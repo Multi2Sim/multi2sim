@@ -32,18 +32,24 @@ namespace Kepler
 
 Thread::Thread(Warp *warp, int id)
 {
-	/* Initialization */
+	// Initialization
 	this->warp = warp;
 	thread_block = warp->getThreadBlock();
 	grid = thread_block->getGrid();
 	this->id = id + thread_block->getId() * grid->getThreadBlockSize();
 	id_in_warp = id % warp_size;
 
-	/* General purpose registers */
+	// Initialization instruction table
+#define DEFINST(_name, _fmt_str, ...) \
+		inst_func[INST_##_name] = &Thread::ExecuteInst_##_name;
+#include <arch/kepler/asm/Inst.def>
+#undef DEFINST
+
+	// Initialize  general purpose registers
 	for (int i = 0; i < 64; ++i)
 		gpr[i].u32 = 0;
 
-	/* Special registers */
+	// Initialize special registers
 	for (int i = 0; i < 82; ++i)
 		sr[i].u32 = 0;
 	sr[33].u32 = id % grid->getThreadBlockSize3(0);
@@ -60,13 +66,42 @@ Thread::Thread(Warp *warp, int id)
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1));
 
-	/* Predicate registers */
+	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
 		pr[i] = 0;
 	pr[7] = 1;
 
 	/* Add thread to warp */
 	//warp->threads[this->id_in_warp] = this;
+}
+
+void Thread::Execute(InstOpcode opcode, Inst *inst)
+{
+	(this->*(inst_func[opcode]))(inst);
+}
+
+void Thread::ISAUnimplemented(Inst *inst)
+{
+	throw misc::Panic(misc::fmt("%s: Unimplemented Kepler "
+			"instruction\n"
+			"\n\t"
+			"The NVIDIA Kepler instruction set is partially "
+			"supported by Multi2Sim. If your program is using an "
+			"unimplemented instruction, please report a bug on "
+			"www.multi2sim.org requesting support for it.",
+			inst->getName()));
+}
+
+void Thread::ISAUnsupportedFeature(Inst *inst)
+{
+	throw misc::Panic(misc::fmt("%s: Unsupported Kepler "
+			"instruction feature\n"
+			"\n\t"
+			"The NVIDIA Kepler instruction set is partially "
+			"supported by Multi2Sim. If your program is using an "
+			"unsupported instruction feature, please report a bug on "
+			"www.multi2sim.org requesting support for it.",
+			inst->getName()));
 }
 
 }	//namespace

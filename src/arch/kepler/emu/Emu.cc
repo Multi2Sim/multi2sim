@@ -67,29 +67,28 @@ Emu *Emu::getInstance()
 
 Emu::Emu() : comm::Emu("kpl")
 {
-    /* Initialize */
+    // Initialize disassembler
 	this->as = as->getInstance();
 
+	/*
+	// Emulation of ISA. This code expands to one function per ISA
+	// instruction. For example:
 #define DEFINST(_name, _fmt_str, ...) \
 	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
 #include <arch/kepler/asm/Inst.def>
 #undef DEFINST
+*/
 
 	// Global memory initialization
-	global_mem = new mem::Memory();
+	global_mem.reset(new mem::Memory());
 	global_mem->setSafe(false);
-    global_mem_top = 0;
-    global_mem_total_size = 1 << 30; /* 2GB */
-    global_mem_free_size = this->global_mem_total_size;
+	global_mem_top = 0;
+	global_mem_total_size = 1 << 30; /* 2GB */
+	global_mem_free_size = this->global_mem_total_size;
 
 	// Global memory initialization
-    const_mem = new mem::Memory();
+    const_mem.reset(new mem::Memory());
 	const_mem->setSafe(false);
-
-	alu_inst_count = 0;
-	branch_inst_count = 0;
-	shared_mem_inst_count = 0;
-	global_mem_inst_count = 0;
 }
 
 void Emu::Dump(std::ostream &os) const
@@ -101,7 +100,7 @@ void Emu::Dump(std::ostream &os) const
 
 void Emu::DumpSummary(std::ostream &os)
 {
-	/* Call parent */
+	// Call parent
 	Dump();
 }
 
@@ -117,8 +116,12 @@ bool Emu::Run()
 	if (!this->grids.size())
 		return FALSE;
 
+	// Stop if no pending grids
+	if (!pending_grids.size())
+		return false;
+
 	// Remove grid and its thread blocks from pending list, and add them to
-	 // running list
+	// running list
 	while (pending_grids.size())
 	{
 		grid = pending_grids.front();
@@ -153,8 +156,8 @@ bool Emu::Run()
 	assert(!running_grids.size() && !pending_grids.size());
 	finished_grids.clear();
 
-	/* Continue emulation */
-	return TRUE;
+	// Continue emulation
+	return true;
 }
 
 void Emu::ReadConstMem(unsigned addr, unsigned size, char *buf)
@@ -206,12 +209,17 @@ void Emu::RegisterOptions()
 			"(default = functional)",
 			(int &) sim_kind, comm::Arch::SimKindMap,
 			"Level of accuracy of kepler simulation");
+
+	// Option --kpl-debug-isa <kind>
+	command_line->RegisterString("--kpl-debug-isa <file>",isa_debug_file,
+			"Dump debug information about Kepler isa implementation");
 }
 
 
 void Emu::ProcessOptions()
 {
 	isa_debug.setPath(isa_debug_file);
+	isa_debug.setPrefix("[Kepler emulator]");
 }
 
 }	//namespace

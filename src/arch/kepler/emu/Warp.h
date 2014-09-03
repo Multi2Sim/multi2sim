@@ -20,16 +20,16 @@
 #ifndef ARCH_KEPLER_EMU_WARP_H
 #define ARCH_KEPLER_EMU_WARP_H
 
-#ifdef __cplusplus
-
 #include <list>
 #include <memory>
 #include <vector>
 
+#include <lib/cpp/Bitmap.h>
 #include <arch/kepler/asm/Inst.h>
 #include "Grid.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
+#include <lib/util/bit-map.h>
 
 namespace Kepler
 {
@@ -37,8 +37,7 @@ namespace Kepler
 class Grid;
 class ThreadBlock;
 class Thread;
-struct KeplerInstWrap;
-struct bit_map_t;
+
 
 /// Polymorphic class used to attach data to a warp. The timing simulator
 /// can use an object derived from this class, instead of adding fields to the
@@ -46,32 +45,52 @@ struct bit_map_t;
 class WarpData
 {
 public:
+
+	/// Virtual destructor for polymorphic class.
 	virtual ~WarpData();
 };
 
+struct SyncStackEntry
+{
+	// Reconvergence address for current stack entry
+	unsigned int reconv_pc;
+
+	// Starting address of a section of code when divergence happens, e.g.
+	// starting address of if (or else) part
+	unsigned int start_address;
+
+	// Active mask
+	unsigned int active_thread_mask;
+
+	// Instruction type. Use to mark if the instruction in stack entry is a SSY
+	// instruction. When the NOP.S instruction is executed, pop all the
+	// instructions before the first SSY instruction(including the first SSY
+	// instruction)
+	std::string inst_type;
+
+	//
+	unsigned int pre_relative_address;
+
+	//
+	unsigned int original_active_thread_mask;
+};
+
+/// The class Warp represents a warp in CUDA.
 class Warp
 {
-	struct SyncStackEntry
-	{
-		unsigned int reconv_pc;
-		unsigned int next_path_pc;
-		unsigned int active_thread_mask;  // the number of the thread active?
-	};
-
-	struct SyncStack
-	{
-		SyncStackEntry entries[32];
-	};
-
-	// IDs
+	// Unique identifier of the warp in the grid
 	int id;
+
+	// Unique identifier of the warp in the thread block.
 	int id_in_thread_block;
 
-	// Name
-	std::string name;
+	// Name  TODO Is it needed?
+	//std::string name;
 
-	// grid and thread-block it belongs to
+	// Grid the warp belongs to
 	Grid *grid;
+
+	// Thread block the warp belongs to
 	ThreadBlock *thread_block;
 
 	// threads
@@ -82,44 +101,48 @@ class Warp
 
 	// Program counter
 	unsigned pc;
+
+	// Instruction size by byte
 	int inst_size;
-    int target_pc;
+
+	// Target PC for next instruction
+	int target_pc;
 
 	// Current instruction
-	//KeplerInstWrap *inst;
-	Inst* inst;
+	Inst inst;
 
-	// Starting/current position in buffer
-	unsigned long long *inst_buffer;
-	unsigned inst_buffer_index;
+	// Pointer points to the starting position of instruction buffer
+	std::vector<unsigned long long>::iterator inst_buffer;
+
+	// The whole instruction buffer size in bytes
 	unsigned inst_buffer_size;
-	 
-	// Sync stack   Reconvergence stack
-	SyncStackEntry new_entry;
-	SyncStack sync_stack;
+	
+	// Reconvergence stack. Currently, we have 32 entries.
+	SyncStackEntry sync_stack[32];
+
+	// The pointer points to the top of the reconvergence stack
 	int sync_stack_top;
-	int sync_stack_pushed;
-	int sync_stack_popped;
-	unsigned int divergent;
-	unsigned int taken;
 
-	// Predicate mask        // mask register??  
-	bit_map_t *pred;
-
-	// Flags updated during instruction execution
+	// Flags updated during instruction execution TODO still needed?
 	int active_mask_push;
 	int active_mask_pop;
 	unsigned at_barrier_thread_count;
 	unsigned finished_thread_count;
-	bool finished_emu;                    // what's this? 
+	bool finished_emu;
 	bool at_barrier;
 
-	// iterators
+	// Flag indicates how many threads are taken at a branch
+	unsigned taken_thread;
+
+	// Iterators
 	std::list<Warp *>::iterator running_list_iter;
 	std::list<Warp *>::iterator barrier_list_iter;
 	std::list<Warp *>::iterator finished_list_iter;
 
 	// To measure simulation performance
+	// FIXME here and above and below: initializers to fields of basic
+	// types, if they are not initialized in the constructor through
+	// arguments.
 	long long emu_inst_count;
 	long long emu_time_start;
 	long long emu_time_end;
@@ -142,29 +165,44 @@ class Warp
 	// past-the-end iterator to the thread-block's thread list.
 	std::vector<std::unique_ptr<Thread>>::iterator threads_end;
 
+	//TODO still needed any more?
+	//int sync_stack_pushed;
+	//int sync_stack_popped;
+	//unsigned int divergent;
+	//unsigned int taken;
+
+/*	// Predicate mask        // Do we still need this in warp? TODO
+	//misc::Bitmap pred;  */
+
 public:
 	/// Constructor
 	///
-	/// \param thread_block Thead-block that the warp belongs to
-	/// \param id Global 1D identifier of the warp
+	/// \param thread_block
+	///	Thead-block that the warp belongs to
+	///
+	/// \param id
+	///	Global 1D identifier of the warp
 	Warp(ThreadBlock *thread_block, unsigned id);
 
-	// Getters
-	//
 	/// Return the global warp 1D ID
 	int getId() const { return id; }
 
-	/// Return the threadblock it is belong to
+	// Get Grid that it belongs to
+	Grid *getGrid() const { return grid; }
+
+	/// Return the threadblock it belongs to
 	ThreadBlock *getThreadBlock() const { return thread_block; }
 
 	/// Return PC
 	unsigned getPC() const { return pc; }
 
 	/// Return pointer to a thread inside this warp
-	Thread *getThread(int id_in_warp) {
-		assert(id_in_warp >= 0 && id_in_warp < (int) thread_count);
+	Thread *getThread(int id_in_warp)
+	{
+		assert(misc::inRange(id_in_warp, 0, (int) thread_count - 1));
 		return threads_begin[id_in_warp].get();
 	}
+
 	/// Return finished_emu
 	bool getFinishedEmu() const { return finished_emu; }
 
@@ -172,22 +210,96 @@ public:
 	bool getAtBarrier() const { return at_barrier; }
 
 	/// Get Sync stack top reconv pc
-    unsigned getSyncStkTopRecPC() const { return sync_stack.entries[sync_stack_top].reconv_pc; }
+	// FIXME Comment must be full English sentence without abbreviations
+	// FIXME General rule: no abbreviations for variable names
+	unsigned getSyncStkTopRecPC() const
+	{
+		return sync_stack[sync_stack_top].reconv_pc;
+	}
 
-	/// Get Sync stack top reconv pc
-    unsigned getSyncStkTopActive() const { return sync_stack.entries[sync_stack_top].active_thread_mask; }
+	/// Get target address of the \p index element in Sync stack
+	unsigned getSyncStkStartAddress(int index) const
+	{
+		return sync_stack[index].start_address;
+	}
 
-	/////////////////////////////////////////////////////////////
-	
-	///Get thread_count
-	unsigned getThreadCount() const {return thread_count; }
+	/// Get target address of Sync stack top
+	unsigned getSyncStkTopStartAddress () const
+	{
+		return sync_stack[sync_stack_top].start_address;
+	}
 
-	/// Get finished_thread_count
-	unsigned getFinishedThreadCount() const {return finished_thread_count; }
+	/// Get Sync stack top
+	unsigned getSyncStkTop () const { return sync_stack_top; }
 
+	/// Get the whole Sync stack top active mask
+	unsigned getSyncStkTopActiveMask() const
+	{
+		return sync_stack[sync_stack_top].active_thread_mask;
+	}
+
+	/// Get Sync stack top active mask
+	unsigned getSyncStkTopActiveMaskBit(int index) const
+	{
+		int temp;
+		temp = sync_stack[sync_stack_top].active_thread_mask & (1<<index);
+		return temp >> index;
+	}
+
+	/// Get active mask of \p index element in Sync Stack
+	unsigned getSyncStkActiveMask (int index) const
+	{
+		return sync_stack[index].active_thread_mask;
+	}
+
+	/// Get number of Sync stack top active mask
+	unsigned getSyncStkTopActiveCount() const
+	{
+		unsigned num;
+		for (unsigned i=0; i<thread_count; i++)
+		{
+			unsigned temp;
+			temp = (sync_stack[sync_stack_top].active_thread_mask >> i) & 1u;
+			if (temp)
+				num++;
+		}
+		return num;
+	}
+
+	/// Get name of Sync stack top instruction
+	std::string getSyncStkTopInst() const
+	{
+		return sync_stack[sync_stack_top].inst_type;
+	}
+
+	/// Get Sync stack top pre relative address
+	unsigned getSyncStkTopPreRelativeAddress() const
+	{
+		return sync_stack[sync_stack_top].pre_relative_address;
+	}
+
+	/// Get Sync stack top original active thread mask
+	unsigned getSyncStkTopOriginalActiveThreadMask() const
+	{
+		return sync_stack[sync_stack_top].original_active_thread_mask;
+	}
+
+	/// Get the number of threads forming the warp.
+	unsigned getThreadCount() const { return thread_count; }
+
+	/// Get the number of threads that have finished execution.
+	unsigned getFinishedThreadCount() const
+	{
+		return finished_thread_count;
+	}
+
+	// FIXME apply formatting changes below, as done above. You continue.
 	/// Get inst_size
 
 	int getInstSize() const {return inst_size;}
+
+	/// Get taken thread
+	unsigned getTakenThread() const { return taken_thread; }
 	//////////////////////////////////////////////////////////////
 
 	// Setters
@@ -209,14 +321,67 @@ public:
 	/// Set Sync stack top reconv pc
     void setSyncStkTopRecPC(unsigned value)
     {
-    	sync_stack.entries[sync_stack_top].reconv_pc = value;
+    	sync_stack[sync_stack_top].reconv_pc = value;
     }
 
-	/// Set Sync stack top reconv pc
-    void setSyncStkTopActive(unsigned value)
+	/// Set the \p index bit of sync stack top active mask to \p value
+    void setSyncStkTopActiveMaskBit(unsigned index, unsigned value)
     {
-    	sync_stack.entries[sync_stack_top].active_thread_mask = value;
+    	unsigned temp;
+    	if (value)
+    	{
+    		temp = 1u << index;
+    		sync_stack[sync_stack_top].active_thread_mask |= temp;
+    	}
+    	else
+    	{
+    		temp = (1u << index) -1;
+    		sync_stack[sync_stack_top].active_thread_mask &= temp;
+    	}
     }
+
+    /// Set whole Sync stack top active mask
+    void setSyncStkTopActiveMask(unsigned mask)
+    {
+    	sync_stack[sync_stack_top].active_thread_mask = mask;
+    }
+
+    /// Set Sync stack top target address
+    void setSyncStkTopStartAddress(unsigned address)
+    {
+    	sync_stack[sync_stack_top].start_address = address;
+    }
+
+    /// Set instruction name of Sync stack top entry
+    void setSyncStkTopInst (std::string name)
+    {
+    	sync_stack[sync_stack_top].inst_type = name;
+    }
+
+    /// Reset sync stack top active mask
+    void resetSyncStkTopActiveMask()
+    {
+    	sync_stack[sync_stack_top].active_thread_mask =
+    			(1ull << thread_count )- 1;
+    }
+
+    /// Set Sync stack top pre relative address
+    void setSyncStkTopPreRelativeAddress(unsigned address)
+    {
+    	sync_stack[sync_stack_top].pre_relative_address = address;
+    }
+
+    /// Set Sync stack top original active thread mask
+    void setSyncStkTopOriginalActiveThreadMask(unsigned address)
+    {
+    	sync_stack[sync_stack_top].original_active_thread_mask = address;
+    }
+
+    /// set taken thread
+    void setTakenThread(unsigned value) { taken_thread = value; }
+
+    /// increase taken thread by value
+    void increaseTakenThread(unsigned value) { taken_thread += value; }
 
 	////////////////////////////////////////////////////////////////////
 	// Set finished_emu
@@ -227,6 +392,9 @@ public:
 
     /// Decrement Sync Stack top counter
     void decrSyncStkTop() { sync_stack_top --; }
+
+    // Increment Reconvergence Stack Top pointer
+    void incrSyncStkTop() { sync_stack_top ++; }
 
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;
@@ -272,7 +440,6 @@ public:
 	}
 };
 
-}  // namespace
+}  // namespace Kepler
 
-#endif
 #endif

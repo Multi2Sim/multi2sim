@@ -50,7 +50,7 @@ class Function
 	// containing the ISA section for the function. FIXME
 	const char *text_buffer;
 	
-	// Size of the ISA section FIXME
+	// Size of the ISA section in bytes FIXME
 	int text_size;
 
 	// Arguments
@@ -65,7 +65,7 @@ public:
 	int getId() const { return id; }
 
 	/// Get the size of the ISA section in the associated ELF binary
-	int getTextSize() const { std::cout<<text_size<<std::endl; return text_size; }
+	int getTextSize() const { return text_size; }
 
 	/// Get a buffer pointing to the ISA section in the associated ELF file
 	const char *getTextBuffer() const { return text_buffer; }

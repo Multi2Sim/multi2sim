@@ -23,6 +23,8 @@
 #ifdef __cplusplus
 
 #include <arch/kepler/asm/Asm.h>
+#include <arch/kepler/asm/Inst.h>
+
 #include "Grid.h"
 #include "Warp.h"
 #include "ThreadBlock.h"
@@ -61,6 +63,7 @@ public:
 		unsigned u32;
 		int s32;
 		float f;
+		unsigned long long u64;
 	};
 
 	/// Memory accesses types
@@ -96,13 +99,30 @@ private:
 	Grid *grid;
 
 	// Registers
-	RegValue gpr[64];  /* General purpose registers */
+	RegValue gpr[256];  /* General purpose registers */
 	RegValue sr[82];  /* Special registers */
 	unsigned pr[8];  /* Predicate registers */
 
 	// Last global memory access
 	unsigned global_mem_access_addr;
 	unsigned global_mem_access_size;
+
+	// Emulation of ISA. This code expands to one function per ISA
+	// instruction. For example:
+#define DEFINST(_name, _fmt_str, ...) \
+		void	ExecuteInst_##_name(Inst *inst);
+#include <arch/kepler/asm/Inst.def>
+#undef DEFINST
+
+	// Instruction execution table
+	typedef void (Thread::*InstFunc)(Inst *inst);
+	InstFunc inst_func[InstOpcodeCount];
+
+	// Error massage for unimplemented instructions
+	static void ISAUnimplemented(Inst *inst);
+
+	// Error massage of unsupported feature
+	static void ISAUnsupportedFeature(Inst *inst);
 
 	/* Fields below are used for architectural simulation only. */
 public :
@@ -113,19 +133,22 @@ public :
 	Thread(Warp *warp, int id);
 
 	/// Get id_in_warp;
-	int getIdInWarp() const { return id_in_warp; }
+	unsigned getIdInWarp() const { return id_in_warp; }
 
 	/// Get warp_id
-	int getWarpId() const { return warp->getId(); }
+	unsigned getWarpId() const { return warp->getId(); }
 
 	/// Get value of a GPR
 	/// \param vreg GPR identifier
-	unsigned ReadGPR(int gpr_id) const { return gpr[gpr_id].u32; }
+	unsigned long long ReadGPR(int gpr_id) const { return gpr[gpr_id].u64; }
 
 	/// Set value of a GPR
 	/// \param gpr GPR idenfifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteGPR(int gpr_id, unsigned value) { gpr[gpr_id].u32 = value;};
+	void WriteGPR(int gpr_id, unsigned long long value)
+	{
+		gpr[gpr_id].u64 = value;
+	}
 
 	/// Get value of a SR
 	/// \param vreg SR identifier
@@ -139,6 +162,10 @@ public :
 	/// Get value of a predicate register
 	/// \param pr Predicate register identifier
 	int GetPred(int pr_id) { return pr[pr_id]; };
+
+	/// Write value of a predicate register
+	/// \param pr predicate register identifier
+	void WritePred(int pr_id, unsigned value) { pr[pr_id] = value; };
 
 	/// Set value of a predicate register
 	/// \param pr Predicate register identifier
@@ -154,6 +181,9 @@ public :
 	/// Set value of the active thread mask
 	/// \param value Value given as an \a unsigned typed value
 	void SetActive(unsigned value);
+
+	/// Execute an instruction
+	void Execute(InstOpcode opcode, Inst *inst);
 };
 
 } //namespace

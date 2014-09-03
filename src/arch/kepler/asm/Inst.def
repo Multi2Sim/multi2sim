@@ -144,6 +144,16 @@ DEFINST(LDS,
 		0x02,
 		0x01)
 
+DEFINST(LDC,  
+                "%pred0 LDC %u8 %dst,[%srcA + 0x%offset2]; ",
+		0x02,
+		0x01,
+		0x0f,
+		0x01,
+		0x07,
+		0x01,
+		0x02)
+		
 DEFINST(ST,
 		"%pred0 ST%e%cg%u8%s [%srcA]%offset, %dst;",
 		0x00,
@@ -209,6 +219,16 @@ DEFINST(S2R,
 		0x00,
 		0x01,
 		0x09)
+		
+DEFINST(PSETP,
+		"%pred0 PSETP%and%and %pred1, %pred2, %pred3, %pred4, %pred5;",
+		0x02,
+		0x02,
+		0x00,
+		0x02,
+		0x00,
+		0x01,
+		0x02)		
 
 DEFINST(SHF,
                 "%pred0 SHF !!! Add arguments !!!;",
@@ -402,3 +422,10 @@ DEFINST(ISCADD32I,
 		"IASCADD32I",
 		0x00,
 		0x05)
+		
+DEFINST(SHL,
+		"SHL",
+		0x01,
+		0x03,
+		0x00,
+		0x09)

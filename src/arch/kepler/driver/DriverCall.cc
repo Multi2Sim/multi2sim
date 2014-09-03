@@ -1,5 +1,6 @@
 /*
  *  Multi2Sim
+
  *  Copyright (C) 2014  Xun Gong (gong.xun@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -17,6 +18,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include<memory>
 #include <arch/kepler/emu/Emu.h>
 #include <arch/kepler/asm/Asm.h>
 #include <arch/kepler/emu/Grid.h>
@@ -71,9 +73,12 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MemAlloc'
+///	ABI Call 'MemAlloc'
 ///
-/// \param unsigned int size
+/// \param pointer device_ptr
+///	The pointer points to allocated memory
+///
+/// \param unsigned size
 ///	Number of bytes to allocate
 ///
 /// \return
@@ -116,7 +121,19 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'MemRead'
 ///
-/// ...
+/// Read memory from device into host.
+///
+/// \param void *device_ptr
+///	Destination pointer in device memory.
+///
+/// \param void *host_ptr
+///	Source pointer in host memory.
+///
+/// \param unsigned int size
+///	Number of bytes to read.
+///
+/// \return
+///	The function does not have any return value.
 int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 {
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
@@ -135,13 +152,13 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 			device_ptr, host_ptr, size);
 
 	// Check memory range
-	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
-		//throw Error("Accessing device memory not allocated");
+	if (device_ptr + size > kpl_emu->getGlobalMemTop())
+		throw Error("Accessing device memory not allocated");
 
 	// Read memory from device to host
 	std::unique_ptr<char> buffer(new char[size]);
-	memory->Read(device_ptr, size, buffer.get());
-	global_mem->Write(host_ptr, size, buffer.get());
+	global_mem->Read(device_ptr, size, buffer.get());
+	memory->Write(host_ptr, size, buffer.get());
 
 	// Return
 	return 0;
@@ -181,13 +198,13 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 			device_ptr, host_ptr, size);
 
 	// Check memory range
-	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
-		//throw Error("Accessing device memory not allocated");
+	if (device_ptr + size > kpl_emu->getGlobalMemTop())
+		throw Error("Accessing device memory not allocated");
 
 	// Read memory from host to device
 	std::unique_ptr<char> buffer(new char[size]);
-	global_mem->Read(device_ptr, size, buffer.get());
-	memory->Write(host_ptr, size, buffer.get());
+	memory->Read(host_ptr, size, buffer.get());
+	global_mem->Write(device_ptr, size, buffer.get());
 
 	// Return
 	return 0;
@@ -196,11 +213,10 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'LaunchKernel'
 ///
-/// Invokes the kernel function whose if is function_id
-/// on a gridDimX * gridDimY * gridDimZ grid of blocks.
-/// Each block contains blockDimX * blockDimY * blockDimZ threads.
-/// sharedMemBytes sets the amount of dynamic shared memory that will be
-/// available to each thread block
+/// Invokes the kernel function whose id is function_id on a gridDimX * gridDimY
+/// * gridDimZ grid of blocks. Each block contains blockDimX * blockDimY *
+/// blockDimZ threads. SharedMemBytes sets the amount of dynamic shared memory
+/// that will be available to each thread block
 ///
 /// \param unsigned function_id
 ///	Function unique identifier
@@ -227,13 +243,13 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 ///	Dynamic shared-memory size per thread block in bytes
 ///
 /// \param unsigned stream
-/// Stream identifier
+///	Stream identifier
 ///
 /// \param void* *kernel_args
-/// Array of pointers to kernel parameters
+///	Array of pointers to kernel parameters
 ///
 /// \param extra
-/// extra options (to be decided)
+///	extra options (to be decided)
 ///
 /// \return
 ///	The function does not have any return value.
@@ -282,7 +298,8 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 	std::string function_name;
 	Function *function;
 	function_name = memory->ReadString(function_name_ptr);
-	// Get function
+
+	// Get function in the module list
 	for (unsigned i = 0; i < modules.size(); i++)
 	{
 		for (int j = 0; j < modules[i]->getNumFunctions(); j++)
@@ -290,16 +307,15 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 			if(function_name == modules[i]->getFunctionName(j))
 				function = modules[i]->getFunction(i);
 		}
-
 	}
-	//Function *function = getFunction(function_id);
-	std::cout<<function->getName()<<std::endl;
+
+	// If function_name is not found
 	if (function == nullptr)
 		throw Driver::Error(misc::fmt("Invalid function ID (%d)",
 				function_id));
 
 	// Set up arguments
-	int offset = 0x20;  // Start writing at this position
+	int offset = 0x140;  // Start writing at this position
 	for (int i = 0; i < function->getNumArguments(); ++i)
 	{
 		// Read argument value
@@ -315,6 +331,8 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 
 		// Write value to constant memory
 		const_mem->Write(offset, sizeof(unsigned),(char *) &temp);
+
+		//std::cout<<"in function	"<<__FUNCTION__<<"the const is"<<temp<<std::endl;
 		offset += 0x4;
 	}
 
@@ -333,16 +351,16 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-/// ABI Call 'MemGetInfo'  FIXME
+/// ABI Call 'MemGetInfo'
 ///
-/// param unsigned free;
-/// Returned free global memory in bytes.
+/// \param unsigned *free;
+///	Returned free global memory in bytes.
 ///
-/// param unsigned total
-/// Returned total global memory in bytes
+/// \param unsigned *total
+///	Returned total global memory in bytes
 ///
-/// return value
-/// the return is always 0 on success
+/// \return
+///	the return is always 0 on success
 int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 {
 	// Get Emu instance and global memory
@@ -352,17 +370,17 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 	unsigned free;
 	unsigned total;
 
-	// Read Arguments
-	memory->Read(args_ptr, sizeof(unsigned), (char *) &free);
-	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &total);
+	// Read value from device
+	free = kpl_emu->getGlobalMemFreeSize();
+	total = kpl_emu->getGlobalMemTotalSize();
 
 	// Debug Info
 	debug << misc::fmt("\tout: free=%u\n", free);
 	debug << misc::fmt("\tout: total=%u\n", total);
 
-	// Write Result to Device
-	kpl_emu->setGlobalMemFreeSize(free);
-	kpl_emu->setGlobalMemTotalSize(total);
+	// Write results
+	memory->Write(args_ptr, sizeof(unsigned), (char *) &free);
+	memory->Write(args_ptr + 4, sizeof(unsigned), (char *) &total);
 
 	// Return
 	return 0;
@@ -371,43 +389,43 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 /// ABI Call 'ModuleLoad'
 ///
+/// The function loads a computer module
+///
 /// \param char *path
 ///	Path of a cubin binary to load the module from.
 ///
 /// \return
-///	[...] FIXME
+///	The function always returns 0
 int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments
-	unsigned path_ptr;  // read address
+	unsigned path_ptr;
 	memory->Read(args_ptr, sizeof(unsigned), (char *) &path_ptr);
 
 	// Get path to cubin binary
 	char path[MAX_STRING_SIZE];
 	memory->Read(path_ptr, MAX_STRING_SIZE, path);
 
-	// Create Module
-	//Module *module = addModule(path);
+	// Create module
 	addModule(path);
-	//return module->getId();
 	return 0;
 }
 
 
 /// ABI Call 'ModuleGetFunction'
 ///
-/// Return a handle to a function within a module
-/// If no function of that name exists, returns error
+/// Return a handle to a function within a module If no function of that name
+/// exists, returns error
 ///
 /// \param unsigned module_id
 ///	Module unique identifier
 ///
-/// \param char *func_name
-///	Function name
+/// \param unsigned name_addr
+///	Address of function name
 ///
 /// \return
-/// the return value is a valid function id on success
-/// otherwise an error will be thrown
+///	The return value is a valid function id on success otherwise an error will
+///	be thrown
 int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 {
 	// Read module id
@@ -416,24 +434,22 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 
 	// Read address of function name
 	unsigned name_addr;
-	memory->Read(args_ptr+4, sizeof (unsigned), (char*) &name_addr);
+	memory->Read(args_ptr + 4, sizeof (unsigned), (char*) &name_addr);
 
 	//Read function name
 	std::string function_name;
 	function_name = memory->ReadString(name_addr);
-	std::cout<<function_name<<std::endl;
 
 	// Debug Info
 	debug << misc::fmt("\tout: module_id=%u\n", module_id);
 
 	// Find function name in function list and return function id
 	modules[module_id]->addFunction(modules[module_id].get(),function_name);
-			std::cout<<modules[module_id]->getFunctionName(0)<<std::endl;
-			std::cout<<modules[module_id]->getNumFunctions()<<std::endl;
 
-	// If no function found, return error
+	// If no function found, return error  TODO
 	//throw Driver::Error(misc::fmt("Invalid function name (%s)",
 	//			function_name.c_str()));
+
 	return 0;
 }
 
@@ -445,8 +461,8 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 /// \param unsigned *device_ptr
 /// Pointer to the Device memory will be freed
 ///
-/// return value
-/// the return is always 0
+/// \return value
+///	the return is always 0
 int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 {
 	/*

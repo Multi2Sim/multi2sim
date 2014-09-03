@@ -41,22 +41,27 @@ Grid::Grid(Function *function)
 	const char * temp_buffer;
 	temp_buffer = function->getTextBuffer();
 	inst_buffer_size = function->getTextSize();
-	for (int i = 0; i < inst_buffer_size; ++i)
+	inst_buffer.resize(inst_buffer_size);
+
+	// Instruction byte
+	unsigned long long inst_byte;
+	for (int i = 0; i < inst_buffer_size; i++)
 	{
-		unsigned char inst_bin_byte = temp_buffer[i];
-		if (i % 8 == 0 || i % 8 == 1 || i % 8 == 2 || i % 8 == 3)
+		inst_byte = (unsigned char) temp_buffer[i];
+		if(i % 8 < 4) // 0 1 2 3 byte
 		{
-			inst_buffer[i / 8] |= (unsigned long long int) (inst_bin_byte)
-					<< (i * 8 + 32);
+			inst_buffer[i / 8] |= inst_byte << (i * 8 + 32);
 		}
-		else
+		else // 4 5 6 7 byte
 		{
-			inst_buffer[i / 8] |= (unsigned long long int) (inst_bin_byte)
-					<< (i * 8 - 32);
+			inst_buffer[i / 8] |= inst_byte << (i * 8 - 32);
 		}
 	}
 	state = GridStateInvalid;
 
+	//for(int i = 0; i < inst_buffer_size / 8; i++)
+	//	std::cout<<"in function	"<<__FUNCTION__<<
+	//	"the inst_buffer["<<i <<"] is"<<inst_buffer[i]<<std::endl;
 	// Add to list  (no need? )
 	//emu->addGrid(function);
 }
