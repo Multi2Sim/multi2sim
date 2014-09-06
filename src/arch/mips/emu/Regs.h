@@ -26,6 +26,7 @@ namespace MIPS
 class Regs
 {
 	unsigned int  gpr[32]; // General Purpose registers
+	float fpr[32]; // Float pointer registers
 	unsigned int pc; //program counter
     unsigned int hi;  // mult register for [63:32]
     unsigned int lo;  // mult register for [31:0]
@@ -45,8 +46,14 @@ public:
     ///
     /// \param value
     ///      New value for the register.
-    void setGPR(int n, unsigned int value);
+    void setGPR(int n, unsigned int value){ gpr[n] = value; }
     
+    /// Set the value of a float point register
+    void setFPR(int n, float value){ fpr[n] = value; }
+
+    /// Get the value of a float point register
+    unsigned int getFPR(int n){  return fpr[n]; }
+
     /// Write pc with value
     void setPC(unsigned int value){ pc = value; }
     
