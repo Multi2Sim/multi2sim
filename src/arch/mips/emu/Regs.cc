@@ -46,14 +46,6 @@ unsigned int Regs::getGPR(int n)
 		  return gpr[n];
 }
 
-//Write one word to GPRs, n is the register number, and value is the data to Rn
-//If the n is greater than 31, exit program
-void Regs::setGPR(int n,unsigned int value)
-{
-//		  printf("%d %d", n, value);
-		  gpr[n]=value;
-}
-
 //Read from HI register
 unsigned int Regs::getHI()
 {
