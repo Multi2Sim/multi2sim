@@ -34,46 +34,99 @@ Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
 #undef DEFINST
 };
 
+void Context::mips_isa_branch(unsigned int dest)
+{
+	target_eip = dest;
+}
+
+void Context::mips_isa_rel_branch(unsigned int dest)
+{
+	target_eip = regs.getPC() + dest + 4;
+}
 
 void Context::ExecuteInst_J()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int dest;
+	unsigned int target = inst.getTarget();
+
+	// Perform Operation
+	dest = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
+	mips_isa_branch(dest);
 }
 
 
 void Context::ExecuteInst_JAL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int reg_no = 31;
+	unsigned int value = regs.getPC() + 8;
+	unsigned int target = inst.getTarget();
+
+	// Perform Operation
+	unsigned int dest = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
+	regs.setGPR(reg_no, value);
+	mips_isa_branch(dest);
 }
 
 
 void Context::ExecuteInst_BEQ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	if(regs.getGPR(rs) == regs.getGPR(rt))
+		mips_isa_rel_branch(misc::SignExtend32(imm << 2, 16));
 }
 
 
 void Context::ExecuteInst_BNE()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	if (regs.getGPR(rs) != regs.getGPR(rt))
+		mips_isa_rel_branch(misc::SignExtend32(imm << 2, 16));
 }
 
 
 void Context::ExecuteInst_BLEZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	if ((int)regs.getGPR(rs) <= 0)
+		mips_isa_rel_branch(misc::SignExtend32(imm << 2, 16));
 }
 
 
 void Context::ExecuteInst_BGTZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	mips_isa_rel_branch(misc::SignExtend32(imm << 2, 16));
 }
 
 
 void Context::ExecuteInst_ADDI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int offset = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	regs.setGPR(rt, ((int)regs.getGPR(rs) + (int)offset));
 }
 
 
@@ -91,13 +144,30 @@ void Context::ExecuteInst_ADDIU()
 
 void Context::ExecuteInst_SLTI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int RT = inst.getBytes()->standard.rt;
+	int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	if ((int)(regs.getGPR(RT)) < IMM)
+		regs.setGPR(RT, 1);
+	else
+		regs.setGPR(RT, 0);
+
 }
 
 
 void Context::ExecuteInst_SLTIU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands
+	unsigned int RT = inst.getBytes()->standard.rt;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform Operation
+	if ((unsigned int)(regs.getGPR(RT)) < IMM)
+		regs.setGPR(RT, 1);
+	else
+		regs.setGPR(RT, 0);
 }
 
 
@@ -191,49 +261,131 @@ void Context::ExecuteInst_LW()
 
 void Context::ExecuteInst_LBU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation LBU
+	unsigned int vAddr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	char temp;
+	memory->Read(vAddr, sizeof(unsigned char), &temp);
+	regs.setGPR(rt, (int)temp);
 }
 
 
 void Context::ExecuteInst_LHU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation LHU
+	char temp;
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Read(addr, sizeof(char), &temp);
+	regs.setGPR(rt, (int)temp);
 }
 
 
 void Context::ExecuteInst_LWR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read Operands from instruction
+	char src[4];
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int rt_value = regs.getGPR(rt);
+	unsigned char *dst = (unsigned char *) & rt_value;
+
+	// Perform operation LWR
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	int i, size = 1 + (addr & 3);
+	memory->Read(addr-size+1, size, src);
+	for (i = 0; i < size; i++)
+		dst[size - i - 1]= src[i];
 }
 
 
 void Context::ExecuteInst_SB()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation SB
+	char temp = regs.getGPR(rt);
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Write(addr, sizeof(unsigned char), &temp);
 }
 
 
 void Context::ExecuteInst_SH()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation SH
+	const char temp = regs.getGPR(rt);
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Write(addr, sizeof(unsigned short int), &temp);
 }
 
 
 void Context::ExecuteInst_SWL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int rt_value = regs.getGPR(rt);
+	unsigned char *src = (unsigned char *) & rt_value;
+	char dst[4];
+
+	// Perform operation SWL
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	int i, size = 4 - (addr & 3);
+	for (i = 0; i < size; i++)
+		dst[i] = src[3 -i];
+	memory->Write(addr, size, dst);
 }
 
 
 void Context::ExecuteInst_SW()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int temp = regs.getGPR(rt);
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+
+	// Perform operation SW
+	char tmp = (char)temp;
+	memory->Write(addr, 4, &tmp);
 }
 
 
 void Context::ExecuteInst_SWR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int rt_value = regs.getGPR(rt);
+	unsigned char *src = (unsigned char *) & rt_value;
+	char dst[4];
+
+	// Perform operation SWR
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	int i, size = 1 + (addr & 3);
+	for (i = 0; i < size; i++)
+		dst[i] = src[size - i -1];
+	memory->Write(addr - size + 1, size, dst);
 }
 
 
@@ -245,13 +397,34 @@ void Context::ExecuteInst_CACHE()
 
 void Context::ExecuteInst_LL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	char temp;
+
+	// Perform operation LL
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Read(addr, 4, &temp);
+	regs.setGPR(rt, temp);
+	// FIXME: set LLbit = 1
 }
 
 
 void Context::ExecuteInst_LWC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int ft = inst.getBytes()->offset_imm.rt;
+	char temp;
+	float f;
+
+	// Perform operation LWC1
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Read(addr, 4, &temp);
+	f = (float)temp;
+	regs.setFPR(ft, f);
 }
 
 
@@ -269,7 +442,18 @@ void Context::ExecuteInst_PREF()
 
 void Context::ExecuteInst_LDC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int ft =inst.getBytes()->offset_imm.rt;
+	char temp;
+	float f;
+
+	// Perform operation LDC1
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Read(addr, 4, &temp);
+	f = (float)temp;
+	regs.setFPR(ft, f);
 }
 
 
@@ -281,25 +465,55 @@ void Context::ExecuteInst_LDC2()
 
 void Context::ExecuteInst_SC()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int rt = inst.getBytes()->offset_imm.rt;
+	unsigned int temp = regs.getGPR(rt);
+
+	// Perform operation SC
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	char tmp = (char) temp;
+	memory->Write(addr, 4, &tmp);
+	regs.setGPR(rt, 1);
 }
 
 
 void Context::ExecuteInst_SWC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int ft =inst.getBytes()->offset_imm.rt;
+	char temp;
+
+	// Perform operation SWC1
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Read(addr, 4, &temp);
+	float f = float(temp);
+	regs.setFPR(ft, f);
 }
 
 
 void Context::ExecuteInst_SWC2()
 {
-	throw misc::Panic("Unimplemented instruction");
+
 }
 
 
 void Context::ExecuteInst_SDC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int IMM = inst.getBytes()->offset_imm.offset;
+	unsigned int ft = inst.getBytes()->standard.rt;
+	double dbl;
+
+	// Perform operation SDC1
+	dbl = (double)regs.getFPR(ft);
+	unsigned char temp = * (unsigned char *) &dbl;
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)IMM, 16);
+	memory->Write(addr, sizeof(unsigned int), reinterpret_cast<const char*>(&temp));
 }
 
 
@@ -311,12 +525,19 @@ void Context::ExecuteInst_SDC2()
 
 void Context::ExecuteInst_SLL()
 {
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int sa = inst.getBytes()->standard.sa;
 
+	// Perform operation SLL
+	regs.setGPR(rd,(regs.getGPR(rt) << sa));
 }
 
 
 void Context::ExecuteInst_MOVF()
 {
+	// FIXME: need to implement float point
 	throw misc::Panic("Unimplemented instruction");
 }
 
@@ -329,7 +550,14 @@ void Context::ExecuteInst_MOVT()
 
 void Context::ExecuteInst_SRL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int sa = inst.getBytes()->standard.sa;
+
+	// Perform operation SRL
+	unsigned int temp = regs.getGPR(rt) >> sa;
+	regs.setGPR(rd, temp);
 }
 
 
@@ -341,19 +569,40 @@ void Context::ExecuteInst_ROR()
 
 void Context::ExecuteInst_SRA()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int sa = inst.getBytes()->standard.sa;
+
+	// Perform operation SRA
+	unsigned int temp = regs.getGPR(rt) >> sa;
+	regs.setGPR(rd, temp);
 }
 
 
 void Context::ExecuteInst_SLLV()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation SLLV
+	unsigned int temp = regs.getGPR(rt) << rs;
+	regs.setGPR(rd, temp);
 }
 
 
 void Context::ExecuteInst_SRLV()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation SRLV
+	unsigned int s = misc::getBits32(regs.getGPR(rs), 4, 0);
+	regs.setGPR(rd, regs.getGPR(rt) >> s);
 }
 
 
@@ -365,31 +614,62 @@ void Context::ExecuteInst_ROTRV()
 
 void Context::ExecuteInst_SRAV()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation SRAV
+	unsigned int s = misc::getBits32(regs.getGPR(rs), 4, 0);
+	regs.setGPR(rd, (int)regs.getGPR(rt) >> s);
 }
 
 
 void Context::ExecuteInst_JR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation JR
+	mips_isa_branch(regs.getGPR(rs));
 }
 
 
 void Context::ExecuteInst_JALR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation JALR
+	mips_isa_branch(regs.getGPR(rs));
+	regs.setGPR(rd, (regs.getPC() + 8));
 }
 
 
 void Context::ExecuteInst_MOVZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation MOVZ
+	if (regs.getGPR(rt) == 0)
+		regs.setGPR(rd, regs.getGPR(rs));
 }
 
 
 void Context::ExecuteInst_MOVN()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation MOVZ
+	if (regs.getGPR(rt) != 0)
+		regs.setGPR(rd, regs.getGPR(rs));
 }
 
 

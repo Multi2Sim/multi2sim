@@ -432,6 +432,11 @@ public:
 	void clearState(ContextState state) { UpdateState(this->state
 			& ~state); }
 
+	/// Mips isa branch
+	void mips_isa_branch(unsigned int dest);
+
+	/// Mips isa rel branch
+	void mips_isa_rel_branch(unsigned int dest);
 };
 
 }  // namespace MIPS
