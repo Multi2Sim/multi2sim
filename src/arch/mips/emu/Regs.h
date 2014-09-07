@@ -76,7 +76,7 @@ public:
     void setHI(unsigned int value);
     
     /// Read from low register
-    unsigned int getLO();
+    unsigned int getLO(){ return lo; }
     
     /// Write Lo register with value
     void setLO(unsigned int value); 

@@ -705,31 +705,61 @@ void Context::ExecuteInst_MTHI()
 
 void Context::ExecuteInst_MFLO()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation MFLO
+	regs.setGPR(rd, regs.getLO());
 }
 
 
 void Context::ExecuteInst_MTLO()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation MTLO
+	regs.setLO(regs.getGPR(rs));
 }
 
 
 void Context::ExecuteInst_MULT()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform operation MULT
+	unsigned int long long temp = (long long int)regs.getGPR(rs)*(long long int)regs.getGPR(rt);
+	regs.setLO(misc::getBits64(temp, 31, 0));
+	regs.setHI(misc::getBits64(temp, 63, 32));
 }
 
 
 void Context::ExecuteInst_MULTU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform operation MULTU
+	unsigned int long long temp = (long long int)regs.getGPR(rs)*(long long int)regs.getGPR(rt);
+	regs.setLO(misc::getBits64(temp, 31, 0));
+	regs.setHI(misc::getBits64(temp, 63, 32));
 }
 
 
 void Context::ExecuteInst_DIV()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation DIV
+	if (regs.getGPR(rt))
+	{
+		regs.setLO(regs.getGPR(rs)/regs.getGPR(rt));
+	}
 }
 
 
