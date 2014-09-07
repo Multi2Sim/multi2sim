@@ -58,13 +58,6 @@ void Regs::setHI(unsigned int value)
 		  hi=value;
 }
 
-//Read from LO register
-unsigned int Regs::getLO()
-{
-
-		  return lo;
-}
-
 //Write LO register with value
 void Regs::setLO(unsigned int value)
 {
