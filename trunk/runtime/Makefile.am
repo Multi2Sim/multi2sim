@@ -1,5 +1,6 @@
 SUBDIRS = \
 	cuda \
+	hsa \
 	opengl \
 	glew \
 	glu \
