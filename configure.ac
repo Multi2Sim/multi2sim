@@ -943,6 +943,7 @@ AC_CONFIG_FILES([
 		 
 		runtime/Makefile
 		runtime/cuda/Makefile
+		runtime/hsa/Makefile
 		runtime/glew/Makefile
 		runtime/glu/Makefile
 		runtime/glut/Makefile

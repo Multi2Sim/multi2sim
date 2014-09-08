@@ -516,6 +516,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
 	mem::MMU::RegisterOptions();
+	mem::Manager::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
 	MIPS::Emu::RegisterOptions();
 	SI::Driver::RegisterOptions();
@@ -536,6 +537,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();
 	mem::MMU::ProcessOptions();
+	mem::Manager::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
 	MIPS::Emu::ProcessOptions();
 	SI::Driver::ProcessOptions();

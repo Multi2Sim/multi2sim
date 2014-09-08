@@ -25,6 +25,8 @@
 #include <memory>
 
 #include <lib/cpp/String.h>
+#include <lib/cpp/Debug.h>
+#include <lib/cpp/CommandLine.h>
 
 #include "Memory.h"
 
@@ -35,6 +37,9 @@ namespace mem
 // A delegate of a memory object for memory allocation and deallocation
 class Manager
 {
+	// Debug file name, as set by user
+	static std::string debug_file;
+
 	// Memory object it manage
 	Memory *memory;
 
@@ -138,7 +143,7 @@ class Manager
 		{
 			std::string chunk_allocation_status = 
 					isAllocated() ? "Occupied": "Free";
-			os << misc::fmt("0x%x - 0x%0x (size %d) --- %s\n",
+			os << misc::fmt("    0x%x - 0x%0x (size %d) --- %s\n",
 					getAddress(),
 					getEndAddress(),
 					getSize(), 
@@ -224,6 +229,15 @@ public:
 	/// Constructor, assign the memory to manager
 	Manager(Memory *memory);
 
+	/// Debugger
+	static misc::Debug debug;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
 	/// Allocate a piece of memory
 	/// 
 	/// \param size
@@ -247,6 +261,12 @@ public:
 
 	/// Determines if the address falls in an allocated region
 	bool isValidAddress(unsigned address);
+
+	/// Get allocated size
+	unsigned getAllocatedSize() const;
+
+	/// Get occupied size, equals to the number of pages occupied
+	unsigned getOccupiedSize() const;
 
 	/// Dump the memory managing status for debug purpose
 	void Dump(std::ostream &os) const;

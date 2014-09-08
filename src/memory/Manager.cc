@@ -32,15 +32,50 @@ Manager::Manager(Memory *memory)
 }
 
 
+// Debug file name, as set by user
+std::string Manager::debug_file;
+
+// Debugger
+misc::Debug Manager::debug;
+
+
+void Manager::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("Memory");
+
+	// Option '--hsa-debug-driver <file>'
+	command_line->RegisterString("--mem-manager-debug <file>", debug_file,
+			"Dump debug information for the memory manager, "
+			"including how much memory allocated, fragmentation.");
+}
+
+
+void Manager::ProcessOptions()
+{
+	debug.setPath(debug_file);
+	//debug.setPrefix("[Memory Manager]");
+}
+
+
 unsigned Manager::Allocate(unsigned size, unsigned alignment)
 {
 	// Assert the alignment is smaller than page size
 	assert(alignment<=Memory::PageSize);
 
+	// Log memory allocation request in debug file
+	debug << misc::fmt("%d bytes of memory requested, align to %d byte\n",
+			size, alignment);
+
 	// If requested size is larger than a page, allocate whole pages for it
 	if (size > Memory::PageSize)
 	{
-		return AllocateLarge(size);
+		unsigned address = AllocateLarge(size);
+		if(debug) Dump(debug);
+		return address;
 	}
 
 	// Traverse all holes to find an available slot
@@ -48,7 +83,10 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 	{
 		if (canHoleContain(it->second, size, alignment))
 		{
-			return AllocateIn(it->second, size, alignment);
+			unsigned address = AllocateIn(it->second,
+					size, alignment);
+			if(debug) Dump(debug);
+			return address;
 		}
 	}
 	
@@ -56,6 +94,9 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 	Chunk *hole = RequestOnePage();
 	unsigned addr = hole->getAddress();
 	AllocateIn(hole, size, alignment);
+
+	// After allocating memory space, dump summary of managed memory
+	if(debug) Dump(debug);
 	return addr;
 }
 
@@ -387,14 +428,62 @@ bool Manager::isValidAddress(unsigned address)
 }
 
 
-void Manager::DumpChunks(std::ostream &os = std::cout) const
+unsigned Manager::getAllocatedSize() const
 {
-	os << "Chunks *****\n";
+	unsigned size_allocated = 0;
 	for (auto it = chunks.begin(); it != chunks.end(); it++)
 	{
-		os << *(it->second.get());
+		Chunk *chunk = it->second.get();
+		if (chunk->isAllocated())
+		{
+			size_allocated += chunk->getSize();
+		}
 	}
-	os << "***** *****\n\n";
+	return size_allocated;
+}
+
+
+unsigned Manager::getOccupiedSize() const
+{
+	unsigned size_occupied = 0;
+	for (auto it = chunks.begin(); it != chunks.end(); it++)
+	{
+		Chunk *chunk = it->second.get();
+		size_occupied += chunk->getSize();
+	}
+	return size_occupied;
+}
+
+
+void Manager::DumpChunks(std::ostream &os = std::cout) const
+{
+	os << "\n  ***** Chunks *****";
+
+	unsigned prev_page = 0;
+
+	for (auto it = chunks.begin(); it != chunks.end(); it++)
+	{
+		Chunk *chunk = it->second.get();
+
+		// If in a new page, print page information
+		unsigned curr_page = chunk->getAddress() / Memory::PageSize;
+		if(curr_page != prev_page)
+		{
+			// Close previous page
+			if (prev_page > 0)
+			{
+				os << "  ***** **** *****\n";
+			}
+
+			// Start a new page
+			prev_page = curr_page;
+			os << "\n  ***** Page *****\n";
+		}
+
+		// Dump chunk information
+		os << *(chunk);
+	}
+	os << "  ***** ****** *****\n";
 }
 
 
@@ -402,7 +491,11 @@ void Manager::Dump(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n***** Memory *****\n");
 	DumpChunks(os);
-	os << misc::fmt("******************\n");
+	os << misc::fmt("  Allocated Size: %d,\n", getAllocatedSize());
+	os << misc::fmt("  Occupied Size: %d,\n", getOccupiedSize());
+	os << misc::fmt("  Fragmentation: %f\n",
+			(double)getAllocatedSize()/(double)getOccupiedSize() );
+	os << misc::fmt("\n***** ****** *****\n\n");
 }
 
 }  // namespace mem
