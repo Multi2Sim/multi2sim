@@ -471,9 +471,7 @@ void Manager::DumpChunks(std::ostream &os = std::cout) const
 		{
 			// Close previous page
 			if (prev_page > 0)
-			{
 				os << "  ***** **** *****\n";
-			}
 
 			// Start a new page
 			prev_page = curr_page;
@@ -483,7 +481,13 @@ void Manager::DumpChunks(std::ostream &os = std::cout) const
 		// Dump chunk information
 		os << *(chunk);
 	}
-	os << "  ***** ****** *****\n";
+
+	// Close last page
+	if (prev_page > 0)
+		os << "  ***** **** *****\n";
+
+	// Close dumping chunks
+	os << "\n  ***** ****** *****\n";
 }
 
 
