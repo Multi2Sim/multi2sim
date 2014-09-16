@@ -29,7 +29,7 @@ libemu_a_SOURCES = \
 	\
 	machine.c \
 	machine.h \
-	ContextIsaFormatR.cc \
+	ContextIsa.cc \
 	\
 	isa.c \
 	isa.h \
