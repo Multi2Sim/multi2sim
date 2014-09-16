@@ -117,6 +117,9 @@ class Asm : public comm::Asm
 	// Global instance of the Kepler disassembler
 	static std::unique_ptr<Asm> as;
 
+	// The path of cubin file disassembler gets from command line
+	static std::string path;
+
 	template<typename... Args> void InitTable(InstOpcode opcode,
 			const char *name, const char *fmt_str, Args&&... args)
 	{
