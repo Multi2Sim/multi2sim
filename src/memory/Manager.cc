@@ -74,7 +74,7 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 	if (size > Memory::PageSize)
 	{
 		unsigned address = AllocateLarge(size);
-		if(debug) Dump(debug);
+		if (debug) Dump(debug);
 		return address;
 	}
 
@@ -83,9 +83,14 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 	{
 		if (canHoleContain(it->second, size, alignment))
 		{
+			debug << misc::fmt("Allocating in hole 0x%x\n",
+					it->second->getAddress());
 			unsigned address = AllocateIn(it->second,
 					size, alignment);
-			if(debug) Dump(debug);
+			if (debug)
+			{
+				Dump(debug);
+			}
 			return address;
 		}
 	}
@@ -126,7 +131,19 @@ bool Manager::canHoleContain(Chunk *hole, unsigned size,
 
 	// Returns true if the hole's size is greater than the requested size
 	// plus the gap.
-	return hole->getSize() >= size + gap;
+	bool can_hold = hole->getSize() >= size + gap;
+
+	// Dump information into debug file
+	/*
+	debug << misc::fmt("Checking if hole 0x%x, size %d, "
+			"fit variable size %d, align to %d. "
+			"Aligned size would be 0x%x. \n",
+			hole->getAddress(), hole->getSize(),
+			size, alignment, aligned_address);
+	*/
+
+	// Return result
+	return can_hold;
 }
 
 
@@ -164,7 +181,7 @@ unsigned Manager::AllocateLarge(unsigned size)
 unsigned Manager::AllocateIn(Chunk *hole, unsigned size, unsigned alignment)
 {
 	// Assert the hole can contain the size
-	assert(canHoleContain(hole, size, alignment));
+	// assert(canHoleContain(hole, size, alignment));
 
 	// Remove the hole  
 	unsigned address = hole->getAddress();
@@ -218,6 +235,9 @@ unsigned Manager::AllocateIn(Chunk *hole, unsigned size, unsigned alignment)
 
 void Manager::Free(unsigned address)
 {
+	// Dump information into debug file
+	debug << misc::fmt("Free pointer at 0x%x.\n", address);
+
 	// Get the chunk to be freed
 	auto it = chunks.find(address);
 	if (it == chunks.end())
@@ -231,6 +251,7 @@ void Manager::Free(unsigned address)
 	if (size > Memory::PageSize)
 	{
 		FreeLarge(it->second.get());
+		if (debug) Dump(debug);
 		return;
 	}
 
@@ -242,6 +263,9 @@ void Manager::Free(unsigned address)
 
 	// Merge Holes
 	MergeHoles(hole);
+
+	// Dump free result
+	if (debug) Dump(debug);
 }
 
 
@@ -320,14 +344,16 @@ void Manager::Merge2Holes(Chunk *hole1, Chunk *hole2)
 	assert(hole1->getAddress() + hole1->getSize() == hole2->getAddress());
 
 	// Get information
+	unsigned addr = hole1->getAddress();
 	unsigned size1 = hole1->getSize();
 	unsigned size2 = hole2->getSize();
 
-	// Erase the second hole
+	// Erase the both holes
 	RemoveHole(hole2);
+	RemoveHole(hole1);
 
-	// Enlarge first hole
-	hole1->setSize(size1 + size2);
+	// Add the large hole
+	this->CreateHole(addr, size1 + size2);
 }
 
 
@@ -377,7 +403,17 @@ Manager::Chunk *Manager::CreateHole(unsigned addr, unsigned size)
 
 	// Insert it into the holes map
 	auto it = holes.insert(std::make_pair(size, hole));
-	hole->setHolesIterator(it);	
+	hole->setHolesIterator(it);
+
+	/*
+	debug << misc::fmt("Hole created at: 0x%x, size: %d\n", addr, size);
+	for (auto it = holes.begin(); it != holes.end(); it++)
+	{
+		debug << misc::fmt("Hole 0x%x, %d\n",
+				it->second->getAddress(),
+				it->first);
+	}
+	*/
 
 	// Return the hole created
 	return hole;
