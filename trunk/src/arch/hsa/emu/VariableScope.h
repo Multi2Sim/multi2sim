@@ -44,7 +44,16 @@ public:
 	/// Destructor
 	~VariableScope();
 
-	/// Add and argument
+	/// Add and variable into variable list
+	///
+	/// \param name
+	/// 	name of the variable,
+	///
+	/// \param size
+	/// 	size of the memory this variable needs, in byte
+	///
+	/// \param type
+	/// 	Type of variable, defined in Brig.h
 	void DeclearVariable(const std::string &name, unsigned int size,
 			unsigned short type);
 
