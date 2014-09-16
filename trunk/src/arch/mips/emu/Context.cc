@@ -31,6 +31,7 @@ namespace MIPS
 // Private functions
 //
 
+
 void Context::UpdateState(unsigned state)
 {
 	// If the difference between the old and new state lies in other
@@ -62,10 +63,6 @@ void Context::UpdateState(unsigned state)
 	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
 	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
 	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
-
-
-
-
 }
 
 
@@ -85,7 +82,6 @@ Context::Context()
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)
 		context_list_present[i] = false;
-
 }
 
 
@@ -216,7 +212,7 @@ void Context::Execute()
 	else
 		memory->setSafeDefault();
 
-	/// read 4 bytes mips instruction from memory into buffer
+	// read 4 bytes mips instruction from memory into buffer
 	char buffer[4];
 	char *buffer_ptr = memory->getBuffer(regs.getPC(), 4,
 				mem::Memory::AccessExec);
@@ -247,7 +243,7 @@ void Context::Execute()
 	effective_address = 0;
 
 	// Advance Program Counter to the size of instruction (4 bytes)
-	regs.incPC(4);
+	regs.setPC(last_eip);
 
 	// Call instruction emulation function
 	if (inst.getOpcode())
@@ -259,6 +255,7 @@ void Context::Execute()
 	// Stats
 	emu->incInstructions();
 }
+
 
 void Context::FinishGroup(int exit_code)
 {
@@ -290,6 +287,7 @@ void Context::FinishGroup(int exit_code)
 	// Process events
 	emu->ProcessEventsSchedule();
 }
+
 
 void Context::Finish(int exit_code)
 {
