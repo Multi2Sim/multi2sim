@@ -70,9 +70,11 @@ void KplAsmFree(struct KplAsm *self)
 {
 }
 
+/*
 void KplAsmDisassembleBinary(struct KplAsm *self, const char *path)
 {
 	Kepler::Asm *as = (Kepler::Asm *) self;
 	as->DisassembleBinary(path);
 }
+*/
 

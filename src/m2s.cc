@@ -513,6 +513,7 @@ int MainProgram(int argc, char **argv)
 	HSA::Asm::RegisterOptions();
 	HSA::Driver::RegisterOptions();
 	HSA::Emu::RegisterOptions();
+	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
 	mem::MMU::RegisterOptions();
@@ -534,6 +535,7 @@ int MainProgram(int argc, char **argv)
 	HSA::Asm::ProcessOptions();
 	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
+	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();
 	mem::MMU::ProcessOptions();

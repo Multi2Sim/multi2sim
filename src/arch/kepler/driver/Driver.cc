@@ -101,7 +101,7 @@ void Driver::RegisterOptions()
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("Kepler");
+	command_line->setCategory("kpl");
 
 	// Debug information for driver
 	command_line->RegisterString("--kpl-debug-driver <file>", debug_file,

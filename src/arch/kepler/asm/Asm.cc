@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <cstdarg>
+#include <cstring>
 #include <iostream>
 
 #include <lib/cpp/CommandLine.h>
@@ -123,15 +124,16 @@ static const int AsmOpcode_C_B_E_B_A_A = 1;
 
 std::unique_ptr<Asm> Asm::as;
 
+std:: string Asm::path;
+
 
 void Asm::RegisterOptions()
 {
-	/*
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("KPL");
+	command_line->setCategory("kpl");
 
 	// Option --kpl-disasm <file>
 	command_line->RegisterString("--kpl-disasm <file>", path,
@@ -141,13 +143,18 @@ void Asm::RegisterOptions()
 	// Option incompatibility
 	command_line->setIncompatible("--kpl-disasm");
 
-	*/
 }
 
 
 void Asm::ProcessOptions()
 {
-
+	// Run kepler disassembler
+	if (!path.empty())
+	{
+		Asm *as = Asm::getInstance();
+		as->DisassembleBinary(path);
+		exit(0);
+	}
 }
 
 void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
