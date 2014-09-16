@@ -356,7 +356,7 @@ void WorkItem::DeclearVariable()
 	case BRIG_SEGMENT_PRIVATE:
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		variable_scope->DeclearVariable(name, dir->size, dir->type);
+		variable_scope->DeclearVariable(name, dir->size/8, dir->type);
 		break;
 	}
 
@@ -383,7 +383,7 @@ void WorkItem::DeclearVariable()
 		else
 			throw misc::Panic("Error creating argument, not in a "
 					"argument scope");
-		variable_scope->DeclearVariable(name, dir->size, dir->type);
+		variable_scope->DeclearVariable(name, dir->size/8, dir->type);
 		break;
 	}
 
@@ -393,7 +393,7 @@ void WorkItem::DeclearVariable()
 		break;
 	}
 
-	Emu::isa_debug << misc::fmt("Create argument: %s %s(%d)\n",
+	Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
 			BrigEntry::type2str(dir->type).c_str(), name.c_str(),
 			dir->size);
 }
