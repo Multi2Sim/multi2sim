@@ -28,6 +28,11 @@ namespace MIPS
 // Configuration variables
 //
 
+// Debug files
+std::string Emu::loader_debug_file;
+std::string Emu::isa_debug_file;
+std::string Emu::context_debug_file;
+std::string Emu::syscall_debug_file;
 
 // Maximum number of instructions
 long long Emu::max_instructions;
@@ -43,8 +48,11 @@ std::unique_ptr<Emu> Emu::instance;
 
 
 // Debuggers
-misc::Debug Emu::loader_debug;
 misc::Debug Emu::context_debug;
+misc::Debug Emu::isa_debug;
+misc::Debug Emu::loader_debug;
+misc::Debug Emu::syscall_debug;
+
 
 
 //
@@ -53,11 +61,45 @@ misc::Debug Emu::context_debug;
 
 void Emu::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("MIPS");
+
+	// Option --mips-debug-ctx <file>
+	command_line->RegisterString("--mips-debug-ctx <file>", context_debug_file,
+			"Dump debug information related with context creation, "
+			"destruction, allocation, or state change.");
+
+	// Option --mips-debug-isa <file>
+	command_line->RegisterString("--mips-debug-isa <file>", isa_debug_file,
+			"Debug information for dynamic execution of MIPS "
+			"instructions. Updates on the processor state can be "
+			"analyzed using this information.");
+
+	// Option --mips-debug-loader <file>
+	command_line->RegisterString("--mips-debug-loader <file>", loader_debug_file,
+			"Dump debug information extending the analysis of the "
+			"ELF program binary. This information shows which ELF "
+			"sections and symbols are loaded to the initial program "
+			"memory image.");
+
+	// Option --mips-debug-syscall <file>
+	command_line->RegisterString("--mips-debug-syscall <file>", syscall_debug_file,
+			"Debug information for system calls performed by a MIPS "
+			"program, including system call code, arguments, and "
+			"return value.");
 }
 
 
 void Emu::ProcessOptions()
 {
+	// Debuggers
+	context_debug.setPath(context_debug_file);
+	isa_debug.setPath(isa_debug_file);
+	loader_debug.setPath(loader_debug_file);
+	syscall_debug.setPath(syscall_debug_file);
 }
 
 

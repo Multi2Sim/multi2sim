@@ -63,11 +63,11 @@ public:
     /// Read from Program Counter
     unsigned int getPC(){ return pc; }
 
-    /// Set Register31 stack pointer to value
-    void setSP(int value) { gpr[31] = value; }
+    /// Set Register29 stack pointer to value
+    void setSP(int value) { gpr[29] = value; }
 
     /// Return the value of the stack pointer register ($31)
-    unsigned int getSP() { return gpr[31]; }
+    unsigned int getSP() { return gpr[29]; }
 
     /// Read from HI register
     unsigned int getHI();

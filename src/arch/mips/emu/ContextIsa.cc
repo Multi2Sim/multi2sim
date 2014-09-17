@@ -38,12 +38,12 @@ Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
 
 void Context::MipsIsaBranch(unsigned int dest)
 {
-	target_eip = dest;
+	n_next_ip = dest;
 }
 
 void Context::MipsIsaRelBranch(unsigned int dest)
 {
-	target_eip = regs.getPC() + dest + 4;
+	n_next_ip = regs.getPC() + dest + 4;
 }
 
 void Context::ExecuteInst_J()
@@ -246,7 +246,6 @@ void Context::ExecuteInst_LW()
 {
 	// read operands from instruction
 	unsigned int rs = inst.getBytes()->standard.rs;
-	std::cout<<"rs = "<<rs<<std::endl;
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
@@ -803,7 +802,13 @@ void Context::ExecuteInst_SUBU()
 
 void Context::ExecuteInst_AND()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction bytes
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform AND operation
+	regs.setGPR(rd, (regs.getGPR(rs) & regs.getGPR(rt)));
 }
 
 
