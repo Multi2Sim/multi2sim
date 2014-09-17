@@ -728,7 +728,7 @@ void kpl_isa_BRA_impl(Thread *thread, Inst *inst)
 	else
 		pred = !thread->GetPred(pred_id-8);
 
-	// Execute and update the active mask value  读当前entry的值  往下一个entry赋值
+	// Execute and update the active mask value  ���������entry������  ������������entry������
 	if(active == 1 && pred == 1)
 	{
 		// In execution part, we need to read the active mask in current stack
@@ -992,7 +992,7 @@ void kpl_isa_MOV32I_impl(Thread *thread, Inst *inst)
 		if(format.s == 0)
 			{
 				// Read source immediate
-				src.u32 = format.srcB;
+				src.u32 = format.imm32;
 
 				// Read destination ID
 				dst_id = format.dst;
