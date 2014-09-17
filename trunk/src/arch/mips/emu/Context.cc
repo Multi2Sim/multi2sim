@@ -235,15 +235,12 @@ void Context::Execute()
 	inst.Decode(regs.getPC(),buffer_ptr);
 
 	// Set last, current, and target instruction addresses
-	last_eip = current_eip;
-	current_eip = regs.getPC();
-	target_eip = 0;
+	regs.setPC(next_ip);
+	next_ip = n_next_ip;
+	n_next_ip += 4;
 
 	// Reset effective address
 	effective_address = 0;
-
-	// Advance Program Counter to the size of instruction (4 bytes)
-	regs.setPC(last_eip);
 
 	// Call instruction emulation function
 	if (inst.getOpcode())
