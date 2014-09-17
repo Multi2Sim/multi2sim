@@ -34,9 +34,19 @@ namespace MIPS
 
 class Context;
 
-
+// MIPS Emulator
 class Emu : public comm::Emu
 {
+	//
+	// Configuration options
+	//
+
+	// Debugger files
+	static std::string loader_debug_file;
+	static std::string context_debug_file;
+	static std::string isa_debug_file;
+	static std::string syscall_debug_file;
+
 	// Unique instance of the singleton
 	static std::unique_ptr<Emu> instance;
 
@@ -151,9 +161,6 @@ public:
 	/// contexts.
 	int getAddressSpaceIndex() { return address_space_index++; }
 
-	/// Debugger for program loader
-	static misc::Debug loader_debug;
-
 	/// Lock the emulator mutex
 	void LockMutex() { pthread_mutex_lock(&mutex); }
 
@@ -185,8 +192,18 @@ public:
 	/// Process command-line options
 	static void ProcessOptions();
 
-	/// Debugger for x86 contexts
+	/// Debugger for MIPS context
 	static misc::Debug context_debug;
+
+	/// Debugger for MIPS ISA emulation
+	static misc::Debug isa_debug;
+
+	/// Debugger for program loader
+	static misc::Debug loader_debug;
+
+	/// Debugger for MIPS system calls
+	static misc::Debug syscall_debug;
+
 };
 
 }

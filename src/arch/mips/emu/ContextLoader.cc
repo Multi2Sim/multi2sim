@@ -382,6 +382,8 @@ void Context::LoadBinary()
 	regs.setSP(loader->environ_base);
 	regs.setPC(loader->interp.empty() ? loader->prog_entry
 			: loader->interp_prog_entry);
+	next_ip = regs.getPC() + 4;
+	n_next_ip = next_ip + 4;
 }
 
 } // namespace mips
