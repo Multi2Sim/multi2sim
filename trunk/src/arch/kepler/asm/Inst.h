@@ -136,7 +136,7 @@ struct InstBytesImm
 	unsigned long long int mod0     : 8; 	// 17:10
 	unsigned long long int pred     : 4; 	// 21:18
 	unsigned long long int s        : 1; 	// 22
-	unsigned long long int srcB     :32; 	// 54:23
+	unsigned long long int imm32    :32; 	// 54:23
 	unsigned long long int mod1    	: 6; 	// 60:55
 	unsigned long long int op1 		: 3; 	// 63:61
 };
@@ -479,6 +479,7 @@ class Inst
 	void DumpRm(std::ostream &os, int high, int low) const;
 	void DumpKeepRefCount(std::ostream &os, int high, int low) const;
 	void DumpCc2(std::ostream &os, int high, int low) const;
+	void DumpImm32(std::ostream &os, int high, int low) const;
 	void DumpSRCB(std::ostream &os, int high0, int low0, int high1,
 			int low1, int high2, int low2, int high3,
 			int low3) const;
