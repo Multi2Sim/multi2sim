@@ -47,14 +47,14 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	this->id = id;
 	this->grid = grid;
 
-	/* Create warps */
+	// Create warps
 	warp_count = (grid->getThreadBlockSize() + warp_size - 1) /
 			warp_size;
 	for (int i = 0; i < warp_count; ++i)
 		warps.push_back(std::unique_ptr<Warp>(new
 				Warp(this, i)));
 
-	/* Create threads */
+	// Create threads
 	thread_count = grid->getThreadBlockSize();
 	for (int i = 0; i < thread_count; ++i)
 		threads.push_back(std::unique_ptr<Thread>(new

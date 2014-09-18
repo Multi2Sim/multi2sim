@@ -119,18 +119,19 @@ void Warp::Execute()
 	// Decode instruction
 	if( pc % 64)
 	{
-		inst.Decode((const char *) &inst_bytes, pc);
+			inst.Decode((const char *) &inst_bytes, pc);
 
-		// Execute instruction
-		inst_op = (InstOpcode) inst.getOpcode();
+			// Execute instruction
+			inst_op = (InstOpcode) inst.getOpcode();
 
-		if (!inst_op)
+
+			if (!inst_op)
 			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
 					<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
-		for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
-		{
-			thread_id->get()->Execute(inst_op,&inst);
-		}
+			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
+			{
+				thread_id->get()->Execute(inst_op,&inst);
+			}
 	}
 	// Finish
 
