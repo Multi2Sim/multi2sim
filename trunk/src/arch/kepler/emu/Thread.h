@@ -124,9 +124,10 @@ private:
 	// Error massage of unsupported feature
 	static void ISAUnsupportedFeature(Inst *inst);
 
-	/* Fields below are used for architectural simulation only. */
+	// Fields below are used for architectural simulation only.
 public :
 
+	static unsigned nop_cnt;
 	/// Constructor
 	/// \param Warp Warp that it belongs to
 	/// \id Global 1D identifier of the thread
