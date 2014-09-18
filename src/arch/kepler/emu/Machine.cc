@@ -128,8 +128,81 @@ void kpl_isa_IMUL_A_impl(Thread *thread, Inst *inst)
 
 void kpl_isa_IMUL_B_impl(Thread *thread, Inst *inst)
 {
-	__NOT_IMPL__
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = thread->getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
+	{
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((thread->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkTargetAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopTargetAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  warp->getSyncStkTopActiveMaskBit(thread->getIdInWarp());
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = thread->GetPred(pred_id);
+	else
+		pred = ! thread->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		src_id = fmt.mod0;
+		srcA = thread->ReadGPR(src_id);
+		src_id = fmt.srcB;
+		if (fmt.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+		}
+		else if (fmt.srcB_mod == 1)
+			srcB = thread->ReadGPR(src_id);
+		else	//check it
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		if (((fmt.mod1 >> 9) & 0x1) == 1)	//FIXME
+			srcB = -srcB;
+
+		// Execute
+		dst = srcA * srcB;
+
+		// Write
+		dst_id = fmt.dst;
+		thread->WriteGPR(dst_id, dst);
+	}
 }
+
 
 void kpl_isa_ISCADD_A_impl(Thread *thread, Inst *inst)
 {
@@ -1497,13 +1570,14 @@ void kpl_isa_PSETP_impl(Thread *thread, Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
+
 	if(pred_id <= 7)
 		pred = thread->GetPred(pred_id);
 	else
 		pred = !thread->GetPred(pred_id - 8);
 
 	// Operand ID
-	unsigned dst_id, srcA_id, srcB_id, srcC_id;
+	unsigned dst_id_0, dst_id_1, srcA_id, srcB_id, srcC_id;
 
 	// Operands
 	unsigned srcA, srcB, srcC, dst;
@@ -1565,8 +1639,12 @@ void kpl_isa_PSETP_impl(Thread *thread, Inst *inst)
 			dst = temp ^ srcC; // Xor operation
 
 		// Write Result
-		dst_id = format.pred0;
-		thread->WritePred(dst_id, dst);
+		dst_id_0 = format.pred0;
+		dst_id_1 = format.pred1;
+		if (dst_id_0 != 7)
+				thread->WritePred(dst_id_0, dst);
+		if (dst_id_1 != 7)
+				thread->WritePred(dst_id_1, dst);
 
 	}
 

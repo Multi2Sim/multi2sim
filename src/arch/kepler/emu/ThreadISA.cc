@@ -112,7 +112,76 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 
 void Thread::ExecuteInst_IMUL_B(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = getWarp();
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
+	{
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active
+	active =  warp->getSyncStkTopActiveMaskBit(getIdInWarp());
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = GetPred(pred_id);
+	else
+		pred = ! GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		src_id = fmt.mod0;
+		srcA = ReadGPR(src_id);
+		src_id = fmt.srcB;
+		if (fmt.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+		}
+		else if (fmt.srcB_mod == 1)
+			srcB = ReadGPR(src_id);
+		else	//check it
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		// Execute
+		dst = srcA * srcB;
+
+		// Write
+		dst_id = fmt.dst;
+		WriteGPR(dst_id, dst);
+	}
 }
 
 void Thread::ExecuteInst_ISCADD_A(Inst *inst)
@@ -391,6 +460,12 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 		this->WriteGPR(dst_id, dst);
 	}
 
+	/*
+		std::cerr << "IADD dst " << dst
+		         << " id " << id << " id_in_warp " << id_in_warp
+		         << " warp_id " << warp->getId()
+		         << " block_id " << sr[37].u32 << std::endl;
+		         */
 	// Debug information
 	Emu::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
@@ -739,7 +814,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 		// entry and set the value to next stack entry
 		warp->incrSyncStkTop();
 		warp->setSyncStkTopActiveMaskBit(this->getIdInWarp(), 1);
-		//warp->setSyncStkTopInst("");  // need do that? or initialize at warp()
+		warp->setSyncStkTopInst("");  // need do that? or initialize at warp()
 		warp->decrSyncStkTop();
 		warp->increaseTakenThread(1);
 	}
@@ -747,7 +822,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	{
 		warp->incrSyncStkTop();
 		warp->setSyncStkTopActiveMaskBit(this->getIdInWarp(), 0);
-		//warp->setSyncStkTopInst("");
+		warp->setSyncStkTopInst("");
 		warp->decrSyncStkTop();
 	}
 
@@ -920,6 +995,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 		dst_id = fmt.dst;
 		this->WriteGPR(dst_id, dst);
 	}
+
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
@@ -1313,7 +1389,6 @@ void Thread::ExecuteInst_ST(Inst *inst)
                  <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
                  <<std::endl;
 	}
-
 }
 
 void Thread::ExecuteInst_STS(Inst *inst)
@@ -1333,7 +1408,105 @@ void Thread::ExecuteInst_FFMA(Inst *inst)
 
 void Thread::ExecuteInst_FADD(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Get Emu
+	Emu* emu = Emu::getInstance();
+
+	// Get Warp
+	Warp *warp = this->getWarp();
+
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
+	{
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 format = inst_bytes.general0;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src_id;
+
+	// Operand
+	float src1, src2, dst;
+	union
+	{
+		unsigned i;
+		float f;
+	} gpr_t;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		src_id = format.mod0;
+		src1 = gpr[src_id].f;
+
+		if (((format.mod1 >> 3) & 0x1) == 1)
+			src1 = fabsf(src1);
+		if (((format.mod1 >> 5) & 0x1) == 1)
+			src1 = -src1;
+
+		src_id = format.srcB;
+
+		if (format.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
+		}
+		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
+			src2 = gpr[src_id].f;
+		else 	// check it
+		{
+			gpr_t.i = format.srcB << 12;
+			src2 = gpr_t.f;
+		}
+
+		if (((format.mod1 >> 2) & 0x1) == 1)
+			src2 = fabsf(src2);
+		if (((format.mod1 >> 4) & 0x1) == 1)
+			src2 = -src2;
+
+		// Execute
+		dst = src1 + src2;
+
+		/* Write */
+		dst_id = format.dst;
+		gpr[dst_id].f = dst;
+	}
 }
 
 void Thread::ExecuteInst_NOP(Inst *inst)
@@ -1374,6 +1547,7 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 		warp->setSyncStkTopStartAddress(0);
 		warp->decrSyncStkTop();
 	}
+	nop_cnt++;
 }
 
 void Thread::ExecuteInst_S2R(Inst *inst)

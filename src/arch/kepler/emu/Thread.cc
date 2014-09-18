@@ -30,6 +30,8 @@ namespace Kepler
  * Public Functions
  */
 
+unsigned Thread::nop_cnt = 0;
+
 Thread::Thread(Warp *warp, int id)
 {
 	// Initialization
@@ -38,6 +40,7 @@ Thread::Thread(Warp *warp, int id)
 	grid = thread_block->getGrid();
 	this->id = id + thread_block->getId() * grid->getThreadBlockSize();
 	id_in_warp = id % warp_size;
+	id_in_thread_block = id;
 
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \

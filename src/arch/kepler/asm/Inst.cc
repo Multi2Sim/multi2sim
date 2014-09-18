@@ -476,11 +476,6 @@ void Inst::DumpSRCB(std::ostream &os, int high0, int low0, int high1, int low1,
 	}
 }
 
-void Inst::DumpImm32(std::ostream &os, int high, int low) const
-{
-	int value = misc::getBits64(bytes.as_dword, high, low);
-	os << misc::fmt(" 0x%x", value);
-}
 void Inst::DumpEndConst(std::ostream &os, int high, int low) const
 {
 	int value = misc::getBits64(bytes.as_dword, high, low);
@@ -557,7 +552,7 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (comm::Asm::isToken(fmt_str, "imm32", length))
 		{
-			DumpImm32(os, 54, 23);
+			DumpEndConst(os, 54, 23);
 		}
 		else if (comm::Asm::isToken(fmt_str, "srcB", length))
 		{
@@ -582,6 +577,14 @@ void Inst::Dump(std::ostream &os) const
 		else if (comm::Asm::isToken(fmt_str, "pred3", length))
 		{
 			DumpPredNoat(os, 45, 42);
+		}
+		else if (comm::Asm::isToken(fmt_str, "pred4", length))
+		{
+			DumpPredNoat(os, 17, 14);
+		}
+		else if (comm::Asm::isToken(fmt_str, "pred5", length))
+		{
+			DumpPredNoat(os, 35, 32);
 		}
 		else if (comm::Asm::isToken(fmt_str, "keeprefcount", length))
 		{

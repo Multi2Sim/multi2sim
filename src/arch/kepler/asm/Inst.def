@@ -221,7 +221,7 @@ DEFINST(S2R,
 		0x09)
 		
 DEFINST(PSETP,
-		"%pred0 PSETP%and%and %pred1, %pred2, %pred3, %pred4, %pred5;",
+		"%pred0 PSETP%and%and %pred1, %pred2, %pred4, %pred5, %pred3;",
 		0x02,
 		0x02,
 		0x00,

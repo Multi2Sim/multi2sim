@@ -241,7 +241,7 @@ public:
 	/// Get Sync stack top active mask
 	unsigned getSyncStkTopActiveMaskBit(int index) const
 	{
-		int temp;
+		unsigned int temp;
 		temp = sync_stack[sync_stack_top].active_thread_mask & (1<<index);
 		return temp >> index;
 	}
