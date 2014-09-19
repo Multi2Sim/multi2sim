@@ -392,7 +392,70 @@ int Context::ExecuteSyscall_prof()
 
 int Context::ExecuteSyscall_brk()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	unsigned int old_heap_break;
+	unsigned int new_heap_break;
+	unsigned int size;
+
+	unsigned int old_heap_break_aligned;
+	unsigned int new_heap_break_aligned;
+
+	// Arguments
+	new_heap_break = regs.getGPR(4);
+	old_heap_break = memory->getHeapBreak();
+	emu->syscall_debug << misc::fmt("  "
+			"newbrk=0x%x (previous brk was 0x%x)\n",
+			new_heap_break, old_heap_break);
+
+	// Align
+	new_heap_break_aligned = misc::RoundUp(new_heap_break,
+			memory->PageSize);
+	old_heap_break_aligned = misc::RoundUp(old_heap_break,
+			memory->PageSize);
+
+	// If argument is zero, the system call is used to
+	//  obtain the current top of the heap.
+	if (!new_heap_break)
+		return old_heap_break;
+
+	// If the heap is increased: if some page in the way is
+	// allocated, do nothing and return old heap top. Otherwise,
+	// allocate pages and return new heap top.
+	if (new_heap_break > old_heap_break)
+	{
+		size = new_heap_break_aligned - old_heap_break_aligned;
+		if (size)
+		{
+			if (memory->MapSpace(old_heap_break_aligned, size)
+					!= old_heap_break_aligned)
+			{
+				misc::Panic(misc::fmt("%s: out of memory", __FUNCTION__));
+			}
+			memory->Map(old_heap_break_aligned, size,
+					memory->AccessRead | memory->AccessWrite);
+		}
+		memory->setHeapBreak(new_heap_break);
+		emu->syscall_debug << misc::fmt("  heap grows %u bytes\n",
+				new_heap_break - old_heap_break);
+
+		return new_heap_break;
+	}
+
+	// Always allow to shrink the heap.
+	if (new_heap_break < old_heap_break)
+	{
+		size = old_heap_break_aligned - new_heap_break_aligned;
+		if (size)
+			memory->Unmap(new_heap_break_aligned, size);
+
+		memory->setHeapBreak(new_heap_break);
+		emu->syscall_debug << misc::fmt("  heap shrinks %u bytes\n",
+				old_heap_break - new_heap_break);
+
+		return new_heap_break;
+	}
+
+	// Heap stays the same
+	return 0;
 }
 
 
@@ -1855,7 +1918,18 @@ int Context::ExecuteSyscall_keyctl()
 
 int Context::ExecuteSyscall_set_thread_area()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Get argument
+	unsigned int uinfo_ptr = regs.getGPR(4);
+
+	//Debug
+	emu->syscall_debug << misc::fmt("  uinfo_ptr = 0x%x\n", uinfo_ptr);
+
+	// Perform syscall operation
+	regs.setCoprocessor0GPR(29, uinfo_ptr);
+	regs.setGPR(7, 0);
+
+	// Return
+	return 0;
 }
 
 
