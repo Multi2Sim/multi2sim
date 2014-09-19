@@ -212,8 +212,12 @@ void Context::Execute()
 	else
 		memory->setSafeDefault();
 
+	// set PC to the next instruction pointer
+	regs.setPC(next_ip);
+
 	// read 4 bytes mips instruction from memory into buffer
 	char buffer[4];
+
 	char *buffer_ptr = memory->getBuffer(regs.getPC(), 4,
 				mem::Memory::AccessExec);
 	if (!buffer_ptr)
@@ -235,7 +239,6 @@ void Context::Execute()
 	inst.Decode(regs.getPC(),buffer_ptr);
 
 	// Set last, current, and target instruction addresses
-	regs.setPC(next_ip);
 	next_ip = n_next_ip;
 	n_next_ip += 4;
 
