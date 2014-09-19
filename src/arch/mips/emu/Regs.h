@@ -27,9 +27,11 @@ class Regs
 {
 	unsigned int  gpr[32]; // General Purpose registers
 	float fpr[32]; // Float pointer registers
+	unsigned int coprocessor0_gpr[32]; /* Coprocessor 0 registers */
 	unsigned int pc; //program counter
     unsigned int hi;  // mult register for [63:32]
     unsigned int lo;  // mult register for [31:0]
+
 public:
     /// Constructor Destructor
     Regs();
@@ -48,6 +50,18 @@ public:
     ///      New value for the register.
     void setGPR(int n, unsigned int value){ gpr[n] = value; }
     
+    /// Set the value of a co-processor 0 register
+    void setCoprocessor0GPR(int n, unsigned int value)
+    {
+    	coprocessor0_gpr[n] = value;
+    }
+
+    /// Get the value of a co-processor 0 register
+    unsigned int getCoprocessor0GPR(int n)
+    {
+    	return coprocessor0_gpr[n];
+    }
+
     /// Set the value of a float point register
     void setFPR(int n, float value){ fpr[n] = value; }
 

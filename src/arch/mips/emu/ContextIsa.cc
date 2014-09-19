@@ -139,7 +139,7 @@ void Context::ExecuteInst_ADDIU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	regs.setGPR(rt,regs.getGPR(rs) + misc::SignExtend32(imm,16));
+	regs.setGPR(rt,regs.getGPR(rs) + misc::SignExtend32((signed)imm,16));
 }
 
 
@@ -208,7 +208,7 @@ void Context::ExecuteInst_LUI()
 	unsigned int rt =inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	regs.setGPR(rt,(unsigned int)(imm << 16));
+	regs.setGPR(rt,(int)(imm << 16));
 }
 
 
@@ -259,7 +259,26 @@ void Context::ExecuteInst_LH()
 
 void Context::ExecuteInst_LWL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Loop counter
+	int i;
+
+	// Read operands
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Get the value of register rt as a char*
+	unsigned int rt_value = regs.getGPR(rt);
+	char *dst = (char *) &rt_value;
+
+	// Get address of the memory read
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm, 16);
+
+	int size = 4 - (addr & 3);
+	char src[4];
+	memory->Read(addr, size, src);
+	for(i = 0; i < size; i++)
+		dst[3 - i] = src[i];
 }
 
 
@@ -656,6 +675,10 @@ void Context::ExecuteInst_JR()
 
 	// Perform operation JR
 	MipsIsaBranch(regs.getGPR(rs));
+
+	// Debug
+	emu->isa_debug << misc::fmt("jump to reg[%d]=0x%x",
+			rs, regs.getCoprocessor0GPR(rs));
 }
 
 
@@ -820,7 +843,14 @@ void Context::ExecuteInst_SUB()
 
 void Context::ExecuteInst_SUBU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// read operands from instruction
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// perform operation SUBU
+	unsigned int value = regs.getGPR(rs) - regs.getGPR(rt);
+	regs.setGPR(rd, value);
 }
 
 
@@ -883,7 +913,16 @@ void Context::ExecuteInst_SLT()
 
 void Context::ExecuteInst_SLTU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform SLTU operation
+	if(regs.getGPR(rs) < regs.getGPR(rt))
+		regs.setGPR(rd, 1);
+	else
+		regs.setGPR(rd, 0);
 }
 
 
@@ -1091,7 +1130,21 @@ void Context::ExecuteInst_EXT()
 
 void Context::ExecuteInst_INS()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Get operands
+	unsigned int sa = inst.getBytes()->standard.sa;
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform operation
+	unsigned int value = misc::getBits32(regs.getGPR(rs),
+			(regs.getGPR(rd) - regs.getGPR(sa)),
+			0);
+	unsigned int new_rt = misc::setBits32(regs.getGPR(rt),
+			regs.getGPR(rd),
+			regs.getGPR(sa),
+			value);
+	regs.setGPR(rt, new_rt);
 }
 
 
@@ -1115,7 +1168,13 @@ void Context::ExecuteInst_SEH()
 
 void Context::ExecuteInst_RDHWR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Only read hardware register 29
+	if(rd == 29)
+		regs.setGPR(rt, regs.getCoprocessor0GPR(rd));
+	//FIXME: This is implemented only for the case where RD is 29
 }
 
 
