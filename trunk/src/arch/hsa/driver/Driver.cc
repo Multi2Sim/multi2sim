@@ -26,7 +26,7 @@ namespace HSA
 const char *Driver::call_name[CallCodeCount] =
 {
 	"Invalid",  // For code 0
-#define DEFCALL(name, code) #name,
+#define DEFCALL(name, code, func) #name,
 #include "Driver.def"
 #undef DEFCALL
 };
@@ -36,7 +36,7 @@ const char *Driver::call_name[CallCodeCount] =
 const Driver::CallFn Driver::call_fn[CallCodeCount] =
 {
 	nullptr,  // For code 0
-#define DEFCALL(name, code) &Driver::Call##name,
+#define DEFCALL(name, code, func) &Driver::Call##name,
 #include "Driver.def"
 #undef DEFCALL
 };
@@ -70,9 +70,8 @@ void Driver::RegisterOptions()
 void Driver::ProcessOptions()
 {
 	debug.setPath(debug_file);
-	debug.setPrefix("[Southern Islands driver]");
+	//debug.setPrefix("[Southern Islands driver]");
 }
-
 
 
 Driver *Driver::getInstance()
@@ -93,7 +92,6 @@ int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
 	if (code < 0 || code >= CallCodeCount || !call_fn[code])
 	{
 		throw misc::Panic(misc::fmt("Invalid call code (%d)\n", code));
-		//debug << misc::fmt("Invalid call code (%d)\n", code);
 		return -1;
 	}
 

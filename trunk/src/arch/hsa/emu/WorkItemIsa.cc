@@ -19,6 +19,7 @@
 
 #include <arch/hsa/asm/BrigDef.h>
 
+#include "RuntimeInterceptor.h"
 #include "WorkItem.h"
 
 
@@ -2245,13 +2246,19 @@ void WorkItem::ExecuteInst_CALL()
 	std::string function_name = BrigStrEntry::GetStringByOffset(binary,
 			function_directive->name);
 
+	// Try to intercept the function execution if the function is runtime
+	// function
+	if (RuntimeInterceptor::getInstance()->Intercept(function_name))
+	{
+		MovePcForwardByOne();
+		return;
+	}
+
 	// Retrieve the function
 	Function *function = loader->getFunction(function_name);
 
-	// Prepare stack frame
+	// Prepare stack frame and pass the argument by value
 	StackFrame *new_frame = new StackFrame(function, this);
-
-	// Prepare argument
 	function->PassByValue(stack_top->getArgumentScope(),
 			new_frame->getFunctionArguments(), &inst);
 

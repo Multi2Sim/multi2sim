@@ -52,7 +52,7 @@ class Driver: public comm::Driver
 	// latest ABI call found in the file.
 	enum
 	{
-#define DEFCALL(name, code) CallCode##name = code,
+#define DEFCALL(name, code, func) CallCode##name = code,
 #include "Driver.def"
 #undef DEFCALL
 		CallCodeCount
@@ -67,7 +67,7 @@ class Driver: public comm::Driver
 	//
 	//	void CallInit(mem::Memory *memory, unsigned args_ptr);
 	//
-#define DEFCALL(name, code) int Call##name(mem::Memory *memory, \
+#define DEFCALL(name, code, func) int Call##name(mem::Memory *memory, \
 		unsigned args_ptr);
 #include "Driver.def"
 #undef DEFCALL
