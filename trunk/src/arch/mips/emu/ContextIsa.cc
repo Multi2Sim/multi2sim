@@ -49,7 +49,7 @@ void Context::MipsIsaRelBranch(unsigned int dest)
 void Context::ExecuteInst_J()
 {
 	// Read Operands
-	unsigned int target = inst.getTarget();
+	unsigned int target = inst.getBytes()->target.target;
 
 	// Perform Operation
 	unsigned int dest = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
@@ -62,7 +62,7 @@ void Context::ExecuteInst_JAL()
 	// Read Operands
 	unsigned int reg_no = 31;
 	unsigned int value = regs.getPC() + 8;
-	unsigned int target = inst.getTarget();
+	unsigned int target = inst.getBytes()->target.target;
 
 	// Perform Operation
 	unsigned int branch_target = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
@@ -173,13 +173,25 @@ void Context::ExecuteInst_SLTIU()
 
 void Context::ExecuteInst_ANDI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction bytes
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform AND operation
+	regs.setGPR(rt, (regs.getGPR(rs) & (unsigned int)(imm)));
 }
 
 
 void Context::ExecuteInst_ORI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction bytes
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform AND operation
+	regs.setGPR(rt, (regs.getGPR(rs) | (imm & ((1U << (16)) - 1))));
 }
 
 
@@ -226,7 +238,16 @@ void Context::ExecuteInst_BGTZL()
 
 void Context::ExecuteInst_LB()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// read operands from instruction
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation LB
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
+	char temp;
+	memory->Read(addr, 1, &temp);
+	regs.setGPR(rt, misc::SignExtend32(temp, 8));
 }
 
 
@@ -251,11 +272,15 @@ void Context::ExecuteInst_LW()
 
 	// Perform operation LW
 	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
-	char temp;
+	unsigned int temp;
 	if ((misc::getBits32(addr, 1, 0) | 0) == 1 )
 		misc::panic("LW: address error, effective address must be naturallty-aligned\n");
-	memory->Read(addr, 4, &temp);
-	regs.setGPR(rt, (int)temp);
+	memory->Read(addr, 4, (char *)&temp);
+	regs.setGPR(rt, temp);
+
+	// Debug
+	emu->isa_debug << misc::fmt("Addr is reg[%d]=%x + 0x%x = 0x%x, ", rs, regs.getGPR(rs), imm, addr);
+	emu->isa_debug << misc::fmt("value loaded: %x\n", temp);
 }
 
 
@@ -365,8 +390,7 @@ void Context::ExecuteInst_SW()
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
 
 	// Perform operation SW
-	char tmp = (char)temp;
-	memory->Write(addr, 4, &tmp);
+	memory->Write(addr, 4, (char*)&temp);
 }
 
 
@@ -814,13 +838,25 @@ void Context::ExecuteInst_AND()
 
 void Context::ExecuteInst_OR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction bytes
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform OR operation
+	regs.setGPR(rd, (regs.getGPR(rs) | regs.getGPR(rt)));
 }
 
 
 void Context::ExecuteInst_XOR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction bytes
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform AND operation
+	regs.setGPR(rd, (regs.getGPR(rs) ^ regs.getGPR(rt)));
 }
 
 
@@ -832,7 +868,16 @@ void Context::ExecuteInst_NOR()
 
 void Context::ExecuteInst_SLT()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation
+	if((int)regs.getGPR(rs) < (int)regs.getGPR(rt))
+		regs.setGPR(rd, 1);
+	else
+		regs.setGPR(rd, 0);
 }
 
 
@@ -880,7 +925,13 @@ void Context::ExecuteInst_TNE()
 
 void Context::ExecuteInst_BLTZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation
+	if((int)rs < 0)
+		MipsIsaRelBranch(imm << 2);
 }
 
 
@@ -990,7 +1041,14 @@ void Context::ExecuteInst_MADDU()
 
 void Context::ExecuteInst_MUL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation
+	long int temp = (long int)regs.getGPR(rs) * (long int)regs.getGPR(rt);
+	regs.setGPR(rd, temp);
 }
 
 
