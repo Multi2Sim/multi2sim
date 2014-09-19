@@ -238,6 +238,15 @@ void Context::Execute()
 	// Disassemble
 	inst.Decode(regs.getPC(),buffer_ptr);
 
+	// Debug
+	if (emu->isa_debug)
+	{
+		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+				emu->getInstructions(), regs.getPC());
+		inst.Dump(emu->isa_debug.operator std::ostream &());
+		emu->isa_debug << misc::fmt("\n");
+	}
+
 	// Set last, current, and target instruction addresses
 	next_ip = n_next_ip;
 	n_next_ip += 4;
