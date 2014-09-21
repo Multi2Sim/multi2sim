@@ -59,6 +59,7 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 		(thread_block->getWarpsInWorkgroup() - 1) * warp_size;
 
 	// Instruction
+	pc = 0;
 	inst_size = 8;
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
@@ -131,6 +132,8 @@ void Warp::Execute()
 			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
 			{
 				thread_id->get()->Execute(inst_op,&inst);
+				std::cerr << inst.getName() << " id " << thread_id->get()->getId()
+						<< " warp_id " << id << std::endl;
 			}
 	}
 	// Finish

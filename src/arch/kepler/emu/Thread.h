@@ -133,6 +133,9 @@ public :
 	/// \id Global 1D identifier of the thread
 	Thread(Warp *warp, int id);
 
+	/// Get global id
+	unsigned getId() const { return id; }
+
 	/// Get id_in_warp;
 	unsigned getIdInWarp() const { return id_in_warp; }
 
