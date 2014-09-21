@@ -19,6 +19,7 @@
 
 #include "PassInfo.h"
 
+comm::BasicBlockPassInfo::~BasicBlockPassInfo(){ }
 
 namespace comm
 {
