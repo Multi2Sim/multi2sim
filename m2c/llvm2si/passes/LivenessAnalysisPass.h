@@ -188,14 +188,11 @@ class LivenessAnalysisPass : public comm::Pass
 	// Function to run LivenessAnalysis on
 	llvm2si::Function *function;
 	
-	// Pass id
-	int id;
-
 public:
 
 	/// Constructor
-	LivenessAnalysisPass(llvm2si::Function *function, int id) :
-		function(function), id(id)
+	LivenessAnalysisPass(llvm2si::Function *function) :
+		function(function)
 	{
 	}
 
@@ -208,11 +205,14 @@ public:
 	template<typename ConcreteType> ConcreteType *getInfo(
 			BasicBlock *basic_block)
 	{
-		return basic_block->getPassInfoPool()->get<ConcreteType>(id);
+		return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
 	}
 
 	/// Run the Liveness Analysis Pass
 	void run();
+
+	/// Dump the Liveness information for debug purposes
+	void dump(std::ostream &os) const;
 
 	/// Destructor
 	~LivenessAnalysisPass() {}

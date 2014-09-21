@@ -43,7 +43,7 @@ public:
 	/// Get a pointer to the pass info of pass given by pass id.
 	template<typename ConcreteType> ConcreteType *get(int pass_id)
 	{
-		if (has(pass_id))
+		if (table.count(pass_id) > 0)
 		{
 			return dynamic_cast<ConcreteType*>(table.at(pass_id).get());
 		}

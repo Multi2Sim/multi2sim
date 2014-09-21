@@ -229,5 +229,11 @@ void LivenessAnalysisPass::run()
 	} // While loop to go through basic_block_queue
 }
 
+
+void LivenessAnalysisPass::dump(std::ostream &os) const
+{
+
+}
+
 }  // namespace llvm2si
 
