@@ -53,11 +53,9 @@ public:
 	// Virtual destructor to make class polymorphic.
 	virtual ~Pass() { }
 
-/*
-
 	/// Return the unique identifier for this pass (starting at 1).
 	int getId() const { return id; }
-
+/*
 	/// Return true if there is a ModulePassInfo for the given Module
 	/// for this pass.
 	bool hasInfo(Module *module) { };
