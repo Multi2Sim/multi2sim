@@ -86,7 +86,7 @@ Emu::Emu() : comm::Emu("kpl")
 	global_mem_total_size = 1 << 30; /* 2GB */
 	global_mem_free_size = this->global_mem_total_size;
 
-	// Global memory initialization
+	// Constant memory initialization
     const_mem.reset(new mem::Memory());
 	const_mem->setSafe(false);
 }

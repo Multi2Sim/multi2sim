@@ -122,8 +122,8 @@ void Grid::GridSetupConstantMemory()
 {
 	unsigned v;
 
-	emu->WriteConstMem(0x8, 3*sizeof(unsigned), (const char*)thread_block_size3);
-	emu->WriteConstMem(0x14, 3*sizeof(unsigned), (const char*)thread_block_count3);
+	emu->WriteConstMem(0x28, 3*sizeof(unsigned), (const char*)thread_block_size3);
+	emu->WriteConstMem(0x34, 3*sizeof(unsigned), (const char*)thread_block_count3);
 	v = 0x1000000;
 	emu->WriteConstMem(0x100000, sizeof(unsigned), (const char*)&v);
 }
