@@ -2248,7 +2248,7 @@ void WorkItem::ExecuteInst_CALL()
 
 	// Try to intercept the function execution if the function is runtime
 	// function
-	if (RuntimeInterceptor::getInstance()->Intercept(function_name))
+	if (RuntimeInterceptor::getInstance()->Intercept(function_name, stack_top))
 	{
 		MovePcForwardByOne();
 		return;
