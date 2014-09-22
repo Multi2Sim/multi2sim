@@ -1168,6 +1168,7 @@ void Context::ExecuteInst_SEH()
 
 void Context::ExecuteInst_RDHWR()
 {
+	// Read operands from instruction
 	unsigned int rd = inst.getBytes()->standard.rd;
 	unsigned int rt = inst.getBytes()->standard.rt;
 
@@ -1268,7 +1269,15 @@ void Context::ExecuteInst_MFC1()
 
 void Context::ExecuteInst_CFC1()
 {
+//	unsigned int temp = 0;
+//	unsigned int fs = inst.getBytes()->standard.rd;
+//	switch(fs)
+//	{
+//	case 0:
+//		temp =
+//	}
 	throw misc::Panic("Unimplemented instruction");
+
 }
 
 
