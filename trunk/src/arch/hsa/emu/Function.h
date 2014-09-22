@@ -143,6 +143,9 @@ public:
 	/// Add an argument information in argument table
 	void addArgument(Variable *argument);
 
+	/// Return the memory size required to hold the arguments
+	unsigned getArgumentSize() const { return arg_size; }
+
 	/// Get the beginning iterator of arguments
 	std::map<std::string, std::unique_ptr<Variable>>::iterator
 	getArgumentIteratorBegin()
