@@ -22,6 +22,8 @@
 
 #include <lib/cpp/String.h>
 
+#include "StackFrame.h"
+
 
 namespace HSA
 {
@@ -40,6 +42,16 @@ class RuntimeInterceptor
 	// Private constructor
 	RuntimeInterceptor();
 
+	// Allocate memory to hold serialized arguments, returns the address
+	// pointing to the beginning of the argument memory space.,
+	unsigned PassArgumentsInByValue(const std::string &function_name,
+			StackFrame *stack_top);
+
+	// Copy the argument value back from the callee's buffer to caller's
+	// buffer
+	void PassBackByValue(unsigned arg_address,
+			StackFrame *stack_top);
+
 public:
 
 	/// Return the pointer to the instance, or throw a \c Panic if no
@@ -51,7 +63,8 @@ public:
 	/// return
 	///	If the function is intercepted, return true. Otherwise, return
 	/// 	false.
-	bool Intercept(const std::string &function_name);
+	bool Intercept(const std::string &function_name,
+			StackFrame *stack_top);
 
 	/// Destructor
 	~RuntimeInterceptor();

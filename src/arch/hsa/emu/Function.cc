@@ -51,6 +51,9 @@ void Function::addArgument(Variable *argument)
 	// Insert argument into table
 	arg_info.insert(std::make_pair(argument->getName(),
 			std::unique_ptr<Variable>(argument)));
+
+	// Increase arg_size
+	arg_size += argument->getSize();
 }
 
 
@@ -282,6 +285,7 @@ void Function::DumpArgumentInfo(std::ostream &os = std::cout) const
 		else
 			os << "Output ";
 		it->second->Dump(os);
+		os << "\n";
 	}
 	os << misc::fmt("\tArgument size allocated %d bytes\n", arg_size);
 	os << misc::fmt("\t*********************\n\n");

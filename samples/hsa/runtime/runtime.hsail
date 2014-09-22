@@ -1,11 +1,16 @@
 version 0:96:$full:$small;
 
-function &hsa_init () ();
+function &hsa_init (arg_u32 %status) ();
+function &hsa_stut_down (arg_u32 %status) ();
 
 function &main()(){
 
 	{
-		call &hsa_init ()();
+		arg_u32 %err;
+		st_arg_u32 2, [%err];
+		call &hsa_init (%err)();
 	}
+	
+	ret;
 
 };
