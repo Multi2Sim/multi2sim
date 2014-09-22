@@ -31,6 +31,10 @@ class Regs
 	unsigned int pc; //program counter
     unsigned int hi;  // mult register for [63:32]
     unsigned int lo;  // mult register for [31:0]
+    struct {
+    	unsigned int FIR;
+    	unsigned int FCSR;
+    }regs_C;
 
 public:
     /// Constructor Destructor

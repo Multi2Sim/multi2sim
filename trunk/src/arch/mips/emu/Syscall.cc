@@ -402,7 +402,7 @@ int Context::ExecuteSyscall_brk()
 	// Arguments
 	new_heap_break = regs.getGPR(4);
 	old_heap_break = memory->getHeapBreak();
-	emu->syscall_debug << misc::fmt("  "
+	emu->syscall_debug << misc::fmt(
 			"newbrk=0x%x (previous brk was 0x%x)\n",
 			new_heap_break, old_heap_break);
 
