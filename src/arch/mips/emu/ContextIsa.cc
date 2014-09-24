@@ -892,7 +892,14 @@ void Context::ExecuteInst_XOR()
 
 void Context::ExecuteInst_NOR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation
+	unsigned int temp = regs.getGPR(rs) | regs.getGPR(rt);
+	regs.setGPR(rd, ~temp);
 }
 
 
@@ -1139,7 +1146,7 @@ void Context::ExecuteInst_INS()
 	// Perform operation
 	unsigned int value = misc::getBits32(regs.getGPR(rs),
 			(regs.getGPR(rd) - regs.getGPR(sa)),
-			0);
+					0);
 	unsigned int new_rt = misc::setBits32(regs.getGPR(rt),
 			regs.getGPR(rd),
 			regs.getGPR(sa),
@@ -1162,7 +1169,11 @@ void Context::ExecuteInst_SEB()
 
 void Context::ExecuteInst_SEH()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	regs.setGPR(rd, misc::SignExtend32(regs.getGPR(rt), 16));
 }
 
 
@@ -1172,7 +1183,6 @@ void Context::ExecuteInst_RDHWR()
 	unsigned int rd = inst.getBytes()->standard.rd;
 	unsigned int rt = inst.getBytes()->standard.rt;
 
-	// Only read hardware register 29
 	if(rd == 29)
 		regs.setGPR(rt, regs.getCoprocessor0GPR(rd));
 	//FIXME: This is implemented only for the case where RD is 29
@@ -1257,10 +1267,6 @@ void Context::ExecuteInst_WAIT()
 }
 
 
-
-
-
-
 void Context::ExecuteInst_MFC1()
 {
 	throw misc::Panic("Unimplemented instruction");
@@ -1269,15 +1275,29 @@ void Context::ExecuteInst_MFC1()
 
 void Context::ExecuteInst_CFC1()
 {
-//	unsigned int temp = 0;
-//	unsigned int fs = inst.getBytes()->standard.rd;
-//	switch(fs)
-//	{
-//	case 0:
-//		temp =
-//	}
-	throw misc::Panic("Unimplemented instruction");
-
+	unsigned int temp = 0;
+	unsigned int fs = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	switch(fs)
+	{
+	case 0:
+		temp = regs.getFIR();
+		break;
+	case 25:
+		temp = (misc::getBits32(regs.getFCSR(), 31, 25) << 1) |
+				misc::getBits32(regs.getFCSR(), 23, 23);
+		break;
+	case 28:
+		temp = (misc::getBits32(regs.getFCSR(), 11, 7) << 7 |
+				misc::getBits32(regs.getFCSR(), 1, 0));
+		break;
+	case 31:
+		temp = regs.getFCSR();
+		break;
+	default:
+		misc::fatal("machine.c: CFC1: unknown value for fs");
+	}
+	regs.setGPR(rt, temp);
 }
 
 
@@ -1295,7 +1315,40 @@ void Context::ExecuteInst_MTC1()
 
 void Context::ExecuteInst_CTC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int fs = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int temp = regs.getGPR(rt);
+
+	// Perform instruction ctc1
+	switch(fs)
+	{
+	case 25:
+		regs.setFCSR((misc::getBits32(temp, 7, 1) << 25) |
+				(misc::getBits32(regs.getFCSR(), 24, 24) << 24) |
+				(misc::getBits32(temp, 0, 0) << 23) |
+				misc::getBits32(regs.getFCSR(), 1, 0));
+		break;
+	case 26:
+		regs.setFCSR(((misc::getBits32(temp, 31, 18) << 18) |
+				(misc::getBits32(regs.getFCSR(), 17, 12) << 24) |
+				(misc::getBits32(temp, 0, 0) << 23) |
+				misc::getBits32(regs.getFCSR(), 1, 0)));
+		break;
+	case 28:
+		regs.setFCSR(((misc::getBits32(temp, 31, 25) << 25) |
+				(misc::getBits32(temp, 2, 2) << 24) |
+				(misc::getBits32(regs.getFCSR(), 23, 12) << 12) |
+				(misc::getBits32(temp, 11, 7) << 7) |
+				misc::getBits32(regs.getFCSR(), 6, 2) << 2) |
+				misc::getBits32(temp, 1, 0));
+		break;
+	case 31:
+		regs.setFCSR(temp);
+		break;
+	default:
+		misc::fatal("machine.c: CTC1: unknown value for fs");
+	}
 }
 
 

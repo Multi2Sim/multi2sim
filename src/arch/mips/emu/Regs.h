@@ -31,10 +31,11 @@ class Regs
 	unsigned int pc; //program counter
     unsigned int hi;  // mult register for [63:32]
     unsigned int lo;  // mult register for [31:0]
+
     struct {
     	unsigned int FIR;
     	unsigned int FCSR;
-    }regs_C;
+    }regs_FPCR; // Float Point Control Register
 
 public:
     /// Constructor Destructor
@@ -44,7 +45,7 @@ public:
     /// Read one word from GPR, n is the register number If n is great than 31,
     /// exit program
     unsigned int getGPR(int n);
-    
+
     /// Set the value of a general purpose register.
     ///
     /// \param n
@@ -54,6 +55,22 @@ public:
     ///      New value for the register.
     void setGPR(int n, unsigned int value){ gpr[n] = value; }
     
+    /// Get float pointer register FIR
+    unsigned int getFIR() { return regs_FPCR.FIR; }
+
+    /// Set float pointer register FCSR
+    /// \param value
+    ///      New value for the register.
+    void setFIR(unsigned int value) { regs_FPCR.FIR = value; }
+
+    /// Get float pointer register FCSR
+    unsigned int getFCSR() { return regs_FPCR.FCSR; }
+
+    /// Set float pointer register FCSR
+    /// \param value
+    ///      New value for the register.
+    void setFCSR(unsigned int value) { regs_FPCR.FCSR = value; }
+
     /// Set the value of a co-processor 0 register
     void setCoprocessor0GPR(int n, unsigned int value)
     {
