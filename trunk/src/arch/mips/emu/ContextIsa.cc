@@ -244,9 +244,9 @@ void Context::ExecuteInst_LB()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation LB
-	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
-	char temp;
-	memory->Read(addr, 1, &temp);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm,16);
+	unsigned char temp;
+	memory->Read(addr, sizeof(unsigned char), (char *)&temp);
 	regs.setGPR(rt, misc::SignExtend32(temp, 8));
 }
 
@@ -290,16 +290,20 @@ void Context::ExecuteInst_LW()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation LW
-	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm,16);
 	unsigned int temp;
 	if ((misc::getBits32(addr, 1, 0) | 0) == 1 )
-		misc::panic("LW: address error, effective address must be naturallty-aligned\n");
+		misc::panic("LW: error, effective address is not naturally-aligned\n");
 	memory->Read(addr, 4, (char *)&temp);
 	regs.setGPR(rt, temp);
 
 	// Debug
-	emu->isa_debug << misc::fmt("Addr is reg[%d]=%x + 0x%x = 0x%x, ", rs, regs.getGPR(rs), imm, addr);
-	emu->isa_debug << misc::fmt("value loaded: %x\n", temp);
+	if(emu->isa_debug)
+	{
+		emu->isa_debug << misc::fmt("Addr is reg[%d]=%x + 0x%x = 0x%x, ",
+				rs, regs.getGPR(rs), imm, addr);
+		emu->isa_debug << misc::fmt("value loaded: %x\n", temp);
+	}
 }
 
 
@@ -312,9 +316,9 @@ void Context::ExecuteInst_LBU()
 
 	// Perform operation LBU
 	unsigned int virtual_addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	char temp;
-	memory->Read(virtual_addr, sizeof(unsigned char), &temp);
-	regs.setGPR(rt, (int)temp);
+	unsigned char temp;
+	memory->Read(virtual_addr, sizeof(unsigned char), (char *)&temp);
+	regs.setGPR(rt, (unsigned)temp);
 }
 
 
@@ -326,10 +330,10 @@ void Context::ExecuteInst_LHU()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation LHU
-	char temp;
+	unsigned short int temp;
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Read(addr, sizeof(char), &temp);
-	regs.setGPR(rt, (int)temp);
+	memory->Read(addr, sizeof(unsigned short int), (char *)&temp);
+	regs.setGPR(rt, temp);
 }
 
 
@@ -406,10 +410,12 @@ void Context::ExecuteInst_SW()
 	unsigned int temp = regs.getGPR(rt);
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
-	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32(imm, 16);
 
 	// Perform operation SW
 	memory->Write(addr, 4, (char*)&temp);
+	if(emu->isa_debug)
+		emu->isa_debug << misc::fmt("stored value: 0x%x\n", temp);
 }
 
 
@@ -444,11 +450,11 @@ void Context::ExecuteInst_LL()
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
-	char temp;
+	unsigned int temp;
 
 	// Perform operation LL
-	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Read(addr, 4, &temp);
+	unsigned int addr = regs.getGPR(base) + imm;
+	memory->Read(addr, 4, (char *)&temp);
 	regs.setGPR(rt, temp);
 	// FIXME: set LLbit = 1
 }
@@ -460,14 +466,14 @@ void Context::ExecuteInst_LWC1()
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 	unsigned int ft = inst.getBytes()->offset_imm.rt;
-	char temp;
+	unsigned int temp;
 	float f;
 
 	// Perform operation LWC1
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Read(addr, 4, &temp);
+	memory->Read(addr, 4, (char*)&temp);
 	f = (float)temp;
-	regs.setFPR(ft, f);
+	regs.setSinglePrecisionFPR(ft, f);
 }
 
 
@@ -489,14 +495,14 @@ void Context::ExecuteInst_LDC1()
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 	unsigned int ft =inst.getBytes()->offset_imm.rt;
-	char temp;
+	unsigned long long temp;
 	float f;
 
 	// Perform operation LDC1
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Read(addr, 4, &temp);
-	f = (float)temp;
-	regs.setFPR(ft, f);
+	memory->Read(addr, 4, (char *)&temp);
+	f = (double)temp;
+	regs.setDoublePrecisionFPR(ft, f);
 }
 
 
@@ -528,19 +534,18 @@ void Context::ExecuteInst_SWC1()
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 	unsigned int ft =inst.getBytes()->offset_imm.rt;
-	char temp;
 
 	// Perform operation SWC1
+	float f = regs.getSinglePrecisionFPR(ft);
+	unsigned int temp = (unsigned int)f;
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Read(addr, 4, &temp);
-	float f = float(temp);
-	regs.setFPR(ft, f);
+	memory->Write(addr, 4, (char *)&temp);
 }
 
 
 void Context::ExecuteInst_SWC2()
 {
-
+	throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -550,13 +555,12 @@ void Context::ExecuteInst_SDC1()
 	unsigned int base = inst.getBytes()->offset_imm.base;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 	unsigned int ft = inst.getBytes()->standard.rt;
-	double dbl;
 
 	// Perform operation SDC1
-	dbl = (double)regs.getFPR(ft);
-	unsigned char temp = * (unsigned char *) &dbl;
+	double dbl = regs.getDoublePrecisionFPR(ft);
+	unsigned int temp = (unsigned int)dbl;
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Write(addr, sizeof(unsigned int), reinterpret_cast<const char*>(&temp));
+	memory->Write(addr, sizeof(unsigned int), (char*)&temp);
 }
 
 
@@ -734,13 +738,19 @@ void Context::ExecuteInst_BREAK()
 
 void Context::ExecuteInst_SYNC()
 {
-	throw misc::Panic("Unimplemented instruction");
+	//FIXME: implement sync
+	//throw misc::Panic("Unimplemented instruction");
 }
 
 
 void Context::ExecuteInst_MFHI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int reg_hi = regs.getHI();
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform operation
+	regs.setGPR(rd, reg_hi);
 }
 
 
@@ -777,7 +787,8 @@ void Context::ExecuteInst_MULT()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform operation MULT
-	unsigned int long long temp = (long long int)regs.getGPR(rs)*(long long int)regs.getGPR(rt);
+	unsigned long long int temp = (long long int)regs.getGPR(rs) *
+			(long long int)regs.getGPR(rt);
 	regs.setLO(misc::getBits64(temp, 31, 0));
 	regs.setHI(misc::getBits64(temp, 63, 32));
 }
@@ -790,7 +801,8 @@ void Context::ExecuteInst_MULTU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform operation MULTU
-	unsigned int long long temp = (long long int)regs.getGPR(rs)*(long long int)regs.getGPR(rt);
+	unsigned long long int temp = (unsigned long long int)regs.getGPR(rs) *
+			(unsigned long long int)regs.getGPR(rt);
 	regs.setLO(misc::getBits64(temp, 31, 0));
 	regs.setHI(misc::getBits64(temp, 63, 32));
 }
@@ -805,7 +817,8 @@ void Context::ExecuteInst_DIV()
 	// Perform operation DIV
 	if (regs.getGPR(rt))
 	{
-		regs.setLO(regs.getGPR(rs)/regs.getGPR(rt));
+		regs.setLO((int)regs.getGPR(rs) / (int)regs.getGPR(rt));
+		regs.setHI((int)regs.getGPR(rs) % (int)regs.getGPR(rt));
 	}
 }
 
@@ -976,14 +989,20 @@ void Context::ExecuteInst_BLTZ()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation
-	if((int)rs < 0)
+	if((int)regs.getGPR(rs) < 0)
 		MipsIsaRelBranch(imm << 2);
 }
 
 
 void Context::ExecuteInst_BGEZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform operation
+	if((int)regs.getGPR(rs) >=0)
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
 }
 
 
@@ -1169,11 +1188,14 @@ void Context::ExecuteInst_SEB()
 
 void Context::ExecuteInst_SEH()
 {
+
 	// Read operands from instruction
 	unsigned int rd = inst.getBytes()->standard.rd;
 	unsigned int rt = inst.getBytes()->standard.rt;
 
-	regs.setGPR(rd, misc::SignExtend32(regs.getGPR(rt), 16));
+	unsigned int temp =
+			misc::SignExtend32((unsigned short int)regs.getGPR(rt), 16);
+	regs.setGPR(rd, temp);
 }
 
 
@@ -1295,7 +1317,7 @@ void Context::ExecuteInst_CFC1()
 		temp = regs.getFCSR();
 		break;
 	default:
-		misc::fatal("machine.c: CFC1: unknown value for fs");
+		misc::Panic(misc::fmt("%s: CFC1 instruction, unknown value for fs", __FILE__));
 	}
 	regs.setGPR(rt, temp);
 }
