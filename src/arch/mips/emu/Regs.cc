@@ -16,6 +16,9 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#include <lib/cpp/Misc.h>
+
 #include "Regs.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +66,7 @@ void Regs::setLO(unsigned int value)
 {
 		  lo=value;
 }
+
 /*
 int Regs::show_all_registers(int n, char *output_buffer)
 {
