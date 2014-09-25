@@ -16,14 +16,21 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+
+#include <cstring>
 #include <errno.h>
 #include <poll.h>
 #include <unistd.h>
+#include <sys/mman.h>
+#include <sys/uio.h>
 
+#include <arch/common/FileTable.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
 #include "Context.h"
 #include "Emu.h"
+#include "Regs.h"
 
 namespace MIPS
 {
@@ -723,10 +730,176 @@ int Context::ExecuteSyscall_readdir()
 }
 
 
+/*
+ * System call 'mmap' (code 90)
+ */
+//FIXME: Fix this implementation
+#define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
+
+
+/*static int Context::MipsSysMmap(unsigned int addr, unsigned int len,
+	int prot, int flags, int guest_fd, int offset)
+{
+
+}
+*/
 int Context::ExecuteSyscall_mmap()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	misc::StringMap sys_mmap_prot_map =
+	{
+			{ "PROT_READ",       0x1 },
+			{ "PROT_WRITE",      0x2 },
+			{ "PROT_EXEC",       0x4 },
+			{ "PROT_SEM",        0x8 },
+			{ "PROT_GROWSDOWN",  0x01000000 },
+			{ "PROT_GROWSUP",    0x02000000 }
+	};
+
+	misc::StringMap sys_mmap_flags_map =
+	{
+			{ "MAP_SHARED",      0x01 },
+			{ "MAP_PRIVATE",     0x02 },
+			{ "MAP_FIXED",       0x10 },
+			{ "MAP_ANONYMOUS",   0x20 },
+			{ "MAP_GROWSDOWN",   0x00100 },
+			{ "MAP_DENYWRITE",   0x00800 },
+			{ "MAP_EXECUTABLE",  0x01000 },
+			{ "MAP_LOCKED",      0x02000 },
+			{ "MAP_NORESERVE",   0x04000 },
+			{ "MAP_POPULATE",    0x08000 },
+			{ "MAP_NONBLOCK",    0x10000 }
+	};
+
+	int offset;
+	int guest_fd;
+
+	std::string prot_str;
+	std::string flags_str;
+
+	/* This system call takes the arguments from memory, at the address
+	 * pointed by 'ebx'. */
+	unsigned int addr = regs.getGPR(4);
+	unsigned int len = regs.getGPR(5);
+	int prot = regs.getGPR(6);
+	int flags = regs.getGPR(7);
+
+	memory->Read(regs.getGPR(29) + 16, 4, (char *)&guest_fd);
+	memory->Read(regs.getGPR(29) + 20, 4, (char *)&offset);
+
+	if (emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+				"guest_fd=%d, offset=0x%x\n",
+				addr, len, prot, flags, guest_fd, offset);
+	prot_str = sys_mmap_prot_map.MapFlags(prot);
+	flags_str = sys_mmap_flags_map.MapFlags(flags);
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("  prot=") << prot_str
+		<< misc::fmt(", flags=") << flags_str << misc::fmt("\n");
+////////////////////////////////////
+	unsigned int len_aligned;
+
+	int perm;
+	int host_fd;
+
+	comm::FileDescriptor *desc;
+
+	// Check that protection flags match in guest and host
+	assert(PROT_READ == 1);
+	assert(PROT_WRITE == 2);
+	assert(PROT_EXEC == 4);
+
+	// Check that mapping flags match
+	assert(MAP_SHARED == 0x01);
+	assert(MAP_PRIVATE == 0x02);
+	assert(MAP_FIXED == 0x10);
+	assert(MAP_ANONYMOUS == 0x20);
+
+	// Translate file descriptor
+	desc =  file_table->getFileDescriptor(guest_fd);
+	host_fd = desc ? desc->getHostIndex() : -1;
+	if (guest_fd > 0 && host_fd < 0)
+		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
+
+	// Permissions
+	perm = memory->AccessInit;
+	perm |= prot & PROT_READ ? memory->AccessRead : 0;
+	perm |= prot & PROT_WRITE ? memory->AccessWrite : 0;
+	perm |= prot & PROT_EXEC ? memory->AccessExec : 0;
+
+		/* Flag MAP_ANONYMOUS.
+		 * If it is set, the 'fd' parameter is ignored. */
+		if (flags & MAP_ANONYMOUS)
+			host_fd = -1;
+
+		/* 'addr' and 'offset' must be aligned to page size boundaries.
+		 * 'len' is rounded up to page boundary. */
+		if (offset & ~memory->PageMask)
+			misc::fatal("%s: unaligned offset", __FUNCTION__);
+		if (addr & ~memory->PageMask)
+			misc::fatal("%s: unaligned address", __FUNCTION__);
+		len_aligned = misc::RoundUp(len, memory->PageSize);
+
+		/* Find region for allocation */
+		if (flags & MAP_FIXED)
+		{
+			/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
+			 * hint for a possible base address of the allocated range. */
+			if (!addr)
+				misc::fatal("%s: no start specified for fixed mapping", __FUNCTION__);
+
+			/* Any allocated page in the range specified by 'addr' and 'len'
+			 * must be discarded. */
+			memory->Unmap(addr, len_aligned);
+		}
+		else
+		{
+			if (!addr || memory->MapSpaceDown(addr, len_aligned) != addr)
+				addr = SYS_MMAP_BASE_ADDRESS;
+			addr = memory->MapSpaceDown(addr, len_aligned);
+//			if (addr == -1)
+//				misc::fatal("%s: out of guest memory", __FUNCTION__);
+		}
+
+		/* Allocation of memory */
+		memory->Map(addr, len_aligned, perm);
+
+		/* Host mapping */
+		if (host_fd >= 0)
+		{
+			char buf[memory->PageSize];
+
+			unsigned int last_pos;
+			unsigned int curr_addr;
+
+			int size;
+			int count;
+
+			/* Save previous position */
+			last_pos = lseek(host_fd, 0, SEEK_CUR);
+			lseek(host_fd, offset, SEEK_SET);
+
+			/* Read pages */
+			assert(len_aligned % memory->PageSize == 0);
+			assert(addr % memory->PageSize == 0);
+			curr_addr = addr;
+			for (size = len_aligned; size > 0; size -= memory->PageSize)
+			{
+				memset(buf, 0, memory->PageSize);
+				count = read(host_fd, buf, memory->PageSize);
+				if (count)
+					memory->Access(curr_addr, memory->PageSize, buf, memory->AccessInit);
+				curr_addr += memory->PageSize;
+			}
+
+			/* Return file to last position */
+			lseek(host_fd, last_pos, SEEK_SET);
+		}
+
+		/* Return mapped address */
+		return addr;
+		//////////////////////////////////////
 }
+
 
 
 int Context::ExecuteSyscall_munmap()
@@ -1087,7 +1260,69 @@ int Context::ExecuteSyscall_readv()
 
 int Context::ExecuteSyscall_writev()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	comm::FileDescriptor *desc;
+	int v;
+	unsigned int iov_base;
+	unsigned int iov_len;
+	void *buf;
+
+	/* Arguments */
+	int guest_fd = regs.getGPR(4);
+	unsigned int iovec_ptr = regs.getGPR(5);
+	int vlen = regs.getGPR(6);
+
+	if(emu->syscall_debug)
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
+			guest_fd, iovec_ptr, vlen);
+
+	/* Check file descriptor */
+	desc = file_table->getFileDescriptor(guest_fd);
+	if (!desc)
+	{
+		if(emu->syscall_debug)
+			emu->syscall_debug << misc::fmt("no file descriptor found");
+		return -EBADF;
+	}
+	int host_fd = desc->getHostIndex();
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	//	/* No pipes allowed */
+	//	if (desc->kind == file_desc_pipe)
+	//		fatal("%s: not supported for pipes.\n%s",
+	//			__FUNCTION__, err_mips_sys_note);
+
+	/* Proceed */
+	int total_len = 0;
+	for (v = 0; v < vlen; v++)
+	{
+		/* Read io vector element */
+		memory->Read(iovec_ptr, 4, (char *)&iov_base);
+		memory->Read(iovec_ptr + 4, 4, (char *)&iov_len);
+		iovec_ptr += 8;
+
+		/* Read buffer from memory and write it to file */
+		buf = malloc(iov_len);
+		memory->Read(iov_base, iov_len, (char *)buf);
+
+		int len = writev(host_fd, (struct iovec *)buf, iov_len);
+		if (len == -1)
+		{
+			if(emu->syscall_debug)
+				emu->syscall_debug << misc::fmt("writev returned len = -1\n");
+			free(buf);
+			return -errno;
+		}
+
+		/* Accumulate written bytes */
+		total_len += len;
+		free(buf);
+	}
+
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("total_len for writev: %d", total_len);
+	/* Return total number of bytes written */
+	return total_len;
 }
 
 

@@ -20,17 +20,26 @@
 #ifndef ARCH_MIPS_EMU_REGS_H
 #define ARCH_MIPS_EMU_REGS_H
 
+#include <lib/cpp/Misc.h>
+
 namespace MIPS
 {
 
 class Regs
 {
 	unsigned int  gpr[32]; // General Purpose registers
-	float fpr[32]; // Float pointer registers
-	unsigned int coprocessor0_gpr[32]; /* Coprocessor 0 registers */
+
+	// Floating point registers used are either single or double precision
+	union
+	{
+		float SinglePrecicion[32]; // Single precision FP registers
+		double DoublePrecision[16]; // Double precision FP registers
+	} fpr;
+
+	unsigned int coprocessor0_gpr[32]; // Co-processor 0 registers
 	unsigned int pc; //program counter
-    unsigned int hi;  // mult register for [63:32]
-    unsigned int lo;  // mult register for [31:0]
+    unsigned int hi; // mult register for [63:32]
+    unsigned int lo; // mult register for [31:0]
 
     struct {
     	unsigned int FIR;
@@ -83,11 +92,17 @@ public:
     	return coprocessor0_gpr[n];
     }
 
-    /// Set the value of a float point register
-    void setFPR(int n, float value){ fpr[n] = value; }
+    /// Set the value of a single precision floating point register
+    void setSinglePrecisionFPR(int n, float value){ fpr.SinglePrecicion[n] = value; }
 
-    /// Get the value of a float point register
-    unsigned int getFPR(int n){  return fpr[n]; }
+    /// Set the value of a double precision floating point register
+    void setDoublePrecisionFPR(int n, float value){ fpr.DoublePrecision[n] = value; }
+
+    /// Get the value of a single precision floating point register
+    float getSinglePrecisionFPR(int n){ return fpr.SinglePrecicion[n]; }
+
+    /// Get the value of a double precision floating point register
+    double getDoublePrecisionFPR(int n){ return fpr.DoublePrecision[n]; }
 
     /// Write pc with value
     void setPC(unsigned int value){ pc = value; }
