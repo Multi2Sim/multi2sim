@@ -243,15 +243,6 @@ void Context::Execute()
 	{
 		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
 				emu->getInstructions(), regs.getPC());
-		inst.Dump(std::cout);
-		emu->isa_debug << misc::fmt("\n");
-	}
-
-	// Debug
-	if (emu->isa_debug)
-	{
-		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-				emu->getInstructions(), regs.getPC());
 		inst.Dump(emu->isa_debug.operator std::ostream &());
 		emu->isa_debug << misc::fmt("\n");
 	}

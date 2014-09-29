@@ -52,7 +52,8 @@ void Context::ExecuteInst_J()
 	unsigned int target = inst.getBytes()->target.target;
 
 	// Perform Operation
-	unsigned int dest = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
+	unsigned int dest = ((misc::getBits32(next_ip, 31, 28)) << 28 )
+			| (target << 2) | 0;
 	MipsIsaBranch(dest);
 }
 
@@ -65,7 +66,8 @@ void Context::ExecuteInst_JAL()
 	unsigned int target = inst.getBytes()->target.target;
 
 	// Perform Operation
-	unsigned int branch_target = (misc::getBits32(regs.getPC()+4, 31, 28)) << 28 | (target << 2);
+	unsigned int branch_target = ((misc::getBits32(next_ip, 31, 28)) << 28)
+			| (target << 2) | 0;
 	regs.setGPR(reg_no, value);
 	MipsIsaBranch(branch_target);
 }
@@ -80,7 +82,7 @@ void Context::ExecuteInst_BEQ()
 
 	// Perform Operation
 	if(regs.getGPR(rs) == regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 18));
 }
 
 
@@ -93,7 +95,7 @@ void Context::ExecuteInst_BNE()
 
 	// Perform Operation
 	if (regs.getGPR(rs) != regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2)|0), 18));
 }
 
 
@@ -139,7 +141,8 @@ void Context::ExecuteInst_ADDIU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	regs.setGPR(rt,regs.getGPR(rs) + misc::SignExtend32((signed)imm,16));
+	int temp = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
+	regs.setGPR(rt,temp);
 }
 
 
@@ -164,7 +167,7 @@ void Context::ExecuteInst_SLTIU()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform Operation
-	if ((regs.getGPR(rt)) < imm)
+	if ((0|regs.getGPR(rt)) < (0|(unsigned)misc::SignExtend32(imm, 16)))
 		regs.setGPR(rt, 1);
 	else
 		regs.setGPR(rt, 0);
@@ -190,8 +193,8 @@ void Context::ExecuteInst_ORI()
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
-	// Perform AND operation
-	regs.setGPR(rt, (regs.getGPR(rs) | (imm & ((1U << (16)) - 1))));
+	// Perform ORI operation
+	regs.setGPR(rt, (regs.getGPR(rs) | (imm & ((1u << 16) - 1))));
 }
 
 
@@ -208,7 +211,7 @@ void Context::ExecuteInst_LUI()
 	unsigned int rt =inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	regs.setGPR(rt,(int)(imm << 16));
+	regs.setGPR(rt,(unsigned)((imm << 16) | 0));
 }
 
 
@@ -578,7 +581,7 @@ void Context::ExecuteInst_SLL()
 	unsigned int sa = inst.getBytes()->standard.sa;
 
 	// Perform operation SLL
-	regs.setGPR(rd,(regs.getGPR(rt) << sa));
+	regs.setGPR(rd,((regs.getGPR(rt) << sa)|0));
 }
 
 
@@ -718,7 +721,7 @@ void Context::ExecuteInst_MOVN()
 	unsigned int rd = inst.getBytes()->standard.rd;
 	unsigned int rs = inst.getBytes()->standard.rs;
 
-	// Perform operation MOVZ
+	// Perform operation MOVN
 	if (regs.getGPR(rt) != 0)
 		regs.setGPR(rd, regs.getGPR(rs));
 }
@@ -898,7 +901,7 @@ void Context::ExecuteInst_XOR()
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int rd = inst.getBytes()->standard.rd;
 
-	// Perform AND operation
+	// Perform XOR operation
 	regs.setGPR(rd, (regs.getGPR(rs) ^ regs.getGPR(rt)));
 }
 
@@ -989,8 +992,8 @@ void Context::ExecuteInst_BLTZ()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation
-	if((int)regs.getGPR(rs) < 0)
-		MipsIsaRelBranch(imm << 2);
+	if ((int)regs.getGPR(rs) < 0)
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 18));
 }
 
 
@@ -1001,8 +1004,8 @@ void Context::ExecuteInst_BGEZ()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation
-	if((int)regs.getGPR(rs) >=0)
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+	if ((int)regs.getGPR(rs) >= 0)
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 18));
 }
 
 

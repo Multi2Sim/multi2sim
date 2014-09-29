@@ -169,6 +169,7 @@ class Inst
 	void DumpFt(std::ostream &os) const;
 	void DumpFd(std::ostream &os) const;
 	void DumpCode(std::ostream &os) const;
+	void DumpHint(std::ostream &os) const;
 
 public:
 
