@@ -110,6 +110,10 @@ bool Context::SyscallWriteCanWakeup()
 
 int Context::ExecuteSyscall_write()
 {
+	// Debug
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("write syscall\n");
+
 	// Arguments
 	int guest_fd = regs.getGPR(4);
 	unsigned buf_ptr = regs.getGPR(5);
@@ -399,6 +403,10 @@ int Context::ExecuteSyscall_prof()
 
 int Context::ExecuteSyscall_brk()
 {
+	// Debug
+	if (emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("brk syscall\n");
+
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
 	unsigned int size;
@@ -745,6 +753,10 @@ int Context::ExecuteSyscall_readdir()
 */
 int Context::ExecuteSyscall_mmap()
 {
+	// Debug
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("mmap syscall\n");
+
 	misc::StringMap sys_mmap_prot_map =
 	{
 			{ "PROT_READ",       0x1 },
@@ -757,17 +769,25 @@ int Context::ExecuteSyscall_mmap()
 
 	misc::StringMap sys_mmap_flags_map =
 	{
-			{ "MAP_SHARED",      0x01 },
-			{ "MAP_PRIVATE",     0x02 },
-			{ "MAP_FIXED",       0x10 },
-			{ "MAP_ANONYMOUS",   0x20 },
-			{ "MAP_GROWSDOWN",   0x00100 },
-			{ "MAP_DENYWRITE",   0x00800 },
-			{ "MAP_EXECUTABLE",  0x01000 },
-			{ "MAP_LOCKED",      0x02000 },
-			{ "MAP_NORESERVE",   0x04000 },
-			{ "MAP_POPULATE",    0x08000 },
-			{ "MAP_NONBLOCK",    0x10000 }
+			// These flags are taken from
+			// /usr/src/linux-headers-3.13.0-35/arch/mips/include/uapi/asm/mman.h
+
+			 // Flags for mmap
+			{ "MAP_SHARED",      0x001 },         // Share changes
+			{ "MAP_PRIVATE",     0x002 },         // Changes are private
+			{ "MAP_TYPE",        0x00f },         // Mask for type of mapping
+			{ "MAP_FIXED",       0x010 },         // Interpret addr exactly
+			// These are linux-specific
+			{ "MAP_NORESERVE",   0x0400 },        // don't check for reservations
+			{ "MAP_ANONYMOUS",   0x0800 },        // don't use a file
+			{ "MAP_GROWSDOWN",   0x1000 },        // stack-like segment
+			{ "MAP_DENYWRITE",   0x2000 },        // ETXTBSY
+			{ "MAP_EXECUTABLE",  0x4000 },        // mark it as an executable
+			{ "MAP_LOCKED",      0x8000 },        // pages are locked
+			{ "MAP_POPULATE",    0x10000 },       // populate (prefault) pagetables
+			{ "MAP_NONBLOCK",    0x20000 },       // do not block on IO
+			{ "MAP_STACK",       0x40000 },       // give out an address that is best suited for process/thread stacks
+			{ "MAP_HUGETLB",     0x80000 }        // create a huge page mapping
 	};
 
 	int offset;
@@ -776,18 +796,17 @@ int Context::ExecuteSyscall_mmap()
 	std::string prot_str;
 	std::string flags_str;
 
-	/* This system call takes the arguments from memory, at the address
-	 * pointed by 'ebx'. */
 	unsigned int addr = regs.getGPR(4);
 	unsigned int len = regs.getGPR(5);
-	int prot = regs.getGPR(6);
-	int flags = regs.getGPR(7);
+
+	unsigned int prot = regs.getGPR(6);
+	unsigned int flags = regs.getGPR(7);
 
 	memory->Read(regs.getGPR(29) + 16, 4, (char *)&guest_fd);
 	memory->Read(regs.getGPR(29) + 20, 4, (char *)&offset);
 
 	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("  addr=0x%x, len=%u, prot=0x%x, flags=0x%x, "
+		emu->syscall_debug << misc::fmt("  addr=0x%x, len=%d, prot=0x%x, flags=0x%x, "
 				"guest_fd=%d, offset=0x%x\n",
 				addr, len, prot, flags, guest_fd, offset);
 	prot_str = sys_mmap_prot_map.MapFlags(prot);
@@ -1113,6 +1132,10 @@ static struct sim_utsname sim_utsname =
 
 int Context::ExecuteSyscall_uname()
 {
+	// Debug
+	if (emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("uname syscall\n");
+
 	unsigned int addr = regs.getGPR(4);
 	memory->Write(addr, sizeof(sim_utsname), (char *)&sim_utsname);
 
@@ -1260,6 +1283,9 @@ int Context::ExecuteSyscall_readv()
 
 int Context::ExecuteSyscall_writev()
 {
+	if(emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("writev syscall\n");
+
 	comm::FileDescriptor *desc;
 	int v;
 	unsigned int iov_base;
@@ -1272,15 +1298,15 @@ int Context::ExecuteSyscall_writev()
 	int vlen = regs.getGPR(6);
 
 	if(emu->syscall_debug)
-	emu->syscall_debug << misc::fmt("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
-			guest_fd, iovec_ptr, vlen);
+		emu->syscall_debug << misc::fmt("  guest_fd=%d, iovec_ptr = 0x%x, vlen=0x%x\n",
+				guest_fd, iovec_ptr, vlen);
 
 	/* Check file descriptor */
 	desc = file_table->getFileDescriptor(guest_fd);
 	if (!desc)
 	{
 		if(emu->syscall_debug)
-			emu->syscall_debug << misc::fmt("no file descriptor found");
+			emu->syscall_debug << misc::fmt("  no file descriptor found");
 		return -EBADF;
 	}
 	int host_fd = desc->getHostIndex();
@@ -1309,7 +1335,7 @@ int Context::ExecuteSyscall_writev()
 		if (len == -1)
 		{
 			if(emu->syscall_debug)
-				emu->syscall_debug << misc::fmt("writev returned len = -1\n");
+				emu->syscall_debug << misc::fmt("  writev returned len = -1\n");
 			free(buf);
 			return -errno;
 		}
@@ -1320,7 +1346,7 @@ int Context::ExecuteSyscall_writev()
 	}
 
 	if(emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("total_len for writev: %d", total_len);
+		emu->syscall_debug << misc::fmt("  total_len for writev: %d", total_len);
 	/* Return total number of bytes written */
 	return total_len;
 }
@@ -1923,9 +1949,11 @@ int Context::ExecuteSyscall_io_cancel()
 // System call 'exit_group'
 //
 
-
 int Context::ExecuteSyscall_exit_group()
 {
+	// Debug
+	if (emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("exit_group syscall\n");
 	// Arguments
 	int status = regs.getGPR(4);
 
@@ -2153,6 +2181,10 @@ int Context::ExecuteSyscall_keyctl()
 
 int Context::ExecuteSyscall_set_thread_area()
 {
+	// Debug
+	if (emu->syscall_debug)
+		emu->syscall_debug << misc::fmt("set_thread_area syscall\n");
+
 	// Get argument
 	unsigned int uinfo_ptr = regs.getGPR(4);
 

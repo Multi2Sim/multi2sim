@@ -294,6 +294,13 @@ void Inst::DumpCode(std::ostream &os) const
 }
 
 
+void Inst::DumpHint(std::ostream &os) const
+{
+	unsigned hint = bytes.standard.rs;
+	os << misc::fmt("0x%x", hint);
+}
+
+
 void Inst::Dump(std::ostream &os)
 {
 	int token_len;
@@ -471,6 +478,8 @@ void Inst::Dump(std::ostream &os)
 			DumpFd(os);
 		else if (comm::Asm::isToken(fmt_str, "code", token_len))
 			DumpCode(os);
+		else if (comm::Asm::isToken(fmt_str, "hint", token_len))
+			DumpHint(os);
 		else
 			throw misc::Panic(misc::fmt("%s: Unrecognized "
 					"token", fmt_str));
