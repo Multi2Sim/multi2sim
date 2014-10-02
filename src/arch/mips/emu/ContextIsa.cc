@@ -82,7 +82,7 @@ void Context::ExecuteInst_BEQ()
 
 	// Perform Operation
 	if(regs.getGPR(rs) == regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 18));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 16));
 }
 
 
@@ -95,7 +95,7 @@ void Context::ExecuteInst_BNE()
 
 	// Perform Operation
 	if (regs.getGPR(rs) != regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(((imm << 2)|0), 18));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2)|0), 16));
 }
 
 
@@ -163,11 +163,12 @@ void Context::ExecuteInst_SLTI()
 void Context::ExecuteInst_SLTIU()
 {
 	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform Operation
-	if ((0|regs.getGPR(rt)) < (0|(unsigned)misc::SignExtend32(imm, 16)))
+	if ((0|regs.getGPR(rs)) < (0|(unsigned)misc::SignExtend32(imm, 16)))
 		regs.setGPR(rt, 1);
 	else
 		regs.setGPR(rt, 0);
@@ -200,7 +201,14 @@ void Context::ExecuteInst_ORI()
 
 void Context::ExecuteInst_XORI()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+
+	// Perform XOR immediate operation
+	unsigned int value = regs.getGPR(rs) ^ imm;
+	regs.setGPR(rt, value);
 }
 
 
@@ -411,9 +419,9 @@ void Context::ExecuteInst_SW()
 	// Read operands from instruction
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int temp = regs.getGPR(rt);
-	unsigned int base = inst.getBytes()->offset_imm.base;
+	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
-	unsigned int addr = regs.getGPR(base) + misc::SignExtend32(imm, 16);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm, 16);
 
 	// Perform operation SW
 	memory->Write(addr, 4, (char*)&temp);
@@ -524,9 +532,8 @@ void Context::ExecuteInst_SC()
 	unsigned int temp = regs.getGPR(rt);
 
 	// Perform operation SC
-	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	char tmp = (char) temp;
-	memory->Write(addr, 4, &tmp);
+	unsigned int addr = regs.getGPR(base) + misc::SignExtend32(imm, 16);
+	memory->Write(addr, 4, (char *)&temp);
 	regs.setGPR(rt, 1);
 }
 
@@ -828,7 +835,19 @@ void Context::ExecuteInst_DIV()
 
 void Context::ExecuteInst_DIVU()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rs = inst.getBytes()->standard.rs;
+
+	// Perform operation
+	unsigned int rs_value = regs.getGPR(rs);
+	unsigned int rt_value = regs.getGPR(rt);
+
+	if (rt_value != 0)
+	{
+		regs.setHI(rs_value % rt_value);
+		regs.setLO(rs_value / rt_value);
+	}
 }
 
 
@@ -975,7 +994,15 @@ void Context::ExecuteInst_TLTU()
 
 void Context::ExecuteInst_TEQ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform 'Trap if Equal' operation
+	if ((int)regs.getGPR(rs) == (int)regs.getGPR(rt))
+	{
+		misc::Panic(misc::fmt("%s: Trap exception", __FUNCTION__));
+	}
 }
 
 
@@ -993,7 +1020,7 @@ void Context::ExecuteInst_BLTZ()
 
 	// Perform operation
 	if ((int)regs.getGPR(rs) < 0)
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 18));
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
 }
 
 
@@ -1185,7 +1212,14 @@ void Context::ExecuteInst_WSBH()
 
 void Context::ExecuteInst_SEB()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Get operands
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	// Perform Sign Extend Byte operation
+	unsigned int rt_value = regs.getGPR(rt);
+	unsigned int value = misc::SignExtend32(misc::getBits32(rt_value, 7, 0), 8);
+	regs.setGPR(rd, value);
 }
 
 

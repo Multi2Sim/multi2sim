@@ -346,13 +346,13 @@ void Context::LoadBinary()
 				1,
 				f,
 				stdout_full_path,
-				O_WRONLY);
+				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY);
 		file_table->newFileDescriptor(
 				comm::FileDescriptor::TypeStandard,
 				2,
 				f,
 				stdout_full_path,
-				O_WRONLY);
+				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY);
 	}
 
 	// Load ELF binary
