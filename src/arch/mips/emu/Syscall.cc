@@ -22,6 +22,7 @@
 #include <poll.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/uio.h>
 
 #include <arch/common/FileTable.h>
@@ -145,6 +146,13 @@ int Context::ExecuteSyscall_write()
 
 		// Return written bytes
 		delete buf;
+
+		// Set reg a3 t 0 in case of success
+		if (err != 0)
+			regs.setGPR(7, 0);
+		else
+			regs.setGPR(7, 1);
+
 		return err;
 	}
 
@@ -404,8 +412,7 @@ int Context::ExecuteSyscall_prof()
 int Context::ExecuteSyscall_brk()
 {
 	// Debug
-	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("brk syscall\n");
+	emu->syscall_debug << misc::fmt("brk syscall\n");
 
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
@@ -418,7 +425,7 @@ int Context::ExecuteSyscall_brk()
 	new_heap_break = regs.getGPR(4);
 	old_heap_break = memory->getHeapBreak();
 	emu->syscall_debug << misc::fmt(
-			"newbrk=0x%x (previous brk was 0x%x)\n",
+			"  newbrk=0x%x (previous brk was 0x%x)\n",
 			new_heap_break, old_heap_break);
 
 	// Align
@@ -1747,6 +1754,29 @@ int Context::ExecuteSyscall_ftruncate64()
 	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
 }
 
+// stat64 syscall implementation
+struct sim_stat64_t
+{
+	unsigned long long dev;  /* 0 8 */
+	unsigned int pad1;  /* 8 4 */
+	unsigned int __ino;  /* 12 4 */
+	unsigned int mode;  /* 16 4 */
+	unsigned int nlink;  /* 20 4 */
+	unsigned int uid;  /* 24 4 */
+	unsigned int gid;  /* 28 4 */
+	unsigned long long rdev;  /* 32 8 */
+	unsigned int pad2;  /* 40 4 */
+	long long size;  /* 44 8 */
+	unsigned int blksize;  /* 52 4 */
+	unsigned long long blocks;  /* 56 8 */
+	unsigned int atime;  /* 64 4 */
+	unsigned int atime_nsec;  /* 68 4 */
+	unsigned int mtime;  /* 72 4 */
+	unsigned int mtime_nsec;  /* 76 4 */
+	unsigned int ctime;  /* 80 4 */
+	unsigned int ctime_nsec;  /* 84 4 */
+	unsigned long long ino;  /* 88 8 */
+} __attribute__((packed));
 
 int Context::ExecuteSyscall_stat64()
 {
@@ -1762,7 +1792,58 @@ int Context::ExecuteSyscall_lstat64()
 
 int Context::ExecuteSyscall_fstat64()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	emu->syscall_debug << misc::fmt("fstat64 syscall\n");
+
+	// Arguments
+	int fd = regs.getGPR(4);
+	unsigned int statbuf_ptr = regs.getGPR(5);
+
+	struct stat statbuf;
+	struct sim_stat64_t sim_statbuf;
+
+	emu->syscall_debug << misc::fmt("  fd=%d, statbuf_ptr=0x%x\n",
+			fd, statbuf_ptr);
+
+	// Get host descripptor
+	int host_fd = file_table->getHostIndex(fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Host call
+	int err = fstat(host_fd, &statbuf);
+	if (err == -1)
+		return -errno;
+
+	if (sizeof(struct sim_stat64_t) != 96)
+		misc::Panic(misc::fmt("host stat and guest stat do not match in size"));
+	memset(&sim_statbuf, 0, sizeof(struct sim_stat64_t));
+
+	sim_statbuf.dev = statbuf.st_dev;
+	sim_statbuf.__ino = statbuf.st_ino;
+	sim_statbuf.mode = statbuf.st_mode;
+	sim_statbuf.nlink = statbuf.st_nlink;
+	sim_statbuf.uid = statbuf.st_uid;
+	sim_statbuf.gid = statbuf.st_gid;
+	sim_statbuf.rdev = statbuf.st_rdev;
+	sim_statbuf.size = statbuf.st_size;
+	sim_statbuf.blksize = statbuf.st_blksize;
+	sim_statbuf.blocks = statbuf.st_blocks;
+	sim_statbuf.atime = statbuf.st_atime;
+	sim_statbuf.mtime = statbuf.st_mtime;
+	sim_statbuf.ctime = statbuf.st_ctime;
+	sim_statbuf.ino = statbuf.st_ino;
+
+	// Debug
+	emu->syscall_debug << misc::fmt("  stat64 structure:\n");
+	emu->syscall_debug << misc::fmt("  dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
+			sim_statbuf.dev, sim_statbuf.ino, sim_statbuf.mode, sim_statbuf.nlink);
+	emu->syscall_debug << misc::fmt("  uid=%d, gid=%d, rdev=%lld\n",
+			sim_statbuf.uid, sim_statbuf.gid, sim_statbuf.rdev);
+	emu->syscall_debug << misc::fmt("size=%lld, blksize=%d, blocks=%lld\n",
+			sim_statbuf.size, sim_statbuf.blksize, sim_statbuf.blocks);
+
+	// Return
+	memory->Write(statbuf_ptr, sizeof sim_statbuf, (char *)&sim_statbuf);
+	return 0;
 }
 
 
