@@ -389,9 +389,9 @@ void Context::ExecuteInst_SH()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation SH
-	const char temp = regs.getGPR(rt);
+	unsigned short int temp = regs.getGPR(rt);
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Write(addr, sizeof(unsigned short int), &temp);
+	memory->Write(addr, sizeof(unsigned short int), (char *)&temp);
 }
 
 

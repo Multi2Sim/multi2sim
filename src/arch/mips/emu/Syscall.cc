@@ -19,13 +19,16 @@
 
 #include <cstring>
 #include <errno.h>
+#include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
 
+#include <arch/common/Driver.h>
 #include <arch/common/FileTable.h>
+#include <arch/common/Runtime.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
@@ -168,10 +171,155 @@ int Context::ExecuteSyscall_write()
 	return 0;
 }
 
+//
+// System call open
+//
+
+// Flags
+static misc::StringMap open_flags_map =
+{
+		{ "O_RDONLY",        00000000 },
+		{ "O_WRONLY",        00000001 },
+		{ "O_RDWR",          00000002 },
+		{ "O_CREAT",         00000100 },
+		{ "O_EXCL",          00000200 },
+		{ "O_NOCTTY",        00000400 },
+		{ "O_TRUNC",         00001000 },
+		{ "O_APPEND",        00002000 },
+		{ "O_NONBLOCK",      00004000 },
+		{ "O_SYNC",          00010000 },
+		{ "FASYNC",          00020000 },
+		{ "O_DIRECT",        00040000 },
+		{ "O_LARGEFILE",     00100000 },
+		{ "O_DIRECTORY",     00200000 },
+		{ "O_NOFOLLOW",      00400000 },
+		{ "O_NOATIME",       01000000 }
+};
+
+comm::FileDescriptor *Context::SyscallOpenVirtualFile(const std::string &path,
+		int flags, int mode)
+{
+	// Assume no file found
+	std::string temp_path;
+
+	// Virtual file /proc/self/maps
+	if (path == "/proc/self/maps")
+		temp_path = OpenProcSelfMaps();
+
+	// Virtual file /proc/cpuinfo
+//	else if (path == "/proc/cpuinfo")
+//		temp_path = OpenProcCPUInfo();
+
+	// No file found
+	if (temp_path.empty())
+		return nullptr;
+
+	// File found, create descriptor
+	int host_fd = open(temp_path.c_str(), flags, mode);
+	assert(host_fd > 0);
+
+	// Add file descriptor table entry.
+	comm::FileDescriptor *desc = file_table->newFileDescriptor(
+			comm::FileDescriptor::TypeVirtual, host_fd,
+			temp_path, flags);
+	emu->syscall_debug << misc::fmt("    host file '%s' opened: "
+			"guest_fd=%d, host_fd=%d\n",
+			temp_path.c_str(), desc->getGuestIndex(),
+			desc->getHostIndex());
+	return desc;
+}
+
+comm::FileDescriptor *Context::SyscallOpenVirtualDevice(const std::string &path,
+		int flags, int mode)
+{
+	// Check if this is a Multi2Sim driver
+	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
+	comm::Driver *driver = driver_pool->getDriverByPath(path);
+	if (!driver)
+		misc::fatal("%s: Cannot find device in %s", __FUNCTION__,
+				path.c_str());
+
+	// Create new file descriptor
+	comm::FileDescriptor *desc = file_table->newFileDescriptor(
+			comm::FileDescriptor::TypeDevice,
+			0,  // Host descriptor doesn't matter
+			path,
+			flags);
+	desc->setDriver(driver);
+
+	// Debug
+	emu->syscall_debug << misc::fmt("    host device '%s' opened: "
+				"guest_fd=%d, host_fd=%d\n",
+				path.c_str(),
+				desc->getGuestIndex(),
+				desc->getHostIndex());
+	// Return the descriptor
+	return desc;
+}
 
 int Context::ExecuteSyscall_open()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	emu->syscall_debug << misc::fmt("open syscall\n");
+
+	// Arguments
+	unsigned int file_name_ptr = regs.getGPR(4);
+	int flags = regs.getGPR(5);
+	int mode = regs.getGPR(6);
+
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+	emu->syscall_debug << misc::fmt("  file_name='%s' flags=0x%x, mode=0x%x\n",
+			file_name.c_str(), flags, mode);
+	emu->syscall_debug << misc::fmt("  fullpath=%s\n", full_path.c_str());
+	emu->syscall_debug << misc::fmt("  flags=%s\n",
+			open_flags_map.MapFlags(flags).c_str());
+
+	// The dynamic linker uses the 'open' system call to open shared libraries.
+	// We need to intercept here attempts to access runtime libraries and
+	// redirect them to our own Multi2Sim runtimes.
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	std::string runtime_redirect_path;
+	if (runtime_pool->Redirect(full_path, runtime_redirect_path))
+		full_path = runtime_redirect_path;
+
+	// Driver devices
+	if (misc::StringPrefix(full_path, "/dev/"))
+	{
+		// Attempt to open virtual file
+		comm::FileDescriptor *desc = SyscallOpenVirtualDevice(
+				full_path, flags, mode);
+		return desc->getGuestIndex();
+	}
+
+	// Virtual files
+	if (misc::StringPrefix(full_path, "/proc/"))
+	{
+		// Attempt to open virtual file
+		comm::FileDescriptor *desc = SyscallOpenVirtualFile(
+				full_path, flags, mode);
+		if (desc)
+			return desc->getGuestIndex();
+
+		// Unhandled virtual file. Let the application read the contents
+		// of the host version of the file as if it was a regular file.
+		emu->syscall_debug << "    warning: unhandled virtual file\n";
+	}
+
+	// Regular file
+	int host_fd = open(full_path.c_str(), flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	// File opened, create a new file descriptor.
+	comm::FileDescriptor *desc = file_table->newFileDescriptor(
+			comm::FileDescriptor::TypeRegular,
+			host_fd, full_path, flags);
+	emu->syscall_debug << misc::fmt("    file descriptor opened: "
+			"guest_fd=%d, host_fd=%d\n",
+			desc->getGuestIndex(), desc->getHostIndex());
+
+	// Return guest descriptor index
+	return desc->getGuestIndex();
 }
 
 
@@ -1140,10 +1288,11 @@ static struct sim_utsname sim_utsname =
 int Context::ExecuteSyscall_uname()
 {
 	// Debug
-	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("uname syscall\n");
+	emu->syscall_debug << misc::fmt("uname syscall\n");
 
 	unsigned int addr = regs.getGPR(4);
+
+	emu->syscall_debug << misc::fmt("  addr is 0x%x\n", addr);
 	memory->Write(addr, sizeof(sim_utsname), (char *)&sim_utsname);
 
 	return 0;
