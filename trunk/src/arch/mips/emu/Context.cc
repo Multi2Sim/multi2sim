@@ -65,6 +65,59 @@ void Context::UpdateState(unsigned state)
 	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
 }
 
+std::string Context::OpenProcSelfMaps()
+{
+	// Create temporary file
+	int fd;
+	FILE *f = NULL;
+	char path[256];
+	strcpy(path, "/tmp/m2s.XXXXXX");
+	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
+		throw misc::Panic("Cannot create temporary file");
+
+	// Get the first page
+	unsigned end = 0;
+	for (;;)
+	{
+		// Get start of next range
+		mem::Memory::Page *page = memory->getNextPage(end);
+		if (!page)
+			break;
+		unsigned start = page->getTag();
+		end = page->getTag();
+		int perm = page->getPerm() & (mem::Memory::AccessRead |
+				mem::Memory::AccessWrite |
+				mem::Memory::AccessExec);
+
+		// Get end of range
+		for (;;)
+		{
+			page = memory->getPage(end + mem::Memory::PageSize);
+			if (!page)
+				break;
+			int page_perm = page->getPerm() &
+					(mem::Memory::AccessRead |
+							mem::Memory::AccessWrite |
+							mem::Memory::AccessExec);
+			if (page_perm != perm)
+				break;
+			end += mem::Memory::PageSize;
+			perm = page_perm;
+		}
+
+		// Dump range
+		fprintf(f, "%08x-%08x %c%c%c%c 00000000 00:00\n", start,
+				end + mem::Memory::PageSize,
+				perm & mem::Memory::AccessRead ? 'r' : '-',
+						perm & mem::Memory::AccessWrite ? 'w' : '-',
+								perm & mem::Memory::AccessExec ? 'x' : '-',
+										'p');
+	}
+
+	// Close file
+	fclose(f);
+	return path;
+}
 
 Context::Context()
 {
