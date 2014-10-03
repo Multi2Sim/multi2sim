@@ -65,6 +65,10 @@ public:
 	template<typename T>
 	void setVariableValue(const std::string &name, T value){};
 
+	/// Get the address of a certain variable, return 0 if the variable is
+	/// not defined
+	unsigned getAddress(const std::string &name) const;
+
 	/// Get the buffer pointer to a certain variable, return nullptr if
 	/// the variable is not defined
 	char *getBuffer(const std::string &name);

@@ -35,6 +35,7 @@ Debug::Debug()
 
 Debug::~Debug()
 {
+	Flush();
 	Close();
 }
 
