@@ -109,6 +109,8 @@ class WorkItem
  	template<typename T> void Inst_POPCOUNT_Aux();
  	template<typename T> void Inst_XOR_Aux();
  	template<typename T> void Inst_BITEXTRACT_Aux();
+	template<typename T> void Inst_LDA_Aux();
+	template<typename T> void Inst_LDC_Aux();
  	template<typename T> void Inst_MOV_Aux();
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename T> void Inst_LD_Aux();

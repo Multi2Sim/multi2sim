@@ -1442,15 +1442,182 @@ void WorkItem::ExecuteInst_EXPAND()
 }
 
 
+template<typename T>
+void WorkItem::Inst_LDA_Aux()
+{
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+//	BrigInstMem * inst_buf =
+//			(BrigInstMem *)stack_top->getPc();
+
+	// Retrieve operand
+	BrigOperandAddress *address_operand_buf =
+			(BrigOperandAddress *)inst.getOperand(1);
+	BrigDirectiveSymbol *symbol =
+			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
+					binary, address_operand_buf->symbol);
+	std::string name = BrigStrEntry::GetStringByOffset(binary,
+			symbol->name);
+
+	// Get offset
+	unsigned long long offset =
+			(((unsigned long long)address_operand_buf->offsetHi)
+					<< 32)
+			+ (unsigned long long)address_operand_buf->offsetLo;
+
+	// Declare address
+	unsigned address;
+
+	// FIXME remove duplicated code
+
+	// First, try argument scope first
+	VariableScope *variable_scope = stack_top->getArgumentScope();
+
+	// Argument scope exist
+	if (variable_scope)
+	{
+		address = variable_scope->getAddress(name);
+
+		// If address found
+		if (address)
+		{
+			storeOperandValue<T>(0, (T)(address + offset));
+			return;
+		}
+	}
+
+	// Second, try variable scope
+	variable_scope = stack_top->getVariableScope();
+	if (variable_scope)
+	{
+		address = variable_scope->getAddress(name);
+
+		// If address found
+		if (address)
+		{
+			storeOperandValue<T>(0, (T)(address + offset));
+			return;
+		}
+	}
+
+	// Third, try variable scope
+	variable_scope = stack_top->getFunctionArguments();
+	if (variable_scope)
+	{
+		address = variable_scope->getAddress(name);
+
+		// If address found
+		if (address)
+		{
+			storeOperandValue<T>(0, (T)(address + offset));
+			return;
+		}
+	}
+
+	throw misc::Panic(misc::fmt("Variable %s not found!\n", name.c_str()));
+
+	// Store the address in dest
+	storeOperandValue<T>(0, 0);
+
+}
+
+
 void WorkItem::ExecuteInst_LDA()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+	BrigInstMem *inst_buf =
+			(BrigInstMem *)stack_top->getPc();
+	
+	switch(inst_buf->type)
+	{
+	case BRIG_TYPE_U32:
+		Inst_LDA_Aux<unsigned int>();
+		break;
+	case BRIG_TYPE_U64:
+		Inst_LDA_Aux<unsigned long long>();
+		break;
+	default:
+		throw misc::Error("Unsupported type for instruction LDA.");
+		break;
+	}
+
+	// Move PC forward.
+	MovePcForwardByOne();
+
+}
+
+
+template<typename T>
+void WorkItem::Inst_LDC_Aux()
+{
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+//	BrigInstBasic *inst_buf =
+//			(BrigInstBasic *)stack_top->getPc();
+
+	// Retrieve operand
+	BrigOperand *src_temp = (BrigOperand *)inst.getOperand(1);
+
+	// Define address and get base address to code section
+	unsigned long long address;
+	unsigned long long base_address = (unsigned long long)binary
+			->getBrigSection(BrigSectionCode)
+			->getBuffer();
+
+	//
+	if (src_temp->kind == BRIG_OPERAND_LABEL_REF)
+	{
+		BrigOperandLabelRef *src = (BrigOperandLabelRef *)src_temp;
+		BrigDirectiveLabel *dir_label =
+				(BrigDirectiveLabel *)
+				BrigDirEntry::GetDirByOffset(binary, src->ref);
+		address = base_address + dir_label->code;
+	}
+	else if (src_temp->kind == BRIG_OPERAND_FUNCTION_REF)
+	{
+		BrigOperandFunctionRef *src =
+				(BrigOperandFunctionRef *)src_temp;
+		BrigDirectiveFunction *dir_label =
+				(BrigDirectiveFunction *)
+				BrigDirEntry::GetDirByOffset(binary, src->ref);
+		address = base_address + dir_label->code;
+	}
+	else
+	{
+		throw misc::Panic("Unsupported type for LDC.\n");
+	}
+
+	storeOperandValue(0, (T)address);
 }
 
 
 void WorkItem::ExecuteInst_LDC()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+	BrigInstBasic *inst_buf =
+			(BrigInstBasic *)stack_top->getPc();
+
+	switch(inst_buf->type)
+	{
+	case BRIG_TYPE_U32:
+		Inst_LDC_Aux<unsigned int>();
+		break;
+	case BRIG_TYPE_U64:
+		Inst_LDC_Aux<unsigned long long>();
+		break;
+	default:
+		throw misc::Error("Unsupported type for instruction LDA.");
+		break;
+	}
+
+	// Move PC forward.
+	MovePcForwardByOne();
 }
 
 
