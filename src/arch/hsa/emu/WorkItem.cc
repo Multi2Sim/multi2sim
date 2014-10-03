@@ -428,6 +428,7 @@ bool WorkItem::Execute()
 	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 	(this->*fn)();
 
+
 	// Return false if execution finished
 	if (stack.empty())
 		return false;

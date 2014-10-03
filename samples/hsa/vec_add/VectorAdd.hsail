@@ -9,9 +9,65 @@
 
 version 0:96:$full:$small;
 
+function &hsa_init (arg_u32 %status) ();
+function &hsa_stut_down (arg_u32 %status) ();
+function &hsa_iterate_agents (arg_u32 %status) (arg_u32 %call_back, arg_u32 %data);
+function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u32 %value);
+
 function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0);
 
 function &abort() ();
+
+function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %data)
+{
+	ld_arg_u64 $d1, [%agent];
+	{
+		arg_u32 %err;
+		private_u32 %type;
+		arg_u32 %attribute;
+		st_arg_u32 21, [%attribute];
+		lda_private_u32 $s1, [%type];
+		arg_u32 %type_addr;
+		st_arg_u32 $s1, [%type_addr];
+		arg_u64 %agent;
+		st_arg_u64 $d1, [%agent];
+		call &hsa_agent_get_info (%err) (%agent, %attribute, %type_addr);
+		ld_private_u32 $s0, [%type];
+	}
+	
+	// If the device is a GPU
+	cmp_eq_b1_u32 $c0, $s0, 1;
+	cbr $c0, @not_gpu_agent;
+	ld_arg_u64 $d0, [%agent];
+	ld_arg_u32 $s1, [%data];
+	st_arg_u64 $d0, [$s1];
+	st_arg_u32 0, [%status];
+	ret;
+	
+@not_gpu_agent:
+	cmp_eq_b1_u32 $c0, $s0, 0; 	// If CPU device
+	cbr $c0, @not_cpu_agent;
+	ld_arg_u32 $s1, [%data];
+	ld_arg_u64 $d0, [$s1];
+	cmp_eq_b1_u64 $c0, $d0, 0;
+	cbr $c0, @add_this_cpu;
+	st_arg_u32 0, [%status];
+	ret;
+
+@add_this_cpu:
+	ld_arg_u64 $d0, [%agent];
+	ld_arg_u32 $s1, [%data];
+	st_arg_u64 $d0, [$s1];
+	st_arg_u32 0, [%status];
+	ret;
+	
+
+@not_cpu_agent:
+	st_arg_u32 0, [%status];
+	ret;
+	
+};
+
 
 kernel &__OpenCL_vec_add_kernel(
   kernarg_u32 %arg_val0,
@@ -42,4 +98,27 @@ kernel &__OpenCL_vec_add_kernel(
   add_u32  $s0, $s0, $s1;
   st_global_f32 $s2, [$s0];
   brn @BB0_1;
+};
+
+function &main()(){
+
+	{
+		arg_u32 %err;
+		call &hsa_init (%err)();
+	}
+	
+	private_u64 %device;
+	{
+		arg_u32 %err;
+		lda_private_u32 $s0, [%device];
+		arg_u32 %device_addr;
+		st_arg_u32 $s0, [%device_addr];
+		ldc_u32 $s0, &select_gpu_if_possible;
+		arg_u32 %call_back;
+		st_arg_u32 $s0, [%call_back];
+		call &hsa_iterate_agents (%err) (%call_back, %device_addr);
+	}
+	
+	
+
 };

@@ -69,6 +69,21 @@ char *VariableScope::getBuffer(const std::string &name)
 }
 
 
+unsigned VariableScope::getAddress(const std::string &name) const
+{
+	// Find argument information
+	auto it = variable_info.find(name);
+	if (it == variable_info.end())
+	{
+		return 0;
+	}
+
+	// Retrieve guest address
+	unsigned guest_address = it->second->getAddress();
+
+	return guest_address;
+}
+
 void VariableScope::Dump(std::ostream &os, unsigned int indent) const
 {
 	for (auto it = variable_info.begin(); it != variable_info.end(); it++)
