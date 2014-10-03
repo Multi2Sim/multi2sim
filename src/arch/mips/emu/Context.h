@@ -158,6 +158,9 @@ class Context
 	// in the various context lists in the emulator.
 	void UpdateState(unsigned state);
 
+	// Virtual files
+	std::string OpenProcSelfMaps();
+
 	// Callbacks for suspended contexts
 	typedef bool (Context::*CanWakeupFn)();
 	typedef void (Context::*WakeupFn)();
@@ -358,6 +361,14 @@ class Context
 	int syscall_write_fd;
 	void SyscallWriteWakeup();
 	bool SyscallWriteCanWakeup();
+
+	// Auxiliary system call functions
+	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
+			int flags, int guest_fd, int offset);
+	comm::FileDescriptor *SyscallOpenVirtualFile(const std::string &path,
+			int flags, int mode);
+	comm::FileDescriptor *SyscallOpenVirtualDevice(const std::string &path,
+			int flags, int mode);
 
 public:
 	/// Position of the context in the main context list. This field is
