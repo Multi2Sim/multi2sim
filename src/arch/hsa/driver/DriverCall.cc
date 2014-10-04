@@ -17,7 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#define __UNIMPLEMENTED__ throw misc::Panic(misc::fmt("Unimplemented driver function %s", __FUNCTION__));
+#define __UNIMPLEMENTED__ \
+	throw misc::Panic(misc::fmt("Unimplemented driver function %s", \
+	__FUNCTION__));
 
 #include "Driver.h"
 
@@ -50,8 +52,8 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 
 int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
-{
-	__UNIMPLEMENTED__
+{	
+
 	return 0;
 }
 
