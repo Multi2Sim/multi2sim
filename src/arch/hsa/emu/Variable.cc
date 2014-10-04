@@ -53,6 +53,16 @@ void Variable::DumpValue(std::ostream &os) const
 
 	// Dump the value
 	os << *buffer;
+
+	// Dump hex format
+	char *char_buffer = (char *)buffer;	
+	os << " ( 0x";
+	for (int i = 0; i < sizeof(T); i++)
+	{
+		os << misc::fmt("%x", *char_buffer);
+		char_buffer++;
+	}
+	os << " ) ";
 }
 
 
