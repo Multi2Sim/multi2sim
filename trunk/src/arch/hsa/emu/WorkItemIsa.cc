@@ -1565,26 +1565,26 @@ void WorkItem::Inst_LDC_Aux()
 	// Define address and get base address to code section
 	unsigned long long address;
 	unsigned long long base_address = (unsigned long long)binary
-			->getBrigSection(BrigSectionCode)
+			->getBrigSection(BrigSectionDirective)
 			->getBuffer();
 
 	//
 	if (src_temp->kind == BRIG_OPERAND_LABEL_REF)
 	{
 		BrigOperandLabelRef *src = (BrigOperandLabelRef *)src_temp;
-		BrigDirectiveLabel *dir_label =
-				(BrigDirectiveLabel *)
-				BrigDirEntry::GetDirByOffset(binary, src->ref);
-		address = base_address + dir_label->code;
+		//BrigDirectiveLabel *dir_label =
+		//		(BrigDirectiveLabel *)
+		//		BrigDirEntry::GetDirByOffset(binary, src->ref);
+		address = base_address + src->ref;
 	}
 	else if (src_temp->kind == BRIG_OPERAND_FUNCTION_REF)
 	{
 		BrigOperandFunctionRef *src =
 				(BrigOperandFunctionRef *)src_temp;
-		BrigDirectiveFunction *dir_label =
-				(BrigDirectiveFunction *)
-				BrigDirEntry::GetDirByOffset(binary, src->ref);
-		address = base_address + dir_label->code;
+		//BrigDirectiveFunction *dir_label =
+		//		(BrigDirectiveFunction *)
+		//		BrigDirEntry::GetDirByOffset(binary, src->ref);
+		address = base_address + src->ref;
 	}
 	else
 	{

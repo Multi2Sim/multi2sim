@@ -121,18 +121,21 @@ void StackFrame::DumpRegister(const std::string &name,
 
 	case 's':
 
-		os << misc::fmt("%d, %d, %f",
-				getRegisterValue<unsigned short>(name),
-				getRegisterValue<short>(name),
-				getRegisterValue<float>(name));
+		os << misc::fmt("%u, %d, %f, 0x%x",
+				getRegisterValue<unsigned int>(name),
+				getRegisterValue<int>(name),
+				getRegisterValue<float>(name),
+				getRegisterValue<unsigned int>(name));
+
 		break;
 
 	case 'd':
 
-		os << misc::fmt("%d, %d, %f",
-				getRegisterValue<unsigned int>(name),
-				getRegisterValue<int>(name),
-				getRegisterValue<double>(name));
+		os << misc::fmt("%llu, %lld, %f, 0x%llx",
+				getRegisterValue<unsigned long long>(name),
+				getRegisterValue<long long>(name),
+				getRegisterValue<double>(name),
+				getRegisterValue<unsigned long long>(name));
 		break;
 
 	case 'q':
