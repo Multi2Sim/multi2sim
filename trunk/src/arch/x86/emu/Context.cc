@@ -352,6 +352,11 @@ Context::Context()
 
 	// Debug
 	emu->context_debug << "Context " << pid << " created\n";
+
+	for (int i=0; i<InstOpcodeCount; i++)
+	{
+		this->inst_count[i] = 0;
+	}
 }
 
 
@@ -359,6 +364,11 @@ Context::~Context()
 {
 	// Debug
 	emu->context_debug << "Context " << pid << " destroyed\n";
+
+	for (int i=0; i<InstOpcodeCount; i++)
+	{
+		std::cout << i << ", " << inst_count[i] << "\n";
+	}
 }
 
 
@@ -773,6 +783,7 @@ void Context::Execute()
 	// Advance instruction pointer
 	regs.incEip(inst.getSize());
 	
+	this->inst_count[inst.getOpcode()]++;
 	// Call instruction emulation function
 	if (inst.getOpcode())
 	{

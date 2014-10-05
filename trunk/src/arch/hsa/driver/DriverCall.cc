@@ -21,6 +21,8 @@
 	throw misc::Panic(misc::fmt("Unimplemented driver function %s", \
 	__FUNCTION__));
 
+#include <arch/hsa/asm/BrigDef.h>
+
 #include "Driver.h"
 
 namespace HSA
@@ -53,6 +55,51 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 {	
+	// Arguments		| Offset
+	// hsa_status_t		| 0
+	// callback		| 4
+	// data			| 8
+
+	// Retrieve argument buffer
+	char *arg_buffer = memory->getBuffer(args_ptr, 16,
+			mem::Memory::AccessRead);
+
+	// Get virtual machine setup
+	Emu *emu = Emu::getInstance();
+	this->component_iterator = emu->getComponentBeginIterator();
+	auto end_iterator = emu->getComponentEndIterator();
+
+	// No component available, return
+	if (end_iterator == this->component_iterator)
+	{
+		unsigned int hsa_status_t = 0;
+		memcpy(arg_buffer, &hsa_status_t, 4);
+		return 0;
+	}
+
+	// Get call back function name
+	unsigned function_directory_address =
+			*(unsigned *)memory->getBuffer(
+					args_ptr+4, 4,
+					mem::Memory::AccessRead);
+	BrigDirectiveFunction *callback_function_directory =
+			(BrigDirectiveFunction *)memory->getBuffer(
+					function_directory_address,
+					sizeof(BrigDirectiveFunction),
+					mem::Memory::AccessRead);
+	std::string callback_function_name =
+			BrigStrEntry::GetStringByOffset(ProgramLoader::getInstance()->getBinary(),
+			callback_function_directory->name);
+
+	// Create new stack frame
+	StackFrame *stack_frame = new StackFrame(
+			ProgramLoader::getInstance()->getFunction(callback_function_name),
+			NULL);
+
+	// Pass argument into stack frame
+	VariableScope *function_args = stack_frame->getFunctionArguments();
+
+	function_args->setVariableValue("a", 1);
 
 	return 0;
 }

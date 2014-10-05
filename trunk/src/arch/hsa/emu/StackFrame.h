@@ -166,9 +166,6 @@ public:
 	/// Return variable scope
 	VariableScope *getVariableScope() const { return variable_scope.get(); }
 
-	/// Setup function arguments and copy their values.
-	void PrepareFunctionArguments(VariableScope *host_scope);
-
 	/// Convert the PC pointer to the offset of the current instruction
 	/// in code section
 	unsigned int getCodeOffset() const;
