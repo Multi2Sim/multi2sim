@@ -103,6 +103,20 @@ public:
 	/// Set host CPU component
 	void setHostCPUComponent(Component *cpu) { host_cpu = cpu; }
 
+	/// Get a iterator pointing the first components
+	std::list<std::unique_ptr<Component>>::iterator
+			getComponentBeginIterator()
+	{
+		return components.begin();
+	}
+
+	/// Get a iterator pointing the pass the last components
+	std::list<std::unique_ptr<Component>>::iterator
+			getComponentEndIterator()
+	{
+		return components.end();
+	}
+
 	/// Dump component list for debug purpose
 	void DumpComponentList(std::ostream &os) const;
 

@@ -104,6 +104,8 @@ class Context
 {
 public:
 
+	unsigned long long inst_count[InstOpcodeCount];
+
 	/// Context list identifiers
 	enum ListType
 	{

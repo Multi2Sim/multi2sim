@@ -23,6 +23,7 @@
 #include <arch/common/Driver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
+#include <arch/hsa/emu/Emu.h>
 
 namespace HSA
 {
@@ -80,6 +81,9 @@ class Driver: public comm::Driver
 
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
+
+	// The iterator pointing to the components
+	std::list<std::unique_ptr<Component>>::iterator component_iterator;
 
 public:
 
