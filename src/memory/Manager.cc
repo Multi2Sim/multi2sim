@@ -78,7 +78,8 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 		return address;
 	}
 
-	// Traverse all holes to find an available slot
+	// Traverse all holes that have a bigger size than the required space to
+	// find an available slot
 	for (auto it = holes.lower_bound(size); it != holes.end(); it++)
 	{
 		if (canHoleContain(it->second, size, alignment))
