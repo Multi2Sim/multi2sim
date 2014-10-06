@@ -28,7 +28,6 @@ Variable::~Variable()
 	if (address > 0)
 	{
 		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
-		//std::cout << "Free variable " << *(this) << "\n";
 		manager->Free(address);
 	}
 }

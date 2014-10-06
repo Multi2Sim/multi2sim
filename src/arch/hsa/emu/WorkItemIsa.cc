@@ -2024,7 +2024,6 @@ void WorkItem::Inst_LD_Aux()
 		std::string name = BrigStrEntry::GetStringByOffset(binary,
 				symbol->name);
 
-		std::cout << "Variable: " << name << "\n";
 		// Get offset
 		unsigned long long offset =
 				(((unsigned long long)address_operand_buf->offsetHi)
@@ -2036,7 +2035,6 @@ void WorkItem::Inst_LD_Aux()
 		host_buffer += offset;
 
 		// Move value from register or immediate into memory
-		std::cout << (unsigned long long)host_buffer << "\n";
 		storeOperandValue<T>(0, *((T *)host_buffer));
 	}
 	// If the address is stored in a register
@@ -2059,7 +2057,6 @@ void WorkItem::Inst_LD_Aux()
 				address, sizeof(T), mem::Memory::AccessRead);
 
 		// Move value from register or immediate into memory
-		// std::cout << (unsigned long long)host_buffer << "\n";
 		storeOperandValue<T>(0, *((T *)host_buffer));
 
 	}
@@ -2470,7 +2467,7 @@ void WorkItem::ExecuteInst_CALL()
 	// function
 	if (RuntimeInterceptor::getInstance()->Intercept(function_name, stack_top))
 	{
-		MovePcForwardByOne();
+		// MovePcForwardByOne();
 		return;
 	}
 
