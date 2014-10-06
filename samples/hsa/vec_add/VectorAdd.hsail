@@ -1,12 +1,3 @@
-//===- VectorAdd.hsail ----------------------------------------------------===//
-//
-//                     The HSA Simulator
-//
-// This file is distributed under the University of Illinois Open Source
-// License. See LICENSE.TXT for details.
-//
-//===----------------------------------------------------------------------===//
-
 version 0:96:$full:$small;
 
 function &hsa_init (arg_u32 %status) ();
@@ -25,7 +16,7 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %da
 	{
 		arg_u32 %err;
 		arg_u32 %attribute;
-		st_arg_u32 21, [%attribute];
+		st_arg_u32 13, [%attribute];
 		lda_private_u32 $s1, [%type];
 		arg_u32 %type_addr;
 		st_arg_u32 $s1, [%type_addr];
