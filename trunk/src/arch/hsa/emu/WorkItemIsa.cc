@@ -2016,24 +2016,53 @@ void WorkItem::Inst_LD_Aux()
 	// Get variable name
 	BrigOperandAddress *address_operand_buf =
 			(BrigOperandAddress *)inst.getOperand(1);
-	BrigDirectiveSymbol *symbol =
-			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-					binary, address_operand_buf->symbol);
-	std::string name = BrigStrEntry::GetStringByOffset(binary,
-			symbol->name);
+	if (address_operand_buf->symbol != 0)
+	{
+		BrigDirectiveSymbol *symbol =
+				(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
+						binary, address_operand_buf->symbol);
+		std::string name = BrigStrEntry::GetStringByOffset(binary,
+				symbol->name);
 
-	// Get offset
-	unsigned long long offset =
-			(((unsigned long long)address_operand_buf->offsetHi)
-					<< 32)
-			+ (unsigned long long)address_operand_buf->offsetLo;
+		std::cout << "Variable: " << name << "\n";
+		// Get offset
+		unsigned long long offset =
+				(((unsigned long long)address_operand_buf->offsetHi)
+						<< 32)
+				+ (unsigned long long)address_operand_buf->offsetLo;
 
-	// Get buffer in host
-	char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
-	host_buffer += offset;
+		// Get buffer in host
+		char *host_buffer = getVariableBuffer(inst_buf->segment, name);
+		host_buffer += offset;
 
-	// Move value from register or immediate into memory
-	storeOperandValue<T>(0, *((T *)host_buffer));
+		// Move value from register or immediate into memory
+		std::cout << (unsigned long long)host_buffer << "\n";
+		storeOperandValue<T>(0, *((T *)host_buffer));
+	}
+	// If the address is stored in a register
+	else
+	{
+		std::string register_name =
+				BrigStrEntry::GetStringByOffset(binary,
+						address_operand_buf->reg);
+		unsigned address = stack_top->getRegisterValue<unsigned>(
+				register_name);
+
+		unsigned long long offset =
+				(((unsigned long long)address_operand_buf->offsetHi)
+						<< 32)
+				+ (unsigned long long)address_operand_buf->offsetLo;
+		address += offset;
+
+		// Get buffer in host
+		char *host_buffer = Emu::getInstance()->getMemory()->getBuffer(
+				address, sizeof(T), mem::Memory::AccessRead);
+
+		// Move value from register or immediate into memory
+		// std::cout << (unsigned long long)host_buffer << "\n";
+		storeOperandValue<T>(0, *((T *)host_buffer));
+
+	}
 }
 
 
@@ -2099,27 +2128,51 @@ void WorkItem::Inst_ST_Aux()
 	// Retrieve variable name
 	BrigOperandAddress *address_operand_buf =
 			(BrigOperandAddress *)inst.getOperand(1);
-	BrigDirectiveSymbol *symbol =
-			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-					binary, address_operand_buf->symbol);
-	std::string name = BrigStrEntry::GetStringByOffset(binary,
-			symbol->name);
+	if (address_operand_buf->symbol != 0)
+	{
+		BrigDirectiveSymbol *symbol =
+				(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
+						binary, address_operand_buf->symbol);
+		std::string name = BrigStrEntry::GetStringByOffset(binary,
+				symbol->name);
 
-	// Get offset
-	unsigned long long offset =
-			(((unsigned long long)address_operand_buf->offsetHi)
-					<< 32)
-			+ (unsigned long long)address_operand_buf->offsetLo;
+		// Get offset
+		unsigned long long offset =
+				(((unsigned long long)address_operand_buf->offsetHi)
+						<< 32)
+				+ (unsigned long long)address_operand_buf->offsetLo;
 
-	// Retrieve memory accessing in the host space
-	char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
-	host_buffer += offset;
+		// Retrieve memory accessing in the host space
+		char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
+		host_buffer += offset;
 
-	// Move value from register or immediate into memory
-	T src0 = getOperandValue<T>(0);
-	memcpy((void *)host_buffer, (void *)&src0, sizeof(T));
+		// Move value from register or immediate into memory
+		T src0 = getOperandValue<T>(0);
+		memcpy((void *)host_buffer, (void *)&src0, sizeof(T));
+	}
+	else
+	{
+		std::string register_name =
+				BrigStrEntry::GetStringByOffset(binary,
+						address_operand_buf->reg);
+		unsigned address = stack_top->getRegisterValue<unsigned>(
+				register_name);
 
-	//std::cout << "Result of ST: " << *(T*)host_buffer << "\n";
+		unsigned long long offset =
+				(((unsigned long long)address_operand_buf->offsetHi)
+						<< 32)
+				+ (unsigned long long)address_operand_buf->offsetLo;
+		address += offset;
+
+		// Get buffer in host
+		char *host_buffer = Emu::getInstance()->getMemory()->getBuffer(
+				address, sizeof(T), mem::Memory::AccessWrite);
+
+		// Move value from register or immediate into memory
+		T src0 = getOperandValue<T>(0);
+		memcpy((void *)host_buffer, (void *)&src0, sizeof(T));
+	}
+
 }
 
 

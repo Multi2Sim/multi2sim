@@ -21,20 +21,20 @@ function &abort() ();
 function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %data)
 {
 	ld_arg_u64 $d1, [%agent];
+	private_u32 %type;
 	{
 		arg_u32 %err;
-		private_u32 %type;
 		arg_u32 %attribute;
 		st_arg_u32 21, [%attribute];
 		lda_private_u32 $s1, [%type];
 		arg_u32 %type_addr;
 		st_arg_u32 $s1, [%type_addr];
-		arg_u64 %agent;
-		st_arg_u64 $d1, [%agent];
-		call &hsa_agent_get_info (%err) (%agent, %attribute, %type_addr);
-		ld_private_u32 $s0, [%type];
+		arg_u64 %agent_arg;
+		st_arg_u64 $d1, [%agent_arg];
+		call &hsa_agent_get_info (%err) (%agent_arg, %attribute, %type_addr);
 	}
 	
+	ld_private_u32 $s0, [%type];
 	// If the device is a GPU
 	cmp_eq_b1_u32 $c0, $s0, 1;
 	cbr $c0, @not_gpu_agent;

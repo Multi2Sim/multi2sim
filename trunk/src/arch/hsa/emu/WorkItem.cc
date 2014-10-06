@@ -317,6 +317,12 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		// try function arguments.
 		argument_scope = stack_top->getFunctionArguments();
 		buffer = argument_scope->getBuffer(name);
+		argument_scope->Dump(std::cout, 0);
+		if(!buffer)
+		{
+			throw misc::Panic("Argument not found\n");
+		}
+
 		return buffer;
 		break;
 	}
@@ -406,6 +412,8 @@ bool WorkItem::Execute()
 	BrigInstEntry inst(stack_top->getPc(),
 			ProgramLoader::getInstance()->getBinary());
 
+	std::cout << inst << "\n";
+
 	// Deal with empty function
 	if (!stack_top->getFunction()->getLastInst())
 	{
@@ -426,7 +434,14 @@ bool WorkItem::Execute()
 	// Get the function according to the opcode and perform the inst
 	int opcode = inst.getOpcode();
 	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-	(this->*fn)();
+	try{
+		(this->*fn)();
+	}
+	catch(misc::Panic &panic)
+	{
+		std::cerr << panic.getMessage();
+		exit(1);
+	}
 
 
 	// Return false if execution finished

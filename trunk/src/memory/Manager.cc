@@ -169,7 +169,7 @@ unsigned Manager::AllocateLarge(unsigned size)
 		throw misc::Error("Guest program out of memory.");
 
 	// Use map to allocate a new page
-	memory->Map(address, size, 0x06);
+	memory->Map(address, size, 0x07);
 
 	// Allocate the chunk
 	CreatePointer(address, page_aligned_size);
@@ -383,7 +383,7 @@ Manager::Chunk *Manager::RequestOnePage()
 		throw misc::Error("Guest program out of memory.");
 
 	// Use map to allocate a new page
-	memory->Map(addr, memory->PageSize, 0x06);
+	memory->Map(addr, memory->PageSize, 0x07);
 
 	// Make the whole page a big hole
 	Chunk *hole = CreateHole(addr, memory->PageSize);

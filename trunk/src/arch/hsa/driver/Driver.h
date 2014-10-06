@@ -25,6 +25,8 @@
 #include <lib/cpp/Debug.h>
 #include <arch/hsa/emu/Emu.h>
 
+#include "runtime.h"
+
 namespace HSA
 {
 
@@ -83,7 +85,8 @@ class Driver: public comm::Driver
 	static const CallFn call_fn[CallCodeCount];
 
 	// The iterator pointing to the components
-	std::list<std::unique_ptr<Component>>::iterator component_iterator;
+	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
+			component_iterator;
 
 public:
 

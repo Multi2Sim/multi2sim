@@ -75,8 +75,8 @@ class Emu : public comm::Emu
 	// can be obtained with a call to getInstance()
 	Emu();
 
-	// list of available components
-	std::list<std::unique_ptr<Component>> components;
+	// Maps from a 64-bit identifier to component
+	std::map<unsigned long long, std::unique_ptr<Component>> components;
 
 	// Host CPU component, the unique_ptr is kept in the list components.
 	Component *host_cpu;
@@ -104,17 +104,27 @@ public:
 	void setHostCPUComponent(Component *cpu) { host_cpu = cpu; }
 
 	/// Get a iterator pointing the first components
-	std::list<std::unique_ptr<Component>>::iterator
+	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
 			getComponentBeginIterator()
 	{
 		return components.begin();
 	}
 
 	/// Get a iterator pointing the pass the last components
-	std::list<std::unique_ptr<Component>>::iterator
+	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
 			getComponentEndIterator()
 	{
 		return components.end();
+	}
+
+	/// Get component by handler
+	Component *getComponent(unsigned long long handler) const
+	{
+		auto it = components.find(handler);
+		if (it == components.end())
+			return nullptr;
+		else
+			return it->second.get();
 	}
 
 	/// Dump component list for debug purpose

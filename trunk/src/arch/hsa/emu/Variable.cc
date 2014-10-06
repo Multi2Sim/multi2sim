@@ -54,15 +54,17 @@ void Variable::DumpValue(std::ostream &os) const
 	// Dump the value
 	os << *buffer;
 
+
 	// Dump hex format
-	char *char_buffer = (char *)buffer;	
+	unsigned char *char_buffer = (unsigned char *)buffer;
+
 	os << " ( 0x";
 	for (unsigned int i = 0; i < sizeof(T); i++)
 	{
-		os << misc::fmt("%x", *char_buffer);
-		char_buffer++;
+		os << misc::fmt("%02x", char_buffer[sizeof(T) - i - 1]);
 	}
 	os << " ) ";
+
 }
 
 
@@ -92,6 +94,7 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 		// Dump information of the argument.
 		os << misc::fmt("%s", name.c_str());
 	}
+
 
 	// If address is allocated
 	if (address)
@@ -154,6 +157,7 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 			break;
 		}
 	}
+
 
 	// New line
 	// os << "\n";
