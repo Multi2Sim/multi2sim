@@ -171,8 +171,9 @@ void RuntimeInterceptor::PassBackByValue(unsigned arg_address,
 		memcpy(buf_in_caller, buffer_in_callee, arg_size);
 
 		// Move the pointer forward
-		 address_offset += arg_size;
+		address_offset += arg_size;
 	}
+
 }
 
 

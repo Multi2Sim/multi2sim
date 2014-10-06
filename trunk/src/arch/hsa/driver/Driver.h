@@ -75,6 +75,11 @@ class Driver: public comm::Driver
 #include "Driver.def"
 #undef DEFCALL
 
+	// Stores the argument received when agent_iterate is called, when
+	// next_agent function is called, reuse the arguments
+	mem::Memory *agent_iterator_memory;
+	unsigned agent_iterator_args_ptr;
+
 	// ABI call names
 	static const char *call_name[CallCodeCount];
 
@@ -105,6 +110,9 @@ public:
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
+
+	/// When the agent iterate callback returns, return to this function
+	int AgentIterateNext();
 
 	/// Destructor
 	~Driver();

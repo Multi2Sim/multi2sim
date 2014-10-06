@@ -668,8 +668,8 @@ void BrigInstEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
 	struct BrigInstAddr *inst = (struct BrigInstAddr *)base;
 	os << this->opcode2str((InstOpcode)inst->opcode);
-	dumpUnderscore(BrigEntry::seg2str(inst->segment));
-	dumpUnderscore(BrigEntry::type2str(inst->type));
+	dumpUnderscore(BrigEntry::seg2str(inst->segment), os);
+	dumpUnderscore(BrigEntry::type2str(inst->type), os);
 	this->dumpOperands(os);
 	os << ";\n";
 }

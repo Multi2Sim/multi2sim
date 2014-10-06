@@ -58,6 +58,10 @@ class StackFrame
 	// C registers, use a 8 bit char for each 1 bit boolean value
 	unsigned char c_registers[8];
 
+	// A flag that determines if this stack frame is running a callback
+	// function for agent iterate
+	bool agentIterateCallback = false;
+
 public:
 
 	/// Constructor
@@ -179,6 +183,19 @@ public:
 	/// Set next directive
 	void setNextDirective(char *directive) { next_dir = directive; }
 
+	/// Determines if the stack frame should return to the agent iterator
+	bool isAgentIterateCallback() const
+	{
+		return agentIterateCallback;
+	}
+
+	/// Set the stack frame to be an agent iterate call back, when this
+	/// function returns, pop the stack frame but do not return to the
+	/// caller.
+	void setAgentIterateCallback(bool agentIterateCallback = false)
+	{
+		this->agentIterateCallback = agentIterateCallback;
+	}
 };
 
 }  // namespace HSA

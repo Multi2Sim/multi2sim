@@ -18,6 +18,7 @@
  */
 
 #include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/driver/Driver.h>
 
 #include "WorkItem.h"
 
@@ -117,6 +118,14 @@ bool WorkItem::ReturnFunction()
 	{
 		callee_frame->Dump(Emu::isa_debug);
 		Emu::isa_debug << "\n";
+	}
+
+	// Check if this frame is a runtime callback.
+	if (callee_frame->isAgentIterateCallback())
+	{
+		stack.pop_back();
+		Driver::getInstance()->AgentIterateNext();
+		return true;
 	}
 
 	// Retrieve second last element
@@ -274,13 +283,7 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 	case BRIG_SEGMENT_GROUP:
 	case BRIG_SEGMENT_PRIVATE:
 	{
-		// Get argument scope if in curve bracket, otherwise, get
-		// function arguments
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		if (!variable_scope)
-		{
-			variable_scope = stack_top->getFunctionArguments();
-		}
 		return variable_scope->getBuffer(name);
 		break;
 	}
@@ -317,7 +320,7 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		// try function arguments.
 		argument_scope = stack_top->getFunctionArguments();
 		buffer = argument_scope->getBuffer(name);
-		argument_scope->Dump(std::cout, 0);
+		//argument_scope->Dump(std::cout, 0);
 		if(!buffer)
 		{
 			throw misc::Panic("Argument not found\n");
@@ -411,8 +414,6 @@ bool WorkItem::Execute()
 	StackFrame *stack_top = stack.back().get();
 	BrigInstEntry inst(stack_top->getPc(),
 			ProgramLoader::getInstance()->getBinary());
-
-	std::cout << inst << "\n";
 
 	// Deal with empty function
 	if (!stack_top->getFunction()->getLastInst())

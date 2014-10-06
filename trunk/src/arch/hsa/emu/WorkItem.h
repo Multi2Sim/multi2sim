@@ -116,10 +116,6 @@ class WorkItem
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
 
- 	// Move the program counter by one. Return false if current PC is
- 	// at the end of the function
- 	bool MovePcForwardByOne();
-
  	// Get the value of the index-th operand
  	template <typename Type>
  	Type getOperandValue(unsigned int index)
@@ -256,6 +252,10 @@ class WorkItem
 
  	/// Run one instruction for the workitem at the position pointed 
  	bool Execute();
+
+ 	/// Move the program counter by one. Return false if current PC is
+ 	/// at the end of the function
+ 	bool MovePcForwardByOne();
 
  	/// Dump backtrace information
  	void Backtrace(std::ostream &os) const;
