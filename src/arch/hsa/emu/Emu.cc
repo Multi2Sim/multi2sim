@@ -125,11 +125,11 @@ void Emu::setDefaultComponentList()
 {
 	// Add a CPU device
 	Component *cpu = Component::getDefaultCPUComponent();
-	components.push_back(std::unique_ptr<Component>(cpu));
+	components.insert(std::make_pair(1, std::unique_ptr<Component>(cpu)));
 
 	// Add a simple GPU component
 	Component *gpu = Component::getDefaultGPUComponent();
-	components.push_back(std::unique_ptr<Component>(gpu));
+	components.insert(std::make_pair(2, std::unique_ptr<Component>(gpu)));
 
 	// Set the CPU as the host component
 	setHostCPUComponent(cpu);
@@ -142,7 +142,7 @@ void Emu::DumpComponentList(std::ostream &os = std::cout) const
 	os << "Components installed.\n";
 	for (auto it = components.begin(); it != components.end(); it++)
 	{
-		os << *((*it).get());
+		os << *(it->second.get());
 	}
 }
 
@@ -162,7 +162,7 @@ bool Emu::Run()
 	// Let all components to execute their own task
 	for (auto it = components.begin(); it != components.end(); it++)
 	{
-		bool running = (*it)->Execute();
+		bool running = it->second->Execute();
 		if (running)
 			stillRunning = true;
 	}

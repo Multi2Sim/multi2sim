@@ -57,14 +57,6 @@ public:
 	void DeclearVariable(const std::string &name, unsigned int size,
 			unsigned short type);
 
-	/// Get the value of an argument
-	template<typename T>
-	T getVariableValue(const std::string &name){};
-
-	/// Set the value of an argument
-	template<typename T>
-	void setVariableValue(const std::string &name, T value){};
-
 	/// Get the address of a certain variable, return 0 if the variable is
 	/// not defined
 	unsigned getAddress(const std::string &name) const;

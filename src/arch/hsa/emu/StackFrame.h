@@ -154,6 +154,9 @@ public:
 		}
 	};
 
+	/// Return current work item
+	WorkItem *getWorkItem() const { return work_item; }
+
 	/// Return argument scope
 	VariableScope *getArgumentScope() const { return argument_scope.get(); }
 
