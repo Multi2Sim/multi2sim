@@ -39,6 +39,9 @@ class RuntimeInterceptor
 	// Maps from the function name to call number
 	static misc::StringMap function_name_to_call_map;
 
+	// The workitem that the last runtime function is executed.
+	WorkItem *intercepted_work_item;
+
 	// Private constructor
 	RuntimeInterceptor();
 
@@ -68,6 +71,12 @@ public:
 
 	/// Destructor
 	~RuntimeInterceptor();
+
+	/// Returns the intercepted work item
+	WorkItem *getInterceptedWorkItem() const
+	{
+		return intercepted_work_item;
+	}
 };
 
 }  // namespace HSA

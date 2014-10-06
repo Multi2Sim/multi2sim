@@ -260,6 +260,12 @@ class WorkItem
  	/// Dump backtrace information
  	void Backtrace(std::ostream &os) const;
 
+ 	/// Push a stack frame into the stack
+ 	void PushStackFrame(StackFrame *stack_frame)
+ 	{
+ 		this->stack.push_back(std::unique_ptr<StackFrame>(stack_frame));
+ 	}
+
  	/// Finish the execution of a function by poping a frame from the stack
  	///
  	/// \return

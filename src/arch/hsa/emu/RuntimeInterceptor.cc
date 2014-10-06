@@ -186,6 +186,9 @@ bool RuntimeInterceptor::Intercept(const std::string &function_name,
 	if(error)
 		return false;
 
+	// Set current intercepted work item
+	intercepted_work_item = stack_top->getWorkItem();
+
 	// Copy arguments
 	unsigned arg_address = PassArgumentsInByValue(function_name, stack_top);
 
