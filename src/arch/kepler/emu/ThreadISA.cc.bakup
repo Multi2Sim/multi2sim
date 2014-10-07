@@ -105,23 +105,6 @@ enum
 };
 // to be added : %globaltimer, %globaltimer_lo, %globaltimer_hi
 
-void Thread::ExecuteInst_Special()
-{
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
-	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
-	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-}
-
-
 void Thread::ExecuteInst_IMUL_A(Inst *inst)
 {
 	this->ISAUnimplemented(inst);
@@ -145,18 +128,29 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	int dst;
 	int srcA, srcB;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -185,13 +179,9 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 		dst = srcA * srcB;
 
 		// Write
-
 		dst_id = fmt.dst;
 		WriteGPR(dst_id, dst);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_ISCADD_A(Inst *inst)
@@ -213,18 +203,29 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	int srcA, srcB;
 	int shamt;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -261,10 +262,6 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 		dst_id = fmt.dst;
 		this->WriteGPR(dst_id, dst);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
@@ -280,9 +277,6 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 {
 	std:: cerr <<"ISCADD B"<<std::endl;
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_IMAD(Inst *inst)
@@ -303,18 +297,29 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	int dst;
 	int srcA, srcB, src3;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -352,10 +357,6 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 		this->WriteGPR(dst_id, dst);
 
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
@@ -372,20 +373,32 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	// Get Warp
 	Warp *warp = this->getWarp();
 
-	unsigned active;
-
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -448,13 +461,17 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 		this->WriteGPR(dst_id, dst);
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
+	/*
+		std::cerr << "IADD dst " << dst
+		         << " id " << id << " id_in_warp " << id_in_warp
+		         << " warp_id " << warp->getId()
+		         << " block_id " << sr[37].u32 << std::endl;
+		         */
+	// Debug information
 	Emu::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
 	Emu::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
-					"= %u\n",inst->getName(),this->id_in_warp);
+					"= %u\n",inst->getName(),this->getIdInWarp());
 	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
 					,inst->getName(),src1);
 	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
@@ -484,18 +501,29 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	int dst;
 	int srcA, srcB;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -530,10 +558,6 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 		dst_id = fmt.dst;
 		this->WriteGPR(dst_id, dst);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
     std::cerr<< "Warp id "<< std::hex
@@ -545,8 +569,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 
 }
 
-
-void Thread::ExecuteInst_ISETP_A(Inst *inst)
+void Thread::ExecuteInst_ISETP(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -568,18 +591,29 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	unsigned bool_op;
 	bool cmp_res;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -587,7 +621,6 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		pred = this->GetPred(pred_id);
 	else
 		pred = ! this->GetPred(pred_id - 8);
-
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -661,10 +694,6 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		if (pred_id_2 != 7)
 			this->WritePred(pred_id_2, pred_2);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
@@ -675,144 +704,6 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 				<<std::endl;
 	}
 }
-
-
-void Thread::ExecuteInst_ISETP_B(Inst *inst)
-{
-	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
-
-	// Predicates and active masks
-	//Emu* emu = Emu::getInstance();
-	Warp* warp = this->getWarp();
-	unsigned pred;
-	unsigned pred_id;
-	unsigned active;
-
-    // Operands
-	unsigned pred_id_1, pred_id_2, pred_id_3;
-	unsigned pred_1, pred_2, pred_3;
-	unsigned srcA_id;
-	int srcA, srcB;
-	unsigned cmp_op;
-	unsigned bool_op;
-	bool cmp_res;
-
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
-	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
-	}
-
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
-
-	// Predicate
-	pred_id = fmt.pred;
-	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
-	else
-		pred = ! this->GetPred(pred_id - 8);
-
-
-	// Execute
-	if (active == 1 && pred == 1)
-	{
-		// Sources
-		srcA_id = fmt.mod0;
-		srcA = this->ReadGPR(srcA_id);
-
-		if (fmt.srcB_mod == 1)
-		{
-            srcB = fmt.srcB;
-            if (srcB >> 18)
-            	srcB |= 0xfff80000;
-		}
-
-		else if (fmt.srcB_mod == 0)
-		{
-			throw misc::Panic("Undetected behavior srcB_mod == 0\n");
-		}
-		else
-			throw misc::Panic("Error srcB_mod\n");
-
-		// Predicates
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
-		pred_id_3 = fmt.mod1 & 0x7;
-
-		pred_3 = this->GetPred(pred_id_3);
-
-		if (((fmt.mod1 >> 3) & 0x1))
-			pred_3 = !pred_3;
-
-		// Compare
-        cmp_op = ((fmt.op1 & 0x1u) << 2) | (fmt.mod1 >> 10);
-
-		if (cmp_op == 1)
-			cmp_res = srcA < srcB;
-		else if (cmp_op == 2)
-			cmp_res = srcA == srcB;
-		else if (cmp_op == 3)
-			cmp_res = srcA <= srcB;
-		else if (cmp_op == 4)
-			cmp_res = srcA > srcB;
-		else if (cmp_op == 5)
-			cmp_res = srcA != srcB;
-		else if (cmp_op == 6)
-			cmp_res = srcA >= srcB;
-		else
-			std::cerr << __func__ <<": compare operation (" << cmp_op << ") not implemented\n";
-
-		// Logic
-		bool_op = (fmt.mod1 >> 6) & 0x3;
-		if (bool_op == 0)
-		{
-			pred_1 = cmp_res && pred_3;
-			pred_2 = !cmp_res && pred_3;
-		}
-		else if (bool_op == 1)
-		{
-			pred_1 = cmp_res || pred_3;
-			pred_2 = !cmp_res || pred_3;
-		}
-		else if (cmp_op == 2)
-		{
-			pred_1 = (cmp_res && !pred_3) || (!cmp_res && pred_3);
-			pred_2 = (cmp_res && pred_3) || (!cmp_res && !pred_3);
-		}
-		else
-			std::cerr << __func__ <<": bitwise operation " << bool_op << " not implemented\n";
-
-		/* Write */
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
-		if (pred_id_1 != 7)
-			this->WritePred(pred_id_1, pred_1);
-		if (pred_id_2 != 7)
-			this->WritePred(pred_id_2, pred_2);
-	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
-	if(getenv("M2S_KPL_ISA_DEBUG"))
-	{
-		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISETP op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-				<<" cmp "<< cmp_op << " bool " << bool_op
-				<<std::endl;
-	}
-
-}
-
 
 void Thread::ExecuteInst_EXIT(Inst *inst)
 {
@@ -827,19 +718,31 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	unsigned pred_id;
 	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
+	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
 		pred = this->GetPred(pred_id);
@@ -853,8 +756,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 			warp->setFinishedEmu(true);
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	warp->setTargetpc(warp->getPC()+warp->getInstSize());
 }
 
 void Thread::ExecuteInst_BRA(Inst *inst)
@@ -862,46 +764,39 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// Get warp
 	Warp *warp = this->getWarp();
 
-	// Predicate register
-	unsigned pred;
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
+	{
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
 
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
 	unsigned active;
+
+	// If the thread is active
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesBRA format = inst_bytes.bra;
 
-	// Get current PC
-	unsigned pc = warp->getPC();
-
-	// Get Instruction size
-	unsigned inst_size = warp->getInstSize();
-
-	// Get instruction offset
-	unsigned offset = format.offset & 0xffffff;
-
-	// Branch direction 0: forward branch, 1: backward branch
-	unsigned branch_direction = offset >> 23;
-
-    // number of taken thread
-    unsigned taken_thread;
-
-    // number of active thread
-    unsigned active_thread;
-
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
-	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
-	}
-
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
-
+	// Predicate register
+	unsigned pred;
 
 	// Predicate register ID
 	unsigned pred_id;
@@ -913,108 +808,122 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	else
 		pred = !this->GetPred(pred_id-8);
 
-	// Clear temp_entry and taken_thread before BRA execute
-	if (id_in_warp == 0)
-	{
-		warp->resetTempEntry();
-		warp->setTakenThread(0);
-	}
-
-	// The threads taking the BRA will set temp_entry's mask to 1
-	// This mask will be pushed into stack then.
-	// taken_thread adds 1
+	// Execute and update the active mask value  ���������entry������  ������������entry������
 	if(active == 1 && pred == 1)
 	{
-		warp->setTempEntryActiveMaskBit(id_in_warp);
-		warp->incrementTakenThread();
+		// In execution part, we need to read the active mask in current stack
+		// entry and set the value to next stack entry
+		warp->incrSyncStkTop();
+		warp->setSyncStkTopActiveMaskBit(this->getIdInWarp(), 1);
+		warp->setSyncStkTopInst("");  // need do that? or initialize at warp()
+		warp->decrSyncStkTop();
+		warp->increaseTakenThread(1);
+	}
+	else
+	{
+		warp->incrSyncStkTop();
+		warp->setSyncStkTopActiveMaskBit(this->getIdInWarp(), 0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
-	// At the last thread, push temp_entry's mask into stack,
-	// along with BRA target address.
-	if (id_in_warp == warp->getThreadCount() - 1)
+	// Get current PC
+	unsigned pc;
+	pc = warp->getPC();
 
+	// Get Instruction size
+	unsigned inst_size;
+	inst_size = warp->getInstSize();
+
+	// Get instruction offset
+	unsigned offset;
+	offset = format.offset;
+
+	// Branch direction 0: forward branch, 1: backward branch
+	unsigned branch_direction;
+	branch_direction = offset >> 23;
+
+	// Update sync stack when the last thread is executed
+	if(this->getIdInWarp() == warp->getThreadCount() - 1)
 	{
+		// Get number of taken thread
+		unsigned taken_thread = warp->getTakenThread();
 
-        taken_thread = warp->getTakenThread();
-        active_thread = warp->getActiveMaskBitCount();
+		// Get number of active thread
+		unsigned active_thread = warp->getSyncStkTopActiveCount();
 
 		// Update sync stack and PC
-        //  no thread in the active mask taken branch
-		if(taken_thread == 0)
+		if(taken_thread == 0)  //  no thread in the active mask taken branch
 		{
 			warp->setTargetpc(pc + inst_size);
+			warp->incrSyncStkTop();
+			warp->resetSyncStkTopActiveMask();
+			warp->decrSyncStkTop();
 		}
-		else
-            // all thread in active
-            // mask taken branch
-			if (taken_thread == warp->getThreadCount())
-            {
-                    warp->setTargetpc(pc + inst_size + offset);
-            }
-        // Current instruction has divergence.
-		else
+		else if (taken_thread == warp->getThreadCount()) // all thread in active
+		{                                       		 // mask taken branch
+			warp->setTargetpc(pc + inst_size + offset);
+			warp->incrSyncStkTop();
+			warp->resetSyncStkTopActiveMask();
+			warp->decrSyncStkTop();
+		}
+		else // branch will diverge
 		{
-			assert(branch_direction == 1 || branch_direction == 0);
-
-            // forward branch diverge
-			if(branch_direction == 0)
-			{
-				// For forward branch, we consist the conditions
-				// pred != PT and pred == PT,
-				// which means whether or not new level divergence happens,
-				// push the mask in temp_entry, and reconvergence pc
-				// into stack
-				// and clear all warp active mask bits taking the BRA.
-				// Target pc goes to the next instruction
-					warp->setTempEntryAddressAndType(
-							pc + inst_size + offset,
-							taken_thread == active_thread ?
-									NODIVBRA : DIVBRA
-							);
-
-					warp->pushTempEntry();
-
-					warp->setActiveMask(
-							warp->getActiveMask()^
-							warp->getTempEntryActiveThreadMask());
-
-					assert(active_thread ==
-							warp->getActiveMaskBitCount() + taken_thread);
-
-					warp->setTargetpc(pc + inst_size);
-
-			}
-			// Backward diverge happens only when pred == PT,
-			// meaning no new level divergence.
-			// Only happens in loop end to jump back.
-			// Divergent backward branch has never been observed,
-			// so we do not supported it.
-			else
-			{
-				if (taken_thread < active_thread)
+			if(branch_direction == 0) // forward branch diverge
+			{ // If taken thread is less than active thread means the divergence
+			  // happens. need to assign the active mask for the next two stack
+			  // entries and increase the stack top pointer by 2.
+				if(taken_thread < active_thread)
 				{
-                    throw misc::Panic("Divergent backward branch is not supported.\n"
-                    		"		Contact the author with your code.\n");
+					warp->incrSyncStkTop();
+					warp->setSyncStkTopStartAddress(pc + inst_size + offset);
+					unsigned mask = warp->getSyncStkTopActiveMask();
+					warp->setSyncStkTopOriginalActiveThreadMask(mask);
+					//warp->setSyncStkTopInst(""); // FIXME
+					mask = ~mask;
+					warp->incrSyncStkTop();
+					warp->setSyncStkTopActiveMask(mask);
+					warp->setSyncStkTopOriginalActiveThreadMask(mask);
+					//warp->setSyncStkTopInst(""); // FIXME
+					warp->setSyncStkTopStartAddress(pc + inst_size);
+					//warp->decrSyncStkTop();
+					//warp->decrSyncStkTop();  need to increase the stack top pointer by 2
+					warp->setTargetpc(pc + inst_size);
+				}
+				else // If taken thread is equal to active thread means no
+				{	 // divergence so no operation.	Just set the target pc.
+					warp->setTargetpc(pc + inst_size);
+				}
+			}
+			else // Backward diverge this case seems never used by NVCC
+			{	 // All backward branches seem no diverge. In case!
+				 // Do the same  thing as forward branch but set the target
+				 // address as pc+inst_size+offset
+				if(taken_thread < active_thread)
+				{
+					warp->incrSyncStkTop();
+					warp->setSyncStkTopStartAddress(pc + inst_size + offset);
+					unsigned mask = warp->getSyncStkTopActiveMask();
+					mask = ~mask;
+					warp->incrSyncStkTop();
+					warp->setSyncStkTopActiveMask(mask);
+					warp->setSyncStkTopStartAddress(pc + inst_size);
+					//warp->decrSyncStkTop();
+					//warp->decrSyncStkTop();  need to increase the stack top pointer by 2
+					warp->setTargetpc(pc + inst_size + offset);
 				}
 				else
 				{
-					// We may push stack here,
-					// and pop it at exact the next instruction,
-					// so we are probably able to omit the stack operation here
-                    offset |= 0xfff00000;
-					warp->setTargetpc(pc + inst_size + offset);
+					warp->setTargetpc(pc + inst_size);
 				}
 			}
 		}
 	}
 }
 
-
 void Thread::ExecuteInst_MOV_A(Inst *inst)
 {
 	std::cerr << "MOV_A" << std::endl;
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_MOV_B(Inst *inst)
@@ -1034,18 +943,29 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	unsigned dst_id, src_id;
 	int dst, src;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -1077,9 +997,6 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 		this->WriteGPR(dst_id, dst);
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
@@ -1095,20 +1012,33 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 {
 	// Get warp
 	Warp *warp = this->getWarp();
-	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1153,9 +1083,6 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 			throw misc::Panic(".S = 1 in Function MOV32I");
 		}
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_LD(Inst *inst)
@@ -1177,18 +1104,29 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	unsigned addr;
 	unsigned data_type;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -1228,10 +1166,6 @@ void Thread::ExecuteInst_LD(Inst *inst)
 			this->WriteGPR(dst_id + 3, dst[3]);
 		}
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
@@ -1270,20 +1204,31 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	unsigned pred_id;
 	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
-	// Predicate
+	// Predicte
 	pred_id = format.pred;
 	if(pred_id <= 7)
 		pred = this->GetPred(pred_id);
@@ -1348,9 +1293,6 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
@@ -1381,18 +1323,29 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	unsigned addr;
 	unsigned data_type;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -1429,9 +1382,6 @@ void Thread::ExecuteInst_ST(Inst *inst)
 			emu->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
@@ -1465,20 +1415,32 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	// Get Warp
 	Warp *warp = this->getWarp();
 
-	unsigned active;
-
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1552,7 +1514,6 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 {
 	// Get Warp
 	Warp *warp = this->getWarp();
-	unsigned active;
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1561,25 +1522,33 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 	// Get Operand
 	unsigned s = format.s;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
-
-	if (active == 1 && s == 1)
+	// Execute if s=1, pop all the stack until meet the first ssy instruction
+	// the stack is popped only one time for each warp
+	if((s == 1) && (this->getIdInWarp() == warp->getThreadCount() - 1))
 	{
-
+		while(warp->getSyncStkTopInst() != "SSY")
+		{
+			warp->setSyncStkTopActiveMask( (1ull << warp->getThreadCount()) - 1);
+			//warp->setSyncStkTopInst("");
+			warp->setSyncStkTopRecPC(0);
+			warp->setSyncStkTopStartAddress(0);
+			warp->decrSyncStkTop();
+		}
+		warp->setSyncStkTopActiveMask( (1ull << warp->getThreadCount()) - 1);
+		warp->setSyncStkTopInst("");
+		warp->setSyncStkTopRecPC(0);
+		warp->setSyncStkTopStartAddress(0);
+		warp->decrSyncStkTop();
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	nop_cnt++;
 }
 
 void Thread::ExecuteInst_S2R(Inst *inst)
@@ -1598,18 +1567,29 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	unsigned dst_id, src_id;
 	int dst, src;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
+	}
+
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active =  warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Predicate
 	pred_id = fmt.pred;
@@ -1637,10 +1617,6 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 		dst_id = fmt.dst;
 		this->WriteGPR(dst_id, dst);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
@@ -1656,20 +1632,33 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 {
 	// Get Warp
 	Warp *warp = this->getWarp();
-	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1755,9 +1744,6 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 		this->WritePred(dst_id, dst);
 
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_SHF(Inst *inst)
@@ -1812,24 +1798,22 @@ void Thread::ExecuteInst_PLONGJMP(Inst *inst)
 
 void Thread::ExecuteInst_SSY(Inst *inst)
 {
-	// Get emulator
-    Emu *emu = Emu::getInstance();
-
 	// Get warp
 	Warp *warp = this->getWarp();
 
-    unsigned address;
-    unsigned pc;
-
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instbytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1842,53 +1826,79 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	// Read Operand constmem
 	isconstmem = format.isconstmem;
 
-	// Execute at the last thread in warp
-	if(id_in_warp == warp->getThreadCount() - 1)
+	// Execute only one time for per warp
+	if(active == 1 && (this->getIdInWarp() == warp->getThreadCount() - 1))
 	{
 		if (isconstmem == 0)
 		{
 			// Push SSY instruction into stack and set the reconvergence address
+			// value of the next two nodes of the stack to offset + pc + 8
+			// after the operation there are 3 more entries in stack and then
+			// let the stack top pointer points to the ssy entry.
 			offset = format.offset;
-			pc = warp->getPC();
-
+			unsigned address;
+			unsigned pc = warp->getPC();
 			address = offset + pc + 8;
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopInst("SSY");
+			warp->resetSyncStkTopActiveMask();
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopRecPC(address);
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopRecPC(address);
+			warp->decrSyncStkTop();
+			warp->decrSyncStkTop();
 		}
-		else
-        {
-			if (isconstmem == 1)
-              	emu->ReadConstMem(1,4, (char*) &address);
-        }
-
-		SyncStackEntry entry(address,
-							warp->getActiveMask(),
-							SSY);
-        warp->pushStack(entry);
+		else if (isconstmem == 1)
+		{
+			Emu *emu = Emu::getInstance();
+			unsigned address;
+			emu->ReadConstMem(1,4, (char*) &address);
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopInst("SSY");
+			warp->resetSyncStkTopActiveMask();
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopRecPC(address);
+			warp->incrSyncStkTop();
+			warp->setSyncStkTopRecPC(address);
+			warp->decrSyncStkTop();
+			warp->decrSyncStkTop();
+		}
 	}
 
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_PBK(Inst *inst)
 {
 	// Get warp
-	/*
 	Warp *warp = this->getWarp();
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active status
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	//Active status
 	unsigned active;
 
 	// If the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1910,9 +1920,6 @@ void Thread::ExecuteInst_PBK(Inst *inst)
 		offset = format.offset;
 		warp->setSyncStkTopPreRelativeAddress(offset);
 	}
-	*/
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_PCNT(Inst *inst)
@@ -1959,20 +1966,33 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 {
 	// Get warp
 	Warp *warp = this->getWarp();
-	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if((this->getIdInWarp() == 0) &&
+			(warp->getPC() ==
+					warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// Determine if the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes foramt
 	InstBytes inst_bytes =inst->getInstBytes();
@@ -1994,7 +2014,7 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 	// Execute
 	if(active == 1 && pred == 1)
 	{
-		//warp->setSyncStkTopActiveMaskBit(0,this->id_in_warp);
+		warp->setSyncStkTopActiveMaskBit(0,this->getIdInWarp());
 	}
 
 }
@@ -2053,20 +2073,32 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 {
 	// Get Warp
 	Warp *warp = this->getWarp();
-	unsigned active;
 
-	// Determine whether the warp reaches reconvergence pc.
-	// If it is, pop the synchronization stack top and restore the active mask
-	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	// Determine whether the warp arrives the PBK address. If it is, restore the
+	// active mask to the original active mask.
+	if(warp->getPC() == warp->getSyncStkTopPreRelativeAddress())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		unsigned mask = warp->getSyncStkTopOriginalActiveThreadMask();
+		warp->setSyncStkTopActiveMask(mask);
 	}
 
-	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	// Pop sync stack when the warp finish else(if) part and begin to execute if
+	// (else) part. Must start at the first thread
+	if ((this->getIdInWarp() == 0) &&
+			(warp->getPC() == warp->getSyncStkStartAddress(warp->getSyncStkTop() - 1)))
+	{
+		warp->setSyncStkTopRecPC(0);
+		warp->resetSyncStkTopActiveMask();
+		warp->setSyncStkTopStartAddress(0);
+		warp->setSyncStkTopInst("");
+		warp->decrSyncStkTop();
+	}
+
+	// Active status
+	unsigned active;
+
+	// If the thread is active
+	active = warp->getSyncStkTopActiveMaskBit(this->getIdInWarp());
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -2119,10 +2151,5 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 		// Write the value to destination register
 		this->WriteGPR(dst_id, dst);
 	}
-
-	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 }
-
 }	// namespace Kepler

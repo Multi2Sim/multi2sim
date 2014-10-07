@@ -30,7 +30,6 @@ namespace Kepler
  * Public Functions
  */
 
-unsigned Thread::nop_cnt = 0;
 
 Thread::Thread(Warp *warp, int id)
 {
@@ -51,6 +50,9 @@ Thread::Thread(Warp *warp, int id)
 	// Initialize  general purpose registers
 	for (int i = 0; i < 64; ++i)
 		gpr[i].u32 = 0;
+
+	// Initialize CC register
+	cc.carry = 0;
 
 	// Initialize special registers
 	for (int i = 0; i < 82; ++i)
@@ -82,6 +84,13 @@ void Thread::Execute(InstOpcode opcode, Inst *inst)
 {
 	(this->*(inst_func[opcode]))(inst);
 }
+
+
+void Thread::ExecuteSpecial()
+{
+	ExecuteInst_Special();
+}
+
 
 void Thread::ISAUnimplemented(Inst *inst)
 {
