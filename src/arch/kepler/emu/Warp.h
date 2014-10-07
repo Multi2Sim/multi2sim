@@ -56,8 +56,7 @@ public:
 enum EntryType
 {
 	NOTCONTROL = 0,
-	NODIVBRA = 1,
-	DIVBRA,
+	BRA = 1,
 	SSY,
 	PBK,
 	PCNT
@@ -73,7 +72,7 @@ struct SyncStackEntry
 	// Or stored active mask bit to be continued for PCTN
 	unsigned int active_thread_mask;
 
-	// Instruction type. Use to mark PBK for now.
+	// Instruction type. Use to mark BRA and PBK for now.
 	// BRK will use this mark to clear the specific active mask bit
 	// From all entries before the PBK entry.
 	EntryType entry_type;
@@ -149,7 +148,8 @@ class Warp
 	int active_mask_push;
 	int active_mask_pop;
 	unsigned at_barrier_thread_count;
-	unsigned finished_thread_count;
+
+	unsigned finished_thread;
 	bool finished_emu;
 	bool at_barrier;
 
@@ -235,17 +235,7 @@ public:
 	}
 
 	/// Get number of 1s in active mask
-	unsigned getActiveMaskBitCount() const
-	{
-		unsigned num = 0;
-
-		for (unsigned i = 0; i < thread_count; i++)
-			num += (active_mask >> i) & 1u;
-
-		assert(num <= thread_count);
-
-		return num;
-	}
+	unsigned getActiveMaskBitCount() const;
 
 	/// Get Sync stack top
 	unsigned getStackTopReconvPc() const
@@ -256,12 +246,17 @@ public:
 			return 0;
 	}
 
-	/// Get Sync stack top
+	/// Get Sync stack top active thread mask
 	unsigned getStackTopActiveThreadMask() const
 	{
 		return sync_stack.back().active_thread_mask;
 	}
 
+	/// Get Sync stack top active thread mask
+	EntryType getStackTopEntryType() const
+	{
+		return sync_stack.back().entry_type;
+	}
 
 	/// Get active thread mask stored in temp_entry
 	unsigned getTempEntryActiveThreadMask() const
@@ -273,10 +268,7 @@ public:
 	unsigned getThreadCount() const { return thread_count; }
 
 	/// Get the number of threads that have finished execution.
-	unsigned getFinishedThreadCount() const
-	{
-		return finished_thread_count;
-	}
+	unsigned getFinishedThreadCount() const;
 
 	// FIXME apply formatting changes below, as done above. You continue.
 	/// Get inst_size
@@ -328,6 +320,15 @@ public:
 
 	////////////////////////////////////////////////////////////////////
 	// Set finished_emu
+    //
+
+    /// Set finished_thread's bit
+    /// \param num
+    /// the bit number to be set
+    void setFinishedThreadBit(unsigned num)
+    {
+    	finished_thread |= 1u << num;
+    }
 
 	void setFinishedEmu (bool value) { finished_emu = value;}
 
@@ -354,12 +355,17 @@ public:
     /// Pop Synchronization stack
     void popStack();
 
+    /// The atom operation of each thread to clear its bits
+    /// in all entries in stack before the latest PBK
+    /// used in BRK, declared in warp scope to avoid being verbose
+    void BRKStack(unsigned id_in_warp);
+
     /// Initial (or reset) temp_entry
     void resetTempEntry()
     {
     	temp_entry.active_thread_mask = 0u;
     	temp_entry.entry_type = NOTCONTROL;
-    	temp_entry.reconv_pc = unsigned(-1);
+        temp_entry.reconv_pc = unsigned(-1);
     }
 
 	/// Emulate the next instruction in the warp at the current

@@ -40,7 +40,7 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 
 	// Initialization
 	// Calculate the warp ID in grid
-	this->id = id + thread_block->getId() * thread_block->getWarpsInWorkgroup();
+	this->id = id + thread_block->getId() * thread_block->getWarpCount();
 
 	// Get the ID in thread block
 	id_in_thread_block = id;
@@ -52,11 +52,11 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	this->thread_block = thread_block;
 
 	// Allocate threads
-	if (id < thread_block->getWarpsInWorkgroup() - 1)
+	if (id < thread_block->getWarpCount() - 1)
 		thread_count = warp_size;
 	else
 		thread_count = grid->getThreadBlockSize() -
-		(thread_block->getWarpsInWorkgroup() - 1) * warp_size;
+		(thread_block->getWarpCount() - 1) * warp_size;
 
 	// Instruction
 	pc = 0;
@@ -65,14 +65,17 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	inst_buffer_size = grid->getInstBufferSize();
 
 	// Initialize active mask
-	active_mask = unsigned(-1);
+	if (thread_count == warp_size)
+            active_mask = unsigned(-1);
+	else
+		active_mask = (1u << thread_count) - 1;
 
 	// Initialize temp_entry
 	resetTempEntry();
 
 	// Reset flags
 	at_barrier_thread_count = 0;
-	finished_thread_count = 0;
+	finished_thread = 0;
 	finished_emu = false;		//make it clear
 	taken_thread = 0;
 
@@ -136,15 +139,16 @@ void Warp::Execute()
 				thread_id->get()->ExecuteSpecial();
 			}
 	}
-	// Finish
 
+	// Finish
 	if (finished_emu)
 	{
 
+		thread_block->incWarpsCompletedEmu();
+
 		// Check if thread block finished kernel execution
-		//copied from SI, delete it if not necessary/
-		if (thread_block->getFinishedEmu() ==
-				thread_block->getWarpsInWorkgroup())
+		if (thread_block->getWarpsCompletedEmuCount() ==
+				thread_block->getWarpCount())
 		{
 			thread_block->setFinishedEmu(true);
 		}
@@ -177,8 +181,8 @@ void Warp::pushStack(SyncStackEntry element)
 				// into other type of entry if their reconv_pcs are the same.
 				if (i->reconv_pc == element.reconv_pc)
 				{
-						if (i->entry_type == NODIVBRA
-							|| element.entry_type == NODIVBRA)
+						if (i->entry_type == BRA
+							|| element.entry_type == BRA)
 						{
 							i->active_thread_mask |= element.active_thread_mask;
 							i->entry_type = i->entry_type > element.entry_type?
@@ -209,9 +213,57 @@ void Warp::pushTempEntry()
 	pushStack(temp_entry);
 }
 
+
 void Warp::popStack()
 {
 		sync_stack.pop_back();
 }
+
+
+void Warp::BRKStack(unsigned id_in_warp)
+{
+		for(auto i = sync_stack.rbegin(); i < sync_stack.rend(); ++i)
+		{
+				if (i->entry_type == PBK)
+				{
+						// clear the current active mask
+						active_mask &= ~(0x1u << id_in_warp);
+						return;
+				}
+				// clear the bit in every entry before a PBK
+				i->active_thread_mask &= ~(0x1u << id_in_warp);
+		}
+
+		throw misc::Error("Instruction BRK error."
+				"No PBK entry in synchronization stack");
+
+}
+
+
+unsigned Warp::getFinishedThreadCount() const
+{
+        unsigned num = 0;
+
+        for (unsigned i = 0; i < thread_count; i++)
+                num += (finished_thread >> i) & 1u;
+
+        assert(num <= thread_count);
+
+        return num;
+}
+
+
+unsigned Warp::getActiveMaskBitCount() const
+{
+        unsigned num = 0;
+
+        for (unsigned i = 0; i < thread_count; i++)
+                num += (active_mask >> i) & 1u;
+
+        assert(num <= thread_count);
+
+        return num;
+}
+
 
 } //namespace

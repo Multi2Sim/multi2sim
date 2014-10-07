@@ -89,6 +89,10 @@ Emu::Emu() : comm::Emu("kpl")
 	// Constant memory initialization
     const_mem.reset(new mem::Memory());
 	const_mem->setSafe(false);
+
+	emu_max_inst = 0xffffffff;
+	emu_max_cycles = 0xffffffff;
+	emu_max_functions = 0xffffffff;
 }
 
 void Emu::Dump(std::ostream &os) const
@@ -133,8 +137,8 @@ bool Emu::Run()
 			grid->WaitingToRunning(thread_block_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
-			while (thread_block.get()->getWarpsCompletedEmu() != thread_block.
-					get()->getWarpsInWorkgroup())
+			while (thread_block.get()->getWarpsCompletedEmuCount()
+					!= thread_block.get()->getWarpCount())
 			{
 				for (auto wp_p = thread_block.get()->WarpsBegin(); wp_p <
 					thread_block.get()->WarpsEnd(); ++wp_p)
