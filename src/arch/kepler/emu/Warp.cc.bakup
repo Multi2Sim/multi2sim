@@ -64,11 +64,20 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
 
-	// Initialize active mask
-	active_mask = unsigned(-1);
-
-	// Initialize temp_entry
-	resetTempEntry();
+	// Initialize Sync stack
+	for(int i = 0; i < 32; i++)
+	{
+		sync_stack[i].start_address = 0 ;
+		sync_stack[i].reconv_pc = 0;
+		sync_stack[i].active_thread_mask = 0;
+		sync_stack[i].inst_type = "";
+		sync_stack[i].pre_relative_address = 0;
+		sync_stack[i].original_active_thread_mask = 0;
+	}
+	sync_stack_top = 0;
+	sync_stack[sync_stack_top].active_thread_mask = (1ull << thread_count )- 1;
+	sync_stack[sync_stack_top].original_active_thread_mask =
+				(1ull << thread_count )- 1;
 
 	// Reset flags
 	at_barrier_thread_count = 0;
@@ -118,10 +127,8 @@ void Warp::Execute()
 
 
 			if (!inst_op)
-			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction "
-					<< std::hex << " pc " << pc << std::endl
+			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction ("
 					<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
-
 			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
 			{
 				thread_id->get()->Execute(inst_op,&inst);
@@ -129,17 +136,16 @@ void Warp::Execute()
 				//		<< " warp_id " << id << std::endl;
 			}
 	}
-	else
-	{
-			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
-			{
-				thread_id->get()->ExecuteSpecial();
-			}
-	}
 	// Finish
 
 	if (finished_emu)
 	{
+		/*
+		assert(list_index_of(thread_block->running_warps, this) != -1);
+		assert(list_index_of(thread_block->finished_warps, this) == -1);
+		list_remove(thread_block->running_warps, this);
+		list_add(thread_block->finished_warps, this);
+		*/
 
 		// Check if thread block finished kernel execution
 		//copied from SI, delete it if not necessary/
@@ -152,11 +158,19 @@ void Warp::Execute()
 
 	}
 
-    inst_count++;					//other counter?
-    emu_inst_count++;
-    emu->incAluInstCount();
-    pc = this->target_pc;
-
+	// Update PC
+	if( pc % 64 )
+	{
+        inst_count++;					//other counter?
+        emu_inst_count++;
+        emu->incAluInstCount();
+	}
+/*	if (KplInstWrapGetCategory(inst) != KplInstCategoryCtrl)
+		pc += inst_size;
+	else
+		pc = this->target_pc;
+*/
+        pc += inst_size;		//make it clear, no jump
     if(pc >= inst_buffer_size - 8)
     {
     	finished_emu = true;
@@ -165,53 +179,6 @@ void Warp::Execute()
 	// Stats
 
 	//asEmu(emu)->instructions++; // no parent class any more
-}
-
-
-void Warp::pushStack(SyncStackEntry element)
-{
-
-		for(auto i = sync_stack.begin(); i < sync_stack.end(); ++i)
-		{
-                // No divergence branch's active mask can be merged(logic or)
-				// into other type of entry if their reconv_pcs are the same.
-				if (i->reconv_pc == element.reconv_pc)
-				{
-						if (i->entry_type == NODIVBRA
-							|| element.entry_type == NODIVBRA)
-						{
-							i->active_thread_mask |= element.active_thread_mask;
-							i->entry_type = i->entry_type > element.entry_type?
-									i->entry_type : element.entry_type;
-							return;
-						}
-						else
-							throw misc::Panic("Unsupported case: multi stack entries"
-									"of PKB, PCNT, divergent BRA or SSY"
-									"use the same reconvergence pc.\n");
-				}
-				else
-				{
-					if (i->reconv_pc < element.reconv_pc)
-					{
-						sync_stack.insert(i, element);
-						return;
-					}
-				}
-		}
-
-		sync_stack.push_back(element);
-}
-
-
-void Warp::pushTempEntry()
-{
-	pushStack(temp_entry);
-}
-
-void Warp::popStack()
-{
-		sync_stack.pop_back();
 }
 
 } //namespace

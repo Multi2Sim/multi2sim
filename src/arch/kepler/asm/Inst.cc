@@ -494,12 +494,12 @@ void Inst::DumpTarget(std::ostream &os, int high0, int low0, int high1,
 {
 	int value0 = misc::getBits64(bytes.as_dword, high0, low0);
 	int value1 = misc::getBits64(bytes.as_dword, high1, low1);
-	int value2 = 8388608 - value0;
+	int value2 = 0xfff00000 | value0;
 
 	if (value1 == 0)
 		os << misc::fmt(" 0x%x", value0 + address + 8);
 	else if (value1 == 1)
-		os << misc::fmt(" 0x%x", value2 + address - 8);
+		os << misc::fmt(" 0x%x",  address + value2 + 8);
 }
 
 void Inst::Dump(std::ostream &os) const
@@ -528,7 +528,7 @@ void Inst::Dump(std::ostream &os) const
 		fmt_str++;
 		if (comm::Asm::isToken(fmt_str, "tgt", length))
 		{
-			DumpTarget(os, 45, 23, 46, 46);
+			DumpTarget(os, 46, 23, 46, 46);
 		}
 		else if (comm::Asm::isToken(fmt_str, "offset", length))
 		{
