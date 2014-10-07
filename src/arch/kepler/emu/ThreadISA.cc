@@ -446,6 +446,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 		// Write Result
 		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
+
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -511,13 +512,12 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 		src_id = fmt.mod0;
 		srcA = this->ReadGPR(src_id);
 		src_id = fmt.srcB;
+		// Check it
 		if (fmt.srcB_mod == 0)
 		{
 			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
 		}
-		else if (fmt.srcB_mod == 1)
-			srcB = this->ReadGPR(src_id);
-		else	//check it
+		else
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
 		if (((fmt.mod1 >> 9) & 0x1) == 1)	//FIXME
@@ -602,8 +602,6 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		}
 		else if (fmt.srcB_mod == 1)
 			srcB = this->ReadGPR(srcB_id);
-		else	//check it
-			srcB = srcB_id >> 18 ? srcB_id | 0xfff80000 : srcB_id;
 
 		// Predicates
 		pred_id_1 = (fmt.dst >> 3) & 0x7;
@@ -846,15 +844,24 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	else
 		pred = ! this->GetPred(pred_id - 8);
 
+	if (id_in_warp == 0)
+		warp->resetTempEntry();
 	// Execute
 	if (active == 1 && pred == 1)
 	{
-		if(warp->getFinishedThreadCount() >= warp->getThreadCount() )
-			warp->setFinishedEmu(true);
+		warp->setFinishedThreadBit(id_in_warp);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	{
+		if (warp->getFinishedThreadCount() == warp->getThreadCount() )
+			warp->setFinishedEmu(true);
+		else
+            if (warp->getFinishedThreadCount() > warp->getThreadCount() )
+            	throw misc::Panic("More threads finished than warp thread count.\n");
+
+        warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	}
 }
 
 void Thread::ExecuteInst_BRA(Inst *inst)
@@ -878,10 +885,11 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	unsigned inst_size = warp->getInstSize();
 
 	// Get instruction offset
-	unsigned offset = format.offset & 0xffffff;
+	int offset = format.offset >> 23 ?
+						format.offset | 0xff000000 : format.offset;
 
 	// Branch direction 0: forward branch, 1: backward branch
-	unsigned branch_direction = offset >> 23;
+	unsigned branch_direction = format.offset >> 23;
 
     // number of taken thread
     unsigned taken_thread;
@@ -968,8 +976,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 				// Target pc goes to the next instruction
 					warp->setTempEntryAddressAndType(
 							pc + inst_size + offset,
-							taken_thread == active_thread ?
-									NODIVBRA : DIVBRA
+							BRA
 							);
 
 					warp->pushTempEntry();
@@ -1001,7 +1008,6 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 					// We may push stack here,
 					// and pop it at exact the next instruction,
 					// so we are probably able to omit the stack operation here
-                    offset |= 0xfff00000;
 					warp->setTargetpc(pc + inst_size + offset);
 				}
 			}
@@ -1065,8 +1071,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 		}
 		else if (fmt.srcB_mod == 1)
 			src = this->ReadGPR(src_id);
-		else	//check it
-			src = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
 
 
 		/* Execute */
@@ -1842,21 +1847,23 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	// Read Operand constmem
 	isconstmem = format.isconstmem;
 
+	offset = format.offset;
+
 	// Execute at the last thread in warp
 	if(id_in_warp == warp->getThreadCount() - 1)
 	{
 		if (isconstmem == 0)
 		{
 			// Push SSY instruction into stack and set the reconvergence address
-			offset = format.offset;
 			pc = warp->getPC();
 
-			address = offset + pc + 8;
+			address = offset + pc + warp->getInstSize();
 		}
 		else
         {
+			// check this
 			if (isconstmem == 1)
-              	emu->ReadConstMem(1,4, (char*) &address);
+              	emu->ReadConstMem(offset << 2,4, (char*) &address);
         }
 
 		SyncStackEntry entry(address,
@@ -1872,8 +1879,11 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 void Thread::ExecuteInst_PBK(Inst *inst)
 {
 	// Get warp
-	/*
-	Warp *warp = this->getWarp();
+	Warp* warp = this->getWarp();
+
+    Emu *emu = Emu::getInstance();
+
+	unsigned address;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -1885,32 +1895,37 @@ void Thread::ExecuteInst_PBK(Inst *inst)
 		warp->popStack();
 	}
 
-	// Active status
-	unsigned active;
-
-	// If the thread is active
-
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesPBK format = inst_bytes.pbk;
 
-	//Pre relative address
-	unsigned address;
 
-	//Get current Pre-relative address for reconvergence stack top entry
-	address = warp->getSyncStkTopPreRelativeAddress();
+	// Execute
+    if (id_in_warp == warp->getThreadCount() - 1)
+    {
+        //Check this
+        if (format.constant)
+        {
+                emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+        }
+        else
+        {
+        // Get operand value
+                if (format.offset >> 23 == 0)
+            address = format.offset + warp->getPC() + warp->getInstSize();
+                else
+                        //means offset is negative value
+                        throw misc::Panic("Negative PKB address offset."
+                                        "Not supported.");
+        }
 
-	// Execute. Execute only once for each warp.
-	if((active == 1) && (address!= 0))
-	{
-		// Operand
-		unsigned offset;
+    	// Push the address and current active mask into stack
+		SyncStackEntry entry(address,
+							warp->getActiveMask(),
+							PBK);
+        warp->pushStack(entry);
+    }
 
-		// Get operand value
-		offset = format.offset;
-		warp->setSyncStkTopPreRelativeAddress(offset);
-	}
-	*/
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
@@ -1994,9 +2009,29 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 	// Execute
 	if(active == 1 && pred == 1)
 	{
-		//warp->setSyncStkTopActiveMaskBit(0,this->id_in_warp);
+		// Clear the specific bit in active masks of all stack entries
+		// above the latest PBK entry (there must be at least one)
+		// To mask the break thread and prevent all active mask recoveries
+		warp->BRKStack(id_in_warp);
 	}
 
+	// Update target PC
+	if (id_in_warp == warp->getThreadCount() - 1)
+	{
+		// if all threads have been "broken" or inactive,
+        // pop all entries before the latest PBK entry.
+		// pc jumps to the PBK entry's reconv_pc.
+		if (warp->getActiveMask() == 0)
+		{
+            while (warp->getStackTopEntryType() != PBK)
+                warp->popStack();
+
+			warp->setTargetpc(warp->getStackTopReconvPc());
+		}
+		else
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+
+	}
 }
 
 void Thread::ExecuteInst_CONT(Inst *inst)

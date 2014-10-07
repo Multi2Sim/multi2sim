@@ -77,14 +77,16 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 
 	/* Flags */
 	finished_emu = false;
-	warps_completed_emu = 0;
+	num_warps_completed_emu = 0;
+	num_warps_at_barrier = 0;
 }
 
-unsigned ThreadBlock::getWarpsInWorkgroup() const
+unsigned ThreadBlock::getWarpCount() const
 {
     return (grid->getThreadBlockSize() + warp_size - 1) /
     		warp_size;
 }
+
 
 void ThreadBlock::Dump(std::ostream &os) const
 {
