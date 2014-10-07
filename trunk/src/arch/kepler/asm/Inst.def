@@ -61,14 +61,14 @@ DEFINST(IADD_A,
 		0x02)
 
 DEFINST(IADD_B,
-                "%pred IADD%sat%x%s %dst %cc_dst, %srcA, %srcB !!! Check !!!;",
+                "%pred IADD%sat%x%s %dst %cc, %srcA, %srcB !!! Check !!!;",
                 0x01,
                 0x03,
                 0x00,
                 0x02)
 
 
-DEFINST(ISETP,
+DEFINST(ISETP_A,
 		"%pred0 ISETP%f%U32%x%and%s %pred1, %pred2, %srcA, %srcB, %pred3;",
 		0x02,
 		0x01,    
@@ -76,6 +76,13 @@ DEFINST(ISETP,
 		0x01,
 		0x02)
 
+DEFINST(ISETP_B,
+		"%pred0 ISETP%f%U32%x%and%s %pred1, %pred2, %srcA, %srcB, %pred3;",
+		0x01,
+		0x02,    
+		0x03,
+		0x01,
+		0x02)
 
 /* Control catogory instructions:
  * EXIT, BRA

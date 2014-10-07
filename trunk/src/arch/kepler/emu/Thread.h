@@ -26,8 +26,8 @@
 #include <arch/kepler/asm/Inst.h>
 
 #include "Grid.h"
-#include "Warp.h"
 #include "ThreadBlock.h"
+#include "Warp.h"
 
 namespace Kepler
 {
@@ -66,6 +66,11 @@ public:
 		unsigned long long u64;
 	};
 
+	struct RegCC
+	{
+		bool carry;
+	};
+
 	/// Memory accesses types
 	enum MemoryAccessType
 	{
@@ -87,7 +92,7 @@ private:
 	// IDs
 	int id;
 	int id_in_thread_block;
-	int id_in_warp;
+	unsigned id_in_warp;
 
 	// 3D IDs
 	int id_3d[3];
@@ -102,6 +107,7 @@ private:
 	RegValue gpr[256];  /* General purpose registers */
 	RegValue sr[82];  /* Special registers */
 	unsigned pr[8];  /* Predicate registers */
+	RegCC cc;
 
 	// Last global memory access
 	unsigned global_mem_access_addr;
@@ -113,6 +119,11 @@ private:
 		void	ExecuteInst_##_name(Inst *inst);
 #include <arch/kepler/asm/Inst.def>
 #undef DEFINST
+
+	// The special instruction appearing every 64 instructions
+	// Not within ISA
+	// FIXME in the future
+	void ExecuteInst_Special();
 
 	// Instruction execution table
 	typedef void (Thread::*InstFunc)(Inst *inst);
@@ -127,7 +138,6 @@ private:
 	// Fields below are used for architectural simulation only.
 public :
 
-	static unsigned nop_cnt;
 	/// Constructor
 	/// \param Warp Warp that it belongs to
 	/// \id Global 1D identifier of the thread
@@ -188,6 +198,9 @@ public :
 
 	/// Execute an instruction
 	void Execute(InstOpcode opcode, Inst *inst);
+
+	// Execute special instruction
+	void ExecuteSpecial();
 };
 
 } //namespace
