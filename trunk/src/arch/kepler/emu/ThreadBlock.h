@@ -77,8 +77,9 @@ class ThreadBlock
 
 	// Barrier information
 	unsigned num_warps_at_barrier;
-	unsigned warps_completed_emu;
-	unsigned warps_completed_timing;
+	unsigned num_warps_completed_emu;
+	unsigned num_warps_completed_timing;
+
 	bool finished_emu;
 	bool finished_timing;
 
@@ -109,13 +110,16 @@ public:
 	int getId() const { return id; }
 
 	// Get counter of warps in thread-block
-	unsigned getWarpsInWorkgroup() const;
+	unsigned getWarpCount() const;
 
 	// Get counter of warps at barrier
 	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
 
 	// Get counter of completed warps
-	unsigned getWarpsCompletedEmu() const { return warps_completed_emu; }
+	unsigned getWarpsCompletedEmuCount() const
+	{
+		return num_warps_completed_emu;
+	}
 
 	// Get Grid that it belongs to
 	Grid *getGrid() const { return grid; }
@@ -141,7 +145,7 @@ public:
 	void setWarpsAtBarrier(unsigned counter) { num_warps_at_barrier = counter; }
 
 	// Increment warps_completed_emu counter
-	void incWarpsCompletedEmu() { warps_completed_emu ++; }
+	void incWarpsCompletedEmu() { num_warps_completed_emu ++; }
 
 	// Set finished_emu
 	void setFinishedEmu(bool value) { finished_emu = value; }
