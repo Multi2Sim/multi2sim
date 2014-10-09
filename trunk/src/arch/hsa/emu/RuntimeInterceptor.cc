@@ -177,6 +177,11 @@ void RuntimeInterceptor::PassBackByValue(unsigned arg_address,
 }
 
 
+void RuntimeInterceptor::ForceIntercept(int call_number, StackFrame *stack_top)
+{
+}
+
+
 bool RuntimeInterceptor::Intercept(const std::string &function_name,
 		StackFrame *stack_top)
 {
@@ -190,21 +195,29 @@ bool RuntimeInterceptor::Intercept(const std::string &function_name,
 	// Set current intercepted work item
 	intercepted_work_item = stack_top->getWorkItem();
 
+	// Dump interception information into debug log
+	Emu::isa_debug << misc::fmt("Executing ABI call %d. \n",
+			call_number);
+
 	// Copy arguments
 	unsigned arg_address = PassArgumentsInByValue(function_name, stack_top);
 
 	// Redirect the runtime function call to drivers ABI call
-	Driver::getInstance()->Call(call_number,
+	// If ret==1, the execution of the runtime runction is to be continued;
+	int ret = Driver::getInstance()->Call(call_number,
 			Emu::getInstance()->getMemory(),
 			arg_address);
+	
+	// Avoid passing value back and freeing argument memory, if the 
+	// runtime function is not finished
+	if (ret == 1)
+		return true;
 
 	// Pass return value back
 	PassBackByValue(arg_address, stack_top);
 
-	// Dump interception information into debug log
-	Emu::isa_debug << misc::fmt("Runtime function %s intercepted, "
-			"executing ABI call %d. \n",
-			function_name.c_str(), call_number);
+	// When the execution of a runtime function finished, move pc forward
+	intercepted_work_item->MovePcForwardByOne();
 
 	return true;
 }

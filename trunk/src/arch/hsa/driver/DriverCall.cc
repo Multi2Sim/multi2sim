@@ -148,16 +148,12 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-int Driver::AgentIterateNext()
+int Driver::CallIterateAgentNext(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments		| Offset
 	// hsa_status_t		| 0
 	// callback		| 4
 	// data			| 8
-
-	// Stores the arguments for future use
-	mem::Memory * memory = agent_iterator_memory;
-	unsigned args_ptr = agent_iterator_args_ptr;
 
 	// Retrieve argument buffer
 	char *arg_buffer = memory->getBuffer(args_ptr, 16,
