@@ -93,6 +93,12 @@ class Driver: public comm::Driver
 	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
 			component_iterator;
 
+	// Retrieve the value at a certain memory space
+	template <typename T>
+	T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr);
+
+	// Set the 
+
 public:
 
 	/// Obtain instance of the singleton
@@ -110,9 +116,6 @@ public:
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
-
-	/// When the agent iterate callback returns, return to this function
-	int AgentIterateNext();
 
 	/// Destructor
 	~Driver();
