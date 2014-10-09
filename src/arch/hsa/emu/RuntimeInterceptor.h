@@ -69,6 +69,9 @@ public:
 	bool Intercept(const std::string &function_name,
 			StackFrame *stack_top);
 
+	/// The function that readlly do the interception work
+	void ForceIntercept(int call_number, StackFrame *stack_top);
+
 	/// Destructor
 	~RuntimeInterceptor();
 

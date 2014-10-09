@@ -20,6 +20,7 @@
 #include <arch/hsa/asm/BrigDef.h>
 #include <arch/hsa/driver/Driver.h>
 
+#include "RuntimeInterceptor.h"
 #include "WorkItem.h"
 
 namespace HSA
@@ -124,7 +125,10 @@ bool WorkItem::ReturnFunction()
 	if (callee_frame->isAgentIterateCallback())
 	{
 		stack.pop_back();
-		Driver::getInstance()->AgentIterateNext();
+		bool intercepted = RuntimeInterceptor::getInstance()
+			->Intercept("&hsa_iterate_agent_next",
+				stack.back().get());
+		assert(intercepted == true);
 		return true;
 	}
 

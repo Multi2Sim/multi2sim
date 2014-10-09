@@ -3,6 +3,7 @@ version 0:96:$full:$small;
 function &hsa_init (arg_u32 %status) ();
 function &hsa_stut_down (arg_u32 %status) ();
 function &hsa_iterate_agents (arg_u32 %status) (arg_u32 %call_back, arg_u32 %data);
+function &hsa_iterate_agent_next (arg_u32 %status) (arg_u32 %call_back, arg_u32 %data);
 function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u32 %value);
 
 function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0);
