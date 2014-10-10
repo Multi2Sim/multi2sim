@@ -18,8 +18,8 @@
  */
 
 #include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/driver/Driver.h>
 
-#include "RuntimeInterceptor.h"
 #include "WorkItem.h"
 
 
@@ -2128,8 +2128,9 @@ void WorkItem::Inst_ST_Aux()
 	if (address_operand_buf->symbol != 0)
 	{
 		BrigDirectiveSymbol *symbol =
-				(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-						binary, address_operand_buf->symbol);
+				(BrigDirectiveSymbol *)
+				BrigDirEntry::GetDirByOffset(binary, 
+						address_operand_buf->symbol);
 		std::string name = BrigStrEntry::GetStringByOffset(binary,
 				symbol->name);
 
@@ -2465,7 +2466,7 @@ void WorkItem::ExecuteInst_CALL()
 
 	// Try to intercept the function execution if the function is runtime
 	// function
-	if (RuntimeInterceptor::getInstance()->Intercept(function_name, stack_top))
+	if (Driver::getInstance()->Intercept(function_name, stack_top))
 	{
 		// MovePcForwardByOne();
 		return;
