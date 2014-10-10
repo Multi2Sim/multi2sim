@@ -19,9 +19,6 @@ libemu_a_SOURCES = \
 		ProgramLoader.h \
 		ProgramLoader.cc \
 		\
-		RuntimeInterceptor.h \
-		RuntimeInterceptor.cc \
-		\
 		RuntimeLibrary.h \
 		RuntimeLibrary.cc \
 		\
