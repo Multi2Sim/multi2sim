@@ -20,7 +20,6 @@
 #include <arch/hsa/asm/BrigDef.h>
 #include <arch/hsa/driver/Driver.h>
 
-#include "RuntimeInterceptor.h"
 #include "WorkItem.h"
 
 namespace HSA
@@ -122,6 +121,7 @@ bool WorkItem::ReturnFunction()
 	}
 
 	// Check if this frame is a runtime callback.
+	/*
 	if (callee_frame->isAgentIterateCallback())
 	{
 		stack.pop_back();
@@ -131,6 +131,7 @@ bool WorkItem::ReturnFunction()
 		assert(intercepted == true);
 		return true;
 	}
+	*/
 
 	// Retrieve second last element
 	if (stack.size()>1)

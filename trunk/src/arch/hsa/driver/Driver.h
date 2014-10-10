@@ -36,8 +36,7 @@ class Driver: public comm::Driver
 	static std::string debug_file;
 
 	/// Constructor
-	Driver() : comm::Driver("HSA", "/dev/hsa")
-	{};
+	Driver() : comm::Driver("HSA", "/dev/hsa"){};
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
@@ -45,7 +44,7 @@ class Driver: public comm::Driver
 	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
 	//
-	//	DEFCALL(Init, 1)
+	//	DEFCALL(Init, 1, &hsa_init)
 	//
 	// expands to
 	//
@@ -64,7 +63,7 @@ class Driver: public comm::Driver
 	// ABI call functions. Each entry in Driver.def will expand into a
 	// function prototype. For example, entry
 	//
-	//	DEFCALL(Init, 1)
+	//	DEFCALL(Init, 1, &hsa_init)
 	//
 	// expands to
 	//
@@ -89,15 +88,30 @@ class Driver: public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
-	// The iterator pointing to the components
-	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
-			component_iterator;
-
 	// Retrieve the value at a certain memory space
 	template <typename T>
-	T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr);
+	T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
+	{
+		// Get the pointer to that argument 
+		T *buffer = (T *)memory->getBuffer(args_ptr + offset, sizeof(T), 
+				mem::Memory::AccessRead);
 
-	// Set the 
+		// Dereference the pointer and return the value
+		return (*buffer);	
+	}
+
+	// Set the the value at a certain memory space
+	template<typename T>
+	void setArgumentValue(T value, int offset, mem::Memory *memory, 
+			unsigned args_ptr)
+	{
+		// Get the pointer to the argument
+		T *buffer = (T *)memory->getBuffer(args_ptr + offset, sizeof(T), 
+				mem::Memory::AccessWrite);
+
+		// Set the value of the argument
+		*buffer = value;
+	}
 
 public:
 
@@ -119,6 +133,62 @@ public:
 
 	/// Destructor
 	~Driver();
+
+
+
+
+	//
+	// Interceptor related functions
+	//
+
+private:
+
+	// Maps from the function name in HSAIL to call number
+	static misc::StringMap function_name_to_call_map;
+
+	// Copy the arguments into a certain place in memory
+	void SerializeArguments(char *arg_buffer, StackFrame *stack_top);
+
+	// The iterator pointing to the components
+	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
+			component_iterator;
+
+	// Allocate memory to hold serialized arguments, returns the address
+	// pointing to the beginning of the argument memory space.,
+	unsigned PassArgumentsInByValue(const std::string &function_name,
+			StackFrame *stack_top);
+
+	// Copy the argument value back from the callee's buffer to caller's
+	// buffer
+	void PassBackByValue(unsigned arg_address,
+			StackFrame *stack_top);
+
+
+	// The intercepted work item
+	// I do not like this thing -- Yifan.
+	WorkItem *intercepted_work_item;
+
+public:
+
+	/// Try to intercept the execution of a HSAIL function
+	///
+	/// \param function_name 
+	///	The name of the function to be intercepted
+	///
+	/// \param stack_top
+	///	The stack frame where the interception take place
+	///
+	/// \return 
+	///	Determine if the function is intercepted
+	bool Intercept(const std::string &function_name, 
+			StackFrame *stack_top);
+
+	/// Exit the intercepted context by passing the returning value back to 
+	/// the stack frame, freeing the memory allocated for the serialized 
+	/// argument and move the host pc forward.
+	void ExitInterceptedEnvironment(unsigned arg_address, 
+			StackFrame *stack_top);
+
 };
 
 } /* namespace HSA */

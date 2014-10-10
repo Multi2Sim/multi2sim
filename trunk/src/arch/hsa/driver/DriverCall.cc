@@ -22,7 +22,6 @@
 	__FUNCTION__));
 
 #include <arch/hsa/asm/BrigDef.h>
-#include <arch/hsa/emu/RuntimeInterceptor.h>
 
 #include "Driver.h"
 
@@ -56,10 +55,28 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 {	
-	// Arguments		| Offset
-	// hsa_status_t		| 0
-	// callback		| 4
-	// data			| 8
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// callback		| 4		| 4
+	// data			| 8		| 4
+	// host_language	| 12		| 4
+	// workitem_prt		| 16		| 8
+
+	// Dump the argument information
+	std::cout << misc::fmt("In function %s ", __FUNCTION__);
+	std::cout << "ret: "<< 
+		getArgumentValue<unsigned int>(0, memory, args_ptr);
+	std::cout << ", callback: " << 
+		getArgumentValue<unsigned int>(4, memory, args_ptr);
+	std::cout << ", data: " <<
+		getArgumentValue<unsigned>(8, memory, args_ptr);
+	std::cout << ", host_lang: " <<
+		getArgumentValue<unsigned int>(12, memory, args_ptr);
+	std::cout << ", workitem_ptr: " << 
+		getArgumentValue<unsigned long long>(16, memory, args_ptr)
+		<< "\n";
+	std::cout.flush();
+
 
 	// Stores the arguments for future use
 	agent_iterator_memory = memory;
@@ -84,8 +101,10 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	WorkItem *work_item = RuntimeInterceptor::getInstance()
-			->getInterceptedWorkItem();
+	WorkItem *work_item = (WorkItem *)getArgumentValue<unsigned long long>(
+			16, memory, args_ptr);
+	work_item->Backtrace(std::cout);
+	std::cout.flush();
 	unsigned function_directory_address =
 			*(unsigned *)memory->getBuffer(
 					args_ptr+4, 4,
@@ -145,96 +164,11 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(stack_frame);
 
-	return 0;
+	return 1;
 }
 
 int Driver::CallIterateAgentNext(mem::Memory *memory, unsigned args_ptr)
 {
-	// Arguments		| Offset
-	// hsa_status_t		| 0
-	// callback		| 4
-	// data			| 8
-
-	// Retrieve argument buffer
-	char *arg_buffer = memory->getBuffer(args_ptr, 16,
-			mem::Memory::AccessRead);
-
-	// Get virtual machine setup
-	Emu *emu = Emu::getInstance();
-	component_iterator++;
-	auto end_iterator = emu->getComponentEndIterator();
-
-	// No component available, return
-	if (end_iterator == component_iterator)
-	{
-		unsigned int hsa_status_t = 0;
-		memcpy(arg_buffer, &hsa_status_t, 4);
-		return 0;
-	}
-
-	// Get call back function name
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	WorkItem *work_item = RuntimeInterceptor::getInstance()
-			->getInterceptedWorkItem();
-	unsigned function_directory_address =
-			*(unsigned *)memory->getBuffer(
-					args_ptr+4, 4,
-					mem::Memory::AccessRead);
-	BrigDirectiveFunction *function_directory =
-			(BrigDirectiveFunction *)(unsigned long long)function_directory_address;
-	std::string callback_function_name =
-			BrigStrEntry::GetStringByOffset(binary,
-			function_directory->name);
-
-	// Create new stack frame
-	StackFrame *stack_frame = new StackFrame(
-			ProgramLoader::getInstance()->getFunction(callback_function_name),
-			work_item);
-
-	// Pass argument into stack frame
-	VariableScope *function_args = stack_frame->getFunctionArguments();
-
-	// Declare return argument
-	BrigDirEntry function_dir_entry((char *)function_directory, binary);
-	BrigDirectiveSymbol *out_arg_directory =
-			(BrigDirectiveSymbol *)function_dir_entry.next();
-	std::string arg_name = BrigStrEntry::GetStringByOffset(binary,
-			out_arg_directory->name);
-	function_args->DeclearVariable(arg_name, 4, out_arg_directory->type);
-
-	// Pass argument 1 (Address handler) to the callback
-	BrigDirectiveSymbol *arg1 = (BrigDirectiveSymbol *)
-			BrigDirEntry::GetDirByOffset(binary,
-					function_directory->firstInArg);
-	BrigDirEntry arg1_entry((char *)arg1, binary);
-	std::string arg1_name = BrigStrEntry::GetStringByOffset(
-			binary, arg1->name);
-	function_args->DeclearVariable(arg1_name, 8, BRIG_TYPE_U64);
-	char *callee_buffer = function_args->getBuffer(arg1_name);
-	if (!callee_buffer)
-	{
-		throw misc::Panic(misc::fmt("Creating argument %s failed!\n", arg1_name.c_str()));
-	}
-	memcpy(callee_buffer, &this->component_iterator->first, 8);
-
-	// Pass argument 2 (Address to the data field) to the callback
-	BrigDirectiveSymbol *arg2 = (BrigDirectiveSymbol *)arg1_entry.next();
-	std::string arg2_name = BrigStrEntry::GetStringByOffset(
-			binary, arg2->name);
-	function_args->DeclearVariable(arg2_name, 16, BRIG_TYPE_U32);
-	callee_buffer = function_args->getBuffer(arg2_name);
-	if (!callee_buffer)
-	{
-		throw misc::Panic(misc::fmt("Creating argument %s failed!\n", arg2_name.c_str()));
-	}
-	memcpy(callee_buffer, arg_buffer + 8, 8);
-
-	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setAgentIterateCallback(true);
-
-	// Add stack frame to the work item;
-	work_item->PushStackFrame(stack_frame);
-
 	return 0;
 }
 
