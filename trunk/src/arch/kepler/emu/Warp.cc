@@ -51,12 +51,15 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	// Get the thread block it belongs to
 	this->thread_block = thread_block;
 
-	// Allocate threads
+	// Get threads from grid
 	if (id < thread_block->getWarpCount() - 1)
 		thread_count = warp_size;
 	else
 		thread_count = grid->getThreadBlockSize() -
 		(thread_block->getWarpCount() - 1) * warp_size;
+
+	// SyncStack
+	sync_stack = std::unique_ptr<SyncStack>(new SyncStack());
 
 	// Instruction
 	pc = 0;
@@ -71,12 +74,12 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 		active_mask = (1u << thread_count) - 1;
 
 	// Initialize temp_entry
-	resetTempEntry();
+	resetTempMask();
 
 	// Reset flags
 	at_barrier_thread_count = 0;
 	finished_thread = 0;
-	finished_emu = false;		//make it clear
+	finished_emu = false;
 	taken_thread = 0;
 
 	// simulation performance
@@ -118,7 +121,6 @@ void Warp::Execute()
 
 			// Execute instruction
 			inst_op = (InstOpcode) inst.getOpcode();
-
 
 			if (!inst_op)
 			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction "
@@ -171,74 +173,40 @@ void Warp::Execute()
 	//asEmu(emu)->instructions++; // no parent class any more
 }
 
-
-void Warp::pushStack(SyncStackEntry element)
-{
-
-		for(auto i = sync_stack.begin(); i < sync_stack.end(); ++i)
-		{
-                // No divergence branch's active mask can be merged(logic or)
-				// into other type of entry if their reconv_pcs are the same.
-				if (i->reconv_pc == element.reconv_pc)
-				{
-						if (i->entry_type == BRA
-							|| element.entry_type == BRA)
-						{
-							i->active_thread_mask |= element.active_thread_mask;
-							i->entry_type = i->entry_type > element.entry_type?
-									i->entry_type : element.entry_type;
-							return;
-						}
-						else
-							throw misc::Panic("Unsupported case: multi stack entries"
-									"of PKB, PCNT, divergent BRA or SSY"
-									"use the same reconvergence pc.\n");
-				}
-				else
-				{
-					if (i->reconv_pc < element.reconv_pc)
-					{
-						sync_stack.insert(i, element);
-						return;
-					}
-				}
-		}
-
-		sync_stack.push_back(element);
-}
-
-
-void Warp::pushTempEntry()
-{
-	pushStack(temp_entry);
-}
-
-
-void Warp::popStack()
-{
-		sync_stack.pop_back();
-}
-
-
-void Warp::BRKStack(unsigned id_in_warp)
+/*
+unsigned Warp::getStackPCNTReconvPc() const
 {
 		for(auto i = sync_stack.rbegin(); i < sync_stack.rend(); ++i)
 		{
-				if (i->entry_type == PBK)
+				if (i->entry_type == PCNT)
+					return i->reconv_pc;
+		}
+
+		throw misc::Error("Instruction PCNT error."
+				"No PBK entry in synchronization stack");
+		return 0;
+}
+
+
+void Warp::CONTStack(unsigned id_in_warp)
+{
+		for(auto i = sync_stack.rbegin(); i < sync_stack.rend(); ++i)
+		{
+				if (i->entry_type == PCNT)
 				{
+                        i->active_thread_mask |= (1u << id_in_warp);
 						// clear the current active mask
 						active_mask &= ~(0x1u << id_in_warp);
 						return;
 				}
-				// clear the bit in every entry before a PBK
+				// clear the bit in every entry before a PCNT
 				i->active_thread_mask &= ~(0x1u << id_in_warp);
 		}
 
-		throw misc::Error("Instruction BRK error."
+		throw misc::Error("Instruction PCNT error."
 				"No PBK entry in synchronization stack");
-
 }
-
+*/
 
 unsigned Warp::getFinishedThreadCount() const
 {

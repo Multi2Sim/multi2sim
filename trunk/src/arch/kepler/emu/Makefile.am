@@ -15,6 +15,9 @@ libemu_a_SOURCES = \
 	ThreadBlock.cc \
 	ThreadBlock.h \
 	\
+	SyncStack.h\
+	SyncStack.cc\
+	\
 	Warp.cc \
 	Warp.h
 	

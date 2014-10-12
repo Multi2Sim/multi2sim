@@ -29,6 +29,7 @@
 #include "Emu.h"
 #include "Grid.h"
 #include "Warp.h"
+#include "SyncStack.h"
 #include "Thread.h"
 #include "ThreadBlock.h"
 
@@ -36,6 +37,7 @@
 namespace Kepler
 {
 
+/*
 typedef union
 {
 	unsigned u32;
@@ -43,6 +45,7 @@ typedef union
 	float f;
 	unsigned long long u64;
 } RegValue;
+*/
 
 enum
 {
@@ -110,11 +113,11 @@ void Thread::ExecuteInst_Special()
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -148,11 +151,11 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -216,11 +219,11 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -306,11 +309,11 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -377,11 +380,11 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -488,11 +491,11 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -571,11 +574,11 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -700,11 +703,11 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -818,9 +821,11 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 fmt = inst_bytes.general0;
 
-	// Predicates and active masks
 	//Emu* emu = Emu::getInstance();
 	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	// Predicates and active masks
 	unsigned pred;
 	unsigned pred_id;
 	unsigned active;
@@ -828,11 +833,11 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = stack->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -845,10 +850,16 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 		pred = ! this->GetPred(pred_id - 8);
 
 	if (id_in_warp == 0)
-		warp->resetTempEntry();
+		warp->resetTempMask();
+
 	// Execute
+	// Clear specific bit of all entries in stack
+	// Clear the bit of current active mask
+	// Set the finished thread bit
 	if (active == 1 && pred == 1)
 	{
+		stack->MaskSyncStack(id_in_warp, EXIT);
+		warp->clearActiveMaskBit(id_in_warp);
 		warp->setFinishedThreadBit(id_in_warp);
 	}
 
@@ -868,6 +879,9 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 {
 	// Get warp
 	Warp *warp = this->getWarp();
+
+	// Get SyncStack
+	SyncStack* stack = warp->getSyncStack();
 
 	// Predicate register
 	unsigned pred;
@@ -900,11 +914,11 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = stack->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -924,7 +938,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// Clear temp_entry and taken_thread before BRA execute
 	if (id_in_warp == 0)
 	{
-		warp->resetTempEntry();
+		warp->resetTempMask();
 		warp->setTakenThread(0);
 	}
 
@@ -933,7 +947,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// taken_thread adds 1
 	if(active == 1 && pred == 1)
 	{
-		warp->setTempEntryActiveMaskBit(id_in_warp);
+		warp->setTempMaskBit(id_in_warp);
 		warp->incrementTakenThread();
 	}
 
@@ -945,69 +959,62 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 
         taken_thread = warp->getTakenThread();
         active_thread = warp->getActiveMaskBitCount();
+        std::cout << "PC " << std::hex << warp->getPC()
+        		<< "	A.M.	" << warp->getActiveMask()<< std::endl;
+        stack->Dump(std::cout);
+
+
+        // previous design that directly updates pc
+        // when no or all threads take BRA has been abandoned
+        // due to the change of synchronization stack.
 
 		// Update sync stack and PC
         //  no thread in the active mask taken branch
-		if(taken_thread == 0)
+		assert(branch_direction == 1 || branch_direction == 0);
+
+		if(branch_direction == 0)
 		{
+			// push reconvergence pc and the active mask at that pc into stack
+			// Clear all current active mask bits taking the BRA.
+			// Target pc goes to the next instruction
+			stack->pushSyncStack(pc + inst_size + offset,
+								warp->getTempMask(),
+								BRA
+								);
+
+			warp->setActiveMask(
+					warp->getActiveMask() &
+					~warp->getTempMask());
+
+			assert(active_thread ==
+					warp->getActiveMaskBitCount() + taken_thread);
+
 			warp->setTargetpc(pc + inst_size);
+
 		}
-		else
-            // all thread in active
-            // mask taken branch
-			if (taken_thread == warp->getThreadCount())
-            {
-                    warp->setTargetpc(pc + inst_size + offset);
-            }
-        // Current instruction has divergence.
+		// Backward diverge happens only when pred == PT,
+		// meaning no new level divergence.
+		// Only happens in loop end to jump back.
+		// Divergent backward branch has never been observed,
+		// so we do not supported it.
 		else
 		{
-			assert(branch_direction == 1 || branch_direction == 0);
-
-            // forward branch diverge
-			if(branch_direction == 0)
+			if (taken_thread < active_thread)
 			{
-				// For forward branch, we consist the conditions
-				// pred != PT and pred == PT,
-				// which means whether or not new level divergence happens,
-				// push the mask in temp_entry, and reconvergence pc
-				// into stack
-				// and clear all warp active mask bits taking the BRA.
-				// Target pc goes to the next instruction
-					warp->setTempEntryAddressAndType(
-							pc + inst_size + offset,
-							BRA
-							);
-
-					warp->pushTempEntry();
-
-					warp->setActiveMask(
-							warp->getActiveMask()^
-							warp->getTempEntryActiveThreadMask());
-
-					assert(active_thread ==
-							warp->getActiveMaskBitCount() + taken_thread);
-
-					warp->setTargetpc(pc + inst_size);
-
+                   throw misc::Panic("Divergent backward branch is not supported.\n"
+                    	"		Contact the author with your code.\n");
 			}
-			// Backward diverge happens only when pred == PT,
-			// meaning no new level divergence.
-			// Only happens in loop end to jump back.
-			// Divergent backward branch has never been observed,
-			// so we do not supported it.
 			else
 			{
-				if (taken_thread < active_thread)
-				{
-                    throw misc::Panic("Divergent backward branch is not supported.\n"
-                    		"		Contact the author with your code.\n");
-				}
+				if (!taken_thread)
+					warp->setTargetpc(pc + inst_size);
+
+				// We may push stack here,
+				// and pop it at exact the next instruction,
+				// so we are probably able to omit the stack operation here
 				else
 				{
-					// We may push stack here,
-					// and pop it at exact the next instruction,
-					// so we are probably able to omit the stack operation here
+					assert(pred_id == 7);
 					warp->setTargetpc(pc + inst_size + offset);
 				}
 			}
@@ -1043,11 +1050,11 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1105,11 +1112,11 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1185,11 +1192,11 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1278,11 +1285,11 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1389,11 +1396,11 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1475,11 +1482,11 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1569,11 +1576,11 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	active = 1u & (warp->getActiveMask() >> id_in_warp);
@@ -1606,11 +1613,11 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1666,11 +1673,11 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
@@ -1823,17 +1830,20 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	// Get warp
 	Warp *warp = this->getWarp();
 
+	// Get synchronization stack
+	SyncStack* stack = warp->getSyncStack();
+
     unsigned address;
     unsigned pc;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Instbytes format
@@ -1866,10 +1876,9 @@ void Thread::ExecuteInst_SSY(Inst *inst)
               	emu->ReadConstMem(offset << 2,4, (char*) &address);
         }
 
-		SyncStackEntry entry(address,
+		stack->pushSyncStack(address,
 							warp->getActiveMask(),
 							SSY);
-        warp->pushStack(entry);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1881,18 +1890,19 @@ void Thread::ExecuteInst_PBK(Inst *inst)
 	// Get warp
 	Warp* warp = this->getWarp();
 
-    Emu *emu = Emu::getInstance();
+	// Get synchronization stack
+	SyncStack* stack = warp->getSyncStack();
 
 	unsigned address;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Instruction bytes format
@@ -1906,13 +1916,15 @@ void Thread::ExecuteInst_PBK(Inst *inst)
         //Check this
         if (format.constant)
         {
-                emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+                //emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+        		throw misc::Panic("getting address from constant memory is "
+        				"not supported.\n");
         }
         else
         {
         // Get operand value
                 if (format.offset >> 23 == 0)
-            address = format.offset + warp->getPC() + warp->getInstSize();
+                    address = format.offset + warp->getPC() + warp->getInstSize();
                 else
                         //means offset is negative value
                         throw misc::Panic("Negative PKB address offset."
@@ -1920,20 +1932,73 @@ void Thread::ExecuteInst_PBK(Inst *inst)
         }
 
     	// Push the address and current active mask into stack
-		SyncStackEntry entry(address,
+		stack->pushSyncStack(address,
 							warp->getActiveMask(),
 							PBK);
-        warp->pushStack(entry);
     }
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
+
 void Thread::ExecuteInst_PCNT(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Get warp
+	Warp* warp = this->getWarp();
+
+	// Get synchronization stack
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned address;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
+	}
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesPCNT format = inst_bytes.pcnt;
+
+
+	// Execute
+    if (id_in_warp == warp->getThreadCount() - 1)
+    {
+        //Check this
+        if (format.constant)
+        {
+                //emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+        		throw misc::Panic("getting address from constant memory is "
+        				"not supported.\n");
+
+        }
+        else
+        {
+        // Get operand value
+                if (format.offset >> 23 == 0)
+                    address = format.offset + warp->getPC() + warp->getInstSize();
+                else
+                        //means offset is negative value
+                        throw misc::Panic("Negative PCNT address offset."
+                                        "Not supported.");
+        }
+
+    	// Push the address and current active mask into stack
+		stack->pushSyncStack(address,
+							0,
+							PCNT);
+    }
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
+
 
 void Thread::ExecuteInst_GETCRSPTR(Inst *inst)
 {
@@ -1970,24 +2035,31 @@ void Thread::ExecuteInst_KIL(Inst *inst)
 	this->ISAUnimplemented(inst);
 }
 
+
 void Thread::ExecuteInst_BRK(Inst *inst)
 {
 	// Get warp
 	Warp *warp = this->getWarp();
+
+	// Get synchronization stack
+	SyncStack* stack = warp->getSyncStack();
+
 	unsigned active;
+	unsigned active_mask;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active
-	active = 1u & (warp->getActiveMask() >> id_in_warp);
+	active_mask = warp->getActiveMask();
+	active = 1u & (active_mask >> id_in_warp);
 
 	// Instruction bytes foramt
 	InstBytes inst_bytes =inst->getInstBytes();
@@ -2012,31 +2084,82 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 		// Clear the specific bit in active masks of all stack entries
 		// above the latest PBK entry (there must be at least one)
 		// To mask the break thread and prevent all active mask recoveries
-		warp->BRKStack(id_in_warp);
+		stack->MaskSyncStack(id_in_warp, BRK);
+
+		// Clear current active mask.
+		warp->clearActiveMaskBit(id_in_warp);
 	}
 
 	// Update target PC
 	if (id_in_warp == warp->getThreadCount() - 1)
 	{
-		// if all threads have been "broken" or inactive,
-        // pop all entries before the latest PBK entry.
-		// pc jumps to the PBK entry's reconv_pc.
-		if (warp->getActiveMask() == 0)
-		{
-            while (warp->getStackTopEntryType() != PBK)
-                warp->popStack();
-
-			warp->setTargetpc(warp->getStackTopReconvPc());
-		}
-		else
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
 	}
 }
 
 void Thread::ExecuteInst_CONT(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Get warp
+	Warp *warp = this->getWarp();
+
+	// Get synchronization stack
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned active;
+
+	// Predicate
+	unsigned pred_id;
+	unsigned pred;
+
+	// Instruction bytes foramt
+	InstBytes inst_bytes =inst->getInstBytes();
+	InstBytesCONT format = inst_bytes.cont;
+
+	// Get current PC
+	unsigned pc = warp->getPC();
+
+	//unsigned target_pc;
+
+	// Get Instruction size
+	unsigned inst_size = warp->getInstSize();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
+	}
+
+	// Active
+	active = 1u & (warp->getActiveMask() >> id_in_warp);
+
+	// Get predicate register value
+	pred_id = format.pred;
+	if(pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = !this->GetPred(pred_id-8);
+
+	// Set the latest PCNT active thread mask
+	// Clear active mask bit of specific all entries before the PCNT
+	if(active == 1 && pred == 1)
+	{
+		stack->MaskSyncStack(id_in_warp, CONT);
+
+		// Clear current active mask.
+		warp->clearActiveMaskBit(id_in_warp);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+
+	{
+		// Update PC
+        // all thread in active mask taken CONT
+        warp->setTargetpc(pc + inst_size);
+	}
 }
 
 void Thread::ExecuteInst_RTT(Inst *inst)
@@ -2093,11 +2216,11 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
-	if ((id_in_warp == 0) && warp->getPC() != 0
-			&& warp->getPC() == warp->getStackTopReconvPc())
+	if ((id_in_warp == 0) && warp->getPC())
 	{
-		warp->setActiveMask(warp->getStackTopActiveThreadMask());
-		warp->popStack();
+		PopResult ret = warp->getSyncStack()->popSyncStack(warp->getPC());
+		if (ret.find)
+			warp->setActiveMask(ret.active_mask);
 	}
 
 	// Active

@@ -30,6 +30,7 @@
 #include <lib/util/bit-map.h>
 
 #include "Grid.h"
+#include "SyncStack.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
 
@@ -51,44 +52,6 @@ public:
 
 	/// Virtual destructor for polymorphic class.
 	virtual ~WarpData();
-};
-
-enum EntryType
-{
-	NOTCONTROL = 0,
-	BRA = 1,
-	SSY,
-	PBK,
-	PCNT
-};
-
-struct SyncStackEntry
-{
-	// SSY and BRA's Reconvergence pc for current stack entry
-	// or CNT and BRK's jumping pc
-	unsigned int reconv_pc;
-
-	// Active mask for BRA, SSY and BRK
-	// Or stored active mask bit to be continued for PCTN
-	unsigned int active_thread_mask;
-
-	// Instruction type. Use to mark BRA and PBK for now.
-	// BRK will use this mark to clear the specific active mask bit
-	// From all entries before the PBK entry.
-	EntryType entry_type;
-
-	SyncStackEntry(unsigned rec, unsigned am, EntryType et)
-	{
-		reconv_pc = rec;
-		active_thread_mask = am;
-		entry_type = et;
-	}
-	SyncStackEntry()
-	{
-		reconv_pc = unsigned(-1);
-		active_thread_mask = unsigned(-1);
-		entry_type = NOTCONTROL;
-	}
 };
 
 /// The class Warp represents a warp in CUDA.
@@ -137,11 +100,11 @@ class Warp
 	unsigned active_mask;
 
 	// Synchronization stack
-	std::vector<SyncStackEntry> sync_stack;
+	std::unique_ptr<SyncStack> sync_stack;
 
 	// A temp but must be stored entry of sync_stack
 	// used by BRA to set individual bit of active mask
-	SyncStackEntry temp_entry;
+	unsigned temp_mask;
 
 
 	// Flags updated during instruction execution TODO still needed?
@@ -225,44 +188,17 @@ public:
 	/// Return at barrier
 	bool getAtBarrier() const { return at_barrier; }
 
+	/// Get temp mask
+	unsigned getTempMask() const { return temp_mask; }
+
 	/// Get acitive mask
 	unsigned getActiveMask() const { return active_mask; }
-
-	/// Get Sync stack top
-	SyncStackEntry getStackTop() const
-	{
-		return sync_stack.back();
-	}
 
 	/// Get number of 1s in active mask
 	unsigned getActiveMaskBitCount() const;
 
-	/// Get Sync stack top
-	unsigned getStackTopReconvPc() const
-	{
-		if (sync_stack.size())
-               return sync_stack.back().reconv_pc;
-		else
-			return 0;
-	}
-
-	/// Get Sync stack top active thread mask
-	unsigned getStackTopActiveThreadMask() const
-	{
-		return sync_stack.back().active_thread_mask;
-	}
-
-	/// Get Sync stack top active thread mask
-	EntryType getStackTopEntryType() const
-	{
-		return sync_stack.back().entry_type;
-	}
-
-	/// Get active thread mask stored in temp_entry
-	unsigned getTempEntryActiveThreadMask() const
-	{
-		return temp_entry.active_thread_mask;
-	}
+	/// Get synchronization stack
+	SyncStack* getSyncStack() const { return sync_stack.get(); }
 
 	/// Get the number of threads forming the warp.
 	unsigned getThreadCount() const { return thread_count; }
@@ -304,18 +240,12 @@ public:
     /// Set active mask
     void setActiveMask(unsigned am) { active_mask = am; }
 
-    /// Set temp_entry's active mask bit
+    /// Set temp mask bit
     /// \param num
     /// the bit number to be set
-    void setTempEntryActiveMaskBit(unsigned num)
+    void setTempMaskBit(unsigned num)
     {
-    	temp_entry.active_thread_mask |= 1u << num;
-    }
-
-    void setTempEntryAddressAndType(unsigned rec_pc, EntryType type)
-    {
-    	temp_entry.entry_type = type;
-    	temp_entry.reconv_pc = rec_pc;
+    	temp_mask |= 1u << num;
     }
 
 	////////////////////////////////////////////////////////////////////
@@ -344,29 +274,14 @@ public:
 		return os;
 	}
 
-    /// Push Synchronization stack
-    /// element is inserted instead of "push back" keeping the stack
-    /// ordered by reconvergence pc
-    void pushStack(SyncStackEntry element);
-
-    /// Push Synchronization stack with temp_entry
-    void pushTempEntry();
-
-    /// Pop Synchronization stack
-    void popStack();
-
-    /// The atom operation of each thread to clear its bits
-    /// in all entries in stack before the latest PBK
-    /// used in BRK, declared in warp scope to avoid being verbose
-    void BRKStack(unsigned id_in_warp);
-
     /// Initial (or reset) temp_entry
-    void resetTempEntry()
+    void resetTempMask()
     {
-    	temp_entry.active_thread_mask = 0u;
-    	temp_entry.entry_type = NOTCONTROL;
-        temp_entry.reconv_pc = unsigned(-1);
+        temp_mask = 0u;
     }
+
+    /// Clear specific bit of current active mask
+    void clearActiveMaskBit(unsigned id) { active_mask &= ~(1u << id); }
 
 	/// Emulate the next instruction in the warp at the current
 	/// position of the program counter
