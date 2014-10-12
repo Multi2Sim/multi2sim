@@ -20,8 +20,6 @@
 #ifndef ARCH_KEPLER_EMU_THREAD_H
 #define ARCH_KEPLER_EMU_THREAD_H
 
-#ifdef __cplusplus
-
 #include <arch/kepler/asm/Asm.h>
 #include <arch/kepler/asm/Inst.h>
 
@@ -204,6 +202,5 @@ public :
 };
 
 } //namespace
-#endif
 
 #endif

@@ -389,8 +389,35 @@ struct InstBytesPBK
 };
 
 
+// PCNT
+// constant unverified
+struct InstBytesPCNT
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int unknown0:	  5; // 6:2
+	unsigned long long int constant:	  1; // 7
+	unsigned long long int unknown1:	 15; // 22:8
+	unsigned long long int offset:       24; // 46:23
+	unsigned long long int unknown2:	  8; // 54:47
+	unsigned long long int op1:			  9; // 63:55
+};
+
+
 // BRK
 struct InstBytesBRK
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int cc:   	      5; // 6:2
+	unsigned long long int unknown0:	 11; // 17:10
+	unsigned long long int pred:	      4; // 21:18
+	unsigned long long int unknown1:     33; // 54:22
+	unsigned long long int op1:			  9; // 63:55
+};
+
+
+// CONT
+// cc not verified
+struct InstBytesCONT
 {
 	unsigned long long int op0:			  2; // 1:0
 	unsigned long long int cc:   	      5; // 6:2
@@ -436,7 +463,9 @@ union InstBytes
 	InstBytesNOP      nop;
 	InstBytesSHL	  shl;
 	InstBytesPBK	  pbk;
+	InstBytesCONT	  cont;
 	InstBytesBRK	  brk;
+	InstBytesPCNT	  pcnt;
 	InstBytesIADD     iadd;
 };
 
