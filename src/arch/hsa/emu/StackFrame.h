@@ -20,12 +20,15 @@
 #ifndef ARCH_HSA_EMU_STACKFRAME_H
 #define ARCH_HSA_EMU_STACKFRAME_H
 
+#include <arch/hsa/driver/Driver.h>
+
 #include "Function.h"
 #include "VariableScope.h"
 
 namespace HSA
 {
 class WorkItem;
+class Driver;
 
 class StackFrame
 {
@@ -58,9 +61,19 @@ class StackFrame
 	// C registers, use a 8 bit char for each 1 bit boolean value
 	unsigned char c_registers[8];
 
-	// A flag that determines if this stack frame is running a callback
-	// function for agent iterate
-	bool agentIterateCallback = false;
+public:
+
+	/// Prototype foe return callback functions
+	typedef int (*CallbackFn)(mem::Memory *memory, unsigned args_ptr);
+
+private:
+	// If driver_function is set, when the stackframe return, call this
+	// function
+	CallbackFn return_callback = nullptr;
+
+	// The address to the memory argment to be passed to the callback 
+	// function when return
+	unsigned callback_args_ptr;
 
 public:
 
@@ -78,6 +91,14 @@ public:
 
 	/// Set the program counter
 	void setPc(char *pc);
+
+	/// Set return callback function
+	void setReturnCallback(CallbackFn callback,
+			unsigned args_ptr)
+	{
+		this->return_callback = callback;
+		this->callback_args_ptr = args_ptr;
+	}
 
 	/// Dump stack frame information
 	void Dump(std::ostream &os) const;
@@ -183,19 +204,18 @@ public:
 	/// Set next directive
 	void setNextDirective(char *directive) { next_dir = directive; }
 
-	/// Determines if the stack frame should return to the agent iterator
-	bool isAgentIterateCallback() const
+	/// Get the return callback function
+	CallbackFn getReturnCallback() const 
 	{
-		return agentIterateCallback;
+		return return_callback;
 	}
 
-	/// Set the stack frame to be an agent iterate call back, when this
-	/// function returns, pop the stack frame but do not return to the
-	/// caller.
-	void setAgentIterateCallback(bool agentIterateCallback = false)
+	/// Return the pointers to the callback arguments
+	unsigned getReturnCallbackArgsPtr() const
 	{
-		this->agentIterateCallback = agentIterateCallback;
+		return callback_args_ptr;
 	}
+
 };
 
 }  // namespace HSA

@@ -22,12 +22,12 @@
 namespace HSA
 {
 
-Component *Component::getDefaultCPUComponent()
+Component *Component::getDefaultCPUComponent(unsigned long long handler)
 {
 	// The component object allocated here with be cast into a unique_ptr
 	// by the function who call this function. Therefore, no need to delete
 	// it in this function
-	Component *component = new Component();
+	Component *component = new Component(handler);
 
 	// Set attributes of the virtual CPU device
 	component->setName("Multi2Sim Virtual HSA CPU");
@@ -39,12 +39,12 @@ Component *Component::getDefaultCPUComponent()
 }
 
 
-Component *Component::getDefaultGPUComponent()
+Component *Component::getDefaultGPUComponent(unsigned long long handler)
 {
 	// The component object allocated here with be cast into a unique_ptr
 	// by the function who call this function. Therefore, no need to delete
 	// it in this function
-	Component *component = new Component();
+	Component *component = new Component(handler);
 
 	// Set attributes of the virtual CPU device
 	component->setName("Multi2Sim Virtual HSA GPU");

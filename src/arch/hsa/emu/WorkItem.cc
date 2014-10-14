@@ -121,17 +121,15 @@ bool WorkItem::ReturnFunction()
 	}
 
 	// Check if this frame is a runtime callback.
-	/*
-	if (callee_frame->isAgentIterateCallback())
+	if (callee_frame->getReturnCallback())
 	{
 		stack.pop_back();
-		bool intercepted = RuntimeInterceptor::getInstance()
-			->Intercept("&hsa_iterate_agent_next",
-				stack.back().get());
-		assert(intercepted == true);
+		StackFrame::CallbackFn callback = 
+			callee_frame->getReturnCallback();
+		callback(Emu::getInstance()->getMemory(), 
+				callee_frame->getReturnCallbackArgsPtr());
 		return true;
 	}
-	*/
 
 	// Retrieve second last element
 	if (stack.size()>1)

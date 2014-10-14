@@ -352,11 +352,6 @@ Context::Context()
 
 	// Debug
 	emu->context_debug << "Context " << pid << " created\n";
-
-	for (int i=0; i<InstOpcodeCount; i++)
-	{
-		this->inst_count[i] = 0;
-	}
 }
 
 
@@ -364,11 +359,6 @@ Context::~Context()
 {
 	// Debug
 	emu->context_debug << "Context " << pid << " destroyed\n";
-
-	for (int i=0; i<InstOpcodeCount; i++)
-	{
-		std::cout << i << ", " << inst_count[i] << "\n";
-	}
 }
 
 
@@ -723,7 +713,7 @@ void Context::HostThreadTimerCancel()
 
 void Context::Execute()
 {
-	// Memory permissions should not be checked if the context is executing in
+	// Memory permissioContext.cc:358:9:ns should not be checked if the context is executing in
 	// speculative mode. This will prevent guest segmentation faults to occur.
 	bool spec_mode = getState(StateSpecMode);
 	if (spec_mode)
@@ -782,8 +772,7 @@ void Context::Execute()
 
 	// Advance instruction pointer
 	regs.incEip(inst.getSize());
-	
-	this->inst_count[inst.getOpcode()]++;
+
 	// Call instruction emulation function
 	if (inst.getOpcode())
 	{

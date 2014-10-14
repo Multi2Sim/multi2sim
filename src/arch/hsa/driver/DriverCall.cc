@@ -22,6 +22,7 @@
 	__FUNCTION__));
 
 #include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/emu/Emu.h>
 
 #include "Driver.h"
 
@@ -53,6 +54,40 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 }
 
 
+int IterateAgentNext(mem::Memory *memory, unsigned args_ptr)
+{
+	std::cout << "In IterateAgentNext\n";
+	
+	std::cout << misc::fmt("In function %s ", __FUNCTION__);
+	std::cout << "ret: "<< 
+		Driver::getInstance()->
+		getArgumentValue<unsigned int>(0, memory, args_ptr);
+	std::cout << ", callback: " << 
+		Driver::getInstance()->
+		getArgumentValue<unsigned int>(4, memory, args_ptr);
+	std::cout << ", data: " <<
+		Driver::getInstance()->
+		getArgumentValue<unsigned>(8, memory, args_ptr);
+	std::cout << ", host_lang: " <<
+		Driver::getInstance()->
+		getArgumentValue<unsigned int>(12, memory, args_ptr);
+	std::cout << ", workitem_ptr: " << 
+		Driver::getInstance()->
+		getArgumentValue<unsigned long long>(16, memory, args_ptr)
+		<< "\n";
+	
+	Driver *driver = Driver::getInstance();
+	WorkItem *work_item = (WorkItem *)
+			driver->getArgumentValue<unsigned long long>(16, 
+					memory, args_ptr);
+		
+	StackFrame *stack_top = work_item->getStackTop();
+	driver->ExitInterceptedEnvironment(args_ptr, stack_top);
+	
+	return 0;
+}
+
+
 int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 {	
 	// Arguments		| Offset	| Size
@@ -63,6 +98,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	// workitem_prt		| 16		| 8
 
 	// Dump the argument information
+	
 	std::cout << misc::fmt("In function %s ", __FUNCTION__);
 	std::cout << "ret: "<< 
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
@@ -75,50 +111,45 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	std::cout << ", workitem_ptr: " << 
 		getArgumentValue<unsigned long long>(16, memory, args_ptr)
 		<< "\n";
-	std::cout.flush();
-
-
-	// Stores the arguments for future use
-	agent_iterator_memory = memory;
-	agent_iterator_args_ptr = args_ptr;
+	
 
 	// Retrieve argument buffer
-	char *arg_buffer = memory->getBuffer(args_ptr, 16,
+	char *arg_buffer = memory->getBuffer(args_ptr, 24,
 			mem::Memory::AccessRead);
 
 	// Get virtual machine setup
 	Emu *emu = Emu::getInstance();
-	this->component_iterator = emu->getComponentBeginIterator();
-	auto end_iterator = emu->getComponentEndIterator();
+	Component *component = emu->getNextComponent(0);
 
-	// No component available, return
-	if (end_iterator == this->component_iterator)
-	{
-		unsigned int hsa_status_t = 0;
-		memcpy(arg_buffer, &hsa_status_t, 4);
+	// No component to iterate anymore
+	if (!component){
+		// Set return argument to HSA_STATUS_SUCCESS
+		setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0, 
+				memory, args_ptr);
+
+		// Return 0 to tell the function finised its execution
 		return 0;
 	}
+
+	// Construct a stack frame and implant it the the caller stack
 
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	WorkItem *work_item = (WorkItem *)getArgumentValue<unsigned long long>(
 			16, memory, args_ptr);
-	work_item->Backtrace(std::cout);
-	std::cout.flush();
-	unsigned function_directory_address =
-			*(unsigned *)memory->getBuffer(
-					args_ptr+4, 4,
-					mem::Memory::AccessRead);
+	unsigned callback_address = getArgumentValue<unsigned>(4, 
+			memory, args_ptr);
 	BrigDirectiveFunction *function_directory =
-			(BrigDirectiveFunction *)(unsigned long long)function_directory_address;
-	std::string callback_function_name =
-			BrigStrEntry::GetStringByOffset(binary,
+			(BrigDirectiveFunction *)
+			(unsigned long long)callback_address;
+	std::string callback_name = BrigStrEntry::GetStringByOffset(binary,
 			function_directory->name);
 
 	// Create new stack frame
+	Function *callback = ProgramLoader::getInstance()->getFunction(
+			callback_name);
 	StackFrame *stack_frame = new StackFrame(
-			ProgramLoader::getInstance()->getFunction(callback_function_name),
-			work_item);
+			callback, work_item);
 
 	// Pass argument into stack frame
 	VariableScope *function_args = stack_frame->getFunctionArguments();
@@ -144,7 +175,8 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	{
 		throw misc::Panic(misc::fmt("Creating argument %s failed!\n", arg1_name.c_str()));
 	}
-	memcpy(callee_buffer, &this->component_iterator->first, 8);
+	unsigned long long *buf = (unsigned long long *)callee_buffer;
+	*buf = component->getHandler();
 
 	// Pass argument 2 (Address to the data field) to the callback
 	BrigDirectiveSymbol *arg2 = (BrigDirectiveSymbol *)arg1_entry.next();
@@ -159,7 +191,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	memcpy(callee_buffer, arg_buffer + 8, 8);
 
 	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setAgentIterateCallback(true);
+	stack_frame->setReturnCallback(&IterateAgentNext, args_ptr);
 
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(stack_frame);
@@ -167,27 +199,25 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	return 1;
 }
 
-int Driver::CallIterateAgentNext(mem::Memory *memory, unsigned args_ptr)
-{
-	return 0;
-}
-
 
 int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 {
-	// Arguments		| Offset
-	// hsa_status_t		| 0
-	// agent		| 4
-	// attribute		| 12
-	// value		| 16
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// agent		| 4		| 8
+	// attribute		| 12		| 4
+	// value		| 16		| 4
+	// host_language	| 20		| 4
+	// workitem_ptr		| 24		| 8
 
 	// Retrieve argument buffer
 	char *arg_buffer = memory->getBuffer(args_ptr, 16,
 			mem::Memory::AccessRead);
 
 	// Retrieve agent handler
-	unsigned long long agent_handler =
-			*(unsigned long long *)(arg_buffer + 4);
+	unsigned long long agent_handler = 
+			getArgumentValue<unsigned long long>(4, memory, 
+					args_ptr);
 	std::cout << "Agent_handler: " << agent_handler << '\n';
 
 	// Try to find the agent
@@ -200,8 +230,16 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// If the device is found, get the attribute queried
-	unsigned int attribute = *(unsigned int *)(arg_buffer+12);
+	unsigned int attribute = getArgumentValue<unsigned int>(12, memory, 
+			args_ptr);
 	std::cout << "Attribute: " << attribute << '\n';
+
+	// Retrieve the pointer to the value
+	unsigned value_address = getArgumentValue<unsigned int>(16, memory, 
+			args_ptr);
+	char *value_ptr = memory->getBuffer(value_address, 8, 
+			mem::Memory::AccessWrite);
+
 	switch(attribute)
 	{
 	case HSA_AGENT_INFO_NAME:
@@ -246,23 +284,11 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	case HSA_AGENT_INFO_DEVICE:
 		if (component->IsGPU())
 		{
-			unsigned int value_address =
-					*(unsigned int *)(arg_buffer + 16);
-			unsigned int *value =
-					(unsigned int *)
-					(unsigned long long)
-					value_address;
-			*value = 1;
+			*value_ptr = 1;
 		}
 		else
 		{
-			unsigned int value_address =
-					*(unsigned int *)(arg_buffer + 16);
-			unsigned int *value =
-					(unsigned int *)
-					(unsigned long long)
-					value_address;
-			*value = 0;
+			*value_ptr = 0;
 		}
 		break;
 	case HSA_AGENT_INFO_CACHE_SIZE:

@@ -124,11 +124,11 @@ Emu *Emu::getInstance()
 void Emu::setDefaultComponentList()
 {
 	// Add a CPU device
-	Component *cpu = Component::getDefaultCPUComponent();
+	Component *cpu = Component::getDefaultCPUComponent(1);
 	components.insert(std::make_pair(1, std::unique_ptr<Component>(cpu)));
 
 	// Add a simple GPU component
-	Component *gpu = Component::getDefaultGPUComponent();
+	Component *gpu = Component::getDefaultGPUComponent(2);
 	components.insert(std::make_pair(2, std::unique_ptr<Component>(gpu)));
 
 	// Set the CPU as the host component
