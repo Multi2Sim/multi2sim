@@ -40,7 +40,6 @@ namespace HSA
 
 class Emu;
 class WorkGroup;
-class StackFrame;
 class ProgramLoader;
 
 /// HSA work item
@@ -259,6 +258,14 @@ class WorkItem
 
  	/// Dump backtrace information
  	void Backtrace(std::ostream &os) const;
+
+	/// Return the stack top stack frame
+	StackFrame* getStackTop()
+	{
+		StackFrame *stack_top = stack.back().get();
+		stack_top->Dump(std::cout);
+		return stack.back().get();
+	}
 
  	/// Push a stack frame into the stack
  	void PushStackFrame(StackFrame *stack_frame)

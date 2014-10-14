@@ -127,6 +127,16 @@ public:
 			return it->second.get();
 	}
 
+	/// Get the component whose handler is next to the value passed in
+	Component *getNextComponent(unsigned long long handler) const
+	{
+		auto it = components.upper_bound(handler);
+		if (it == components.end())
+			return nullptr;
+		else
+			return it->second.get();
+	}
+
 	/// Dump component list for debug purpose
 	void DumpComponentList(std::ostream &os) const;
 
