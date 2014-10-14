@@ -23,12 +23,14 @@
 #include <arch/common/Driver.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
-#include <arch/hsa/emu/Emu.h>
+#include <memory/Memory.h>
 
 #include "runtime.h"
 
 namespace HSA
 {
+class StackFrame;
+class Component;
 
 class Driver: public comm::Driver
 {
@@ -87,6 +89,8 @@ class Driver: public comm::Driver
 
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
+
+public:
 
 	// Retrieve the value at a certain memory space
 	template <typename T>
@@ -163,12 +167,11 @@ private:
 	void PassBackByValue(unsigned arg_address,
 			StackFrame *stack_top);
 
-
-	// The intercepted work item
-	// I do not like this thing -- Yifan.
-	WorkItem *intercepted_work_item;
-
 public:
+	
+	/// Prototype for callback functions;
+	typedef int (Driver::*CallbackFn)(mem::Memory *memory, 
+			unsigned args_ptr);
 
 	/// Try to intercept the execution of a HSAIL function
 	///

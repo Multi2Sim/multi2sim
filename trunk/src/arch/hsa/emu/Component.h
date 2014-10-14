@@ -40,6 +40,9 @@ protected:
 
 	// A data structure holds the information of the agent
 	struct AgentInfo{
+		// The global unique 64-bit device handler
+		unsigned long long handler;
+
 		// Determine if the device is a GPU device
 		bool is_GPU;
 
@@ -65,13 +68,16 @@ protected:
 public:
 
 	/// Constructor
-	Component(){};
+	Component(unsigned long long handler)
+	{
+		this->agent_info.handler = handler;
+	};
 
 	/// Create and return a virtual CPU device
-	static Component *getDefaultCPUComponent();
+	static Component *getDefaultCPUComponent(unsigned long long handler);
 
 	/// Create and return a virtual GPU device
-	static Component *getDefaultGPUComponent();
+	static Component *getDefaultGPUComponent(unsigned long long handler);
 
 	/// Insert a queue into the queue list
 	void addQueue(AQLQueue *queue);
@@ -105,6 +111,9 @@ public:
 	//
 	// Setters and getters for agent_info
 	//
+
+	/// Get handler
+	unsigned long long getHandler() { return agent_info.handler; }
 
 	/// Set is_GPU field in agent_info
 	void setIsGPU(bool is_GPU){ agent_info.is_GPU = is_GPU; }
