@@ -59,28 +59,26 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 		(thread_block->getWarpCount() - 1) * warp_size;
 
 	// SyncStack
-	sync_stack = std::unique_ptr<SyncStack>(new SyncStack());
+	sync_stack = std::unique_ptr<SyncStack>(new SyncStack(thread_count));
 
 	// Instruction
 	pc = 0;
+	target_pc = 0;
 	inst_size = 8;
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
 
 	// Initialize active mask
 	if (thread_count == warp_size)
-            active_mask = unsigned(-1);
+            sync_stack.get()->setActiveMask(unsigned(-1));
 	else
-		active_mask = (1u << thread_count) - 1;
-
-	// Initialize temp_entry
-	resetTempMask();
+            sync_stack.get()->setActiveMask((1u << thread_count) - 1);
 
 	// Reset flags
 	at_barrier_thread_count = 0;
+	at_barrier = 0;
 	finished_thread = 0;
 	finished_emu = false;
-	taken_thread = 0;
 
 	// simulation performance
 	emu_inst_count = 0;
@@ -173,40 +171,6 @@ void Warp::Execute()
 	//asEmu(emu)->instructions++; // no parent class any more
 }
 
-/*
-unsigned Warp::getStackPCNTReconvPc() const
-{
-		for(auto i = sync_stack.rbegin(); i < sync_stack.rend(); ++i)
-		{
-				if (i->entry_type == PCNT)
-					return i->reconv_pc;
-		}
-
-		throw misc::Error("Instruction PCNT error."
-				"No PBK entry in synchronization stack");
-		return 0;
-}
-
-
-void Warp::CONTStack(unsigned id_in_warp)
-{
-		for(auto i = sync_stack.rbegin(); i < sync_stack.rend(); ++i)
-		{
-				if (i->entry_type == PCNT)
-				{
-                        i->active_thread_mask |= (1u << id_in_warp);
-						// clear the current active mask
-						active_mask &= ~(0x1u << id_in_warp);
-						return;
-				}
-				// clear the bit in every entry before a PCNT
-				i->active_thread_mask &= ~(0x1u << id_in_warp);
-		}
-
-		throw misc::Error("Instruction PCNT error."
-				"No PBK entry in synchronization stack");
-}
-*/
 
 unsigned Warp::getFinishedThreadCount() const
 {
@@ -220,18 +184,6 @@ unsigned Warp::getFinishedThreadCount() const
         return num;
 }
 
-
-unsigned Warp::getActiveMaskBitCount() const
-{
-        unsigned num = 0;
-
-        for (unsigned i = 0; i < thread_count; i++)
-                num += (active_mask >> i) & 1u;
-
-        assert(num <= thread_count);
-
-        return num;
-}
 
 
 } //namespace
