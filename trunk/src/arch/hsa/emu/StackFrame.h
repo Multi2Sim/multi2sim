@@ -21,6 +21,7 @@
 #define ARCH_HSA_EMU_STACKFRAME_H
 
 #include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/driver/DriverCallbackInfo.h>
 
 #include "Function.h"
 #include "VariableScope.h"
@@ -64,16 +65,15 @@ class StackFrame
 public:
 
 	/// Prototype foe return callback functions
-	typedef int (*CallbackFn)(mem::Memory *memory, unsigned args_ptr);
+	typedef int (*CallbackFn)(DriverCallbackInfo *info);
 
 private:
-	// If driver_function is set, when the stackframe return, call this
+	// If driver_function is set, when the stack frame return, call this
 	// function
 	CallbackFn return_callback = nullptr;
 
-	// The address to the memory argment to be passed to the callback 
-	// function when return
-	unsigned callback_args_ptr;
+	// The information provided for the return callback function
+	DriverCallbackInfo *callback_info;
 
 public:
 
@@ -94,10 +94,10 @@ public:
 
 	/// Set return callback function
 	void setReturnCallback(CallbackFn callback,
-			unsigned args_ptr)
+			DriverCallbackInfo *info)
 	{
 		this->return_callback = callback;
-		this->callback_args_ptr = args_ptr;
+		this->callback_info = info;
 	}
 
 	/// Dump stack frame information
@@ -211,9 +211,9 @@ public:
 	}
 
 	/// Return the pointers to the callback arguments
-	unsigned getReturnCallbackArgsPtr() const
+	DriverCallbackInfo* getReturnCallbackInfo() const
 	{
-		return callback_args_ptr;
+		return callback_info;
 	}
 
 };

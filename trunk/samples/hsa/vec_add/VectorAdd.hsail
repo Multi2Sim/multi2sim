@@ -28,7 +28,7 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %da
 	
 	ld_private_u32 $s0, [%type];
 	// If the device is a GPU
-	cmp_eq_b1_u32 $c0, $s0, 1;
+	cmp_ne_b1_u32 $c0, $s0, 1;
 	cbr $c0, @not_gpu_agent;
 	ld_arg_u64 $d0, [%agent];
 	ld_arg_u32 $s1, [%data];
