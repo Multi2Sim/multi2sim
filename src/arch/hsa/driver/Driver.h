@@ -31,6 +31,7 @@ namespace HSA
 {
 class StackFrame;
 class Component;
+class WorkItem;
 
 class Driver: public comm::Driver
 {
@@ -90,6 +91,8 @@ class Driver: public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
+
+
 public:
 
 	// Retrieve the value at a certain memory space
@@ -137,6 +140,13 @@ public:
 
 	/// Destructor
 	~Driver();
+
+	///
+	void StartAgentIterateCallback(WorkItem *workitem,
+			unsigned callback_address,
+			unsigned long long component_handler,
+			unsigned long long data_address,
+			unsigned args_ptr);
 
 
 

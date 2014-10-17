@@ -23,7 +23,9 @@
 
 #include <arch/hsa/asm/BrigDef.h>
 #include <arch/hsa/emu/Emu.h>
+#include <arch/hsa/emu/Component.h>
 
+#include "DriverCallbackInfo.h"
 #include "Driver.h"
 
 namespace HSA
@@ -54,11 +56,19 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-int IterateAgentNext(mem::Memory *memory, unsigned args_ptr)
+int IterateAgentNext(DriverCallbackInfo *args)
 {
-	std::cout << "In IterateAgentNext\n";
-	
+	// Convert the info object to be this function specific
+	AgentIterateNextInfo *info = (AgentIterateNextInfo *)args;
+	mem::Memory *memory = info->getMemory();
+	WorkItem *work_item = info->getWorkItem();
+	unsigned args_ptr = info->getArgsPtr();
+	unsigned long long last_handler =
+			info->getLastComponentHandler();
+
+	/*	
 	std::cout << misc::fmt("In function %s ", __FUNCTION__);
+	std::cout << misc::fmt("last_handler: %lld, ", last_handler);
 	std::cout << "ret: "<< 
 		Driver::getInstance()->
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
@@ -75,16 +85,36 @@ int IterateAgentNext(mem::Memory *memory, unsigned args_ptr)
 		Driver::getInstance()->
 		getArgumentValue<unsigned long long>(16, memory, args_ptr)
 		<< "\n";
-	
+	*/
+
+	// Get virtual machine setup
 	Driver *driver = Driver::getInstance();
-	WorkItem *work_item = (WorkItem *)
-			driver->getArgumentValue<unsigned long long>(16, 
-					memory, args_ptr);
-		
-	StackFrame *stack_top = work_item->getStackTop();
-	driver->ExitInterceptedEnvironment(args_ptr, stack_top);
-	
-	return 0;
+	Emu *emu = Emu::getInstance();
+	Component *component = emu->getNextComponent(last_handler);
+
+	// No component to iterate anymore
+	if (!component){
+		// Set return argument to HSA_STATUS_SUCCESS
+		driver->setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+		// Exit intercepted environment
+		StackFrame *stack_top = work_item->getStackTop();
+		driver->ExitInterceptedEnvironment(args_ptr, stack_top);
+
+		// Return 0 to tell the function finised its execution
+		return 0;
+	}
+
+	// Construct a stack frame and implant it the the caller stack
+	unsigned callback_address = driver->getArgumentValue<unsigned>
+			(4, memory,args_ptr);
+	unsigned long long data_address = driver->getArgumentValue
+			<unsigned long long>(8, memory, args_ptr);
+	driver->StartAgentIterateCallback(work_item, callback_address,
+			component->getHandler(), data_address, args_ptr);
+
+	return 1;
 }
 
 
@@ -98,7 +128,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	// workitem_prt		| 16		| 8
 
 	// Dump the argument information
-	
+	/*	
 	std::cout << misc::fmt("In function %s ", __FUNCTION__);
 	std::cout << "ret: "<< 
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
@@ -111,11 +141,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	std::cout << ", workitem_ptr: " << 
 		getArgumentValue<unsigned long long>(16, memory, args_ptr)
 		<< "\n";
-	
-
-	// Retrieve argument buffer
-	char *arg_buffer = memory->getBuffer(args_ptr, 24,
-			mem::Memory::AccessRead);
+	*/
 
 	// Get virtual machine setup
 	Emu *emu = Emu::getInstance();
@@ -132,13 +158,28 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// Construct a stack frame and implant it the the caller stack
+	WorkItem *workitem = (WorkItem *)getArgumentValue<unsigned long long>(
+			16, memory, args_ptr);
+	unsigned callback_address = getArgumentValue<unsigned>(4, memory, 
+			args_ptr);
+	unsigned long long data_address = getArgumentValue<unsigned long long>
+		(8, memory, args_ptr);	
+	StartAgentIterateCallback(workitem, callback_address, 
+			component->getHandler(), data_address,
+			args_ptr);
 
+	return 1;
+}
+
+
+void Driver::StartAgentIterateCallback(WorkItem *work_item,
+		unsigned callback_address, 
+		unsigned long long componentHandler, 
+		unsigned long long data_address,
+		unsigned args_ptr)
+{
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	WorkItem *work_item = (WorkItem *)getArgumentValue<unsigned long long>(
-			16, memory, args_ptr);
-	unsigned callback_address = getArgumentValue<unsigned>(4, 
-			memory, args_ptr);
 	BrigDirectiveFunction *function_directory =
 			(BrigDirectiveFunction *)
 			(unsigned long long)callback_address;
@@ -171,12 +212,8 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 			binary, arg1->name);
 	function_args->DeclearVariable(arg1_name, 8, BRIG_TYPE_U64);
 	char *callee_buffer = function_args->getBuffer(arg1_name);
-	if (!callee_buffer)
-	{
-		throw misc::Panic(misc::fmt("Creating argument %s failed!\n", arg1_name.c_str()));
-	}
 	unsigned long long *buf = (unsigned long long *)callee_buffer;
-	*buf = component->getHandler();
+	*buf = componentHandler;
 
 	// Pass argument 2 (Address to the data field) to the callback
 	BrigDirectiveSymbol *arg2 = (BrigDirectiveSymbol *)arg1_entry.next();
@@ -184,19 +221,21 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 			binary, arg2->name);
 	function_args->DeclearVariable(arg2_name, 16, BRIG_TYPE_U32);
 	callee_buffer = function_args->getBuffer(arg2_name);
-	if (!callee_buffer)
-	{
-		throw misc::Panic(misc::fmt("Creating argument %s failed!\n", arg2_name.c_str()));
-	}
-	memcpy(callee_buffer, arg_buffer + 8, 8);
+	buf = (unsigned long long *)callee_buffer;
+	*buf = data_address;
+
+	// Setup info for return callback function
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	AgentIterateNextInfo *callback_info = new AgentIterateNextInfo(
+			work_item, memory, args_ptr, componentHandler);
+	//std::cout << "Callback info have component hander " << 
+	//		callback_info->getLastComponentHandler() << "\n";
 
 	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setReturnCallback(&IterateAgentNext, args_ptr);
+	stack_frame->setReturnCallback(&IterateAgentNext, callback_info);
 
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(stack_frame);
-
-	return 1;
 }
 
 
