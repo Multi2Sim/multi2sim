@@ -120,14 +120,13 @@ bool WorkItem::ReturnFunction()
 		Emu::isa_debug << "\n";
 	}
 
-	// Check if this frame is a runtime callback.
+	// Check if this frame have a call back funtion when it return
 	if (callee_frame->getReturnCallback())
 	{
 		stack.pop_back();
 		StackFrame::CallbackFn callback = 
 			callee_frame->getReturnCallback();
-		callback(Emu::getInstance()->getMemory(), 
-				callee_frame->getReturnCallbackArgsPtr());
+		callback(callee_frame->getReturnCallbackInfo());
 		return true;
 	}
 
