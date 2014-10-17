@@ -28,115 +28,212 @@
 namespace Kepler
 {
 
-enum EntryType
+enum SyncStackEntryType
 {
-        NOTCONTROL = 0,
-        BRA = 1,
-        SSY,
-        PBK,
-        PCNT
+        SyncStackEntryNotControl,
+        SyncStackEntryBRA,
+        SyncStackEntrySSY,
+        SyncStackEntryPBK,
+        SyncStackEntryPCNT
 };
 
-enum MaskType
+enum SyncStackMaskType
 {
-        NOTMASK = 0,
-        BRK = 1,
-        CONT,
-        EXIT
+        SyncStackMaskNotMask,
+        SyncStackMaskBRK,
+        SyncStackMaskCONT,
+        SyncStackMaskEXIT
 };
 
-struct SyncStackEntry
-{
-
-        // acitve masks to be restored
-        unsigned int active_thread_mask;
-
-        // entry type. Used in individual type operation.
-        EntryType entry_type;
-
-        SyncStackEntry()
-        {
-        	active_thread_mask = unsigned(-1);
-        	entry_type = NOTCONTROL;
-        }
-        SyncStackEntry(unsigned rec, unsigned am, EntryType et)
-        {
-        	active_thread_mask = am;
-        	entry_type = et;
-        }
-};
-
-// A result value used by popSyncStack, with a bool to validate it.
-struct PopResult
-{
-	bool find;
-	unsigned active_mask;
-
-	PopResult():find(false), active_mask(0x0){}
-
-	PopResult(bool find, unsigned active_mask)
-	{
-		this->find = find;
-		this->active_mask = active_mask;
-	}
-};
 
 // Main class of synchronization stack
 class SyncStack
 {
-        typedef std::unique_ptr<SyncStackEntry> handler;
-        typedef std::list<handler>::iterator list_it;
+        class SyncStackEntry
+        {
+                // reconvergence pc
+                unsigned reconv_pc;
+
+                // acitve masks to be restored
+                unsigned int active_thread_mask;
+
+                // entry type. Used in individual type operation.
+                SyncStackEntryType entry_type;
+
+        public:
+
+                SyncStackEntry()
+                {
+                		reconv_pc = 0u;
+                		active_thread_mask = unsigned(-1);
+                		entry_type = SyncStackEntryNotControl;
+                }
+
+                SyncStackEntry(unsigned rec, unsigned am, SyncStackEntryType et)
+                {
+                    	reconv_pc = rec;
+                    	active_thread_mask = am;
+                    	entry_type = et;
+                }
+
+                unsigned getActiveThreadMask() { return active_thread_mask; }
+
+                unsigned getEntryType() { return entry_type; }
+
+                unsigned getRenconvPC() { return reconv_pc; }
+
+                void setActiveThreadMask(unsigned am)
+                {
+                		active_thread_mask = am;
+                }
+
+                /// It compares the entry's type with param.
+                /// return true if type matches.
+                bool compareEntryType(SyncStackEntryType type)
+                {
+                        return type == entry_type;
+                }
+
+                /// clear the corresponding bit in active thread mask
+                void MaskBit(unsigned id_in_warp)
+                {
+                        active_thread_mask &= ~(1u << id_in_warp);
+                }
+
+                /// Set the corresponding bit in active thread mask
+                void SetBit(unsigned id_in_warp)
+                {
+                        active_thread_mask |= (1u << id_in_warp);
+                }
+        };
 
         // Modeled as a list, instead of a stack, recording the active mask
         // and entry type.
         // Each element of it is mapped with a reconvergence pc in hash table.
-        std::list<handler> sync_stack;
+        // This list is used to keep track of pushing order of reconvergence pcs.
+        // It is easy to find all entries before a PBK entry,
+        // once BRK wants to mask a specific bit of them all.
+        std::list<std::unique_ptr<SyncStackEntry>> sync_stack;
 
-        // a hash table to check before every instruction
-        // if the current pc is recorded as a reconvergence pc.
-        // every pair is combined with a reconvergence pc
+        // It is a hash table used to check before every instruction
+        // whether the current pc is recorded as a reconvergence pc.
+        // Every pair is combined with a reconvergence pc
         // and an iterator to a specific list element of sync_stack
-        std::unordered_multimap<unsigned, list_it> hash_table;
+        std::unordered_multimap<unsigned, std::list<std::unique_ptr<SyncStackEntry>>::iterator> hash_table;
+
+        // number of thread in warp
+        unsigned thread_count;
+
+        // current active mask
+        unsigned active_mask;
+
+        // A temp but must be stored entry of sync_stack
+        // used by BRA to set individual bit of active mask
+        unsigned temp_mask;
 
 public:
 
-        SyncStack(){}
+        SyncStack(unsigned thread_count)
+        {
+        	this->thread_count = thread_count;
+        	temp_mask = 0;
+        	active_mask = unsigned(-1);
+        }
+
+        /// Get temp mask
+        unsigned getTempMask() const { return temp_mask; }
+
+        /// Get acitive mask
+        unsigned getActiveMask() const { return active_mask; }
+
+        /// Set active mask
+        void setActiveMask(unsigned am) { active_mask = am; }
+
+        /// Set temp mask bit
+        /// \param num
+        /// the bit number to be set
+        void setTempMaskBit(unsigned num)
+        {
+        	temp_mask |= 1u << num;
+        }
+
+        /// Initial (or reset) temp_entry
+        void resetTempMask()
+        {
+        	temp_mask = 0u;
+        }
+
+        /// Get number of 1s in active mask
+        unsigned getActiveMaskBitCount() const;
+
+        /// Get the number of 1s in temp mask
+        unsigned getTempMaskBitCount() const;
+
+        /// Clear specific bit of current active mask
+        void clearActiveMaskBit(unsigned id) { active_mask &= ~(1u << id); }
 
         /// push the reconvergence pc, active mask and entry type
         /// into stack
-        void pushSyncStack(unsigned, unsigned, EntryType);
+        void push(unsigned reconv_pc,
+                        unsigned active_mask,
+                        SyncStackEntryType entry_type
+                        );
 
         /// FIXME push an empty entry into stack, for testing.
-        void pushSyncStack();
+        void push();
 
-        /// search the address in hash table, "or" all active masks found
-        /// return it with a bool to indicate find or not
-        /// and delete the found element both in hash table and list
-        PopResult popSyncStack(unsigned);
+        /// This function searches the current pc in hash table,
+        /// and "or" all active masks found.
+        /// Then it deletes all found elements both in hash table and list
+        /// return a bool to indicate whether pc is find or not.
+        /// \param address the current pc to be searched
+        /// \param active_mask the returned active mask
+        /// \return whether or not this pc is found in hash table
+        bool pop(unsigned address, unsigned& active_mask);
 
-        /// Used by BRK and EXIT.
-        /// The former sets the specific bit of
+        /// Used by BRK, CONT and EXIT.
+        /// In BRK case, it clears the specific bit of
         /// all active masks in stack before a PBK entry
-        /// The later sets the bit of all entries in stack.
-        /// \param The number of bit to be set
-        void MaskSyncStack(unsigned, MaskType);
+        /// In EXIT case, it clears the bit of all entries in stack.
+        /// And in CONT case, it finds the first PCNT entry in stack,
+        /// and sets the specific bit.
+        /// \param id_in_warp The number of bit to be set
+        /// \param type instruction type
+        void mask(unsigned id_in_warp, SyncStackMaskType type);
 
-        unsigned checkSyncStack(unsigned);
+        /// Used by BRA, BRK, CONT
+        /// When no thread or all threads take the instruction,
+        /// pc is updated to a specific value.
+        /// This function pops all entries with addresses
+        /// between target pc and current pc.
+        /// You do not have worried about which pc is larger.
+        /// This function will detect that.
+        /// \return true if pop at least one element.
+        bool popTillTarget(unsigned target_pc, unsigned current_pc);
+
+        /// Used by BRK, check if all threads taken the loop have break.
+        /// \param address The first PBK reconvergence pc
+        bool checkBRK(unsigned& address);
+
+        /// Used by CONT, check if all threads taken the loop have continued.
+        /// \param address The first PCNT reconvergence pc
+        bool checkCONT(unsigned& address);
+
+        //unsigned checkSyncStack(unsigned);
 
         void Dump(std::ostream &os = std::cout) const;
 
         /// Dump synchronization stack into output stream
         /*
         friend std::ostream &operator<<(std::ostream &os,
-			const SyncStack &sync_stack) {
-        	sync_stack.Dump(os);
-        	return os;
+                        const SyncStack &sync_stack) {
+                sync_stack.Dump(os);
+                return os;
         }
         */
 
 };
 
-}	// namespace
+}        // namespace
 
 #endif
-

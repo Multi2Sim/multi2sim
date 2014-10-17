@@ -63,9 +63,6 @@ class Warp
 	// Unique identifier of the warp in the thread block.
 	int id_in_thread_block;
 
-	// Name  TODO Is it needed?
-	//std::string name;
-
 	// Grid the warp belongs to
 	Grid *grid;
 
@@ -96,28 +93,15 @@ class Warp
 	// The whole instruction buffer size in bytes
 	unsigned inst_buffer_size;
 	
-	// current active mask
-	unsigned active_mask;
-
 	// Synchronization stack
 	std::unique_ptr<SyncStack> sync_stack;
 
-	// A temp but must be stored entry of sync_stack
-	// used by BRA to set individual bit of active mask
-	unsigned temp_mask;
-
-
-	// Flags updated during instruction execution TODO still needed?
-	int active_mask_push;
-	int active_mask_pop;
+	// Flags updated during instruction execution
 	unsigned at_barrier_thread_count;
 
 	unsigned finished_thread;
 	bool finished_emu;
 	bool at_barrier;
-
-	// Flag indicates how many threads are taken at a branch
-	unsigned taken_thread;
 
 	// Iterators
 	std::list<Warp *>::iterator running_list_iter;
@@ -149,9 +133,6 @@ class Warp
 	// thread that doesn't belong to this warp), or it could be a
 	// past-the-end iterator to the thread-block's thread list.
 	std::vector<std::unique_ptr<Thread>>::iterator threads_end;
-
-/*	// Predicate mask        // Do we still need this in warp? TODO
-	//misc::Bitmap pred;  */
 
 public:
 	/// Constructor
@@ -188,14 +169,6 @@ public:
 	/// Return at barrier
 	bool getAtBarrier() const { return at_barrier; }
 
-	/// Get temp mask
-	unsigned getTempMask() const { return temp_mask; }
-
-	/// Get acitive mask
-	unsigned getActiveMask() const { return active_mask; }
-
-	/// Get number of 1s in active mask
-	unsigned getActiveMaskBitCount() const;
 
 	/// Get synchronization stack
 	SyncStack* getSyncStack() const { return sync_stack.get(); }
@@ -206,13 +179,9 @@ public:
 	/// Get the number of threads that have finished execution.
 	unsigned getFinishedThreadCount() const;
 
-	// FIXME apply formatting changes below, as done above. You continue.
 	/// Get inst_size
-
 	int getInstSize() const {return inst_size;}
 
-	/// Get taken thread
-	unsigned getTakenThread() const { return taken_thread; }
 	//////////////////////////////////////////////////////////////
 
 	// Setters
@@ -231,22 +200,6 @@ public:
 	void setThreadEnd(std::vector<std::unique_ptr<Thread>>::iterator value)
 	{ threads_end = value; }
 
-    /// set taken thread
-    void setTakenThread(unsigned value) { taken_thread = value; }
-
-    /// increase taken thread by value
-    void incrementTakenThread() { taken_thread++; }
-
-    /// Set active mask
-    void setActiveMask(unsigned am) { active_mask = am; }
-
-    /// Set temp mask bit
-    /// \param num
-    /// the bit number to be set
-    void setTempMaskBit(unsigned num)
-    {
-    	temp_mask |= 1u << num;
-    }
 
 	////////////////////////////////////////////////////////////////////
 	// Set finished_emu
@@ -269,19 +222,11 @@ public:
 
 	/// Dump warp into output stream
 	friend std::ostream &operator<<(std::ostream &os,
-			const Warp &warp) {
+			const Warp &warp)
+	{
 		os << warp;
 		return os;
 	}
-
-    /// Initial (or reset) temp_entry
-    void resetTempMask()
-    {
-        temp_mask = 0u;
-    }
-
-    /// Clear specific bit of current active mask
-    void clearActiveMaskBit(unsigned id) { active_mask &= ~(1u << id); }
 
 	/// Emulate the next instruction in the warp at the current
 	/// position of the program counter
