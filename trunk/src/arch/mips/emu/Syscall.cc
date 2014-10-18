@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <syscall.h>
 #include <unistd.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -67,6 +68,7 @@ void Context::ExecuteSyscall()
 	// Perform system call
 	ExecuteSyscallFn fn = execute_syscall_fn[code];
 	int ret = (this->*fn)();
+	emu->syscall_debug << misc::fmt("  ret=(%d, 0x%x)\n", ret, ret);
 
 	//FIXME: Syscallcode sigreturn not implemented
 	// Set return value in 'eax', except for 'sigreturn' system call. Also, if the
@@ -94,9 +96,132 @@ int Context::ExecuteSyscall_fork()
 }
 
 
+void Context::SyscallReadWakeup()
+{
+}
+
+bool Context::SyscallReadCanWakeup()
+{
+	// If the host thread is still running for this context, do nothing.
+	if (host_thread_suspend_active)
+		return false;
+
+	// Context received a signal
+	SignalSet pending_unblocked = signal_mask_table.getPending() &
+			~signal_mask_table.getBlocked();
+	if (pending_unblocked.Any())
+	{
+		CheckSignalHandlerIntr();
+		emu->syscall_debug << misc::fmt("syscall 'read' - "
+				"interrupted by signal (pid %d)\n", pid);
+		return true;
+	}
+
+	// Get file descriptor
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
+	if (!desc)
+		misc::panic("%s: invalid file descriptor", __FUNCTION__);
+
+	// Check if data is ready in file by polling it
+	struct pollfd host_fds;
+	host_fds.fd = desc->getHostIndex();
+	host_fds.events = POLLIN;
+	int err = poll(&host_fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: unexpected error in host call to 'poll'",
+				__FUNCTION__);
+
+	// If data is ready, perform host 'read' call and wake up
+	if (host_fds.revents)
+	{
+		unsigned pbuf = regs.getGPR(4);
+		int count = regs.getGPR(5);
+		char *buf = new char[count];
+
+		count = read(desc->getHostIndex(), buf, count);
+		if (count < 0)
+			misc::panic("%s: unexpected error in host 'read'",
+					__FUNCTION__);
+
+		regs.setGPR(2, count);
+		memory->Write(pbuf, count, buf);
+		delete buf;
+
+		emu->syscall_debug << misc::fmt("syscall 'read' - "
+				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getGPR(2));
+		return true;
+	}
+
+	// Data is not ready. Launch host thread again
+	host_thread_suspend_active = true;
+	if (pthread_create(&host_thread_suspend, nullptr,
+			&Context::HostThreadSuspend, this))
+		misc::panic("%s: could not launch host thread", __FUNCTION__);
+	return false;
+}
+
 int Context::ExecuteSyscall_read()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Arguments
+	int guest_fd = regs.getGPR(4);
+	unsigned buf_ptr = regs.getGPR(5);
+	unsigned count = regs.getGPR(6);
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, "
+			"buf_ptr=0x%x, count=0x%x\n",
+			guest_fd, buf_ptr, count);
+
+	// Get file descriptor
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
+	if (!desc)
+		return -EBADF;
+	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Poll the file descriptor to check if read is blocking
+	char *buf = new char[count]();
+	struct pollfd fds;
+	fds.fd = host_fd;
+	fds.events = POLLIN;
+	int err = poll(&fds, 1, 0);
+	if (err < 0)
+		misc::panic("%s: error executing 'poll'", __FUNCTION__);
+
+	// Non-blocking read
+	if (fds.revents || (desc->getFlags() & O_NONBLOCK))
+	{
+		// Host system call
+		err = read(host_fd, buf, count);
+		if (err == -1)
+		{
+			delete buf;
+			return -errno;
+		}
+
+		// Write in guest memory
+		if (err > 0)
+		{
+			memory->Write(buf_ptr, err, buf);
+			emu->syscall_debug << misc::StringBinaryBuffer(buf,
+					count, 40);
+		}
+
+		// Return number of read bytes
+		delete buf;
+		return err;
+	}
+
+	// Blocking read - suspend thread
+	emu->syscall_debug << misc::fmt("  blocking read - process suspended\n");
+	syscall_read_fd = guest_fd;
+	Suspend(&Context::SyscallReadCanWakeup, &Context::SyscallReadWakeup,
+			ContextRead);
+	emu->ProcessEventsSchedule();
+
+	// Free allocated buffer. Return value doesn't matter,
+	// it will be overwritten when context wakes up from blocking call.
+	delete buf;
+	return 0;
 }
 
 //
@@ -115,23 +240,28 @@ bool Context::SyscallWriteCanWakeup()
 int Context::ExecuteSyscall_write()
 {
 	// Debug
-	if(emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("write syscall\n");
+	emu->syscall_debug << misc::fmt("write syscall\n");
 
 	// Arguments
 	int guest_fd = regs.getGPR(4);
 	unsigned buf_ptr = regs.getGPR(5);
 	unsigned count = regs.getGPR(6);
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
 	if(!desc)
 		return -EBADF;
 	int host_fd = desc->getHostIndex();
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Read buffer from memory
 	char *buf = new char[count];
 	memory->Read(buf_ptr,count, buf);
+	emu->syscall_debug << "  buf=\""
+			<< misc::StringBinaryBuffer(buf, count, 40)
+			<< "\"\n";
 
 	// Poll the file descriptor to check if write is blocking
 	struct pollfd fds;
@@ -160,6 +290,7 @@ int Context::ExecuteSyscall_write()
 	}
 
 	// Blocking write - suspend thread
+	emu->syscall_debug << misc::fmt("  blocking write - process suspended\n");
 	syscall_write_fd = guest_fd;
 	Suspend(&Context::SyscallWriteCanWakeup, &Context::SyscallWriteWakeup,
 			ContextWrite);
@@ -325,7 +456,32 @@ int Context::ExecuteSyscall_open()
 
 int Context::ExecuteSyscall_close()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Arguments
+	int guest_fd = regs.getGPR(4);
+	int host_fd = file_table->getHostIndex(guest_fd);
+	emu->syscall_debug << misc::fmt("  guest_fd=%d\n", guest_fd);
+	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
+
+	// Get file descriptor table entry.
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
+	if (!desc)
+		return -EBADF;
+
+	// Close host file descriptor only if it is valid and not
+	// stdin/stdout/stderr
+	if (host_fd > 2)
+		close(host_fd);
+
+	// Free guest file descriptor. This will delete the host file if it's a
+	// virtual file
+	if (desc->getType() == comm::FileDescriptor::TypeVirtual)
+		emu->syscall_debug << misc::fmt("    host file '%s': "
+				"temporary file deleted\n",
+				desc->getPath().c_str());
+	file_table->freeFileDescriptor(desc->getGuestIndex());
+
+	// Success
+	return 0;
 }
 
 

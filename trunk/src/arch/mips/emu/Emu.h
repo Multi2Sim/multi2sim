@@ -177,6 +177,10 @@ public:
 	/// emulator mutex.
 	void ProcessEventsSchedule();
 
+	/// Schedule next call to ProcessEvents(). The emulator mutex must be
+	/// locked before invoking this function.
+	void ProcessEventsScheduleUnsafe() { process_events_force = true; }
+
 	/// Run one iteration of the emulation loop.
 	/// \return This function \c true if the iteration had a useful
 	/// emulation, and \c false if all contexts finished execution.
