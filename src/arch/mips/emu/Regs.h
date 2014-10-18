@@ -93,22 +93,25 @@ public:
     }
 
     /// Set the value of a single precision floating point register
-    void setSinglePrecisionFPR(int n, float value){ fpr.SinglePrecicion[n] = value; }
+    void setSinglePrecisionFPR(int n, float value) { fpr.SinglePrecicion[n] = value; }
 
     /// Set the value of a double precision floating point register
-    void setDoublePrecisionFPR(int n, float value){ fpr.DoublePrecision[n] = value; }
+    void setDoublePrecisionFPR(int n, float value) { fpr.DoublePrecision[n] = value; }
 
     /// Get the value of a single precision floating point register
-    float getSinglePrecisionFPR(int n){ return fpr.SinglePrecicion[n]; }
+    float getSinglePrecisionFPR(int n) { return fpr.SinglePrecicion[n]; }
 
     /// Get the value of a double precision floating point register
-    double getDoublePrecisionFPR(int n){ return fpr.DoublePrecision[n]; }
+    double getDoublePrecisionFPR(int n) { return fpr.DoublePrecision[n]; }
 
     /// Write pc with value
-    void setPC(unsigned int value){ pc = value; }
+    void setPC(unsigned int value) { pc = value; }
     
-    /// Increment value of register \c eip by \a value bytes.
+    /// Increment value of register \c pc by \a value bytes.
     void incPC(int value) { pc += value; }
+
+    /// Decrement value of register \c pc by \a value bytes
+    void decPC(unsigned int value) { pc -= value; }
 
     /// Read from Program Counter
     unsigned int getPC(){ return pc; }
