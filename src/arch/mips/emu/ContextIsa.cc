@@ -344,7 +344,7 @@ void Context::ExecuteInst_LHU()
 	unsigned short int temp;
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
 	memory->Read(addr, sizeof(unsigned short int), (char *)&temp);
-	regs.setGPR(rt, temp);
+	regs.setGPR(rt, (unsigned int)temp);
 }
 
 

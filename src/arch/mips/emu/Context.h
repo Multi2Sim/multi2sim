@@ -57,7 +57,10 @@ enum ContextState
 	ContextZombie       = 0x02000,  // zombie context
 	ContextAlloc        = 0x08000,  // allocated to a core/thread
 	ContextCallback     = 0x10000,  // suspended after syscall with callback
-	ContextMapped       = 0x20000   // mapped to a core/thread
+	ContextMapped       = 0x20000,  // mapped to a core/thread
+	ContextRead   		= 0x00400,  // 'read' system call
+	ContextPoll         = 0x00200,  // 'poll' system call
+	ContextNanosleep    = 0x00100   // suspended after syscall 'nanosleep'
 };
 
 /// Context list identifiers
@@ -160,6 +163,17 @@ class Context
 
 	// Virtual files
 	std::string OpenProcSelfMaps();
+
+	// Host thread function
+	void HostThreadSuspend();
+	static void *HostThreadSuspend(void *data) {
+		((Context *) data)->HostThreadSuspend();
+		return nullptr;
+	}
+
+	// Cancel host thread
+	void HostThreadSuspendCancel();
+	void HostThreadSuspendCancelUnsafe();
 
 	// Callbacks for suspended contexts
 	typedef bool (Context::*CanWakeupFn)();
@@ -357,10 +371,27 @@ class Context
 	// Table of system call execution functions
 	static const ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
 
+	// System call 'nanosleep'
+	long long syscall_nanosleep_wakeup_time;
+	void SyscallNanosleepWakeup();
+	bool SyscallNanosleepCanWakeup();
+
+	// System call 'read'
+	int syscall_read_fd;
+	void SyscallReadWakeup();
+	bool SyscallReadCanWakeup();
+
 	// System call 'write'
 	int syscall_write_fd;
 	void SyscallWriteWakeup();
 	bool SyscallWriteCanWakeup();
+
+	// System call 'poll'
+	int syscall_poll_time;
+	int syscall_poll_fd;
+	int syscall_poll_events;
+	void SyscallPollWakeup();
+	bool SyscallPollCanWakeup();
 
 	// Auxiliary system call functions
 	int SyscallMmapAux(unsigned int addr, unsigned int len, int prot,
@@ -416,6 +447,18 @@ public:
 	// Check whether there is any pending unblocked signal in the context,
 	// and invoke the corresponding signal handler.
 	void CheckSignalHandler();
+
+
+	// Check any pending signal, and run the corresponding signal handler by
+	// considering that the signal interrupted a system call
+	// (\c syscall_intr). This has the following implication on the return
+	// address from the signal handler:
+	//   -If flag \c SA_RESTART is set for the handler, the return address
+	//    is the system call itself, which must be repeated.
+	//   -If flag \c SA_RESTART is not set, the return address is the
+	//    instruction next to the system call, and register '//FIXME: 2(?)' is set to
+	//    \c -EINTR.
+	void CheckSignalHandlerIntr();
 
 	/// Run one instruction for the context at the position pointed to by
 	/// register program counter.

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <iostream>
+#include <poll.h>
 #include <vector>
 
 #include <lib/cpp/Environment.h>
@@ -201,6 +202,122 @@ void Context::Load(const std::vector<std::string> &args,
 	// Load the binary
 	LoadBinary();
 }
+
+
+void Context::HostThreadSuspend()
+{
+	// Get current time
+	esim::Engine *esim = esim::Engine::getInstance();
+	long long now = esim->getRealTime();
+
+	// Detach this thread - we don't want the parent to have to join it to
+	// release its resources. The thread termination can be observed by
+	// atomically checking the 'host_thread_suspend_active' field of the
+	// context.
+	pthread_detach(pthread_self());
+
+	// Suspended in system call 'nanosleep'
+	if (getState(ContextNanosleep))
+	{
+		// Calculate remaining sleep time in microseconds
+		long long timeout = syscall_nanosleep_wakeup_time > now ?
+				syscall_nanosleep_wakeup_time - now : 0;
+		usleep(timeout);
+
+	}
+
+	// Suspended in system call 'read'
+	if (getState(ContextRead))
+	{
+		// Get file descriptor
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
+		if (!desc)
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_read_fd));
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = POLLIN;
+		int err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			throw misc::Panic("Unexpected error in host 'poll'");
+	}
+
+	// Suspended in system call 'write'
+	if (getState(ContextWrite))
+	{
+		// Get file descriptor
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_write_fd);
+		if (!desc)
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_write_fd));
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = POLLOUT;
+		int err = poll(&host_fds, 1, -1);
+		if (err < 0)
+			throw misc::Panic("Unexpected error in host 'poll'");
+	}
+
+	// Suspended in system call 'poll'
+	if (getState(ContextPoll))
+	{
+		// Get file descriptor
+		comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_poll_fd);
+		if (!desc)
+			throw misc::Panic(misc::fmt("Invalid file descriptor "
+					"(%d)", syscall_poll_fd));
+
+		// Calculate timeout for host call in milliseconds from now
+		int timeout;
+		if (!syscall_poll_time)
+			timeout = -1;
+		else if (syscall_poll_time < now)
+			timeout = 0;
+		else
+			timeout = (syscall_poll_time - now) / 1000;
+
+		// Perform blocking host 'poll'
+		struct pollfd host_fds;
+		host_fds.fd = desc->getHostIndex();
+		host_fds.events = ((syscall_poll_events & 4) ? POLLOUT : 0) |
+				((syscall_poll_events & 1) ? POLLIN : 0);
+		int err = poll(&host_fds, 1, timeout);
+		if (err < 0)
+			throw misc::Panic("Unexpected error in host 'poll'");
+	}
+
+	// Event occurred - thread finishes
+	emu->LockMutex();
+	emu->ProcessEventsScheduleUnsafe();
+	host_thread_suspend_active = false;
+	emu->UnlockMutex();
+}
+
+
+void Context::HostThreadSuspendCancelUnsafe()
+{
+	if (host_thread_suspend_active)
+	{
+		if (pthread_cancel(host_thread_suspend))
+			throw misc::Panic(misc::fmt("[Context %d] Error "
+					"canceling host thread", pid));
+		host_thread_suspend_active = false;
+	}
+	emu->ProcessEventsScheduleUnsafe();
+}
+
+
+void Context::HostThreadSuspendCancel()
+{
+	emu->LockMutex();
+	HostThreadSuspendCancelUnsafe();
+	emu->UnlockMutex();
+}
+
 
 
 void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
