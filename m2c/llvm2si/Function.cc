@@ -394,6 +394,10 @@ void Function::Dump(std::ostream &os)
 
 		// Dump code of basic block
 		os << *basic_block;
+
+		/// To find out the basic block id's of every block in the
+		/// assembly file, uncomment the following line
+		/// os << "\nBasic Block id: " << basic_block->getId() << *basic_block;
 	}
 	os << '\n';
 
