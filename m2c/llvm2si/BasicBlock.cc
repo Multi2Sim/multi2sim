@@ -39,6 +39,8 @@ using namespace si2bin;
 namespace llvm2si
 {
 
+int BasicBlock::id_counter;
+
 int BasicBlock::getLlvmTypeSize(llvm::Type *llvm_type)
 {
 	// Return size based on type kind

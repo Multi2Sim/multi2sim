@@ -91,6 +91,7 @@ public:
 			comm::BasicBlock(node),
 			function(function)
 	{
+		global_id = (BasicBlock::id_counter)++;
 	}
 
 	/// Return a reference to the list of instructions
