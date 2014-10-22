@@ -39,4 +39,3 @@ Function *Module::addFunction(Module *module, const std::string &name)
 }
 
 } // namespace Kepler
-
