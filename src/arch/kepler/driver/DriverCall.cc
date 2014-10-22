@@ -305,7 +305,7 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 		for (int j = 0; j < modules[i]->getNumFunctions(); j++)
 		{
 			if(function_name == modules[i]->getFunctionName(j))
-				function = modules[i]->getFunction(i);
+				function = modules[i]->getFunction(j);
 		}
 	}
 
