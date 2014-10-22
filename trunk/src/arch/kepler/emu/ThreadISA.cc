@@ -37,16 +37,6 @@
 namespace Kepler
 {
 
-/*
-typedef union
-{
-	unsigned u32;
-	int s32;
-	float f;
-	unsigned long long u64;
-} RegValue;
-*/
-
 enum
 {
 	SR_LANEID = 0,
@@ -976,9 +966,11 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         taken_thread = stack->getTempMaskBitCount();
         active_thread = stack->getActiveMaskBitCount();
 
+        /*
         std::cout << "PC " << std::hex << warp->getPC()
         		<< "	A.M.	" << stack->getActiveMask()<< std::endl;
         stack->Dump(std::cout);
+        */
 
 		// Update sync stack and PC
         //  no thread in the active mask taken branch
