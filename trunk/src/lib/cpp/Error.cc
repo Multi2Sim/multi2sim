@@ -39,6 +39,7 @@ void Exception::Dump(std::ostream &os) const
 	// Colors
 	std::string red = os.tellp() == -1 ? "\033[31m" : "";
 	std::string black = os.tellp() == -1 ? "\033[30m" : "";
+	std::string reset_color = os.tellp() == -1 ? "\e[m" : "";
 
 	// Print in clean paragraphs
 	StringFormatter formatter;
@@ -69,8 +70,8 @@ void Exception::Dump(std::ostream &os) const
 		os << formatter;
 	}
 
-	// Start black
-	os << black;
+	// Recover original color
+	os << reset_color;
 }
 
 
