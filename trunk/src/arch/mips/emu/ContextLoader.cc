@@ -86,7 +86,7 @@ void Context::LoadProgramHeaders()
 	// Program header PT_PHDR, specifying location and size of the program
 	// header table itself. Search for program header PT_PHDR, specifying
 	// location and size of the program header table. If none found, choose
-	// loader->bottom - phdt_size. */
+	// loader->bottom - phdt_size.
 	unsigned phdt_base = loader->bottom - phdt_size;
 	for (auto &program_header : binary->getProgramHeaders())
 		if (program_header->getType() == PT_PHDR)
@@ -155,8 +155,21 @@ void Context::LoadELFSections(ELFReader::File *binary)
 			// Permissions
 			if (section->getFlags() & SHF_WRITE)
 				perm |= mem::Memory::AccessWrite;
+
 			if (section->getFlags() & SHF_EXECINSTR)
+			{
 				perm |= mem::Memory::AccessExec;
+
+				// Add region to call stack
+				if (call_stack != nullptr)
+				{
+					call_stack->Map(binary->getPath(),
+							section->getOffset(),
+							section->getAddr(),
+							section->getSize(),
+							false);
+				}
+			}
 
 			// Load section
 			memory->Map(section->getAddr(), section->getSize(), perm);
@@ -307,14 +320,13 @@ void Context::LoadStack()
 void Context::LoadBinary()
 {
 	// Alternative stdin
-	std::string stdin_full_path = getFullPath(loader->stdin_file_name);
-	if (!stdin_full_path.empty())
+	if (!loader->stdin_file_name.empty())
 	{
 		// Open new stdin
-		int f = open(stdin_full_path.c_str(), O_RDONLY);
+		int f = open(loader->stdin_file_name.c_str(), O_RDONLY);
 		if (f < 0)
-			throw Emu::Error(misc::fmt("[%s] Cannot open standard "
-					"input", stdin_full_path.c_str()));
+			misc::fatal("%s: cannot open stdin",
+					loader->stdin_file_name.c_str());
 
 		// Replace file descriptor 0
 		file_table->freeFileDescriptor(0);
@@ -322,21 +334,20 @@ void Context::LoadBinary()
 				comm::FileDescriptor::TypeStandard,
 				0,
 				f,
-				stdin_full_path,
+				loader->stdin_file_name,
 				O_RDONLY);
 	}
 
 	// Alternative stdout/stderr
-	std::string stdout_full_path = getFullPath(loader->stdout_file_name);
-	if (!stdout_full_path.empty())
+	if (!loader->stdout_file_name.empty())
 	{
 		// Open new stdout
-		int f = open(stdout_full_path.c_str(),
+		int f = open(loader->stdout_file_name.c_str(),
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
 			throw Emu::Error(misc::fmt("[%s] Cannot open standard "
-					"output", stdout_full_path.c_str()));
+					"output", loader->stdout_file_name.c_str()));
 
 		// Replace file descriptors 1 and 2
 		file_table->freeFileDescriptor(1);
@@ -345,18 +356,17 @@ void Context::LoadBinary()
 				comm::FileDescriptor::TypeStandard,
 				1,
 				f,
-				stdout_full_path,
-				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY);
+				loader->stdout_file_name,
+				O_WRONLY);
 		file_table->newFileDescriptor(
 				comm::FileDescriptor::TypeStandard,
 				2,
 				f,
-				stdout_full_path,
-				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY);
+				loader->stdout_file_name,
+				O_WRONLY);
 	}
 
 	// Load ELF binary
-	loader->exe = getFullPath(loader->args[0]);
 	loader->binary.reset(new ELFReader::File(loader->exe));
 
 	// Read sections and program entry
@@ -384,7 +394,13 @@ void Context::LoadBinary()
 			: loader->interp_prog_entry);
 	next_ip = regs.getPC();
 	n_next_ip = next_ip + 4;
+
+	//Debug
+	emu->loader_debug << misc::fmt("Program entry is 0x%x\n", regs.getPC())
+			<< misc::fmt("Initial stack pointer is 0x%x\n", regs.getSP())
+			<< misc::fmt("Heap start set to 0x%x\n", memory->getHeapBreak());
 }
 
-} // namespace mips
+
+} // namespace MIPS
 

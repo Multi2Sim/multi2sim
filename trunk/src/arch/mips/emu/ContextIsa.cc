@@ -149,11 +149,12 @@ void Context::ExecuteInst_ADDIU()
 void Context::ExecuteInst_SLTI()
 {
 	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int rt = inst.getBytes()->standard.rt;
 	int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform Operation
-	if ((int)(regs.getGPR(rt)) < imm)
+	if ((int)(regs.getGPR(rs)) < imm)
 		regs.setGPR(rt, 1);
 	else
 		regs.setGPR(rt, 0);
@@ -620,7 +621,13 @@ void Context::ExecuteInst_SRL()
 
 void Context::ExecuteInst_ROR()
 {
-	throw misc::Panic("Unimplemented instruction");
+	unsigned int sa = inst.getBytes()->standard.sa;
+	unsigned int rt = inst.getBytes()->standard.rt;
+	unsigned int rd = inst.getBytes()->standard.rd;
+
+	unsigned int temp = misc::getBits32(regs.getGPR(rt), sa-1, 0) |
+			misc::getBits32(regs.getGPR(rt), 31, sa);
+	regs.setGPR(rd, temp);
 }
 
 

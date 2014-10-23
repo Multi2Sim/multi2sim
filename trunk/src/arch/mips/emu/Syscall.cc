@@ -1451,6 +1451,8 @@ int Context::ExecuteSyscall_uname()
 	emu->syscall_debug << misc::fmt("  addr is 0x%x\n", addr);
 	memory->Write(addr, sizeof(sim_utsname), (char *)&sim_utsname);
 
+	// Set reg a3 (regno 7) to 0 to indicate success
+	regs.setGPR(7,0);
 	return 0;
 }
 
