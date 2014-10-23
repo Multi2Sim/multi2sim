@@ -137,7 +137,8 @@ public:
         {
         	this->thread_count = thread_count;
         	temp_mask = 0;
-        	active_mask = unsigned(-1);
+        	active_mask = (thread_count < 32) ?
+        			 ((1u << thread_count) - 1) : unsigned(-1);
         }
 
         /// Get temp mask
