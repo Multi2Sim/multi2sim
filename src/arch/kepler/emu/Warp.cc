@@ -51,8 +51,12 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	// Get the thread block it belongs to
 	this->thread_block = thread_block;
 
+	int thread_block_size = thread_block->getGrid()->getThreadBlockSize();
+
 	// Get threads from grid
-	if (id < thread_block->getWarpCount() - 1)
+	if (thread_block_size <= (int)warp_size)
+		thread_count = thread_block_size;
+	else if (id < thread_block->getWarpCount() - 1)
 		thread_count = warp_size;
 	else
 		thread_count = grid->getThreadBlockSize() -

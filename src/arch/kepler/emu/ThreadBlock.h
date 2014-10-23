@@ -131,7 +131,7 @@ public:
 	}
 
 	// Get counter of threads in thread-block
-	int getThreadsInThreadBlock() const { return threads.size(); }
+	int getThreadsCount() const { return threads.size(); }
 
 
 	// Get finished_emu
