@@ -174,7 +174,13 @@ int Context::ExecuteSyscall_read()
 	// Get file descriptor
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
 	if (!desc)
+	{
+		// set reg a3 to 1 to indicate failure
+		regs.setGPR(7,1);
+
 		return -EBADF;
+	}
+
 	int host_fd = desc->getHostIndex();
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
@@ -195,6 +201,8 @@ int Context::ExecuteSyscall_read()
 		if (err == -1)
 		{
 			delete buf;
+			// set reg a3 to 1 to indicate failure
+			regs.setGPR(7,1);
 			return -errno;
 		}
 
@@ -205,6 +213,9 @@ int Context::ExecuteSyscall_read()
 			emu->syscall_debug << misc::StringBinaryBuffer(buf,
 					count, 40);
 		}
+
+		// set reg a3 to 0 to indicate success
+		regs.setGPR(7,0);
 
 		// Return number of read bytes
 		delete buf;
@@ -217,6 +228,9 @@ int Context::ExecuteSyscall_read()
 	Suspend(&Context::SyscallReadCanWakeup, &Context::SyscallReadWakeup,
 			ContextRead);
 	emu->ProcessEventsSchedule();
+
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
 
 	// Free allocated buffer. Return value doesn't matter,
 	// it will be overwritten when context wakes up from blocking call.
@@ -246,13 +260,18 @@ int Context::ExecuteSyscall_write()
 	int guest_fd = regs.getGPR(4);
 	unsigned buf_ptr = regs.getGPR(5);
 	unsigned count = regs.getGPR(6);
-	emu->syscall_debug << misc::fmt("  guest_fd=%d, buf_ptr=0x%x, count=0x%x\n",
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, buf_ptr=0x%x, count=%d\n",
 			guest_fd, buf_ptr, count);
 
 	// Get file descriptor
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
 	if(!desc)
+	{
+		// set reg a3 to 1 to indicate failure
+		regs.setGPR(7,1);
+
 		return -EBADF;
+	}
 	int host_fd = desc->getHostIndex();
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
@@ -280,7 +299,7 @@ int Context::ExecuteSyscall_write()
 		// Return written bytes
 		delete buf;
 
-		// Set reg a3 t 0 in case of success
+		// Set reg a3 to 0 in case of success
 		if (err != 0)
 			regs.setGPR(7, 0);
 		else
@@ -299,6 +318,9 @@ int Context::ExecuteSyscall_write()
 	// Return value doesn't matter here. It will be overwritten when the
 	// context wakes up after blocking call.
 	delete buf;
+
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
 	return 0;
 }
 
@@ -419,6 +441,9 @@ int Context::ExecuteSyscall_open()
 		// Attempt to open virtual file
 		comm::FileDescriptor *desc = SyscallOpenVirtualDevice(
 				full_path, flags, mode);
+
+		// set reg a3 to 0 to indicate success
+		regs.setGPR(7,0);
 		return desc->getGuestIndex();
 	}
 
@@ -429,8 +454,11 @@ int Context::ExecuteSyscall_open()
 		comm::FileDescriptor *desc = SyscallOpenVirtualFile(
 				full_path, flags, mode);
 		if (desc)
+		{
+			// set reg a3 to 0 to indicate success
+			regs.setGPR(7,0);
 			return desc->getGuestIndex();
-
+		}
 		// Unhandled virtual file. Let the application read the contents
 		// of the host version of the file as if it was a regular file.
 		emu->syscall_debug << "    warning: unhandled virtual file\n";
@@ -439,7 +467,12 @@ int Context::ExecuteSyscall_open()
 	// Regular file
 	int host_fd = open(full_path.c_str(), flags, mode);
 	if (host_fd == -1)
+	{
+		// set reg a3 to 1 to indicate syscall failure
+		regs.setGPR(7,1);
+
 		return -errno;
+	}
 
 	// File opened, create a new file descriptor.
 	comm::FileDescriptor *desc = file_table->newFileDescriptor(
@@ -449,6 +482,9 @@ int Context::ExecuteSyscall_open()
 			"guest_fd=%d, host_fd=%d\n",
 			desc->getGuestIndex(), desc->getHostIndex());
 
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
 	// Return guest descriptor index
 	return desc->getGuestIndex();
 }
@@ -456,6 +492,7 @@ int Context::ExecuteSyscall_open()
 
 int Context::ExecuteSyscall_close()
 {
+	emu->syscall_debug << misc::fmt("close syscall\n");
 	// Arguments
 	int guest_fd = regs.getGPR(4);
 	int host_fd = file_table->getHostIndex(guest_fd);
@@ -465,7 +502,11 @@ int Context::ExecuteSyscall_close()
 	// Get file descriptor table entry.
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
 	if (!desc)
+	{
+		// set reg a3 to 1 to indicate failure
+		regs.setGPR(7,1);
 		return -EBADF;
+	}
 
 	// Close host file descriptor only if it is valid and not
 	// stdin/stdout/stderr
@@ -479,6 +520,9 @@ int Context::ExecuteSyscall_close()
 				"temporary file deleted\n",
 				desc->getPath().c_str());
 	file_table->freeFileDescriptor(desc->getGuestIndex());
+
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
 
 	// Success
 	return 0;
@@ -523,7 +567,20 @@ int Context::ExecuteSyscall_chdir()
 
 int Context::ExecuteSyscall_time()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Debug
+	emu->syscall_debug << misc::fmt("time syscall\n");
+
+	// Arguments
+	unsigned time_ptr = regs.getGPR(4);
+	emu->syscall_debug << misc::fmt("  ptime=0x%x\n", time_ptr);
+
+	// Host call
+	int t = time(NULL);
+	if (time_ptr)
+		memory->Write(time_ptr, 4, (char *) &t);
+
+	// set reg a3 to 0 to indicate success
+	return t;
 }
 
 
@@ -741,7 +798,11 @@ int Context::ExecuteSyscall_brk()
 	// If argument is zero, the system call is used to
 	//  obtain the current top of the heap.
 	if (!new_heap_break)
+	{
+		// Set reg a3 to 0 to indicate success
+		regs.setGPR(7, 0);
 		return old_heap_break;
+	}
 
 	// If the heap is increased: if some page in the way is
 	// allocated, do nothing and return old heap top. Otherwise,
@@ -763,6 +824,8 @@ int Context::ExecuteSyscall_brk()
 		emu->syscall_debug << misc::fmt("  heap grows %u bytes\n",
 				new_heap_break - old_heap_break);
 
+		// Set reg a3 to 0 to indicate success
+		regs.setGPR(7, 0);
 		return new_heap_break;
 	}
 
@@ -777,9 +840,13 @@ int Context::ExecuteSyscall_brk()
 		emu->syscall_debug << misc::fmt("  heap shrinks %u bytes\n",
 				old_heap_break - new_heap_break);
 
+		// Set reg a3 to 0 to indicate success
+		regs.setGPR(7, 0);
 		return new_heap_break;
 	}
 
+	// Set reg a3 to 0 to indicate success
+	regs.setGPR(7, 0);
 	// Heap stays the same
 	return 0;
 }
@@ -1021,7 +1088,45 @@ int Context::ExecuteSyscall_unused84()
 
 int Context::ExecuteSyscall_readlink()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// FIXME: double check the implementation of readlink
+	// Debug
+	emu->syscall_debug << misc::fmt("readlink syscall\n");
+	int file_name_ptr = regs.getGPR(4);
+	unsigned int buf_ptr = regs.getGPR(5);
+	unsigned count = regs.getGPR(6);
+	int ret;
+
+	char *buf = new char[count]();
+	emu->syscall_debug << misc::fmt("  file_name_ptr=0x%x, "
+			"buf_ptr=0x%x, count=%d\n",
+			file_name_ptr, buf_ptr, count);
+
+	// Get file descriptor
+	std::string file_name = memory->ReadString(file_name_ptr);
+
+	emu->syscall_debug << misc::fmt("  file_name=%s\n",
+			file_name.c_str());
+	if (file_name == "/proc/self/exe")
+	{
+		std::string full_path = loader->exe;
+		if(full_path.empty())
+		{
+			// set reg a3 to 1 to indicate error
+			regs.setGPR(7,1);
+			ret = -1;
+		}
+		else
+		{
+			snprintf(buf, count, "%s", full_path.c_str());
+			emu->syscall_debug << misc::fmt("  buf: %s\n", buf);
+			memory->Write(buf_ptr, full_path.size(), buf);
+			regs.setGPR(7,0);
+			ret = full_path.size();
+		}
+	}
+
+	delete buf;
+	return ret;
 }
 
 
@@ -1052,87 +1157,45 @@ int Context::ExecuteSyscall_readdir()
 /*
  * System call 'mmap' (code 90)
  */
-//FIXME: Fix this implementation
-#define SYS_MMAP_BASE_ADDRESS  0xb7fb0000
 
+static const unsigned mmap_base_address = 0xb7fb0000;
 
-/*static int Context::MipsSysMmap(unsigned int addr, unsigned int len,
-	int prot, int flags, int guest_fd, int offset)
+static const misc::StringMap mmap_prot_map =
 {
+	{ "PROT_READ",       0x1 },
+	{ "PROT_WRITE",      0x2 },
+	{ "PROT_EXEC",       0x4 },
+	{ "PROT_SEM",        0x8 },
+	{ "PROT_GROWSDOWN",  0x01000000 },
+	{ "PROT_GROWSUP",    0x02000000 }
+};
 
-}
-*/
-int Context::ExecuteSyscall_mmap()
+static const misc::StringMap mmap_flags_map =
 {
-	// Debug
-	if(emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("mmap syscall\n");
+		// These flags are taken from
+		// /usr/src/linux-headers-3.13.0-35/arch/mips/include/uapi/asm/mman.h
 
-	misc::StringMap sys_mmap_prot_map =
-	{
-			{ "PROT_READ",       0x1 },
-			{ "PROT_WRITE",      0x2 },
-			{ "PROT_EXEC",       0x4 },
-			{ "PROT_SEM",        0x8 },
-			{ "PROT_GROWSDOWN",  0x01000000 },
-			{ "PROT_GROWSUP",    0x02000000 }
-	};
+		// Flags for mmap
+		{ "MAP_SHARED",      0x001 },         // Share changes
+		{ "MAP_PRIVATE",     0x002 },         // Changes are private
+		{ "MAP_TYPE",        0x00f },         // Mask for type of mapping
+		{ "MAP_FIXED",       0x010 },         // Interpret addr exactly
+		// These are linux-specific
+		{ "MAP_NORESERVE",   0x0400 },        // don't check for reservations
+		{ "MAP_ANONYMOUS",   0x0800 },        // don't use a file
+		{ "MAP_GROWSDOWN",   0x1000 },        // stack-like segment
+		{ "MAP_DENYWRITE",   0x2000 },        // ETXTBSY
+		{ "MAP_EXECUTABLE",  0x4000 },        // mark it as an executable
+		{ "MAP_LOCKED",      0x8000 },        // pages are locked
+		{ "MAP_POPULATE",    0x10000 },       // populate (prefault) pagetables
+		{ "MAP_NONBLOCK",    0x20000 },       // do not block on IO
+		{ "MAP_STACK",       0x40000 },       // give out an address that is best suited for process/thread stacks
+		{ "MAP_HUGETLB",     0x80000 }        // create a huge page mapping
+};
 
-	misc::StringMap sys_mmap_flags_map =
-	{
-			// These flags are taken from
-			// /usr/src/linux-headers-3.13.0-35/arch/mips/include/uapi/asm/mman.h
-
-			 // Flags for mmap
-			{ "MAP_SHARED",      0x001 },         // Share changes
-			{ "MAP_PRIVATE",     0x002 },         // Changes are private
-			{ "MAP_TYPE",        0x00f },         // Mask for type of mapping
-			{ "MAP_FIXED",       0x010 },         // Interpret addr exactly
-			// These are linux-specific
-			{ "MAP_NORESERVE",   0x0400 },        // don't check for reservations
-			{ "MAP_ANONYMOUS",   0x0800 },        // don't use a file
-			{ "MAP_GROWSDOWN",   0x1000 },        // stack-like segment
-			{ "MAP_DENYWRITE",   0x2000 },        // ETXTBSY
-			{ "MAP_EXECUTABLE",  0x4000 },        // mark it as an executable
-			{ "MAP_LOCKED",      0x8000 },        // pages are locked
-			{ "MAP_POPULATE",    0x10000 },       // populate (prefault) pagetables
-			{ "MAP_NONBLOCK",    0x20000 },       // do not block on IO
-			{ "MAP_STACK",       0x40000 },       // give out an address that is best suited for process/thread stacks
-			{ "MAP_HUGETLB",     0x80000 }        // create a huge page mapping
-	};
-
-	int offset;
-	int guest_fd;
-
-	std::string prot_str;
-	std::string flags_str;
-
-	unsigned int addr = regs.getGPR(4);
-	unsigned int len = regs.getGPR(5);
-
-	unsigned int prot = regs.getGPR(6);
-	unsigned int flags = regs.getGPR(7);
-
-	memory->Read(regs.getGPR(29) + 16, 4, (char *)&guest_fd);
-	memory->Read(regs.getGPR(29) + 20, 4, (char *)&offset);
-
-	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("  addr=0x%x, len=%d, prot=0x%x, flags=0x%x, "
-				"guest_fd=%d, offset=0x%x\n",
-				addr, len, prot, flags, guest_fd, offset);
-	prot_str = sys_mmap_prot_map.MapFlags(prot);
-	flags_str = sys_mmap_flags_map.MapFlags(flags);
-	if(emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("  prot=") << prot_str
-		<< misc::fmt(", flags=") << flags_str << misc::fmt("\n");
-////////////////////////////////////
-	unsigned int len_aligned;
-
-	int perm;
-	int host_fd;
-
-	comm::FileDescriptor *desc;
-
+int Context::SyscallMmapAux(unsigned addr, unsigned len,
+		int prot, int flags, int guest_fd, int offset)
+{
 	// Check that protection flags match in guest and host
 	assert(PROT_READ == 1);
 	assert(PROT_WRITE == 2);
@@ -1145,88 +1208,125 @@ int Context::ExecuteSyscall_mmap()
 	assert(MAP_ANONYMOUS == 0x20);
 
 	// Translate file descriptor
-	desc =  file_table->getFileDescriptor(guest_fd);
-	host_fd = desc ? desc->getHostIndex() : -1;
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
+	int host_fd = desc ? desc->getHostIndex() : -1;
 	if (guest_fd > 0 && host_fd < 0)
 		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
 
 	// Permissions
-	perm = memory->AccessInit;
-	perm |= prot & PROT_READ ? memory->AccessRead : 0;
-	perm |= prot & PROT_WRITE ? memory->AccessWrite : 0;
-	perm |= prot & PROT_EXEC ? memory->AccessExec : 0;
+	int perm = mem::Memory::AccessInit;
+	perm |= prot & PROT_READ ? mem::Memory::AccessRead : 0;
+	perm |= prot & PROT_WRITE ? mem::Memory::AccessWrite : 0;
+	perm |= prot & PROT_EXEC ? mem::Memory::AccessExec : 0;
 
-		/* Flag MAP_ANONYMOUS.
-		 * If it is set, the 'fd' parameter is ignored. */
-		if (flags & MAP_ANONYMOUS)
-			host_fd = -1;
+	// Flag MAP_ANONYMOUS.
+	// If it is set, the 'fd' parameter is ignored.
+	if (flags & MAP_ANONYMOUS)
+		host_fd = -1;
 
-		/* 'addr' and 'offset' must be aligned to page size boundaries.
-		 * 'len' is rounded up to page boundary. */
-		if (offset & ~memory->PageMask)
-			misc::fatal("%s: unaligned offset", __FUNCTION__);
-		if (addr & ~memory->PageMask)
-			misc::fatal("%s: unaligned address", __FUNCTION__);
-		len_aligned = misc::RoundUp(len, memory->PageSize);
+	// 'addr' and 'offset' must be aligned to page size boundaries.
+	// 'len' is rounded up to page boundary.
+	if (offset & ~mem::Memory::PageMask)
+		misc::fatal("%s: unaligned offset", __FUNCTION__);
+	if (addr & ~mem::Memory::PageMask)
+		misc::fatal("%s: unaligned address", __FUNCTION__);
+	unsigned len_aligned = misc::RoundUp(len, mem::Memory::PageSize);
 
-		/* Find region for allocation */
-		if (flags & MAP_FIXED)
+	// Find region for allocation
+	if (flags & MAP_FIXED)
+	{
+		// If MAP_FIXED is set, the 'addr' parameter must be obeyed, and
+		// is not just a hint for a possible base address of the
+		// allocated range.
+		if (!addr)
+			misc::fatal("%s: no start specified for fixed mapping",
+					__FUNCTION__);
+
+		// Any allocated page in the range specified by 'addr' and 'len'
+		// must be discarded.
+		memory->Unmap(addr, len_aligned);
+	}
+	else
+	{
+		if (!addr || memory->MapSpaceDown(addr, len_aligned) != addr)
+			addr = mmap_base_address;
+		addr = memory->MapSpaceDown(addr, len_aligned);
+		if (addr == (unsigned) -1)
+			misc::fatal("%s: out of guest memory", __FUNCTION__);
+	}
+
+	// Allocation of memory
+	memory->Map(addr, len_aligned, perm);
+
+	// Host mapping
+	if (host_fd >= 0)
+	{
+		// Save previous position
+		unsigned last_pos = lseek(host_fd, 0, SEEK_CUR);
+		lseek(host_fd, offset, SEEK_SET);
+
+		// Read pages
+		assert(len_aligned % mem::Memory::PageSize == 0);
+		assert(addr % mem::Memory::PageSize == 0);
+		unsigned curr_addr = addr;
+		for (int size = len_aligned; size > 0; size -= mem::Memory::PageSize)
 		{
-			/* If MAP_FIXED is set, the 'addr' parameter must be obeyed, and is not just a
-			 * hint for a possible base address of the allocated range. */
-			if (!addr)
-				misc::fatal("%s: no start specified for fixed mapping", __FUNCTION__);
-
-			/* Any allocated page in the range specified by 'addr' and 'len'
-			 * must be discarded. */
-			memory->Unmap(addr, len_aligned);
-		}
-		else
-		{
-			if (!addr || memory->MapSpaceDown(addr, len_aligned) != addr)
-				addr = SYS_MMAP_BASE_ADDRESS;
-			addr = memory->MapSpaceDown(addr, len_aligned);
-//			if (addr == -1)
-//				misc::fatal("%s: out of guest memory", __FUNCTION__);
-		}
-
-		/* Allocation of memory */
-		memory->Map(addr, len_aligned, perm);
-
-		/* Host mapping */
-		if (host_fd >= 0)
-		{
-			char buf[memory->PageSize];
-
-			unsigned int last_pos;
-			unsigned int curr_addr;
-
-			int size;
-			int count;
-
-			/* Save previous position */
-			last_pos = lseek(host_fd, 0, SEEK_CUR);
-			lseek(host_fd, offset, SEEK_SET);
-
-			/* Read pages */
-			assert(len_aligned % memory->PageSize == 0);
-			assert(addr % memory->PageSize == 0);
-			curr_addr = addr;
-			for (size = len_aligned; size > 0; size -= memory->PageSize)
-			{
-				memset(buf, 0, memory->PageSize);
-				count = read(host_fd, buf, memory->PageSize);
-				if (count)
-					memory->Access(curr_addr, memory->PageSize, buf, memory->AccessInit);
-				curr_addr += memory->PageSize;
-			}
-
-			/* Return file to last position */
-			lseek(host_fd, last_pos, SEEK_SET);
+			char buf[mem::Memory::PageSize];
+			memset(buf, 0, mem::Memory::PageSize);
+			int count = read(host_fd, buf, mem::Memory::PageSize);
+			if (count)
+				memory->Access(curr_addr, mem::Memory::PageSize,
+						buf, mem::Memory::AccessInit);
+			curr_addr += mem::Memory::PageSize;
 		}
 
-		/* Return mapped address */
-		return addr;
+		// Record map in call stack
+		if (call_stack != nullptr && !desc->getPath().empty())
+			call_stack->Map(desc->getPath(),
+					offset,
+					addr,
+					len,
+					true);
+
+		// Return file to last position
+		lseek(host_fd, last_pos, SEEK_SET);
+	}
+
+
+	// Return mapped address
+	return addr;
+}
+
+int Context::ExecuteSyscall_mmap()
+{
+	// Debug
+	emu->syscall_debug << misc::fmt("mmap syscall\n");
+
+	int offset;
+	int guest_fd;
+
+	std::string prot_str;
+	std::string flags_str;
+
+	unsigned int addr = regs.getGPR(4);
+	unsigned int len = regs.getGPR(5);
+	unsigned int prot = regs.getGPR(6);
+	unsigned int flags = regs.getGPR(7);
+
+	memory->Read(regs.getGPR(29) + 16, 4, (char *)&guest_fd);
+	memory->Read(regs.getGPR(29) + 20, 4, (char *)&offset);
+
+	emu->syscall_debug << misc::fmt("  addr=0x%x, len=%d, prot=0x%x, flags=0x%x, "
+				"guest_fd=%d, offset=0x%x\n",
+				addr, len, prot, flags, guest_fd, offset);
+	emu->syscall_debug << misc::fmt("  prot=%s, flags=%s\n",
+			mmap_prot_map.MapFlags(prot).c_str(),
+			mmap_flags_map.MapFlags(flags).c_str());
+
+	// Set reg a3 to 0 to indicate success
+	regs.setGPR(7, 0);
+
+	return SyscallMmapAux(addr, len, prot, flags, guest_fd, offset);
 		//////////////////////////////////////
 }
 
@@ -2118,7 +2218,11 @@ int Context::ExecuteSyscall_fstat64()
 	// Host call
 	int err = fstat(host_fd, &statbuf);
 	if (err == -1)
+	{
+		// set reg a3 to 1 to indicate syscall failure
+		regs.setGPR(7,1);
 		return -errno;
+	}
 
 	if (sizeof(struct sim_stat64_t) != 96)
 		misc::Panic(misc::fmt("host stat and guest stat do not match in size"));
@@ -2145,8 +2249,11 @@ int Context::ExecuteSyscall_fstat64()
 			sim_statbuf.dev, sim_statbuf.ino, sim_statbuf.mode, sim_statbuf.nlink);
 	emu->syscall_debug << misc::fmt("  uid=%d, gid=%d, rdev=%lld\n",
 			sim_statbuf.uid, sim_statbuf.gid, sim_statbuf.rdev);
-	emu->syscall_debug << misc::fmt("size=%lld, blksize=%d, blocks=%lld\n",
+	emu->syscall_debug << misc::fmt("  size=%lld, blksize=%d, blocks=%lld\n",
 			sim_statbuf.size, sim_statbuf.blksize, sim_statbuf.blocks);
+
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
 
 	// Return
 	memory->Write(statbuf_ptr, sizeof sim_statbuf, (char *)&sim_statbuf);
@@ -2570,8 +2677,7 @@ int Context::ExecuteSyscall_keyctl()
 int Context::ExecuteSyscall_set_thread_area()
 {
 	// Debug
-	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("set_thread_area syscall\n");
+	emu->syscall_debug << misc::fmt("set_thread_area syscall\n");
 
 	// Get argument
 	unsigned int uinfo_ptr = regs.getGPR(4);
@@ -2581,7 +2687,9 @@ int Context::ExecuteSyscall_set_thread_area()
 
 	// Perform syscall operation
 	regs.setCoprocessor0GPR(29, uinfo_ptr);
-	regs.setGPR(7, 0);
+
+	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
 
 	// Return
 	return 0;
