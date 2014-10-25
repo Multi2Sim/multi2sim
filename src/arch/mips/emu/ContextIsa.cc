@@ -114,10 +114,12 @@ void Context::ExecuteInst_BLEZ()
 void Context::ExecuteInst_BGTZ()
 {
 	// Read Operands
+	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform Operation
-	MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+	if (regs.getGPR(rs) > 0)
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
 }
 
 
@@ -497,7 +499,7 @@ void Context::ExecuteInst_LWC2()
 
 void Context::ExecuteInst_PREF()
 {
-	throw misc::Panic("Unimplemented instruction");
+  //  throw misc::Panic("Unimplemented instruction");
 }
 
 
@@ -1178,16 +1180,18 @@ void Context::ExecuteInst_CLO()
 }
 
 
-
-
-
-
-
-
-
 void Context::ExecuteInst_EXT()
 {
-	throw misc::Panic("Unimplemented instruction");
+  unsigned int rs = inst.getBytes()->standard.rs;
+  unsigned int rt = inst.getBytes()->standard.rt;
+  unsigned int rd = inst.getBytes()->standard.rd;
+  unsigned int sa = inst.getBytes()->standard.sa;
+
+  if (rd + sa > 31)
+    misc::Panic("inst EXT, unexpected behavior");
+
+  unsigned temp = 0 | misc::getBits32(regs.getGPR(rs), rd, sa);
+  regs.setGPR(rt, temp);
 }
 
 
@@ -1375,7 +1379,12 @@ void Context::ExecuteInst_MFHC1()
 
 void Context::ExecuteInst_MTC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int fs = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform instruction MTC1
+	regs.setSinglePrecisionFPR(fs,regs.getGPR(rt));
 }
 
 
