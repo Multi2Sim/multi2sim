@@ -65,6 +65,12 @@ void Context::ExecuteSyscall()
 	if (code < 1 || code >= SyscallCodeCount)
 		printf("invalid system call (code %d)", code);
 
+	// Debug
+	emu->syscall_debug << misc::fmt("system call '%s' "
+			"(code %d, inst %lld, pid %d)\n",
+			Context::syscall_name[code], code,
+			emu->getInstructions(), pid);
+
 	// Perform system call
 	ExecuteSyscallFn fn = execute_syscall_fn[code];
 	int ret = (this->*fn)();
@@ -253,9 +259,6 @@ bool Context::SyscallWriteCanWakeup()
 
 int Context::ExecuteSyscall_write()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("write syscall\n");
-
 	// Arguments
 	int guest_fd = regs.getGPR(4);
 	unsigned buf_ptr = regs.getGPR(5);
@@ -412,8 +415,6 @@ comm::FileDescriptor *Context::SyscallOpenVirtualDevice(const std::string &path,
 
 int Context::ExecuteSyscall_open()
 {
-	emu->syscall_debug << misc::fmt("open syscall\n");
-
 	// Arguments
 	unsigned int file_name_ptr = regs.getGPR(4);
 	int flags = regs.getGPR(5);
@@ -492,7 +493,6 @@ int Context::ExecuteSyscall_open()
 
 int Context::ExecuteSyscall_close()
 {
-	emu->syscall_debug << misc::fmt("close syscall\n");
 	// Arguments
 	int guest_fd = regs.getGPR(4);
 	int host_fd = file_table->getHostIndex(guest_fd);
@@ -567,9 +567,6 @@ int Context::ExecuteSyscall_chdir()
 
 int Context::ExecuteSyscall_time()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("time syscall\n");
-
 	// Arguments
 	unsigned time_ptr = regs.getGPR(4);
 	emu->syscall_debug << misc::fmt("  ptime=0x%x\n", time_ptr);
@@ -772,9 +769,6 @@ int Context::ExecuteSyscall_prof()
 
 int Context::ExecuteSyscall_brk()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("brk syscall\n");
-
 	unsigned int old_heap_break;
 	unsigned int new_heap_break;
 	unsigned int size;
@@ -1089,8 +1083,6 @@ int Context::ExecuteSyscall_unused84()
 int Context::ExecuteSyscall_readlink()
 {
 	// FIXME: double check the implementation of readlink
-	// Debug
-	emu->syscall_debug << misc::fmt("readlink syscall\n");
 	int file_name_ptr = regs.getGPR(4);
 	unsigned int buf_ptr = regs.getGPR(5);
 	unsigned count = regs.getGPR(6);
@@ -1299,9 +1291,6 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 
 int Context::ExecuteSyscall_mmap()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("mmap syscall\n");
-
 	int offset;
 	int guest_fd;
 
@@ -1327,14 +1316,29 @@ int Context::ExecuteSyscall_mmap()
 	regs.setGPR(7, 0);
 
 	return SyscallMmapAux(addr, len, prot, flags, guest_fd, offset);
-		//////////////////////////////////////
 }
 
-
+//
+// System call 'munmap'
+//
 
 int Context::ExecuteSyscall_munmap()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Arguments
+	unsigned addr = regs.getGPR(4);
+	unsigned size = regs.getGPR(5);
+	emu->syscall_debug << misc::fmt("  addr=0x%x, size=%d\n", addr, size);
+
+	// Restrictions
+	if (addr & (mem::Memory::PageSize - 1))
+		misc::fatal("%s: address not aligned", __FUNCTION__);
+
+	// Unmap
+	unsigned size_aligned = misc::RoundUp(size, mem::Memory::PageSize);
+	memory->Unmap(addr, size_aligned);
+
+	// Return
+	return 0;
 }
 
 
@@ -1543,9 +1547,6 @@ static struct sim_utsname sim_utsname =
 
 int Context::ExecuteSyscall_uname()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("uname syscall\n");
-
 	unsigned int addr = regs.getGPR(4);
 
 	emu->syscall_debug << misc::fmt("  addr is 0x%x\n", addr);
@@ -1697,9 +1698,6 @@ int Context::ExecuteSyscall_readv()
 
 int Context::ExecuteSyscall_writev()
 {
-	if(emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("writev syscall\n");
-
 	comm::FileDescriptor *desc;
 	int v;
 	unsigned int iov_base;
@@ -2199,8 +2197,6 @@ int Context::ExecuteSyscall_lstat64()
 
 int Context::ExecuteSyscall_fstat64()
 {
-	emu->syscall_debug << misc::fmt("fstat64 syscall\n");
-
 	// Arguments
 	int fd = regs.getGPR(4);
 	unsigned int statbuf_ptr = regs.getGPR(5);
@@ -2284,10 +2280,116 @@ int Context::ExecuteSyscall_getdents64()
 	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
 }
 
+//
+// System call fcntl64
+
+static const misc::StringMap fcntl_cmd_map =
+{
+		{ "F_DUPFD", 0 },
+		{ "F_GETFD", 1 },
+		{ "F_SETFD", 2 },
+		{ "F_GETFL", 3 },
+		{ "F_SETFL", 4 },
+		{ "F_GETLK", 5 },
+		{ "F_SETLK", 6 },
+		{ "F_SETLKW", 7 },
+		{ "F_SETOWN", 8 },
+		{ "F_GETOWN", 9 },
+		{ "F_SETSIG", 10 },
+		{ "F_GETSIG", 11 },
+		{ "F_GETLK64", 12 },
+		{ "F_SETLK64", 13 },
+		{ "F_SETLKW64", 14 }
+};
 
 int Context::ExecuteSyscall_fcntl64()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+	// Arguments
+	int guest_fd = regs.getGPR(4);
+	int cmd = regs.getGPR(5);
+	unsigned arg = regs.getGPR(6);
+	emu->syscall_debug << misc::fmt("  guest_fd=%d, cmd=%d, arg=0x%x\n",
+			guest_fd, cmd, arg);
+	emu->syscall_debug << misc::fmt("    cmd=%s\n",
+			fcntl_cmd_map.MapValue(cmd));
+
+	// Get file descriptor table entry
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
+	if (!desc)
+	{
+		// Set reg a3 to 1 to indicate failure
+		regs.setGPR(7, 1);
+		return -EBADF;
+	}
+
+	if (desc->getHostIndex() < 0)
+		misc::fatal("%s: not supported for this type of file",
+				__FUNCTION__);
+	emu->syscall_debug << misc::fmt("    host_fd=%d\n",
+			desc->getHostIndex());
+
+	// Process command
+	int err = 0;
+	switch (cmd)
+	{
+
+	// F_GETFD
+	case 1:
+	{
+		err = fcntl(desc->getHostIndex(), F_GETFD);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	// F_SETFD
+	case 2:
+	{
+		err = fcntl(desc->getHostIndex(), F_SETFD, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	// F_GETFL
+	case 3:
+	{
+		err = fcntl(desc->getHostIndex(), F_GETFL);
+		if (err == -1)
+			err = -errno;
+		else
+			emu->syscall_debug << misc::fmt("    ret=%s\n",
+					open_flags_map.MapFlags(err).c_str());
+		break;
+	}
+
+	// F_SETFL
+	case 4:
+	{
+		emu->syscall_debug << misc::fmt("    arg=%s\n",
+				open_flags_map.MapFlags(arg).c_str());
+		desc->setFlags(arg);
+
+		err = fcntl(desc->getHostIndex(), F_SETFL, arg);
+		if (err == -1)
+			err = -errno;
+		break;
+	}
+
+	default:
+
+		misc::fatal("%s: command %s not implemented.",
+				__FUNCTION__, fcntl_cmd_map.MapValue(cmd));
+	}
+
+	// Set reg a3 to 1 for failure, 0 for success
+	if (err < 0)
+		regs.setGPR(7,1);
+	else
+		regs.setGPR(7,0);
+
+	// Return
+	return err;
 }
 
 
@@ -2446,9 +2548,6 @@ int Context::ExecuteSyscall_io_cancel()
 
 int Context::ExecuteSyscall_exit_group()
 {
-	// Debug
-	if (emu->syscall_debug)
-		emu->syscall_debug << misc::fmt("exit_group syscall\n");
 	// Arguments
 	int status = regs.getGPR(4);
 
@@ -2676,9 +2775,6 @@ int Context::ExecuteSyscall_keyctl()
 
 int Context::ExecuteSyscall_set_thread_area()
 {
-	// Debug
-	emu->syscall_debug << misc::fmt("set_thread_area syscall\n");
-
 	// Get argument
 	unsigned int uinfo_ptr = regs.getGPR(4);
 
