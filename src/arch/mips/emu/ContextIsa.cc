@@ -119,7 +119,7 @@ void Context::ExecuteInst_BGTZ()
 
 	// Perform Operation
 	if (regs.getGPR(rs) > 0)
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 18));
 }
 
 
@@ -129,9 +129,14 @@ void Context::ExecuteInst_ADDI()
 	unsigned int rt = inst.getBytes()->standard.rt;
 	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int offset = inst.getBytes()->offset_imm.offset;
+	unsigned int rs_reg = regs.getGPR(rs);
 
 	// Perform Operation
-	regs.setGPR(rt, ((int)regs.getGPR(rs) + (int)offset));
+	int temp = ((rs_reg & 0x80000000) | rs_reg)
+			+ misc::SignExtend32(offset, 16);
+	if ((temp & 0x80000000) != (temp & 0x40000000))
+			misc::Panic("ADDI: Integer overflow");
+	regs.setGPR(rt, temp);
 }
 
 
@@ -143,8 +148,9 @@ void Context::ExecuteInst_ADDIU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	int temp = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
+	int temp = regs.getGPR(rs) + (signed)misc::SignExtend32(imm,16);
 	regs.setGPR(rt,temp);
+	// emu->isa_debug << misc::fmt("  result is %d\n", regs.getGPR(rt));
 }
 
 
@@ -186,7 +192,7 @@ void Context::ExecuteInst_ANDI()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform AND operation
-	regs.setGPR(rt, (regs.getGPR(rs) & (unsigned int)(imm)));
+	regs.setGPR(rt, (regs.getGPR(rs) & (imm & ((1u << 16) - 1))));
 }
 
 
@@ -210,7 +216,7 @@ void Context::ExecuteInst_XORI()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform XOR immediate operation
-	unsigned int value = regs.getGPR(rs) ^ imm;
+	unsigned int value = regs.getGPR(rs) ^ (imm & ((1u << 16) - 1));
 	regs.setGPR(rt, value);
 }
 
