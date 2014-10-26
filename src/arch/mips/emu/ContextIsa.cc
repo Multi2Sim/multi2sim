@@ -1157,7 +1157,7 @@ void Context::ExecuteInst_MUL()
 	unsigned int rd = inst.getBytes()->standard.rd;
 
 	// Perform operation
-	long int temp = (long int)regs.getGPR(rs) * (long int)regs.getGPR(rt);
+	long long int temp = (int)regs.getGPR(rs) * (int)regs.getGPR(rt);
 	regs.setGPR(rd, temp);
 }
 
