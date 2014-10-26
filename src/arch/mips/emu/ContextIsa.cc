@@ -148,7 +148,8 @@ void Context::ExecuteInst_ADDIU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	int temp = regs.getGPR(rs) + (signed)misc::SignExtend32(imm,16);
+	int temp = regs.getGPR(rs) + (signed)misc::SignExtend32(imm, 16);
+
 	regs.setGPR(rt,temp);
 	// emu->isa_debug << misc::fmt("  result is %d\n", regs.getGPR(rt));
 }
@@ -162,7 +163,7 @@ void Context::ExecuteInst_SLTI()
 	int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform Operation
-	if ((int)(regs.getGPR(rs)) < imm)
+	if ((int)(regs.getGPR(rs)) < (int)misc::SignExtend32(imm,16))
 		regs.setGPR(rt, 1);
 	else
 		regs.setGPR(rt, 0);
@@ -228,7 +229,7 @@ void Context::ExecuteInst_LUI()
 	unsigned int rt =inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	regs.setGPR(rt,(unsigned)((imm << 16) | 0));
+	regs.setGPR(rt,(imm << 16));
 }
 
 
@@ -386,7 +387,7 @@ void Context::ExecuteInst_SB()
 	// Perform operation SB
 	char temp = regs.getGPR(rt);
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
-	memory->Write(addr, sizeof(unsigned char), &temp);
+	memory->Write(addr, sizeof(char), &temp);
 }
 
 
@@ -434,8 +435,8 @@ void Context::ExecuteInst_SW()
 
 	// Perform operation SW
 	memory->Write(addr, 4, (char*)&temp);
-	if(emu->isa_debug)
-		emu->isa_debug << misc::fmt("stored value: 0x%x\n", temp);
+//	if(emu->isa_debug)
+//		emu->isa_debug << misc::fmt("stored value: 0x%x\n", temp);
 }
 
 

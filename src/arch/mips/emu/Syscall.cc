@@ -312,7 +312,7 @@ int Context::ExecuteSyscall_write()
 	}
 
 	// Blocking write - suspend thread
-	emu->syscall_debug << misc::fmt("  blocking write - process suspended\n");
+	emu->syscall_debug << misc::fmt(" blocking write - process suspended\n");
 	syscall_write_fd = guest_fd;
 	Suspend(&Context::SyscallWriteCanWakeup, &Context::SyscallWriteWakeup,
 			ContextWrite);
