@@ -84,7 +84,7 @@ public:
 	/// AppendPrefix() for details.
 	void PrependPrefix(const std::string &prefix)
 	{
-		prefixes = "[" + prefix + "} " + prefixes;
+		prefixes = "[" + prefix + "] " + prefixes;
 	}
 
 	/// Set the exception type (e.g., `Error`). This word is displayed after

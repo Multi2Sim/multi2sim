@@ -55,7 +55,6 @@ public:
 		{
 			// Set module prefix
 			AppendPrefix("Memory");
-			abort();/////////
 		}
 	};
 
