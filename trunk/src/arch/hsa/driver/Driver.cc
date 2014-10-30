@@ -125,6 +125,8 @@ bool Driver::Intercept(const std::string &function_name,
 	int call_number = 0;
 	call_number = function_name_to_call_map.MapString(function_name, 
 			error);
+
+	// This function is not a runtime function, return to emulator
 	if (error)
 		return false;
 

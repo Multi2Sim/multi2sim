@@ -64,7 +64,7 @@ class StackFrame
 
 public:
 
-	/// Prototype foe return callback functions
+	/// Prototype for return callback functions
 	typedef int (*CallbackFn)(DriverCallbackInfo *info);
 
 private:
@@ -73,7 +73,7 @@ private:
 	CallbackFn return_callback = nullptr;
 
 	// The information provided for the return callback function
-	DriverCallbackInfo *callback_info;
+	std::unique_ptr<DriverCallbackInfo> callback_info;
 
 public:
 
@@ -94,10 +94,10 @@ public:
 
 	/// Set return callback function
 	void setReturnCallback(CallbackFn callback,
-			DriverCallbackInfo *info)
+			std::unique_ptr<DriverCallbackInfo> info)
 	{
 		this->return_callback = callback;
-		this->callback_info = info;
+		this->callback_info = std::move(info);
 	}
 
 	/// Dump stack frame information
@@ -166,7 +166,7 @@ public:
 	/// Release an argument scope, when we find a '}'
 	void  CloseArgumentScope()
 	{
-		argument_scope.release();
+		argument_scope.reset(nullptr);
 	};
 
 	/// Create an argument in the argument scope
@@ -213,7 +213,7 @@ public:
 	/// Return the pointers to the callback arguments
 	DriverCallbackInfo* getReturnCallbackInfo() const
 	{
-		return callback_info;
+		return callback_info.get();
 	}
 
 };

@@ -66,6 +66,9 @@ int IterateAgentNext(DriverCallbackInfo *args)
 	unsigned long long last_handler =
 			info->getLastComponentHandler();
 
+	// All information retrieved, then we can pop the stack
+	work_item->PopStack();
+
 	/*	
 	std::cout << misc::fmt("In function %s ", __FUNCTION__);
 	std::cout << misc::fmt("last_handler: %lld, ", last_handler);
@@ -226,13 +229,13 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 
 	// Setup info for return callback function
 	mem::Memory *memory = Emu::getInstance()->getMemory();
-	AgentIterateNextInfo *callback_info = new AgentIterateNextInfo(
-			work_item, memory, args_ptr, componentHandler);
-	//std::cout << "Callback info have component hander " << 
-	//		callback_info->getLastComponentHandler() << "\n";
+	std::unique_ptr<AgentIterateNextInfo> callback_info(
+			new AgentIterateNextInfo(work_item, memory,
+					args_ptr, componentHandler));
 
 	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setReturnCallback(&IterateAgentNext, callback_info);
+	stack_frame->setReturnCallback(&IterateAgentNext,
+			std::move(callback_info));
 
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(stack_frame);
@@ -257,21 +260,19 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	unsigned long long agent_handler = 
 			getArgumentValue<unsigned long long>(4, memory, 
 					args_ptr);
-	std::cout << "Agent_handler: " << agent_handler << '\n';
 
 	// Try to find the agent
 	Component *component = Emu::getInstance()->getComponent(agent_handler);
 	if (component == nullptr)
 	{
 		unsigned int *return_val = (unsigned int *)arg_buffer;
-		*return_val = HSA_STATUS_ERROR_INVALID_AGENT; // HSA_STATUS_ERROR_INVALID_AGENT
+		*return_val = HSA_STATUS_ERROR_INVALID_AGENT;
 		return 0;
 	}
 
 	// If the device is found, get the attribute queried
 	unsigned int attribute = getArgumentValue<unsigned int>(12, memory, 
 			args_ptr);
-	std::cout << "Attribute: " << attribute << '\n';
 
 	// Retrieve the pointer to the value
 	unsigned value_address = getArgumentValue<unsigned int>(16, memory, 

@@ -1,5 +1,6 @@
 version 0:96:$full:$small;
 
+// Runtime definitions
 function &hsa_init (arg_u32 %status) ();
 function &hsa_stut_down (arg_u32 %status) ();
 function &hsa_iterate_agents (arg_u32 %status) (arg_u32 %call_back, arg_u32 %data);
@@ -8,18 +9,25 @@ function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribu
 
 function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0);
 
-function &abort() ();
-
+// Iterate agent callback 
 function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %data)
 {
+	// Load argument %agent into register %d1
 	ld_arg_u64 $d1, [%agent];
+	// Declare a local variable for storing the type of the device
 	private_u32 %type;
 	{
+		// Declare a variable for function return
 		arg_u32 %err;
+		// Declear an argument for the attribute to retrieve
 		arg_u32 %attribute;
+		// Set the value of %attribute to be 13, for device type
 		st_arg_u32 13, [%attribute];
+		// Get the address of the variable %type;
 		lda_private_u32 $s1, [%type];
+		// Declare an argument to pass the address of the data field
 		arg_u32 %type_addr;
+		// Set the value of %type_addr
 		st_arg_u32 $s1, [%type_addr];
 		arg_u64 %agent_arg;
 		st_arg_u64 $d1, [%agent_arg];
@@ -27,6 +35,7 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %da
 	}
 	
 	ld_private_u32 $s0, [%type];
+
 	// If the device is a GPU
 	cmp_ne_b1_u32 $c0, $s0, 1;
 	cbr $c0, @not_gpu_agent;
@@ -53,7 +62,6 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u32 %da
 	st_arg_u32 0, [%status];
 	ret;
 	
-
 @not_cpu_agent:
 	st_arg_u32 0, [%status];
 	ret;
@@ -111,6 +119,6 @@ function &main()(){
 		call &hsa_iterate_agents (%err) (%call_back, %device_addr);
 	}
 	
-	
+	ret;	
 
 };
