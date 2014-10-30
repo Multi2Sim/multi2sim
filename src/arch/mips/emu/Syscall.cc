@@ -249,9 +249,6 @@ int Context::ExecuteSyscall_read()
 //
 void Context::SyscallWriteWakeup()
 {
-	if (emu->syscall_debug)
-		misc::fmt(" syscall can wake up");
-	return false;
 }
 
 bool Context::SyscallWriteCanWakeup()
