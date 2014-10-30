@@ -103,20 +103,6 @@ public:
 	/// Set host CPU component
 	void setHostCPUComponent(Component *cpu) { host_cpu = cpu; }
 
-	/// Get a iterator pointing the first components
-	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
-			getComponentBeginIterator()
-	{
-		return components.begin();
-	}
-
-	/// Get a iterator pointing the pass the last components
-	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
-			getComponentEndIterator()
-	{
-		return components.end();
-	}
-
 	/// Get component by handler
 	Component *getComponent(unsigned long long handler) const
 	{

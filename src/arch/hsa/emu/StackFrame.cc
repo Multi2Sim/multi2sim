@@ -39,8 +39,7 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 	next_dir = function->getFirstInFunctionDirective();
 
 	// Allocate register space
-	char *register_space = new char[function->getRegisterSize()];
-	this->register_storage.reset(register_space);
+	this->register_storage.reset(new char[function->getRegisterSize()]);
 
 	// Initialize argument scopes
 	function_arguments.reset(new VariableScope());
@@ -49,7 +48,8 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 
 
 StackFrame::~StackFrame()
-{}
+{
+}
 
 void StackFrame::setPc(char *pc)
 {
