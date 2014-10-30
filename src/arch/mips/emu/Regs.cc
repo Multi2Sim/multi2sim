@@ -41,27 +41,26 @@ Regs::~Regs()
 {
 }
 
-//read one word from GPRs, n is the register number.
-//If the n is greater than 31, exit program
+// Read one word from GPRs, n is the register number.
+// If the n is greater than 31, exit program
 unsigned int Regs::getGPR(int n)
 {
-//		printf("%d %d", n, gpr[n]);
 		  return gpr[n];
 }
 
-//Read from HI register
+// Read from HI register
 unsigned int Regs::getHI()
 {
 		  return hi;
 }
 
-//Write HI register with value
+// Write HI register with value
 void Regs::setHI(unsigned int value)
 {
 		  hi=value;
 }
 
-//Write LO register with value
+// Write LO register with value
 void Regs::setLO(unsigned int value)
 {
 		  lo=value;
@@ -100,7 +99,6 @@ int Regs::show_all_registers(int n, char *output_buffer)
 
 	}
 	return 0;
-
 }
 */
 
