@@ -262,8 +262,7 @@ class WorkItem
 	/// Return the stack top stack frame
 	StackFrame* getStackTop()
 	{
-		StackFrame *stack_top = stack.back().get();
-		stack_top->Dump(std::cout);
+		//StackFrame *stack_top = stack.back().get();
 		return stack.back().get();
 	}
 
@@ -272,6 +271,11 @@ class WorkItem
  	{
  		this->stack.push_back(std::unique_ptr<StackFrame>(stack_frame));
  	}
+
+	/// Pop the stackframe at the stack top
+	void PopStack(){
+		stack.pop_back();
+	}
 
  	/// Finish the execution of a function by poping a frame from the stack
  	///

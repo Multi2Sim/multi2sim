@@ -69,8 +69,7 @@ bool WorkItem::MovePcForwardByOne()
 	StackFrame *stack_top = stack.back().get();
 
 	// Set the stackframe's pc to the next instuction
-	BrigInstEntry inst(stack_top->getPc(),
-				ProgramLoader::getInstance()->getBinary());
+	BrigInstEntry inst(stack_top->getPc(), binary);
 	char *next_pc = inst.next();
 
 	// If next pc is beyond last inst, the last instruction of the function
@@ -123,7 +122,6 @@ bool WorkItem::ReturnFunction()
 	// Check if this frame have a call back funtion when it return
 	if (callee_frame->getReturnCallback())
 	{
-		stack.pop_back();
 		StackFrame::CallbackFn callback = 
 			callee_frame->getReturnCallback();
 		callback(callee_frame->getReturnCallbackInfo());

@@ -91,8 +91,6 @@ class Driver: public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
-
-
 public:
 
 	// Retrieve the value at a certain memory space
@@ -119,8 +117,6 @@ public:
 		// Set the value of the argument
 		*buffer = value;
 	}
-
-public:
 
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
