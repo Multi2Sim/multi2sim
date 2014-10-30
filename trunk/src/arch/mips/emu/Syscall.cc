@@ -249,10 +249,15 @@ int Context::ExecuteSyscall_read()
 //
 void Context::SyscallWriteWakeup()
 {
+	if (emu->syscall_debug)
+		misc::fmt(" syscall can wake up");
+	return false;
 }
 
 bool Context::SyscallWriteCanWakeup()
 {
+	if (emu->syscall_debug)
+		misc::fmt(" syscall can wake up");
 	return false;
 }
 
@@ -1742,6 +1747,8 @@ int Context::ExecuteSyscall_writev()
 		/* Read buffer from memory and write it to file */
 		buf = malloc(iov_len);
 		memory->Read(iov_base, iov_len, (char *)buf);
+		if(emu->syscall_debug)
+			emu->syscall_debug << misc::fmt("iov_len = %d\n", iov_len);
 
 		int len = writev(host_fd, (struct iovec *)buf, iov_len);
 		if (len == -1)

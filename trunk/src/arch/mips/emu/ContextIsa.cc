@@ -661,7 +661,8 @@ void Context::ExecuteInst_SLLV()
 	unsigned int rs = inst.getBytes()->standard.rs;
 
 	// Perform operation SLLV
-	unsigned int temp = regs.getGPR(rt) << rs;
+	unsigned int s = misc::getBits32(regs.getGPR(rs), 4, 0);
+	unsigned int temp = regs.getGPR(rt) << s;
 	regs.setGPR(rd, temp);
 }
 
