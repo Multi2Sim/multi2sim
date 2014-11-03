@@ -125,26 +125,24 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 {	
 	// Arguments		| Offset	| Size
 	// hsa_status_t		| 0		| 4
-	// callback		| 4		| 4
-	// data			| 8		| 4
-	// host_language	| 12		| 4
-	// workitem_prt		| 16		| 8
+	// callback		| 4		| 8
+	// data			| 12		| 8
+	// host_language	| 20		| 4
+	// workitem_prt		| 24		| 8
 
 	// Dump the argument information
-	/*	
-	std::cout << misc::fmt("In function %s ", __FUNCTION__);
-	std::cout << "ret: "<< 
+	debug << misc::fmt("In function %s", __FUNCTION__);
+	debug << "\n\thsa_status_t: "<< 
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
-	std::cout << ", callback: " << 
-		getArgumentValue<unsigned int>(4, memory, args_ptr);
-	std::cout << ", data: " <<
-		getArgumentValue<unsigned>(8, memory, args_ptr);
-	std::cout << ", host_lang: " <<
-		getArgumentValue<unsigned int>(12, memory, args_ptr);
-	std::cout << ", workitem_ptr: " << 
-		getArgumentValue<unsigned long long>(16, memory, args_ptr)
+	debug << ", \n\tcallback: " << 
+		getArgumentValue<unsigned long long>(4, memory, args_ptr);
+	debug << ", \n\tdata: " <<
+		getArgumentValue<unsigned long long>(12, memory, args_ptr);
+	debug << ", \n\thost_lang: " <<
+		getArgumentValue<unsigned int>(20, memory, args_ptr);
+	debug << ", \n\tworkitem_ptr: " << 
+		getArgumentValue<unsigned long long>(24, memory, args_ptr)
 		<< "\n";
-	*/
 
 	// Get virtual machine setup
 	Emu *emu = Emu::getInstance();
@@ -162,11 +160,11 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 
 	// Construct a stack frame and implant it the the caller stack
 	WorkItem *workitem = (WorkItem *)getArgumentValue<unsigned long long>(
-			16, memory, args_ptr);
-	unsigned callback_address = getArgumentValue<unsigned>(4, memory, 
-			args_ptr);
+			24, memory, args_ptr);
+	unsigned callback_address = getArgumentValue<unsigned long long>(
+			4, memory, args_ptr);
 	unsigned long long data_address = getArgumentValue<unsigned long long>
-		(8, memory, args_ptr);	
+		(12, memory, args_ptr);	
 	StartAgentIterateCallback(workitem, callback_address, 
 			component->getHandler(), data_address,
 			args_ptr);
@@ -214,18 +212,19 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	std::string arg1_name = BrigStrEntry::GetStringByOffset(
 			binary, arg1->name);
 	function_args->DeclearVariable(arg1_name, 8, BRIG_TYPE_U64);
-	char *callee_buffer = function_args->getBuffer(arg1_name);
-	unsigned long long *buf = (unsigned long long *)callee_buffer;
-	*buf = componentHandler;
+	unsigned long long *callee_buffer = 
+			(unsigned long long *)function_args->
+			getBuffer(arg1_name);
+	*callee_buffer = componentHandler;
 
 	// Pass argument 2 (Address to the data field) to the callback
 	BrigDirectiveSymbol *arg2 = (BrigDirectiveSymbol *)arg1_entry.next();
 	std::string arg2_name = BrigStrEntry::GetStringByOffset(
 			binary, arg2->name);
-	function_args->DeclearVariable(arg2_name, 16, BRIG_TYPE_U32);
-	callee_buffer = function_args->getBuffer(arg2_name);
-	buf = (unsigned long long *)callee_buffer;
-	*buf = data_address;
+	function_args->DeclearVariable(arg2_name, 16, BRIG_TYPE_U64);
+	callee_buffer = (unsigned long long *)
+			function_args->getBuffer(arg2_name);
+	*callee_buffer = data_address;
 
 	// Setup info for return callback function
 	mem::Memory *memory = Emu::getInstance()->getMemory();
@@ -236,7 +235,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	// Set the stack frame to be an agent_iterate_callback
 	stack_frame->setReturnCallback(&IterateAgentNext,
 			std::move(callback_info));
-
+	
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(stack_frame);
 }

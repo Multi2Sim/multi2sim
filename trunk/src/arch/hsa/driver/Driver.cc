@@ -144,7 +144,7 @@ bool Driver::Intercept(const std::string &function_name,
 	// continued
 	int ret = Call(call_number, Emu::getInstance()->getMemory(), 
 			arg_address);
-
+	
 	// Avoid passing value back and moving the pc forward if the runtime 
 	// function is finished
 	if (ret == 1)
@@ -271,6 +271,22 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 			function->getArgumentSize() + 4);
 	WorkItem *work_item = stack_top->getWorkItem();
 	*buf = (unsigned long long)work_item;
+	
+	debug << misc::fmt("arguemntSize: %d\n", function->getArgumentSize());
+	debug << "WorkItem: "<<(unsigned long long)work_item << "\n";
+	debug << misc::fmt("In function %s", __FUNCTION__);
+	debug << "\n\thsa_status_t: "<< 
+		getArgumentValue<unsigned int>(0, memory, arg_address);
+	debug << ", \n\tcallback: " << 
+		getArgumentValue<unsigned long long>(4, memory, arg_address);
+	debug << ", \n\tdata: " <<
+		getArgumentValue<unsigned long long>(12, memory, arg_address);
+	debug << ", \n\thost_lang: " <<
+		getArgumentValue<unsigned int>(20, memory, arg_address);
+	debug << ", \n\tworkitem_ptr: " << 
+		getArgumentValue<unsigned long long>(24, memory, arg_address)
+		<< "\n";
+
 
 	return arg_address;
 }
