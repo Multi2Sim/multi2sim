@@ -82,7 +82,7 @@ void Context::ExecuteInst_BEQ()
 
 	// Perform Operation
 	if(regs.getGPR(rs) == regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 16));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 18));
 }
 
 
@@ -95,7 +95,7 @@ void Context::ExecuteInst_BNE()
 
 	// Perform Operation
 	if (regs.getGPR(rs) != regs.getGPR(rt))
-		MipsIsaRelBranch(misc::SignExtend32(((imm << 2)|0), 16));
+		MipsIsaRelBranch(misc::SignExtend32(((imm << 2)|0), 18));
 }
 
 
@@ -104,10 +104,11 @@ void Context::ExecuteInst_BLEZ()
 	// Read Operands
 	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
+	unsigned int rs_value = regs.getGPR(rs);
 
 	// Perform Operation
-	if ((int)regs.getGPR(rs) <= 0)
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+	if ((rs_value & 0x80000000) || (rs_value == 0))
+	  MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 18));
 }
 
 
@@ -148,7 +149,7 @@ void Context::ExecuteInst_ADDIU()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform Operation
-	int temp = regs.getGPR(rs) + (signed)misc::SignExtend32(imm, 16);
+	unsigned int temp = regs.getGPR(rs) + (signed)misc::SignExtend32(imm, 16);
 
 	regs.setGPR(rt,temp);
 	// emu->isa_debug << misc::fmt("  result is %d\n", regs.getGPR(rt));
@@ -265,9 +266,9 @@ void Context::ExecuteInst_LB()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation LB
-	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm,16);
-	unsigned char temp;
-	memory->Read(addr, sizeof(unsigned char), (char *)&temp);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
+	char temp;
+	memory->Read(addr, sizeof(char), &temp);
 	regs.setGPR(rt, misc::SignExtend32(temp, 8));
 }
 
@@ -311,7 +312,7 @@ void Context::ExecuteInst_LW()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation LW
-	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm,16);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm,16);
 	unsigned int temp;
 	if ((misc::getBits32(addr, 1, 0) | 0) == 1 )
 		misc::panic("LW: error, effective address is not naturally-aligned\n");
@@ -385,7 +386,7 @@ void Context::ExecuteInst_SB()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation SB
-	char temp = regs.getGPR(rt);
+	char temp = misc::getBits32(regs.getGPR(rt), 7, 0);
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
 	memory->Write(addr, sizeof(char), &temp);
 }
@@ -399,7 +400,7 @@ void Context::ExecuteInst_SH()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation SH
-	unsigned short int temp = regs.getGPR(rt);
+	unsigned short int temp = misc::getBits32(regs.getGPR(rt),   15, 0);
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32((signed)imm, 16);
 	memory->Write(addr, sizeof(unsigned short int), (char *)&temp);
 }
@@ -431,7 +432,7 @@ void Context::ExecuteInst_SW()
 	unsigned int temp = regs.getGPR(rt);
 	unsigned int rs = inst.getBytes()->standard.rs;
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
-	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32(imm, 16);
+	unsigned int addr = regs.getGPR(rs) + misc::SignExtend32((signed)imm, 16);
 
 	// Perform operation SW
 	memory->Write(addr, 4, (char*)&temp);
@@ -478,6 +479,7 @@ void Context::ExecuteInst_LL()
 	memory->Read(addr, 4, (char *)&temp);
 	regs.setGPR(rt, temp);
 	// FIXME: set LLbit = 1
+	ll_bit = true;
 }
 
 
@@ -543,8 +545,11 @@ void Context::ExecuteInst_SC()
 
 	// Perform operation SC
 	unsigned int addr = regs.getGPR(base) + misc::SignExtend32(imm, 16);
-	memory->Write(addr, 4, (char *)&temp);
-	regs.setGPR(rt, 1);
+
+	if (ll_bit)
+		memory->Write(addr, 4, (char *)&temp);
+
+	regs.setGPR(rt, (0 | ll_bit));
 }
 
 
@@ -623,7 +628,7 @@ void Context::ExecuteInst_SRL()
 	unsigned int sa = inst.getBytes()->standard.sa;
 
 	// Perform operation SRL
-	unsigned int temp = regs.getGPR(rt) >> sa;
+	unsigned int temp = (unsigned int)regs.getGPR(rt) >> sa;
 	regs.setGPR(rd, temp);
 }
 
@@ -648,7 +653,7 @@ void Context::ExecuteInst_SRA()
 	unsigned int sa = inst.getBytes()->standard.sa;
 
 	// Perform operation SRA
-	unsigned int temp = regs.getGPR(rt) >> sa;
+	int temp = (int)regs.getGPR(rt) >> (int)sa;
 	regs.setGPR(rd, temp);
 }
 
@@ -676,7 +681,7 @@ void Context::ExecuteInst_SRLV()
 
 	// Perform operation SRLV
 	unsigned int s = misc::getBits32(regs.getGPR(rs), 4, 0);
-	regs.setGPR(rd, regs.getGPR(rt) >> s);
+	regs.setGPR(rd, (unsigned int)regs.getGPR(rt) >> s);
 }
 
 
@@ -708,8 +713,8 @@ void Context::ExecuteInst_JR()
 	MipsIsaBranch(regs.getGPR(rs));
 
 	// Debug
-	emu->isa_debug << misc::fmt("jump to reg[%d]=0x%x",
-			rs, regs.getCoprocessor0GPR(rs));
+	emu->isa_debug << misc::fmt("jump to reg[%d]=0x%x\n",
+			rs, regs.getGPR(rs));
 }
 
 
@@ -901,7 +906,8 @@ void Context::ExecuteInst_SUBU()
 	unsigned int rd = inst.getBytes()->standard.rd;
 
 	// perform operation SUBU
-	unsigned int value = regs.getGPR(rs) - regs.getGPR(rt);
+        unsigned int value = (unsigned int)regs.getGPR(rs) 
+	  - (unsigned int)regs.getGPR(rt);
 	regs.setGPR(rd, value);
 }
 
@@ -1036,8 +1042,8 @@ void Context::ExecuteInst_BLTZ()
 	unsigned int imm = inst.getBytes()->offset_imm.offset;
 
 	// Perform operation
-	if ((int)regs.getGPR(rs) < 0)
-		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 16));
+	if (regs.getGPR(rs) & 0x80000000)
+		MipsIsaRelBranch(misc::SignExtend32(imm << 2, 18));
 }
 
 
@@ -1117,7 +1123,7 @@ void Context::ExecuteInst_BGEZAL()
 
 	// Perform instruction bgezal
 	if ((int)regs.getGPR(rs) >= 0)
-		MipsIsaRelBranch(misc::SignExtend32(imm, 16) << 2);
+	  MipsIsaRelBranch(misc::SignExtend32(((imm << 2) | 0), 18));
 }
 
 
@@ -1160,7 +1166,7 @@ void Context::ExecuteInst_MUL()
 
 	// Perform operation
 	long long int temp = (int)regs.getGPR(rs) * (int)regs.getGPR(rt);
-	regs.setGPR(rd, temp);
+	regs.setGPR(rd, misc::getBits32(temp, 31, 0));
 }
 
 
@@ -1178,7 +1184,27 @@ void Context::ExecuteInst_MSUBU()
 
 void Context::ExecuteInst_CLZ()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Get arguments
+	unsigned int rs = inst.getBytes()->standard.rs;
+	unsigned int rd = inst.getBytes()->standard.rd;
+	unsigned int rs_reg = regs.getGPR(rs);
+
+	// Perform CLZ operation:
+	// Count the number of leading zero's in GPR rs and put in GPR rd
+	int i;
+	int temp = 32;
+
+	for (i=31; i>=0; i--)
+	{
+		if (rs_reg & 0x80000000)
+		{
+			temp = 31 - i;
+			break;
+		}
+		rs_reg = rs_reg << 1;
+	}
+
+	regs.setGPR(rd, temp);
 }
 
 
@@ -1212,13 +1238,8 @@ void Context::ExecuteInst_INS()
 	unsigned int rt = inst.getBytes()->standard.rt;
 
 	// Perform operation
-	unsigned int value = misc::getBits32(regs.getGPR(rs),
-			(regs.getGPR(rd) - regs.getGPR(sa)),
-					0);
-	unsigned int new_rt = misc::setBits32(regs.getGPR(rt),
-			regs.getGPR(rd),
-			regs.getGPR(sa),
-			value);
+	unsigned int value = misc::getBits32(regs.getGPR(rs), rd - sa, 0);
+	unsigned int new_rt = misc::setBits32(regs.getGPR(rt), rd, sa, value);
 	regs.setGPR(rt, new_rt);
 }
 
@@ -1249,8 +1270,8 @@ void Context::ExecuteInst_SEH()
 	unsigned int rd = inst.getBytes()->standard.rd;
 	unsigned int rt = inst.getBytes()->standard.rt;
 
-	unsigned int temp =
-			misc::SignExtend32((unsigned short int)regs.getGPR(rt), 16);
+	unsigned int rt_value = regs.getGPR(rt);
+	unsigned int temp = misc::SignExtend32(misc::getBits32(rt_value, 15, 0), 16);
 	regs.setGPR(rd, temp);
 }
 
@@ -1347,7 +1368,12 @@ void Context::ExecuteInst_WAIT()
 
 void Context::ExecuteInst_MFC1()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Read operands from instruction
+	unsigned int fs = inst.getBytes()->standard.rd;
+	unsigned int rt = inst.getBytes()->standard.rt;
+
+	// Perform instruction MFC1
+	regs.setGPR(rt,regs.getSinglePrecisionFPR(fs));
 }
 
 
@@ -1443,7 +1469,13 @@ void Context::ExecuteInst_MTHC1()
 
 void Context::ExecuteInst_BC1F()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Get the arguments
+	unsigned int cc = inst.getBytes()->cc.cc;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+	unsigned int addr = misc::SignExtend32(((imm << 2) | 0), 18);
+
+	if (cc == 0)
+		MipsIsaRelBranch(addr);
 }
 
 
@@ -1455,7 +1487,13 @@ void Context::ExecuteInst_BC1FL()
 
 void Context::ExecuteInst_BC1T()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Get the arguments
+	unsigned int cc = inst.getBytes()->cc.cc;
+	unsigned int imm = inst.getBytes()->offset_imm.offset;
+	unsigned int addr = misc::SignExtend32(((imm << 2) | 0), 18);
+
+	if (cc == 1)
+		MipsIsaRelBranch(addr);
 }
 
 
@@ -1468,18 +1506,50 @@ void Context::ExecuteInst_BC1TL()
 void Context::ExecuteInst_ADD_S()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// // Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+
+	// // Perform add.s operation
+	// float temp = regs.getSinglePrecisionFPR(fs)
+	// 		+ regs.getSinglePrecisionFPR(ft);
+
+	// regs.setSinglePrecisionFPR(fd, temp);
 }
 
 
 void Context::ExecuteInst_SUB_S()
 {
 	throw misc::Panic("Unimplemented instruction");
+	// Get arguments
+//	unsigned int fd = inst.getBytes()->standard.sa;
+//	unsigned int fs = inst.getBytes()->standard.rd;
+//	unsigned int ft = inst.getBytes()->standard.rt;
+//
+//	// Perform sub.s operation
+//	float temp = regs.getSinglePrecisionFPR(fs)
+//			- regs.getSinglePrecisionFPR(ft);
+//
+//	regs.setSinglePrecisionFPR(fd, temp);
 }
 
 
 void Context::ExecuteInst_MUL_S()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+
+	// // Perform mul.s operation
+	// float temp = regs.getSinglePrecisionFPR(fs)
+	// 		* regs.getSinglePrecisionFPR(ft);
+
+	// regs.setSinglePrecisionFPR(fd, (float)temp);
 }
 
 
@@ -1504,6 +1574,14 @@ void Context::ExecuteInst_ABS_S()
 void Context::ExecuteInst_MOV_S()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Perform mov.d operation:
+	// // move the contents of a floating point reg to another FP reg
+	// regs.setSinglePrecisionFPR(fd, regs.getSinglePrecisionFPR(fs));
 }
 
 
@@ -1600,6 +1678,16 @@ void Context::ExecuteInst_RSQRT_S()
 void Context::ExecuteInst_CVT_D_S()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Get the single precision FP value
+	// float temp = regs.getSinglePrecisionFPR(fs);
+
+	// // Store as double precision
+	// regs.setDoublePrecisionFPR(fd, (double)temp);
 }
 
 
@@ -1624,6 +1712,18 @@ void Context::ExecuteInst_CVT_PS_S()
 void Context::ExecuteInst_ADD_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+
+	// // Perform add.s operation
+	// double temp = regs.getDoublePrecisionFPR(fs)
+	// 		+ regs.getDoublePrecisionFPR(ft);
+
+	// regs.setDoublePrecisionFPR(fd, temp);
+
 }
 
 
@@ -1636,12 +1736,35 @@ void Context::ExecuteInst_SUB_D()
 void Context::ExecuteInst_MUL_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+
+	// // Perform mul.d operation
+	// double temp = regs.getDoublePrecisionFPR(fs)
+	// 		* regs.getDoublePrecisionFPR(ft);
+
+	// regs.setDoublePrecisionFPR(fd, (double)temp);
 }
 
 
 void Context::ExecuteInst_DIV_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+
+	// // Perform div.d operation
+	// double temp = regs.getDoublePrecisionFPR(fs)
+	// 		/ regs.getDoublePrecisionFPR(ft);
+
+	// regs.setDoublePrecisionFPR(fd, (double)temp);
+
 }
 
 
@@ -1660,6 +1783,14 @@ void Context::ExecuteInst_ABS_D()
 void Context::ExecuteInst_MOV_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Perform mov.d operation:
+	// // move the contents of a floating point reg to another FP reg
+	// regs.setDoublePrecisionFPR(fd, regs.getDoublePrecisionFPR(fs));
 }
 
 
@@ -1756,6 +1887,16 @@ void Context::ExecuteInst_RSQRT_D()
 void Context::ExecuteInst_CVT_S_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Get the word value
+	// double temp = regs.getDoublePrecisionFPR(fs);
+
+	// // Store as double precision
+	// regs.setSinglePrecisionFPR(fd, (float)temp);
 }
 
 
@@ -1846,6 +1987,19 @@ void Context::ExecuteInst_C_NGL_D()
 void Context::ExecuteInst_C_LT_D()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Instruction is Floating point compare
+	// Compare.LessThan.Double
+
+	// Get arguments
+	// unsigned int fs = inst.getBytes()->standard.rd;
+	// unsigned int ft = inst.getBytes()->standard.rt;
+	// unsigned int cc = inst.getBytes()->cc.cc;
+
+	// if (regs.getDoublePrecisionFPR(fs) < regs.getDoublePrecisionFPR(ft))
+	// 	regs.setDoublePrecisionFPR(cc, 1);
+	// else
+	// 	regs.setDoublePrecisionFPR(cc, 0);
 }
 
 
@@ -1870,12 +2024,32 @@ void Context::ExecuteInst_C_NGT_D()
 void Context::ExecuteInst_CVT_S_W()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Get the word value
+	// int temp = regs.getSinglePrecisionFPR(fs);
+
+	// // Store as single precision
+	// regs.setSinglePrecisionFPR(fd, (float)temp);
 }
 
 
 void Context::ExecuteInst_CVT_D_W()
 {
 	throw misc::Panic("Unimplemented instruction");
+
+	// Get arguments
+	// unsigned int fd = inst.getBytes()->standard.sa;
+	// unsigned int fs = inst.getBytes()->standard.rd;
+
+	// // Get the word value
+	// unsigned temp = regs.getSinglePrecisionFPR(fs);
+
+	// // Store as double precision
+	// regs.setDoublePrecisionFPR(fd, (double)temp);
 }
 
 
