@@ -104,84 +104,100 @@ public:
 		return os;
 	}
 
-	// Getters
-	//
-	// Get ID
+	/// Getters
+	///
+	/// Get ID
 	int getId() const { return id; }
 
-	// Get counter of warps in thread-block
+	/// Get counter of warps in thread-block
 	unsigned getWarpCount() const;
 
-	// Get counter of warps at barrier
+	/// Get counter of warps at barrier
 	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
 
-	// Get counter of completed warps
+	/// Get counter of completed warps
 	unsigned getWarpsCompletedEmuCount() const
 	{
 		return num_warps_completed_emu;
 	}
 
-	// Get Grid that it belongs to
+	/// Get Grid that it belongs to
 	Grid *getGrid() const { return grid; }
 
-	// Get pointer of a thread in this thread-block
+	/// Get pointer of a thread in this thread-block
 	Thread *getThread(int id_in_thread_block) {
 		assert(id_in_thread_block >= 0 && id_in_thread_block < (int)threads.size());
 		return threads[id_in_thread_block].get();
 	}
 
-	// Get counter of threads in thread-block
+	/// Get counter of threads in thread-block
 	int getThreadsCount() const { return threads.size(); }
 
 
-	// Get finished_emu
+	/// Get finished_emu
 	bool getFinishedEmu() const { return finished_emu; }
-	// Setters
-	//
-	// Increase warps_at_barrier counter
+	/// Setters
+	///
+	/// Increase warps_at_barrier counter
 	void incWarpsAtBarrier() { num_warps_at_barrier++; }
 
-	// Set warp_at_barrier counter
+	/// Set warp_at_barrier counter
 	void setWarpsAtBarrier(unsigned counter) { num_warps_at_barrier = counter; }
 
-	// Increment warps_completed_emu counter
+	/// Increment warps_completed_emu counter
 	void incWarpsCompletedEmu() { num_warps_completed_emu ++; }
 
-	// Set finished_emu
+	/// Set finished_emu
 	void setFinishedEmu(bool value) { finished_emu = value; }
 
-	// Return an iterator to the first work-item in the work-group. The
-	// following code can then be used to iterate over all work-items (and
-	// print them)
-	//
-	// \code
-	// for (auto i = work_group->ThreadsBegin(),
-	//		e = work_group->ThreadsEnd(); i != e; ++i)
-	//	i->Dump(std::cout);
-	// \endcode
+	/// Write shared memory
+	/// \param addr the address the program will write to
+	/// \param buffer the variable the program will read from
+	/// \param length data length
+	void writeSharedMem(unsigned addr, unsigned length, char* buffer);
+
+	/// Read shared memory
+	/// \param addr the address the program will read from
+	/// \param buffer the variable the program will read to
+	/// \param length data length
+	void readSharedMem(unsigned addr, unsigned length, char* buffer);
+
+	/// Clear barrier flag in all warps of the threadblock
+	/// To continue simulation
+	void clearWarpAtBarrier();
+
+	/// Return an iterator to the first work-item in the work-group. The
+	/// following code can then be used to iterate over all work-items (and
+	/// print them)
+	///
+	/// \code
+	/// for (auto i = work_group->ThreadsBegin(),
+	///		e = work_group->ThreadsEnd(); i != e; ++i)
+	///	i->Dump(std::cout);
+	/// \endcode
 	std::vector<std::unique_ptr<Thread>>::iterator ThreadsBegin() {
 		return threads.begin();
 	}
 
-	/// Return a past-the-end iterator to the list of work-items
+	///// Return a past-the-end iterator to the list of work-items
 	std::vector<std::unique_ptr<Thread>>::iterator ThreadsEnd() {
 		return threads.end();
 	}
 
-	// Return an iterator to the first warp in the work-group. The
-	// following code can then be used to iterate over all warps (and
-	// print them)
-	//
-	// \code
-	// for (auto i = work_group->WarpsBegin(),
-	//		e = work_group->WarpsEnd(); i != e; ++i)
-	//	i->Dump(std::cout);
-	// \endcode
+	/// Return an iterator to the first warp in the work-group. The
+	/// following code can then be used to iterate over all warps (and
+	/// print them)
+	///
+	/// \code
+	/// for (auto i = work_group->WarpsBegin(),
+	///		e = work_group->WarpsEnd(); i != e; ++i)
+	///	i->Dump(std::cout);
+	/// \endcode
 	std::vector<std::unique_ptr<Warp>>::iterator WarpsBegin() {
 		return warps.begin();
 	}
 
-	// Return a past-the-end iterator to the list of warps
+	/// Return a past-the-end iterator to the list of warps
 	std::vector<std::unique_ptr<Warp>>::iterator WarpsEnd() {
 		return warps.end();
 	}

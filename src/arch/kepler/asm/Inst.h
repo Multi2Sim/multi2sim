@@ -70,7 +70,7 @@ struct InstDecodeInfo
 
 
 // 1st level struct
-/* BFE, POPC, IADD, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
+/* BFE, POPC, IASCADD, IMNMX, SHR, IMUL, LOP, SHL, DMUL, DMNMX, FADD,
    FMNMX, FMUL, DADD, SEL, P2R, RRO, MOV, F2F, F2I, I2F, I2I, FLO, DCHK, FCHK */	//S2R, IMAD, ISETP, ISCADD
 struct InstBytesGeneral0
 {
