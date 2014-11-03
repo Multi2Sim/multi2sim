@@ -129,6 +129,10 @@ class Context
 	// Current emulated instruction
 	Inst inst;
 
+	// LLbit Bit of virtual state used to
+	// specify operation for instructions that provide atomic read-modify-write
+	bool ll_bit;
+
 	// File descriptor table, shared by contexts
 	std::shared_ptr<comm::FileTable> file_table;
 
