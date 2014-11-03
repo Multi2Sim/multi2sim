@@ -70,15 +70,6 @@ Emu::Emu() : comm::Emu("kpl")
     // Initialize disassembler
 	this->as = as->getInstance();
 
-	/*
-	// Emulation of ISA. This code expands to one function per ISA
-	// instruction. For example:
-#define DEFINST(_name, _fmt_str, ...) \
-	inst_func[INST_##_name] = kpl_isa_##_name##_impl;
-#include <arch/kepler/asm/Inst.def>
-#undef DEFINST
-*/
-
 	// Global memory initialization
 	global_mem.reset(new mem::Memory());
 	global_mem->setSafe(false);
@@ -137,14 +128,21 @@ bool Emu::Run()
 			grid->WaitingToRunning(thread_block_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
+
 			while (thread_block.get()->getWarpsCompletedEmuCount()
 					!= thread_block.get()->getWarpCount())
 			{
+
 				for (auto wp_p = thread_block.get()->WarpsBegin(); wp_p <
 					thread_block.get()->WarpsEnd(); ++wp_p)
 				{
 					if ((*wp_p)->getFinishedEmu() || (*wp_p)->getAtBarrier())
+					{
+						std::cout << "warp id " << wp_p->get()->getId()
+								<< " at barrier of block " << thread_block->getId()
+								<< std::endl;
 						continue;
+					}
 					(*wp_p)->Execute();
 				}
 			}

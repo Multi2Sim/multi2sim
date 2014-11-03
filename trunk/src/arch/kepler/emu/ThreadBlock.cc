@@ -79,6 +79,9 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	finished_emu = false;
 	num_warps_completed_emu = 0;
 	num_warps_at_barrier = 0;
+
+	finished_timing = 0;
+	num_warps_completed_timing = 0;
 }
 
 unsigned ThreadBlock::getWarpCount() const
@@ -93,6 +96,27 @@ void ThreadBlock::Dump(std::ostream &os) const
 	os<<"ID:	"<<id<<std::endl;
 	//os<<"the first of grid inst buffer" <<*grid->getInstBuffer()<<std::endl;
 	os<<"the buffer size of grid is"<<grid->getInstBufferSize()<<std::endl;
+}
+
+
+void ThreadBlock::readSharedMem(unsigned address, unsigned length, char* buffer)
+{
+	shared_mem.Read(address, length, buffer);
+}
+
+
+void ThreadBlock::writeSharedMem(unsigned address, unsigned length, char* buffer)
+{
+	shared_mem.Write(address, length, buffer);
+}
+
+
+void ThreadBlock::clearWarpAtBarrier()
+{
+	for (auto p = WarpsBegin(); p != WarpsEnd(); ++p)
+	{
+		p->get()->setAtBarrier(false);
+	}
 }
 
 }	//namespace

@@ -200,6 +200,8 @@ public:
 	void setThreadEnd(std::vector<std::unique_ptr<Thread>>::iterator value)
 	{ threads_end = value; }
 
+	/// set at barrier flag
+	void setAtBarrier(bool value) { at_barrier = value; }
 
 	////////////////////////////////////////////////////////////////////
 	// Set finished_emu

@@ -125,15 +125,23 @@ void Warp::Execute()
 			inst_op = (InstOpcode) inst.getOpcode();
 
 			if (!inst_op)
-			std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction "
-					<< std::hex << " pc " << pc << std::endl
-					<< inst_bytes.as_uint[0]<< inst_bytes.as_uint[1] << std::endl;
+			{
+				std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction "
+					<< std::hex << " pc " << pc << std::endl;
+				misc::Panic("Simulation exits with exception.\n");
+			}
 
 			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
 			{
+				/*
+				if (thread_id->get()->getId() == 0)
+				std::cerr << inst.getName() << " id " << thread_id->get()->getId()
+						<< " warp_id " << id << " thread count " << this->thread_count
+						<< " block id " << thread_block->getId()
+						<< " warp count " << thread_block->getWarpCount()
+						<< " pc " << pc << std::endl;
+						*/
 				thread_id->get()->Execute(inst_op,&inst);
-				//std::cerr << inst.getName() << " id " << thread_id->get()->getId()
-				//		<< " warp_id " << id << std::endl;
 			}
 	}
 	else
