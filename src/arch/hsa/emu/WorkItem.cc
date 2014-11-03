@@ -320,7 +320,6 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		// try function arguments.
 		argument_scope = stack_top->getFunctionArguments();
 		buffer = argument_scope->getBuffer(name);
-		//argument_scope->Dump(std::cout, 0);
 		if(!buffer)
 		{
 			throw misc::Panic("Argument not found\n");
