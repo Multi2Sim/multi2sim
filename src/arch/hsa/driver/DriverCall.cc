@@ -190,8 +190,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	// Create new stack frame
 	Function *callback = ProgramLoader::getInstance()->getFunction(
 			callback_name);
-	StackFrame *stack_frame = new StackFrame(
-			callback, work_item);
+	auto stack_frame = misc::new_unique<StackFrame>(callback, work_item);
 
 	// Pass argument into stack frame
 	VariableScope *function_args = stack_frame->getFunctionArguments();
@@ -237,7 +236,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 			std::move(callback_info));
 	
 	// Add stack frame to the work item;
-	work_item->PushStackFrame(stack_frame);
+	work_item->PushStackFrame(std::move(stack_frame));
 }
 
 
