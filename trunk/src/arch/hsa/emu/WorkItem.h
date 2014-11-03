@@ -267,9 +267,9 @@ class WorkItem
 	}
 
  	/// Push a stack frame into the stack
- 	void PushStackFrame(StackFrame *stack_frame)
+ 	void PushStackFrame(std::unique_ptr<StackFrame> stack_frame)
  	{
- 		this->stack.push_back(std::unique_ptr<StackFrame>(stack_frame));
+ 		this->stack.push_back(std::move(stack_frame));
  	}
 
 	/// Pop the stackframe at the stack top
