@@ -189,6 +189,13 @@ DEFINST(DADD,
 		0x0c,
 		0x0e)
 
+DEFINST(FMUL,
+		"%pred0 FMUL %dst, %srcA, %srcB;",
+		0x02,
+		0x03,
+		0x0c,
+		0x0d)
+
 DEFINST(FFMA,
 		"%pred0 FFMA %dst, %srcA, %srcB, %srcC;",
 		0x02,

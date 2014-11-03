@@ -120,17 +120,11 @@ void Thread::ExecuteInst_Special()
 
 void Thread::ExecuteInst_IMUL_A(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
-}
-
-void Thread::ExecuteInst_IMUL_B(Inst *inst)
-{
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 fmt = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
 	Warp* warp = getWarp();
 	SyncStack* stack = warp->getSyncStack();
 
@@ -170,14 +164,86 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 		src_id = fmt.mod0;
 		srcA = ReadGPR(src_id);
 		src_id = fmt.srcB;
-		if (fmt.srcB_mod == 0)
+
+		if (fmt.op0 == 1  && fmt.op1 == 0x107 && fmt.srcB_mod)
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+
+		else if (fmt.op0 == 2 && fmt.op1 == 0x187 && fmt.srcB_mod)
+			srcB = ReadGPR(src_id);
+
+		else	//check it
+			ISAUnimplemented(inst);
+
+		// Execute
+		dst = srcA * srcB;
+
+		// Write
+
+		dst_id = fmt.dst;
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+
+
+}
+
+void Thread::ExecuteInst_IMUL_B(Inst *inst)
+{
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Warp* warp = getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = GetPred(pred_id);
+	else
+		pred = ! GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		src_id = fmt.mod0;
+		srcA = ReadGPR(src_id);
+		src_id = fmt.srcB;
+
+		if (fmt.op0 == 1  && fmt.op1 == 0x107 && fmt.srcB_mod)
 		{
-			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 		}
-		else if (fmt.srcB_mod == 1)
+		else if (fmt.op0 == 2 && fmt.op1 == 0x187 && fmt.srcB_mod)
 			srcB = ReadGPR(src_id);
 		else	//check it
-			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+			ISAUnimplemented(inst);
 
 		// Execute
 		dst = srcA * srcB;
@@ -283,6 +349,7 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	ISAUnsupportedFeature(inst);
 }
 
 void Thread::ExecuteInst_IMAD(Inst *inst)
@@ -879,6 +946,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 
         warp->setTargetpc(warp->getPC() + warp->getInstSize());
 	}
+
 }
 
 void Thread::ExecuteInst_BRA(Inst *inst)
@@ -1057,6 +1125,7 @@ void Thread::ExecuteInst_MOV_A(Inst *inst)
 	std::cerr << "MOV_A" << std::endl;
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
+	this->ISAUnsupportedFeature(inst);
 }
 
 void Thread::ExecuteInst_MOV_B(Inst *inst)
@@ -1292,7 +1361,78 @@ void Thread::ExecuteInst_LD(Inst *inst)
 
 void Thread::ExecuteInst_LDS(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Inst bytes format
+
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+	ThreadBlock* thread_block = this->thread_block;
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned src_id;
+	unsigned long long src;
+	unsigned dst_id;
+	unsigned dst;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read, note that dst and src are changed with each other
+		// comparing with other instructions
+		dst_id = fmt.mod0;
+		dst = ReadGPR(dst_id);
+
+		src_id = fmt.dst;
+		src = ReadGPR(src_id);
+
+		// Execute
+		// Write
+		if (id_in_warp == 0 && getenv("M2S_KPL_ISA_DEBUG"))
+		{
+			std::cout << "PC = " << std::hex << warp->getPC() << std::endl;
+			std::cerr<<" dst " << std::hex <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+                 <<std::endl;
+
+		}
+		// FIXME naive here
+		thread_block->readSharedMem(dst, sizeof(int), (char*)&src);
+
+		// write back
+		WriteGPR(src_id, src);
+
+	}
+
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_LDC(Inst *inst)
@@ -1414,6 +1554,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 void Thread::ExecuteInst_ST(Inst *inst)
 {
 	// Inst bytes format
+
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 fmt = inst_bytes.general0;
 	Emu* emu = Emu::getInstance();
@@ -1495,7 +1636,74 @@ void Thread::ExecuteInst_ST(Inst *inst)
 
 void Thread::ExecuteInst_STS(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+	ThreadBlock* thread_block = this->thread_block;
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned src_id;
+	unsigned src;
+	unsigned dst_id;
+	unsigned dst;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read, note that dst and src are changed with each other
+		// comparing with other instructions
+		dst_id = fmt.mod0;
+		dst = ReadGPR(dst_id);
+
+		src_id = fmt.dst;
+		src = ReadGPR(src_id);
+
+		if (id_in_warp == 0 && getenv("M2S_KPL_ISA_DEBUG"))
+		{
+			std::cerr << "PC = " << std::hex << warp->getPC() << std::endl;
+        std::cerr<<" dst " << std::hex <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+                 <<std::endl;
+		}
+		// Execute
+		// Write
+
+		// naive here
+		thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+
 }
 
 void Thread::ExecuteInst_DADD(Inst *inst)
@@ -1507,6 +1715,104 @@ void Thread::ExecuteInst_FFMA(Inst *inst)
 {
 	this->ISAUnimplemented(inst);
 }
+
+
+void Thread::ExecuteInst_FMUL(Inst *inst)
+{
+	// Get Emu
+	Emu* emu = Emu::getInstance();
+
+	// Get Warp
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 format = inst_bytes.general0;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src_id;
+
+	// Operand
+	float src1, src2, dst;
+	union
+	{
+		unsigned i;
+		float f;
+	} gpr_t;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read
+		src_id = format.mod0;
+		src1 = gpr[src_id].f;
+
+		if (((format.mod1 >> 3) & 0x1) == 1)
+			src1 = fabsf(src1);
+		if (((format.mod1 >> 5) & 0x1) == 1)
+			src1 = -src1;
+
+		src_id = format.srcB;
+
+		if (format.srcB_mod == 0)
+		{
+			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
+		}
+		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
+			src2 = gpr[src_id].f;
+		else 	// check it
+		{
+			gpr_t.i = format.srcB << 12;
+			src2 = gpr_t.f;
+		}
+
+		if (((format.mod1 >> 2) & 0x1) == 1)
+			src2 = fabsf(src2);
+		if (((format.mod1 >> 4) & 0x1) == 1)
+			src2 = -src2;
+
+		// Execute
+		dst = src1 * src2;
+
+		/* Write */
+		dst_id = format.dst;
+		gpr[dst_id].f = dst;
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+}
+
 
 void Thread::ExecuteInst_FADD(Inst *inst)
 {
@@ -1599,6 +1905,9 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 		dst_id = format.dst;
 		gpr[dst_id].f = dst;
 	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_NOP(Inst *inst)
@@ -1826,7 +2135,75 @@ void Thread::ExecuteInst_SHF(Inst *inst)
 
 void Thread::ExecuteInst_BAR(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+
+	// Inst bytes format	//FIXME S2R description missing in Inst.h
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// FIXME naive here
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+	{
+		warp->setAtBarrier(true);
+		thread_block->incWarpsAtBarrier();
+		std::cout << "at barrier inc at warp id " << warp->getId();
+		std::cout << " to " << thread_block->getWarpsAtBarrier()
+				<< "warp count is " << thread_block->getWarpCount()<< std::endl;
+
+		if (thread_block->getWarpsAtBarrier()
+				== thread_block->getWarpCount())
+		{
+			std::cout << " num at barrier " << thread_block->getWarpsAtBarrier()
+					<< std::endl;
+			thread_block->clearWarpAtBarrier();
+			thread_block->setWarpsAtBarrier(0);
+		}
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<this->getWarpId() <<" S2R op0 "<<fmt.op0;
+		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<std::endl;
+	}
 }
 
 void Thread::ExecuteInst_BPT(Inst *inst)

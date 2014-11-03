@@ -100,23 +100,8 @@ void Grid::SetupSize(unsigned *thread_block_count,
 		std::unique_ptr<ThreadBlock> tb;
 		pending_thread_blocks.push_back(std::move(tb));
 	}
-	//this->running_thread_blocks = list_create();
-	//this->finished_thread_blocks = list_create();
-
-	// Debug
-	/*kpl_isa_debug("%s:%d: block count = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_block_count3[0],
-			this->thread_block_count3[1],
-			this->thread_block_count3[2]);
-	kpl_isa_debug("%s:%d: block size = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_block_size3[0],
-			this->thread_block_size3[1],
-			this->thread_block_size3[2]);
-	kpl_isa_debug("%s:%d: grid size = (%d,%d,%d)\n",
-			__FILE__, __LINE__, this->thread_count3[0],
-			this->thread_count3[1], this->thread_count3[2]);
-			*/
 }
+
 
 void Grid::GridSetupConstantMemory()
 {
