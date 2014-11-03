@@ -137,7 +137,7 @@ public:
 	/// Destructor
 	~Driver();
 
-	///
+	/// Redirect the execution to the callback function
 	void StartAgentIterateCallback(WorkItem *workitem,
 			unsigned callback_address,
 			unsigned long long component_handler,
