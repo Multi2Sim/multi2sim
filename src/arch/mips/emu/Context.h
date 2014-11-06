@@ -140,9 +140,10 @@ class Context
 	std::unique_ptr<comm::CallStack> call_stack;
 
 	// Instruction pointers
-	unsigned next_ip;  // Address of next instruction to be emulated
-	unsigned current_ip;  // Address of currently emulated instruction
-	unsigned n_next_ip;  // Address of the second next instruction to be emulated
+	unsigned previous_ip;	// Address of last instruction executed
+	unsigned next_ip;  		// Address of next instruction to be emulated
+	unsigned current_ip;  	// Address of currently emulated instruction
+	unsigned n_next_ip;  	// Address of the second next instruction to be emulated
 
 	// Parent context
 	Context *parent = nullptr;
