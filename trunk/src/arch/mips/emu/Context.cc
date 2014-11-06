@@ -406,11 +406,16 @@ void Context::Execute()
 	memory->setSafeDefault();
 
 	// Disassemble
-	inst.Decode(regs.getPC(),buffer_ptr);
+	inst.Decode(regs.getPC(), buffer_ptr);
 
 	// Debug
 	if (emu->isa_debug)
 	{
+		ELFReader::Symbol *symbol = (loader->binary)->getSymbolByAddress(regs.getPC());
+		std::string symbol_string = symbol->getName();
+		if ((regs.getPC() - previous_ip) != 4)
+			emu->isa_debug << misc::fmt("\nIN %s\n", symbol_string.c_str());
+
 		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
 				emu->getInstructions(), regs.getPC());
 		inst.Dump(emu->isa_debug.operator std::ostream &());
@@ -418,6 +423,7 @@ void Context::Execute()
 	}
 
 	// Set last, current, and target instruction addresses
+	previous_ip = regs.getPC();
 	next_ip = n_next_ip;
 	n_next_ip += 4;
 
