@@ -1404,29 +1404,55 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	// Execute
 	if (active == 1 && pred == 1)
 	{
-		// Read, note that dst and src are changed with each other
-		// comparing with other instructions
-		dst_id = fmt.mod0;
+
+		dst_id = fmt.dst;
 		dst = ReadGPR(dst_id);
 
-		src_id = fmt.dst;
+		src_id = fmt.mod0;
 		src = ReadGPR(src_id);
 
 		// Execute
 		// Write
 		if (id_in_warp == 0 && getenv("M2S_KPL_ISA_DEBUG"))
 		{
-			std::cout << "PC = " << std::hex << warp->getPC() << std::endl;
+			std::cout << "LDS PC = " << std::hex << warp->getPC() << std::endl;
 			std::cerr<<" dst " << std::hex <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
                  <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
                  <<std::endl;
 
 		}
-		// FIXME naive here
-		thread_block->readSharedMem(dst, sizeof(int), (char*)&src);
+		thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
 
 		// write back
-		WriteGPR(src_id, src);
+		WriteGPR(dst_id, dst);
+
+		if (((fmt.mod1 >> 9) & 0x7) == 5)
+		{
+			src += sizeof(int);
+			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+			WriteGPR(dst_id + 1, dst);
+		}
+
+		// FIXME not verified
+		if (((fmt.mod1 >> 9) & 0x7) == 6)
+		{
+			misc::Panic("Instruction LDS: 128 bit operation.\n");
+
+			// if the panic above is met, remove the comment sign below
+			/*
+			src += sizeof(int);
+			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+			WriteGPR(dst_id + 1, dst);
+
+			src += sizeof(int);
+			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+			WriteGPR(dst_id + 2, dst);
+			src += sizeof(int);
+			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+			WriteGPR(dst_id + 3, dst);
+			*/
+		}
+
 
 	}
 
@@ -1677,6 +1703,7 @@ void Thread::ExecuteInst_STS(Inst *inst)
 
 
 	// Execute
+
 	if (active == 1 && pred == 1)
 	{
 		// Read, note that dst and src are changed with each other
@@ -1697,8 +1724,36 @@ void Thread::ExecuteInst_STS(Inst *inst)
 		// Execute
 		// Write
 
-		// naive here
 		thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+
+		if (((fmt.mod1 >> 9) & 0x7) == 5)
+		{
+			src = ReadGPR(src_id + 1);
+			thread_block->writeSharedMem(dst + sizeof(int),
+					sizeof(int), (char*)&src);
+		}
+
+		// FIXME not verified
+		if (((fmt.mod1 >> 9) & 0x7) == 6)
+		{
+			misc::Panic("Instruction STS: 128 bit operation.\n");
+			// if the panic above is met, remove the comment sign below
+			/*
+			src = ReadGPR(src_id + 1);
+			dst += sizeof(int);
+
+			thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+
+			src = ReadGPR(src_id + 2);
+			dst += sizeof(int);
+
+			thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+
+			src = ReadGPR(src_id + 3);
+			dst += sizeof(int);
+			thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+			*/
+		}
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2179,15 +2234,17 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	{
 		warp->setAtBarrier(true);
 		thread_block->incWarpsAtBarrier();
+		/*
 		std::cout << "at barrier inc at warp id " << warp->getId();
 		std::cout << " to " << thread_block->getWarpsAtBarrier()
 				<< "warp count is " << thread_block->getWarpCount()<< std::endl;
+				*/
 
 		if (thread_block->getWarpsAtBarrier()
 				== thread_block->getWarpCount())
 		{
-			std::cout << " num at barrier " << thread_block->getWarpsAtBarrier()
-					<< std::endl;
+			//std::cout << " num at barrier " << thread_block->getWarpsAtBarrier()
+			//		<< std::endl;
 			thread_block->clearWarpAtBarrier();
 			thread_block->setWarpsAtBarrier(0);
 		}
@@ -2421,6 +2478,90 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
+}
+
+
+void Thread::ExecuteInst_BFE(Inst *inst)
+{
+	// Inst bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral0 fmt = inst_bytes.general0;
+
+	// Predicates and active masks
+	Emu* emu = Emu::getInstance();
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+    // Operands
+	unsigned dst_id, src_id;
+	int dst;
+	int srcA, srcB;
+	unsigned start_bit, len;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = fmt.pred;
+	if (pred_id <= 7)
+		pred = this->GetPred(pred_id);
+	else
+		pred = ! this->GetPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		/* Read */
+		src_id = fmt.mod0;
+		srcA = this->ReadGPR(src_id);
+		src_id = fmt.srcB;
+		// FIXME == 0 has not been observed.
+		if (fmt.srcB_mod == 1)
+			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+		else
+			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+
+		// Execute
+		// FIXME not fully verified, logic is not supposed to be correct.
+		start_bit = srcB & 0xff;
+		len = (srcB >> 8) & 0xff;
+
+		dst = ((srcA & (1 << (start_bit + len - 1))) >> start_bit) &
+				(1 << (len - 1));
+		if (((dst >> (len - 1)) & 0x1) == 1)
+			dst = dst | (0xffffffff << len);
+
+		/* Write */
+		dst_id = fmt.dst;
+		this->WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+
+	//if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+    std::cerr<< "Warp id "<< std::hex
+      		<<this->getWarpId() <<" BFE op0 "<<fmt.op0;
+    std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " << srcB
+       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+       		<<std::endl;
+	}
+	//this->ISAUnimplemented(inst);
 }
 
 

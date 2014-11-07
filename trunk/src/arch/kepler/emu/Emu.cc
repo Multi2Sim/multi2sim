@@ -138,9 +138,6 @@ bool Emu::Run()
 				{
 					if ((*wp_p)->getFinishedEmu() || (*wp_p)->getAtBarrier())
 					{
-						std::cout << "warp id " << wp_p->get()->getId()
-								<< " at barrier of block " << thread_block->getId()
-								<< std::endl;
 						continue;
 					}
 					(*wp_p)->Execute();
