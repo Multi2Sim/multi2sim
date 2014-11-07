@@ -6168,6 +6168,16 @@ int Context::ExecuteSyscall_clock_gettime()
 		sim_ts.nsec = (now % 1000000) * 1000;
 		break;
 
+	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
+	case 3:  /* CLOCK_THREAD_CPUTIME_ID */
+	case 5:  /* CLOCK_REALTIME_COARSE */
+	case 6:  /* CLOCK_MONOTONIC_COARSE */
+
+		// These clocks are not implemented in detail. To let applications
+		// run without errors, we just provide a warning for now.
+		misc::Warning("%s: not implemented for 'clk_id' = %d",
+			__FUNCTION__, clk_id);
+
 	case 1:  /* CLOCK_MONOTONIC */
 	case 4:  /* CLOCK_MONOTONIC_RAW */
 
@@ -6192,15 +6202,6 @@ int Context::ExecuteSyscall_clock_gettime()
 		sim_ts.nsec = now % 1000000000ll;
 		break;
 
-	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
-	case 3:  /* CLOCK_THREAD_CPUTIME_ID */
-	case 5:  /* CLOCK_REALTIME_COARSE */
-	case 6:  /* CLOCK_MONOTONIC_COARSE */
-
-		misc::fatal("%s: not implemented for 'clk_id' = %d",
-			__FUNCTION__, clk_id);
-		break;
-	
 	default:
 		misc::fatal("%s: invalid value for 'clk_id' (%d)",
 			__FUNCTION__, clk_id);
