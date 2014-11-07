@@ -78,11 +78,12 @@ void fatal(const char *fmt, ...)
 	// Colors
 	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
 	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
+	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
 
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << buf;
-	std::cerr << '\n' << red << formatter << black << "\n\n";
+	std::cerr << '\n' << red << formatter << reset_color << "\n\n";
 	exit(1);
 }
 
@@ -99,11 +100,12 @@ void panic(const char *fmt, ...)
 	// Colors
 	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
 	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
+	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
 
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << "Panic: " << buf;
-	std::cerr << '\n' << red << formatter << black << "\n\n";
+	std::cerr << '\n' << red << formatter << reset_color << "\n\n";
 
 	// Abort program
 	abort();
@@ -122,11 +124,12 @@ void Warning(const char *fmt, ...)
 	// Colors
 	std::string blue = std::cerr.tellp() == -1 ? "\033[34m" : "";
 	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
+	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
 
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << "Warning: " << buf;
-	std::cerr << '\n' << blue << formatter << black << "\n\n";
+	std::cerr << '\n' << blue << formatter << reset_color << "\n\n";
 }
 
 

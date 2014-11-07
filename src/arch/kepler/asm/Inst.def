@@ -141,7 +141,7 @@ DEFINST(LD,
 		0x06)
 
 DEFINST(LDS,
-		"%pred0 LDS%u8 %dst, [%srcA+0x%offset2];",
+		"%pred0 LDS %u8 %dst, [%srcA+0x%offset2];",
 		0x02,
 		0x01,
 		0x0f,
@@ -152,7 +152,7 @@ DEFINST(LDS,
 		0x01)
 
 DEFINST(LDC,  
-                "%pred0 LDC %u8 %dst,[%srcA + 0x%offset2]; ",
+        "%pred0 LDC %u8 %dst,[%srcA + 0x%offset2]; ",
 		0x02,
 		0x01,
 		0x0f,
@@ -170,11 +170,11 @@ DEFINST(ST,
 DEFINST(STS,
 		"%pred0 STS !!! ADD ARGS !!!;",
 		0x02,
-                0x01,
-                0x0f,
-                0x01,
-                0x07,
-                0x00,
+        0x01,
+        0x0f,
+        0x01,
+        0x07,
+        0x00,
 		0x02,
 		0x03)
 
@@ -264,9 +264,18 @@ DEFINST(BAR,
                 0x01,
 		0x05)
 
+DEFINST(BFE,
+				"%pred0 BFE %dst, %srcA, %imm32;",
+				0x01,
+				0x03,
+				0x00,
+				0x00)
+
 /* Other (place later) instructions:
  * 
  */
+ 
+ 
 
 DEFINST(BPT,
 		"BPT",
