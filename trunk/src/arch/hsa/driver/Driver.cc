@@ -222,6 +222,9 @@ void Driver::SerializeArguments(char *arg_buffer, StackFrame *stack_top)
 		// Get argument size
 		unsigned arg_size = BrigEntry::type2size(symbol->type);
 
+		debug << misc::fmt("Arg value: %s: 0x%llx\n", arg_name.c_str(), 
+				*(unsigned long long *)buf_in_caller);
+
 		// Copy value into callee's buffer
 		memcpy(arg_buffer + offset, buf_in_caller, arg_size);
 
@@ -271,20 +274,19 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 			function->getArgumentSize() + 4);
 	WorkItem *work_item = stack_top->getWorkItem();
 	*buf = (unsigned long long)work_item;
-	
-	debug << misc::fmt("arguemntSize: %d\n", function->getArgumentSize());
-	debug << "WorkItem: "<<(unsigned long long)work_item << "\n";
+
+	unsigned args_ptr = arg_address;
 	debug << misc::fmt("In function %s", __FUNCTION__);
 	debug << "\n\thsa_status_t: "<< 
-		getArgumentValue<unsigned int>(0, memory, arg_address);
+		getArgumentValue<unsigned int>(0, memory, args_ptr);
 	debug << ", \n\tcallback: " << 
-		getArgumentValue<unsigned long long>(4, memory, arg_address);
-	debug << ", \n\tdata: " <<
-		getArgumentValue<unsigned long long>(12, memory, arg_address);
+		getArgumentValue<unsigned long long>(4, memory, args_ptr);
+	debug << misc::fmt(", \n\tdata: 0x%llx", getArgumentValue
+			<unsigned long long>(12, memory, args_ptr));
 	debug << ", \n\thost_lang: " <<
-		getArgumentValue<unsigned int>(20, memory, arg_address);
+		getArgumentValue<unsigned int>(20, memory, args_ptr);
 	debug << ", \n\tworkitem_ptr: " << 
-		getArgumentValue<unsigned long long>(24, memory, arg_address)
+		getArgumentValue<unsigned long long>(24, memory, args_ptr)
 		<< "\n";
 
 

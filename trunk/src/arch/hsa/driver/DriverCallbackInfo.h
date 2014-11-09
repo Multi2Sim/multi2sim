@@ -22,6 +22,7 @@
 
 namespace HSA
 {
+class WorkItem;
 
 /// DriverCallbackInfo holds information that need to be passed to the 
 /// callback function.
@@ -47,7 +48,8 @@ public:
 			work_item(work_item),
 			memory(memory),
 			args_ptr(args_ptr)
-	{}
+	{
+	}
 
 	/// Virtual distructor
 	virtual ~DriverCallbackInfo(){}
