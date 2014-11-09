@@ -25,7 +25,6 @@
 #include <arch/hsa/emu/Emu.h>
 #include <arch/hsa/emu/Component.h>
 
-#include "DriverCallbackInfo.h"
 #include "Driver.h"
 
 namespace HSA
@@ -56,7 +55,7 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-int IterateAgentNext(DriverCallbackInfo *args)
+int Driver::IterateAgentNext(DriverCallbackInfo *args)
 {
 	// Convert the info object to be this function specific
 	AgentIterateNextInfo *info = (AgentIterateNextInfo *)args;
@@ -69,26 +68,20 @@ int IterateAgentNext(DriverCallbackInfo *args)
 	// All information retrieved, then we can pop the stack
 	work_item->PopStack();
 
-	/*	
-	std::cout << misc::fmt("In function %s ", __FUNCTION__);
-	std::cout << misc::fmt("last_handler: %lld, ", last_handler);
-	std::cout << "ret: "<< 
-		Driver::getInstance()->
+
+	debug << misc::fmt("In function %s ", __FUNCTION__);
+	debug << misc::fmt("last_handler: %lld, ", last_handler);
+	debug << "ret: "<<
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
-	std::cout << ", callback: " << 
-		Driver::getInstance()->
+	debug << ", callback: " <<
 		getArgumentValue<unsigned int>(4, memory, args_ptr);
-	std::cout << ", data: " <<
-		Driver::getInstance()->
-		getArgumentValue<unsigned>(8, memory, args_ptr);
-	std::cout << ", host_lang: " <<
-		Driver::getInstance()->
-		getArgumentValue<unsigned int>(12, memory, args_ptr);
-	std::cout << ", workitem_ptr: " << 
-		Driver::getInstance()->
-		getArgumentValue<unsigned long long>(16, memory, args_ptr)
+	debug << ", data: " <<
+		getArgumentValue<unsigned long long>(12, memory, args_ptr);
+	debug << ", host_lang: " <<
+		getArgumentValue<unsigned int>(20, memory, args_ptr);
+	debug << ", workitem_ptr: " <<
+		getArgumentValue<unsigned long long>(24, memory, args_ptr)
 		<< "\n";
-	*/
 
 	// Get virtual machine setup
 	Driver *driver = Driver::getInstance();
@@ -110,10 +103,10 @@ int IterateAgentNext(DriverCallbackInfo *args)
 	}
 
 	// Construct a stack frame and implant it the the caller stack
-	unsigned callback_address = driver->getArgumentValue<unsigned>
+	unsigned callback_address = driver->getArgumentValue<unsigned long long>
 			(4, memory,args_ptr);
 	unsigned long long data_address = driver->getArgumentValue
-			<unsigned long long>(8, memory, args_ptr);
+			<unsigned long long>(12, memory, args_ptr);
 	driver->StartAgentIterateCallback(work_item, callback_address,
 			component->getHandler(), data_address, args_ptr);
 
@@ -136,8 +129,8 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 		getArgumentValue<unsigned int>(0, memory, args_ptr);
 	debug << ", \n\tcallback: " << 
 		getArgumentValue<unsigned long long>(4, memory, args_ptr);
-	debug << ", \n\tdata: " <<
-		getArgumentValue<unsigned long long>(12, memory, args_ptr);
+	debug << misc::fmt(", \n\tdata: 0x%llx", getArgumentValue
+			<unsigned long long>(12, memory, args_ptr));
 	debug << ", \n\thost_lang: " <<
 		getArgumentValue<unsigned int>(20, memory, args_ptr);
 	debug << ", \n\tworkitem_ptr: " << 
@@ -232,7 +225,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 					args_ptr, componentHandler));
 
 	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setReturnCallback(&IterateAgentNext,
+	stack_frame->setReturnCallback(&Driver::IterateAgentNext,
 			std::move(callback_info));
 	
 	// Add stack frame to the work item;
@@ -246,13 +239,9 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	// hsa_status_t		| 0		| 4
 	// agent		| 4		| 8
 	// attribute		| 12		| 4
-	// value		| 16		| 4
-	// host_language	| 20		| 4
-	// workitem_ptr		| 24		| 8
-
-	// Retrieve argument buffer
-	char *arg_buffer = memory->getBuffer(args_ptr, 16,
-			mem::Memory::AccessRead);
+	// value		| 16		| 8
+	// host_language	| 24		| 4
+	// workitem_ptr		| 28		| 8
 
 	// Retrieve agent handler
 	unsigned long long agent_handler = 
@@ -263,8 +252,8 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	Component *component = Emu::getInstance()->getComponent(agent_handler);
 	if (component == nullptr)
 	{
-		unsigned int *return_val = (unsigned int *)arg_buffer;
-		*return_val = HSA_STATUS_ERROR_INVALID_AGENT;
+		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
+				0, memory, args_ptr);
 		return 0;
 	}
 
@@ -273,8 +262,8 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 			args_ptr);
 
 	// Retrieve the pointer to the value
-	unsigned value_address = getArgumentValue<unsigned int>(16, memory, 
-			args_ptr);
+	unsigned long long value_address = getArgumentValue<unsigned long long>
+			(16, memory, args_ptr);
 	char *value_ptr = memory->getBuffer(value_address, 8, 
 			mem::Memory::AccessWrite);
 
@@ -357,21 +346,21 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_COUNT\n");
 		break;
 	default:
-		unsigned int *return_val = (unsigned int *)arg_buffer;
-		*return_val = HSA_STATUS_ERROR_INVALID_ARGUMENT;
+		setArgumentValue<unsigned int>(
+				HSA_STATUS_ERROR_INVALID_ARGUMENT, 
+				0, memory, args_ptr);
 		return 0;
 		break;
 	}
-
-	unsigned int *return_val = (unsigned int *)arg_buffer;
-	*return_val = HSA_STATUS_SUCCESS;
+	setArgumentValue<unsigned int>(
+			HSA_STATUS_ERROR_INVALID_ARGUMENT, 
+			0, memory, args_ptr);
 	return 0;
 }
 
 
 int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
 	return 0;
 }
 
