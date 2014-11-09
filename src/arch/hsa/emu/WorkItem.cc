@@ -344,6 +344,7 @@ void WorkItem::DeclearVariable()
 	StackFrame *stack_top = stack.back().get();
 	BrigDirectiveVariable *dir =
 			(BrigDirectiveVariable *)stack_top->getNextDirective();
+	unsigned int size = BrigEntry::type2size(dir->type);
 	std::string name = BrigStrEntry::GetStringByOffset(binary, dir->name);
 
 	// Allocate memory in different segment
@@ -364,7 +365,8 @@ void WorkItem::DeclearVariable()
 	case BRIG_SEGMENT_PRIVATE:
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		variable_scope->DeclearVariable(name, dir->size/8, dir->type);
+		variable_scope->DeclearVariable(name, size, dir->type);
+		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
 		break;
 	}
 
@@ -391,7 +393,8 @@ void WorkItem::DeclearVariable()
 		else
 			throw misc::Panic("Error creating argument, not in a "
 					"argument scope");
-		variable_scope->DeclearVariable(name, dir->size/8, dir->type);
+		variable_scope->DeclearVariable(name, size, dir->type);
+		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
 		break;
 	}
 
@@ -403,7 +406,7 @@ void WorkItem::DeclearVariable()
 
 	Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
 			BrigEntry::type2str(dir->type).c_str(), name.c_str(),
-			dir->size);
+			size);
 }
 
 

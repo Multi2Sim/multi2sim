@@ -25,6 +25,7 @@
 #include <lib/cpp/Debug.h>
 #include <memory/Memory.h>
 
+#include "DriverCallbackInfo.h"
 #include "runtime.h"
 
 namespace HSA
@@ -91,11 +92,9 @@ class Driver: public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
-public:
-
 	// Retrieve the value at a certain memory space
 	template <typename T>
-	T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
+	static T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
 	{
 		// Get the pointer to that argument 
 		T *buffer = (T *)memory->getBuffer(args_ptr + offset, sizeof(T), 
@@ -107,7 +106,7 @@ public:
 
 	// Set the the value at a certain memory space
 	template<typename T>
-	void setArgumentValue(T value, int offset, mem::Memory *memory, 
+	static void setArgumentValue(T value, int offset, mem::Memory *memory,
 			unsigned args_ptr)
 	{
 		// Get the pointer to the argument
@@ -117,6 +116,8 @@ public:
 		// Set the value of the argument
 		*buffer = value;
 	}
+
+public:
 
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
@@ -136,6 +137,9 @@ public:
 
 	/// Destructor
 	~Driver();
+
+	/// Used as callback function to iterate next device
+	static int IterateAgentNext(DriverCallbackInfo *args);
 
 	/// Redirect the execution to the callback function
 	void StartAgentIterateCallback(WorkItem *workitem,

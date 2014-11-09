@@ -10,7 +10,7 @@ function &hsa_system_get_info(arg_u32 %status) (arg_u32 %attribute, arg_u64 %val
 function &hsa_iterate_agents (arg_u32 %status) (arg_u64 %call_back, arg_u64 %data);
 function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u64 %value);
 // Queues
-function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u64 %size, 
+function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u32 %size, 
 		arg_u32 %type, arg_u64 %call_back, 
 		arg_u64 %service_queue, arg_u64 %queue);
 function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue);
@@ -106,22 +106,51 @@ kernel &__OpenCL_vec_add_kernel(
 function &main()(){
 
 	{
-		arg_u32 %err;
-		call &hsa_init (%err)();
+		arg_u32 %err;				// Declare return argument
+		call &hsa_init (%err)();		// Call hsa_init
 	}
 	
-	private_u64 %device;
+	private_u64 %device;				// Declare the device handler 
 	{
-		arg_u32 %err;
-		lda_private_u64 $d0, [%device];
-		arg_u64 %device_addr;
-		st_arg_u64 $d0, [%device_addr];
-		ldc_u64 $d0, &select_gpu_if_possible;
-		arg_u64 %call_back;
-		st_arg_u64 $d0, [%call_back];
+		arg_u32 %err;				// Deaclare return argument
+		lda_private_u64 $d0, [%device];		// Get the address of the device variable
+		arg_u64 %device_addr;			// Declear argument variable to hold device address
+		st_arg_u64 $d0, [%device_addr];		// Store the value in $d0 to the variable
+		ldc_u64 $d0, &select_gpu_if_possible;	// Get the address of callback
+		arg_u64 %call_back;			// Declare callback function
+		st_arg_u64 $d0, [%call_back];		// Store the value 
 		call &hsa_iterate_agents (%err) (%call_back, %device_addr);
 	}
+
+	// Create AQL queue
+	private_u64 %ptr_queue;				// Address to the queue
+	{
+		arg_u64 %component;			// The queue is to be added into this component
+		ld_private_u64 $d0, [%device];		// Load the value ot %device to $d0
+		st_arg_u64 $d0, [%component];		// Store the device handler to %component
+
+		arg_u32 %queue_size;			// Declare queue size
+		st_arg_u32 4, [%queue_size];		// Set the queue size to be 4
+		
+		arg_u32 %queue_type;			// Declare queue type
+		st_arg_u32 1, [%queue_type];		// Set the queue to be queue type single
+
+		arg_u64 %ptr_callback;			// Declare the pointer to the callback
+		st_arg_u64 0, [%ptr_callback];		// Set the callback to be NULL
+
+		arg_u64 %ptr_dispatch_queue;		// Declare pointer to dispatch queue
+		st_arg_u64 0, [%ptr_dispatch_queue];	// Set the dispatch queue to be NULL
+
+		arg_u64 %ptr_ptr_queue;			// Declare pointer to ptr_queue;
+		lda_private_u64 $d0, [%ptr_queue];			// Address to the ptr_queue
+		st_arg_u64 $d0, [%ptr_ptr_queue];	// Store the ptr_ptr_queue
+
+		call &hsa_queue_create(%component, %queue_size, 
+				%queue_type, %ptr_callback, 
+				%ptr_dispatch_queue, 
+				%ptr_ptr_queue);
+	}
 	
-	ret;	
+	ret;						// Return
 
 };
