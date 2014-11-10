@@ -56,10 +56,12 @@ Component *Component::getDefaultGPUComponent(unsigned long long handler)
 }
 
 
-void Component::addQueue(AQLQueue *queue)
+void Component::addQueue(std::unique_ptr<AQLQueue> queue)
 {
+	Emu::aql_debug << misc::fmt("Add a queue to component %lld\n", 
+			agent_info.handler);
 	queue->Associate(this);
-	queues.emplace_back(queue);
+	queues.emplace_back(std::move(queue));
 }
 
 

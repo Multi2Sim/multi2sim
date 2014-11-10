@@ -189,6 +189,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	AQLQueue *queue = RuntimeLibrary::CreateQueue(host_cpu, 2,
 			HSAQueueMulti);
 
+
 	//Prepare the dispatch packet
 	AQLDispatchPacket *packet = new AQLDispatchPacket();
 	packet->setDimension(1);
