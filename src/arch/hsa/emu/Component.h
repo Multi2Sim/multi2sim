@@ -63,7 +63,7 @@ protected:
 	std::list<std::unique_ptr<Grid>> grids;
 
 	// List of queues associated with this component
-	std::list<std::unique_ptr<AQLQueue>> queues;
+	std::list<std::unique_ptr<AQLQueue, void (*)(AQLQueue *)>> queues;
 
 public:
 
@@ -80,7 +80,7 @@ public:
 	static Component *getDefaultGPUComponent(unsigned long long handler);
 
 	/// Insert a queue into the queue list
-	void addQueue(std::unique_ptr<AQLQueue> queue);
+	void addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue);
 
 	/// Execute instructions on this components
 	///

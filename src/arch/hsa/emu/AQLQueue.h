@@ -73,6 +73,11 @@ class AQLQueue
 	// Position to read next
 	unsigned long long read_index;
 
+	// The address of this queue in guest memory. If the queue is defined
+	// in the guest memory, it should not be simply deleted, but should 
+	// be removed from the guest memmory with the Manager::Free() function
+	unsigned address_in_guest_memory;
+
 	// Convert the linear write/ read index to real position
 	unsigned long long toRecursiveIndex(unsigned long long index)
 	{
@@ -105,15 +110,21 @@ public:
 	void Associate(Component *component);
 
 	/// Determine if the queue is empty
-	bool isEmpty() const{ return read_index == write_index; }
+	bool isEmpty() const { return read_index == write_index; }
 
 	/// Allocate an AQL packet slot by incrementing the writeIndex by
 	/// size of AQLPacket
-	void allocatesPacketSlot(){ write_index += sizeof(AQLPacket); }
+	void allocatesPacketSlot() { write_index += sizeof(AQLPacket); }
 
 	/// Read next packet, increase read_index, mark the packet format as
 	/// Invalid
 	AQLDispatchPacket *ReadPacket();
+
+	/// If the queue is a unique_ptr defined on guest memory, this 
+	/// function serves as a custom deleter. It avoid freeing the memory 
+	/// from the operating system, but it frees the memory from the 
+	/// Multi2Sim memory mananger.
+	static void Deleter(AQLQueue *queue);
 
 
 
@@ -123,16 +134,28 @@ public:
 	//
 
 	/// Set queue type
-	void setQueueType(unsigned int queue_type){ this->queue_type = queue_type; }
+	void setQueueType(unsigned int queue_type)
+	{ 
+		this->queue_type = queue_type; 
+	}
 
 	/// Get queue type
-	unsigned int getQueueType() const{ return queue_type; }
+	unsigned int getQueueType() const
+	{
+		return queue_type; 
+	}
 
 	/// Set queue feature
-	void setQueueFeature(unsigned int queue_feature){ this->queue_feature = queue_feature; }
+	void setQueueFeature(unsigned int queue_feature)
+	{ 
+		this->queue_feature = queue_feature; 
+	}
 
 	/// Get queue feature
-	unsigned int getQueueFeature() {return queue_feature;}
+	unsigned int getQueueFeature() 
+	{
+		return queue_feature;
+	}
 
 	/// Get base address
 	unsigned long long getBaseAddress() const{ return base_address; }
@@ -169,6 +192,12 @@ public:
 
 	/// Get write index
 	unsigned long long getWriteIndex() const{ return write_index; }
+
+	/// Get the address in guest memory
+	void setAddressInGuestMemory(unsigned address)
+	{
+		address_in_guest_memory = address;
+	}
 
 };
 
