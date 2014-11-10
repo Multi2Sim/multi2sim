@@ -70,6 +70,11 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %da
 	
 };
 
+function &test_kernel () ()
+{
+	workitemabsid_u32 $s1, 0;
+	syscall_u32 $s1, 1, $s1, 0, 0;
+};
 
 kernel &__OpenCL_vec_add_kernel(
   kernarg_u64 %arg_val0,
@@ -154,8 +159,39 @@ function &main()(){
 	}
 
 	// Dispatch packet
+	private_u64 %packet_id;				// Declare packet id
+	ld_private_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
+	// FIXME accessing data structures in this way is not safe
+	ld_global_u64 $d1, [$d0+8];			// Store the queue's base address to $d1;
+	st_private_u64 $d1, [%packet_id];		// Store the packet_id, which equals to the base address;
 	
-	
+	// Update write index
+	ld_global_u64 $d2, [$d0+40];			// Get write index
+	add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
+	st_global_u64 $d2, [$d0+40];			// Write the write index back
+
+	ldc_u64 $d3, &test_kernel;			// Load the address of the kernel object
+
+	// Prepare each field of AQLPacket
+	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1
+	st_global_u32 0x00020001,	[$d1+4];	// Set x dim to 2 and y dim to 0
+	st_global_u32 0x00010000,	[$d1+8];	// Set z dim to 0 and reserved to 0
+	st_global_u32 0x00000002,	[$d1+12];	// Set grid size x to 2
+	st_global_u32 0x00000001,	[$d1+16];	// Set grid size y to 1
+	st_global_u32 0x00000001,	[$d1+20];	// Set grid size z to 1
+	st_global_u32 0x00000000,	[$d1+24];	// Set private seg size to 0
+	st_global_u32 0x00000000,	[$d1+28];	// Set group seg size to 0
+	st_global_u64 $d3,		[$d1+32];	// Set kernel object to the kernel to be executed
+	st_global_u64 0,		[$d1+40];	// Set kernel argument address to 40
+	st_global_u64 0,		[$d1+48];	// Set reserved3 to 0
+	st_global_u64 0,		[$d1+56];	// Set completion signal to 0
+
+	// Dispatch packet
+	st_global_u32 0x00024000,	[$d1];		// Dispatch packet
+
+	// Set bell signal	
+	st_global_u64 $d1,		[$d0+16];	// Set doorbell signal
+
 	ret;						// Return
 
 };
