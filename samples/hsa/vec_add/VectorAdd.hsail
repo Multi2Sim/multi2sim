@@ -142,10 +142,12 @@ function &main()(){
 		st_arg_u64 0, [%ptr_dispatch_queue];	// Set the dispatch queue to be NULL
 
 		arg_u64 %ptr_ptr_queue;			// Declare pointer to ptr_queue;
-		lda_private_u64 $d0, [%ptr_queue];			// Address to the ptr_queue
+		lda_private_u64 $d0, [%ptr_queue];	// Address to the ptr_queue
 		st_arg_u64 $d0, [%ptr_ptr_queue];	// Store the ptr_ptr_queue
 
-		call &hsa_queue_create(%component, %queue_size, 
+		arg_u32 %status;			// Return value
+
+		call &hsa_queue_create (%status) (%component, %queue_size, 
 				%queue_type, %ptr_callback, 
 				%ptr_dispatch_queue, 
 				%ptr_ptr_queue);

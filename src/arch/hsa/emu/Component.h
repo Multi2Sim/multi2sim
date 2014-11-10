@@ -80,7 +80,7 @@ public:
 	static Component *getDefaultGPUComponent(unsigned long long handler);
 
 	/// Insert a queue into the queue list
-	void addQueue(AQLQueue *queue);
+	void addQueue(std::unique_ptr<AQLQueue> queue);
 
 	/// Execute instructions on this components
 	///

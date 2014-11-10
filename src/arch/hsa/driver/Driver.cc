@@ -148,7 +148,10 @@ bool Driver::Intercept(const std::string &function_name,
 	// Avoid passing value back and moving the pc forward if the runtime 
 	// function is finished
 	if (ret == 1)
+	{
+		debug << misc::fmt("Driver execution continued.\n");
 		return true;
+	}
 	
 	// Finish the execution of the intercepted function
 	ExitInterceptedEnvironment(arg_address, stack_top);
@@ -161,6 +164,9 @@ bool Driver::Intercept(const std::string &function_name,
 void Driver::ExitInterceptedEnvironment(unsigned arg_address, 
 		StackFrame *stack_top)
 {
+	// Dump information
+	debug << misc::fmt("Driver execution finished.\n\n");
+
 	// Pass the value back
 	PassBackByValue(arg_address, stack_top);
 
@@ -222,9 +228,6 @@ void Driver::SerializeArguments(char *arg_buffer, StackFrame *stack_top)
 		// Get argument size
 		unsigned arg_size = BrigEntry::type2size(symbol->type);
 
-		debug << misc::fmt("Arg value: %s: 0x%llx\n", arg_name.c_str(), 
-				*(unsigned long long *)buf_in_caller);
-
 		// Copy value into callee's buffer
 		memcpy(arg_buffer + offset, buf_in_caller, arg_size);
 
@@ -274,21 +277,6 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 			function->getArgumentSize() + 4);
 	WorkItem *work_item = stack_top->getWorkItem();
 	*buf = (unsigned long long)work_item;
-
-	unsigned args_ptr = arg_address;
-	debug << misc::fmt("In function %s", __FUNCTION__);
-	debug << "\n\thsa_status_t: "<< 
-		getArgumentValue<unsigned int>(0, memory, args_ptr);
-	debug << ", \n\tcallback: " << 
-		getArgumentValue<unsigned long long>(4, memory, args_ptr);
-	debug << misc::fmt(", \n\tdata: 0x%llx", getArgumentValue
-			<unsigned long long>(12, memory, args_ptr));
-	debug << ", \n\thost_lang: " <<
-		getArgumentValue<unsigned int>(20, memory, args_ptr);
-	debug << ", \n\tworkitem_ptr: " << 
-		getArgumentValue<unsigned long long>(24, memory, args_ptr)
-		<< "\n";
-
 
 	return arg_address;
 }
