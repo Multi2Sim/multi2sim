@@ -26,10 +26,11 @@ AQLQueue *RuntimeLibrary::CreateQueue(Component *component,
 		unsigned int size,
 		QueueType type)
 {
-	AQLQueue *queue = new AQLQueue(size, type);
-	component->addQueue(queue);
-
-	return queue;
+	std::unique_ptr<AQLQueue> queue = 
+			std::unique_ptr<AQLQueue>(new AQLQueue(size, type));
+	AQLQueue* queue_ptr = queue.get();	
+	component->addQueue(std::move(queue));
+	return queue_ptr;
 }
 
 unsigned int RuntimeLibrary::getNumberOfHSAComponent()

@@ -361,6 +361,68 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 {
+	// Name			| Offset		| Size
+	// ---------------------------------------------------
+	// status		| 0			| 4
+	// agent		| 4			| 8
+	// size			| 12			| 4
+	// type			| 16			| 4
+	// callback		| 20			| 8
+	// service_queue	| 28			| 8
+	// queue		| 36			| 8
+
+	// Declare arguments as variables
+	unsigned long long agent = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned int size = getArgumentValue<unsigned int>
+			(12, memory, args_ptr);
+	unsigned int type = getArgumentValue<unsigned int>
+			(16, memory, args_ptr);
+	unsigned long long callback = getArgumentValue<unsigned long long>
+			(20, memory, args_ptr);
+	unsigned long long service_queue = getArgumentValue<unsigned long long>
+			(28, memory, args_ptr);
+	unsigned long long queue = getArgumentValue<unsigned long long>
+			(36, memory, args_ptr);
+	unsigned int host_lang = getArgumentValue<unsigned int>
+			(44, memory, args_ptr);
+	unsigned long long work_item = getArgumentValue<unsigned long long>
+			(48, memory, args_ptr);
+	
+	// Dump argument for debug purpose
+	debug << misc::fmt("\tStatus: %d, \n", getArgumentValue
+			<unsigned int>(0, memory, args_ptr));
+	debug << misc::fmt("\tAgent: %lld, \n", agent);
+	debug << misc::fmt("\tSize: %d, \n", size);
+	debug << misc::fmt("\tType: %d, \n", type);
+	debug << misc::fmt("\tCallback: 0x%016llx, \n", callback);
+	debug << misc::fmt("\tService queue: 0x%016llx, \n", service_queue);
+	debug << misc::fmt("\tQueue: 0x%016llx, \n", queue);
+	debug << misc::fmt("\tHost language: %d, \n", host_lang);
+	debug << misc::fmt("\tWork item address: 0x%016llx\n", work_item);
+
+	// No support for callback and service queue yet
+	if (callback != 0)
+		throw misc::Panic("Call back in runtime function create \
+				queue is not supported");
+	if (service_queue != 0)
+		throw misc::Panic("Service queue in runtime function create \
+				queue is not supported");
+
+	// Retrieve component
+	Component *component = Emu::getInstance()->getComponent(agent);
+	if (component == nullptr)
+	{
+		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
+				0, memory, args_ptr);
+	}
+
+	// Init queue
+	std::unique_ptr<AQLQueue> new_queue = 
+			std::unique_ptr<AQLQueue>(
+					new AQLQueue(size, (QueueType)type));
+	component->addQueue(std::move(new_queue));
+
 	return 0;
 }
 

@@ -39,9 +39,6 @@ enum QueueType
 
 class AQLQueue
 {
-	// Device it associated with
-	Component *associated_component = nullptr;
-
 	// MULTI or SINGLE
 	unsigned int queue_type;
 
@@ -66,6 +63,9 @@ class AQLQueue
 	// is created, and may be NULL, the system provided serviceQueue or an
 	// application managed queue.
 	unsigned long long service_queue;
+
+	// Device it associated with
+	Component *associated_component = nullptr;
 
 	// Position where to write next
 	unsigned long long write_index;
