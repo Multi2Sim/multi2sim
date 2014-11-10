@@ -165,17 +165,14 @@ function &main()(){
 	ld_global_u64 $d1, [$d0+8];			// Store the queue's base address to $d1;
 	st_private_u64 $d1, [%packet_id];		// Store the packet_id, which equals to the base address;
 	
-	// Update write index
-	ld_global_u64 $d2, [$d0+40];			// Get write index
-	add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
-	st_global_u64 $d2, [$d0+40];			// Write the write index back
-
 	ldc_u64 $d3, &test_kernel;			// Load the address of the kernel object
 
 	// Prepare each field of AQLPacket
 	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1
-	st_global_u32 0x00020001,	[$d1+4];	// Set x dim to 2 and y dim to 0
-	st_global_u32 0x00010000,	[$d1+8];	// Set z dim to 0 and reserved to 0
+	st_global_u16 0x0002,		[$d1+4];	// Set x dim to 2
+	st_global_u16 0x0001,		[$d1+6];	// Set y dim to 1
+	st_global_u16 0x0001,		[$d1+8];	// Set z dim to 0 
+	st_global_u16 0x0000,		[$d1+10];	// Set reserved to 0
 	st_global_u32 0x00000002,	[$d1+12];	// Set grid size x to 2
 	st_global_u32 0x00000001,	[$d1+16];	// Set grid size y to 1
 	st_global_u32 0x00000001,	[$d1+20];	// Set grid size z to 1
@@ -191,6 +188,15 @@ function &main()(){
 
 	// Set bell signal	
 	st_global_u64 $d1,		[$d0+16];	// Set doorbell signal
+
+	// Update write index
+	ld_global_u64 $d2, [$d0+40];			// Get write index
+	add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
+	st_global_u64 $d2, [$d0+40];			// Write the write index back
+
+	// Do something and wait
+	add_u64 $d2, $d2, 1;
+
 
 	ret;						// Return
 

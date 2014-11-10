@@ -42,7 +42,13 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	group_size = group_size_x * group_size_y * group_size_z;
 
 	// Set root function information
-	this->root_function = (Function *)packet->getKernalObjectAddress();
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+	BrigDirectiveFunction *function = (BrigDirectiveFunction *)
+					packet->getKernalObjectAddress();
+	std::string function_name = BrigStrEntry::GetStringByOffset(binary,
+			function->name);
+	this->root_function = ProgramLoader::getInstance()->getFunction(
+			function_name);
 	this->kernel_args = packet->getKernargAddress();
 
 	// Create work items
