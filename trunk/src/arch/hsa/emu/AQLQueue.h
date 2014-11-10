@@ -64,14 +64,14 @@ class AQLQueue
 	// application managed queue.
 	unsigned long long service_queue;
 
-	// Device it associated with
-	Component *associated_component = nullptr;
-
 	// Position where to write next
 	unsigned long long write_index;
 
 	// Position to read next
 	unsigned long long read_index;
+
+	// Device it associated with
+	Component *associated_component = nullptr;
 
 	// The address of this queue in guest memory. If the queue is defined
 	// in the guest memory, it should not be simply deleted, but should 

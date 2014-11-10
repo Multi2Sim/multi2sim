@@ -113,28 +113,53 @@ public:
 	~AQLDispatchPacket(){};
 
 	/// Return the dimension
-	unsigned short getDimension() const { return getByOffset<unsigned short>(2); }
+	unsigned short getDimension() const 
+	{ 
+		return getByOffset<unsigned short>(2); 
+	}
 
 	/// Set the dimension field
-	void setDimension(unsigned short dim){ setByOffset<unsigned short>(2, dim); }
+	void setDimension(unsigned short dim)
+	{ 
+		setByOffset<unsigned short>(2, dim); 
+	}
 
 	/// Return the work group size x
-	unsigned short getWorkGroupSizeX() const { return getByOffset<unsigned short>(4); }
+	unsigned short getWorkGroupSizeX() const 
+	{ 
+		return getByOffset<unsigned short>(4); 
+	}
 
 	/// Set the work group size x
-	void setWorkGroupSizeX(unsigned short wg_size_x){ setByOffset<unsigned short>(4, wg_size_x); }
+	void setWorkGroupSizeX(unsigned short wg_size_x)
+	{ 
+		setByOffset<unsigned short>(4, wg_size_x); 
+	}
 
 	/// Return the work group size y
-	unsigned short getWorkGroupSizeY() const { return getByOffset<unsigned short>(6); }
+	unsigned short getWorkGroupSizeY() const 
+	{ 
+		return getByOffset<unsigned short>(6); 
+	}
 
 	/// Set the work group size y
-	void setWorkGroupSizeY(unsigned short wg_size_y){ setByOffset<unsigned short>(6, wg_size_y); }
+	void setWorkGroupSizeY(unsigned short wg_size_y)
+	{ 
+		setByOffset<unsigned short>(6, wg_size_y); 
+	}
 
 	/// Return the work group size z
-	unsigned short getWorkGroupSizeZ() const { return getByOffset<unsigned short>(8); }
+	unsigned short getWorkGroupSizeZ() const 
+	{ 
+		return getByOffset<unsigned short>(8); 
+	}
 
 	/// Set the work group size z
-	void setWorkGroupSizeZ(unsigned int wg_size_z){ setByOffset<unsigned short>(8, wg_size_z); }
+	void setWorkGroupSizeZ(unsigned int wg_size_z)
+	{ 
+		setByOffset<unsigned short>(8, wg_size_z); 
+	}
+
 
 	/// Set 3 work group size at one time
 	void setWorkGroupSize(unsigned x, unsigned y, unsigned z)
@@ -145,13 +170,20 @@ public:
 	}
 
 	/// Return the grid size x
-	unsigned int getGridSizeX() const { return getByOffset<unsigned int>(12); }
+	unsigned int getGridSizeX() const 
+	{ 
+		return getByOffset<unsigned int>(12); 
+	}
 
 	/// Set the grid size x
-	void setGridSizeX(unsigned int grid_size_x){ setByOffset<unsigned int>(12, grid_size_x); }
+	void setGridSizeX(unsigned int grid_size_x)
+	{ 
+		setByOffset<unsigned int>(12, grid_size_x); 
+	}
 
 	/// Return the grid size y
-	unsigned int getGridSizeY() const { return getByOffset<unsigned int>(16); }
+	unsigned int getGridSizeY() const 
+	{ return getByOffset<unsigned int>(16); }
 
 	/// Set the grid size y
 	void setGridSizeY(unsigned int grid_size_y){ setByOffset<unsigned int>(16, grid_size_y); }
