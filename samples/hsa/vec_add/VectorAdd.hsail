@@ -152,6 +152,9 @@ function &main()(){
 				%ptr_dispatch_queue, 
 				%ptr_ptr_queue);
 	}
+
+	// Dispatch packet
+	
 	
 	ret;						// Return
 

@@ -60,6 +60,22 @@ AQLQueue::~AQLQueue()
 {}
 
 
+void AQLQueue::Deleter(AQLQueue *queue)
+{
+	if(queue->address_in_guest_memory != 0)
+	{
+		// AQL queue is in guest memory
+		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+		manager->Free(queue->address_in_guest_memory);
+	}
+	else
+	{
+		// AQL queue is in host memory
+		delete queue;
+	}
+}
+
+
 void AQLQueue::Associate(Component *component)
 {
 	if (associated_component)
@@ -81,8 +97,6 @@ void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 
 	// 3. Assigning the packet to the Packet Processor
 	AQLDispatchPacket *saved_packet = getPacket(packet_id);
-	//std::cout << misc::fmt("saved_packet address: 0x%llx\n",
-	//		(unsigned long long)saved_packet);
 	saved_packet->Assign();
 
 	// 4. Notifying the Packet Processor of the packet
