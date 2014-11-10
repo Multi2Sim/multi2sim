@@ -418,10 +418,20 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// Init queue
-	std::unique_ptr<AQLQueue> new_queue = 
-			std::unique_ptr<AQLQueue>(
-					new AQLQueue(size, (QueueType)type));
+	// FIXME Find a way to free the memory in guest memory
+	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+	unsigned address = manager->Allocate(sizeof(AQLQueue));	
+	char *queue_buffer = memory->getBuffer(address, sizeof(AQLQueue), 
+			mem::Memory::AccessWrite);
+	auto new_queue = std::unique_ptr<AQLQueue, void (*)(AQLQueue*)>(
+			new(queue_buffer) AQLQueue(size, (QueueType)type),
+			AQLQueue::Deleter);
+	new_queue->setAddressInGuestMemory(address);
 	component->addQueue(std::move(new_queue));
+
+	// Store queue address
+	memory->Write(queue, sizeof(unsigned long long),  
+			(char *)&address);
 
 	return 0;
 }

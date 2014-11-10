@@ -26,8 +26,9 @@ AQLQueue *RuntimeLibrary::CreateQueue(Component *component,
 		unsigned int size,
 		QueueType type)
 {
-	std::unique_ptr<AQLQueue> queue = 
-			std::unique_ptr<AQLQueue>(new AQLQueue(size, type));
+	// FIXME create this queue in quest memory
+	auto queue = std::unique_ptr<AQLQueue, void (*)(AQLQueue *)>(
+			new AQLQueue(size, type), AQLQueue::Deleter);
 	AQLQueue* queue_ptr = queue.get();	
 	component->addQueue(std::move(queue));
 	return queue_ptr;

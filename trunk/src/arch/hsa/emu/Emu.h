@@ -90,7 +90,12 @@ class Emu : public comm::Emu
 public:
 
 	/// Destructor
-	~Emu(){};
+	~Emu()
+	{
+		// Guarantee everything in guest memory freed before freeing 
+		// the guest memory itself;
+		components.clear();
+	};
 
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
