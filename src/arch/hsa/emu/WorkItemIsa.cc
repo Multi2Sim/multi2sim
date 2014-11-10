@@ -2650,7 +2650,29 @@ void WorkItem::ExecuteInst_WORKGROUPSIZE()
 
 void WorkItem::ExecuteInst_WORKITEMABSID()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigInstEntry inst(stack_top->getPc(), binary);
+
+	unsigned int dim = getOperandValue<unsigned int>(1);
+	switch(dim)
+	{
+	case 0:
+		storeOperandValue<unsigned int>(0, abs_id_x);
+		break;
+	case 1:
+		storeOperandValue<unsigned int>(0, abs_id_y);
+		break;
+	case 2:
+		storeOperandValue<unsigned int>(0, abs_id_z);
+		break;
+	default:
+		throw misc::Error("Trying to getting work item absolute id "
+				"other than x, y and z axis.");
+	}
+
+	// Move pc to next instruction
+	MovePcForwardByOne();
 }
 
 
