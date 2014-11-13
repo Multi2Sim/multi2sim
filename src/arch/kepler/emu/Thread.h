@@ -24,6 +24,7 @@
 #include <arch/kepler/asm/Inst.h>
 
 #include "Grid.h"
+#include "Register.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
 
@@ -47,28 +48,7 @@ public:
 class Thread
 {
 
-enum DataTypeGPR
-{
-	Unsigned = 0,
-	Signed,
-	Float
-};
-
-public:
-	/// GPR value
-	union RegValue
-	{
-		unsigned u32;
-		int s32;
-		float f;
-		unsigned long long u64;
-	};
-
-	struct RegCC
-	{
-		bool carry;
-	};
-
+	/*
 	/// Memory accesses types
 	enum MemoryAccessType
 	{
@@ -84,6 +64,7 @@ public:
 		unsigned addr;
 		unsigned size;
 	};
+	*/
 
 private:
 
@@ -102,10 +83,7 @@ private:
 	Grid *grid;
 
 	// Registers
-	RegValue gpr[256];  /* General purpose registers */
-	RegValue sr[82];  /* Special registers */
-	unsigned pr[8];  /* Predicate registers */
-	RegCC cc;
+	Register registers;
 
 	// Last global memory access
 	unsigned global_mem_access_addr;
@@ -152,37 +130,56 @@ public :
 
 	/// Get value of a GPR
 	/// \param vreg GPR identifier
-	unsigned long long ReadGPR(int gpr_id) const { return gpr[gpr_id].u64; }
+	unsigned ReadGPR(int gpr_id) { return registers.ReadGPR(gpr_id); }
+
+	/// Get float type value of a GPR
+	/// \param vreg GPR identifier
+	float ReadFloatGPR(int gpr_id) { return registers.ReadFloatGPR(gpr_id); }
 
 	/// Set value of a GPR
 	/// \param gpr GPR idenfifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteGPR(int gpr_id, unsigned long long value)
+	void WriteGPR(int gpr_id, unsigned value)
 	{
-		gpr[gpr_id].u64 = value;
+		registers.WriteGPR(gpr_id, value);
+	}
+
+	/// Set float value of a GPR
+	/// \param gpr GPR idenfifier
+	/// \param value Value given as an \a float typed value
+	void WriteFloatGPR(int gpr_id, float value)
+	{
+		registers.WriteFloatGPR(gpr_id, value);
 	}
 
 	/// Get value of a SR
 	/// \param vreg SR identifier
-	unsigned ReadSR(int sr_id) { return sr[sr_id].u32; };
+	unsigned ReadSR(int sr_id) { return registers.ReadSR(sr_id); }
 
 	/// Set value of a SR
-	/// \param gpr SR idenfifier
+	/// \param gpr SR identifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteSR(int sr_id, unsigned value) { sr[sr_id].u32 = value; };
+	void WriteSR(int sr_id, unsigned value)
+	{
+		registers.WriteSR(sr_id, value);
+	}
 
-	/// Get value of a predicate register
+	/// Read value of a predicate register
 	/// \param pr Predicate register identifier
-	int GetPred(int pr_id) { return pr[pr_id]; };
+	int ReadPred(int pr_id) { return registers.ReadPred(pr_id); }
 
 	/// Write value of a predicate register
 	/// \param pr predicate register identifier
-	void WritePred(int pr_id, unsigned value) { pr[pr_id] = value; };
+	void WritePred(int pr_id, unsigned value)
+	{
+		registers.WritePred(pr_id, value);
+	}
 
-	/// Set value of a predicate register
-	/// \param pr Predicate register identifier
-	/// \param value Value given as an \a unsigned typed value
-	void SetPred(int pr_id, unsigned value) { pr[pr_id] = value; };
+	/// Read value of Condition Code register
+	bool ReadCC() { return registers.ReadCC(); }
+
+	/// Write value of Condition Code register
+	void WriteCC(bool value) { registers.WriteCC(value); }
 
 	/// Get value of the active thread mask
 	int GetActive();
