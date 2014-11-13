@@ -48,15 +48,17 @@ Thread::Thread(Warp *warp, int id)
 #undef DEFINST
 
 	// Initialize  general purpose registers
-	for (int i = 0; i < 64; ++i)
-		gpr[i].u32 = 0;
+	for (int i = 0; i < 256; ++i)
+		WriteGPR(i, 0);
 
 	// Initialize CC register
-	cc.carry = 0;
+	WriteCC(0);
 
 	// Initialize special registers
 	for (int i = 0; i < 82; ++i)
-		sr[i].u32 = 0;
+		WriteSR(i, 0);
+
+	/*
 	sr[33].u32 = id % grid->getThreadBlockSize3(0);
 	sr[34].u32 = (id / grid->getThreadBlockSize3(0)) %
 			grid->getThreadBlockSize3(1);
@@ -71,10 +73,26 @@ Thread::Thread(Warp *warp, int id)
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1));
 
+	*/
+	WriteSR(33, id % grid->getThreadBlockSize3(0));
+	WriteSR(34, (id / grid->getThreadBlockSize3(0)) %
+			grid->getThreadBlockSize3(1));
+	WriteSR(35, id / (grid->getThreadBlockSize3(0) *
+			grid->getThreadBlockSize3(1)));
+	WriteSR(37, thread_block->getId() %
+			grid->getThreadBlockCount3(0));
+	WriteSR(38, (thread_block->getId() /
+			grid->getThreadBlockCount3(0)) %
+			grid->getThreadBlockCount3(1));
+	WriteSR(39, thread_block->getId() /
+			(grid->getThreadBlockCount3(0) *
+					grid->getThreadBlockCount3(1)));
+
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
-		pr[i] = 0;
-	pr[7] = 1;
+		WritePred(i, 0);
+
+	WritePred(7, 1);
 
 	/* Add thread to warp */
 	//warp->threads[this->id_in_warp] = this;

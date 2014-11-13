@@ -19,7 +19,9 @@ libemu_a_SOURCES = \
 	SyncStack.cc\
 	\
 	Warp.cc \
-	Warp.h
+	Warp.h \
+	\
+	Register.h
 	
 AM_CPPFLAGS = @M2S_INCLUDES@
 

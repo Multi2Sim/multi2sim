@@ -64,6 +64,7 @@ enum
 	SR_TID = 32,
 	SR_TID_X = 33,
 	SR_TID_Y = 34,
+
 	SR_TID_Z = 35,
 	SR_CTA_PARAM = 36,
 	SR_CTAID_X = 37,
@@ -153,9 +154,9 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = GetPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! GetPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -224,9 +225,9 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = GetPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! GetPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -295,9 +296,9 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -388,9 +389,9 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	if( active == 1 && pred == 1)
 	{
@@ -470,15 +471,18 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
 
 	// Operand
 	unsigned src1, src2, dst;
+
+	// for extended precision add
+	long long unsigned srcl1, srcl2;
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -501,23 +505,55 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 			this->ISAUnsupportedFeature(inst);
 		}
 
-		// Read .PO mode value
-		if(format.po == 1) // subtraction mode
-			src2 = -src2;
-		else if(format.po == 2)
-			src1 = -src1;
-		else if(format.po == 3)
-			this->ISAUnsupportedFeature(inst);
+		// Read and Execute .PO mode value
+		if (format.po == 0)
+		{
+			dst = src1 + src2 + (format.x ? ReadCC() : 0);
 
-		// Execute
-		// Bit 50 indicates 'CC', not supported yet
-		dst = src1 + src2;
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
+
+				if (srcl1 + srcl2 + (format.x ? ReadCC() : 0) > 0xffffffff)
+					WriteCC(1);
+			}
+		}
+
+		else if (format.po == 1) // subtraction mode
+		{
+			dst = src1 - src2 - (format.x ? ReadCC() : 0);
+
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
+
+				if (srcl1 < srcl2 + (format.x ? ReadCC() : 0))
+					WriteCC(1);
+			}
+		}
+		else if (format.po == 2)
+		{
+			dst = src2 - src1 - (format.x ? ReadCC() : 0);
+
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
+
+				if (srcl2 < srcl1 + (format.x ? ReadCC() : 0))
+					WriteCC(1);
+			}
+		}
+		else
+			this->ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
-
 	}
+
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
@@ -539,23 +575,12 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 void Thread::ExecuteInst_IADD_B(Inst *inst)
 {
 
-	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
-
-	// Predicates and active masks
+	// Get Warp
 	Emu* emu = Emu::getInstance();
-	Warp* warp = this->getWarp();
+	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack();
 
-	unsigned pred;
-	unsigned pred_id;
 	unsigned active;
-
-    // Operands
-	unsigned dst_id, src_id;
-	int dst;
-	int srcA, srcB;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -570,51 +595,111 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	// Active
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
-	// Predicate
-	pred_id = fmt.pred;
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesIADD format = inst_bytes.iadd;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
+	// for extended precision add
+	long long unsigned srcl1, srcl2;
 
 	// Execute
 	if (active == 1 && pred == 1)
 	{
-		/* Read */
-		src_id = fmt.mod0;
-		srcA = this->ReadGPR(src_id);
-		src_id = fmt.srcB;
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
 		// Check it
-		if (fmt.srcB_mod == 0)
+		if (format.op2 == 0)
 		{
-			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
 		}
 		else
-			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+			src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 
-		if (((fmt.mod1 >> 9) & 0x1) == 1)	//FIXME
-			srcB = -srcB;
+		// Read and Execute .PO mode value
+		if (format.po == 0)
+		{
+			dst = src1 + src2 + (format.x ? ReadCC() : 0);
 
-		/* Execute */
-		dst = srcA + srcB;
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
 
-		/* Write */
-		dst_id = fmt.dst;
+				if (srcl1 + srcl2 + (format.x ? ReadCC() : 0) > 0xffffffff)
+					WriteCC(1);
+			}
+		}
+
+		else if (format.po == 1) // subtraction mode
+		{
+			dst = src1 - src2 - (format.x ? ReadCC() : 0);
+
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
+
+				if (srcl1 < srcl2 + (format.x ? ReadCC() : 0))
+					WriteCC(1);
+			}
+		}
+		else if (format.po == 2)
+		{
+			dst = src2 - src1 - (format.x ? ReadCC() : 0);
+
+			if (format.cc)
+			{
+				srcl1 = src1;
+				srcl2 = src2;
+
+				if (srcl2 < srcl1 + (format.x ? ReadCC() : 0))
+					WriteCC(1);
+			}
+		}
+		else
+			this->ISAUnsupportedFeature(inst);
+
+		// Write Result
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
+
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
-	{
-    std::cerr<< "Warp id "<< std::hex
-      		<<this->getWarpId() <<" IADD op0 "<<fmt.op0;
-    std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
-       		<<std::endl;
-	}
-
+	Emu::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
+					"= %x\n",inst->getName(),warp->getPC());
+	Emu::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
+					"= %u\n",inst->getName(),this->id_in_warp);
+	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
+					,inst->getName(),src1);
+	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
+					,inst->getName(),src2);
+	Emu::isa_debug << misc::fmt("At instruction %s:\toutput: the result is "
+					"= %d\n",inst->getName(),dst);
+	Emu::isa_debug << misc::fmt("\n");
 }
 
 
@@ -641,6 +726,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	unsigned cmp_op;
 	unsigned bool_op;
 	bool cmp_res;
+	bool x;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -658,17 +744,19 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 
 	// Execute
 	if (active == 1 && pred == 1)
 	{
 		// Sources
+		x = (fmt.mod1 >> 4) & 0x1;
+
 		srcA_id = fmt.mod0;
-		srcA = this->ReadGPR(srcA_id);
+		srcA = this->ReadGPR(srcA_id) - (x ? ReadCC() : 0);
 		srcB_id = fmt.srcB;
 		if (fmt.srcB_mod == 0)
 		{
@@ -683,7 +771,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		pred_id_3 = fmt.mod1 & 0x7;
 
 
-		pred_3 = this->GetPred(pred_id_3);
+		pred_3 = this->ReadPred(pred_id_3);
 		if (((fmt.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
 
@@ -789,9 +877,9 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -820,7 +908,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 		pred_id_2 = fmt.dst & 0x7;
 		pred_id_3 = fmt.mod1 & 0x7;
 
-		pred_3 = this->GetPred(pred_id_3);
+		pred_3 = this->ReadPred(pred_id_3);
 
 		if (((fmt.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
@@ -918,9 +1006,9 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	if (id_in_warp == 0)
 		stack->resetTempMask();
@@ -1007,9 +1095,9 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id-8);
+		pred = !this->ReadPred(pred_id-8);
 
 	// Clear temp_entry and taken_thread before BRA execute
 	if (id_in_warp == 0)
@@ -1163,9 +1251,9 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -1237,9 +1325,9 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id - 8);
+		pred = !this->ReadPred(pred_id - 8);
 
 	// Operands ID
 	unsigned dst_id;
@@ -1309,9 +1397,9 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -1397,9 +1485,9 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -1501,9 +1589,9 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id -8);
+		pred = !this->ReadPred(pred_id -8);
 
 	// Execute
 	if(active == 1 && pred == 1)
@@ -1547,18 +1635,30 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 			// Caculate mem_addr and read const mem
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
-			emu->ReadConstMem(mem_addr, 8, (char*)&srcB.u64);
+
+			// Read the lower 32 bits
+			emu->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
 
 			// Execute
-			dst.u64 = srcB.u64;
+			dst.u32 = srcB.u32;
 
 			// Write
 			dst_id = format.dst;
-			this->WriteGPR(dst_id, dst.u64);
+			this->WriteGPR(dst_id, dst.u32);
+
+			// Read the upper 32 bits
+			emu->ReadConstMem(mem_addr + 4, 4, (char*)&srcB.u32);
+
+			// Execute the upper 32 bits
+			dst.u32 = srcB.u32;
+
+			// Write the upper 32 bits
+			this->WriteGPR(dst_id + 1, dst.u32);
 	    }
 		else
 		{
-			throw misc::Panic("Unsupported feature in Kepler LDC instruction");
+			throw misc::Panic("Unsupported feature in Kepler LDC instruction\n"
+						"128 bits LDC attempted.\n");
 		}
 
 	}
@@ -1615,9 +1715,9 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -1697,9 +1797,9 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -1810,9 +1910,9 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -1830,7 +1930,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	{
 		// Read
 		src_id = format.mod0;
-		src1 = gpr[src_id].f;
+		src1 = ReadFloatGPR(src_id);
 
 		if (((format.mod1 >> 3) & 0x1) == 1)
 			src1 = fabsf(src1);
@@ -1844,7 +1944,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
-			src2 = gpr[src_id].f;
+			src2 = ReadFloatGPR(src_id);
 		else 	// check it
 		{
 			gpr_t.i = format.srcB << 12;
@@ -1861,7 +1961,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 
 		/* Write */
 		dst_id = format.dst;
-		gpr[dst_id].f = dst;
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1907,9 +2007,9 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -1927,7 +2027,7 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	{
 		// Read
 		src_id = format.mod0;
-		src1 = gpr[src_id].f;
+		src1 = ReadFloatGPR(src_id);
 
 		if (((format.mod1 >> 3) & 0x1) == 1)
 			src1 = fabsf(src1);
@@ -1941,7 +2041,7 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
-			src2 = gpr[src_id].f;
+			src2 = ReadFloatGPR(src_id);
 		else 	// check it
 		{
 			gpr_t.i = format.srcB << 12;
@@ -1958,7 +2058,7 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 
 		/* Write */
 		dst_id = format.dst;
-		gpr[dst_id].f = dst;
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2035,9 +2135,9 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2107,9 +2207,9 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id - 8);
+		pred = !this->ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id, srcB_id, srcC_id;
@@ -2128,27 +2228,27 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 
 		// Get SrcA value
 		if(srcA_id <= 7)
-			srcA = this->GetPred(srcA_id);
+			srcA = this->ReadPred(srcA_id);
 		else
-			srcA = !this->GetPred(srcA_id - 8);
+			srcA = !this->ReadPred(srcA_id - 8);
 
 		// Read SrcB id
 		srcB_id = format.pred3;
 
 		// Get SrcB value
 		if(srcB_id <= 7)
-			srcB = this->GetPred(srcB_id);
+			srcB = this->ReadPred(srcB_id);
 		else
-			srcB = !this->GetPred(srcB_id - 8);
+			srcB = !this->ReadPred(srcB_id - 8);
 
 		// Read SrcC id
 		srcC_id = format.pred4;
 
 		// Get SrcC value
 		if(srcC_id <= 7)
-			srcC = this->GetPred(srcC_id);
+			srcC = this->ReadPred(srcC_id);
 		else
-			srcC = !this->GetPred(srcC_id - 8);
+			srcC = !this->ReadPred(srcC_id - 8);
 
 		// Get Opcode
 		bool_op0 = format.bool_op0;
@@ -2220,9 +2320,9 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2518,9 +2618,9 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	// Predicate
 	pred_id = fmt.pred;
 	if (pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = ! this->GetPred(pred_id - 8);
+		pred = ! this->ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2529,6 +2629,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 		src_id = fmt.mod0;
 		srcA = this->ReadGPR(src_id);
 		src_id = fmt.srcB;
+
 		// FIXME == 0 has not been observed.
 		if (fmt.srcB_mod == 1)
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
@@ -2536,12 +2637,12 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
 
 		// Execute
-		// FIXME not fully verified, logic is not supposed to be correct.
+		// FIXME not fully verified, but logic is supposed to be correct.
 		start_bit = srcB & 0xff;
 		len = (srcB >> 8) & 0xff;
 
-		dst = ((srcA & (1 << (start_bit + len - 1))) >> start_bit) &
-				(1 << (len - 1));
+        dst = ((srcA & ((1 << (start_bit + len)) - 1)) >> start_bit) &
+                ((1 << len) - 1);
 		if (((dst >> (len - 1)) & 0x1) == 1)
 			dst = dst | (0xffffffff << len);
 
@@ -2639,9 +2740,9 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id - 8);
+		pred = !this->ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -2721,9 +2822,9 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id-8);
+		pred = !this->ReadPred(pred_id-8);
 
 	// Set the latest PCNT active thread mask
 	// Clear active mask bit of specific all entries before the PCNT
@@ -2831,9 +2932,9 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if(pred_id <= 7)
-		pred = this->GetPred(pred_id);
+		pred = this->ReadPred(pred_id);
 	else
-		pred = !this->GetPred(pred_id - 8);
+		pred = !this->ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id; //srcB_id to be added for register
