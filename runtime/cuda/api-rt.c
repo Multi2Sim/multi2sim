@@ -68,6 +68,11 @@ char *cuda_rt_err_param_note =
  * CUDA Runtime Internal Functions
  */
 
+void __cudaInitModule()
+{
+
+}
+
 void **__cudaRegisterFatBinary(void *fatCubin)
 {
 	void **fatCubinHandle;
