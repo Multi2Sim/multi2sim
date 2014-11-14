@@ -2654,7 +2654,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 
-	//if(getenv("M2S_KPL_ISA_DEBUG"))
+	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
     std::cerr<< "Warp id "<< std::hex
       		<<this->getWarpId() <<" BFE op0 "<<fmt.op0;
