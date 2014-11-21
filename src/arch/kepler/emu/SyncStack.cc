@@ -103,7 +103,7 @@ bool SyncStack::popTillTarget(unsigned target_pc, unsigned current_pc)
 
 		if (t->first < larger_pc && t->first > smaller_pc)
 		{
-			ret = false;
+			ret = true;
 			sync_stack.erase(t->second);
 			address.push_back(t->first);
 		}
@@ -224,6 +224,27 @@ bool SyncStack::checkCONT(unsigned& address)
 	// above the first PBK entry is 0 (in real case, include BRK and EXIT).
 	// A thread is continued when the bit in first PCNT active mask is 1.
 	return ((~active & active_PBK) ^ active_PCNT) == active_PBK;
+}
+
+
+bool SyncStack::checkCAL(unsigned& address, unsigned& active_mask)
+{
+
+	bool ret = false;
+
+	for (auto i = sync_stack.begin(); i != sync_stack.end(); ++i)
+	{
+
+		if (i->get()->compareEntryType(SyncStackEntryCAL))
+		{
+			active_mask = i->get()->getActiveThreadMask();
+			address = i->get()->getRenconvPC();
+			ret = true;
+		}
+	}
+
+
+	return ret;
 }
 
 
