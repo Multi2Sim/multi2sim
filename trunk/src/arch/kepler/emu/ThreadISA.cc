@@ -123,7 +123,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = getWarp();
@@ -152,7 +152,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = ReadPred(pred_id);
 	else
@@ -162,14 +162,14 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		srcA = ReadGPR(src_id);
-		src_id = fmt.srcB;
+		src_id = format.srcB;
 
-		if (fmt.op0 == 1  && fmt.op1 == 0x107 && fmt.srcB_mod)
+		if (format.op0 == 1  && format.op1 == 0x107 && format.srcB_mod)
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
-		else if (fmt.op0 == 2 && fmt.op1 == 0x187 && fmt.srcB_mod)
+		else if (format.op0 == 2 && format.op1 == 0x187 && format.srcB_mod)
 			srcB = ReadGPR(src_id);
 
 		else	//check it
@@ -180,7 +180,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 
 		// Write
 
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
 	}
 
@@ -194,7 +194,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = getWarp();
@@ -223,7 +223,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = ReadPred(pred_id);
 	else
@@ -233,15 +233,15 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		srcA = ReadGPR(src_id);
-		src_id = fmt.srcB;
+		src_id = format.srcB;
 
-		if (fmt.op0 == 1  && fmt.op1 == 0x107 && fmt.srcB_mod)
+		if (format.op0 == 1  && format.op1 == 0x107 && format.srcB_mod)
 		{
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 		}
-		else if (fmt.op0 == 2 && fmt.op1 == 0x187 && fmt.srcB_mod)
+		else if (format.op0 == 2 && format.op1 == 0x187 && format.srcB_mod)
 			srcB = ReadGPR(src_id);
 		else	//check it
 			ISAUnimplemented(inst);
@@ -251,7 +251,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 
 		// Write
 
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
 	}
 
@@ -263,7 +263,7 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emu* emu = Emu::getInstance();
@@ -294,7 +294,7 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -304,28 +304,28 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		srcA = this->ReadGPR(src_id);
 
-		if (((fmt.mod1 >> 6) & 0x3) == 2)	//FIXME
+		if (((format.mod1 >> 6) & 0x3) == 2)	//FIXME
 			srcA = -srcA;
-		src_id = fmt.srcB;
-		if (fmt.srcB_mod == 0)
+		src_id = format.srcB;
+		if (format.srcB_mod == 0)
 			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
-		else if (fmt.srcB_mod == 1)
+		else if (format.srcB_mod == 1)
 			srcB = this->ReadGPR(src_id);
 		else
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 
-		if (((fmt.mod1 >> 6) & 0x3) == 1)	//FIXME
+		if (((format.mod1 >> 6) & 0x3) == 1)	//FIXME
 			srcB = -srcB;
-		shamt = fmt.mod1 & 0xf; //45:42
+		shamt = format.mod1 & 0xf; //45:42
 
 		/* Execute */
 		dst = (srcA << shamt) + srcB;
 
 		/* Write */
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
 
@@ -335,10 +335,10 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISCADD op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+				<<this->getWarpId() <<" ISCADD op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
 	}
 }
@@ -357,7 +357,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emu* emu = Emu::getInstance();
@@ -387,7 +387,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -396,18 +396,18 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	if( active == 1 && pred == 1)
 	{
 		// Read
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		srcA = this->ReadGPR(src_id);
-		src_id = fmt.mod1 & 0xff;
+		src_id = format.mod1 & 0xff;
 		src3 = this->ReadGPR(src_id);
-		if (fmt.srcB_mod == 0)
+		if (format.srcB_mod == 0)
 		{
-			src_id = fmt.srcB;
+			src_id = format.srcB;
 			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
 		}
-		else if (fmt.srcB_mod == 1)
+		else if (format.srcB_mod == 1)
 		{
-			src_id = fmt.srcB & 0x1ff;
+			src_id = format.srcB & 0x1ff;
 			srcB = this->ReadGPR(src_id);
 		}
 		else	//check it
@@ -418,7 +418,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 		dst = srcA * srcB + src3;
 
 		// Write
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 
 	}
@@ -429,10 +429,10 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-        		<<this->getWarpId() <<" IMAD op0 "<<fmt.op0;
-        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
+        		<<this->getWarpId() <<" IMAD op0 "<<format.op0;
+        std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 
-        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+        		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
         		<<std::endl;
 	}
 }
@@ -707,7 +707,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emu* emu = Emu::getInstance();
@@ -742,7 +742,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -753,30 +753,30 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Sources
-		x = (fmt.mod1 >> 4) & 0x1;
+		x = (format.mod1 >> 4) & 0x1;
 
-		srcA_id = fmt.mod0;
+		srcA_id = format.mod0;
 		srcA = this->ReadGPR(srcA_id) - (x ? ReadCC() : 0);
-		srcB_id = fmt.srcB;
-		if (fmt.srcB_mod == 0)
+		srcB_id = format.srcB;
+		if (format.srcB_mod == 0)
 		{
 			emu->ReadConstMem(srcB_id << 2, 4, (char*)&srcB);
 		}
-		else if (fmt.srcB_mod == 1)
+		else if (format.srcB_mod == 1)
 			srcB = this->ReadGPR(srcB_id);
 
 		// Predicates
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
-		pred_id_3 = fmt.mod1 & 0x7;
+		pred_id_1 = (format.dst >> 3) & 0x7;
+		pred_id_2 = format.dst & 0x7;
+		pred_id_3 = format.mod1 & 0x7;
 
 
 		pred_3 = this->ReadPred(pred_id_3);
-		if (((fmt.mod1 >> 3) & 0x1))
+		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
 
 		// Compare
-        cmp_op = ((fmt.op1 & 0x1) << 2) | (fmt.mod1 >> 10);
+        cmp_op = ((format.op1 & 0x1) << 2) | (format.mod1 >> 10);
 
 		if (cmp_op == 1)
 			cmp_res = srcA < srcB;
@@ -794,7 +794,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 			std::cerr << __func__ <<": compare operation (" << cmp_op << ") not implemented\n";
 
 		// Logic
-		bool_op = (fmt.mod1 >> 6) & 0x3;
+		bool_op = (format.mod1 >> 6) & 0x3;
 		if (bool_op == 0)
 		{
 			pred_1 = cmp_res && pred_3;
@@ -814,8 +814,8 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 			std::cerr << __func__ <<": bitwise operation " << bool_op << " not implemented\n";
 
 		/* Write */
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
+		pred_id_1 = (format.dst >> 3) & 0x7;
+		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
 			this->WritePred(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
@@ -828,9 +828,9 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISETP op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<this->getWarpId() <<" ISETP op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<" cmp "<< cmp_op << " bool " << bool_op
 				<<std::endl;
 	}
@@ -841,7 +841,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	//Emu* emu = Emu::getInstance();
@@ -875,7 +875,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -886,17 +886,17 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Sources
-		srcA_id = fmt.mod0;
+		srcA_id = format.mod0;
 		srcA = this->ReadGPR(srcA_id);
 
-		if (fmt.srcB_mod == 1)
+		if (format.srcB_mod == 1)
 		{
-            srcB = fmt.srcB;
+            srcB = format.srcB;
             if (srcB >> 18)
             	srcB |= 0xfff80000;
 		}
 
-		else if (fmt.srcB_mod == 0)
+		else if (format.srcB_mod == 0)
 		{
 			throw misc::Panic("Undetected behavior srcB_mod == 0\n");
 		}
@@ -904,17 +904,17 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 			throw misc::Panic("Error srcB_mod\n");
 
 		// Predicates
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
-		pred_id_3 = fmt.mod1 & 0x7;
+		pred_id_1 = (format.dst >> 3) & 0x7;
+		pred_id_2 = format.dst & 0x7;
+		pred_id_3 = format.mod1 & 0x7;
 
 		pred_3 = this->ReadPred(pred_id_3);
 
-		if (((fmt.mod1 >> 3) & 0x1))
+		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
 
 		// Compare
-        cmp_op = ((fmt.op1 & 0x1u) << 2) | (fmt.mod1 >> 10);
+        cmp_op = ((format.op1 & 0x1u) << 2) | (format.mod1 >> 10);
 
 		if (cmp_op == 1)
 			cmp_res = srcA < srcB;
@@ -932,7 +932,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 			std::cerr << __func__ <<": compare operation (" << cmp_op << ") not implemented\n";
 
 		// Logic
-		bool_op = (fmt.mod1 >> 6) & 0x3;
+		bool_op = (format.mod1 >> 6) & 0x3;
 		if (bool_op == 0)
 		{
 			pred_1 = cmp_res && pred_3;
@@ -952,8 +952,8 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 			std::cerr << __func__ <<": bitwise operation " << bool_op << " not implemented\n";
 
 		/* Write */
-		pred_id_1 = (fmt.dst >> 3) & 0x7;
-		pred_id_2 = fmt.dst & 0x7;
+		pred_id_1 = (format.dst >> 3) & 0x7;
+		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
 			this->WritePred(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
@@ -966,9 +966,9 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISETP op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<this->getWarpId() <<" ISETP op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<" cmp "<< cmp_op << " bool " << bool_op
 				<<std::endl;
 	}
@@ -980,7 +980,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	//Emu* emu = Emu::getInstance();
 	Warp* warp = this->getWarp();
@@ -1004,7 +1004,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	// Active
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1199,7 +1199,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 
         			// There is supposed to be no entries between the pcs.
         			if(stack->popTillTarget(target_pc, pc))
-        				misc::Panic("Stack entries found between pc to"
+        				throw misc::Panic("Stack entries found between pc to"
         						" target pc when backward BRA\n");
         		}
         	}
@@ -1220,7 +1220,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emu* emu = Emu::getInstance();
@@ -1249,7 +1249,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1259,12 +1259,12 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = fmt.srcB;
-		if (fmt.srcB_mod == 0)
+		src_id = format.srcB;
+		if (format.srcB_mod == 0)
 		{
 			emu->ReadConstMem(src_id << 2, 4, (char*)&src);
 		}
-		else if (fmt.srcB_mod == 1)
+		else if (format.srcB_mod == 1)
 			src = this->ReadGPR(src_id);
 
 
@@ -1273,7 +1273,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 		dst = src;
 
 		/* Write */
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
 
@@ -1283,9 +1283,9 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-        		<<this->getWarpId() <<" MOV_B op0 "<<fmt.op0;
-        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-        		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+        		<<this->getWarpId() <<" MOV_B op0 "<<format.op0;
+        std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+        		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
         		<<std::endl;
 	}
 
@@ -1364,7 +1364,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 	Emu* emu = Emu::getInstance();
 
 	// Predicates and active masks
@@ -1395,7 +1395,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1405,12 +1405,12 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		if(fmt.op1 & 0x1) 	//offset direction
-			addr = this->ReadGPR(fmt.mod0) - (fmt.mod1 << 19) - fmt.srcB;
+		if(format.op1 & 0x1) 	//offset direction
+			addr = this->ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
 		else
-			addr = this->ReadGPR(fmt.mod0) + (fmt.mod1 << 19) + fmt.srcB;
+			addr = this->ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
 
-		data_type = (fmt.op1 >> 2) & 0x7;
+		data_type = (format.op1 >> 2) & 0x7;
 
 		// Execute
 		emu->ReadGlobalMem(addr, 4, (char*)dst);
@@ -1420,7 +1420,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 			emu->ReadGlobalMem(addr + 8, 8, (char*)&dst[2]);
 
 		/* Write */
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst[0]);
 
 
@@ -1439,9 +1439,9 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" LD op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<this->getWarpId() <<" LD op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
 	}
 
@@ -1452,7 +1452,7 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	// Inst bytes format
 
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -1483,7 +1483,7 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1493,10 +1493,10 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		dst = ReadGPR(dst_id);
 
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		src = ReadGPR(src_id);
 
 		// Execute
@@ -1504,8 +1504,8 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 		if (id_in_warp == 0 && getenv("M2S_KPL_ISA_DEBUG"))
 		{
 			std::cout << "LDS PC = " << std::hex << warp->getPC() << std::endl;
-			std::cerr<<" dst " << std::hex <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+			std::cerr<<" dst " << std::hex <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+                 <<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
                  <<std::endl;
 
 		}
@@ -1514,7 +1514,7 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 		// write back
 		WriteGPR(dst_id, dst);
 
-		if (((fmt.mod1 >> 9) & 0x7) == 5)
+		if (((format.mod1 >> 9) & 0x7) == 5)
 		{
 			src += sizeof(int);
 			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
@@ -1522,9 +1522,9 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 		}
 
 		// FIXME not verified
-		if (((fmt.mod1 >> 9) & 0x7) == 6)
+		if (((format.mod1 >> 9) & 0x7) == 6)
 		{
-			misc::Panic("Instruction LDS: 128 bit operation.\n");
+			throw misc::Panic("Instruction LDS: 128 bit operation.\n");
 
 			// if the panic above is met, remove the comment sign below
 			/*
@@ -1556,7 +1556,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	InstBytesLDC format = inst_bytes.ldc;
 
 	// Operands Type
-	// int u_or_s = fmt.u_or_s;
+	// int u_or_s = format.u_or_s;
 
 	// Operands
 	unsigned dst_id, srcA_id, srcB_id1;
@@ -1682,7 +1682,7 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	// Inst bytes format
 
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 	Emu* emu = Emu::getInstance();
 
 	// Predicates and active masks
@@ -1713,7 +1713,7 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1723,12 +1723,12 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		if(fmt.op1 & 0x1) 	//offset direction
-			addr = this->ReadGPR(fmt.mod0) - (fmt.mod1 << 19) - fmt.srcB;
+		if(format.op1 & 0x1) 	//offset direction
+			addr = this->ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
 		else
-			addr = this->ReadGPR(fmt.mod0) + (fmt.mod1 << 19) + fmt.srcB;
-		data_type = (fmt.op1 >> 2) & 0x7;
-		src_id = fmt.dst;
+			addr = this->ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
+		data_type = (format.op1 >> 2) & 0x7;
+		src_id = format.dst;
 		src[0] = this->ReadGPR(src_id);
 		if (data_type > 4)
 			src[1] = this->ReadGPR(src_id + 1);
@@ -1753,9 +1753,9 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-                 <<this->getWarpId() <<" ST op0 "<<fmt.op0;
-        std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+                 <<this->getWarpId() <<" ST op0 "<<format.op0;
+        std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+                 <<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
                  <<std::endl;
 	}
 }
@@ -1764,7 +1764,7 @@ void Thread::ExecuteInst_STS(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -1795,7 +1795,7 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -1808,17 +1808,17 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	{
 		// Read, note that dst and src are changed with each other
 		// comparing with other instructions
-		dst_id = fmt.mod0;
+		dst_id = format.mod0;
 		dst = ReadGPR(dst_id);
 
-		src_id = fmt.dst;
+		src_id = format.dst;
 		src = ReadGPR(src_id);
 
 		if (id_in_warp == 0 && getenv("M2S_KPL_ISA_DEBUG"))
 		{
 			std::cerr << "PC = " << std::hex << warp->getPC() << std::endl;
-        std::cerr<<" dst " << std::hex <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-                 <<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+        std::cerr<<" dst " << std::hex <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+                 <<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
                  <<std::endl;
 		}
 		// Execute
@@ -1826,7 +1826,7 @@ void Thread::ExecuteInst_STS(Inst *inst)
 
 		thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
 
-		if (((fmt.mod1 >> 9) & 0x7) == 5)
+		if (((format.mod1 >> 9) & 0x7) == 5)
 		{
 			src = ReadGPR(src_id + 1);
 			thread_block->writeSharedMem(dst + sizeof(int),
@@ -1834,9 +1834,9 @@ void Thread::ExecuteInst_STS(Inst *inst)
 		}
 
 		// FIXME not verified
-		if (((fmt.mod1 >> 9) & 0x7) == 6)
+		if (((format.mod1 >> 9) & 0x7) == 6)
 		{
-			misc::Panic("Instruction STS: 128 bit operation.\n");
+			throw misc::Panic("Instruction STS: 128 bit operation.\n");
 			// if the panic above is met, remove the comment sign below
 			/*
 			src = ReadGPR(src_id + 1);
@@ -2105,7 +2105,7 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 {
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -2133,7 +2133,7 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -2143,19 +2143,19 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = fmt.srcB & 0xff;
+		src_id = format.srcB & 0xff;
 		if (src_id == SR_CLOCKLO)	//No cycle count for now
 			;//src = this->grid->emu->inst_count & 0xffffffff;
 		else if (src_id == SR_CLOCKHI)
 			;//src = (this->grid->emu->inst_count >> 32) & 0xffffffff;
-		else if (fmt.srcB_mod == 1)
+		else if (format.srcB_mod == 1)
 			src = this->ReadSR(src_id);
 
 		// Execute
 		dst = src;
 
 		// Write
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
 
@@ -2165,9 +2165,9 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" S2R op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<this->getWarpId() <<" S2R op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
 	}
 
@@ -2293,7 +2293,7 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -2318,7 +2318,7 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -2356,9 +2356,9 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" S2R op0 "<<fmt.op0;
-		std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " <<fmt.srcB
-				<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+				<<this->getWarpId() <<" S2R op0 "<<format.op0;
+		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
+				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
 	}
 }
@@ -2390,7 +2390,64 @@ void Thread::ExecuteInst_BRX(Inst *inst)
 
 void Thread::ExecuteInst_CAL(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Inst bytes format	//FIXME S2R description missing in Inst.h
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesCAL format = inst_bytes.cal;
+
+	// Predicates and active masks
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	// Get instruction offset
+	int offset = format.offset >> 23 ?
+						format.offset | 0xff000000 : format.offset;
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (warp->getSyncStack()->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// FIXME naive here
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+	{
+		stack->push(warp->getPC() + 8,
+					stack->getActiveMask(),
+					SyncStackEntryCAL);
+		warp->setTargetpc(warp->getPC() + offset + warp->getInstSize());
+	}
+
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr<< "Warp id "<< std::hex
+				<<this->getWarpId() <<" CAL op0 "<<format.op0 << " offset "
+				<<format.offset << " op1 "<< format.op1 <<std::endl;
+	}
+	//this->ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_PRET(Inst *inst)
@@ -2585,7 +2642,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 fmt = inst_bytes.general0;
+	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emu* emu = Emu::getInstance();
@@ -2616,7 +2673,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Predicate
-	pred_id = fmt.pred;
+	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
@@ -2626,12 +2683,12 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
-		src_id = fmt.mod0;
+		src_id = format.mod0;
 		srcA = this->ReadGPR(src_id);
-		src_id = fmt.srcB;
+		src_id = format.srcB;
 
 		// FIXME == 0 has not been observed.
-		if (fmt.srcB_mod == 1)
+		if (format.srcB_mod == 1)
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 		else
 			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
@@ -2647,7 +2704,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 			dst = dst | (0xffffffff << len);
 
 		/* Write */
-		dst_id = fmt.dst;
+		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
 
@@ -2657,9 +2714,9 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	if(getenv("M2S_KPL_ISA_DEBUG"))
 	{
     std::cerr<< "Warp id "<< std::hex
-      		<<this->getWarpId() <<" BFE op0 "<<fmt.op0;
-    std::cerr<<" dst " <<fmt.dst <<" mod0 " <<fmt.mod0 << " s " <<fmt.s << " srcB " << srcB
-       		<<" mod1 " <<fmt.mod1 << " op1 "<< fmt.op1 <<" srcB_mod " <<fmt.srcB_mod
+      		<<this->getWarpId() <<" BFE op0 "<<format.op0;
+    std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " << srcB
+       		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
        		<<std::endl;
 	}
 	//this->ISAUnimplemented(inst);
@@ -2693,7 +2750,76 @@ void Thread::ExecuteInst_LONGJMP(Inst *inst)
 
 void Thread::ExecuteInst_RET(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+
+	// Inst bytes format	//FIXME S2R description missing in Inst.h
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesGeneral2 format = inst_bytes.general2;
+
+	// Predicates and active masks
+	Warp* warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack();
+
+	unsigned temp_am;
+	unsigned temp_addr;
+
+	unsigned pred;
+	unsigned pred_id;
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		if (stack->checkCAL(temp_addr, temp_am))
+		{
+			// In case of RET in middle of function,
+			// pop all entries before a CAL
+			stack->popTillTarget(temp_addr, warp->getPC());
+
+			if (!warp->getSyncStack()->pop(temp_addr, temp_am))
+			{
+				std::cerr << "Get address" << std::hex << temp_addr << std::endl;
+				stack->Dump();
+				throw misc::Panic("Instruction RET: cannot find return address");
+			}
+		}
+		else
+		{
+			throw misc::Panic("Sync stack does not clean at instrunction RET:"
+					" other entry exists before a CAL.\n");
+		}
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// FIXME naive here
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(temp_addr);
+
+	if(getenv("M2S_KPL_ISA_DEBUG"))
+	{
+		std::cerr << "RET Warp id "<< std::hex
+				<<this->getWarpId() <<" CAL op0 "<<format.op0
+				<< " offset " <<format.mod << " mod "<< format.op1 << std::endl;
+		std::cerr << "From " << std::hex << warp->getPC() << " to "
+				<< temp_addr << std::endl;
+	}
+
+	//this->ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_KIL(Inst *inst)

@@ -34,7 +34,8 @@ enum SyncStackEntryType
         SyncStackEntryBRA,
         SyncStackEntrySSY,
         SyncStackEntryPBK,
-        SyncStackEntryPCNT
+        SyncStackEntryPCNT,
+        SyncStackEntryCAL
 };
 
 enum SyncStackMaskType
@@ -213,14 +214,17 @@ public:
         bool popTillTarget(unsigned target_pc, unsigned current_pc);
 
         /// Used by BRK, check if all threads taken the loop have break.
-        /// \param address The first PBK reconvergence pc
+        /// \param address Return the first PBK reconvergence pc
         bool checkBRK(unsigned& address);
 
         /// Used by CONT, check if all threads taken the loop have continued.
-        /// \param address The first PCNT reconvergence pc
+        /// \param address Return the first PCNT reconvergence pc
         bool checkCONT(unsigned& address);
 
-        //unsigned checkSyncStack(unsigned);
+        /// Used by RET, check if the sync stack top has a CAL entry
+        /// \param address Return the first CAL entry's pc
+        /// \param address Return the first CAL entry's active mask
+        bool checkCAL(unsigned& address, unsigned& active_mask);
 
         void Dump(std::ostream &os = std::cout) const;
 

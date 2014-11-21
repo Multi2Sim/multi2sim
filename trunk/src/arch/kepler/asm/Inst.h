@@ -404,6 +404,7 @@ struct InstBytesPCNT
 
 
 // BRK
+// cc not verified
 struct InstBytesBRK
 {
 	unsigned long long int op0:			  2; // 1:0
@@ -426,6 +427,21 @@ struct InstBytesCONT
 	unsigned long long int unknown1:     33; // 54:22
 	unsigned long long int op1:			  9; // 63:55
 };
+
+
+// CAL
+// constant unverified
+struct InstBytesCAL
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int unknown0:	 16; // 17:2
+	unsigned long long int pred:	      4; // 21:18
+	unsigned long long int unknown1:	  1; // 22:22
+	unsigned long long int offset:       24; // 46:23
+	unsigned long long int unknown2:	  8; // 54:47
+	unsigned long long int op1:			  9; // 63:55
+};
+
 
 // IADD
 struct InstBytesIADD
@@ -466,6 +482,7 @@ union InstBytes
 	InstBytesCONT	  cont;
 	InstBytesBRK	  brk;
 	InstBytesPCNT	  pcnt;
+	InstBytesCAL      cal;
 	InstBytesIADD     iadd;
 };
 
