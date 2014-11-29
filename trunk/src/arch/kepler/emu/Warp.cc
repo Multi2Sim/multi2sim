@@ -38,6 +38,8 @@ namespace Kepler
 Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 {
 
+	unsigned am = 0;
+
 	// Initialization
 	// Calculate the warp ID in grid
 	this->id = id + thread_block->getId() * thread_block->getWarpCount();
@@ -62,8 +64,21 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 		thread_count = grid->getThreadBlockSize() -
 		(thread_block->getWarpCount() - 1) * warp_size;
 
+	// Return Address Stack
+	return_stack = std::unique_ptr<ReturnAddressStack>(new ReturnAddressStack());
 	// SyncStack
-	sync_stack = std::unique_ptr<SyncStack>(new SyncStack(thread_count));
+	std::unique_ptr<SyncStack> sync_stack(new SyncStack(thread_count));
+
+	// Initialize active mask
+	if (thread_count == warp_size)
+            am = unsigned(-1);
+	else
+            am = (1u << thread_count) - 1;
+
+	// Push the default sync stack for main kernel function.
+	return_stack->push(0, am, sync_stack);
+
+	this->getSyncStack()->get()->setActiveMask(am);
 
 	// Instruction
 	pc = 0;
@@ -72,11 +87,6 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
 	inst_buffer = grid->getInstBuffer();
 	inst_buffer_size = grid->getInstBufferSize();
 
-	// Initialize active mask
-	if (thread_count == warp_size)
-            sync_stack.get()->setActiveMask(unsigned(-1));
-	else
-            sync_stack.get()->setActiveMask((1u << thread_count) - 1);
 
 	// Reset flags
 	at_barrier_thread_count = 0;

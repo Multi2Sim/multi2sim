@@ -30,7 +30,7 @@
 #include <lib/util/bit-map.h>
 
 #include "Grid.h"
-#include "SyncStack.h"
+#include "ReturnAddressStack.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
 
@@ -93,8 +93,11 @@ class Warp
 	// The whole instruction buffer size in bytes
 	unsigned inst_buffer_size;
 	
+	// Return address stack
+	std::unique_ptr<ReturnAddressStack> return_stack;
+
 	// Synchronization stack
-	std::unique_ptr<SyncStack> sync_stack;
+	// std::unique_ptr<SyncStack> sync_stack;
 
 	// Flags updated during instruction execution
 	unsigned at_barrier_thread_count;
@@ -171,7 +174,16 @@ public:
 
 
 	/// Get synchronization stack
-	SyncStack* getSyncStack() const { return sync_stack.get(); }
+	std::unique_ptr<SyncStack>* getSyncStack() const
+	{
+		return return_stack->getTopSyncStack();
+	}
+
+	/// Get return address stack
+	std::unique_ptr<ReturnAddressStack>* getReturnAddressStack()
+	{
+		return &return_stack;
+	}
 
 	/// Get the number of threads forming the warp.
 	unsigned getThreadCount() const { return thread_count; }

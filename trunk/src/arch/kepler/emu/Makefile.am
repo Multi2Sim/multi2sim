@@ -18,6 +18,9 @@ libemu_a_SOURCES = \
 	SyncStack.h\
 	SyncStack.cc\
 	\
+	ReturnAddressStack.h\
+	ReturnAddressStack.cc\
+	\
 	Warp.cc \
 	Warp.h \
 	\
