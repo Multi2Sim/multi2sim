@@ -242,6 +242,12 @@ public:
 		return &basic_blocks;
 	}
 
+	/// Return number of basic blocks in the function
+	int getNumBasicBlocks()
+	{
+		return basic_blocks.size();
+	}
+
 	/// Create a basic block that belongs to the function, and return a
 	/// pointer to it. The new basic block will be internally freed when the
 	/// function object is destroyed.
