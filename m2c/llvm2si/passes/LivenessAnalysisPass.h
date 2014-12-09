@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Ce Gao (gaoce@coe.neu.edu)
+ *  Copyright (C) 2014  Charu Kalra (ckalra@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,192 +35,182 @@ namespace llvm2si
 
 class BasicBlockLivenessAnalysisPassInfo : public comm::BasicBlockPassInfo
 {
-        // Hash tables mapping basic block id to the corresponding bitmaps for
-	// vector register def, use, live_out, live_in sets
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> vector_def_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> vector_use_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> vector_out_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> vector_in_map;
+	std::unique_ptr<misc::Bitmap>vector_def_info;
+	std::unique_ptr<misc::Bitmap>vector_use_info;
+	misc::Bitmap *vector_in_info;
+	misc::Bitmap *vector_out_info;
 
-        // Hash tables mapping basic block id to the corresponding bitmaps for
-	// scalar register def, use, live_out, live_in sets
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> scalar_def_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> scalar_use_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> scalar_out_map;
-	std::unordered_map<int, std::unique_ptr<misc::Bitmap>> scalar_in_map;
+	std::unique_ptr<misc::Bitmap>scalar_def_info;
+	std::unique_ptr<misc::Bitmap>scalar_use_info;
+	misc::Bitmap *scalar_in_info;
+	misc::Bitmap *scalar_out_info;
 
 public:
 
-	/// Return vector def set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getVectorDefSet(int basic_block_id) const
+	void ResetVectorDefInfo(int size)
 	{
-		auto it = vector_def_map.find(basic_block_id);
-		return it == vector_def_map.end() ? nullptr : it->second.get();
+		vector_def_info = misc::new_unique<misc::Bitmap>(size);
+		vector_def_info->Reset();
 	}
 
-	/// Return vector use set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getVectorUseSet(int basic_block_id) const
+	void ResetVectorUseInfo(int size)
 	{
-		auto it = vector_use_map.find(basic_block_id);
-		return it == vector_use_map.end() ? nullptr : it->second.get();
+		vector_use_info =  misc::new_unique<misc::Bitmap>(size);
+		vector_use_info->Reset();
 	}
 
-	/// Return vector out set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getVectorOutSet(int basic_block_id) const
+	void ResetVectorInInfo(int size)
 	{
-		auto it = vector_out_map.find(basic_block_id);
-		return it == vector_out_map.end() ? nullptr : it->second.get();
+		vector_in_info = new misc::Bitmap(size);
+		vector_in_info->Reset();
 	}
 
-	/// Return vector def set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getVectorInSet(int basic_block_id) const
+	void ResetVectorOutInfo(int size)
 	{
-		auto it = vector_in_map.find(basic_block_id);
-		return it == vector_in_map.end() ? nullptr : it->second.get();
+		vector_out_info =  new misc::Bitmap(size);
+		vector_out_info->Reset();
 	}
 
-	/// Return scalar def set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getScalarDefSet(int basic_block_id) const
+	void SetVectorDefInfo(misc::Bitmap *dummy_vdef)
 	{
-		auto it = scalar_def_map.find(basic_block_id);
-		return it == scalar_def_map.end() ? nullptr : it->second.get();
+		*vector_def_info = *dummy_vdef;
 	}
 
-	/// Return scalar use set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getScalarUseSet(int basic_block_id) const
+	void SetVectorUseInfo(misc::Bitmap *dummy_vuse)
 	{
-		auto it = scalar_use_map.find(basic_block_id);
-		return it == scalar_use_map.end() ? nullptr : it->second.get();
+		*vector_use_info = *dummy_vuse;
 	}
 
-	/// Return vector out set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getScalarOutSet(int basic_block_id) const
+	void SetVectorInInfo(misc::Bitmap *dummy_vin)
 	{
-		auto it = scalar_out_map.find(basic_block_id);
-		return it == scalar_out_map.end() ? nullptr : it->second.get();
+		*vector_in_info = *dummy_vin;
 	}
 
-	/// Return scalar def set associated with the basic block id, or a
-	/// nullptr if the id is not found
-	misc::Bitmap *getScalarInSet(int basic_block_id) const
+	void SetVectorOutInfo(misc::Bitmap *dummy_vout)
 	{
-		auto it = scalar_in_map.find(basic_block_id);
-		return it == scalar_in_map.end() ? nullptr : it->second.get();
+		*vector_out_info = *dummy_vout;
 	}
 
-	/// Reset the vector def set to 0 at all locations
-	misc::Bitmap *resetVectorDefSet(int basic_block_id, int num_registers)
+	misc::Bitmap GetVectorDefInfo()
 	{
-		vector_def_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return vector_def_map[basic_block_id].get();
+		return *vector_def_info;
 	}
 
-	/// Reset the vector use set to 0 at all locations
-	misc::Bitmap *resetVectorUseSet(int basic_block_id, int num_registers)
+	misc::Bitmap GetVectorUseInfo()
 	{
-		vector_use_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return vector_use_map[basic_block_id].get();
+		return *vector_use_info;
 	}
 
-	/// Reset the vector out set to 0 at all locations
-	misc::Bitmap *resetVectorOutSet(int basic_block_id, int num_registers)
+	misc::Bitmap* GetVectorInInfo()
 	{
-		vector_out_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return vector_out_map[basic_block_id].get();
+		return vector_in_info;
 	}
 
-	/// Reset the vector in set to 0 at all locations
-	misc::Bitmap *resetVectorInSet(int basic_block_id, int num_registers)
+	misc::Bitmap* GetVectorOutInfo()
 	{
-		vector_in_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return vector_in_map[basic_block_id].get();
+		return vector_out_info;
 	}
 
-	/// Reset the scalar def set to 0 at all locations
-	misc::Bitmap *resetScalarDefSet(int basic_block_id, int num_registers)
+	void ResetScalarDefInfo(int size)
 	{
-		scalar_def_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return scalar_def_map[basic_block_id].get();
+		scalar_def_info = misc::new_unique<misc::Bitmap>(size);
+		scalar_def_info->Reset();
 	}
 
-	/// Reset the scalar use set to 0 at all locations
-	misc::Bitmap *resetScalarUseSet(int basic_block_id, int num_registers)
+	void ResetScalarUseInfo(int size)
 	{
-		scalar_use_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return scalar_use_map[basic_block_id].get();
+		scalar_use_info =  misc::new_unique<misc::Bitmap>(size);
+		scalar_use_info->Reset();
 	}
 
-	/// Reset the scalar out set to 0 at all locations
-	misc::Bitmap *resetScalarOutSet(int basic_block_id, int num_registers)
+	void ResetScalarInInfo(int size)
 	{
-		scalar_out_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return scalar_out_map[basic_block_id].get();
+		scalar_in_info = new misc::Bitmap(size);
+		scalar_in_info->Reset();
 	}
 
-	/// Reset the scalar in set to 0 at all locations
-	misc::Bitmap *resetScalarInSet(int basic_block_id, int num_registers)
+	void ResetScalarOutInfo(int size)
 	{
-		scalar_in_map[basic_block_id] =
-				misc::new_unique<misc::Bitmap>(num_registers);
-		return scalar_in_map[basic_block_id].get();
+		scalar_out_info = new misc::Bitmap(size);
+		scalar_out_info->Reset();
 	}
 
-	/// Destructor
-	~BasicBlockLivenessAnalysisPassInfo() {}
+	void SetScalarDefInfo(misc::Bitmap *dummy_sdef)
+	{
+		*scalar_def_info = *dummy_sdef;
+	}
+
+	void SetScalarUseInfo(misc::Bitmap *dummy_suse)
+	{
+			*scalar_use_info = *dummy_suse;
+	}
+
+	void SetScalarInInfo(misc::Bitmap *dummy_sin)
+	{
+		*scalar_in_info = *dummy_sin;
+	}
+
+	void SetScalarOutInfo(misc::Bitmap *dummy_sout)
+	{
+		*scalar_out_info = *dummy_sout;
+	}
+
+	misc::Bitmap GetScalarDefInfo()
+	{
+		return *scalar_def_info;
+	}
+
+	misc::Bitmap GetScalarUseInfo()
+	{
+		return *scalar_use_info;
+	}
+
+	misc::Bitmap* GetScalarInInfo()
+	{
+		return scalar_in_info;
+	}
+
+	misc::Bitmap* GetScalarOutInfo()
+	{
+		return scalar_out_info;
+	}
+
+	~BasicBlockLivenessAnalysisPassInfo()
+	{
+		delete vector_in_info;
+		delete vector_out_info;
+		delete scalar_in_info;
+		delete scalar_out_info;
+	}
 };
 
 class LivenessAnalysisPass : public comm::Pass
 {
-	// Function to run LivenessAnalysis on
-	llvm2si::Function *function;
-	
-public:
+	/// Function to run LivenessAnalysis on
+	llvm2si::Function *lap_function;
 
-	/// Constructor
-	LivenessAnalysisPass(llvm2si::Function *function) :
-		function(function)
-	{
-	}
+	public:
 
-	/*
-	bool hasInfo;
-	setInfo;
-	*/
+		/// Constructor
+		LivenessAnalysisPass(llvm2si::Function *function) :
+			lap_function(function)
+		{
+			std::cout << "I am at the constructor\n";
+		}
 
-	/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
-	template<typename ConcreteType> ConcreteType *getInfo(
-			BasicBlock *basic_block)
-	{
-		return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
-	}
+		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
+		template<typename ConcreteType> ConcreteType *getInfo(BasicBlock *basic_block)
+		{
+			return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
+		}
 
-	/// Run the Liveness Analysis Pass
-	void run();
+		void run();
 
-	/// Dump the Liveness information for debug purposes
-	void dump(std::ostream &os) const;
+		void dump(std::ostream &os);
 
-	/// Destructor
-	~LivenessAnalysisPass() {}
+		~LivenessAnalysisPass() {}
 };
 
-
-}  // namespace llvm2si
-
+}
 
 #endif
-
