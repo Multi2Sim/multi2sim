@@ -37,6 +37,7 @@
 
 // TODO: Figure out a way to include all passes once.
 #include "passes/DataDependencyPass.h"
+#include "passes/LivenessAnalysisPass.h"
 
 namespace llvm2si
 {
@@ -105,6 +106,10 @@ void Context::Parse(const std::string &in, const std::string &out)
 		function->EmitBody();
 		function->EmitControlFlow();
 		function->EmitPhi();
+
+		LivenessAnalysisPass lap(function);
+		lap.run();
+		//// lap.dump(std::cout);
 
 		// Dump code
 		f << *function;
