@@ -26,8 +26,6 @@ namespace llvm2si
 /// every basic block using information from Phase 1
 void LivenessAnalysisPass::run()
 {
-	std::cout << "I am running Liveness Analysis \n";
-
 	/// Create a basic block queue
 	std::vector<llvm2si::BasicBlock *> basic_block_queue;
 
