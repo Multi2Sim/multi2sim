@@ -195,7 +195,7 @@ class LivenessAnalysisPass : public comm::Pass
 		LivenessAnalysisPass(llvm2si::Function *function) :
 			lap_function(function)
 		{
-			std::cout << "I am at the constructor\n";
+
 		}
 
 		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
