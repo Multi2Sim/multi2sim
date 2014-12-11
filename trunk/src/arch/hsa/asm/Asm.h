@@ -23,9 +23,6 @@
 #include <arch/common/Asm.h>
 #include <lib/cpp/CommandLine.h>
 
-#include "BrigInstEntry.h"
-
-
 namespace HSA
 {
 
@@ -37,13 +34,6 @@ class Asm : public comm::Asm
 
 protected:
 	
-	// The decode table, 
-	struct InstInfo inst_info[InstOpcodeCount];
-
-	// Fill in the inst info with the data from Inst.def
-	void InitTable(InstOpcode opcode,
-			const char *name, const char *fmt_str);
-
 	// Instance of the singleton
 	static std::unique_ptr<Asm> instance;
 
@@ -58,15 +48,13 @@ public:
 	/// Checks if the elf file to be loaded
 	static bool isValidBrigELF(const std::string &path)
 	{
-		BrigFile bf(path.c_str());
-		return bf.isValid();
+		//BrigFile bf(path.c_str());
+		//return bf.isValid();
+		return true;
 	}
 	
 	/// Returns the pointer to the only instance of has disassembler
 	static Asm *getInstance();
-
-	/// Return an array with instruction information
-	const struct InstInfo *getInstInfo() const { return inst_info; }
 
 	/// Disassemble the Brig file into HSAIL format
 	void DisassembleBinary(const std::string &path) const;
