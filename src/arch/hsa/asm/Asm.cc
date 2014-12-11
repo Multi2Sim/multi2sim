@@ -18,9 +18,6 @@
  */
 
 #include "Asm.h"
-#include "BrigFile.h"
-#include "BrigSection.h"
-#include "BrigDirEntry.h"
 
 namespace HSA
 {
@@ -76,26 +73,12 @@ Asm *Asm::getInstance()
 
 Asm::Asm()
 {
-	
-#define DEFINST(_name, _opstr)	\
-		InitTable(Inst_##_name, #_name, _opstr);
-#include "Inst.def"
-#undef DEFINST
-	
 	indent = 0;
 }
 
-
-void Asm::InitTable(InstOpcode opcode, const char *name, const char *fmt_str)
-{
-	inst_info[opcode].opcode = opcode;
-	inst_info[opcode].name = name;
-	inst_info[opcode].fmt_str = fmt_str;	
-}
-
-
 void Asm::DisassembleBinary(const std::string &path) const
 {
+	/*
 	BrigFile brig_file(path.c_str());
 	BrigSection *brig_section = 
 			brig_file.getBrigSection(BrigSectionDirective);
@@ -114,6 +97,7 @@ void Asm::DisassembleBinary(const std::string &path) const
 		dir.Dump();
 		buffer_pointer = dir.nextTop();
 	}
+	*/
 }
 
 }  // namespace HSA

@@ -34,13 +34,14 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
-#include <arch/hsa/driver/Driver.h>
-#include <arch/hsa/emu/Emu.h>
+//#include <arch/hsa/driver/Driver.h>
+//#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <dram/System.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
 #include <memory/MMU.h>
+#include <memory/Manager.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
@@ -125,8 +126,7 @@ void RegisterArchitectures()
 
 	// HSA
 	arch_pool->Register("HSA",
-			HSA::Asm::getInstance(),
-			HSA::Emu::getInstance());
+			HSA::Asm::getInstance());
 
 	// Kepler
 	arch_pool->Register("Kepler",
@@ -165,8 +165,8 @@ void RegisterDrivers()
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 
 	// HSA driver
-	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	driver_pool->Register(hsa_driver);
+	// HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	// driver_pool->Register(hsa_driver);
 
 	// Kepler driver
 	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
@@ -213,10 +213,12 @@ void LoadProgram(const std::vector<std::string> &args,
 	case 0: // ELF file for HSA Brig format do not have machine code
 		// FIXME: Rather than preload the whole brig file, modify the 
 		// 	ELFReader to support brig file validation
+		/*
 		if(HSA::Asm::isValidBrigELF(exe))
 		{
 			emu = HSA::Emu::getInstance();
 		}
+		*/
 		break;
 
 	default:
@@ -511,8 +513,8 @@ int MainProgram(int argc, char **argv)
 	// Read command line
 	RegisterOptions();
 	HSA::Asm::RegisterOptions();
-	HSA::Driver::RegisterOptions();
-	HSA::Emu::RegisterOptions();
+	// HSA::Driver::RegisterOptions();
+	// HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
@@ -533,8 +535,8 @@ int MainProgram(int argc, char **argv)
 	// Process command line
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
-	HSA::Driver::ProcessOptions();
-	HSA::Emu::ProcessOptions();
+//	HSA::Driver::ProcessOptions();
+//	HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();
