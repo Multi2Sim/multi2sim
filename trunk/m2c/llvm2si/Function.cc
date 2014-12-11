@@ -25,8 +25,6 @@
 #include "BasicBlock.h"
 #include "Context.h"
 #include "Function.h"
-#include "InterferenceGraph.h"
-
 
 // FIXME - This is against the coding guidelines, but all the code for the
 // back-end and disassembler will eventually be restructure to revolve around
