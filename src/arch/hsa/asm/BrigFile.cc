@@ -18,26 +18,21 @@
  */
 
 #include "BrigFile.h"
-#include "BrigDirEntry.h"
 
 namespace HSA
 {
 
-BrigFile::BrigFile(const std::string &path)
-		: 
+BrigFile::BrigFile(const std::string &path): 
 		file(path),
-		brig_sections(6)
+		brig_sections()
 {	
-	for(int i=0; i<file.getNumSections(); i++)
+	std::cout << "Brig file loaded\n";
+	for (int i = 0; i < file.getNumSections(); i++)
 	{
-		BrigSection * section = new BrigSection(file.getSection(i));
-
-		//only add known section to section list
-		if(section->getType() >= 0 && section->getType() <= 5)
-		{
-			this->brig_sections[section->getType()] = 
-					std::unique_ptr<BrigSection> (section);
-		} 
+		auto section = misc::new_unique<BrigSection>(
+				file.getSection(i));
+		section->DumpSectionHex(std::cout);
+		brig_sections.push_back(std::move(section));
 	}
 }
 
@@ -47,9 +42,9 @@ BrigFile::~BrigFile()
 }
 
 
-BrigSection *BrigFile::getBrigSection(BrigSectionType type) const
+BrigSection *BrigFile::getBrigSection(unsigned int index) const
 {
-	return this->brig_sections[type].get();
+	return this->brig_sections[index].get();
 }
 
 
@@ -79,7 +74,7 @@ bool BrigFile::isValid() const
 	return true;
 }
 
-
+/*
 char *BrigFile::findMainFunction()
 {
 	// get pointers to code and dir section
@@ -118,5 +113,6 @@ char *BrigFile::findMainFunction()
 	}
 	return nullptr;
 }
+*/
 
 }  // namespace HSA
