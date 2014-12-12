@@ -37,6 +37,7 @@
 //#include <arch/hsa/driver/Driver.h>
 //#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
+#include <arch/arm/asm/Asm.h>
 #include <dram/System.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
@@ -526,6 +527,7 @@ int MainProgram(int argc, char **argv)
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
 	dram::System::RegisterOptions();
+	ARM::Asm::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -548,6 +550,7 @@ int MainProgram(int argc, char **argv)
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
 	dram::System::ProcessOptions();
+	ARM::Asm::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers
 	RegisterArchitectures();
