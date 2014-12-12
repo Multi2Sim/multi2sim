@@ -29,40 +29,6 @@ BrigSection::BrigSection(ELFReader::Section *elfSection)
 	this->elf_section = elfSection;
 	std::string sectionName = elfSection->getName();	
 	
-	//Determine section type according to its name
-	if (sectionName.compare(".strtab") == 0)
-	{
-		this->type = BrigSectionString; 
-	}
-	else if (sectionName.compare(".directives") == 0)
-	{
-		this->type = BrigSectionDirective;
-	}
-	else if (sectionName.compare(".operands") == 0)
-	{
-		this->type = BrigSectionOperand;
-	}
-	else if (sectionName.compare(".code") == 0)
-	{
-		this->type = BrigSectionCode;
-	}
-	else if (sectionName.compare(".debug") == 0)
-	{
-		this->type = BrigSectionDebug;
-	}
-	else if (sectionName.compare(".shstrtab") == 0)
-	{
-		this->type = BrigSectionShstrtab;
-	}
-	else if (sectionName.compare("") == 0)
-	{
-		this->type = BrigSectionUnknown;
-	}
-	else
-	{
-		this->type = BrigSectionUnknown;
-		throw misc::Panic("Unexpected section: " + sectionName);
-	}
 }
 
 
@@ -71,7 +37,7 @@ BrigSection::~BrigSection()
 }
 
 
-void BrigSection::dumpSectionHex(std::ostream &os = std::cout) const
+void BrigSection::DumpSectionHex(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n********** Section %s **********\n", 
 			this->getName().c_str());

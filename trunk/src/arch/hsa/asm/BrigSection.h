@@ -65,7 +65,7 @@ public:
 	BrigSectionType getType() const { return this->type; }
 
 	/// Dump section on stdout in HEX
-	void dumpSectionHex(std::ostream &os) const;
+	void DumpSectionHex(std::ostream &os) const;
 
 };
 
