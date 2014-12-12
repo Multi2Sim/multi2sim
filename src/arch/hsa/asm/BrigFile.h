@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef HSA_ASM_BRIGFILE_H
-#define HSA_ASM_BRIGFILE_H
+#ifndef ARCH_HSA_ASM_BRIGFILE_H
+#define ARCH_HSA_ASM_BRIGFILE_H
 
 #include <cstdint>
 #include <map>
@@ -26,8 +26,8 @@
 
 #include <lib/cpp/ELFReader.h>
 
-#include "BrigSection.h"
 #include "BrigDef.h"
+#include "BrigSection.h"
 
 
 namespace HSA{
@@ -39,17 +39,14 @@ class BrigSection;
 /// interfaces to the other parts of the Multi2sim.
 class BrigFile
 {
-
-protected:
-
 	// The elf file, read by ELFReader
 	ELFReader::File file;
 
 	// A vector that holds 5 sections defined in BRIG standard;
-	// brigSections[0] - .string
-	// brigSections[1] - .directive
-	// ...
-	// The index corresponds with the BrigSectionType enumerator 
+	// brigSections[0] - hsa_data
+	// brigSections[1] - hsa_code
+	// brigSections[2] - hsa_operand
+	// ... More costomized sections
 	std::vector<std::unique_ptr<BrigSection>> brig_sections;
 
 public:
@@ -64,7 +61,7 @@ public:
 	const std::string &getPath() const { return file.getPath(); }
 
 	/// Returns the section according to the type value passed in
-	BrigSection *getBrigSection(BrigSectionType type) const;
+	BrigSection *getBrigSection(unsigned int index) const;
 
 	/// Checks if the loaded brig file is a valid brig file
 	/// \return
@@ -75,8 +72,9 @@ public:
 	/// \return
 	/// 	Returns the pointer to the first insts in main function or 
 	/// 	nullptr if main function is not found;
+	/*
 	char *findMainFunction();
-
+	*/
 };
 
 } // namespace HSA

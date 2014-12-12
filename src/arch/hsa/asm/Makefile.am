@@ -5,7 +5,13 @@ libasm_a_SOURCES = \
 	BrigDef.h \
 	\
 	Asm.h \
-	Asm.cc 
+	Asm.cc \
+	\
+	BrigFile.h \
+	BrigFile.cc \
+	\
+	BrigSection.h \
+	BrigSection.cc 
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
