@@ -26,12 +26,15 @@ BrigFile::BrigFile(const std::string &path):
 		file(path),
 		brig_sections()
 {	
-	std::cout << "Brig file loaded\n";
 	for (int i = 0; i < file.getNumSections(); i++)
 	{
+		// Skip empty section
+		if (file.getSection(i)->getSize() == 0) 
+			continue;
+
+		// Create section
 		auto section = misc::new_unique<BrigSection>(
-				file.getSection(i));
-		section->DumpSectionHex(std::cout);
+				file.getSection(i), this);
 		brig_sections.push_back(std::move(section));
 	}
 }
@@ -54,15 +57,13 @@ bool BrigFile::isValid() const
 	// a valid brig file
 	std::vector<std::string> secNames =
 	{
-		".strtab", 
-		".directives",
-		".code",
-		".operands",
-		".debug"
+		"hsa_data", 
+		"hsa_code",
+		"hsa_operand",
 	};
 
 	// Traverse all sections and compare the names
-	for(unsigned int i=0; i<secNames.size(); i++)
+	for(unsigned int i=1; i<secNames.size(); i++)
 	{
 		BrigSection *sec = this->brig_sections[i].get();
 		if(!(sec->getName() == secNames[i])) 

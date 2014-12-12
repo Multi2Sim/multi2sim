@@ -11,7 +11,10 @@ libasm_a_SOURCES = \
 	BrigFile.cc \
 	\
 	BrigSection.h \
-	BrigSection.cc 
+	BrigSection.cc \
+	\
+	BrigEntry.h \
+	BrigEntry.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
