@@ -26,11 +26,11 @@
 #include "BrigFile.h"
 #include "BrigDef.h"
 
-
 namespace HSA
 {
 
 class BrigFile;
+class BrigEntry;
 
 /// This class represents a section in a BRIG file. 
 class BrigSection
@@ -38,8 +38,8 @@ class BrigSection
 
 protected:
 
-	// Type of the section
-	BrigSectionType type;
+	// Brig file that this section belongs to
+	BrigFile *binary;
 
 	// The section of the elf file. 
 	ELFReader::Section *elf_section;
@@ -47,10 +47,13 @@ protected:
 public:
 
 	/// Creates the BRIG section, set the type and read in buffer
-	BrigSection(ELFReader::Section *elfSection);
+	BrigSection(ELFReader::Section *elfSection, BrigFile *binary);
 
 	/// Deconstructor
 	~BrigSection();
+
+	/// Return the binary file that contains this section
+	BrigFile *getBinary() const { return binary; }
 
 	/// Returns the name of section
 	const std::string &getName() const { return elf_section->getName(); }
@@ -60,12 +63,16 @@ public:
 
 	/// Returns a pointer to the section contest. 
 	const char *getBuffer() const { return elf_section->getBuffer(); }
-	
-	/// Returns the type of the section
-	BrigSectionType getType() const { return this->type; }
 
 	/// Dump section on stdout in HEX
 	void DumpSectionHex(std::ostream &os) const;
+
+	/// Return an unique_ptr to the first entry in the section
+	std::unique_ptr<BrigEntry> getFirstEntry() const;
+
+	/// Return an unique_ptr to the entry at a specific offset. If the
+	/// the offset is invalid, return nullptr
+	std::unique_ptr<BrigEntry> getEntryByOffset(unsigned int offset) const;
 
 };
 

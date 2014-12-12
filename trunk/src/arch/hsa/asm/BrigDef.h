@@ -1,6 +1,8 @@
 #ifndef ARCH_HSA_ASM_BRIGDEF_H
 #define ARCH_HSA_ASM_BRIGDEF_H
 
+#include <cstdint>
+
 namespace HSA
 {
 
@@ -94,7 +96,7 @@ typedef uint8_t BrigWidth8_t;
 /// Enumerates all possible section types in a BRIG file
 enum BrigSectionType
 {
-	BrigSectionHsaData,
+	BrigSectionHsaData = 0,
 	BrigSectionHsaCode,
 	BrigSectionHsaOperand,
 	BrigSectionShstrtab

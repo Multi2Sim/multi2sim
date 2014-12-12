@@ -19,16 +19,16 @@
 
 #include <lib/cpp/String.h>
 
-#include "BrigSection.h"
 #include "BrigFile.h"
+#include "BrigEntry.h"
+#include "BrigSection.h"
 
 namespace HSA{
 
-BrigSection::BrigSection(ELFReader::Section *elfSection)
+BrigSection::BrigSection(ELFReader::Section *elfSection, BrigFile *binary):
+		binary(binary),
+		elf_section(elfSection)
 {
-	this->elf_section = elfSection;
-	std::string sectionName = elfSection->getName();	
-	
 }
 
 
@@ -56,6 +56,30 @@ void BrigSection::DumpSectionHex(std::ostream &os = std::cout) const
 		}
 	}
 	os << "\n";
+}
+
+
+std::unique_ptr<BrigEntry> BrigSection::getFirstEntry() const
+{
+	struct BrigSectionHeader *header = 
+			(struct BrigSectionHeader *)getBuffer();
+	return getEntryByOffset(header->headerByteCount);
+}
+
+
+std::unique_ptr<BrigEntry> BrigSection::getEntryByOffset(
+		unsigned int offset) const
+{
+	struct BrigSectionHeader *header = 
+			(struct BrigSectionHeader *)getBuffer();
+	if (offset < header->headerByteCount)
+		return std::unique_ptr<BrigEntry>(nullptr);
+
+	if (offset >= header->byteCount)
+		return std::unique_ptr<BrigEntry>(nullptr);
+
+	char *entry_base = (char *)getBuffer() + offset;
+	return std::unique_ptr<BrigEntry>(new BrigEntry(entry_base, this));
 }
 
 }  // namespace HSA

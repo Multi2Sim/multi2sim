@@ -17,145 +17,65 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef HSA_ASM_BRIGENTRY_H
-#define HSA_ASM_BRIGENTRY_H
+#ifndef ARCH_HSA_ASM_BRIGENTRY_H
+#define ARCH_HSA_ASM_BRIGENTRY_H
 
-#include <cstring>
-
-#include <lib/cpp/Misc.h>
-#include <lib/cpp/String.h>
-
-#include "BrigFile.h"
-#include "BrigDef.h"
-#include "SymbolModifier.h"
-
+#include <iostream>
+#include <memory>
 
 namespace HSA
 {
-	
-/// Pure virtual class representing a brig entry
+
+class BrigFile;
+class BrigSection;
+
+/// A BRIG Entry is an entry in the hsa_code or hsa_operand section. It is
+/// can represent directive, instruction or operand
 class BrigEntry
 {
-
 protected:
 
 	// Pointer to the first byte of the entry
-	char *base;
+	const char *base;
 
-	// Brig file that this entry belongs to 
-	BrigFile *file;
+	// A Pointer to the file that this brig entry belongs to 
+	const BrigSection *section;
 
-	// Maps type to type strings
-	static misc::StringMap type_to_str_map;
+	// Return the pointer in the file to the entry. This function is set 
+	// to be private because the BrigEntry should populates all the fields
+	// and directly read from the the binary should be forbidden in the 
+	// emulator
+	const char *getBuffer() const { return base; }
 
-	// Maps type and the number of byte is needs
-	static std::map<unsigned short, unsigned short> type_to_size_map;
-
-	// Convert profile to string to print out
-	static const char *profile2str(int profile);
-	
-	// Convert profile to string
-	static const char *machineModel2str(int machineModel);
-
-	// Returns the align string
-	static const char *align2str(unsigned char align);
-
-	// Returns segments as string 
-	// Segments are attributes such as global, readonly...
-	static const char *seg2str(unsigned char seg);
-
-	// Maps memory semantic to string
-	static misc::StringMap sem_to_str_map;
-
-	// Convert memory semantic 
-	const char *sem2str(unsigned char modifier) const;
-
-	// Dump value list
-	static void dumpValueList(BrigDataOffset32_t data,
-			BrigType16_t type, 
-			uint32_t elementCount,
-			BrigFile *file,
-			std::ostream &os);
-
-	// Dump Symbol Declaration
-	static void dumpSymDecl(const BrigEntry *dir, std::ostream &os);
-	
-	// Dump Argument list
-	// \return
-	// 	pointer to the next directive to be processed
-	static char *dumpArgs(char *arg, 
-			unsigned short argCount,
-			BrigFile *file,
-			std::ostream &os);
-
-	// Dump _str if str is not empty, otherwise do nothing
-	static void dumpUnderscore(const std::string &str,
-			std::ostream &os = std::cout)
-	{
-		if(str.length())
-		{
-			os << "_" << str;
-		}
-	}
-	
-	// Dumps a numberic value
-	void dumpValue(char *value) const;
-	
-	// Dump the function or kernel body
-	void dumpBody(int codeOffset,
-			int nInst,
-			char *next,
-			bool isDecl, 
-			std::ostream &os) const;
-
-	// Dump nested directives inside a class. It will dump all the directive
-	// should be dumped before the current code offset
-	// \param dirPtr
-	//	Pointer to the directive to be dumped next
-	// \return
-	// 	Pointer to the next directive to be dumped
-	char *DumpRelatedDirectives(char *dirPtr,
-			unsigned int offset, std::ostream &os) const;
-
-	// Dump the tab for indentation
-	static void dumpIndent(std::ostream &os);
-	
 public:
-
+	
 	/// Constructor
-	BrigEntry(char *buf, BrigFile *file);
+	BrigEntry(const char *buf, const BrigSection *section);
 
-	/// Destructor
-	virtual ~BrigEntry(){};
+	/// Return the size in bytes of the entry
+	unsigned getSize() const;
 
-	/// Returns the pointer to the buffer of the entry
-	char *getBuffer() const{return base;}
+	/// Return the kind field of the entry
+	unsigned getKind() const;
 
-	/// Returns the pointer to the brig file this entry belongs to
-	BrigFile *getFile() const{return file;}
+	/// Get the offset of this entry int the section
+	unsigned int getOffset() const;
 
-	/// Converts type to type string
-	static std::string type2str(int type);
+	/// Return the section that has this entry
+	const BrigSection *getSection() const { return section; }
 
-	/// Converts type to the number of bytes it occupies
-	static unsigned short type2size(int type);
+	/// Returns the file that has this entry
+	BrigFile *getBinary() const { return section->getBinary(); }
 
-	/// Returns the size of the entry, the size is paddint into 4 bytes
-	/// String entry should have different implementation, since the size
-	/// field in string entry is 4 bytes long
-	virtual unsigned int getSize() const;
+	/// Dump the entry
+	void Dump(std::ostream &os) const;
 
-	/// Dump the entry in HEX
-	virtual void dumpHex(std::ostream &os) const;
-
-	/// Virtual function for dump assembly
-	virtual void Dump(std::ostream &os) const;
-
-	/// Returns the pointer to the next entry
-	virtual char *next() const{return this->base + this->getSize();}
+	/// Returns an unique pointer to the next entry
+	std::unique_ptr<BrigEntry> next() const;
 
 };
 
 }  // namespace HSA
 
 #endif
+

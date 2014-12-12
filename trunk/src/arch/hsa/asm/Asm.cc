@@ -19,6 +19,7 @@
 
 #include "Asm.h"
 #include "BrigFile.h"
+#include "BrigEntry.h"
 
 namespace HSA
 {
@@ -80,9 +81,16 @@ Asm::Asm()
 void Asm::DisassembleBinary(const std::string &path) const
 {
 	BrigFile brig_file(path.c_str());
-	/*
 	BrigSection *brig_section = 
-			brig_file.getBrigSection(BrigSectionDirective);
+			brig_file.getBrigSection(BrigSectionHsaCode);
+
+	auto entry = brig_section->getFirstEntry();
+	while(entry.get())
+	{
+		entry->Dump(std::cout);
+		entry = entry->next();
+	}
+	/*
 	const char *buffer = brig_section->getBuffer();
 
 	char *buffer_pointer = (char *)buffer;
