@@ -47,7 +47,7 @@ unsigned LogBase2(unsigned value)
 		throw misc::Panic("Value is not a power of 2");
 	
 	// Check that value is not 0
-	if (value > 0)
+	if (value == 0)
 		throw misc::Panic("Value cannot be 0");
 
 	// Calculate
