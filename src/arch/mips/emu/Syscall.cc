@@ -579,6 +579,8 @@ int Context::ExecuteSyscall_time()
 		memory->Write(time_ptr, 4, (char *) &t);
 
 	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
 	return t;
 }
 
@@ -645,7 +647,10 @@ int Context::ExecuteSyscall_setuid()
 
 int Context::ExecuteSyscall_getuid()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+ 	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
+	return getuid();
 }
 
 
@@ -856,7 +861,10 @@ int Context::ExecuteSyscall_setgid()
 
 int Context::ExecuteSyscall_getgid()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+ 	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
+	return getgid();
 }
 
 
@@ -868,12 +876,20 @@ int Context::ExecuteSyscall_signal()
 
 int Context::ExecuteSyscall_geteuid()
 {
-	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
+ 	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
+	return geteuid();
 }
 
 
 int Context::ExecuteSyscall_getegid()
 {
+ 	// set reg a3 to 0 to indicate success
+	regs.setGPR(7,0);
+
+	return getegid();
+
 	throw misc::Panic(misc::fmt("Unimplemented syscall (code %d)", regs.getGPR(2) - __NR_Linux));
 }
 
