@@ -33,6 +33,10 @@ namespace misc
 //
 // Bitwise Functions
 //
+inline unsigned short getBits16(unsigned short x, int high, int low)
+{
+	return (x >> low) & ((1u << (high - low + 1)) - 1);
+}
 
 inline unsigned getBits32(unsigned x, int high, int low)
 {

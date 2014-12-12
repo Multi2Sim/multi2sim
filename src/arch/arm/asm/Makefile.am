@@ -10,7 +10,18 @@ libasm_a_SOURCES = \
 	asm-thumb32.dat \
 	\
 	inst.c \
-	inst.h
+	inst.h \
+	\
+	\
+	Inst.cc \
+	Inst.def \
+	InstThumb.def \
+	InstThumb32.def \
+	Inst.h \
+	\
+	Asm.cc\
+	Asm.h 
+
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
