@@ -21,45 +21,43 @@
 namespace llvm2si
 {
 
-/// Liveness Analysis consists of two phases. Phase 1 evaluates the Use and Def
-/// sets for every basic block. Phase 2 evaluates the Live In and Live Out of
-/// every basic block using information from Phase 1
+// Liveness Analysis consists of two phases. Phase 1 evaluates the Use and Def
+// sets for every basic block. Phase 2 evaluates the Live In and Live Out of
+// every basic block using information from Phase 1
 void LivenessAnalysisPass::run()
 {
-	/// Create a basic block queue
+	// Create a basic block queue
 	std::vector<llvm2si::BasicBlock *> basic_block_queue;
 
-	/// Create Def and Use bitmaps of given size for vector
-	/// and scalar registers. Used in Phase 1.
+	// Create Def and Use bitmaps of given size for vector
+	// and scalar registers. Used in Phase 1.
 	misc::Bitmap v_def(lap_function->getNumVectorRegisters());
 	misc::Bitmap v_use(lap_function->getNumVectorRegisters());
 	misc::Bitmap s_def(lap_function->getNumScalarRegisters());
 	misc::Bitmap s_use(lap_function->getNumScalarRegisters());
 
-	/// Declare Live In and Live Out sets for vector
+	// Declare Live In and Live Out sets for vector
 	/// and scalar registers. Used in Phase 2
 	misc::Bitmap v_in_current(lap_function->getNumVectorRegisters());
 	misc::Bitmap v_out_current(lap_function->getNumVectorRegisters());
 	misc::Bitmap s_in_current(lap_function->getNumScalarRegisters());
 	misc::Bitmap s_out_current(lap_function->getNumScalarRegisters());
 
-	/// Declare pointers to current basic block and its successor. Used in phase 2
-	/// llvm2si::BasicBlock *basic_block_current, *basic_block_successor;
+	// Declare pointers to current basic block and its successor. Used in phase 2
+	// llvm2si::BasicBlock *basic_block_current, *basic_block_successor;
 	llvm2si::BasicBlock *basic_block_successor;
 
-	/// Fetch basic blocks from the function and
-	/// push them in to the queue
+	// Fetch basic blocks from the function and
+	// push them in to the queue
 	for (auto &it : *(lap_function->getBasicBlocks()))
-	{
 		basic_block_queue.push_back(it.get());
-	}
 
-	/// Traverse the basic blocks in the function in reverse order.
+	// Traverse the basic blocks in the function in reverse order.
 	for (auto basic_block = basic_block_queue.rbegin();
 			basic_block != basic_block_queue.rend();
 			basic_block++)
 	{
-		/// Reset all bitmaps
+		// Reset all bitmaps
 		v_def.Reset();
 		v_use.Reset();
 		s_def.Reset();
@@ -68,28 +66,28 @@ void LivenessAnalysisPass::run()
 		auto *basic_block_pass_info =
 						getInfo<BasicBlockLivenessAnalysisPassInfo>(*basic_block);
 
-		/// Reset all vector sets associated with all basic blocks
+		// Reset all vector sets associated with all basic blocks
 		basic_block_pass_info->ResetVectorDefInfo(lap_function->getNumVectorRegisters());
 		basic_block_pass_info->ResetVectorUseInfo(lap_function->getNumVectorRegisters());
 
 		basic_block_pass_info->ResetVectorInInfo(lap_function->getNumVectorRegisters());
 		basic_block_pass_info->ResetVectorOutInfo(lap_function->getNumVectorRegisters());
 
-		/// Reset all scalar sets associated with all basic blocks
+		// Reset all scalar sets associated with all basic blocks
 		basic_block_pass_info->ResetScalarDefInfo(lap_function->getNumScalarRegisters());
 		basic_block_pass_info->ResetScalarUseInfo(lap_function->getNumScalarRegisters());
 
 		basic_block_pass_info->ResetScalarInInfo(lap_function->getNumScalarRegisters());
 		basic_block_pass_info->ResetScalarOutInfo(lap_function->getNumScalarRegisters());
 
-		/// Create pointers to vector and scalar registers
+		// Create pointers to vector and scalar registers
 		si2bin::ArgVectorRegister *vector_register;
 		si2bin::ArgScalarRegister *scalar_register;
 
-		/// Traverse through all the instructions in the basic block
+		// Traverse through all the instructions in the basic block
 		for (auto &instruction : (*basic_block)->getInstructions())
 		{
-			/// Get arguments from the instruction
+			// Get arguments from the instruction
 			for (auto &argument : instruction->getArguments())
 			{
 				switch (argument->getToken()->getDirection())
@@ -142,15 +140,13 @@ void LivenessAnalysisPass::run()
 
 	std::vector<bool> bb_change;
 	bool changed = true;
-	/// Declare pointers to live_in sets for the successors of current
-	/// vector and scalar registers
-	misc::Bitmap *v_in_successor;
-	//(lap_function->getNumVectorRegisters());
-	misc::Bitmap *s_in_successor;
-	//(lap_function->getNumScalarRegisters());
 
+	// Declare pointers to live_in sets for the successors of current
+	// vector and scalar registers
+	misc::Bitmap *v_in_successor, *s_in_successor;
 	misc::Bitmap *v_in, *v_out, *s_in, *s_out;
-	/// Iterate through basic_block_queue until no basic blocks remain
+
+	// Iterate through basic_block_queue until no basic blocks remain
 	while(changed)
 	{
 		changed = false;
@@ -158,43 +154,43 @@ void LivenessAnalysisPass::run()
 					basic_block_current != basic_block_queue.rend();
 					++basic_block_current)
 		{
-			/// Get a pointer to PassInfo obj associated with the basic block
+			// Get a pointer to PassInfo obj associated with the basic block
 			auto *basic_block_pass_info_current =
 					getInfo<BasicBlockLivenessAnalysisPassInfo>
 					(*basic_block_current);
 
-			/// Get live-in and live-out sets for vector and scalar
-			/// registers
+			// Get live-in and live-out sets for vector and scalar
+			// registers
 			v_in  = basic_block_pass_info_current->GetVectorInInfo();
 			v_out = basic_block_pass_info_current->GetVectorOutInfo();
 			s_in  = basic_block_pass_info_current->GetScalarInInfo();
 			s_out = basic_block_pass_info_current->GetScalarOutInfo();
 
-			/// Save current status of live-in and live-out sets for
-			/// vector and scalar registers
+			// Save current status of live-in and live-out sets for
+			// vector and scalar registers
 			v_in_current  = *v_in;
 			v_out_current = *v_out;
 			s_in_current  = *s_in;
 			s_out_current = *s_out;
 
-			/// Get successors of current basic block
+			// Get successors of current basic block
 			for (auto &node : (*basic_block_current)->getNode()->getSuccList())
 			{
-				/// Assert the node is leaf node
+				// Assert the node is leaf node
 				assert(node->getKind() == comm::Node::KindLeaf);
 
-				/// Get the basic block that this LeafNode corresponds to
+				// Get the basic block that this LeafNode corresponds to
 				basic_block_successor = misc::cast<llvm2si::BasicBlock*>
 						(misc::cast<comm::LeafNode*>(node)
 						->getBasicBlock());
 
-				/// Get a pointer to PassInfo obj associated with the basic block
+				// Get a pointer to PassInfo obj associated with the basic block
 				auto *basic_block_pass_info_successor =
 						getInfo<BasicBlockLivenessAnalysisPassInfo>
 						(basic_block_successor);
 
-				/// Get live-in sets for vector and scalar registers of
-				/// the succeeding basic block
+				// Get live-in sets for vector and scalar registers of
+				// the succeeding basic block
 				v_in_successor = basic_block_pass_info_successor->GetVectorInInfo();
 				s_in_successor = basic_block_pass_info_successor->GetScalarInInfo();
 
@@ -233,20 +229,15 @@ void LivenessAnalysisPass::dump(std::ostream &os)
 			 << lap_function->getBasicBlocks()->size() << "\n";
 
 	 for (auto &it : *(lap_function->getBasicBlocks()))
-	 {
-		// std::cout << "\nBasic block id being pushed into the queue: " << (*it).getId();
 	 	basic_block_queue.push_back(it.get());
-	 }
-
-	// std::cout << "\nTotal basic blocks in the queue: " << basic_block_queue.size() << "\n";
 
 	 // Traverse the basic blocks in the function in reverse order
-	for (auto basic_block = basic_block_queue.begin();
+	 for (auto basic_block = basic_block_queue.begin();
 			basic_block != basic_block_queue.end();
 			basic_block++)
 	 {
 
-	 	/// Get a pointer to PassInfo obj associated with the basic block
+	 	// Get a pointer to PassInfo obj associated with the basic block
 		auto *basic_block_pass_info = getInfo<BasicBlockLivenessAnalysisPassInfo>
 	 						(*basic_block);
 

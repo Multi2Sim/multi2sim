@@ -142,7 +142,7 @@ public:
 
 	void SetScalarUseInfo(misc::Bitmap *dummy_suse)
 	{
-			*scalar_use_info = *dummy_suse;
+		*scalar_use_info = *dummy_suse;
 	}
 
 	void SetScalarInInfo(misc::Bitmap *dummy_sin)
@@ -204,8 +204,10 @@ class LivenessAnalysisPass : public comm::Pass
 			return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
 		}
 
+		/// Execute the liveness analysis pass
 		void run();
 
+		/// Dump debug information related to liveness analysis pass
 		void dump(std::ostream &os);
 
 		~LivenessAnalysisPass() {}
