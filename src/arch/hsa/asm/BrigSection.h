@@ -31,6 +31,7 @@ namespace HSA
 
 class BrigFile;
 class BrigEntry;
+class BrigDataEntry;
 
 /// This class represents a section in a BRIG file. 
 class BrigSection
@@ -73,6 +74,11 @@ public:
 	/// Return an unique_ptr to the entry at a specific offset. If the
 	/// the offset is invalid, return nullptr
 	std::unique_ptr<BrigEntry> getEntryByOffset(unsigned int offset) const;
+
+	/// Return an unique_ptr of a brig data entry at a specific offset. 
+	/// Panic would be thrown if the section is not hsa_data section
+	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
+			unsigned int offset) const;
 
 };
 
