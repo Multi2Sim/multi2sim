@@ -21,6 +21,7 @@
 
 #include "BrigFile.h"
 #include "BrigEntry.h"
+#include "BrigDataEntry.h"
 #include "BrigSection.h"
 
 namespace HSA{
@@ -80,6 +81,33 @@ std::unique_ptr<BrigEntry> BrigSection::getEntryByOffset(
 
 	char *entry_base = (char *)getBuffer() + offset;
 	return std::unique_ptr<BrigEntry>(new BrigEntry(entry_base, this));
+}
+
+
+std::unique_ptr<BrigDataEntry> BrigSection::getDataEntryByOffset(
+		unsigned int offset) const
+{
+	// Check if the request is made on hsa_data section
+	if (elf_section->getName() != "hsa_data")
+		throw misc::Panic("Data entry is only allowed in hsa_data "
+				"section");
+
+	// Get the section header for the section length
+	struct BrigSectionHeader *header = 
+			(struct BrigSectionHeader *)getBuffer();
+
+	// Check if the offset is two small
+	if (offset < header->headerByteCount)
+		return std::unique_ptr<BrigDataEntry>(nullptr);
+
+	// Check if the offset is beyond the boundary of current section
+	if (offset >= header->byteCount)
+		return std::unique_ptr<BrigDataEntry>(nullptr);
+
+	// Return the entry
+	char *entry_base = (char *)getBuffer() + offset;
+	return std::unique_ptr<BrigDataEntry>(
+			new BrigDataEntry(entry_base, this));
 }
 
 }  // namespace HSA

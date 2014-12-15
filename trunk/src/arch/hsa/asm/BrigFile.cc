@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "BrigDataEntry.h"
 #include "BrigFile.h"
 
 namespace HSA
@@ -74,6 +75,16 @@ bool BrigFile::isValid() const
 	}
 	return true;
 }
+
+
+const std::string BrigFile::getStringByOffset(unsigned int offset) const
+{
+	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
+	std::unique_ptr<BrigDataEntry> data_entry = 
+			data_section->getDataEntryByOffset(offset);
+	return data_entry->getString();
+}
+
 
 /*
 char *BrigFile::findMainFunction()

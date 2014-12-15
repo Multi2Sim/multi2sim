@@ -169,11 +169,11 @@ function &main()(){
 
 	// Prepare each field of AQLPacket
 	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1
-	st_global_u16 0x0002,		[$d1+4];	// Set x dim to 2
+	st_global_u16 0x00064,		[$d1+4];	// Set x dim to 2
 	st_global_u16 0x0001,		[$d1+6];	// Set y dim to 1
 	st_global_u16 0x0001,		[$d1+8];	// Set z dim to 0 
 	st_global_u16 0x0000,		[$d1+10];	// Set reserved to 0
-	st_global_u32 0x00000002,	[$d1+12];	// Set grid size x to 2
+	st_global_u32 0x0000000640,	[$d1+12];	// Set grid size x to 2
 	st_global_u32 0x00000001,	[$d1+16];	// Set grid size y to 1
 	st_global_u32 0x00000001,	[$d1+20];	// Set grid size z to 1
 	st_global_u32 0x00000000,	[$d1+24];	// Set private seg size to 0

@@ -66,7 +66,11 @@ public:
 	/// Checks if the loaded brig file is a valid brig file
 	/// \return
 	///	Returns \c true if the loaded file is valid
-	bool isValid() const;	
+	bool isValid() const;
+	
+	/// Return the string that is stored in the hsa_data section by its 
+	/// offset
+	const std::string getStringByOffset(unsigned int offset) const;
 
 	/// Search for the main function 
 	/// \return
