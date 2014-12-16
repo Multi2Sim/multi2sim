@@ -230,6 +230,13 @@ void Node::Connect(Node *node_dest)
 	assert(!InList(node_dest->pred_list));
 	succ_list.push_back(node_dest);
 	node_dest->pred_list.push_back(this);
+	node_dest->backup_pred_list = node_dest->pred_list;
+	this->backup_succ_list = this->succ_list;
+}
+
+void Node::DumpSuccList()
+{
+	this->DumpList(backup_succ_list, std::cout);
 }
 
 void Node::ConnectScalar(Node *node_dest)

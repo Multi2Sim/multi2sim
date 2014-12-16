@@ -89,8 +89,18 @@ private:
 	// List of successor nodes
 	std::list<Node *> succ_list;
 	
+	// This list is a back up of the succ_list which is created when new
+	// connections are initially laid in the tree. The succ_list is losing
+	// some connections during the tree analysis which is not giving the correct
+	// successors for every basic block. While that needs to be fixed, as a temporary
+	// solution, use backup lists to get BB successors
+	std::list<Node *> backup_succ_list;
+
 	// List of predecessor nodes
 	std::list<Node *> pred_list;
+
+	// Same as backup_succ_list
+	std::list<Node *> backup_pred_list;
 
 	// List of nodes connected through forward edges
 	std::list<Node *> forward_edge_list;
@@ -156,6 +166,15 @@ public:
 	///	for (auto &pred_node : node->getPredList())
 	/// \endcode
 	const std::list<Node *> &getPredList() const { return pred_list; }
+
+	/// Return the reference to the list of successor nodes.
+	const std::list<Node *> &getBackupSuccList() const { return backup_succ_list; }
+
+	/// Return the reference to the list of successor nodes.
+	const std::list<Node *> &getBackupPredList() const { return backup_pred_list; }
+
+	/// Dumps the back up successor list
+	void DumpSuccList();
 
 	/// Virtual destructor
 	virtual ~Node() { }
