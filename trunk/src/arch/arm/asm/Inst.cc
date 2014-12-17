@@ -1,21 +1,21 @@
-//
-//  Multi2Sim
-//  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License as published by
-//  the Free Software Foundation; either version 2 of the License, or
-//  (at your option) any later version.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-// 
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #include <fstream>
 #include <iomanip>
@@ -42,6 +42,7 @@ Inst::Inst()
 	info_32 = NULL;
 }
 
+
 unsigned int Inst::Rotl(unsigned int value, int shift)
 {
 	shift = shift * 2;
@@ -49,6 +50,7 @@ unsigned int Inst::Rotl(unsigned int value, int shift)
 		return value;
 	return (value << shift) | (value >> (sizeof(value) * 8 - shift));
 }
+
 
 unsigned int Inst::Rotr(unsigned int value, int shift)
 {
@@ -155,6 +157,7 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 
 }
 
+
 void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 {
 	unsigned int rn;
@@ -222,7 +225,7 @@ void Inst::DumpRd(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
 
@@ -289,7 +292,7 @@ void Inst::DumpRn(std::ostream &os)
 	else if (cat == InstCategoryVfp)
 		rn = this->dword.vfp_mv.vfp_rn;
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
 
@@ -367,7 +370,7 @@ void Inst::DumpRm(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
 
@@ -386,8 +389,6 @@ void Inst::DumpRm(std::ostream &os)
 		os << misc::fmt("r%d", rm);
 		break;
 	}
-
-
 }
 
 void Inst::DumpRs(std::ostream &os)
@@ -426,7 +427,7 @@ void Inst::DumpRs(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
 
@@ -445,8 +446,8 @@ void Inst::DumpRs(std::ostream &os)
 		os << misc::fmt("r%d", rs);
 		break;
 	}
-
 }
+
 
 void Inst::DumpOp2(std::ostream &os)
 {
@@ -491,7 +492,7 @@ void Inst::DumpOp2(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
 
@@ -559,6 +560,7 @@ void Inst::DumpOp2(std::ostream &os)
 
 }
 
+
 void Inst::DumpCond(std::ostream &os)
 {
 	InstCategory cat = this->info->category;
@@ -603,7 +605,7 @@ void Inst::DumpCond(std::ostream &os)
 	else if (cat == InstCategoryVfp)
 		cond = this->dword.vfp_mv.cond;
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
 
@@ -672,6 +674,7 @@ void Inst::DumpCond(std::ostream &os)
 	}
 }
 
+
 void Inst::DumpRdlo(std::ostream &os)
 {
 	InstCategory cat = this->info->category;
@@ -708,7 +711,7 @@ void Inst::DumpRdlo(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
 
@@ -753,7 +756,7 @@ void Inst::DumpRdhi(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
 
@@ -798,7 +801,7 @@ void Inst::DumpPsr(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
 
@@ -854,7 +857,7 @@ void Inst::DumpOp2Psr(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
 
@@ -921,7 +924,7 @@ void Inst::DumpAMode3(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
 }
@@ -962,7 +965,7 @@ void Inst::DumpAMode2(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
 }
@@ -1004,7 +1007,7 @@ void Inst::DumpIdx(std::ostream &os)
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 
@@ -1053,7 +1056,7 @@ void Inst::DumpBaddr(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
 	else if (cat == InstCategoryBrnch)
 		offset = (this->dword.brnch.off << 2);
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
 
@@ -1099,7 +1102,7 @@ void Inst::DumpRegs(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
 	else if (cat == InstCategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	/* TODO: destinations for CDTR CDO*/
+	// TODO: destinations for CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
 
@@ -1153,7 +1156,7 @@ void Inst::DumpImmd24(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
 	else if (cat == InstCategorySwiSvc)
 		immd24 = this->dword.swi_svc.cmnt;
-	/* TODO: destinations for CDTR CDO*/
+	// TODO: destinations for CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
 
@@ -1199,7 +1202,7 @@ void Inst::DumpImmd16(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
 	else if (cat == InstCategorySwiSvc)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
 
@@ -1216,7 +1219,7 @@ void Inst::DumpCopr(std::ostream &os)
 		copr = this->dword.cpr_rtr.cpr_num;
 	else if (cat == InstCategoryCprDtr)
 		copr = this->dword.cpr_dtr.cpr_num;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: copr num fmt not recognized", cat));
 
@@ -1234,7 +1237,7 @@ void Inst::DumpAMode5(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: copr num fmt not recognized", cat));
 	else if (cat == InstCategoryCprDtr)
 		offset = this->dword.cpr_dtr.off;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: amode5 fmt not recognized", cat));
 
@@ -1255,7 +1258,7 @@ void Inst::DumpVfp1stm(std::ostream &os)
 
 	if (cat == InstCategoryVfp)
 		vfp1 = this->dword.vfp_mv.immd8;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: vfp1 stm fmt not recognized", cat));
 
@@ -1273,7 +1276,7 @@ void Inst::DumpVfp1ldm(std::ostream &os)
 
 	if (cat == InstCategoryVfp)
 		vfp1 = this->dword.vfp_mv.immd8;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: vfp1 ldm fmt not recognized", cat));
 
@@ -1296,7 +1299,7 @@ void Inst::DumpVfpRegs(std::ostream &os)
 		reg_start = ((this->dword.vfp_mv.d << 4)
 			| (this->dword.vfp_mv.vd)) & (0x0000001f);
 	}
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: vfp regs fmt not recognized", cat));
 
@@ -1313,7 +1316,7 @@ void Inst::DumpFreg(std::ostream &os)
 
 	if (cat == InstCategoryCprDtr)
 		freg = this->dword.cpr_dtr.cpr_sr_dst;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: freg fmt not recognized", cat));
 
@@ -1331,7 +1334,7 @@ void Inst::DumpFp(std::ostream &os)
 
 	if (cat == InstCategoryCprDtr)
 		freg = this->dword.cpr_dtr.cpr_sr_dst;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: FP fmt not recognized", cat));
 
@@ -1341,6 +1344,7 @@ void Inst::DumpFp(std::ostream &os)
 		os << misc::fmt("E");
 }
 
+
 void Inst::DumpRt(std::ostream &os)
 {
 	InstCategory cat = this->info->category;
@@ -1348,7 +1352,7 @@ void Inst::DumpRt(std::ostream &os)
 
 	if (cat == InstCategoryVfp)
 		rt = this->dword.vfp_strreg_tr.vfp_rt;
-	/* TODO: destinations for BDTR CDTR CDO*/
+	// TODO: destinations for BDTR CDTR CDO
 	else
 		throw misc::Panic(misc::fmt("%d: vfp rt fmt not recognized", cat));
 
@@ -1369,17 +1373,19 @@ void Inst::DumpRt(std::ostream &os)
 		}
 }
 
+
 void Inst::DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr)
 {
 	os << misc::fmt("%8x:\t%08x\t",inst_addr, *inst_ptr);
 }
+
 
 void Inst::Dump(std::ostream &os)
 {
 	const char *fmt_str;
 	int token_len;
 
-	/* Nothing for empty format string */
+	// Nothing for empty format string 
 	fmt_str = this->info ? this->info->fmt_str : NULL;
 	if (!fmt_str || !*fmt_str)
 	{
@@ -1387,7 +1393,7 @@ void Inst::Dump(std::ostream &os)
 		return;
 	}
 
-	/* Follow format string */
+	// Follow format string 
 	while (*fmt_str)
 	{
 		if (*fmt_str != '%')
@@ -1582,6 +1588,7 @@ void Inst::Thumb16DumpRM(std::ostream &os)
 	}
 }
 
+
 void Inst::Thumb16DumpRN(std::ostream &os)
 {
 	InstThumb16Category cat = this->info_16->cat16;
@@ -1639,6 +1646,7 @@ void Inst::Thumb16DumpRN(std::ostream &os)
 		break;
 	}
 }
+
 
 void Inst::Thumb16DumpIMMD8(std::ostream &os)
 {
@@ -1711,6 +1719,7 @@ void Inst::Thumb16DumpIMMD8(std::ostream &os)
 
 }
 
+
 void Inst::Thumb16DumpIMMD3(std::ostream &os)
 {
 	InstThumb16Category cat = this->info_16->cat16;
@@ -1757,6 +1766,7 @@ void Inst::Thumb16DumpIMMD3(std::ostream &os)
 	os << misc::fmt("#%d",immd3);
 
 }
+
 
 void Inst::Thumb16DumpIMMD5(std::ostream &os)
 {
@@ -1812,6 +1822,7 @@ void Inst::Thumb16DumpIMMD5(std::ostream &os)
 		os << misc::fmt("#%d",immd5);
 
 }
+
 
 void Inst::Thumb16DumpCOND(std::ostream &os)
 {
@@ -1921,6 +1932,7 @@ void Inst::Thumb16DumpCOND(std::ostream &os)
 
 }
 
+
 void Inst::Thumb16DumpREGS(std::ostream &os)
 {
 	InstThumb16Category cat = this->info_16->cat16;
@@ -1979,6 +1991,7 @@ void Inst::Thumb16DumpREGS(std::ostream &os)
 
 }
 
+
 void Inst::Thumb16DumpItEqX(std::ostream &os)
 {
 	InstThumb16Category cat = this->info_16->cat16;
@@ -2002,10 +2015,12 @@ void Inst::Thumb16DumpItEqX(std::ostream &os)
 	}
 }
 
+
 void Inst::Thumb16DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
 {
 	os << misc::fmt("%8x:	%04x		", inst_addr, *inst_ptr);
 }
+
 
 void Inst::Thumb16Dump(std::ostream &os)
 {
@@ -2013,7 +2028,7 @@ void Inst::Thumb16Dump(std::ostream &os)
 	const char *fmt_str;
 	int token_len;
 
-	/* Nothing for empty format string */
+	// Nothing for empty format string 
 	fmt_str = this->info_16 ? this->info_16->fmt_str : NULL;
 	if (!fmt_str || !*fmt_str)
 	{
@@ -2021,7 +2036,7 @@ void Inst::Thumb16Dump(std::ostream &os)
 		return;
 	}
 
-	/* Follow format string */
+	// Follow format string 
 	while (*fmt_str)
 	{
 		if (*fmt_str != '%')
@@ -2059,6 +2074,7 @@ void Inst::Thumb16Dump(std::ostream &os)
 	}
 	os << misc::fmt("\n");
 }
+
 
 void Inst::Thumb32DumpRD(std::ostream &os)
 {
@@ -2120,6 +2136,7 @@ void Inst::Thumb32DumpRD(std::ostream &os)
 
 }
 
+
 void Inst::Thumb32DumpRN(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2179,6 +2196,7 @@ void Inst::Thumb32DumpRN(std::ostream &os)
 	}
 
 }
+
 
 void Inst::Thumb32DumpRM(std::ostream &os)
 {
@@ -2240,6 +2258,7 @@ void Inst::Thumb32DumpRM(std::ostream &os)
 
 }
 
+
 void Inst::Thumb32DumpRT(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2271,6 +2290,7 @@ void Inst::Thumb32DumpRT(std::ostream &os)
 		break;
 	}
 }
+
 
 void Inst::Thumb32DumpRT2(std::ostream &os)
 {
@@ -2304,6 +2324,7 @@ void Inst::Thumb32DumpRT2(std::ostream &os)
 	}
 }
 
+
 void Inst::Thumb32DumpRA(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2334,6 +2355,7 @@ void Inst::Thumb32DumpRA(std::ostream &os)
 		break;
 	}
 }
+
 
 void Inst::Thumb32DumpRDLO(std::ostream &os)
 {
@@ -2366,6 +2388,7 @@ void Inst::Thumb32DumpRDLO(std::ostream &os)
 	}
 }
 
+
 void Inst::Thumb32DumpRDHI(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2396,6 +2419,7 @@ void Inst::Thumb32DumpRDHI(std::ostream &os)
 		break;
 	}
 }
+
 
 void Inst::Thumb32DumpS(std::ostream &os)
 {
@@ -2439,6 +2463,7 @@ void Inst::Thumb32DumpS(std::ostream &os)
 		os << misc::fmt("s");
 }
 
+
 void Inst::Thumb32dumpREGS(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2465,6 +2490,7 @@ void Inst::Thumb32dumpREGS(std::ostream &os)
 	os << misc::fmt("}");
 
 }
+
 
 void Inst::Thumb32DumpSHFTREG(std::ostream &os)
 {
@@ -2504,6 +2530,7 @@ void Inst::Thumb32DumpSHFTREG(std::ostream &os)
 	}
 
 }
+
 
 void Inst::Thumb32DumpIMM12(std::ostream &os)
 {
@@ -2549,6 +2576,7 @@ void Inst::Thumb32DumpIMM12(std::ostream &os)
 	}
 
 }
+
 
 void Inst::Thumb32DumpIMMD12(std::ostream &os)
 {
@@ -2613,6 +2641,7 @@ void Inst::Thumb32DumpIMMD12(std::ostream &os)
 	os << misc::fmt("#%d", const_val);
 }
 
+
 void Inst::Thumb32DumpIMMD8(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
@@ -2649,11 +2678,11 @@ void Inst::Thumb32DumpIMMD8(std::ostream &os)
 
 }
 
+
 void Inst::Thumb32DumpIMM2(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
 	unsigned int immd2;
-
 
 	if (cat == InstThumb32CategoryLdstrByte)
 	{
@@ -2668,6 +2697,7 @@ void Inst::Thumb32DumpIMM2(std::ostream &os)
 
 	os << misc::fmt("#%d", immd2);
 }
+
 
 void Inst::Thumb32DumpCOND(std::ostream &os)
 {
@@ -2747,13 +2777,11 @@ void Inst::Thumb32DumpCOND(std::ostream &os)
 }
 
 
-
 void Inst::Thumb32DumpLSB(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
 	unsigned int immd2;
 	unsigned int immd3;
-
 
 	if (cat == InstThumb32CategoryBitField)
 	{
@@ -2763,9 +2791,9 @@ void Inst::Thumb32DumpLSB(std::ostream &os)
 	else
 		throw misc::Panic(misc::fmt("%d: imm2 fmt not recognized", cat));
 
-
 	os << misc::fmt("#%d", ((immd3 << 2) | immd2));
 }
+
 
 void Inst::Thumb32DumpWID(std::ostream &os)
 {
@@ -2774,8 +2802,6 @@ void Inst::Thumb32DumpWID(std::ostream &os)
 	unsigned int immd2;
 	unsigned int immd3;
 	unsigned int lsb;
-
-
 
 	if (cat == InstThumb32CategoryBitField)
 	{
@@ -2789,6 +2815,7 @@ void Inst::Thumb32DumpWID(std::ostream &os)
 	lsb = (immd3 << 2) | immd2;
 	os << misc::fmt("#%d", (msb - lsb + 1));
 }
+
 
 void Inst::Thumb32DumpIMMD16(std::ostream &os)
 {
@@ -2815,6 +2842,7 @@ void Inst::Thumb32DumpIMMD16(std::ostream &os)
 
 	os << misc::fmt("#%d	; 0x%x", immd16, immd16);
 }
+
 
 void Inst::Thumb32DumpADDR(std::ostream &os)
 {
@@ -2852,10 +2880,11 @@ void Inst::Thumb32DumpADDR(std::ostream &os)
 	else
 		throw misc::Panic(misc::fmt("%d: addr fmt not recognized", cat));
 
-	/* FIXME : Changed from +4 to +2 */
+	// FIXME : Changed from +4 to +2 
 	addr = (inst_addr + 2) + (addr);
 	os << misc::fmt("#%d	; 0x%x", addr, addr);
 }
+
 
 void Inst::Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
 {
@@ -2865,13 +2894,14 @@ void Inst::Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned in
 			((thumb_32) & 0xffff0000) >> 16);
 }
 
+
 void Inst::Thumb32Dump(std::ostream &os)
 {
 
 	const char *fmt_str;
 	int token_len;
 
-	/* Nothing for empty format string */
+	// Nothing for empty format string 
 	fmt_str = this->info_32 ? this->info_32->fmt_str : NULL;
 	if (!fmt_str || !*fmt_str)
 	{
@@ -2879,7 +2909,7 @@ void Inst::Thumb32Dump(std::ostream &os)
 		return;
 	}
 
-	/* Follow format string */
+	// Follow format string 
 	while (*fmt_str)
 	{
 		if (*fmt_str != '%')
@@ -2946,10 +2976,12 @@ void Inst::Thumb32Dump(std::ostream &os)
 	os << misc::fmt("\n");
 }
 
+
 void Inst::Thumb32InstTableDecode()
 {
 	struct InstThumb32Info *current_table;
-	/* We initially start with the first table mips_asm_table, with the opcode field as argument */
+
+	// We initially start with the first table mips_asm_table, with the opcode field as argument 
 	current_table = as->dec_table_thumb32_asm;
 	int current_table_low = 27;
 	int current_table_high = 28;
@@ -2958,7 +2990,7 @@ void Inst::Thumb32InstTableDecode()
 
 	thumb32_table_arg =  misc::getBits32(*(unsigned int*)this->dword_32.bytes, current_table_high, current_table_low);
 
-	/* Find next tables if the instruction belongs to another table */
+	// Find next tables if the instruction belongs to another table 
 	while (1) {
 		if (current_table[thumb32_table_arg].next_table && loop_iteration < 8) {
 			current_table_high = current_table[thumb32_table_arg].next_table_high;
@@ -2978,10 +3010,12 @@ void Inst::Thumb32InstTableDecode()
 	this->info_32 = &current_table[thumb32_table_arg];
 }
 
+
 void Inst::Thumb16InstTableDecode()
 {
 	struct InstThumb16Info *current_table;
-	/* We initially start with the first table mips_asm_table, with the opcode field as argument */
+
+	// We initially start with the first table mips_asm_table, with the opcode field as argument 
 	current_table = as->dec_table_thumb16_asm;
 	int current_table_low = 14;
 	int current_table_high = 15;
@@ -2990,7 +3024,7 @@ void Inst::Thumb16InstTableDecode()
 
 	thumb16_table_arg =  misc::getBits16(*(unsigned short*)this->dword_16.bytes, current_table_high, current_table_low);
 
-	/* Find next tables if the instruction belongs to another table */
+	// Find next tables if the instruction belongs to another table 
 	while (1) {
 		if (current_table[thumb16_table_arg].next_table && loop_iteration < 6) {
 			current_table_high = current_table[thumb16_table_arg].next_table_high;
@@ -3011,6 +3045,7 @@ void Inst::Thumb16InstTableDecode()
 	this->info_16 = &current_table[thumb16_table_arg];
 }
 
+
 void Inst::Decode(unsigned int addr, const char *buf)
 {
 
@@ -3027,6 +3062,7 @@ void Inst::Decode(unsigned int addr, const char *buf)
 	this->info = &as->inst_info[arg1 * 16 + arg2];
 }
 
+
 void Inst::Thumb16Decode(const char *buf, unsigned int ip)
 {
 	unsigned int byte_index;
@@ -3036,6 +3072,7 @@ void Inst::Thumb16Decode(const char *buf, unsigned int ip)
 
 	Thumb16InstTableDecode();
 }
+
 
 void Inst::Thumb32Decode(const char *buf, unsigned int ip)
 {
@@ -3048,7 +3085,7 @@ void Inst::Thumb32Decode(const char *buf, unsigned int ip)
 	Thumb32InstTableDecode();
 }
 
-} // namespace
+} // namespace ARM
 
 
 
