@@ -1,11 +1,29 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #ifndef ARM_ASM_INST_H
 #define ARM_ASM_INST_H
 
+#include <iostream>
+
 namespace ARM
 {
-
-#include <iostream>
 
 // Forward declarations
 class Asm;
@@ -296,6 +314,7 @@ struct InstThumb32BytesTableBranch
 	unsigned int __reserved1: 12; 	// [31:20]
 };
 
+
 struct InstThumb32BytesDataProcShftreg
 {
 	unsigned int rm		: 4; 	// [3:0]
@@ -308,6 +327,7 @@ struct InstThumb32BytesDataProcShftreg
 	unsigned int sign	: 1; 	// [20]
 	unsigned int __reserved1: 11; 	// [31:21]
 };
+
 
 struct InstThumb32BytesDataProcImmd
 {
@@ -322,6 +342,7 @@ struct InstThumb32BytesDataProcImmd
 	unsigned int __reserved2: 5; 	// [31:27]
 };
 
+
 struct InstThumb32BytesBranch
 {
 	unsigned int immd11	: 11; 	// [10:0]
@@ -334,6 +355,7 @@ struct InstThumb32BytesBranch
 	unsigned int sign	: 1; 	// [26]
 	unsigned int __reserved2: 5; 	// [31:27]
 };
+
 
 struct InstThumb32BytesBranchLink
 {
@@ -358,6 +380,7 @@ struct InstThumb32BytesLdStrReg
 	unsigned int __reserved1: 12; 	// [31:20]
 };
 
+
 struct InstThumb32BytesLdStrImm
 {
 	unsigned int immd12	: 12;	// [11:0]
@@ -368,6 +391,7 @@ struct InstThumb32BytesLdStrImm
 	unsigned int __reserved1: 8; 	// [31:24]
 };
 
+
 struct InstThumb32BytesLdStrtImm
 {
 	unsigned int immd8	: 8;	// [7:0]
@@ -376,6 +400,7 @@ struct InstThumb32BytesLdStrtImm
 	unsigned int rn		: 4;	// [19:16]
 	unsigned int __reserved1: 12; 	// [31:20]
 };
+
 
 struct InstThumb32BytesDprocReg
 {
@@ -389,6 +414,7 @@ struct InstThumb32BytesDprocReg
 	unsigned int __reserved2: 11; 	// [31:21]
 };
 
+
 struct InstThumb32BytesMult
 {
 	unsigned int rm		: 4;	// [3:0]
@@ -399,6 +425,7 @@ struct InstThumb32BytesMult
 	unsigned int __reserved1: 12; 	// [31:20]
 };
 
+
 struct InstThumb32BytesMultLong
 {
 	unsigned int rm		: 4;	// [3:0]
@@ -408,6 +435,7 @@ struct InstThumb32BytesMultLong
 	unsigned int rn		: 4; 	// [19:16]
 	unsigned int __reserved1: 12; 	// [31:20]
 };
+
 
 struct InstThumb32BytesBitField
 {
@@ -433,6 +461,7 @@ struct InstThumb16BytesMovshiftReg
 
 };
 
+
 struct InstThumb16BytesAddSub
 {
 	unsigned int reg_rd	: 3;	// [2:0]
@@ -443,6 +472,7 @@ struct InstThumb16BytesAddSub
 	unsigned int __reserved0: 5; 	// [15:11]
 };
 
+
 struct InstThumb16BytesImmdOprs
 {
 	unsigned int offset8	: 8;	// [7:0]
@@ -450,6 +480,7 @@ struct InstThumb16BytesImmdOprs
 	unsigned int op_int	: 2;	// [12:11]
 	unsigned int __reserved0: 3; 	// [15:13]
 };
+
 
 struct InstThumb16BytesCmpT2
 {
@@ -459,6 +490,7 @@ struct InstThumb16BytesCmpT2
 	unsigned int __reserved0: 8; 	// [15:8]
 };
 
+
 struct InstThumb16BytesDpr
 {
 	unsigned int reg_rd	: 3;	// [2:0]
@@ -466,6 +498,7 @@ struct InstThumb16BytesDpr
 	unsigned int op_int	: 4;	// [9:6]
 	unsigned int __reserved0: 6; 	// [15:10]
 };
+
 
 struct InstThumb16BytesHighRegOprs
 {
@@ -476,12 +509,14 @@ struct InstThumb16BytesHighRegOprs
 	unsigned int __reserved0: 6; 	// [15:10]
 };
 
+
 struct InstThumb16BytesPcLdr
 {
 	unsigned int immd_8	: 8;	// [7:0]
 	unsigned int reg_rd	: 3; 	// [10:8]
 	unsigned int __reserved0: 5; 	// [15:11]
 };
+
 
 struct InstThumb16BytesLdStrReg
 {
@@ -495,6 +530,7 @@ struct InstThumb16BytesLdStrReg
 	unsigned int __reserved1: 4; 	// [15:12]
 };
 
+
 struct InstThumb16BytesLdStrExts
 {
 
@@ -507,6 +543,7 @@ struct InstThumb16BytesLdStrExts
 	unsigned int __reserved1: 4; 	// [15:12]
 };
 
+
 struct InstThumb16BytesLdStrImmd
 {
 	unsigned int reg_rd	: 3; 	// [2:0]
@@ -517,6 +554,7 @@ struct InstThumb16BytesLdStrImmd
 	unsigned int __reserved0: 3; 	// [15:13]
 };
 
+
 struct InstThumb16BytesLdStrHfwrd
 {
 	unsigned int reg_rd	: 3; 	// [2:0]
@@ -526,6 +564,7 @@ struct InstThumb16BytesLdStrHfwrd
 	unsigned int __reserved0: 4; 	// [15:12]
 };
 
+
 struct InstThumb16BytesLdStrSpImmd
 {
 	unsigned int immd_8	: 8;	// [7:0]
@@ -534,6 +573,7 @@ struct InstThumb16BytesLdStrSpImmd
 	unsigned int __reserved0: 4; 	// [15:12]
 };
 
+
 struct InstThumb16BytesMiscAddsp
 {
 	unsigned int immd_8	: 8;	// [7:0]
@@ -541,11 +581,13 @@ struct InstThumb16BytesMiscAddsp
 	unsigned int __reserved0: 5; 	// [15:11]
 };
 
+
 struct InstThumb16BytesMiscSubsp
 {
 	unsigned int immd_8	: 7;	// [7:0]
 	unsigned int __reserved0: 9; 	// [15:8]
 };
+
 
 struct InstThumb16BytesMiscCbnz
 {
@@ -558,12 +600,14 @@ struct InstThumb16BytesMiscCbnz
 	unsigned int __reserved2: 4; 	// [15:12]
 };
 
+
 struct InstThumb16BytesMiscExtnd
 {
 	unsigned int reg_rd	: 3;	// [2:0]
 	unsigned int reg_rm	: 3;	// [5:3]
 	unsigned int __reserved0: 10; 	// [15:6]
 };
+
 
 struct InstThumb16BytesMiscPushPop
 {
@@ -572,6 +616,7 @@ struct InstThumb16BytesMiscPushPop
 	unsigned int __reserved0: 7; 	// [15:9]
 };
 
+
 struct InstThumb16BytesMiscRev
 {
 	unsigned int reg_rd	: 3;	// [2:0]
@@ -579,12 +624,14 @@ struct InstThumb16BytesMiscRev
 	unsigned int __reserved0: 10; 	// [15:6]
 };
 
+
 struct InstThumb16BytesIfThen
 {
 	unsigned int mask	: 4;	// [3:0]
 	unsigned int first_cond	: 4;	// [7:4]
 	unsigned int __reserved0: 8;	// [15:8]
 };
+
 
 struct InstThumb16BytesLdmStm
 {
@@ -594,11 +641,13 @@ struct InstThumb16BytesLdmStm
 	unsigned int __reserved0: 4;	// [15:12]
 };
 
+
 struct InstThumb16BytesSvc
 {
 	unsigned int value	: 8;	// [7:0]
 	unsigned int __reserved0: 8;	// [15:8]
 };
+
 
 struct InstThumb16BytesCondBr
 {
@@ -607,6 +656,7 @@ struct InstThumb16BytesCondBr
 	unsigned int __reserved0: 4;	// [15:12]
 };
 
+
 struct InstThumb16BytesBr
 {
 	unsigned int immd11	: 11;	// [10:0]
@@ -614,9 +664,9 @@ struct InstThumb16BytesBr
 };
 
 
-
 union InstBytes
 {
+	// Indicate the instruction bit width
 	unsigned char bytes[4];
 	unsigned int word;
 
@@ -638,11 +688,12 @@ union InstBytes
 	InstBytesSwiSvc swi_svc;
 	InstBytesVfpMv vfp_mv;
 	InstBytesVfpStregTr vfp_strreg_tr;
-
 };
+
 
 union InstThumb32Bytes
 {
+	// Indicate the instruction bit width
 	unsigned char bytes[4];
 	unsigned int word;
 
@@ -662,11 +713,12 @@ union InstThumb32Bytes
 	InstThumb32BytesMultLong mult_long;
 	InstThumb32BytesBitField bit_field;
 	InstThumb16BytesMiscAddsp add_sp;
-
 };
+
 
 union InstThumb16Bytes
 {
+	// Indicate the instruction bit width
 	unsigned char bytes[2];
 
 	InstThumb16BytesMovshiftReg movshift_reg_ins;
@@ -692,34 +744,28 @@ union InstThumb16Bytes
 	InstThumb16BytesCondBr cond_br_ins;
 	InstThumb16BytesCmpT2 cmp_t2;
 	InstThumb16BytesBr br_ins;
-
 };
 
 
 enum InstOpcode
 {
 	InstOpcodeInvalid = 0,
-
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	InstOpcode##_name,
 #include "Inst.def"
 #undef DEFINST
-
 	// Max
 	InstOpcodeCount
-
 };
 
 
 enum InstThumb16Opcode
 {
 	InstThumb16OpcodeInvalid = 0,
-
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 	InstThumb16Opcode##_name,
 #include "InstThumb.def"
 #undef DEFINST
-
 	// Max
 	InstThumb16OpcodeCount
 };
@@ -741,7 +787,6 @@ enum InstThumb32Opcode
 enum InstCategory
 {
 	InstCatInvalid = 0,
-
 	InstCategoryDprReg, 	 // Data Processing Register instructions
 	InstCategoryDprImm,	 // Data Processing Immediate instructions
 	InstCategoryDprSat, 	 // Data Processing saturation instructions
@@ -762,17 +807,14 @@ enum InstCategory
 	InstCategoryCprRtr,   // Coprocessor Register Transfer instructions
 	InstCategorySwiSvc,   // Software Interrupt / SVC Angel trap instructions
 	InstCategoryVfp,   // Vector Floating Point Instructions
-
 	InstCategoryUndef,
-
 	InstCategoryCount
-
 };
+
 
 enum InstThumb16Category
 {
 	InstThumb16CategoryNone = 0,
-
 	InstThumb16CategoryMovshiftReg,	 // Move Shift Instructions Register Based
 	InstThumb16CategoryAddsub,		 // Addition and Subtraction Instructions
 	InstThumb16CategoryImmdOprs,		 // Operations with Immediate Operations
@@ -796,16 +838,13 @@ enum InstThumb16Category
 	InstThumb16CategoryMiscCbnz,		 // Miscellaneous Instructions CB{N}Z
 	InstThumb16CategoryCmpT2,		 // Miscellaneous Instructions CB{N}Z
 	InstThumb16CategoryUndef,
-
 	InstThumb16CategoryCount
-
 };
 
 
 enum InstThumb32Category
 {
 	InstThumb32CategoryNone = 0,
-
 	InstThumb32CategoryLdStMult,	// Load Store Multiple
 	InstThumb32CategoryLdStDouble,	// Load Store Double Exclusive
 	InstThumb32CategoryPushPop,	// Push Pop Multiple
@@ -825,9 +864,7 @@ enum InstThumb32Category
 	InstThumb32CategoryBitField,	// Multiply Long
 	InstThumb32CategoryMovImmd,	// Immediate Move
 	InstThumb32CategoryUndef,
-
 	InstThumb32CategoryCount
-
 };
 
 
@@ -875,7 +912,10 @@ class Inst
 	// Disassembler
 	Asm *as; 
 
+	// Instruction address
 	unsigned int addr;
+
+	// Instruction content
 	InstBytes dword;
 	InstThumb16Bytes dword_16;
 	InstThumb32Bytes dword_32;
@@ -890,12 +930,15 @@ public:
 	//constructor
 	Inst();
 
+	// FIXME comment
 	unsigned int Rotl(unsigned int value, int shift);
 	unsigned int Rotr(unsigned int value, int shift);
 
+	// FIXME comment
 	void Amode2Disasm(std::ostream &os, InstCategory cat);
 	void Amode3Disasm(std::ostream &os, InstCategory cat);
 
+	// Functions that dump the ARM instruction related information
 	void DumpRd(std::ostream &os);
 	void DumpRn(std::ostream &os);
 	void DumpRm(std::ostream &os);
@@ -924,6 +967,7 @@ public:
 	void DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr);
 	void Dump(std::ostream &os);
 
+	// Functions that dump the Thumb 16 instruction related information
 	void Thumb16DumpRD(std::ostream &os);
 	void Thumb16DumpRM(std::ostream &os);
 	void Thumb16DumpRN(std::ostream &os);
@@ -936,6 +980,7 @@ public:
 	void Thumb16DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr);
 	void Thumb16Dump(std::ostream &os);
 
+	// Functions that dump the Thumb 32 instruction related information
 	void Thumb32DumpRD(std::ostream &os);
 	void Thumb32DumpRN(std::ostream &os);
 	void Thumb32DumpRM(std::ostream &os);
@@ -956,7 +1001,7 @@ public:
 	void Thumb32DumpWID(std::ostream &os);
 	void Thumb32DumpIMMD16(std::ostream &os);
 	void Thumb32DumpADDR(std::ostream &os);
-	void Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr);
+	void Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr);
 	void Thumb32Dump(std::ostream &os);
 
 	// Populate the 'info' field of an instruction by decoding the instruction
@@ -977,4 +1022,5 @@ public:
 };
 
 } // namespace ARM
+
 #endif // ARM_ASM_INST_H
