@@ -26,7 +26,6 @@
 
 #include "Emu.h"
 #include "Grid.h"
-#include "Machine.h"
 #include "Thread.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
