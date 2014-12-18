@@ -24,13 +24,13 @@
 #include "Asm.h"
 #include "Inst.h"
 
+
 namespace ARM
 {
 
 //
 // Configuration options
 //
-
 std::string Asm::path;
 
 void Asm::RegisterOptions()
@@ -51,6 +51,7 @@ void Asm::RegisterOptions()
 	command_line->setIncompatible("--arm-disasm");
 }
 
+
 void Asm::ProcessOptions()
 {
 	// Run ARM disassembler
@@ -62,362 +63,13 @@ void Asm::ProcessOptions()
 	}
 }
 
+
 Asm::Asm()
 {
-	InstInfo *info;
-	int i;
-	int j;
-
 	// Form the Instruction table and read Information from table
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
-	switch (InstCategory##_category) { \
-	\
-	case InstCategoryDprReg: \
-	inst_info[_arg1 * 16 + 0].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 0 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 1].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 1 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 2].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 2 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 3].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 3 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 4].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 4 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 5].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 5 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 6].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 6 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 7].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 7 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 8].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 8 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 10].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 10 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 12].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 12 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 14].opcode = InstOpcode##_name; \
-	info = &inst_info[_arg1 * 16 + 14 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break; \
-	\
-	case InstCategoryDprImm: \
-	for (i = 0; i < 16; i++ ){\
-		inst_info[_arg1 * 16 + i].opcode = InstOpcode##_name;\
-		info = &inst_info[_arg1 * 16 + i ]; \
-		info->inst = InstOpcode##_name; \
-		info->category = InstCategory##_category; \
-		info->name = #_name; \
-		info->fmt_str = _fmt_str; \
-		info->size = 4;\
-		info->opcode = InstOpcode##_name; \
-	}\
-	break;\
-	\
-	case InstCategoryDprSat:\
-	inst_info[_arg1 * 16 + 5].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 5 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryPsr:\
-	inst_info[_arg1 * 16 + 0].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 0 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryMult:\
-	inst_info[_arg1 * 16 + 9].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 9 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryMultSign:\
-	inst_info[_arg1 * 16 + 8].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 8 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 10].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 10 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 12].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 12 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	inst_info[_arg1 * 16 + 14].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 14 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryMultLn:\
-	inst_info[_arg1 * 16 + 9].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 9 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryMultLnSign:\
-	inst_info[_arg1 * 16 + 8].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 8 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategorySdswp:\
-	inst_info[_arg1 * 16 + 9].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + 9 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryBax:\
-	inst_info[_arg1 * 16 + _arg2].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + _arg2 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryHfwrdReg:\
-	inst_info[_arg1 * 16 + _arg2].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + _arg2 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryHfwrdImm:\
-	inst_info[_arg1 * 16 + _arg2].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + _arg2 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategorySdtr:\
-	if (_arg2 == 0xff){\
-		for (i = 0; i < 16; i++){\
-			inst_info[_arg1 * 16 + i].opcode = InstOpcode##_name;\
-			info = &inst_info[_arg1 * 16 + i ]; \
-			info->inst = InstOpcode##_name; \
-			info->category = InstCategory##_category; \
-			info->name = #_name; \
-			info->fmt_str = _fmt_str; \
-			info->size = 4;\
-			info->opcode = InstOpcode##_name; \
-		}\
-	}\
-	else{\
-		inst_info[_arg1 * 16 + _arg2].opcode = InstOpcode##_name;\
-		info = &inst_info[_arg1 * 16 + _arg2 ]; \
-		info->inst = InstOpcode##_name; \
-		info->category = InstCategory##_category; \
-		info->name = #_name; \
-		info->fmt_str = _fmt_str; \
-		info->size = 4;\
-		info->opcode = InstOpcode##_name; \
-		inst_info[_arg1 * 16 + (_arg2 + 8)].opcode = InstOpcode##_name;\
-		info = &inst_info[_arg1 * 16 + (_arg2 + 8)]; \
-		info->inst = InstOpcode##_name; \
-		info->category = InstCategory##_category; \
-		info->name = #_name; \
-		info->fmt_str = _fmt_str; \
-		info->size = 4;\
-		info->opcode = InstOpcode##_name; \
-	}\
-	break;\
-	\
-	case InstCategoryBrnch:\
-	for (i = 0 ; i < 16; i++){\
-		for (j = 0 ; j < 16; j++){\
-			inst_info[(_arg1 + i ) * 16 + j].opcode = InstOpcode##_name;\
-			info = &inst_info[(_arg1 + i) * 16 + j ]; \
-			info->inst = InstOpcode##_name; \
-			info->category = InstCategory##_category; \
-			info->name = #_name; \
-			info->fmt_str = _fmt_str; \
-			info->size = 4;\
-			info->opcode = InstOpcode##_name; \
-		}\
-	}\
-	break;\
-	\
-	case InstCategoryBdtr:\
-	for (i = 0; i < 16; i++){\
-		inst_info[_arg1 * 16 + i].opcode = InstOpcode##_name;\
-		info = &inst_info[_arg1 * 16 + i ]; \
-		info->inst = InstOpcode##_name; \
-		info->category = InstCategory##_category; \
-		info->name = #_name; \
-		info->fmt_str = _fmt_str; \
-		info->size = 4;\
-		info->opcode = InstOpcode##_name; \
-	}\
-	break;\
-	\
-	case InstCategorySwiSvc:\
-	for (i = 0 ; i < 16; i++){\
-		for (j = 0 ; j < 16; j++){\
-			inst_info[(_arg1 + i ) * 16 + j].opcode = InstOpcode##_name;\
-			info = &inst_info[(_arg1 + i) * 16 + j ]; \
-			info->inst = InstOpcode##_name; \
-			info->category = InstCategory##_category; \
-			info->name = #_name; \
-			info->fmt_str = _fmt_str; \
-			info->size = 4;\
-			info->opcode = InstOpcode##_name; \
-		}\
-	}\
-	break;\
-	\
-	case InstCategoryCprDtr:\
-	inst_info[_arg1 * 16 + _arg2].opcode = InstOpcode##_name;\
-	info = &inst_info[_arg1 * 16 + _arg2 ]; \
-	info->inst = InstOpcode##_name; \
-	info->category = InstCategory##_category; \
-	info->name = #_name; \
-	info->fmt_str = _fmt_str; \
-	info->size = 4;\
-	info->opcode = InstOpcode##_name; \
-	break;\
-	\
-	case InstCategoryVfp:\
-	for (i = 0; i < 16; i++){\
-		inst_info[_arg1 * 16 + i].opcode = InstOpcode##_name;\
-		info = &inst_info[_arg1 * 16 + i ]; \
-		info->inst = InstOpcode##_name; \
-		info->category = InstCategory##_category; \
-		info->name = #_name; \
-		info->fmt_str = _fmt_str; \
-		info->size = 4;\
-		info->opcode = InstOpcode##_name; \
-	}\
-	break;\
-	}
+	SetupInstInfo(#_name, _fmt_str, InstCategory##_category, \
+			_arg1, _arg2, InstOpcode##_name);
 #include "Inst.def"
 #undef DEFINST
 
@@ -694,7 +346,7 @@ Asm::Asm()
 	dec_table_thumb32_asm_lv7[0].next_table_high 	= 22;
 	dec_table_thumb32_asm_lv7[0].next_table_low 	= 20;
 
-	for(i = 0; i < 8; i++)
+	for(unsigned int i = 0; i < 8; i++)
 	{
 		if(!(i % 2))
 		{
@@ -745,7 +397,7 @@ Asm::Asm()
 	dec_table_thumb32_ld_byte[0].next_table_high 	= 19;
 	dec_table_thumb32_ld_byte[0].next_table_low 	= 16;
 
-	for(i = 0; i < 15; i++)
+	for(unsigned int i = 0; i < 15; i++)
 	{
 		dec_table_thumb32_ld_byte1[i].next_table 	= dec_table_thumb32_ld_byte2;
 		dec_table_thumb32_ld_byte1[i].next_table_high 	= 11;
@@ -760,7 +412,7 @@ Asm::Asm()
 	dec_table_thumb32_ld_byte[2].next_table_high 	= 19;
 	dec_table_thumb32_ld_byte[2].next_table_low 	= 16;
 
-	for(i = 0; i < 15; i++)
+	for(unsigned int i = 0; i < 15; i++)
 	{
 		dec_table_thumb32_ld_byte4[i].next_table 	= dec_table_thumb32_ld_byte5;
 		dec_table_thumb32_ld_byte4[i].next_table_high 	= 11;
@@ -973,7 +625,7 @@ Asm::Asm()
 	dec_table_thumb16_asm_lv5[1].next_table_high	= 11;
 	dec_table_thumb16_asm_lv5[1].next_table_low	= 5;
 
-	for(i = 0; i < 8; i++)
+	for(unsigned int i = 0; i < 8; i++)
 	{
 		dec_table_thumb16_misc[(0x78 + i)].next_table 		= dec_table_thumb16_it;
 		dec_table_thumb16_misc[(0x78 + i)].next_table_high 	= 3;
@@ -1009,7 +661,9 @@ Asm::Asm()
 
 }
 
+
 std::unique_ptr<Asm> Asm::instance;
+
 
 Asm *Asm::getInstance()
 {
@@ -1021,6 +675,7 @@ Asm *Asm::getInstance()
 	instance.reset(new Asm());
 	return instance.get();
 }
+
 
 Asm::~Asm()
 {
@@ -1147,6 +802,340 @@ Asm::~Asm()
 	delete dec_table_thumb32_brnch_ctrl;
 	delete dec_table_thumb32_brnch_ctrl1;
 }
+
+
+void Asm::SetupInstInfo(const char* name, const char* fmt_str,
+		InstCategory category, int arg1, int arg2, InstOpcode inst_name)
+{
+	InstInfo *info;
+	switch (category)
+	{
+		case InstCategoryDprReg:
+			info = &inst_info[arg1 * 16 + 0 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 1 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 2 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 3 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 4 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 5 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 6 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 7 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 8 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 10 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 12 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 14 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryDprImm:
+			for (unsigned int i = 0; i < 16; i++ )
+			{
+				info = &inst_info[arg1 * 16 + i ];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+			break;
+
+		case InstCategoryDprSat:
+			info = &inst_info[arg1 * 16 + 5 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryPsr:
+			info = &inst_info[arg1 * 16 + 0 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+		break;
+
+		case InstCategoryMult:
+			info = &inst_info[arg1 * 16 + 9 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryMultSign:
+			info = &inst_info[arg1 * 16 + 8 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 10 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 12 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + 14 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryMultLn:
+			info = &inst_info[arg1 * 16 + 9 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryMultLnSign:
+			info = &inst_info[arg1 * 16 + 8 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategorySdswp:
+			info = &inst_info[arg1 * 16 + 9 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryBax:
+			info = &inst_info[arg1 * 16 + arg2 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryHfwrdReg:
+			info = &inst_info[arg1 * 16 + arg2 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryHfwrdImm:
+			info = &inst_info[arg1 * 16 + arg2 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategorySdtr:
+			if (arg2 == 0xff)
+			{
+				for (unsigned int i = 0; i < 16; i++){
+					info = &inst_info[arg1 * 16 + i ];
+					info->inst = inst_name;
+					info->category = category;
+					info->name = name;
+					info->fmt_str = fmt_str;
+					info->size = 4;
+				info->opcode = inst_name;
+				}
+			}
+			else
+			{
+				info = &inst_info[arg1 * 16 + arg2 ];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+				info = &inst_info[arg1 * 16 + (arg2 + 8)];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+			break;
+
+		case InstCategoryBrnch:
+			for (unsigned int i = 0 ; i < 16; i++)
+			{
+				for (unsigned int j = 0 ; j < 16; j++)
+				{
+					info = &inst_info[(arg1 + i) * 16 + j ];
+					info->inst = inst_name;
+					info->category = category;
+					info->name = name;
+					info->fmt_str = fmt_str;
+					info->size = 4;
+					info->opcode = inst_name;
+				}
+			}
+			break;
+
+		case InstCategoryBdtr:
+			for (unsigned int i = 0; i < 16; i++)
+			{
+				info = &inst_info[arg1 * 16 + i ];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+			break;
+
+		case InstCategorySwiSvc:
+			for (unsigned int i = 0 ; i < 16; i++)
+			{
+				for (unsigned int j = 0 ; j < 16; j++)
+				{
+					info = &inst_info[(arg1 + i) * 16 + j ];
+					info->inst = inst_name;
+					info->category = category;
+					info->name = name;
+					info->fmt_str = fmt_str;
+					info->size = 4;
+					info->opcode = inst_name;
+				}
+			}
+			break;
+
+		case InstCategoryCprDtr:
+			info = &inst_info[arg1 * 16 + arg2 ];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			break;
+
+		case InstCategoryVfp:
+			for (unsigned int i = 0; i < 16; i++)
+			{
+				info = &inst_info[arg1 * 16 + i ];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+			break;
+		default:
+			throw misc::Panic(misc::fmt("%d: not recognized", category));
+			break;
+	}
+}
+
 
 void Asm::Thumb32SetupTable(const char* name , const char* fmt_str ,
 		InstThumb32Category cat32 , int op1 , int op2 , int op3 ,
@@ -1277,6 +1266,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 	return;
 }
 
+
 unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file,
 		unsigned int inst_addr, unsigned int *inst_ptr)
 {
@@ -1296,6 +1286,7 @@ unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file,
 
 	return (word_flag);
 }
+
 
 unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file,
 		unsigned int inst_addr, unsigned int *inst_ptr)
@@ -1317,6 +1308,7 @@ unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file,
 	return (word_flag);
 }
 
+
 void Asm::ElfSymbolListCreate(const ELFReader::File &file,
 			std::vector<ELFReader::Symbol*> &symbol_list)
 {
@@ -1329,6 +1321,7 @@ void Asm::ElfSymbolListCreate(const ELFReader::File &file,
 		}
 	}
 }
+
 
 AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &symbol_list,
 		unsigned int addr)
@@ -1375,6 +1368,7 @@ AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &
 	return disasm_mode;
 }
 
+
 int Asm::TestThumb32(const char *inst_ptr)
 {
 	unsigned int byte_index;
@@ -1395,6 +1389,7 @@ int Asm::TestThumb32(const char *inst_ptr)
 		return(0);
 	}
 }
+
 
 void Asm::DisassembleBinary(const std::string &path)
 {
@@ -1424,12 +1419,8 @@ void Asm::DisassembleBinary(const std::string &path)
 	// Decode and dump instructions
 	for (inst_pos = 0; inst_pos < section->getSize();)
 	{
-
 		disasm_mode = DissassembleMode(symbol_list,
 			(section->getAddr() + inst_index));
-
-		if(disasm_mode != AsmDisassemblyModeArm && disasm_mode != AsmDisassemblyModeThumb)
-			continue;
 
 		if (disasm_mode == AsmDisassemblyModeArm)
 		{
@@ -1514,17 +1505,5 @@ void Asm::DisassembleBinary(const std::string &path)
 	}
 }
 
-// Pointer to 'inst' is declared volatile to avoid optimizations when calling 'memset'
-
-
-//void ARMThumb16InstDebugDump(ARMInst *inst, FILE *f )
-//{
-//	ARMInstThumb16Dump(inst, f);
-//}
-
-//void ARMThumb32InstDebugDump(ARMInst *inst, FILE *f )
-//{
-//	ARMInstThumb32Dump(inst, f);
-//}
-
 } //namespace ARM
+

@@ -1,4 +1,21 @@
-
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
 
 #ifndef ARM_ASM_ASM_H
 #define ARM_ASM_ASM_H
@@ -12,13 +29,13 @@
 #include <lib/cpp/Error.h>
 #include <lib/cpp/ELFReader.h>
 
-
 #include "Inst.h"
+
 
 namespace ARM
 {
 
-// Disassembly Mode 
+/// Disassembly Mode 
 enum AsmDisassemblyMode
 {
 	AsmDisassemblyModeArm = 1,
@@ -26,7 +43,7 @@ enum AsmDisassemblyMode
 };
 
 
-// Shift operators 
+/// Shift operators 
 enum AsmShiftOperator
 {
 	AsmShiftOperatorLsl = 0,
@@ -35,7 +52,8 @@ enum AsmShiftOperator
 	AsmShiftOperatorRor
 };
 
-// Condition Fields 
+
+/// Condition Fields 
 enum AsmConditionCodes
 {
 	AsmConditionCodesEQ = 0, // Equal 
@@ -55,6 +73,8 @@ enum AsmConditionCodes
 	AsmConditionCodesAL	// Always 
 };
 
+
+/// User register
 enum AsmUserRegisters
 {
 	AsmUserRegistersR0 = 0,
@@ -75,6 +95,8 @@ enum AsmUserRegisters
 	AsmUserRegistersR15	// Program Counter pc 
 };
 
+
+/// PSR register
 enum AsmPsrRegisters
 {
 	AsmPsrRegistersCPSR = 0,
@@ -82,6 +104,7 @@ enum AsmPsrRegisters
 };
 
 
+/// ARM disassembler
 class Asm : public comm::Asm
 {
 	// File to disassemble
@@ -106,7 +129,7 @@ public:
 		}
 	};
 
-	// ARM instruction table 
+	/// ARM instruction table 
 	InstInfo inst_info[256*16];
 
 	/// Pointers to the tables of instructions Thumb16
@@ -123,7 +146,6 @@ public:
 	InstThumb16Info *dec_table_thumb16_asm_lv7;
 	InstThumb16Info *dec_table_thumb16_asm_lv8;
 	InstThumb16Info *dec_table_thumb16_asm_lv9;
-
 
 	InstThumb16Info *dec_table_thumb16_data_proc;
 	InstThumb16Info *dec_table_thumb16_spcl_data_brex;
@@ -153,7 +175,6 @@ public:
 	InstThumb32Info *dec_table_thumb32_asm_lv13;
 	InstThumb32Info *dec_table_thumb32_asm_lv14;
 	InstThumb32Info *dec_table_thumb32_asm_lv15;
-
 
 	InstThumb32Info *dec_table_thumb32_asm_ldst_mul;
 	InstThumb32Info *dec_table_thumb32_asm_ldst_mul1;
@@ -245,6 +266,8 @@ public:
 	int TestThumb32(const char *inst_ptr);
 	void Thumb16InstDebugDump();
 	void Thumb32InstDebugDump();
+	void SetupInstInfo(const char* name, const char* fmt_str,
+			InstCategory category, int arg1, int arg2, InstOpcode inst_name);
 	void Thumb32SetupTable(const char* name ,const char* fmt_str ,
 		InstThumb32Category cat32 , int op1 , int op2 , int op3 ,
 		int op4 , int op5 , int op6, int op7, int op8, InstThumb32Opcode inst_name);
@@ -274,11 +297,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
 };
-
 
 } //namespace ARM
 
-
 #endif // ARM_ASM_ASM_H
+
