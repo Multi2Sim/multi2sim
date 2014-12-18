@@ -35,13 +35,13 @@ namespace llvm2si
 
 class BasicBlockLivenessAnalysisPassInfo : public comm::BasicBlockPassInfo
 {
-	std::unique_ptr<misc::Bitmap>vector_def_info;
-	std::unique_ptr<misc::Bitmap>vector_use_info;
+	misc::Bitmap *vector_def_info;
+	misc::Bitmap *vector_use_info;
 	misc::Bitmap *vector_in_info;
 	misc::Bitmap *vector_out_info;
 
-	std::unique_ptr<misc::Bitmap>scalar_def_info;
-	std::unique_ptr<misc::Bitmap>scalar_use_info;
+	misc::Bitmap *scalar_def_info;
+	misc::Bitmap *scalar_use_info;
 	misc::Bitmap *scalar_in_info;
 	misc::Bitmap *scalar_out_info;
 
@@ -49,13 +49,13 @@ public:
 
 	void ResetVectorDefInfo(int size)
 	{
-		vector_def_info = misc::new_unique<misc::Bitmap>(size);
+		vector_def_info = new misc::Bitmap(size);
 		vector_def_info->Reset();
 	}
 
 	void ResetVectorUseInfo(int size)
 	{
-		vector_use_info =  misc::new_unique<misc::Bitmap>(size);
+		vector_use_info =  new misc::Bitmap(size);
 		vector_use_info->Reset();
 	}
 
@@ -101,25 +101,25 @@ public:
 		return *vector_use_info;
 	}
 
-	misc::Bitmap* GetVectorInInfo()
+	misc::Bitmap GetVectorInInfo()
 	{
-		return vector_in_info;
+		return *vector_in_info;
 	}
 
-	misc::Bitmap* GetVectorOutInfo()
+	misc::Bitmap GetVectorOutInfo()
 	{
-		return vector_out_info;
+		return *vector_out_info;
 	}
 
 	void ResetScalarDefInfo(int size)
 	{
-		scalar_def_info = misc::new_unique<misc::Bitmap>(size);
+		scalar_def_info = new misc::Bitmap(size);
 		scalar_def_info->Reset();
 	}
 
 	void ResetScalarUseInfo(int size)
 	{
-		scalar_use_info =  misc::new_unique<misc::Bitmap>(size);
+		scalar_use_info =  new misc::Bitmap(size);
 		scalar_use_info->Reset();
 	}
 
@@ -165,20 +165,25 @@ public:
 		return *scalar_use_info;
 	}
 
-	misc::Bitmap* GetScalarInInfo()
+	misc::Bitmap GetScalarInInfo()
 	{
-		return scalar_in_info;
+		return *scalar_in_info;
 	}
 
-	misc::Bitmap* GetScalarOutInfo()
+	misc::Bitmap GetScalarOutInfo()
 	{
-		return scalar_out_info;
+		return *scalar_out_info;
 	}
 
 	~BasicBlockLivenessAnalysisPassInfo()
 	{
+		delete vector_def_info;
+		delete vector_use_info;
 		delete vector_in_info;
 		delete vector_out_info;
+
+		delete scalar_def_info;
+		delete scalar_use_info;
 		delete scalar_in_info;
 		delete scalar_out_info;
 	}
@@ -199,7 +204,7 @@ class LivenessAnalysisPass : public comm::Pass
 		}
 
 		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
-		template<typename ConcreteType> ConcreteType *getInfo(BasicBlock *basic_block)
+		template<typename ConcreteType> ConcreteType* getInfo(BasicBlock *basic_block)
 		{
 			return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
 		}
@@ -208,7 +213,7 @@ class LivenessAnalysisPass : public comm::Pass
 		void run();
 
 		/// Dump debug information related to liveness analysis pass
-		void dump(std::ostream &os);
+		void dump();
 
 		~LivenessAnalysisPass() {}
 };
