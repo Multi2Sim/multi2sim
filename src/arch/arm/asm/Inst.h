@@ -907,6 +907,7 @@ struct InstThumb32Info
 };
 
 
+/// ARM instruction
 class Inst
 {
 	// Disassembler
@@ -927,18 +928,18 @@ class Inst
 
 public:
 
-	//constructor
+	/// constructor
 	Inst();
 
-	// FIXME comment
+	/// FIXME comment
 	unsigned int Rotl(unsigned int value, int shift);
 	unsigned int Rotr(unsigned int value, int shift);
 
-	// FIXME comment
+	/// FIXME comment
 	void Amode2Disasm(std::ostream &os, InstCategory cat);
 	void Amode3Disasm(std::ostream &os, InstCategory cat);
 
-	// Functions that dump the ARM instruction related information
+	/// Functions that dump the ARM instruction related information
 	void DumpRd(std::ostream &os);
 	void DumpRn(std::ostream &os);
 	void DumpRm(std::ostream &os);
@@ -967,7 +968,7 @@ public:
 	void DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr);
 	void Dump(std::ostream &os);
 
-	// Functions that dump the Thumb 16 instruction related information
+	/// Functions that dump the Thumb 16 instruction related information
 	void Thumb16DumpRD(std::ostream &os);
 	void Thumb16DumpRM(std::ostream &os);
 	void Thumb16DumpRN(std::ostream &os);
@@ -980,7 +981,7 @@ public:
 	void Thumb16DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr);
 	void Thumb16Dump(std::ostream &os);
 
-	// Functions that dump the Thumb 32 instruction related information
+	/// Functions that dump the Thumb 32 instruction related information
 	void Thumb32DumpRD(std::ostream &os);
 	void Thumb32DumpRN(std::ostream &os);
 	void Thumb32DumpRM(std::ostream &os);
@@ -1004,10 +1005,10 @@ public:
 	void Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr);
 	void Thumb32Dump(std::ostream &os);
 
-	// Populate the 'info' field of an instruction by decoding the instruction
-	// in 'buf'. The first 4 bytes of 'buf' are copied to field 'bytes'. The value
-	// given in 'addr' is the instruction's virtual address, used for branch
-	// decoding purposes.
+	/// Populate the 'info' field of an instruction by decoding the instruction
+	/// in 'buf'. The first 4 bytes of 'buf' are copied to field 'bytes'. The value
+	/// given in 'addr' is the instruction's virtual address, used for branch
+	/// decoding purposes.
 	void Decode(unsigned int addr, const char *buf);
 	void Thumb16Decode(const char *buf, unsigned int ip);
 	void Thumb32Decode(const char *buf, unsigned int ip);
@@ -1021,6 +1022,6 @@ public:
 
 };
 
-} // namespace ARM
+}  // namespace ARM
 
 #endif // ARM_ASM_INST_H
