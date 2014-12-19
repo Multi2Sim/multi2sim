@@ -159,10 +159,10 @@ void LivenessAnalysisPass::run()
 	// Vector that keeps track of the change in liveness of every block
 	std::vector<bool> bb_change;
 	bool changed = true;
-	int i  = 0;
+
 	// Iterate through basic_block_queue until no basic blocks remain
 	while(changed == true)
-	{ i++;
+	{
 		changed = false;
 		for (auto basic_block_current = basic_block_queue.rbegin();
 					basic_block_current != basic_block_queue.rend();
@@ -244,7 +244,6 @@ void LivenessAnalysisPass::run()
 			bb_change.pop_back();
 		}
 	}
-	std::cout << i << "\n";
 }
 
 void LivenessAnalysisPass::dump()
