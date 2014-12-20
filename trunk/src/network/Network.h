@@ -153,6 +153,118 @@ public:
 	Node *newPhotonicNode(const std::string &name, int channels,
 			int wavelength);
 
+	/// Adding New Link
+	///
+	/// \param srcNode
+	///	source of the connection
+	///
+	/// \param dstNode
+	/// destination of the connection
+	///
+	/// \param bandwidth
+	/// bandwidth of the connection
+	///
+	/// \param srcBufferSize
+	/// size of the buffer, connected to the link at source
+	///
+	/// \param dstBufferSize
+	/// size of the buffer, connected to the link at destination
+	///
+	/// \param virtualChannelCount
+	/// number of virtual channels on the physical link
+	void newLink(Node *srcNode, Node *dstNode, int bandwidth,
+			int srcBufferSize, int dstBufferSize,
+			int virtualChannelCount);
+
+	/// Adding New symmetric Bidirectional Links
+	///
+	/// \param firstNode
+	///	first node for the bidirectional link
+	///
+	/// \param secondNode
+	/// second node for the bidirectional link
+	///
+	/// \param bandwidth
+	/// bandwidth of the bidirectional link
+	///
+	/// \param srcBufferSize
+	/// size of the source buffer of the link
+	///
+	/// \param dstBufferSize
+	/// size of the destination buffer of the link
+	///
+	/// \param virtualChannelCount
+	/// number of virtual channels on the bidirectional link
+	void newBidirectionalLink(Node *firstNode, Node *secondNode, int bandwidth,
+			int srcBufferSize, int dstBufferSize,
+			int virtualChannelCount);
+
+	/// Adding New bus port
+	///
+	/// \param srcNode
+	///	first node for the bidirectional link
+	///
+	/// \param dstNode
+	/// second node for the bidirectional link
+	///
+	/// \param srcBufferSize
+	/// size of the source buffer of the link
+	///
+	/// \param dstBufferSize
+	/// size of the destination buffer of the link
+	void newBusPort(Node *srcNode, Node *dstNode, int busSrcBufferSize,
+			int busDstBufferSize);
+
+	/// Adding New symmetric ports for Bidirectional bus
+	///
+	/// \param firstNode
+	///	first node for the bidirectional bus
+	///
+	/// \param secondNode
+	/// second node for the bidirectional bus
+	///
+	/// \param srcBufferSize
+	/// size of the source port of the bus
+	///
+	/// \param dstBufferSize
+	/// size of the destination port of the bus
+	void newBidirectionalBusPort(Node *firstNode, Node *secondNode,
+			int busSrcBufferSize, int busDstBufferSize);
+
+	/// Adding New photonic Channel
+	///
+	/// \param firstNode
+	///	source node for the photonic Channel
+	///
+	/// \param secondNode
+	/// destination node for the photonic Channel
+	///
+	/// \param srcBufferSize
+	/// size of the source port of the photonic Channel
+	///
+	/// \param dstBufferSize
+	/// size of the destination port of the photonic Channel
+	void newPhotonicChannelPort(Node *srcNode, Node *dstNode,
+			int srcBufferSize, int dstBufferSize);
+
+	/// Adding New symmetric ports for Bidirectional photonic Channel
+	///
+	/// \param firstNode
+	///	first node for the bidirectional photonic Channel
+	///
+	/// \param secondNode
+	/// second node for the bidirectional photonic Channel
+	///
+	/// \param srcBufferSize
+	/// size of the source port of the photonic Channel
+	///
+	/// \param dstBufferSize
+	/// size of the destination port of the photonic Channel
+	void newBidirectionalPhotonicChannelPort(Node *firstNode,
+			Node *secondNode, int srcBufferSize,
+			int dstBufferSize);
+
+
 };
 
 
