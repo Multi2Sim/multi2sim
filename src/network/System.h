@@ -129,6 +129,10 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+    /// Returns whether or not Network is running as a stand alone simulator.
+    bool isStandAlone() { return stand_alone; }
+
 };
 
 }  // namespace net
