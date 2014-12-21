@@ -22,6 +22,7 @@
 #include "Asm.h"
 #include "BrigDef.h"
 #include "BrigSection.h"
+#include "AsmService.h"
 #include "BrigEntry.h"
 
 namespace HSA
@@ -84,6 +85,12 @@ BrigEntry::BrigEntry(const char *buf, const BrigSection *section):
 }
 
 
+BrigFile *BrigEntry::getBinary() const
+{
+	return section->getBinary();
+}
+
+
 unsigned BrigEntry::getSize() const
 {
 	BrigBase *brig_base = (BrigBase *)base;
@@ -104,11 +111,31 @@ unsigned int BrigEntry::getOffset() const
 }
 
 
-std::unique_ptr<BrigEntry> BrigEntry::next() const
+std::unique_ptr<BrigEntry> BrigEntry::Next() const
 {
 	unsigned int next_offset = getOffset() + getSize();
 	return section->getEntryByOffset(next_offset);
 }
+
+
+std::unique_ptr<BrigEntry> BrigEntry::NextTopLevelEntry() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		return getNextModuleEntry();
+	}
+	default:
+	{
+		return Next();
+	}
+	}
+}
+
 
 
 void BrigEntry::DumpIndent(std::ostream &os = std::cout) const
@@ -143,10 +170,8 @@ void BrigEntry::DumpDirArgBlockStart(std::ostream &os = std::cout) const
 
 void BrigEntry::DumpDirComment(std::ostream &os = std::cout) const
 {
-	struct BrigDirectiveComment *dir = (struct BrigDirectiveComment *)base;
 	DumpIndent(os);
-	os << misc::fmt("%s\n", 
-			getBinary()->getStringByOffset(dir->name).c_str());
+	os << getName() << "\n";
 }
 
 
@@ -158,39 +183,97 @@ void BrigEntry::DumpDirControl(std::ostream &os = std::cout) const
 
 void BrigEntry::DumpDirExtension(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "EXTENSION");
+	os << "extension ";
+	AsmService::DumpStringLiteral(getName(), os);
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirFbarrier(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "FBARRIER");
+	os << misc::fmt("Directive: %s, not supported\n", "FBarrier");
 }
 
 
 void BrigEntry::DumpDirFunction(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "FUNCTION");
+	// Dump prefix
+	AsmService::DumpWithSpace(AsmService::DeclToString(
+			!isDefinition()), os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(
+			getLinkage()), os);
+
+	// Dump name
+	os << "function " << getName();
+
+	// Dump arguments
+	DumpArguments(Next(), getOutArgCount(), os);
+	DumpArguments(getFirstInArg(), getInArgCount(), os);
+
+	// Dump body
+	if (isDefinition())
+	{
+		DumpBody(getFirstCodeBlockEntry(), getNextModuleEntry(), os);
+	}
+
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirIndirectFunction(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "INDIRECT_FUNCTION");
+	// Dump prefix
+	AsmService::DumpWithSpace(AsmService::DeclToString(
+			!isDefinition()), os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(
+			getLinkage()), os);
+
+	// Dump function name
+	os << "inderict function " << getName();
+
+	// Dump arguments
+	DumpArguments(Next(), getOutArgCount(), os);
+	DumpArguments(getFirstInArg(), getInArgCount(), os);
+
+	// Dump body
+	// Dump body
+	if (isDefinition())
+	{
+		DumpBody(getFirstCodeBlockEntry(), getNextModuleEntry(), os);
+	}
+
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirKernel(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "KERNEL");
+	// Dump prefix
+	AsmService::DumpWithSpace(AsmService::DeclToString(
+			!isDefinition()), os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(
+			getLinkage()), os);
+
+	// Dump name
+	os << "kernel " << getName();
+
+	// Dump arguments
+	DumpArguments(getFirstInArg(), getInArgCount(), os);
+
+	// Dump body
+	if (isDefinition())
+	{
+		DumpBody(getFirstCodeBlockEntry(), getNextModuleEntry(), os);
+	}
+
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirLabel(std::ostream &os = std::cout) const
 {
 	os << "\n";
-	struct BrigDirectiveLabel *label = (struct BrigDirectiveLabel *)base;
-	os << getBinary()->getStringByOffset(label->name);
+	os << getName();
 	os << ":\n";
 }
 
@@ -209,21 +292,40 @@ void BrigEntry::DumpDirPragma(std::ostream &os = std::cout) const
 
 void BrigEntry::DumpDirSignature(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "SIGNATURE");
+	AsmService::DumpWithSpace(AsmService::DeclToString(
+			!isDefinition()), os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(
+			getLinkage()), os);
+
+	os << "signature " << getName();
+
+	// Dump arguments
+	DumpArguments(Next(), getOutArgCount(), os);
+	DumpArguments(getFirstInArg(), getInArgCount(), os);
+
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirVariable(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "VARIABLE");
+	DumpSymbolDeclaration(os);
+
+	// FIXME Deal with variable init
+
+	os << ";\n";
 }
 
 
 void BrigEntry::DumpDirVersion(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "VERSION");
+	os << "version ";
+	os << getHsailMajor() << ":";
+	os << getHsailMinor() << ":";
+	os << AsmService::ProfileToString(getProfile()) << ":";
+	os << AsmService::MachineModelToString(getMachineModel()) << ";";
+	os << "\n";
 }
-
 
 
 void BrigEntry::DumpInstAddr(std::ostream &os = std::cout) const
@@ -240,7 +342,13 @@ void BrigEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 
 void BrigEntry::DumpInstBasic(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "BASIC");
+	os << AsmService::OpcodeToString(getOpcode());
+	if (AsmService::InstUseType(getOpcode()))
+	{
+		AsmService::DumpUnderscore(
+				AsmService::TypeToString(getType()), os);
+	}
+	os << "\n";
 }
 
 
@@ -391,6 +499,545 @@ void BrigEntry::DumpOperandString(std::ostream &os = std::cout) const
 void BrigEntry::DumpOperandWavesize(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("Operand: %s, not supported\n", "WAVESIZE");
+}
+
+
+void BrigEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
+{
+	AsmService::DumpWithSpace(AsmService::DeclToString(
+			!isDefinition()), os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(
+			getLinkage()), os);
+	AsmService::DumpWithSpace(AsmService::AllocationToString(
+			getAllocation()), os);
+	// FIXME: add align and const support
+
+	// Dump memory segment and type
+	os << AsmService::SegmentToString(getSegment());
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+
+	// Dump name if exist
+	if (getName() != "")
+	{
+		os << " " << getName();
+	}
+
+	// Dump square bracket if the symbol is array
+	if (isFlexArray())
+	{
+		os << "[]";
+	}
+	else if(isArray())
+	{
+		os << "[" << getDim() << "]";
+	}
+
+}
+
+
+void BrigEntry::DumpArguments(std::unique_ptr<BrigEntry> arg, 
+			unsigned int count, 
+			std::ostream &os = std::cout) const
+{
+	os << "(";
+	if (count == 1)
+	{
+		arg->DumpSymbolDeclaration(os);
+	}
+	else if(count > 1)
+	{
+		Asm::getInstance()->IndentMore();	
+		for (unsigned int i = 0; i < count; i++)
+		{
+			os << "\n";
+			DumpIndent();
+			arg->DumpSymbolDeclaration(os);
+			if (i > 1)
+				os << ",";
+			arg = arg->Next();
+		}	
+		Asm::getInstance()->IndentLess();
+	}
+	os << ")";
+}
+
+
+void BrigEntry::DumpBody(std::unique_ptr<BrigEntry> start, 
+		std::unique_ptr<BrigEntry> end,
+		std::ostream &os = std::cout) const
+{
+	os << "\n{\n";
+	
+	Asm::getInstance()->IndentMore();
+	//os << misc::fmt("end: %p\n", end.get());
+	std::unique_ptr<BrigEntry> entry = std::move(start);
+	while(true)
+	{
+		// Terminate if end reached
+		if (entry.get() == nullptr)
+			break;	
+		else if (end.get() && end->base == entry->base)
+			break;
+
+		// Dump entry
+		entry->Dump(os);
+		entry = entry->Next();
+		
+	}
+	Asm::getInstance()->IndentLess();
+	
+	os << "}";
+}
+
+
+unsigned int BrigEntry::getHsailMajor() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("hsailMajor field is only valid for "
+				"directive version");
+	}
+
+	return directive->hsailMajor;
+}
+
+
+unsigned int BrigEntry::getHsailMinor() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("hsailMinor field is only valid for "
+				"directive version");
+	}
+
+	return directive->hsailMinor;
+
+}
+
+
+unsigned int BrigEntry::getBrigMajor() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("brigMajor field is only valid for "
+				"directive version");
+	}
+
+	return directive->brigMajor;
+
+}
+
+
+unsigned int BrigEntry::getBrigMinor() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("brigMinor field is only valid for "
+				"directive version");
+	}
+
+	return directive->brigMinor;
+
+}
+
+
+BrigProfile BrigEntry::getProfile() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("brigMinor field is only valid for "
+				"directive version");
+	}
+
+	return (BrigProfile)directive->profile;
+
+}
+
+
+BrigMachineModel BrigEntry::getMachineModel() const
+{
+	struct BrigDirectiveVersion *directive = 
+			(struct BrigDirectiveVersion *)base;
+
+	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
+	{
+		throw misc::Panic("brigMinor field is only valid for "
+				"directive version");
+	}
+
+	return (BrigMachineModel)directive->machineModel;
+}
+
+
+std::string BrigEntry::getName() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_COMMENT:
+	case BRIG_KIND_DIRECTIVE_LABEL:
+	case BRIG_KIND_DIRECTIVE_EXTENSION:
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveComment *dir = 
+				(struct BrigDirectiveComment *)base;
+		return getBinary()->getStringByOffset(dir->name);
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;
+		return getBinary()->getStringByOffset(dir->name);
+	}
+	default: 
+		throw misc::Panic(misc::fmt("Name field are not valid "
+				"for entry\n"));
+	}
+	return "";
+}
+
+
+bool BrigEntry::isDefinition() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+	}
+	default:
+		throw misc::Panic("Get isDefinition is not valid for type\n");
+	}
+}
+
+
+bool BrigEntry::isConst() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_CONST);
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_CONST);
+	}
+	default:
+		throw misc::Panic("Get isConst is not valid for type\n");
+	}
+}
+
+
+bool BrigEntry::isArray() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_ARRAY);
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_ARRAY);
+	}
+	default:
+		throw misc::Panic("Get isArray is not valid for type\n");
+	}
+}
+
+
+bool BrigEntry::isFlexArray() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_FLEX_ARRAY);
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_FLEX_ARRAY);
+	}
+	default:
+		throw misc::Panic("Get isFlexArray is not valid for type\n");
+	}
+}
+
+
+unsigned char BrigEntry::getLinkage() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;
+		unsigned char linkage = dir->linkage;
+		return linkage;
+	}
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		return dir->linkage;
+	}	
+	default:
+		throw misc::Panic("Get linkage is not valid for type.\n");
+	}
+}
+
+
+unsigned char BrigEntry::getAllocation() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;
+		unsigned char allocation = dir->allocation;
+		return allocation;
+	}
+	default: 
+		throw misc::Panic("Get allocation is not valid for kind.\n");
+	}
+}
+
+
+unsigned char BrigEntry::getSegment() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;
+		unsigned char segment = dir->segment;
+		return segment;
+	}
+	default:
+		throw misc::Panic("Get segment is not valid for kind.\n");
+	}
+}
+
+
+unsigned long long BrigEntry::getDim() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;
+		unsigned long long *dim = (unsigned long long *)&dir->dim;
+		return *dim;
+	}
+	default:
+		throw misc::Panic("Get dim is not valid for kind.\n");
+	}
+}
+
+
+unsigned short BrigEntry::getOutArgCount() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		return dir->outArgCount;
+	}	
+	default:
+		throw misc::Panic("Get outArgCount is not valid for kind.\n");
+	}	
+}
+
+
+unsigned short BrigEntry::getInArgCount() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		return dir->inArgCount;
+	}
+	default:
+		throw misc::Panic("Get inArgCount is not valid for kind.\n");	
+	}	
+}
+
+
+std::unique_ptr<BrigEntry> BrigEntry::getFirstInArg() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned int offset =  dir->firstInArg;
+		return getBinary()->getCodeEntryByOffset(offset);
+	}
+	default:
+		throw misc::Panic("Get inArgCount is not valid for kind.\n");	
+	}	
+}
+
+
+std::unique_ptr<BrigEntry> BrigEntry::getFirstCodeBlockEntry() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned int offset =  dir->firstCodeBlockEntry;
+		return getBinary()->getCodeEntryByOffset(offset);
+	}
+	default:
+		throw misc::Panic("Get firstCodeBlockEntry is not valid for "
+			"kind.\n");	
+	}
+}
+
+
+std::unique_ptr<BrigEntry> BrigEntry::getNextModuleEntry() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir = 
+				(struct BrigDirectiveExecutable *)base;	
+		unsigned int offset =  dir->nextModuleEntry;
+		return getBinary()->getCodeEntryByOffset(offset);
+	}
+	default:
+		throw misc::Panic("Get nextModuleEntry is not valid for kind.\n");	
+	}
+}
+
+
+BrigOpcode BrigEntry::getOpcode() const
+{
+	/// Check if the entry is an inst
+	if (getKind() < BRIG_KIND_INST_BEGIN 
+			|| getKind() >= BRIG_KIND_INST_END)
+	{
+		throw misc::Panic(misc::fmt(
+				"Getting opcode is invalid for "
+				"entry of kind %d\n", getKind()));
+	}
+
+	// Return opcode	
+	struct BrigInstBase *inst = (struct BrigInstBase *)base;
+	return (BrigOpcode)inst->opcode;
+}
+
+
+BrigTypeX BrigEntry::getType() const
+{
+	/// Check if the entry is an inst
+	if (getKind() >= BRIG_KIND_INST_BEGIN 
+			&& getKind() < BRIG_KIND_INST_END)
+	{
+		// Return type
+		struct BrigInstBase *inst = (struct BrigInstBase *)base;
+		return (BrigTypeX)inst->type;
+	}
+	else if(getKind() == BRIG_KIND_DIRECTIVE_VARIABLE)
+	{
+		struct BrigDirectiveVariable *dir = 
+				(struct BrigDirectiveVariable *)base;
+		return (BrigTypeX)dir->type;
+	}
+	else
+	{
+		throw misc::Panic("Get type is not vaild for kind\n");
+	}
+
+	
+
 }
 
 }  // namespace HSA

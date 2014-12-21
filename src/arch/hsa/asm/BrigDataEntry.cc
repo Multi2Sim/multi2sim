@@ -38,7 +38,7 @@ unsigned int BrigDataEntry::getSize() const
 
 const std::string BrigDataEntry::getString() const
 {
-	std::string str((const char *)data->bytes);
+	std::string str((const char *)data->bytes, data->byteCount);
 	return str;
 }
 

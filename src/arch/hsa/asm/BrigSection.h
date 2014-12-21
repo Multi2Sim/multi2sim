@@ -24,6 +24,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "BrigFile.h"
+#include "BrigEntry.h"
 #include "BrigDef.h"
 
 namespace HSA

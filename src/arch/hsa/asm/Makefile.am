@@ -7,6 +7,9 @@ libasm_a_SOURCES = \
 	Asm.h \
 	Asm.cc \
 	\
+	AsmService.h \
+	AsmService.cc \
+	\
 	BrigFile.h \
 	BrigFile.cc \
 	\
