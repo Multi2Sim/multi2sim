@@ -88,7 +88,7 @@ void Asm::DisassembleBinary(const std::string &path) const
 	while(entry.get())
 	{
 		entry->Dump(std::cout);
-		entry = entry->next();
+		entry = entry->NextTopLevelEntry();
 	}
 	/*
 	const char *buffer = brig_section->getBuffer();

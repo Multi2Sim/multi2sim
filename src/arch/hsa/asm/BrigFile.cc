@@ -77,6 +77,16 @@ bool BrigFile::isValid() const
 }
 
 
+std::unique_ptr<BrigEntry> BrigFile::getCodeEntryByOffset(
+		unsigned int offset) const
+{
+	BrigSection *code_section = getBrigSection(BrigSectionHsaCode);
+	std::unique_ptr<BrigEntry> entry = 
+			code_section->getEntryByOffset(offset);
+	return entry;
+}
+
+
 const std::string BrigFile::getStringByOffset(unsigned int offset) const
 {
 	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
