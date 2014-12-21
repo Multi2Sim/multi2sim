@@ -162,8 +162,7 @@ public:
 	}
 
 	/// Add a wait counter argument
-	ArgWaitCounter *addWaitCounter(ArgWaitCounter::CounterType type
-			= ArgWaitCounter::CounterTypeInvalid)
+	ArgWaitCounter *addWaitCounter(ArgWaitCounter::CounterType type)
 	{
 		return addArgument<ArgWaitCounter>(type);
 	}
