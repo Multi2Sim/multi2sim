@@ -309,12 +309,12 @@ ArgWaitCounter::ArgWaitCounter(CounterType counter_type) :
 
 	case CounterTypeLgkmCnt:
 
-		vmcnt_active = false;
+		lgkmcnt_active = true;
 		break;
 
 	case CounterTypeExpCnt:
 
-		vmcnt_active = false;
+		expcnt_active = true;
 		break;
 	
 	default:
