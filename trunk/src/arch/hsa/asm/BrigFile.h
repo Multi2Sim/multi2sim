@@ -27,10 +27,11 @@
 #include <lib/cpp/ELFReader.h>
 
 #include "BrigDef.h"
+#include "BrigEntry.h"
 #include "BrigSection.h"
 
-
-namespace HSA{
+namespace HSA
+{
 
 class BrigSection;
 
@@ -67,6 +68,11 @@ public:
 	/// \return
 	///	Returns \c true if the loaded file is valid
 	bool isValid() const;
+
+	/// Retrieve an entry in the code section
+	std::unique_ptr<BrigEntry> getCodeEntryByOffset(
+			unsigned int offset) const;
+
 	
 	/// Return the string that is stored in the hsa_data section by its 
 	/// offset

@@ -23,6 +23,8 @@
 #include <iostream>
 #include <memory>
 
+#include "BrigFile.h"
+
 namespace HSA
 {
 
@@ -68,7 +70,7 @@ public:
 	const BrigSection *getSection() const { return section; }
 
 	/// Returns the file that has this entry
-	BrigFile *getBinary() const { return section->getBinary(); }
+	BrigFile *getBinary() const;
 
 	/// Dump the entry
 	void Dump(std::ostream &os = std::cout) const
@@ -141,8 +143,99 @@ public:
 	/// dump function
 	static std::map<unsigned, DumpEntryFn> dump_entry_fn;
 
-	/// Returns an unique pointer to the next entry
-	std::unique_ptr<BrigEntry> next() const;
+	/// Dump symbol declaration
+	void DumpSymbolDeclaration(std::ostream &os) const;
+
+	/// Dump argument list
+	void DumpArguments(std::unique_ptr<BrigEntry> firstArg, 
+			unsigned int count, std::ostream &os) const;
+
+	/// Dump function or kernel body
+	void DumpBody(std::unique_ptr<BrigEntry> start,
+			std::unique_ptr<BrigEntry> end,
+			std::ostream &os) const;
+
+	/// Return an unique pointer to the next entry
+	std::unique_ptr<BrigEntry> Next() const;
+
+	/// Return an unique pointer to the next top level entry
+	std::unique_ptr<BrigEntry> NextTopLevelEntry() const;
+
+	
+
+
+	//
+	// BrigEntry class provide a full banch of getter functions as APIs
+	// for other parts of the simulator. It would check is the get is 
+	// valid for the entry at first and then returns the value
+	//
+
+	/// Return the hsailMajor field for the version directive
+	unsigned int getHsailMajor() const;
+
+	/// Return the hsailMinor field for the version directive
+	unsigned int getHsailMinor() const;
+
+	/// Return the brigMajor field for the version directive
+	unsigned int getBrigMajor() const;
+
+	/// Return the brigMinor field for the version directive
+	unsigned int getBrigMinor() const;
+
+	/// Return the profile field for the version directive
+	BrigProfile getProfile() const;
+	
+	/// Return the machineModel field for the version directive
+	BrigMachineModel getMachineModel() const;
+
+	/// Return the string represented by the name field
+	std::string getName() const;
+
+	/// Return definition field of symbol modifier
+	bool isDefinition() const;
+
+	/// Return true if the variable is const
+	bool isConst() const;
+
+	/// Return true if the variable is an array
+	bool isArray() const;
+
+	/// Return true if the variable is a flexble array
+	bool isFlexArray() const;
+
+	/// Return linkage field
+	unsigned char getLinkage() const;
+
+	/// Return allocation field
+	unsigned char getAllocation() const;
+
+	/// Return segment field
+	unsigned char getSegment() const;
+
+	/// Return the dim field
+	unsigned long long getDim() const;
+
+	/// Return number of output arguments
+	unsigned short getOutArgCount() const;
+
+	/// Return number of input arguments
+	unsigned short getInArgCount() const;
+
+	/// Return unique pointer to the BrigEntry of the first input argument
+	std::unique_ptr<BrigEntry> getFirstInArg() const;
+
+	/// Return the first entry in the code section of an executable
+	std::unique_ptr<BrigEntry> getFirstCodeBlockEntry() const;
+
+	/// Return the pass the last entry of an executable
+	std::unique_ptr<BrigEntry> getNextModuleEntry() const;
+
+	/// Return the opcode of an instruction
+	BrigOpcode getOpcode() const;
+
+	/// Return the type field of an instruction
+	BrigTypeX getType() const;
+
 
 };
 
