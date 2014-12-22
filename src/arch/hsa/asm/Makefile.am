@@ -20,7 +20,9 @@ libasm_a_SOURCES = \
 	BrigEntry.cc \
 	\
 	BrigDataEntry.h \
-	BrigDataEntry.cc
+	BrigDataEntry.cc \
+	\
+	Inst.def
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
