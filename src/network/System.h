@@ -86,9 +86,6 @@ class System
 	// Stand-alone simulator instantiator
 	static bool stand_alone;
 
-	/// Debugger for network
-	static misc::Debug debug;
-
 	/// Networks configuration file
 	static misc::IniFile ini_file;
 
@@ -105,6 +102,9 @@ class System
 	static int net_system_frequency;
 
 public:
+
+	/// Debugger for network
+	static misc::Debug debug;
 
 	/// Get instance of singleton
 	static System *getInstance();

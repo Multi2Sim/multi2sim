@@ -30,6 +30,9 @@ int System::net_system_frequency = 1000;
 void System::ParseConfiguration(const std::string &path)
 {
 	misc::IniFile ini_file(path);
+	System::debug << misc::fmt("Loading Network Configuration file \"%s\"\n",
+			path.c_str());
+
 	std::string section = "General";
 
 	// Default Frequency
@@ -50,9 +53,12 @@ void System::ParseConfiguration(const std::string &path)
 
 		std::string network_name = tokens[1];
 
-		networks.emplace_back(new Network(network_name,
-							section, ini_file));
+		Network * net = new Network(network_name,
+				section, ini_file);
+		networks.emplace_back(net);
+		network_map.emplace(network_name,net);
 	}
+
 }
 
 }

@@ -30,7 +30,7 @@ namespace misc
 Debug::Debug()
 {
 	os = nullptr;
-	active = true;
+	active = false;
 }
 
 Debug::~Debug()
@@ -72,6 +72,9 @@ void Debug::setPath(const std::string &path)
 		std::cerr << "fatal: cannot open " << path << '\n';
 		exit(1);
 	}
+
+	//activate the debug
+	active = true;
 }
 
 
