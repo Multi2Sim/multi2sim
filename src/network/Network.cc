@@ -61,8 +61,10 @@ void Network::ParseConfiguration(const std::string &section,
 						"zero/non-existent.\n"),__FILE__, __FUNCTION__);
 	}
 
-	PacketSize = config.ReadInt(section, "DefaultPacketSize",0);
+	PacketSize = config.ReadInt(section, "DefaultPacketSize", 0);
 	netFrequency = config.ReadInt(section, "Frequency", 0);
+
+	System::debug << misc::fmt("Network found: %s\n",name.c_str());
 }
 
 }
