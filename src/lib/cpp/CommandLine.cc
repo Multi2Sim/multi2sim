@@ -139,7 +139,7 @@ void CommandLineCategory::Help(std::ostream &os)
 
 	// Header for categories other than default
 	std::string header = description.empty() ?
-			name + " options" :
+			name + " Options" :
 			description;
 	os << "\n";
 	os << header << "\n";

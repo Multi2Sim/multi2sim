@@ -21,13 +21,16 @@
 #define NETWORK_NODE_H
 
 #include "System.h"
+#include "Network.h"
+
+#include <lib/cpp/IniFile.h>
 
 namespace net
 {
 
 class Buffer;
 class Bus;
-
+class Network;
 
 class NodeData
 {

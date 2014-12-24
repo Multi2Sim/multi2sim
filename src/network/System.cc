@@ -22,14 +22,20 @@
 #include <lib/cpp/CommandLine.h>
 
 
+
+
 namespace net
 {
 
 const misc::StringMap System::TrafficPatternMap =
 {
-	{ "command", TrafficPatternCommand },
-	{ "uniform", TrafficPatternUniform }
+		{ "command", TrafficPatternCommand },
+		{ "uniform", TrafficPatternUniform }
 };
+
+net::System::TrafficPattern System::traffic_pattern = net::System::TrafficPatternUniform;
+
+std::string System::config_file;
 
 std::string System::debug_file;
 
@@ -37,9 +43,11 @@ misc::Debug System::debug;
 
 std::string System::report_file;
 
-std::string System::visual_file;
-
 std::string System::routing_table_file;
+
+std::string System::sim_net_name;
+
+std::string System::visual_file;
 
 long long System::max_cycles = 1000000;
 
@@ -53,6 +61,8 @@ bool System::net_help = false;
 
 bool System::stand_alone = false;
 
+
+
 std::unique_ptr<System> System::instance;
 
 
@@ -63,7 +73,7 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance = misc::new_unique<System>();
+	instance.reset(new System());
 	return instance.get();
 }
 
@@ -74,7 +84,7 @@ void System::RegisterOptions()
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("net");
+	command_line->setCategory("Network");
 
 	// Debug information
 	command_line->RegisterString("--net-debug <file>", debug_file,
@@ -139,8 +149,8 @@ void System::RegisterOptions()
 			"with '--net-sim'. (see '--net-traffic-pattern'");
 
 	// Stand-alone simulator
-	command_line->RegisterBool("--net-sim <network name>",
-			stand_alone,
+	command_line->RegisterString("--net-sim <network name>",
+			sim_net_name,
 			"Runs a network simulation using synthetic traffic, "
 			"where <network> is the name of a network specified "
 			"in the network configuration file (option "
@@ -175,9 +185,20 @@ void System::RegisterOptions()
 
 void System::ProcessOptions()
 {
+	// Get the system
+	System* net_system = System::getInstance();
+
 	// Debugger
-	if (debug_file.empty())
+	if (!debug_file.empty())
 		debug.setPath(debug_file);
+
+	// Stand-Alone activation
+	if (!sim_net_name.empty())
+		net_system->stand_alone = true;
+
+	// Configuration
+	if (!config_file.empty())
+		net_system->ParseConfiguration(config_file);
 
 }
 

@@ -20,12 +20,12 @@
 #ifndef NETWORK_SYSTEM_H
 #define NETWORK_SYSTEM_H
 
+#include "Network.h"
+
 #include <cassert>
-#include <memory>
 
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/IniFile.h>
-#include <lib/cpp/String.h>
 
 
 namespace net
@@ -65,6 +65,9 @@ class System
 	// Network Traffic Pattern
 	static TrafficPattern traffic_pattern;
 
+	// Stand-Alone Simulator Network Name
+	static std::string sim_net_name;
+
 	// Stand-alone simulation duration.
 	static long long max_cycles;
 
@@ -93,10 +96,13 @@ class System
 	static std::unique_ptr<System> instance;
 
 	// Hash table of networks indexed by their names
-	static std::unordered_map<std::string, Network *> network_map;
+	std::unordered_map<std::string, Network *> network_map;
 
 	// List of networks in the system
-	static std::vector<std::unique_ptr<Network>> networks;
+	std::vector<std::unique_ptr<Network>> networks;
+
+	// General frequency if not specified in the network section
+	static int net_system_frequency;
 
 public:
 
@@ -107,7 +113,7 @@ public:
 	System() { assert(instance == nullptr); }
 
 	// Get the list of networks
-	const std::vector<std::unique_ptr<Network>> &getNetworks() const
+	std::vector<std::unique_ptr<Network>> &getNetworks()
 	{
 		return networks;
 	}
@@ -129,6 +135,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Parse a configuration file
+	void ParseConfiguration(const std::string &path);
 
     /// Returns whether or not Network is running as a stand alone simulator.
     bool isStandAlone() { return stand_alone; }
