@@ -21,7 +21,13 @@
 #define NETWORK_NETWORK_H
 
 #include "System.h"
+#include "Node.h"
+#include "Link.h"
+#include "Bus.h"
+#include "Buffer.h"
 
+#include <lib/cpp/IniFile.h>
+#include <lib/cpp/String.h>
 
 namespace net
 {
@@ -45,13 +51,13 @@ class Network
 	long long msg_id_counter;
 
 	// List of nodes in the Network
-	const std::vector<std::unique_ptr<Node>> nodes;
+	std::vector<std::unique_ptr<Node>> nodes;
 
 	// Total number of end nodes in the network
 	int end_node_count;
 
 	// List of links in the network
-	const std::vector<std::unique_ptr<Link>> links;
+	std::vector<std::unique_ptr<Link>> links;
 
 	// Last cycle the snapshot is recorded
 	long long last_recorded_snapshot;
@@ -59,8 +65,18 @@ class Network
 	// Last offered bandwidth recorded for the snapshot
 	long long last_recorded_offered_bandwidth;
 
+	///
+	/// Default Values
+	///
 
+	/// DefaultBufferSizes
+	int DefaultInputBufferSize;
+	int DefaultOutputBufferSize;
+	int DefaultBandwidth;
 
+	// Network Specific Values
+	int PacketSize;
+	int netFrequency;
 
 	//
 	// Statistics
@@ -77,8 +93,14 @@ class Network
 
 public:
 
-	/// Constructor
+	/// Constructors
 	Network(const std::string &name);
+	Network(const std::string &name, const std::string &section,
+			misc::IniFile &config);
+
+	/// Configuration Parser
+	void ParseConfiguration(const std::string &section,
+			misc::IniFile &config);
 
 	/// find and returns node in the network using node name
 	///

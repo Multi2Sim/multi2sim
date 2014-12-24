@@ -201,7 +201,7 @@ void Emu::RegisterOptions()
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("kpl");
+	command_line->setCategory("Kepler");
 
 	// Option --kpl-sim <kind>
 	command_line->RegisterEnum("--kpl-sim {functional|detailed} "

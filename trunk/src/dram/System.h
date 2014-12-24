@@ -118,7 +118,7 @@ public:
 	/// Parse a configuration file
 	void ParseConfiguration(const std::string &path);
 
-	/// Run the standalone dram simulation loop.
+	/// Run the stand-alone DRAM simulation loop.
 	void Run();
 
 	/// Returns the next available unique command id.

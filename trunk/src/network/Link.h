@@ -20,6 +20,7 @@
 #ifndef NETWORK_LINK_H
 #define NETWORK_LINK_H
 
+#include <lib/cpp/String.h>
 
 namespace net
 {

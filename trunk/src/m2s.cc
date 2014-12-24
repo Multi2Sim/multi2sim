@@ -43,6 +43,7 @@
 #include <driver/opengl/OpenGLDriver.h>
 #include <memory/MMU.h>
 #include <memory/Manager.h>
+#include <network/System.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
@@ -527,6 +528,7 @@ int MainProgram(int argc, char **argv)
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
 	dram::System::RegisterOptions();
+	net::System::RegisterOptions();
 	ARM::Asm::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
@@ -550,6 +552,7 @@ int MainProgram(int argc, char **argv)
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
 	dram::System::ProcessOptions();
+	net::System::ProcessOptions();
 	ARM::Asm::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers

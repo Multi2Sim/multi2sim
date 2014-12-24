@@ -133,7 +133,7 @@ void Asm::RegisterOptions()
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
 	// Category
-	command_line->setCategory("kpl");
+	command_line->setCategory("Kepler");
 
 	// Option --kpl-disasm <file>
 	command_line->RegisterString("--kpl-disasm <file>", path,

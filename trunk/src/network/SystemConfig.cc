@@ -17,7 +17,42 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "System.h"
+
+#include <lib/cpp/Misc.h>
+
 namespace net
 {
+
+int System::net_system_frequency = 1000;
+
+
+void System::ParseConfiguration(const std::string &path)
+{
+	misc::IniFile ini_file(path);
+	std::string section = "General";
+
+	// Default Frequency
+	ini_file.ReadInt(section, "Frequency", net_system_frequency);
+
+	// First configuration look-up is for networks
+	for (int i = 0; i < ini_file.getNumSections(); i++)
+	{
+		// Get section
+		section = ini_file.getSection(i);
+
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		if (tokens.size() != 2 ||
+				strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+
+		std::string network_name = tokens[1];
+
+		networks.emplace_back(new Network(network_name,
+							section, ini_file));
+	}
+}
 
 }

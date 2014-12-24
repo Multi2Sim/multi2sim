@@ -188,7 +188,7 @@ void System::ParseConfiguration(const std::string &path)
 
 void System::Run()
 {
-	// Running a simulation seperate from the rest of m2s.
+	// Running a simulation separate from the rest of m2s.
 	stand_alone = true;
 
 	// Get the simulation engine and actions.

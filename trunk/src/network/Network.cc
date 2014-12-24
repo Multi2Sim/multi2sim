@@ -18,11 +18,51 @@
  */
 
 #include <cstring>
+#include <csignal>
 
 #include "Network.h"
 
 namespace net
 {
 
+Network::Network(const std::string &name)
+:
+				name(name)
+{
+
+}
+
+Network::Network(const std::string &name, const std::string &section,
+		misc::IniFile &config)
+:
+				Network(name)
+{
+	ParseConfiguration(section, config);
+}
+
+void Network::ParseConfiguration(const std::string &section,
+		misc::IniFile &config)
+{
+	// Non-empty values
+	DefaultOutputBufferSize = config.ReadInt(section,
+			"DefaultOutputBufferSize", 0);
+
+	DefaultInputBufferSize = config.ReadInt(section,
+			"DefaultInputBufferSize",0);
+
+	DefaultBandwidth = config.ReadInt(section,
+			"DefaultBandwidth",0);
+
+	if (!DefaultOutputBufferSize || !DefaultInputBufferSize ||
+			!DefaultBandwidth)
+	{
+		misc::fatal(
+				("%s:%s:\nDefault values can not be "
+						"zero/non-existent.\n"),__FILE__, __FUNCTION__);
+	}
+
+	PacketSize = config.ReadInt(section, "DefaultPacketSize",0);
+	netFrequency = config.ReadInt(section, "Frequency", 0);
+}
 
 }
