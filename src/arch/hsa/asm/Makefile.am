@@ -10,17 +10,27 @@ libasm_a_SOURCES = \
 	AsmService.h \
 	AsmService.cc \
 	\
+	BrigEntry.h \
+	BrigEntry.cc \
+	\
 	BrigFile.h \
 	BrigFile.cc \
+	\
+	BrigImmed.h \
+	BrigImmed.cc \
 	\
 	BrigSection.h \
 	BrigSection.cc \
 	\
-	BrigEntry.h \
-	BrigEntry.cc \
+	BrigCodeEntry.h \
+	BrigCodeEntryDump.cc \
+	BrigCodeEntryGetter.cc \
 	\
 	BrigDataEntry.h \
 	BrigDataEntry.cc \
+	\
+	BrigOperandEntry.h \
+	BrigOperandEntry.cc \
 	\
 	Inst.def
 

@@ -17,319 +17,259 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <iomanip>
+#include <lib/cpp/String.h>
 
-#include "BrigOperandEntry.h"
-#include "BrigDirEntry.h"
-#include "BrigStrEntry.h"
-#include "BrigInstEntry.h"
-#include "BrigSection.h"
+#include "BrigDef.h"
 #include "BrigImmed.h"
+#include "BrigFile.h"
+#include "BrigDataEntry.h"
+#include "BrigCodeEntry.h"
+#include "AsmService.h"
+#include "BrigOperandEntry.h"
 
 namespace HSA
 {
 
-BrigOperandEntry::BrigOperandEntry(char *buf,
-		BrigFile *file, 
-		const BrigInstEntry *inst,
-		unsigned char index)
-		:
-		BrigEntry(buf, file)
+std::map<unsigned, BrigOperandEntry::DumpEntryFn> BrigOperandEntry::dump_entry_fn = 
 {
-	this->inst = inst;
-	this->index = index;
-}
-
-
-unsigned short BrigOperandEntry::getKind() const
-{
-	struct BrigOperand *op = (struct BrigOperand *)base;
-	return op->kind;
-}
-
-
-
-BrigOperandEntry::DumpOperandFn BrigOperandEntry::dump_operand_fn[] = 
-{
-	&BrigOperandEntry::dumpOperandImmed,
-	&BrigOperandEntry::dumpOperandWavesize,
-	&BrigOperandEntry::dumpOperandReg,
-	&BrigOperandEntry::dumpOperandRegVector,
-	&BrigOperandEntry::dumpOperandAddress,
-	&BrigOperandEntry::dumpOperandLabelRef,
-	&BrigOperandEntry::dumpOperandArgumentRef,
-	&BrigOperandEntry::dumpOperandArgumentList,
-	&BrigOperandEntry::dumpOperandFunctionRef,
-	&BrigOperandEntry::dumpOperandFunctionList,
-	&BrigOperandEntry::dumpOperandSignatureRef,
-	&BrigOperandEntry::dumpOperandFbarrierRef
+	{BRIG_KIND_OPERAND_ADDRESS, &BrigOperandEntry::DumpOperandAddress},
+	{BRIG_KIND_OPERAND_DATA, &BrigOperandEntry::DumpOperandData},
+	{BRIG_KIND_OPERAND_CODE_LIST, &BrigOperandEntry::DumpOperandCodeList},
+	{BRIG_KIND_OPERAND_CODE_REF, &BrigOperandEntry::DumpOperandCodeRef},
+	{BRIG_KIND_OPERAND_IMAGE_PROPERTIES, &BrigOperandEntry::DumpOperandImageProperties},
+	{BRIG_KIND_OPERAND_OPERAND_LIST, &BrigOperandEntry::DumpOperandOperandList},
+	{BRIG_KIND_OPERAND_REG,  &BrigOperandEntry::DumpOperandReg},
+	{BRIG_KIND_OPERAND_SAMPLER_PROPERTIES, &BrigOperandEntry::DumpOperandSamplerProperties},
+	{BRIG_KIND_OPERAND_STRING, &BrigOperandEntry::DumpOperandString},
+	{BRIG_KIND_OPERAND_WAVESIZE, &BrigOperandEntry::DumpOperandWavesize},
 };
 
 
-unsigned char *BrigOperandEntry::getImmedBytes() const
+BrigOperandEntry::BrigOperandEntry(const char *buf,
+		const BrigSection *section) :
+		BrigEntry(buf, section)
 {
-	// Check operand type
-	if( this->getKind() != BRIG_OPERAND_IMMED)
-	{
-		throw misc::Panic("Trying to get bytes field of non-immed "
-				"operand");
-	}
-
-	//Get the bytes of immed operand
-	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
-	return operand->bytes;
 }
 
 
-int BrigOperandEntry::getOperandType() const
+unsigned BrigOperandEntry::getKind() const
 {
-	if (inst->getOpcode() == BRIG_OPCODE_SHL  && index ==2)
+	BrigBase *brig_base = (BrigBase *)base;
+	return (unsigned)brig_base->kind;
+}
+
+	
+void BrigOperandEntry::DumpOperandAddress(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	auto symbol = getSymbol();
+	auto reg = getReg();
+	unsigned long long offset = getOffset();
+
+	if (symbol.get())
 	{
-		return BRIG_TYPE_U32;
+		os << misc::fmt("[%s]", symbol->getName().c_str());	
 	}
-	else if (inst->getOpcode() == BRIG_OPCODE_SHR  && index ==2)
+
+	if (reg.get())
 	{
-		return BRIG_TYPE_U32;
+		os << "[";
+		reg->Dump(BRIG_TYPE_NONE, os);
+		if (offset > 0)
+			os << "+" << offset;
+		if (offset < 0)
+			os << "-" << -offset;
+		os << "]";
 	}
-	else if (inst->getOpcode() == BRIG_OPCODE_BITEXTRACT
-		&& (index == 2 || index == 3))
+	else if (offset != 0 || !symbol.get())
 	{
-		return BRIG_TYPE_U32;
+		if (symbol.get() && offset < 0)
+		{
+			os << "[" << "-" << -offset << "]";
+		}
+		else
+		{
+			os << "[" << (unsigned long long)offset << "]";
+		}
 	}
-	else if (inst->getOpcode() == BRIG_OPCODE_BITMASK
-		&& (index == 1 || index == 2))
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_BITINSERT
-		&& (index == 3 || index == 4))
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_CMOV
-		&& index == 1 )
-	{
-		struct BrigInstBasic* i = 
-			(struct BrigInstBasic *)inst->getBuffer();
-		if (i->type <= 31)
-			return BRIG_TYPE_B1;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_CLASS
-		&& index == 2 )
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if ( (inst->getOpcode() == BRIG_OPCODE_SAD
-		|| inst->getOpcode() == BRIG_OPCODE_SADHI )
-		&& index == 3 )
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_UNPACKCVT
-		&& index == 2 )
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_MASKLANE
-		&& index == 1 )
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getOpcode() == BRIG_OPCODE_ALLOCA
-		&& index == 1 )
-	{
-		return BRIG_TYPE_U32;
-	}
-	else if (inst->getKind() == BRIG_INST_SOURCE_TYPE ||
-		inst->getKind() == BRIG_INST_CMP ||
-		inst->getKind() == BRIG_INST_CVT ||
-		inst->getKind() == BRIG_INST_SEG)
-	{
-		struct BrigInstSourceType *i 
-			= (struct BrigInstSourceType *)inst->getBuffer();
-		return i->sourceType;
-	}
-	else
-	{
-		return inst->getType();
-	}
-	return inst->getType();
 }
 
 
-std::string BrigOperandEntry::getRegisterName() const
+void BrigOperandEntry::DumpOperandData(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
 {
-	if (this->getKind() != BRIG_OPERAND_REG)
-		throw misc::Panic("Trying to get register name on"
-				" non-register operand");
-	struct BrigOperandReg *op = (struct BrigOperandReg *)base;
-	return BrigStrEntry::GetStringByOffset(file, op->reg);
+	struct BrigOperandData *operand = (struct BrigOperandData *)base;
+	auto data = getBinary()->getDataEntryByOffset(operand->data);
+	auto immed = misc::new_unique<BrigImmed>(data->getBytes(), type);
+	immed->Dump(os);
 }
 
 
-void BrigOperandEntry::dumpOperandImmed(std::ostream &os = std::cout) const
+void BrigOperandEntry::DumpOperandCodeList(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
 {
-	int type = getOperandType();
-	struct BrigOperandImmed *operand = (struct BrigOperandImmed *)base;
-	BrigImmed immed( operand->bytes, type );
-	immed.Dump(os);
+	os << misc::fmt("Operand: %s, not supported\n", "CODE_LIST");
 }
 
 
-void BrigOperandEntry::dumpOperandWavesize(std::ostream &os = std::cout) const
+void BrigOperandEntry::DumpOperandCodeRef(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	os << getRef()->getName();
+}
+
+
+void BrigOperandEntry::DumpOperandImageProperties(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "IMAGE_PROPERTIES");
+}
+
+
+void BrigOperandEntry::DumpOperandOperandList(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "OPERAND_LIST");
+}
+
+
+void BrigOperandEntry::DumpOperandReg(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	os << AsmService::RegisterKindToString(getRegKind()) << getRegNumber();
+}
+
+
+void BrigOperandEntry::DumpOperandSamplerProperties(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "SAMPLER_PROPERTIES");
+}
+
+
+void BrigOperandEntry::DumpOperandString(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
+{
+	AsmService::DumpStringLiteral(getString(), os);
+}
+
+
+void BrigOperandEntry::DumpOperandWavesize(BrigTypeX type = BRIG_TYPE_NONE, 
+		std::ostream &os = std::cout) const
 {
 	os << "WAVESIZE";
 }
 
 
-void BrigOperandEntry::dumpOperandReg(std::ostream &os = std::cout) const
+std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getSymbol() const
 {
-	struct BrigOperandReg *op = (struct BrigOperandReg *)base;
-	os << BrigStrEntry::GetStringByOffset(file, op->reg);
-}
-
-
-void BrigOperandEntry::dumpOperandRegVector(std::ostream &os = std::cout) const
-{
-	struct BrigOperandRegVector *operand = (struct BrigOperandRegVector *)base;
-	os << "(";
-	for (int i=0; i<operand->regCount; i++)
+	switch(getKind())
 	{
-		if (i>0) os << ",";
-		os << BrigStrEntry::GetStringByOffset(file, operand->regs[i]);
+	case BRIG_KIND_OPERAND_ADDRESS:
+	{
+		struct BrigOperandAddress *operand = 
+				(struct BrigOperandAddress *)base;
+		return getBinary()->getCodeEntryByOffset(operand->symbol);
 	}
-	os << ")";
-}
-
-
-void BrigOperandEntry::dumpOperandAddress(std::ostream &os = std::cout) const
-{
-	struct BrigOperandAddress *operand = (struct BrigOperandAddress *)base;
-	struct BrigDirectiveSymbol *dirBase 
-		= (struct BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-				file, operand->symbol
-			);
-	std::string reg = BrigStrEntry::GetStringByOffset(file, operand->reg);
-	long long offset = 
-		(uint64_t(operand->offsetHi) << 32) | uint64_t(operand->offsetLo);
-	if (operand->symbol)
-	{
-		os << "[" <<
-			BrigStrEntry::GetStringByOffset(file, dirBase->name) 
-			<< ']';
-	}
-	if (operand->reg)
-	{
-		os << "[" << reg;
-		if (offset > 0) os << '+' << std::dec << offset;
-		if (offset < 0) os << '-' << std::dec << -offset;
-		os << "]";
-	}
-	else if (offset > 0 || !operand->symbol)
-	{
-		os << "[" << offset << "]";
+	default:
+		throw misc::Panic("GetSymbol is not vaild for type");
 	}
 }
 
 
-void BrigOperandEntry::dumpOperandLabelRef(std::ostream &os = std::cout) const
+std::unique_ptr<BrigOperandEntry> BrigOperandEntry::getReg() const
 {
-	struct BrigOperandRef *op = (struct BrigOperandRef *)base;
-	BrigSection* bs = file->getBrigSection(BrigSectionDirective);
-	char *buf = (char *)bs->getBuffer();
-	buf += op->ref; 
-	struct BrigDirectiveBase *dir = (struct BrigDirectiveBase *)buf;
-	if (dir->kind == BRIG_DIRECTIVE_LABEL)
+	switch(getKind())
 	{
-		struct BrigDirectiveLabel *label = (struct BrigDirectiveLabel *)buf;
-		os << BrigStrEntry::GetStringByOffset(file, label->name);
+	case BRIG_KIND_OPERAND_ADDRESS:
+	{
+		struct BrigOperandAddress *operand = 
+				(struct BrigOperandAddress *)base;
+		return getBinary()->getOperandByOffset(operand->reg);
 	}
-	else if (dir->kind == BRIG_DIRECTIVE_LABEL_TARGETS)
-	{
-		struct BrigDirectiveLabelTargets *targets
-			= (struct BrigDirectiveLabelTargets *)dir;
-		buf = (char *)bs->getBuffer();
-		buf += targets->label;
-		struct BrigDirectiveLabel *label = (struct BrigDirectiveLabel *)buf;
-		os << BrigStrEntry::GetStringByOffset(file, label->name);
-	}
-	else
-	{
-		throw misc::Panic("OperandLabelRef can"
-				" only ref to label of label target");
+	default:
+		throw misc::Panic("GetReg is not vaild for type");
 	}
 }
 
 
-void BrigOperandEntry::dumpOperandArgumentRef(std::ostream &os = std::cout) const
+unsigned long long BrigOperandEntry::getOffset() const
 {
-	struct BrigOperandArgumentRef *operand = 
-		(struct BrigOperandArgumentRef *)base;
-	struct BrigDirectiveSymbol *dir = 
-		(struct BrigDirectiveSymbol *)
-		BrigDirEntry::GetDirByOffset(file, operand->ref);
-	os << BrigStrEntry::GetStringByOffset(file, dir->name);
-}
-
-
-void BrigOperandEntry::dumpOperandArgumentList(std::ostream &os = std::cout) const
-{
-	struct BrigOperandArgumentList *operand = 
-		(struct BrigOperandArgumentList *)base;
-	unsigned count = operand->elementCount;
-	if (count == 1 && !operand->elements[0] ) { count = 0; } // Empty list
-	os << "(";
-	for (unsigned i=0; i<count; i++)
+	switch(getKind())
 	{
-		if (i > 0){ os << ","; }
-		struct BrigDirectiveSymbol *dir = 
-			(struct BrigDirectiveSymbol *)
-			BrigDirEntry::GetDirByOffset(file, operand->elements[i]);
-		os << BrigStrEntry::GetStringByOffset(file, dir->name);	
+	case BRIG_KIND_OPERAND_ADDRESS:
+	{
+		struct BrigOperandAddress *operand = 
+				(struct BrigOperandAddress *)base;
+		return *(unsigned long long *)(&operand->offset);
 	}
-	os << ")";
+	default:
+		throw misc::Panic("GetReg is not vaild for type");
+	}
 }
 
 
-void BrigOperandEntry::dumpOperandFunctionRef(std::ostream &os = std::cout) const
+BrigRegisterKind BrigOperandEntry::getRegKind() const
 {
-	struct BrigOperandFunctionRef *operand = 
-		(struct BrigOperandFunctionRef *)base;
-	struct BrigDirectiveFunction *dir = 
-		(struct BrigDirectiveFunction *)BrigDirEntry::GetDirByOffset(
-					file, operand->ref
-				);
-	os << BrigStrEntry::GetStringByOffset(file, dir->name);	
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_REG:
+	{
+		struct BrigOperandReg *operand = 
+				(struct BrigOperandReg *)base;
+		return (BrigRegisterKind)operand->regKind;
+	}
+	default:
+		throw misc::Panic("GetRegKind is not vaild for type");
+	}
 }
 
 
-void BrigOperandEntry::dumpOperandFunctionList(std::ostream &os = std::cout) const
+unsigned short BrigOperandEntry::getRegNumber() const
 {
-	os << "<unsupported operand function_list>";
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_REG:
+	{
+		struct BrigOperandReg *operand = 
+				(struct BrigOperandReg *)base;
+		return operand->regNum;
+	}
+	default:
+		throw misc::Panic("GetRegNum is not vaild for type");
+	}
 }
-void BrigOperandEntry::dumpOperandSignatureRef(std::ostream &os = std::cout) const
+
+
+std::string BrigOperandEntry::getString() const
 {
-	os << "<unsupported operand signature_ref>";
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_STRING:
+	{
+		struct BrigOperandString *operand = 
+				(struct BrigOperandString *)base;
+		return getBinary()->getStringByOffset(operand->string);
+	}
+	default:
+		throw misc::Panic("GetString is not valid for type");
+	}
 }
 
 
-void BrigOperandEntry::dumpOperandFbarrierRef(std::ostream &os = std::cout) const
+std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getRef() const
 {
-	struct BrigOperandFbarrierRef *operand = 
-		(struct BrigOperandFbarrierRef *)base;
-	struct BrigDirectiveFbarrier *dir = 
-		(struct BrigDirectiveFbarrier *)
-		BrigDirEntry::GetDirByOffset(file, operand->ref);
-	os << BrigStrEntry::GetStringByOffset(file, dir->name);
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_CODE_REF:
+	{
+		struct BrigOperandCodeRef *operand = 
+				(struct BrigOperandCodeRef *)base;
+		return getBinary()->getCodeEntryByOffset(operand->ref);
+	}
+	default:
+		throw misc::Panic("GetString is not valid for type");
+	}
 }
 
-
-char *BrigOperandEntry::GetOperandBufferByOffset(BrigFile *file,
-		unsigned int offset)
-{
-	BrigSection *bs = file->getBrigSection(BrigSectionOperand);
-	char *buf = (char *)bs->getBuffer();
-	return buf + offset;
-}
-
-} // end namespace HSA
+}  // namespace HSA

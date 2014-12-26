@@ -48,7 +48,23 @@ protected:
 	// Map segment to segment string
 	static misc::StringMap segment_to_str_map;
 
+	// Map alignment to alignment string
+	static misc::StringMap align_to_str_map;
+
+	// Map register kind to string
+	static misc::StringMap register_kind_to_str_map;
+
 public:
+
+	/// Returns true a certain instruction uses type modifier
+	static bool InstUseType(BrigOpcode opcode);
+
+
+
+
+	//
+	// String translation functions
+	//
 
 	/// Convert opcode to opcode string
 	static std::string OpcodeToString(BrigOpcode opcode);
@@ -74,8 +90,21 @@ public:
 	/// Convert segment to segment string
 	static std::string SegmentToString(unsigned char segment);
 
-	/// Returns true a certain instruction uses type modifier
-	static bool InstUseType(BrigOpcode opcode);
+	/// Convert alignment to alignment string
+	static std::string AlignToString(BrigAlignment align);
+
+	/// Convert const to const string
+	static std::string ConstToString(bool isConst);
+
+	/// Convert register kind to string
+	static std::string RegisterKindToString(BrigRegisterKind register_kind);
+
+	
+
+
+	//
+	// Dumping auxilliary functions
+	//
 
 	/// Dump a string with a leading underscore if the string is not empty
 	static void DumpUnderscore(const std::string &string, 
