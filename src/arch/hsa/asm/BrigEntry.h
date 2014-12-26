@@ -20,19 +20,14 @@
 #ifndef ARCH_HSA_ASM_BRIGENTRY_H
 #define ARCH_HSA_ASM_BRIGENTRY_H
 
-#include <iostream>
-#include <memory>
-
-#include "BrigFile.h"
-
 namespace HSA
 {
 
-class BrigFile;
 class BrigSection;
+class BrigFile;
 
-/// A BRIG Entry is an entry in the hsa_code or hsa_operand section. It can 
-/// represent a directive, an instruction or an operand
+// A BrigEntry is a piece of data record from hsa_code, hsa_data or hsa_operand
+// section. 
 class BrigEntry
 {
 protected:
@@ -43,25 +38,18 @@ protected:
 	// A Pointer to the file that this brig entry belongs to 
 	const BrigSection *section;
 
-	// Return the pointer in the file to the entry. This function is set 
-	// to be private because the BrigEntry should populates all the fields
-	// and directly read from the the binary should be forbidden in the 
-	// emulator
+	// Return the pointer to the brig data. Accessing the buffer should 
+	// be forbidden from the ouside of this function
 	const char *getBuffer() const { return base; }
 
-	/// Output a certain number of tabs for indentation
-	void DumpIndent(std::ostream &os) const;
-
 public:
-	
+
 	/// Constructor
-	BrigEntry(const char *buf, const BrigSection *section);
-
-	/// Return the size in bytes of the entry
-	unsigned getSize() const;
-
-	/// Return the kind field of the entry
-	unsigned getKind() const;
+	BrigEntry(const char *buf, const BrigSection *section) :
+			base(buf),
+			section(section)
+	{	
+	};
 
 	/// Get the offset of this entry int the section
 	unsigned int getOffset() const;
@@ -72,174 +60,8 @@ public:
 	/// Returns the file that has this entry
 	BrigFile *getBinary() const;
 
-	/// Dump the entry
-	void Dump(std::ostream &os = std::cout) const
-	{
-		DumpEntryFn fn = BrigEntry::dump_entry_fn[getKind()];
-		(this->*fn)(os);
-	}
-
-	/// Operator \c << invoking function Dump() on an output stream.
-	friend std::ostream &operator<<(std::ostream &os,
-			const BrigEntry &entry)
-	{
-		entry.Dump(os);
-		return os;
-	}
-
-	/// Prototype of functions that dump the entry
-	typedef void (BrigEntry::*DumpEntryFn)(std::ostream &os) const;
-
-	/// Dump directive functions
-	void DumpDirArgBlockEnd(std::ostream &os) const;
-	void DumpDirArgBlockStart(std::ostream &os) const;
-	void DumpDirComment(std::ostream &os) const;
-	void DumpDirControl(std::ostream &os) const;
-	void DumpDirExtension(std::ostream &os) const;
-	void DumpDirFbarrier(std::ostream &os) const;
-	void DumpDirFunction(std::ostream &os) const;
-	void DumpDirIndirectFunction(std::ostream &os) const;
-	void DumpDirKernel(std::ostream &os) const;
-	void DumpDirLabel(std::ostream &os) const;
-	void DumpDirLoc(std::ostream &os) const;
-	void DumpDirPragma(std::ostream &os) const;
-	void DumpDirSignature(std::ostream &os) const;
-	void DumpDirVariable(std::ostream &os) const;
-	void DumpDirVersion(std::ostream &os) const;
-
-	/// Dump instruction functions
-	void DumpInstAddr(std::ostream &os) const;
-	void DumpInstAtomic(std::ostream &os) const;
-	void DumpInstBasic(std::ostream &os) const;
-	void DumpInstBr(std::ostream &os) const;
-	void DumpInstCmp(std::ostream &os) const;
-	void DumpInstCvt(std::ostream &os) const;
-	void DumpInstImage(std::ostream &os) const;
-	void DumpInstLane(std::ostream &os) const;
-	void DumpInstMem(std::ostream &os) const;
-	void DumpInstMemFence(std::ostream &os) const;
-	void DumpInstMod(std::ostream &os) const;
-	void DumpInstQueryImage(std::ostream &os) const;
-	void DumpInstQuerySampler(std::ostream &os) const;
-	void DumpInstQueue(std::ostream &os) const;
-	void DumpInstSeg(std::ostream &os) const;
-	void DumpInstSegCvt(std::ostream &os) const;
-	void DumpInstSignal(std::ostream &os) const;
-	void DumpInstSourceType(std::ostream &os) const;
-	
-	/// Dump operand functions
-	void DumpOperandAddress(std::ostream &os) const;
-	void DumpOperandData(std::ostream &os) const;
-	void DumpOperandCodeList(std::ostream &os) const;
-	void DumpOperandCodeRef(std::ostream &os) const;
-	void DumpOperandImageProperties(std::ostream &os) const;
-	void DumpOperandOperandList(std::ostream &os) const;
-	void DumpOperandReg(std::ostream &os) const;
-	void DumpOperandSamplerProperties(std::ostream &os) const;
-	void DumpOperandString(std::ostream &os) const;
-	void DumpOperandWavesize(std::ostream &os) const;
-
-	/// A binary search tree that maps the kind of the entry to the 
-	/// dump function
-	static std::map<unsigned, DumpEntryFn> dump_entry_fn;
-
-	/// Dump symbol declaration
-	void DumpSymbolDeclaration(std::ostream &os) const;
-
-	/// Dump argument list
-	void DumpArguments(std::unique_ptr<BrigEntry> firstArg, 
-			unsigned int count, std::ostream &os) const;
-
-	/// Dump function or kernel body
-	void DumpBody(std::unique_ptr<BrigEntry> start,
-			std::unique_ptr<BrigEntry> end,
-			std::ostream &os) const;
-
-	/// Return an unique pointer to the next entry
-	std::unique_ptr<BrigEntry> Next() const;
-
-	/// Return an unique pointer to the next top level entry
-	std::unique_ptr<BrigEntry> NextTopLevelEntry() const;
-
-	
-
-
-	//
-	// BrigEntry class provide a full banch of getter functions as APIs
-	// for other parts of the simulator. It would check is the get is 
-	// valid for the entry at first and then returns the value
-	//
-
-	/// Return the hsailMajor field for the version directive
-	unsigned int getHsailMajor() const;
-
-	/// Return the hsailMinor field for the version directive
-	unsigned int getHsailMinor() const;
-
-	/// Return the brigMajor field for the version directive
-	unsigned int getBrigMajor() const;
-
-	/// Return the brigMinor field for the version directive
-	unsigned int getBrigMinor() const;
-
-	/// Return the profile field for the version directive
-	BrigProfile getProfile() const;
-	
-	/// Return the machineModel field for the version directive
-	BrigMachineModel getMachineModel() const;
-
-	/// Return the string represented by the name field
-	std::string getName() const;
-
-	/// Return definition field of symbol modifier
-	bool isDefinition() const;
-
-	/// Return true if the variable is const
-	bool isConst() const;
-
-	/// Return true if the variable is an array
-	bool isArray() const;
-
-	/// Return true if the variable is a flexble array
-	bool isFlexArray() const;
-
-	/// Return linkage field
-	unsigned char getLinkage() const;
-
-	/// Return allocation field
-	unsigned char getAllocation() const;
-
-	/// Return segment field
-	unsigned char getSegment() const;
-
-	/// Return the dim field
-	unsigned long long getDim() const;
-
-	/// Return number of output arguments
-	unsigned short getOutArgCount() const;
-
-	/// Return number of input arguments
-	unsigned short getInArgCount() const;
-
-	/// Return unique pointer to the BrigEntry of the first input argument
-	std::unique_ptr<BrigEntry> getFirstInArg() const;
-
-	/// Return the first entry in the code section of an executable
-	std::unique_ptr<BrigEntry> getFirstCodeBlockEntry() const;
-
-	/// Return the pass the last entry of an executable
-	std::unique_ptr<BrigEntry> getNextModuleEntry() const;
-
-	/// Return the opcode of an instruction
-	BrigOpcode getOpcode() const;
-
-	/// Return the type field of an instruction
-	BrigTypeX getType() const;
-
-
 };
 
 }  // namespace HSA
 
 #endif
-

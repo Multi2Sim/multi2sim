@@ -23,49 +23,38 @@
 #include <iostream>
 #include <memory>
 
-#include "BrigSection.h"
 #include "BrigDef.h"
+#include "BrigEntry.h"
 
 namespace HSA
 {
 
-class BrigFile;
-class BrigSection;
+class BrigEntry;
 
-// FIXME Combine BrigData and BrigEntry into one shared base class BrigBasicEntry
 /// A BrigEntry is an entry in the hsa_data section. The major difference is
 /// that is uses 4 bytes for the size of the entry
-class BrigDataEntry
+class BrigDataEntry : public BrigEntry
 {
-	// Pointer to the first byte of the data entry
-	const char *base;
-
 	// The struct that of the data entry
 	struct BrigData *data;
-
-	// A pointer to the section that owns this brig data
-	const BrigSection *section;
-
-	// Return the pointer to the brig data. Accessing the buffer should 
-	// be forbidden from the ouside of this function
-	const char *getBuffer() const { return base; }
 
 public:
 
 	/// Constructor
-	BrigDataEntry(const char *buf, const BrigSection* section);
+	BrigDataEntry(const char *buf, const BrigSection* section) : 
+			BrigEntry(buf, section)
+	{
+		data = (BrigData *)buf;
+	}
 
-	/// Return the size in bytes of the entry
-	unsigned int getSize() const;
-
-	/// Return the section that has this entry
-	const BrigSection *getSection() const { return section; }
-
-	/// Returns the file that has this entry
-	BrigFile *getBinary() const { return section->getBinary(); }
-
-	/// Returns the data as string
+	/// Return the data as string
 	const std::string getString() const;
+
+	/// Return the byte count of the data entry
+	unsigned int getByteCount() const;
+
+	/// Return the pointer to the byte field 
+	const unsigned char *getBytes() const;
 
 };
 	

@@ -26,13 +26,14 @@
 
 #include <lib/cpp/ELFReader.h>
 
-#include "BrigDef.h"
-#include "BrigEntry.h"
 #include "BrigSection.h"
 
 namespace HSA
 {
 
+class BrigCodeEntry;
+class BrigDataEntry;
+class BrigOperandEntry;
 class BrigSection;
 
 /// This class represents the ELF file defined by HSA standard, or called 
@@ -70,13 +71,20 @@ public:
 	bool isValid() const;
 
 	/// Retrieve an entry in the code section
-	std::unique_ptr<BrigEntry> getCodeEntryByOffset(
+	std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(
 			unsigned int offset) const;
 
-	
 	/// Return the string that is stored in the hsa_data section by its 
 	/// offset
 	const std::string getStringByOffset(unsigned int offset) const;
+
+	/// Return the data entry at a certain offset
+	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
+			unsigned int offset) const;
+
+	/// Return an operand from the operand section by offset
+	std::unique_ptr<BrigOperandEntry> getOperandByOffset(
+			unsigned int offset) const;
 
 	/// Search for the main function 
 	/// \return

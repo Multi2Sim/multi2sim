@@ -25,8 +25,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
-#include "BrigEntry.h"
-
+#include "BrigDef.h"
 
 namespace HSA
 {
@@ -35,24 +34,23 @@ namespace HSA
 class BrigImmed
 {
 	// pointer to the immediate item
-	unsigned char* ptr;
+	const unsigned char* ptr;
 
 	// type of the item
-	int type;
+	BrigTypeX type;
 
 public:
 
 	/// Constructor
-	BrigImmed(unsigned char* ptr, int type)
-	{
-		this->ptr = ptr; 
-		this->type = type;
-	}
+	BrigImmed(const unsigned char* ptr, BrigTypeX type) : 
+			ptr(ptr),
+			type(type)
+	{}
 
 	/// Definition of functions to dump immedite items
 	typedef 
-		unsigned char* (BrigImmed::*DumpImmedFn)(
-			unsigned char *ptr, std::ostream &os
+		const unsigned char* (BrigImmed::*DumpImmedFn)(
+			const unsigned char *ptr, std::ostream &os
 		) const;
 
 	/// Map from type to size ot the item
@@ -90,52 +88,51 @@ public:
 	}
 
 	/// Dumps the immed operand according to the inst type
-	unsigned char* dumpImmedNONE(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU32(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU64(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS32(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS64(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF32(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF64(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB1(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB32(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB64(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedB128(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedSAMP(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedROIMG(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedRWIMG(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedFBAR(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU8X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU8X8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU8X16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU16X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU16X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU16X8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU32X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU32X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedU64X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS8X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS8X8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS8X16(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS16X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS16X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS16X8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS32X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS32X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedS64X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF16X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF16X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF16X8(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF32X2(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF32X4(unsigned char *ptr, std::ostream &os) const;
-	unsigned char* dumpImmedF64X2(unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedNONE(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU32(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU64(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS32(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS64(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF32(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF64(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB1(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB32(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB64(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedB128(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedSAMP(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedROIMG(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedRWIMG(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU8X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU8X8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU8X16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU16X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU16X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU16X8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU32X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU32X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedU64X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS8X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS8X8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS8X16(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS16X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS16X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS16X8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS32X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS32X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedS64X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF16X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF16X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF16X8(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF32X2(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF32X4(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedF64X2(const unsigned char *ptr, std::ostream &os) const;
 	void dumpImmedUnsupported(std::ostream &os) const;
 };
 
