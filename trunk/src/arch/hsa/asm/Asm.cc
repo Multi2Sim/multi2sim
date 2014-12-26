@@ -19,7 +19,8 @@
 
 #include "Asm.h"
 #include "BrigFile.h"
-#include "BrigEntry.h"
+#include "BrigCodeEntry.h"
+#include "BrigSection.h"
 
 namespace HSA
 {
@@ -78,35 +79,19 @@ Asm::Asm()
 	indent = 0;
 }
 
+
 void Asm::DisassembleBinary(const std::string &path) const
 {
 	BrigFile brig_file(path.c_str());
 	BrigSection *brig_section = 
 			brig_file.getBrigSection(BrigSectionHsaCode);
 
-	auto entry = brig_section->getFirstEntry();
+	auto entry = brig_section->getFirstEntry<BrigCodeEntry>();
 	while(entry.get())
 	{
 		entry->Dump(std::cout);
 		entry = entry->NextTopLevelEntry();
 	}
-	/*
-	const char *buffer = brig_section->getBuffer();
-
-	char *buffer_pointer = (char *)buffer;
-
-	// Increment by 4 to skip the section size field
-	buffer_pointer += 4;
-
-	// Traverse all top level directives and dump them
-	while (buffer_pointer &&
-			buffer_pointer < buffer + brig_section->getSize())
-	{
-		BrigDirEntry dir(buffer_pointer, &brig_file);
-		dir.Dump();
-		buffer_pointer = dir.nextTop();
-	}
-	*/
 }
 
 }  // namespace HSA

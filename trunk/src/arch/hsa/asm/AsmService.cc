@@ -120,6 +120,29 @@ misc::StringMap AsmService::segment_to_str_map =
 };
 
 
+misc::StringMap AsmService::align_to_str_map = 
+{
+	{"", BRIG_ALIGNMENT_1},
+	{"align(2)", BRIG_ALIGNMENT_2},
+	{"align(4)", BRIG_ALIGNMENT_4},	
+	{"align(8)", BRIG_ALIGNMENT_8},	
+	{"align(16)", BRIG_ALIGNMENT_16},	
+	{"align(32)", BRIG_ALIGNMENT_32},
+	{"align(64)", BRIG_ALIGNMENT_64},
+	{"align(128)", BRIG_ALIGNMENT_128},
+	{"align(256)", BRIG_ALIGNMENT_256}				
+};
+
+
+misc::StringMap AsmService::register_kind_to_str_map = 
+{
+	{"$c", BRIG_REGISTER_CONTROL},
+	{"$s", BRIG_REGISTER_SINGLE},
+	{"$d", BRIG_REGISTER_DOUBLE},
+	{"$q", BRIG_REGISTER_QUAD},
+};
+
+
 std::string AsmService::OpcodeToString(BrigOpcode opcode)
 {
 	return opcode_to_str_map.MapValue(opcode);
@@ -187,6 +210,28 @@ std::string AsmService::AllocationToString(unsigned char allocation)
 std::string AsmService::SegmentToString(unsigned char segment)
 {
 	return segment_to_str_map.MapValue(segment);
+}
+
+
+std::string AsmService::AlignToString(BrigAlignment align)
+{
+	return align_to_str_map.MapValue(align);
+}
+
+
+std::string AsmService::ConstToString(bool isConst)
+{
+	if (isConst)
+	{
+		return "const";
+	}
+	return "";
+}
+
+
+std::string AsmService::RegisterKindToString(BrigRegisterKind register_kind)
+{
+	return register_kind_to_str_map.MapValue(register_kind);
 }
 
 

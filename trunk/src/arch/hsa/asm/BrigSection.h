@@ -23,16 +23,13 @@
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 
-#include "BrigFile.h"
-#include "BrigEntry.h"
 #include "BrigDef.h"
+#include "BrigEntry.h"
 
 namespace HSA
 {
 
 class BrigFile;
-class BrigEntry;
-class BrigDataEntry;
 
 /// This class represents a section in a BRIG file. 
 class BrigSection
@@ -70,16 +67,30 @@ public:
 	void DumpSectionHex(std::ostream &os) const;
 
 	/// Return an unique_ptr to the first entry in the section
-	std::unique_ptr<BrigEntry> getFirstEntry() const;
+	template <typename T>
+	std::unique_ptr<T> getFirstEntry() const
+	{
+		struct BrigSectionHeader *header =
+				(struct BrigSectionHeader *)getBuffer();
+		return getEntryByOffset<T>(header->headerByteCount);
+	}
 
 	/// Return an unique_ptr to the entry at a specific offset. If the
 	/// the offset is invalid, return nullptr
-	std::unique_ptr<BrigEntry> getEntryByOffset(unsigned int offset) const;
+	template<typename T>	
+	std::unique_ptr<T> getEntryByOffset(unsigned int offset) const
+	{
+		struct BrigSectionHeader *header =
+				(struct BrigSectionHeader *)getBuffer();
+		if (offset < header->headerByteCount)
+			return std::unique_ptr<T>(nullptr);
 
-	/// Return an unique_ptr of a brig data entry at a specific offset. 
-	/// Panic would be thrown if the section is not hsa_data section
-	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
-			unsigned int offset) const;
+		if (offset >= header->byteCount)
+			return std::unique_ptr<T>(nullptr);
+
+		char *entry_base = (char *)getBuffer() + offset;
+		return std::unique_ptr<T>(new T(entry_base, this));
+	}
 
 };
 

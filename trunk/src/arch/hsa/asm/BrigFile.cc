@@ -17,7 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
+#include "BrigDef.h"
+#include "BrigSection.h"
 #include "BrigDataEntry.h"
+#include "BrigCodeEntry.h"
+#include "BrigOperandEntry.h"
 #include "BrigFile.h"
 
 namespace HSA
@@ -77,12 +83,12 @@ bool BrigFile::isValid() const
 }
 
 
-std::unique_ptr<BrigEntry> BrigFile::getCodeEntryByOffset(
+std::unique_ptr<BrigCodeEntry> BrigFile::getCodeEntryByOffset(
 		unsigned int offset) const
 {
 	BrigSection *code_section = getBrigSection(BrigSectionHsaCode);
-	std::unique_ptr<BrigEntry> entry = 
-			code_section->getEntryByOffset(offset);
+	std::unique_ptr<BrigCodeEntry> entry =
+			code_section->getEntryByOffset<BrigCodeEntry>(offset);
 	return entry;
 }
 
@@ -90,9 +96,29 @@ std::unique_ptr<BrigEntry> BrigFile::getCodeEntryByOffset(
 const std::string BrigFile::getStringByOffset(unsigned int offset) const
 {
 	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
-	std::unique_ptr<BrigDataEntry> data_entry = 
-			data_section->getDataEntryByOffset(offset);
+	std::unique_ptr<BrigDataEntry> data_entry =
+			data_section->getEntryByOffset<BrigDataEntry>(offset);
 	return data_entry->getString();
+}
+
+
+std::unique_ptr<BrigDataEntry> BrigFile::getDataEntryByOffset(
+		unsigned int offset) const
+{
+	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
+	std::unique_ptr<BrigDataEntry> data_entry =
+			data_section->getEntryByOffset<BrigDataEntry>(offset);
+	return data_entry;
+}
+
+
+std::unique_ptr<BrigOperandEntry> BrigFile::getOperandByOffset(
+		unsigned int offset) const
+{
+	BrigSection *operand_section = getBrigSection(BrigSectionHsaOperand);
+	std::unique_ptr<BrigOperandEntry> entry = operand_section->
+			getEntryByOffset<BrigOperandEntry>(offset);
+	return entry;
 }
 
 

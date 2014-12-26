@@ -19,9 +19,9 @@
 
 #include <iomanip>
 
-#include "BrigImmed.h"
 #include "BrigDef.h"
-#include "BrigEntry.h"
+#include "AsmService.h"
+#include "BrigImmed.h"
 
 namespace HSA
 {
@@ -50,31 +50,30 @@ BrigImmed::dump_immed_fn =
 	{BRIG_TYPE_SAMP, &BrigImmed::dumpImmedSAMP},
 	{BRIG_TYPE_ROIMG, &BrigImmed::dumpImmedROIMG},
 	{BRIG_TYPE_RWIMG, &BrigImmed::dumpImmedRWIMG},
-	{BRIG_TYPE_FBAR, &BrigImmed::dumpImmedFBAR},
-	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_32 , &BrigImmed::dumpImmedU8X4},
-	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedU8X8},
-	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedU8X16},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_32 , &BrigImmed::dumpImmedU16X2},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedU16X4},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedU16X8},
-	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedU32X2},
-	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedU32X4},
-	{BRIG_TYPE_U64 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedU64X2},
-	{BRIG_TYPE_S8  | BRIG_TYPE_PACK_32 , &BrigImmed::dumpImmedS8X4},
-	{BRIG_TYPE_S8  | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedS8X8},
-	{BRIG_TYPE_S8  | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedS8X16},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_32 , &BrigImmed::dumpImmedS16X2},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedS16X4},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedS16X8},
-	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedS32X2},
-	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedS32X4},
-	{BRIG_TYPE_S64 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedS64X2},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_32 , &BrigImmed::dumpImmedF16X2},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedF16X4},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedF16X8},
-	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_64 , &BrigImmed::dumpImmedF32X2},
-	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedF32X4},
-	{BRIG_TYPE_F64 | BRIG_TYPE_PACK_128, &BrigImmed::dumpImmedF64X2}
+	{BRIG_TYPE_U8X4, &BrigImmed::dumpImmedU8X4},
+	{BRIG_TYPE_U8X8, &BrigImmed::dumpImmedU8X8},
+	{BRIG_TYPE_U8X16, &BrigImmed::dumpImmedU8X16},
+	{BRIG_TYPE_U16X2, &BrigImmed::dumpImmedU16X2},
+	{BRIG_TYPE_U16X4, &BrigImmed::dumpImmedU16X4},
+	{BRIG_TYPE_U16X8, &BrigImmed::dumpImmedU16X8},
+	{BRIG_TYPE_U32X2, &BrigImmed::dumpImmedU32X2},
+	{BRIG_TYPE_U32X4, &BrigImmed::dumpImmedU32X4},
+	{BRIG_TYPE_U64X2, &BrigImmed::dumpImmedU64X2},
+	{BRIG_TYPE_S8X4, &BrigImmed::dumpImmedS8X4},
+	{BRIG_TYPE_S8X8, &BrigImmed::dumpImmedS8X8},
+	{BRIG_TYPE_S8X16, &BrigImmed::dumpImmedS8X16},
+	{BRIG_TYPE_S16X2, &BrigImmed::dumpImmedS16X2},
+	{BRIG_TYPE_S16X4, &BrigImmed::dumpImmedS16X4},
+	{BRIG_TYPE_S16X8, &BrigImmed::dumpImmedS16X8},
+	{BRIG_TYPE_S32X2 , &BrigImmed::dumpImmedS32X2},
+	{BRIG_TYPE_S32X4, &BrigImmed::dumpImmedS32X4},
+	{BRIG_TYPE_S64X2, &BrigImmed::dumpImmedS64X2},
+	{BRIG_TYPE_F16X2 , &BrigImmed::dumpImmedF16X2},
+	{BRIG_TYPE_F16X4 , &BrigImmed::dumpImmedF16X4},
+	{BRIG_TYPE_F16X8, &BrigImmed::dumpImmedF16X8},
+	{BRIG_TYPE_F32X2, &BrigImmed::dumpImmedF32X2},
+	{BRIG_TYPE_F32X4, &BrigImmed::dumpImmedF32X4},
+	{BRIG_TYPE_F64X2, &BrigImmed::dumpImmedF64X2}
 };
 
 
@@ -101,7 +100,6 @@ std::map<int, int> BrigImmed::type_to_size_map =
 	{BRIG_TYPE_SAMP, 	0},
 	{BRIG_TYPE_ROIMG, 	0},
 	{BRIG_TYPE_RWIMG, 	0},
-	{BRIG_TYPE_FBAR, 	0},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_32 , 4},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_64 , 8},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_128, 16},
@@ -135,7 +133,7 @@ int BrigImmed::getSize()
 }
 
 
-unsigned char* BrigImmed::dumpImmedNONE(unsigned char *ptr = nullptr,
+const unsigned char *BrigImmed::dumpImmedNONE(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	dumpImmedUnsupported(os);
@@ -143,135 +141,129 @@ unsigned char* BrigImmed::dumpImmedNONE(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU8(unsigned char *ptr = nullptr,
+const unsigned char *BrigImmed::dumpImmedU8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned char *value = (unsigned char *)ptr;
-	os << std::dec << (int)*value;
+	os << misc::fmt("%u", *value);
 	return ptr + 1;
 }
 
 
-unsigned char* BrigImmed::dumpImmedU16(unsigned char *ptr = nullptr,
+const unsigned char *BrigImmed::dumpImmedU16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned short *value = (unsigned short *)ptr;
-	os << std::dec << *value;
+	os << misc::fmt("%u", *value);
 	return ptr + 2;
 }
 
 
-unsigned char* BrigImmed::dumpImmedU32(unsigned char *ptr = nullptr,
+const unsigned char *BrigImmed::dumpImmedU32(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int *value = (unsigned int *)ptr;
-	os << std::dec << *value;
+	os << misc::fmt("%u", *value);
 	return ptr + 4;
 }
 
 
-unsigned char* BrigImmed::dumpImmedU64(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU64(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
-	uint64_t *value = (uint64_t *)ptr;
-	os << std::dec << *value;
+	unsigned long long *value = (unsigned long long *)ptr;
+	os << misc::fmt("%llu", *value);
 	return ptr + 8;
 }
 
 
-unsigned char* BrigImmed::dumpImmedS8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = (unsigned char *)this->ptr;
 	char *value = (char *)ptr;
-	os << std::dec << (int)*value;
+	os << misc::fmt("%d", *value);
 	return ptr + 1;
 }
 
 
-unsigned char* BrigImmed::dumpImmedS16(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = (unsigned char *)this->ptr;
 	short *value = (short *)ptr;
-	os << std::dec << *value;
+	os << misc::fmt("%d", *value);
 	return ptr + 2;
 }
 
 
-unsigned char* BrigImmed::dumpImmedS32(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS32(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = (unsigned char *)this->ptr;
 	int *value = (int *)ptr;
-	os << std::dec << *value;
+	os << misc::fmt("%d", *value);
 	return ptr + 4;
 }
 
 
-unsigned char* BrigImmed::dumpImmedS64(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS64(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = (unsigned char *)this->ptr;
 	long long *value = (long long *)ptr;
-	os << std::dec << *value;
+	os << misc::fmt("%lld", *value);
 	return ptr + 8;
 }
 
 
-unsigned char* BrigImmed::dumpImmedF16(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	os << "0H";
 	for (int i=0; i<2; i++)
 	{
-		unsigned char *value = &ptr[1-i];
-		std::cout << std::setfill('0') << std::setw(2) << 
-			std::hex << (int)*value;
-		std::cout << std::dec;
+		const unsigned char *value = &ptr[1-i];
+		os << misc::fmt("%02x", (int)*value);
 	}
 	return ptr + 2;
 }
 
 
-unsigned char* BrigImmed::dumpImmedF32(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF32(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	os << "0F";
 	for (int i=0; i<4; i++)
 	{
-		unsigned char *value = &ptr[3-i];
-		std::cout << std::setfill('0') << std::setw(2) << 
-			std::hex << (int)*value;
-		std::cout << std::dec;
+		const unsigned char *value = &ptr[3-i];
+		os << misc::fmt("%02x", (int)*value);
 	}
 	return ptr + 4;
 }
 
 
-unsigned char* BrigImmed::dumpImmedF64(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF64(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	os << "0D";
 	for (int i=0; i<8; i++)
 	{
-		unsigned char *value = (unsigned char*) &ptr[7-i];
-		std::cout << std::setfill('0') << std::setw(2) << 
-			std::hex << (int)*value;
-		std::cout << std::dec;
+		const unsigned char *value = (const unsigned char *) &ptr[7-i];
+		os << misc::fmt("%02x", (int)*value);
 	}
 	return ptr + 8;
 }
 
 
-unsigned char* BrigImmed::dumpImmedB1(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB1(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -287,7 +279,7 @@ unsigned char* BrigImmed::dumpImmedB1(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedB8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -296,7 +288,7 @@ unsigned char* BrigImmed::dumpImmedB8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedB16(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -305,7 +297,7 @@ unsigned char* BrigImmed::dumpImmedB16(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedB32(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB32(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -314,7 +306,7 @@ unsigned char* BrigImmed::dumpImmedB32(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedB64(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB64(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -323,7 +315,7 @@ unsigned char* BrigImmed::dumpImmedB64(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedB128(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedB128(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -332,7 +324,7 @@ unsigned char* BrigImmed::dumpImmedB128(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedSAMP(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedSAMP(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -341,7 +333,7 @@ unsigned char* BrigImmed::dumpImmedSAMP(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedROIMG(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedROIMG(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -350,7 +342,7 @@ unsigned char* BrigImmed::dumpImmedROIMG(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedRWIMG(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedRWIMG(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
@@ -359,23 +351,14 @@ unsigned char* BrigImmed::dumpImmedRWIMG(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedFBAR(unsigned char *ptr = nullptr,
-		std::ostream &os = std::cout) const
-{
-	if (!ptr) ptr = this->ptr;
-	dumpImmedUnsupported(os);
-	return ptr;
-}
-
-
-unsigned char* BrigImmed::dumpImmedU8X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU8X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -388,14 +371,14 @@ unsigned char* BrigImmed::dumpImmedU8X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU8X8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU8X8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 8;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -408,14 +391,14 @@ unsigned char* BrigImmed::dumpImmedU8X8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU8X16(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU8X16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 16;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -428,14 +411,14 @@ unsigned char* BrigImmed::dumpImmedU8X16(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU16X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU16X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -448,14 +431,14 @@ unsigned char* BrigImmed::dumpImmedU16X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU16X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU16X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -468,14 +451,14 @@ unsigned char* BrigImmed::dumpImmedU16X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU16X8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU16X8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 8;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -488,14 +471,14 @@ unsigned char* BrigImmed::dumpImmedU16X8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU32X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU32X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -508,14 +491,14 @@ unsigned char* BrigImmed::dumpImmedU32X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU32X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU32X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -528,14 +511,14 @@ unsigned char* BrigImmed::dumpImmedU32X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedU64X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedU64X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 8;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -548,14 +531,14 @@ unsigned char* BrigImmed::dumpImmedU64X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS8X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS8X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -568,14 +551,14 @@ unsigned char* BrigImmed::dumpImmedS8X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS8X8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS8X8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 8;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -588,14 +571,14 @@ unsigned char* BrigImmed::dumpImmedS8X8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS8X16(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS8X16(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {	
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 1;
 	unsigned int pack = 16;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -608,14 +591,14 @@ unsigned char* BrigImmed::dumpImmedS8X16(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS16X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS16X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -628,14 +611,14 @@ unsigned char* BrigImmed::dumpImmedS16X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS16X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS16X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -648,14 +631,14 @@ unsigned char* BrigImmed::dumpImmedS16X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS16X8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS16X8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 8;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -668,14 +651,14 @@ unsigned char* BrigImmed::dumpImmedS16X8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS32X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS32X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -688,14 +671,14 @@ unsigned char* BrigImmed::dumpImmedS32X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS32X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS32X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -708,14 +691,14 @@ unsigned char* BrigImmed::dumpImmedS32X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedS64X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedS64X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 8;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_s" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -728,14 +711,14 @@ unsigned char* BrigImmed::dumpImmedS64X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF16X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF16X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -748,14 +731,14 @@ unsigned char* BrigImmed::dumpImmedF16X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF16X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF16X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -768,14 +751,14 @@ unsigned char* BrigImmed::dumpImmedF16X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF16X8(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF16X8(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 2;
 	unsigned int pack = 8;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -788,14 +771,14 @@ unsigned char* BrigImmed::dumpImmedF16X8(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF32X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF32X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -808,14 +791,14 @@ unsigned char* BrigImmed::dumpImmedF32X2(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF32X4(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF32X4(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 4;
 	unsigned int pack = 4;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -828,14 +811,14 @@ unsigned char* BrigImmed::dumpImmedF32X4(unsigned char *ptr = nullptr,
 }
 
 
-unsigned char* BrigImmed::dumpImmedF64X2(unsigned char *ptr = nullptr,
+const unsigned char * BrigImmed::dumpImmedF64X2(const unsigned char *ptr = nullptr,
 		std::ostream &os = std::cout) const
 {
 	if (!ptr) ptr = this->ptr;
 	unsigned int size = 8;
 	unsigned int pack = 2;
 	unsigned int lastIndex = size * pack - size;
-	unsigned char *value = (unsigned char*) &ptr[lastIndex];
+	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
 	os << "_f" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
@@ -849,7 +832,7 @@ unsigned char* BrigImmed::dumpImmedF64X2(unsigned char *ptr = nullptr,
 
 void BrigImmed::dumpImmedUnsupported(std::ostream &os = std::cout) const
 {
-	os << "<immed type: " << BrigEntry::type2str(this->type) 
+	os << "<immed type: " << AsmService::TypeToString(this->type) 
 		<< " >";
 }
 
