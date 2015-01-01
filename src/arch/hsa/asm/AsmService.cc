@@ -96,15 +96,6 @@ misc::StringMap AsmService::linkage_to_str_map =
 };
 
 
-misc::StringMap AsmService::allocation_to_str_map = 
-{
-	{"", BRIG_ALLOCATION_NONE},
-	{"", BRIG_ALLOCATION_PROGRAM},
-	{"agent", BRIG_ALLOCATION_AGENT},
-	{"", BRIG_ALLOCATION_AUTOMATIC}
-};
-
-
 misc::StringMap AsmService::segment_to_str_map = 
 {
 	{"", BRIG_SEGMENT_NONE},
@@ -140,6 +131,172 @@ misc::StringMap AsmService::register_kind_to_str_map =
 	{"$s", BRIG_REGISTER_SINGLE},
 	{"$d", BRIG_REGISTER_DOUBLE},
 	{"$q", BRIG_REGISTER_QUAD},
+};
+
+
+misc::StringMap AsmService::width_to_str_map = 
+{
+	{"", BRIG_WIDTH_NONE}, 
+	{"width(1)", BRIG_WIDTH_1}, 
+	{"width(2)", BRIG_WIDTH_2}, 
+	{"width(4)", BRIG_WIDTH_4}, 
+	{"width(8)", BRIG_WIDTH_8}, 
+	{"width(16)", BRIG_WIDTH_16}, 
+	{"width(32)", BRIG_WIDTH_32}, 
+	{"width(64)", BRIG_WIDTH_64}, 
+	{"width(128)", BRIG_WIDTH_128}, 
+	{"width(256)", BRIG_WIDTH_256}, 
+	{"width(512)", BRIG_WIDTH_512}, 
+	{"width(1024)", BRIG_WIDTH_1024}, 
+	{"width(2048)", BRIG_WIDTH_2048}, 
+	{"width(4096)", BRIG_WIDTH_4096}, 
+	{"width(8192)", BRIG_WIDTH_8192}, 
+	{"width(16384)", BRIG_WIDTH_16384}, 
+	{"width(32768)", BRIG_WIDTH_32768}, 
+	{"width(65536)", BRIG_WIDTH_65536}, 
+	{"width(131072)", BRIG_WIDTH_131072}, 
+	{"width(262144)", BRIG_WIDTH_262144}, 
+	{"width(524288)", BRIG_WIDTH_524288}, 
+	{"width(1048576)", BRIG_WIDTH_1048576}, 
+	{"width(2097152)", BRIG_WIDTH_2097152}, 
+	{"width(4194304)", BRIG_WIDTH_4194304}, 
+	{"width(8388608)", BRIG_WIDTH_8388608}, 
+	{"width(16777216)", BRIG_WIDTH_16777216}, 
+	{"width(33554432)", BRIG_WIDTH_33554432}, 
+	{"width(67108864)", BRIG_WIDTH_67108864}, 
+	{"width(134217728)", BRIG_WIDTH_134217728}, 
+	{"width(268435456)", BRIG_WIDTH_268435456}, 
+	{"width(536870912)", BRIG_WIDTH_536870912}, 
+	{"width(1073741824)", BRIG_WIDTH_1073741824}, 
+	{"width(2147483648)", BRIG_WIDTH_2147483648}, 
+	{"width(WAVESIZE)", BRIG_WIDTH_WAVESIZE}, 
+	{"width(all)", BRIG_WIDTH_ALL}, 
+};
+
+
+misc::StringMap AsmService::compare_operation_to_str_map = 
+{
+	{"eq", BRIG_COMPARE_EQ}, 
+	{"ne", BRIG_COMPARE_NE}, 
+	{"lt", BRIG_COMPARE_LT}, 
+	{"le", BRIG_COMPARE_LE}, 
+	{"gt", BRIG_COMPARE_GT}, 
+	{"ge", BRIG_COMPARE_GE}, 
+	{"equ", BRIG_COMPARE_EQU}, 
+	{"neu", BRIG_COMPARE_NEU}, 
+	{"ltu", BRIG_COMPARE_LTU}, 
+	{"leu", BRIG_COMPARE_LEU}, 
+	{"gtu", BRIG_COMPARE_GTU}, 
+	{"geu", BRIG_COMPARE_GEU}, 
+	{"num", BRIG_COMPARE_NUM}, 
+	{"nan", BRIG_COMPARE_NAN}, 
+	{"seq", BRIG_COMPARE_SEQ}, 
+	{"sne", BRIG_COMPARE_SNE}, 
+	{"slt", BRIG_COMPARE_SLT}, 
+	{"sle", BRIG_COMPARE_SLE}, 
+	{"sgt", BRIG_COMPARE_SGT}, 
+	{"sge", BRIG_COMPARE_SGE}, 
+	{"sgeu", BRIG_COMPARE_SGEU}, 
+	{"sequ", BRIG_COMPARE_SEQU}, 
+	{"sneu", BRIG_COMPARE_SNEU}, 
+	{"sltu", BRIG_COMPARE_SLTU}, 
+	{"sleu", BRIG_COMPARE_SLEU}, 
+	{"snum", BRIG_COMPARE_SNUM}, 
+	{"snan", BRIG_COMPARE_SNAN}, 
+	{"sgtu", BRIG_COMPARE_SGTU}
+};
+
+
+misc::StringMap AsmService::rounding_to_str_map = 
+{
+	{"", BRIG_ROUND_NONE}, 
+	{"near", BRIG_ROUND_FLOAT_NEAR_EVEN}, 
+	{"zero", BRIG_ROUND_FLOAT_ZERO}, 
+	{"up", BRIG_ROUND_FLOAT_PLUS_INFINITY}, 
+	{"down", BRIG_ROUND_FLOAT_MINUS_INFINITY}, 
+	{"neari", BRIG_ROUND_INTEGER_NEAR_EVEN}, 
+	{"zeroi", BRIG_ROUND_INTEGER_ZERO}, 
+	{"upi", BRIG_ROUND_INTEGER_PLUS_INFINITY}, 
+	{"downi", BRIG_ROUND_INTEGER_MINUS_INFINITY}, 
+	{"neari_sat", BRIG_ROUND_INTEGER_NEAR_EVEN_SAT}, 
+	{"zeroi_sat", BRIG_ROUND_INTEGER_ZERO_SAT}, 
+	{"upi_sat", BRIG_ROUND_INTEGER_PLUS_INFINITY_SAT}, 
+	{"downi_sat", BRIG_ROUND_INTEGER_MINUS_INFINITY_SAT}, 
+	{"sneari", BRIG_ROUND_INTEGER_SIGNALLING_NEAR_EVEN}, 
+	{"szeroi", BRIG_ROUND_INTEGER_SIGNALLING_ZERO}, 
+	{"supi", BRIG_ROUND_INTEGER_SIGNALLING_PLUS_INFINITY}, 
+	{"sdowni", BRIG_ROUND_INTEGER_SIGNALLING_MINUS_INFINITY}, 
+	{"sneari_sat", BRIG_ROUND_INTEGER_SIGNALLING_NEAR_EVEN_SAT}, 
+	{"szeroi_sat", BRIG_ROUND_INTEGER_SIGNALLING_ZERO_SAT}, 
+	{"supi_sat", BRIG_ROUND_INTEGER_SIGNALLING_PLUS_INFINITY_SAT}, 
+	{"sdowni_sat", BRIG_ROUND_INTEGER_SIGNALLING_MINUS_INFINITY_SAT}
+};
+
+
+misc::StringMap AsmService::pack_to_str_map = 
+{
+	{"", BRIG_PACK_NONE}, 
+	{"pp", BRIG_PACK_PP}, 
+	{"ps", BRIG_PACK_PS}, 
+	{"sp", BRIG_PACK_SP}, 
+	{"ss", BRIG_PACK_SS}, 
+	{"s", BRIG_PACK_S}, 
+	{"p", BRIG_PACK_P}, 
+	{"pp_sat", BRIG_PACK_PPSAT}, 
+	{"ps_sat", BRIG_PACK_PSSAT}, 
+	{"sp_sat", BRIG_PACK_SPSAT}, 
+	{"ss_sat", BRIG_PACK_SSSAT}, 
+	{"s_sat", BRIG_PACK_SSAT}, 
+	{"p_sat", BRIG_PACK_PSAT}
+};
+
+
+misc::StringMap AsmService::kind_to_str_map = 
+{
+	{"NONE", BRIG_KIND_NONE},
+	{"DIRECTIVE_ARG_BLOCK_END", BRIG_KIND_DIRECTIVE_ARG_BLOCK_END}, 
+	{"DIRECTIVE_ARG_BLOCK_START", BRIG_KIND_DIRECTIVE_ARG_BLOCK_START}, 
+	{"DIRECTIVE_COMMENT", BRIG_KIND_DIRECTIVE_COMMENT}, 
+	{"DIRECTIVE_CONTROL", BRIG_KIND_DIRECTIVE_CONTROL}, 
+	{"DIRECTIVE_EXTENSION", BRIG_KIND_DIRECTIVE_EXTENSION}, 
+	{"DIRECTIVE_FBARRIER", BRIG_KIND_DIRECTIVE_FBARRIER}, 
+	{"DIRECTIVE_FUNCTION", BRIG_KIND_DIRECTIVE_FUNCTION}, 
+	{"DIRECTIVE_INDIRECT_FUNCTION", BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION}, 
+	{"DIRECTIVE_KERNEL", BRIG_KIND_DIRECTIVE_KERNEL}, 
+	{"DIRECTIVE_LABEL", BRIG_KIND_DIRECTIVE_LABEL}, 
+	{"DIRECTIVE_LOC", BRIG_KIND_DIRECTIVE_LOC}, 
+	{"DIRECTIVE_PRAGMA", BRIG_KIND_DIRECTIVE_PRAGMA}, 
+	{"DIRECTIVE_SIGNATURE", BRIG_KIND_DIRECTIVE_SIGNATURE}, 
+	{"DIRECTIVE_VARIABLE", BRIG_KIND_DIRECTIVE_VARIABLE}, 
+	{"DIRECTIVE_VERSION", BRIG_KIND_DIRECTIVE_VERSION}, 
+	{"INST_ADDR", BRIG_KIND_INST_ADDR}, 
+	{"INST_ATOMIC", BRIG_KIND_INST_ATOMIC}, 
+	{"INST_BASIC", BRIG_KIND_INST_BASIC}, 
+	{"INST_BR", BRIG_KIND_INST_BR}, 
+	{"INST_CMP", BRIG_KIND_INST_CMP}, 
+	{"INST_CVT", BRIG_KIND_INST_CVT}, 
+	{"INST_IMAGE", BRIG_KIND_INST_IMAGE}, 
+	{"INST_LANE", BRIG_KIND_INST_LANE}, 
+	{"INST_MEM", BRIG_KIND_INST_MEM}, 
+	{"INST_MEM_FENCE", BRIG_KIND_INST_MEM_FENCE}, 
+	{"INST_MOD", BRIG_KIND_INST_MOD}, 
+	{"INST_QUERY_IMAGE", BRIG_KIND_INST_QUERY_IMAGE}, 
+	{"INST_QUERY_SAMPLER", BRIG_KIND_INST_QUERY_SAMPLER}, 
+	{"INST_QUEUE", BRIG_KIND_INST_QUEUE}, 
+	{"INST_SEG", BRIG_KIND_INST_SEG}, 
+	{"INST_SEG_CVT", BRIG_KIND_INST_SEG_CVT}, 
+	{"INST_SIGNAL", BRIG_KIND_INST_SIGNAL}, 
+	{"INST_SOURCE_TYPE", BRIG_KIND_INST_SOURCE_TYPE}, 
+	{"OPERAND_ADDRESS", BRIG_KIND_OPERAND_ADDRESS}, 
+	{"OPERAND_DATA", BRIG_KIND_OPERAND_DATA}, 
+	{"OPERAND_CODE_LIST", BRIG_KIND_OPERAND_CODE_LIST}, 
+	{"OPERAND_CODE_REF", BRIG_KIND_OPERAND_CODE_REF}, 
+	{"OPERAND_IMAGE_PROPERTIES", BRIG_KIND_OPERAND_IMAGE_PROPERTIES}, 
+	{"OPERAND_OPERAND_LIST", BRIG_KIND_OPERAND_OPERAND_LIST}, 
+	{"OPERAND_REG", BRIG_KIND_OPERAND_REG}, 
+	{"OPERAND_SAMPLER_PROPERTIES", BRIG_KIND_OPERAND_SAMPLER_PROPERTIES}, 
+	{"OPERAND_STRING", BRIG_KIND_OPERAND_STRING}, 
+	{"OPERAND_WAVESIZE", BRIG_KIND_OPERAND_WAVESIZE}
 };
 
 
@@ -201,9 +358,13 @@ std::string AsmService::LinkageToString(unsigned char linkage)
 }
 
 
-std::string AsmService::AllocationToString(unsigned char allocation)
+std::string AsmService::AllocationToString(BrigAllocation allocation, 
+			BrigSegment segment)
 {
-	return allocation_to_str_map.MapValue(allocation);
+	if (allocation == BRIG_ALLOCATION_AGENT && 
+			segment != BRIG_SEGMENT_READONLY)
+		return "alloc(agent)";
+	return "";
 }
 
 
@@ -235,31 +396,62 @@ std::string AsmService::RegisterKindToString(BrigRegisterKind register_kind)
 }
 
 
-bool AsmService::InstUseType(BrigOpcode opcode)
+std::string AsmService::WidthToString(BrigWidth width)
 {
-	switch(opcode)
+	return width_to_str_map.MapValue(width);
+}
+
+
+std::string AsmService::CompareOperationToString(BrigCompareOperation compare)
+{
+	return compare_operation_to_str_map.MapValue(compare);	
+}
+
+
+std::string AsmService::AluModifierToString(BrigAluModifier modifier)
+{
+	if (modifier.allBits & BRIG_ALU_FTZ)
 	{
-	case BRIG_OPCODE_ARRIVEFBAR:
-	case BRIG_OPCODE_BARRIER:
-	case BRIG_OPCODE_BR:
-	case BRIG_OPCODE_CALL:
-	case BRIG_OPCODE_GCNMADS:
-	case BRIG_OPCODE_GCNMADU:
-	case BRIG_OPCODE_GCNMQSAD4:
-	case BRIG_OPCODE_GCNREGIONALLOC:
-	case BRIG_OPCODE_INITFBAR:
-	case BRIG_OPCODE_JOINFBAR:
-	case BRIG_OPCODE_LEAVEFBAR:
-	case BRIG_OPCODE_NOP:
-	case BRIG_OPCODE_RELEASEFBAR:
-	case BRIG_OPCODE_RET:
-	case BRIG_OPCODE_WAITFBAR:
-	case BRIG_OPCODE_WAVEBARRIER:
-		return false;
-	default:
-		return true;
+		return "ftz";	
 	}
-	return true;
+	return "";
+}
+
+
+std::string AsmService::RoundingToString(BrigRound rounding)
+{
+	return rounding_to_str_map.MapValue(rounding);
+}
+
+
+std::string AsmService::PackToString(BrigPack pack)
+{
+	return pack_to_str_map.MapValue(pack);
+}
+
+
+std::string AsmService::VectorModifierToString(unsigned vectorModifier)
+{
+	switch(vectorModifier)
+	{
+	case 0:
+		return "";
+	case 2:
+		return "v2";
+	case 3:
+		return "v3";
+	case 4:
+		return "v4";
+	default:
+		throw misc::Panic(misc::fmt("Invalid vector modifier v%d", 
+				vectorModifier));
+	}
+}
+
+
+std::string AsmService::KindToString(BrigKinds kind)
+{
+	return kind_to_str_map.MapValue(kind);
 }
 
 

@@ -42,6 +42,9 @@ class BrigCodeEntry : public BrigEntry
 	/// Output a certain number of tabs for indentation
 	void DumpIndent(std::ostream &os) const;
 
+	// Throw kind error
+	void KindError(const std::string &str) const;
+	
 public:
 	
 	/// Constructor
@@ -50,7 +53,7 @@ public:
 	{}
 
 	/// Return the kind field of the entry
-	unsigned getKind() const;
+	BrigKinds getKind() const;
 
 	/// Return the size in bytes of the entry
 	unsigned getSize() const;
@@ -129,6 +132,9 @@ public:
 	/// Dump operands of an instruction
 	void DumpOperands(std::ostream &os) const;
 
+	/// Dump call argument
+	void DumpCallArguments(std::ostream &os) const;
+
 	/// Return an unique pointer to the next entry
 	std::unique_ptr<BrigCodeEntry> Next() const;
 
@@ -146,6 +152,18 @@ public:
 
 	/// Return true, if current entry is an instruction
 	bool isInstruction() const;
+
+	/// Return true if the instruction use type
+	bool useType() const;
+
+	/// Return default width
+	BrigWidth getDefaultWidth() const;
+
+	/// Return the width field of an instruction
+	BrigWidth getWidth() const;
+
+	/// Return true if instruction is call
+	bool isCallInst() const;
 
 	/// Return the hsailMajor field for the version directive
 	unsigned int getHsailMajor() const;
@@ -184,10 +202,10 @@ public:
 	unsigned char getLinkage() const;
 
 	/// Return allocation field
-	unsigned char getAllocation() const;
+	BrigAllocation getAllocation() const;
 
 	/// Return segment field
-	unsigned char getSegment() const;
+	BrigSegment getSegment() const;
 
 	/// Return the dim field
 	unsigned long long getDim() const;
@@ -229,6 +247,26 @@ public:
 	/// index
 	BrigTypeX getOperandType(unsigned char index) const;
 
+	/// Get compare operation field
+	BrigCompareOperation getCompareOperation() const;
+
+	/// Get alu modifier field
+	BrigAluModifier getAluModifier() const;
+
+	/// Return source type field
+	BrigTypeX getSourceType() const;
+
+	/// Return the rounding 
+	BrigRound getRounding() const;
+
+	/// Return the default rounding of an instruction
+	BrigRound getDefaultRounding() const;
+
+	/// Return the pack field
+	BrigPack getPack() const;
+
+	/// Return the vector modifier
+	unsigned getVectorModifier() const;
 };
 
 }  // namespace HSA
