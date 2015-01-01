@@ -121,7 +121,13 @@ void BrigCodeEntry::DumpDirExtension(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpDirFbarrier(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "FBarrier");
+	DumpIndent(os);
+	AsmService::DumpWithSpace(AsmService::DeclToString(!isDefinition()), 
+			os);
+	AsmService::DumpWithSpace(AsmService::LinkageToString(getLinkage()), 
+			os);
+	os << "fbarrier " << getName() << ";\n";
+
 }
 
 
@@ -277,7 +283,14 @@ void BrigCodeEntry::DumpDirVersion(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "ADDR");
+	DumpIndent();
+	os << AsmService::OpcodeToString(getOpcode());	
+	AsmService::DumpUnderscore(AsmService::SegmentToString(getSegment()), 
+			os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()),
+			os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -291,7 +304,7 @@ void BrigCodeEntry::DumpInstBasic(std::ostream &os = std::cout) const
 {
 	DumpIndent(os);
 	os << AsmService::OpcodeToString(getOpcode());
-	if (AsmService::InstUseType(getOpcode()))
+	if (useType())
 	{
 		AsmService::DumpUnderscore(
 				AsmService::TypeToString(getType()), os);
@@ -305,13 +318,51 @@ void BrigCodeEntry::DumpInstBasic(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstBr(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "BR");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+
+	// Dump width
+	if (getDefaultWidth() != getWidth())
+		AsmService::DumpUnderscore(AsmService::WidthToString(
+				getWidth()), os);
+
+	// Dump type
+	if (useType()) 
+		AsmService::DumpUnderscore(AsmService::TypeToString(
+				getType()), os);
+
+	// Dump operands
+	if (isCallInst())
+		DumpCallArguments(os);
+	/*
+	else if (getOpcode() == BRIG_OPCODE_SBR)
+		DumpSbrArgs(os);
+	*/
+	else 
+		DumpOperands(os);
+
+	// Finish dumping
+	os << ";\n";
 }
 
 
 void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "CMP");
+	DumpIndent();
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::CompareOperationToString(
+			getCompareOperation()), os);
+	AsmService::DumpUnderscore(AsmService::AluModifierToString(
+			getAluModifier()), os);
+	// TODO: pring_rounding:
+	// TODO: print_(pack2str());
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
+			os);
+
+	// Dump operands
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -340,6 +391,8 @@ void BrigCodeEntry::DumpInstMem(std::ostream &os = std::cout) const
 
 	// Dump instruction
 	os << AsmService::OpcodeToString(getOpcode());	
+	AsmService::DumpUnderscore(AsmService::VectorModifierToString(
+			getVectorModifier()), os);
 	if (getOpcode() != BRIG_OPCODE_ALLOCA)
 		AsmService::DumpUnderscore(AsmService::SegmentToString(
 				getSegment()), os);
@@ -366,7 +419,19 @@ void BrigCodeEntry::DumpInstMemFence(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstMod(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "ADDR");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::AluModifierToString(
+			getAluModifier()), os);
+	if (getRounding() != getDefaultRounding())
+		AsmService::DumpUnderscore(AsmService::RoundingToString(
+				getRounding()), os);
+	AsmService::DumpUnderscore(AsmService::PackToString(getPack()), os);
+	if (useType())
+		AsmService::DumpUnderscore(AsmService::TypeToString(getType()), 
+				os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -408,7 +473,15 @@ void BrigCodeEntry::DumpInstSignal(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstSourceType(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "SOURCE_TYPE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::VectorModifierToString(
+			getVectorModifier()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
+			os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -419,7 +492,7 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 	AsmService::DumpWithSpace(AsmService::LinkageToString(
 			getLinkage()), os);
 	AsmService::DumpWithSpace(AsmService::AllocationToString(
-			getAllocation()), os);
+			getAllocation(), getSegment()), os);
 	// FIXME: add align and const support
 
 	// Dump memory segment and type
@@ -515,6 +588,64 @@ void BrigCodeEntry::DumpOperands(std::ostream &os = std::cout) const
 		BrigTypeX type = getOperandType(i);
 		operand->Dump(type, os);
 	}	
+}
+
+
+void BrigCodeEntry::DumpCallArguments(std::ostream &os = std::cout) const
+{
+	if (!isCallInst())
+		throw misc::Panic("DumpCallArgument not valid for kind");
+
+	os << "\t";
+
+	auto operand1 = getOperand(1);
+	operand1->Dump(BRIG_TYPE_NONE, os);
+
+	auto operand0 = getOperand(0);
+	if (operand0.get())
+	{
+		os << " ";
+		operand0->Dump(BRIG_TYPE_NONE, os);
+	}
+
+	if (getOperandCount() >= 3)
+	{
+		auto operand2 = getOperand(2);
+		if (operand2.get())
+		{
+			os << " ";
+			operand2->Dump(BRIG_TYPE_NONE, os);
+		}
+	}
+
+	if (getOperandCount() >= 4)
+	{
+		auto operand3 = getOperand(3);
+		if (operand3->getKind() == BRIG_KIND_OPERAND_CODE_LIST)
+		{
+			os << " [";
+			for (unsigned int i = 0; 
+				i < operand3->getElementCount(); i++)
+			{
+				if (i > 0) os << ", ";
+				os << operand3->getElement(i)->getName();
+			}
+			os << "]";
+		}
+		else if(operand3->getKind() == BRIG_KIND_OPERAND_CODE_REF)
+		{
+			os << " ";	
+			operand3->Dump(BRIG_TYPE_NONE, os);
+		}
+	}
+}
+
+
+void BrigCodeEntry::KindError(const std::string &str) const
+{
+	throw misc::Panic(misc::fmt("%s not valid for kind %s", 
+			str.c_str(), 
+			AsmService::KindToString(getKind()).c_str()));
 }
 
 }  // namespace HSA

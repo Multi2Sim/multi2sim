@@ -45,6 +45,14 @@ std::map<unsigned, BrigOperandEntry::DumpEntryFn> BrigOperandEntry::dump_entry_f
 };
 
 
+void BrigOperandEntry::KindError(const std::string &str) const
+{
+	throw misc::Panic(misc::fmt("%s not valid for kind %s", 
+			str.c_str(), 
+			AsmService::KindToString(getKind()).c_str()));
+}
+
+
 BrigOperandEntry::BrigOperandEntry(const char *buf,
 		const BrigSection *section) :
 		BrigEntry(buf, section)
@@ -52,10 +60,10 @@ BrigOperandEntry::BrigOperandEntry(const char *buf,
 }
 
 
-unsigned BrigOperandEntry::getKind() const
+BrigKinds BrigOperandEntry::getKind() const
 {
 	BrigBase *brig_base = (BrigBase *)base;
-	return (unsigned)brig_base->kind;
+	return (BrigKinds)brig_base->kind;
 }
 
 	
@@ -108,7 +116,13 @@ void BrigOperandEntry::DumpOperandData(BrigTypeX type = BRIG_TYPE_NONE,
 void BrigOperandEntry::DumpOperandCodeList(BrigTypeX type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Operand: %s, not supported\n", "CODE_LIST");
+	os << "(";
+	for (unsigned int i = 0; i < getElementCount(); i++)
+	{
+		if (i > 0) os << ", ";
+		os << getElement(i)->getName();
+	}
+	os << ")";
 }
 
 
@@ -129,7 +143,9 @@ void BrigOperandEntry::DumpOperandImageProperties(BrigTypeX type = BRIG_TYPE_NON
 void BrigOperandEntry::DumpOperandOperandList(BrigTypeX type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Operand: %s, not supported\n", "OPERAND_LIST");
+	os << "(";
+	DumpListOfOperand(getElements().get(), type, os);
+	os << ")";
 }
 
 
@@ -158,6 +174,21 @@ void BrigOperandEntry::DumpOperandWavesize(BrigTypeX type = BRIG_TYPE_NONE,
 		std::ostream &os = std::cout) const
 {
 	os << "WAVESIZE";
+}
+
+
+void BrigOperandEntry::DumpListOfOperand(BrigDataEntry *operands, 
+		BrigTypeX type, std::ostream& os = std::cout) const
+{
+	unsigned size = operands->getByteCount() / 4;
+	for (unsigned i = 0; i < size; i++)
+	{
+		if (i > 0) os << ", ";
+		unsigned int offset = *(unsigned int *)(operands->getBytes() + 
+				i * 4);
+		auto operand = getBinary()->getOperandByOffset(offset);
+		operand->Dump(type, os);
+	}
 }
 
 
@@ -270,6 +301,52 @@ std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getRef() const
 	default:
 		throw misc::Panic("GetString is not valid for type");
 	}
+}
+
+
+std::unique_ptr<BrigDataEntry> BrigOperandEntry::getElements() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_OPERAND_LIST:
+	{
+		struct BrigOperandOperandList *operand
+			= (struct BrigOperandOperandList *)base;
+		auto data_entry = getBinary()->getDataEntryByOffset(
+				operand->elements);
+		return data_entry;
+	}
+	case BRIG_KIND_OPERAND_CODE_LIST:
+	{
+		struct BrigOperandCodeList *operand
+			= (struct BrigOperandCodeList *)base;
+		auto data_entry = getBinary()->getDataEntryByOffset(
+				operand->elements);
+		return data_entry;
+	}
+	default:
+		KindError("GetElements");
+	}
+	return std::unique_ptr<BrigDataEntry>(nullptr);
+}
+
+
+unsigned int BrigOperandEntry::getElementCount() const
+{
+	auto data_entry = getElements();
+	return data_entry->getByteCount() / 4;
+}
+
+
+std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getElement(unsigned int index) const
+{
+	if (index >= getElementCount())
+		throw misc::Panic("GetElement out of range");
+	auto data_entry = getElements();
+	unsigned int offset = 
+			*(unsigned int *)(data_entry->getBytes() + 
+			index * 4);
+	return getBinary()->getCodeEntryByOffset(offset);
 }
 
 }  // namespace HSA

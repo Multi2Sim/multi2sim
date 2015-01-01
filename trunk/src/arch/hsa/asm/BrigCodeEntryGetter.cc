@@ -65,10 +65,10 @@ unsigned BrigCodeEntry::getSize() const
 }
 
 
-unsigned BrigCodeEntry::getKind() const
+BrigKinds BrigCodeEntry::getKind() const
 {
 	BrigBase *brig_base = (BrigBase *)base;
-	return (unsigned)brig_base->kind;
+	return (BrigKinds)brig_base->kind;
 }
 
 
@@ -76,6 +76,119 @@ bool BrigCodeEntry::isInstruction() const
 {
 	if (getKind() >= BRIG_KIND_INST_BEGIN 
 			&& getKind() < BRIG_KIND_INST_END)
+		return true;
+	return false;
+}
+
+
+bool BrigCodeEntry::useType() const
+{
+	if (!isInstruction()){
+		throw misc::Panic("UseType not valid for type");
+	}
+	switch(getOpcode())
+	{
+	case BRIG_OPCODE_ARRIVEFBAR:
+	case BRIG_OPCODE_BARRIER:
+	case BRIG_OPCODE_BR:
+	case BRIG_OPCODE_CALL:
+	case BRIG_OPCODE_GCNMADS:
+	case BRIG_OPCODE_GCNMADU:
+	case BRIG_OPCODE_GCNMQSAD4:
+	case BRIG_OPCODE_GCNREGIONALLOC:
+	case BRIG_OPCODE_INITFBAR:
+	case BRIG_OPCODE_JOINFBAR:
+	case BRIG_OPCODE_LEAVEFBAR:
+	case BRIG_OPCODE_NOP:
+	case BRIG_OPCODE_RELEASEFBAR:
+	case BRIG_OPCODE_RET:
+	case BRIG_OPCODE_WAITFBAR:
+	case BRIG_OPCODE_WAVEBARRIER:
+		return false;
+	default:
+		return true;
+	}
+}
+
+
+BrigWidth BrigCodeEntry::getDefaultWidth() const
+{
+	if (!isInstruction()){
+		throw misc::Panic("UseType not valid for type");
+	}
+	switch(getOpcode())
+	{
+	case BRIG_OPCODE_ACTIVELANECOUNT: 
+		return BRIG_WIDTH_1;
+        case BRIG_OPCODE_ACTIVELANEID: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_ACTIVELANEMASK: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_ACTIVELANESHUFFLE: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_ALLOCA: 
+        	return BRIG_WIDTH_NONE;
+        case BRIG_OPCODE_ARRIVEFBAR: 
+        	return BRIG_WIDTH_WAVESIZE;
+        case BRIG_OPCODE_BARRIER: 
+        	return BRIG_WIDTH_ALL;
+        case BRIG_OPCODE_BR: 
+        	return BRIG_WIDTH_ALL;
+        case BRIG_OPCODE_CALL: 
+        	return BRIG_WIDTH_ALL;
+        case BRIG_OPCODE_CBR: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_GCNLD: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_GCNST: 
+        	return BRIG_WIDTH_NONE;
+        case BRIG_OPCODE_ICALL: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_JOINFBAR: 
+        	return BRIG_WIDTH_WAVESIZE;
+        case BRIG_OPCODE_LD: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_LEAVEFBAR: 
+        	return BRIG_WIDTH_WAVESIZE;
+        case BRIG_OPCODE_SBR: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_SCALL: 
+        	return BRIG_WIDTH_1;
+        case BRIG_OPCODE_ST: 
+        	return BRIG_WIDTH_NONE;
+        case BRIG_OPCODE_WAITFBAR: 
+        	return BRIG_WIDTH_WAVESIZE;
+        case BRIG_OPCODE_WAVEBARRIER: 
+        	return BRIG_WIDTH_WAVESIZE;
+        default:
+            return BRIG_WIDTH_NONE;
+            break;
+	}
+}
+
+
+BrigWidth BrigCodeEntry::getWidth() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_BR:
+	{
+		struct BrigInstBr *inst = (struct BrigInstBr *)base;
+		return (BrigWidth)inst->width;
+	}
+	default:
+		throw misc::Panic("GetWidth not valid for kind");
+	}
+}
+
+
+bool BrigCodeEntry::isCallInst() const
+{
+	if (!isInstruction())
+		throw misc::Panic("IsCallInst not valid for kind");
+	if (getOpcode() == BRIG_OPCODE_CALL || 
+		getOpcode() == BRIG_OPCODE_SCALL || 
+		getOpcode() == BRIG_OPCODE_ICALL)
 		return true;
 	return false;
 }
@@ -232,6 +345,13 @@ bool BrigCodeEntry::isDefinition() const
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
 		return !!(modifier & BRIG_SYMBOL_DEFINITION);
 	}
+	case BRIG_KIND_DIRECTIVE_FBARRIER:
+	{
+		struct BrigDirectiveFbarrier *dir = 
+				(struct BrigDirectiveFbarrier *)base;
+		unsigned char modifier = (unsigned char)dir->modifier.allBits;
+		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+	}
 	default:
 		throw misc::Panic("Get isDefinition is not valid for type\n");
 	}
@@ -345,6 +465,12 @@ unsigned char BrigCodeEntry::getLinkage() const
 		struct BrigDirectiveExecutable *dir = 
 				(struct BrigDirectiveExecutable *)base;	
 		return dir->linkage;
+	}
+	case BRIG_KIND_DIRECTIVE_FBARRIER:
+	{
+		struct BrigDirectiveFbarrier *dir = 
+				(struct BrigDirectiveFbarrier *)base;
+		return dir->linkage;
 	}	
 	default:
 		throw misc::Panic("Get linkage is not valid for type.\n");
@@ -352,7 +478,7 @@ unsigned char BrigCodeEntry::getLinkage() const
 }
 
 
-unsigned char BrigCodeEntry::getAllocation() const
+BrigAllocation BrigCodeEntry::getAllocation() const
 {
 	switch(getKind())
 	{
@@ -361,7 +487,7 @@ unsigned char BrigCodeEntry::getAllocation() const
 		struct BrigDirectiveVariable *dir = 
 				(struct BrigDirectiveVariable *)base;
 		unsigned char allocation = dir->allocation;
-		return allocation;
+		return (BrigAllocation)allocation;
 	}
 	default: 
 		throw misc::Panic("Get allocation is not valid for kind.\n");
@@ -369,7 +495,7 @@ unsigned char BrigCodeEntry::getAllocation() const
 }
 
 
-unsigned char BrigCodeEntry::getSegment() const
+BrigSegment BrigCodeEntry::getSegment() const
 {
 	switch(getKind())
 	{
@@ -378,14 +504,21 @@ unsigned char BrigCodeEntry::getSegment() const
 		struct BrigDirectiveVariable *dir = 
 				(struct BrigDirectiveVariable *)base;
 		unsigned char segment = dir->segment;
-		return segment;
+		return (BrigSegment)segment;
 	}
 	case BRIG_KIND_INST_MEM:
 	{
 		struct BrigInstMem *inst = 
 				(struct BrigInstMem *)base;
 		unsigned char segment = inst->segment;
-		return segment;
+		return (BrigSegment)segment;
+	}
+	case BRIG_KIND_INST_ADDR:
+	{
+		struct BrigInstAddr *inst = 
+				(struct BrigInstAddr *)base;
+		unsigned char segment = inst->segment;
+		return (BrigSegment)segment;
 	}
 	default:
 		throw misc::Panic("Get segment is not valid for kind.\n");
@@ -630,8 +763,205 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		throw misc::Panic("GetOperandType is only valid for"
 				" instruction");
 
-	// In default cases, return src type
+	// Create a table 
+	unsigned short opcode = getOpcode();
+	switch (index)
+	{
+	case 0:
+		if (opcode == BRIG_OPCODE_ARRIVEFBAR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_ATOMICNORET) 
+			throw misc::Panic("OPERAND ATTR SEG not supported");
+		if (opcode == BRIG_OPCODE_BARRIER) return BRIG_TYPE_NONE;
+		if (opcode == BRIG_OPCODE_BR) return BRIG_TYPE_NONE;
+		if (opcode == BRIG_OPCODE_CALL) return BRIG_TYPE_NONE;
+		if (opcode == BRIG_OPCODE_ICALL) return BRIG_TYPE_NONE;
+		if (opcode == BRIG_OPCODE_INITFBAR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_JOINFBAR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_RELEASEFBAR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_WAITFBAR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_MEMFENCE) return BRIG_TYPE_NONE;
+		break;
+	case 1:
+		if (opcode == BRIG_OPCODE_ACTIVELANECOUNT) return getSourceType();
+		if (opcode == BRIG_OPCODE_ACTIVELANEMASK) return getSourceType();
+		if (opcode == BRIG_OPCODE_ACTIVELANECOUNT) return getSourceType();
+		if (opcode == BRIG_OPCODE_BITMASK) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_CLASS) return getSourceType();
+		if (opcode == BRIG_OPCODE_CMP) return getSourceType();
+		if (opcode == BRIG_OPCODE_CVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_SAD) return getSourceType();
+		if (opcode == BRIG_OPCODE_SADHI) return getSourceType();
+		if (opcode == BRIG_OPCODE_POPCOUNT) return getSourceType();
+		if (opcode == BRIG_OPCODE_COMBINE) return getSourceType();
+		if (opcode == BRIG_OPCODE_EXPAND) return getSourceType();
+		if (opcode == BRIG_OPCODE_FIRSTBIT) return getSourceType();
+		if (opcode == BRIG_OPCODE_LASTBIT) return getSourceType();
+		if (opcode == BRIG_OPCODE_FTOS) return getSourceType();
+		if (opcode == BRIG_OPCODE_CURRENTWORKGROUPSIZE) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_GRIDGROUPS) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_GRIDSIZE) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_LDF) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_WORKGROUPID) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_WORKGROUPSIZE) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_WORKITEMABSID) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_WORKITEMID) return BRIG_TYPE_U32;
+		break;
+	case 2:
+		if (opcode == BRIG_OPCODE_ACTIVELANESHUFFLE) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_BITMASK) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_CLASS) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_SHL) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_SHR) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_UNPACK) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_CMP) return getSourceType();
+		if (opcode == BRIG_OPCODE_PACK) return getSourceType();
+		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_SAD) return getSourceType();
+		if (opcode == BRIG_OPCODE_SADHI) return getSourceType();
+		break;
+	case 3:
+		break;
+	case 4:
+		break;
+	default:
+		throw misc::Panic("Operand index out of range");
+	}
+
+	// In default cases, return inst type
 	return getType();
+}
+
+
+BrigCompareOperation BrigCodeEntry::getCompareOperation() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_CMP:
+	{
+		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+		return (BrigCompareOperation)inst->compare;
+	}	
+	default: 
+		throw misc::Panic("GetCompareOperation not valid for kind");
+	}
+}
+
+
+BrigAluModifier BrigCodeEntry::getAluModifier() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_CMP:
+	{
+		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+		return inst->modifier;
+	}	
+	case BRIG_KIND_INST_MOD:
+	{
+		struct BrigInstMod *inst = (struct BrigInstMod *)base;
+		return inst->modifier;
+	}
+	default: 
+		throw misc::Panic("GetCompareOperation not valid for kind");
+	}	
+}
+
+
+BrigTypeX BrigCodeEntry::getSourceType() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_CMP:
+	{
+		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+		return (BrigTypeX)inst->sourceType;
+	}	
+	case BRIG_KIND_INST_SOURCE_TYPE:
+	{
+		struct BrigInstSourceType *inst = 
+				(struct BrigInstSourceType *)base;
+		return (BrigTypeX)inst->sourceType;
+	}
+	default: 
+		throw misc::Panic("GetSourceType not valid for kind");
+	}	
+}
+
+
+BrigRound BrigCodeEntry::getRounding() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MOD:
+	{
+		struct BrigInstMod *inst = (struct BrigInstMod *)base;
+		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
+	}	
+	default: 
+		throw misc::Panic("GetRounding not valid for kind");
+	}
+}
+
+
+BrigRound BrigCodeEntry::getDefaultRounding() const
+{
+	switch(getOpcode())
+	{
+	case BRIG_OPCODE_ABS:
+		return BRIG_ROUND_NONE;
+	default:
+		return BRIG_ROUND_NONE;
+	}
+}
+
+
+BrigPack BrigCodeEntry::getPack() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MOD:
+	{
+		struct BrigInstMod *inst = (struct BrigInstMod *)base;
+		return (BrigPack)(inst->pack);
+	}	
+	default: 
+		throw misc::Panic("GetCompareOperation not valid for kind");
+	}
+}
+
+
+unsigned BrigCodeEntry::getVectorModifier() const
+{
+	switch(getOpcode())
+	{
+	case BRIG_OPCODE_LD:
+	case BRIG_OPCODE_GCNLD:
+	case BRIG_OPCODE_ST:
+	case BRIG_OPCODE_GCNST:
+	case BRIG_OPCODE_EXPAND:
+	case BRIG_OPCODE_RDIMAGE:
+	case BRIG_OPCODE_LDIMAGE:
+	case BRIG_OPCODE_STIMAGE:
+	case BRIG_OPCODE_ACTIVELANEMASK:
+	{
+		auto operand = getOperand(0);
+		if(operand->getKind() == BRIG_KIND_OPERAND_OPERAND_LIST)
+			return operand->getElementCount();
+		else
+			return 0;
+	}
+	case BRIG_OPCODE_COMBINE:
+	{
+		auto operand = getOperand(1);
+		if(operand->getKind() == BRIG_KIND_OPERAND_OPERAND_LIST)
+			return operand->getElementCount();
+		else
+			return 0;
+	}
+	default:
+		return 0;
+	}
 }
 
 }  // namespace HSA
