@@ -33,6 +33,9 @@ class BrigSection;
 class BrigOperandEntry : public BrigEntry
 {
 
+	// Throw kind error
+	void KindError(const std::string &str) const;
+
 public:
 
 	/// Constructor
@@ -55,7 +58,7 @@ public:
 	}
 
 	/// Return the kind field of the entry
-	unsigned getKind() const;
+	BrigKinds getKind() const;
 
 	/// Dump operand functions
 	void DumpOperandAddress(BrigTypeX type, std::ostream &os) const;
@@ -68,6 +71,10 @@ public:
 	void DumpOperandSamplerProperties(BrigTypeX type, std::ostream &os) const;
 	void DumpOperandString(BrigTypeX type, std::ostream &os) const;
 	void DumpOperandWavesize(BrigTypeX type, std::ostream &os) const;
+
+	/// Dump a list of operand
+	void DumpListOfOperand(BrigDataEntry *operands, BrigTypeX type,
+			std::ostream& os) const;
 
 	/// Return the symbol field of the operand
 	std::unique_ptr<BrigCodeEntry> getSymbol() const;
@@ -89,6 +96,14 @@ public:
 
 	/// Return the code entry pointed by ref field
 	std::unique_ptr<BrigCodeEntry> getRef() const;
+
+	std::unique_ptr<BrigDataEntry> getElements() const;
+
+	/// Return the number of elements 
+	unsigned int getElementCount() const;
+
+	/// Return a certain element
+	std::unique_ptr<BrigCodeEntry> getElement(unsigned int index) const;
 
 };
 

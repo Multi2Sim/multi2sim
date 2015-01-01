@@ -42,9 +42,6 @@ protected:
 	// Map linkage to linkage string
 	static misc::StringMap linkage_to_str_map;
 
-	// Map allocation to allocation string
-	static misc::StringMap allocation_to_str_map;
-
 	// Map segment to segment string
 	static misc::StringMap segment_to_str_map;
 
@@ -54,10 +51,22 @@ protected:
 	// Map register kind to string
 	static misc::StringMap register_kind_to_str_map;
 
-public:
+	// Map width to string
+	static misc::StringMap width_to_str_map;
 
-	/// Returns true a certain instruction uses type modifier
-	static bool InstUseType(BrigOpcode opcode);
+	// Map compare operation to string
+	static misc::StringMap compare_operation_to_str_map;
+
+	/// Map rounding to string
+	static misc::StringMap rounding_to_str_map;
+
+	/// Map pack to string
+	static misc::StringMap pack_to_str_map;
+
+	/// Map kind to string
+	static misc::StringMap kind_to_str_map;
+
+public:
 
 
 
@@ -85,7 +94,8 @@ public:
 	static std::string LinkageToString(unsigned char linkage);
 
 	/// Convert allocation to allocation string
-	static std::string AllocationToString(unsigned char allocation);
+	static std::string AllocationToString(BrigAllocation allocation, 
+			BrigSegment segment);
 
 	/// Convert segment to segment string
 	static std::string SegmentToString(unsigned char segment);
@@ -99,6 +109,26 @@ public:
 	/// Convert register kind to string
 	static std::string RegisterKindToString(BrigRegisterKind register_kind);
 
+	/// Convert width to string
+	static std::string WidthToString(BrigWidth width);
+
+	/// Convert compare operation to string
+	static std::string CompareOperationToString(BrigCompareOperation compare);
+
+	/// Convert alu modifier to string
+	static std::string AluModifierToString(BrigAluModifier modifier);
+
+	/// Convert rounding to string
+	static std::string RoundingToString(BrigRound rounding);
+
+	/// Convert pack to string
+	static std::string PackToString(BrigPack pack);
+
+	/// Convert vector modifier to string
+	static std::string VectorModifierToString(unsigned vectorModifier);
+
+	/// Convert kind to string
+	static std::string KindToString(BrigKinds kind);
 	
 
 
