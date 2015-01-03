@@ -177,12 +177,12 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	}
 	else if (func_name == "__get_group_id_u32")
 	{
-		// Allocate a new vector register to copy global size.
+		// Allocate a new vector register to copy work group id.
 		int ret_vreg = function->AllocVReg();
 		Symbol *ret_symbol = function->addSymbol(var_name);
 		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
-		// Create new vector register containing the global size.
+		// Create new vector register containing the work group id.
 		// v_mov_b32 vreg, s[wgid + dim]
 		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
@@ -207,6 +207,20 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(function->getSRegGSize() + dim);
+		assert(instruction->hasValidArguments());
+	}
+	else if (func_name == "__get_local_size_u32")
+	{
+		// Allocate a new vector register to copy local size.
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Create new vector register containing the local size.
+		// v_mov_b32 vreg, s[lsize + dim]
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(function->getSRegLSize() + dim);
 		assert(instruction->hasValidArguments());
 	}
 	else
