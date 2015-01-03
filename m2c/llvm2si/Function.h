@@ -213,6 +213,8 @@ public:
 
 	int getSRegGSize() { return sreg_gsize; }
 
+	int getSRegLSize() { return sreg_lsize; }
+
 	/// Return number of scalar registers
 	int getNumScalarRegisters() const { return num_sregs; }
 
