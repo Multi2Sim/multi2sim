@@ -209,6 +209,8 @@ public:
 
 	int getVRegLid() { return vreg_lid; }
 
+	int getSRegWGid() { return sreg_wgid; }
+
 	int getSRegGSize() { return sreg_gsize; }
 
 	/// Return number of scalar registers
