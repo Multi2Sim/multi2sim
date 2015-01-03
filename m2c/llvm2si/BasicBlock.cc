@@ -175,6 +175,26 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		ret_symbol->setRegister(Symbol::TypeVectorRegister,
 				function->getVRegLid() + dim);
 	}
+	else if (func_name == "__get_group_id_u32")
+	{
+		// Allocate a new vector register to copy global size.
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Create new vector register containing the global size.
+		// v_mov_b32 vreg, s[wgid + dim]
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(function->getSRegWGid() + dim);
+		assert(instruction->hasValidArguments());
+
+		// Create new symbol associating it with the scalar register
+		// containing the group ID in the given dimension.
+		/* Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister,
+					function->getSRegWGid() + dim); */
+	}
 	else if (func_name == "__get_global_size_u32")
 	{
 		// Allocate a new vector register to copy global size.
