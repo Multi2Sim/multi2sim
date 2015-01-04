@@ -223,6 +223,20 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		instruction->addScalarRegister(function->getSRegLSize() + dim);
 		assert(instruction->hasValidArguments());
 	}
+	else if (func_name == "__get_num_groups_u32")
+	{
+		// Allocate a new vector register to copy local size.
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(var_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Create new vector register containing the local size.
+		// v_mov_b32 vreg, s[num_of_workgroups + dim]
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(function->getNumOfWG() + dim);
+		assert(instruction->hasValidArguments());
+	}
 	else
 	{
 		throw Error("Invalid built-in function: " + func_name);

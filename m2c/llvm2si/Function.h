@@ -215,6 +215,13 @@ public:
 
 	int getSRegLSize() { return sreg_lsize; }
 
+	int getNumOfWG()
+	{
+		// Copying to a float variable to avoid type casting gsize
+		float temp_gsize = sreg_gsize;
+		return ceil(temp_gsize/sreg_lsize);
+	}
+
 	/// Return number of scalar registers
 	int getNumScalarRegisters() const { return num_sregs; }
 
