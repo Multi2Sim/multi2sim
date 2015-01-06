@@ -176,9 +176,15 @@ BrigWidth BrigCodeEntry::getWidth() const
 		struct BrigInstBr *inst = (struct BrigInstBr *)base;
 		return (BrigWidth)inst->width;
 	}
-	default:
-		throw misc::Panic("GetWidth not valid for kind");
+	case BRIG_KIND_INST_MEM:
+	{
+		struct BrigInstMem *inst = (struct BrigInstMem *)base;
+		return (BrigWidth)inst->width;
 	}
+	default:
+		KindError("GetWidth");
+	}
+	return BRIG_WIDTH_NONE;
 }
 
 
@@ -384,11 +390,12 @@ bool BrigCodeEntry::isConst() const
 		struct BrigInstMem *dir = 
 				(struct BrigInstMem *)base;	
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_CONST);
+		return !!(modifier & BRIG_MEMORY_CONST);
 	}
 	default:
-		throw misc::Panic("Get isConst is not valid for type\n");
+		KindError("IsConst");
 	}
+	return false;
 }
 
 
@@ -520,9 +527,24 @@ BrigSegment BrigCodeEntry::getSegment() const
 		unsigned char segment = inst->segment;
 		return (BrigSegment)segment;
 	}
-	default:
-		throw misc::Panic("Get segment is not valid for kind.\n");
+	case BRIG_KIND_INST_SEG_CVT:
+	{
+		struct BrigInstSegCvt *inst = 
+				(struct BrigInstSegCvt *)base;
+		unsigned char segment = inst->segment;
+		return (BrigSegment)segment;
 	}
+	case BRIG_KIND_INST_ATOMIC:
+	{
+		struct BrigInstAtomic *inst = 
+				(struct BrigInstAtomic *)base;
+		unsigned char segment = inst->segment;
+		return (BrigSegment)segment;
+	}
+	default:
+		KindError("GetSegment");
+	}
+	return BRIG_SEGMENT_NONE;
 }
 
 
@@ -769,8 +791,6 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 	{
 	case 0:
 		if (opcode == BRIG_OPCODE_ARRIVEFBAR) return BRIG_TYPE_U32;
-		if (opcode == BRIG_OPCODE_ATOMICNORET) 
-			throw misc::Panic("OPERAND ATTR SEG not supported");
 		if (opcode == BRIG_OPCODE_BARRIER) return BRIG_TYPE_NONE;
 		if (opcode == BRIG_OPCODE_BR) return BRIG_TYPE_NONE;
 		if (opcode == BRIG_OPCODE_CALL) return BRIG_TYPE_NONE;
@@ -790,6 +810,7 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_CMP) return getSourceType();
 		if (opcode == BRIG_OPCODE_CVT) return getSourceType();
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_UNPACKCVT) return getSourceType();
 		if (opcode == BRIG_OPCODE_SAD) return getSourceType();
 		if (opcode == BRIG_OPCODE_SADHI) return getSourceType();
 		if (opcode == BRIG_OPCODE_POPCOUNT) return getSourceType();
@@ -814,6 +835,7 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_SHL) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_SHR) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_UNPACK) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_UNPACKCVT) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_CMP) return getSourceType();
 		if (opcode == BRIG_OPCODE_PACK) return getSourceType();
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
@@ -821,8 +843,15 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_SADHI) return getSourceType();
 		break;
 	case 3:
+		if (opcode == BRIG_OPCODE_BITEXTRACT) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_BITINSERT) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_PACK) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_SAD) return BRIG_TYPE_U32;
+		if (opcode == BRIG_OPCODE_SHUFFLE) return BRIG_TYPE_B32;
 		break;
 	case 4:
+		if (opcode == BRIG_OPCODE_BITINSERT) return BRIG_TYPE_B32;
+		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
 		break;
 	default:
 		throw misc::Panic("Operand index out of range");
@@ -843,8 +872,9 @@ BrigCompareOperation BrigCodeEntry::getCompareOperation() const
 		return (BrigCompareOperation)inst->compare;
 	}	
 	default: 
-		throw misc::Panic("GetCompareOperation not valid for kind");
+		KindError("GetCompareOperation");
 	}
+	return BRIG_COMPARE_EQ;
 }
 
 
@@ -862,9 +892,15 @@ BrigAluModifier BrigCodeEntry::getAluModifier() const
 		struct BrigInstMod *inst = (struct BrigInstMod *)base;
 		return inst->modifier;
 	}
+	case BRIG_KIND_INST_CVT:
+	{
+		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
+		return inst->modifier;
+	}
 	default: 
-		throw misc::Panic("GetCompareOperation not valid for kind");
+		KindError("GetAluModifier");
 	}	
+	throw misc::Panic("Error");
 }
 
 
@@ -883,9 +919,21 @@ BrigTypeX BrigCodeEntry::getSourceType() const
 				(struct BrigInstSourceType *)base;
 		return (BrigTypeX)inst->sourceType;
 	}
+	case BRIG_KIND_INST_SEG_CVT:
+	{
+		struct BrigInstSegCvt *inst = 
+				(struct BrigInstSegCvt *)base;
+		return (BrigTypeX)inst->sourceType;
+	}
+	case BRIG_KIND_INST_CVT:
+	{
+		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
+		return (BrigTypeX)inst->sourceType;
+	}
 	default: 
-		throw misc::Panic("GetSourceType not valid for kind");
+		KindError("GetSourceType");
 	}	
+	return BRIG_TYPE_NONE;
 }
 
 
@@ -897,10 +945,21 @@ BrigRound BrigCodeEntry::getRounding() const
 	{
 		struct BrigInstMod *inst = (struct BrigInstMod *)base;
 		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
-	}	
-	default: 
-		throw misc::Panic("GetRounding not valid for kind");
 	}
+	case BRIG_KIND_INST_CMP:
+	{
+		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
+	}
+	case BRIG_KIND_INST_CVT:
+	{
+		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
+		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
+	}		
+	default: 
+		KindError("GetRounding");
+	}
+	return BRIG_ROUND_NONE;
 }
 
 
@@ -910,6 +969,54 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 	{
 	case BRIG_OPCODE_ABS:
 		return BRIG_ROUND_NONE;
+	case BRIG_OPCODE_ADD:
+	case BRIG_OPCODE_SUB:
+	case BRIG_OPCODE_MUL:
+	case BRIG_OPCODE_DIV:
+	{
+		if (getType() >= 9 && getType() <= 11)
+		{
+			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+		}
+		if (getType() == BRIG_TYPE_F16X2 || 
+				getType() == BRIG_TYPE_F16X4 ||
+				getType() == BRIG_TYPE_F16X8 ||
+				getType() == BRIG_TYPE_F32X2 ||
+				getType() == BRIG_TYPE_F32X4 ||
+				getType() == BRIG_TYPE_F64X2)
+		{
+			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+		}
+		return BRIG_ROUND_NONE;
+	}
+	case BRIG_OPCODE_CVT:
+	{
+		if (getSourceType() >= BRIG_TYPE_U8 
+			&& getSourceType() <= BRIG_TYPE_S64
+			&& getType() >= BRIG_TYPE_F16
+			&& getType() <= BRIG_TYPE_F64)
+		{
+			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+		}
+		else if (getType() >= BRIG_TYPE_U8 
+			&& getType() <= BRIG_TYPE_S64
+			&& getSourceType() >= BRIG_TYPE_F16
+			&& getSourceType() <= BRIG_TYPE_F64)
+		{
+			return BRIG_ROUND_INTEGER_ZERO;
+		}
+		else if (getSourceType() == BRIG_TYPE_F32
+			&& getType() == BRIG_TYPE_F16)
+		{
+			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+		}
+		else if (getSourceType() == BRIG_TYPE_F64
+			&& (getType() == BRIG_TYPE_F32 
+			|| getType() == BRIG_TYPE_F16))
+		{
+			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+		}
+	}
 	default:
 		return BRIG_ROUND_NONE;
 	}
@@ -924,10 +1031,16 @@ BrigPack BrigCodeEntry::getPack() const
 	{
 		struct BrigInstMod *inst = (struct BrigInstMod *)base;
 		return (BrigPack)(inst->pack);
+	}
+	case BRIG_KIND_INST_CMP:
+	{
+		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
+		return (BrigPack)(inst->pack);
 	}	
 	default: 
-		throw misc::Panic("GetCompareOperation not valid for kind");
+		KindError("GetPack");
 	}
+	return BRIG_PACK_NONE;
 }
 
 
@@ -962,6 +1075,92 @@ unsigned BrigCodeEntry::getVectorModifier() const
 	default:
 		return 0;
 	}
+}
+
+
+unsigned char BrigCodeEntry::getEquivClass() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MEM:
+	{
+		struct BrigInstMem *inst = (struct BrigInstMem *)base;
+		return inst->equivClass;
+	}
+	case BRIG_KIND_INST_ATOMIC:
+	{
+		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
+		return inst->equivClass;
+	}
+	default:
+		KindError("GetEquivClass");
+	}
+	return 0;
+}
+
+
+bool BrigCodeEntry::isNoNull() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_SEG_CVT:
+	{
+		struct BrigInstSegCvt *inst = (struct BrigInstSegCvt *)base;
+		unsigned char modifier = inst->modifier.allBits;
+		return !!(modifier & BRIG_SEG_CVT_NONULL);
+	}
+	default:
+		KindError("IsNoNull");
+	}
+	return false;
+}
+
+
+BrigAtomicOperation BrigCodeEntry::getAtomicOperation() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_ATOMIC:
+	{
+		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
+		return (BrigAtomicOperation)inst->atomicOperation;
+	}
+	default:
+		KindError("GetAtomicOperation");
+	}	
+	return BRIG_ATOMIC_ADD;
+}
+
+
+BrigMemoryOrder BrigCodeEntry::getMemoryOrder() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_ATOMIC:
+	{
+		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
+		return (BrigMemoryOrder)inst->memoryOrder;
+	}
+	default:
+		KindError("GetMemoryOrder");
+	}	
+	return BRIG_MEMORY_ORDER_NONE;
+}
+
+
+BrigMemoryScope BrigCodeEntry::getMemoryScope() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_ATOMIC:
+	{
+		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
+		return (BrigMemoryScope)inst->memoryScope;
+	}
+	default:
+		KindError("GetMemoryScope");
+	}	
+	return BRIG_MEMORY_SCOPE_NONE;	
 }
 
 }  // namespace HSA
