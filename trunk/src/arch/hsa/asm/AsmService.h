@@ -66,6 +66,15 @@ protected:
 	/// Map kind to string
 	static misc::StringMap kind_to_str_map;
 
+	/// Map atomic operation to string
+	static misc::StringMap atomic_operation_to_str_map;
+
+	/// Map memory order to string
+	static misc::StringMap memory_order_to_str_map;
+
+	/// Map memory scope to string
+	static misc::StringMap memory_scope_to_str_map;
+
 public:
 
 
@@ -129,6 +138,22 @@ public:
 
 	/// Convert kind to string
 	static std::string KindToString(BrigKinds kind);
+
+	/// Convert nonull to string
+	static std::string NoNullToString(bool is_no_null);
+
+	/// Convert equivalance class to string
+	static std::string EquivClassToString(unsigned char equiv_class);
+
+	/// Convert atomic operation to string
+	static std::string AtomicOperationToString(BrigAtomicOperation 
+			atomic_operation);
+
+	/// Convert memory order to string
+	static std::string MemoryOrderToString(BrigMemoryOrder memory_order);
+
+	/// Convert memory scope to string
+	static std::string MemoryScopeToString(BrigMemoryScope memory_scope);
 	
 
 
