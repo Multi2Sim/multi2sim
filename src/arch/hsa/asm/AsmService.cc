@@ -99,7 +99,7 @@ misc::StringMap AsmService::linkage_to_str_map =
 misc::StringMap AsmService::segment_to_str_map = 
 {
 	{"", BRIG_SEGMENT_NONE},
-	{"flat", BRIG_SEGMENT_FLAT},
+	{"", BRIG_SEGMENT_FLAT},
 	{"global", BRIG_SEGMENT_GLOBAL},
 	{"readonly", BRIG_SEGMENT_READONLY},
 	{"kernarg", BRIG_SEGMENT_KERNARG},
@@ -300,6 +300,53 @@ misc::StringMap AsmService::kind_to_str_map =
 };
 
 
+misc::StringMap AsmService::atomic_operation_to_str_map = 
+{
+	{"add", BRIG_ATOMIC_ADD},
+	{"and", BRIG_ATOMIC_AND},
+	{"cas", BRIG_ATOMIC_CAS},
+	{"exch", BRIG_ATOMIC_EXCH},
+	{"ld", BRIG_ATOMIC_LD},
+	{"max", BRIG_ATOMIC_MAX},
+	{"min", BRIG_ATOMIC_MIN},
+	{"or", BRIG_ATOMIC_OR},
+	{"st", BRIG_ATOMIC_ST},
+	{"sub", BRIG_ATOMIC_SUB},
+	{"wrapdec", BRIG_ATOMIC_WRAPDEC},
+	{"wrapinc", BRIG_ATOMIC_WRAPINC},
+	{"xor", BRIG_ATOMIC_XOR},
+	{"wait_eq", BRIG_ATOMIC_WAIT_EQ},
+	{"wait_ne", BRIG_ATOMIC_WAIT_NE},
+	{"wait_lt", BRIG_ATOMIC_WAIT_LT},
+	{"wait_gte", BRIG_ATOMIC_WAIT_GTE},
+	{"waittimeout_eq", BRIG_ATOMIC_WAITTIMEOUT_EQ},
+	{"waittimeout_ne", BRIG_ATOMIC_WAITTIMEOUT_NE},
+	{"waittimeout_lt", BRIG_ATOMIC_WAITTIMEOUT_LT},
+	{"waittimeout_gte", BRIG_ATOMIC_WAITTIMEOUT_GTE}
+};
+
+
+misc::StringMap AsmService::memory_order_to_str_map = 
+{
+	{"", BRIG_MEMORY_ORDER_NONE},
+	{"rlx", BRIG_MEMORY_ORDER_RELAXED},
+	{"scacq", BRIG_MEMORY_ORDER_SC_ACQUIRE},
+	{"screl", BRIG_MEMORY_ORDER_SC_RELEASE},
+	{"scar", BRIG_MEMORY_ORDER_SC_ACQUIRE_RELEASE}
+};
+
+
+misc::StringMap AsmService::memory_scope_to_str_map = 
+{
+	{"", BRIG_MEMORY_SCOPE_NONE},
+	{"wi", BRIG_MEMORY_SCOPE_WORKITEM},
+	{"wv", BRIG_MEMORY_SCOPE_WAVEFRONT},
+	{"wg", BRIG_MEMORY_SCOPE_WORKGROUP},
+	{"cmp", BRIG_MEMORY_SCOPE_COMPONENT},
+	{"sys", BRIG_MEMORY_SCOPE_SYSTEM}
+};
+
+
 std::string AsmService::OpcodeToString(BrigOpcode opcode)
 {
 	return opcode_to_str_map.MapValue(opcode);
@@ -452,6 +499,36 @@ std::string AsmService::VectorModifierToString(unsigned vectorModifier)
 std::string AsmService::KindToString(BrigKinds kind)
 {
 	return kind_to_str_map.MapValue(kind);
+}
+
+
+std::string AsmService::NoNullToString(bool is_no_null)
+{
+	return is_no_null ? "nonull" : "";
+}
+
+
+std::string AsmService::EquivClassToString(unsigned char equiv_class)
+{
+	return misc::fmt("equiv(%d)", equiv_class);
+}
+
+
+std::string AsmService::AtomicOperationToString(BrigAtomicOperation atomic_operation)
+{
+	return atomic_operation_to_str_map.MapValue(atomic_operation);
+}
+
+
+std::string AsmService::MemoryOrderToString(BrigMemoryOrder memory_order)
+{
+	return memory_order_to_str_map.MapValue(memory_order);
+}
+
+
+std::string AsmService::MemoryScopeToString(BrigMemoryScope memory_scope)
+{
+	return memory_scope_to_str_map.MapValue(memory_scope);
 }
 
 

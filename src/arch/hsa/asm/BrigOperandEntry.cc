@@ -203,8 +203,9 @@ std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getSymbol() const
 		return getBinary()->getCodeEntryByOffset(operand->symbol);
 	}
 	default:
-		throw misc::Panic("GetSymbol is not vaild for type");
+		KindError("GetSymbol");
 	}
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 
@@ -219,8 +220,9 @@ std::unique_ptr<BrigOperandEntry> BrigOperandEntry::getReg() const
 		return getBinary()->getOperandByOffset(operand->reg);
 	}
 	default:
-		throw misc::Panic("GetReg is not vaild for type");
+		KindError("GetOperandEntry");
 	}
+	return std::unique_ptr<BrigOperandEntry>(nullptr);
 }
 
 
@@ -299,8 +301,9 @@ std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getRef() const
 		return getBinary()->getCodeEntryByOffset(operand->ref);
 	}
 	default:
-		throw misc::Panic("GetString is not valid for type");
+		KindError("GetRef");
 	}
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 

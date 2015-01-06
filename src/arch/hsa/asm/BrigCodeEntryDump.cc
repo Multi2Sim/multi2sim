@@ -296,7 +296,27 @@ void BrigCodeEntry::DumpInstAddr(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstAtomic(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "ATOMIC");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::AtomicOperationToString(
+			getAtomicOperation()), os);
+	AsmService::DumpUnderscore(AsmService::SegmentToString(
+			getSegment()), os);
+	AsmService::DumpUnderscore(AsmService::MemoryOrderToString(
+			getMemoryOrder()), os);
+	AsmService::DumpUnderscore(AsmService::MemoryScopeToString(
+			getMemoryScope()), os);
+
+	// Dump equiv class
+	if (getEquivClass() != 0)
+	{
+		AsmService::DumpUnderscore(AsmService::EquivClassToString(
+				getEquivClass()), os);
+	}
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -354,8 +374,10 @@ void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 			getCompareOperation()), os);
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
-	// TODO: pring_rounding:
-	// TODO: print_(pack2str());
+	AsmService::DumpUnderscore(AsmService::RoundingToString(
+			getRounding()), os);
+	AsmService::DumpUnderscore(AsmService::PackToString(
+			getPack()), os);
 	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
 	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
 			os);
@@ -368,7 +390,20 @@ void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstCvt(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "CVT");
+	DumpIndent();
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::AluModifierToString(
+			getAluModifier()), os);
+	if (getRounding() != getDefaultRounding())
+	{
+		AsmService::DumpUnderscore(AsmService::RoundingToString(
+				getRounding()), os);
+	}
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
+			os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -399,8 +434,21 @@ void BrigCodeEntry::DumpInstMem(std::ostream &os = std::cout) const
 	AsmService::DumpUnderscore(AsmService::AlignToString(getAlign()), os);
 	AsmService::DumpUnderscore(AsmService::ConstToString(isConst()), os);
 
-	// TODO: equiv2str & width
+	// Print equivalance class
+	if (getEquivClass() != 0)
+	{
+		AsmService::DumpUnderscore(AsmService::EquivClassToString(
+				getEquivClass()), os);
+	}
 
+	// Print width
+	if (getWidth() != getDefaultWidth())
+	{
+		AsmService::DumpUnderscore(AsmService::WidthToString(
+				getWidth()), os);
+	}
+
+	// Print type
 	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
 
 	// Dump operands;
@@ -461,7 +509,16 @@ void BrigCodeEntry::DumpInstSeg(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstSegCvt(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "SEG_CVT");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::SegmentToString(getSegment()), 
+			os);
+	AsmService::DumpUnderscore(AsmService::NoNullToString(isNoNull()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
+			os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 

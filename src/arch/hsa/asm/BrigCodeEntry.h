@@ -267,6 +267,21 @@ public:
 
 	/// Return the vector modifier
 	unsigned getVectorModifier() const;
+
+	/// Return the equivalance class
+	unsigned char getEquivClass() const;
+
+	/// Return the atomic operation
+	BrigAtomicOperation getAtomicOperation() const;
+
+	/// Return the memory order
+	BrigMemoryOrder getMemoryOrder() const;
+
+	/// Return the memory scope
+	BrigMemoryScope getMemoryScope() const;
+
+	/// Determine is no null 
+	bool isNoNull() const;
 };
 
 }  // namespace HSA
