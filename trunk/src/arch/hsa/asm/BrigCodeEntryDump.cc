@@ -243,7 +243,6 @@ void BrigCodeEntry::DumpDirPragma(std::ostream &os = std::cout) const
 void BrigCodeEntry::DumpDirSignature(std::ostream &os = std::cout) const
 {
 	// Dump prefix
-	os << "\n";
 	AsmService::DumpWithSpace(AsmService::DeclToString(
 			!isDefinition()), os);
 	AsmService::DumpWithSpace(AsmService::LinkageToString(
@@ -354,10 +353,8 @@ void BrigCodeEntry::DumpInstBr(std::ostream &os = std::cout) const
 	// Dump operands
 	if (isCallInst())
 		DumpCallArguments(os);
-	/*
 	else if (getOpcode() == BRIG_OPCODE_SBR)
-		DumpSbrArgs(os);
-	*/
+		DumpSbrArguments(os);
 	else 
 		DumpOperands(os);
 
@@ -409,13 +406,44 @@ void BrigCodeEntry::DumpInstCvt(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstImage(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "IMAGE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::VectorModifierToString(
+			getVectorModifier()), os);
+	AsmService::DumpUnderscore(AsmService::ImageGeometryToString(
+			getGeometry()), os);
+	if (getEquivClass() != 0)
+	{
+		AsmService::DumpUnderscore(AsmService::EquivClassToString(
+				getEquivClass()), os);
+	}
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getImageType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getCoordType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
 void BrigCodeEntry::DumpInstLane(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "LANE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::VectorModifierToString(
+			getVectorModifier()), os);
+	if (getWidth() != getDefaultWidth())
+	{
+		AsmService::DumpUnderscore(AsmService::WidthToString(
+				getWidth()), os);
+	}
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getSourceType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -461,7 +489,27 @@ void BrigCodeEntry::DumpInstMem(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstMemFence(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "MEM_FENCE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::MemoryOrderToString(
+			getMemoryOrder()), os);
+	if (getGlobalSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
+	{
+		os << "_global(" << AsmService::MemoryScopeToString(
+				getGlobalSegmentScope()) << ")";
+	}
+	if (getGroupSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
+	{
+		os << "_group(" << AsmService::MemoryScopeToString(
+				getGroupSegmentScope()) << ")";
+	}
+	if (getImageSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
+	{
+		os << "_image(" << AsmService::MemoryScopeToString(
+				getImageSegmentScope()) << ")";
+	}
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -485,25 +533,58 @@ void BrigCodeEntry::DumpInstMod(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstQueryImage(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "QUERY_IMAGE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::ImageGeometryToString(
+			getGeometry()), os);
+	AsmService::DumpUnderscore(AsmService::ImageQueryToString(
+			getImageQuery()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getImageType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
 void BrigCodeEntry::DumpInstQuerySampler(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "QUERY_SAMPLER");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::SamplerQueryToString(
+			getSamplerQuery()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
 void BrigCodeEntry::DumpInstQueue(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "QUEUE");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::SegmentToString(
+			getSegment()), os);
+	AsmService::DumpUnderscore(AsmService::MemoryOrderToString(
+			getMemoryOrder()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
 void BrigCodeEntry::DumpInstSeg(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "SEG");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::SegmentToString(
+			getSegment()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -524,7 +605,18 @@ void BrigCodeEntry::DumpInstSegCvt(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstSignal(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Instruction: %s, not supported\n", "SIGNAL");
+	DumpIndent(os);
+	os << AsmService::OpcodeToString(getOpcode());
+	AsmService::DumpUnderscore(AsmService::AtomicOperationToString(
+			getSignalOperation()), os);
+	AsmService::DumpUnderscore(AsmService::MemoryOrderToString(
+			getMemoryOrder()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getType()), os);
+	AsmService::DumpUnderscore(AsmService::TypeToString(
+			getSignalType()), os);
+	DumpOperands(os);
+	os << ";\n";
 }
 
 
@@ -695,6 +787,26 @@ void BrigCodeEntry::DumpCallArguments(std::ostream &os = std::cout) const
 			operand3->Dump(BRIG_TYPE_NONE, os);
 		}
 	}
+}
+
+
+void BrigCodeEntry::DumpSbrArguments(std::ostream &os = std::cout) const
+{
+	os << "\t";
+	auto operand0 = getOperand(0);
+	operand0->Dump(BRIG_TYPE_NONE, os);
+	os << " ";
+
+	// Print operand code list in square barcket
+	auto operand1 = getOperand(1);
+	os << "[";
+	for (unsigned int i = 0; i < operand1->getElementCount(); i++)
+	{
+		if (i > 0) 
+			os << ", "	;
+		os << operand1->getElement(i)->getName();
+	}
+	os << "]";
 }
 
 

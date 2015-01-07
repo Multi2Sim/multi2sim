@@ -57,23 +57,29 @@ protected:
 	// Map compare operation to string
 	static misc::StringMap compare_operation_to_str_map;
 
-	/// Map rounding to string
+	// Map rounding to string
 	static misc::StringMap rounding_to_str_map;
 
-	/// Map pack to string
+	// Map pack to string
 	static misc::StringMap pack_to_str_map;
 
-	/// Map kind to string
+	// Map kind to string
 	static misc::StringMap kind_to_str_map;
 
-	/// Map atomic operation to string
+	// Map atomic operation to string
 	static misc::StringMap atomic_operation_to_str_map;
 
-	/// Map memory order to string
+	// Map memory order to string
 	static misc::StringMap memory_order_to_str_map;
 
-	/// Map memory scope to string
+	// Map memory scope to string
 	static misc::StringMap memory_scope_to_str_map;
+
+	// Map image geometry to string
+	static misc::StringMap image_geometry_to_str_map;
+
+	// Map image query to string
+	static misc::StringMap image_query_to_str_map;
 
 public:
 
@@ -155,6 +161,16 @@ public:
 	/// Convert memory scope to string
 	static std::string MemoryScopeToString(BrigMemoryScope memory_scope);
 	
+	/// Convert image geometry to string
+	static std::string ImageGeometryToString(BrigImageGeometry geometry);
+
+	/// Convert image query to string
+	static std::string ImageQueryToString(BrigImageQuery query);
+
+	/// Convert sampler query to string
+	static std::string SamplerQueryToString(BrigSamplerQuery query);
+
+
 
 
 	//

@@ -181,6 +181,11 @@ BrigWidth BrigCodeEntry::getWidth() const
 		struct BrigInstMem *inst = (struct BrigInstMem *)base;
 		return (BrigWidth)inst->width;
 	}
+	case BRIG_KIND_INST_LANE:
+	{
+		struct BrigInstLane *inst = (struct BrigInstLane *)base;
+		return (BrigWidth)inst->width;
+	}
 	default:
 		KindError("GetWidth");
 	}
@@ -541,6 +546,20 @@ BrigSegment BrigCodeEntry::getSegment() const
 		unsigned char segment = inst->segment;
 		return (BrigSegment)segment;
 	}
+	case BRIG_KIND_INST_QUEUE:
+	{
+		struct BrigInstQueue *inst = 
+				(struct BrigInstQueue *)base;
+		unsigned char segment = inst->segment;
+		return (BrigSegment)segment;
+	}
+	case BRIG_KIND_INST_SEG:
+	{
+		struct BrigInstSeg *inst = 
+				(struct BrigInstSeg *)base;
+		unsigned char segment = inst->segment;
+		return (BrigSegment)segment;
+	}
 	default:
 		KindError("GetSegment");
 	}
@@ -851,6 +870,7 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		break;
 	case 4:
 		if (opcode == BRIG_OPCODE_BITINSERT) return BRIG_TYPE_B32;
+		if (opcode == BRIG_OPCODE_ACTIVELANESHUFFLE) return BRIG_TYPE_B1;
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
 		break;
 	default:
@@ -928,6 +948,11 @@ BrigTypeX BrigCodeEntry::getSourceType() const
 	case BRIG_KIND_INST_CVT:
 	{
 		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
+		return (BrigTypeX)inst->sourceType;
+	}
+	case BRIG_KIND_INST_LANE:
+	{
+		struct BrigInstLane *inst = (struct BrigInstLane *)base;
 		return (BrigTypeX)inst->sourceType;
 	}
 	default: 
@@ -1092,6 +1117,11 @@ unsigned char BrigCodeEntry::getEquivClass() const
 		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
 		return inst->equivClass;
 	}
+	case BRIG_KIND_INST_IMAGE:
+	{
+		struct BrigInstImage *inst = (struct BrigInstImage *)base;
+		return inst->equivClass;
+	}
 	default:
 		KindError("GetEquivClass");
 	}
@@ -1141,6 +1171,21 @@ BrigMemoryOrder BrigCodeEntry::getMemoryOrder() const
 		struct BrigInstAtomic *inst = (struct BrigInstAtomic *)base;
 		return (BrigMemoryOrder)inst->memoryOrder;
 	}
+	case BRIG_KIND_INST_SIGNAL:
+	{
+		struct BrigInstSignal *inst = (struct BrigInstSignal *)base;
+		return (BrigMemoryOrder)inst->memoryOrder;
+	}
+	case BRIG_KIND_INST_MEM_FENCE:
+	{
+		struct BrigInstMemFence *inst = (struct BrigInstMemFence *)base;
+		return (BrigMemoryOrder)inst->memoryOrder;
+	}
+	case BRIG_KIND_INST_QUEUE:
+	{
+		struct BrigInstQueue *inst = (struct BrigInstQueue *)base;
+		return (BrigMemoryOrder)inst->memoryOrder;
+	}
 	default:
 		KindError("GetMemoryOrder");
 	}	
@@ -1161,6 +1206,180 @@ BrigMemoryScope BrigCodeEntry::getMemoryScope() const
 		KindError("GetMemoryScope");
 	}	
 	return BRIG_MEMORY_SCOPE_NONE;	
+}
+
+
+BrigAtomicOperation BrigCodeEntry::getSignalOperation() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_SIGNAL:
+	{
+		struct BrigInstSignal *inst = (struct BrigInstSignal *)base;
+		return (BrigAtomicOperation)inst->signalOperation;
+	}
+	default:
+		KindError("GetSignalOperation");
+	}	
+	return BRIG_ATOMIC_ADD;	
+}
+
+
+BrigTypeX BrigCodeEntry::getSignalType() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_SIGNAL:
+	{
+		struct BrigInstSignal *inst = (struct BrigInstSignal *)base;
+		return (BrigTypeX)inst->signalType;
+	}
+	default:
+		KindError("GetSignalType");
+	}	
+	return BRIG_TYPE_NONE;	
+}
+
+
+BrigImageGeometry BrigCodeEntry::getGeometry() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_IMAGE:
+	{
+		struct BrigInstImage *inst = (struct BrigInstImage *)base;
+		return (BrigImageGeometry)inst->geometry;
+	}
+	case BRIG_KIND_INST_QUERY_IMAGE:
+	{
+		struct BrigInstQueryImage *inst = 
+				(struct BrigInstQueryImage *)base;
+		return (BrigImageGeometry)inst->geometry;
+	}
+	default:
+		KindError("GetGeometry");
+	}
+	return BRIG_GEOMETRY_1D;
+}
+
+
+BrigTypeX BrigCodeEntry::getImageType() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_IMAGE:
+	{
+		struct BrigInstImage *inst = (struct BrigInstImage *)base;
+		return (BrigTypeX)inst->imageType;
+	}
+	case BRIG_KIND_INST_QUERY_IMAGE:
+	{
+		struct BrigInstQueryImage *inst = 
+				(struct BrigInstQueryImage *)base;
+		return (BrigTypeX)inst->imageType;
+	}
+	default:
+		KindError("GetImageType");
+	}	
+	return BRIG_TYPE_NONE;		
+}
+
+
+BrigTypeX BrigCodeEntry::getCoordType() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_IMAGE:
+	{
+		struct BrigInstImage *inst = (struct BrigInstImage *)base;
+		return (BrigTypeX)inst->coordType;
+	}
+	default:
+		KindError("GetCoordType");
+	}	
+	return BRIG_TYPE_NONE;	
+}
+
+
+BrigMemoryScope BrigCodeEntry::getGlobalSegmentScope() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MEM_FENCE:
+	{
+		struct BrigInstMemFence *inst = (struct BrigInstMemFence *)base;
+		return (BrigMemoryScope)inst->globalSegmentMemoryScope;
+	}
+	default:
+		KindError("GetGlobalSegmentScope");
+	}	
+	return BRIG_MEMORY_SCOPE_NONE;	
+}
+
+
+BrigMemoryScope BrigCodeEntry::getGroupSegmentScope() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MEM_FENCE:
+	{
+		struct BrigInstMemFence *inst = (struct BrigInstMemFence *)base;
+		return (BrigMemoryScope)inst->groupSegmentMemoryScope;
+	}
+	default:
+		KindError("GetGlobalSegmentScope");
+	}	
+	return BRIG_MEMORY_SCOPE_NONE;
+}
+
+
+BrigMemoryScope BrigCodeEntry::getImageSegmentScope() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_MEM_FENCE:
+	{
+		struct BrigInstMemFence *inst = (struct BrigInstMemFence *)base;
+		return (BrigMemoryScope)inst->imageSegmentMemoryScope;
+	}
+	default:
+		KindError("GetGlobalSegmentScope");
+	}	
+	return BRIG_MEMORY_SCOPE_NONE;
+}
+
+
+BrigImageQuery BrigCodeEntry::getImageQuery() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_QUERY_IMAGE:
+	{
+		struct BrigInstQueryImage *inst = 
+				(struct BrigInstQueryImage *)base;
+		return (BrigImageQuery)inst->imageQuery;
+	}
+	default:
+		KindError("GetImageQuery");
+	}	
+	return BRIG_IMAGE_QUERY_WIDTH;
+}
+
+
+BrigSamplerQuery BrigCodeEntry::getSamplerQuery() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_INST_QUERY_SAMPLER:
+	{
+		struct BrigInstQuerySampler *inst = 
+				(struct BrigInstQuerySampler *)base;
+		return (BrigSamplerQuery)inst->samplerQuery;
+	}
+	default:
+		KindError("GetSamplerQuery");
+	}	
+	return BRIG_SAMPLER_QUERY_ADDRESSING;	
 }
 
 }  // namespace HSA

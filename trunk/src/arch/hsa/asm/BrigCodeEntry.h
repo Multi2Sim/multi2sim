@@ -132,8 +132,11 @@ public:
 	/// Dump operands of an instruction
 	void DumpOperands(std::ostream &os) const;
 
-	/// Dump call argument
+	/// Dump operands for call instructions
 	void DumpCallArguments(std::ostream &os) const;
+
+	/// Dump operands for sbr instrucitons
+	void DumpSbrArguments(std::ostream &os) const;
 
 	/// Return an unique pointer to the next entry
 	std::unique_ptr<BrigCodeEntry> Next() const;
@@ -279,6 +282,36 @@ public:
 
 	/// Return the memory scope
 	BrigMemoryScope getMemoryScope() const;
+
+	/// Return the signal operation
+	BrigAtomicOperation getSignalOperation() const;
+
+	/// Return the signal type
+	BrigTypeX getSignalType() const;
+
+	/// Return the geometry
+	BrigImageGeometry getGeometry() const;
+
+	/// Return the image type
+	BrigTypeX getImageType() const;
+
+	/// Return the coord type
+	BrigTypeX getCoordType() const;
+
+	/// Return the global segment memory scope
+	BrigMemoryScope getGlobalSegmentScope() const;
+
+	/// Return the group segment memory scope
+	BrigMemoryScope getGroupSegmentScope() const;
+
+	/// Return the image segment memory scope
+	BrigMemoryScope getImageSegmentScope() const;
+
+	/// Return the query field for image query instruction
+	BrigImageQuery getImageQuery() const;
+
+	/// Return the sampler query
+	BrigSamplerQuery getSamplerQuery() const;
 
 	/// Determine is no null 
 	bool isNoNull() const;

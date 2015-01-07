@@ -347,6 +347,30 @@ misc::StringMap AsmService::memory_scope_to_str_map =
 };
 
 
+misc::StringMap AsmService::image_geometry_to_str_map = 
+{
+	{"1d", BRIG_GEOMETRY_1D},
+	{"2d", BRIG_GEOMETRY_2D},
+	{"3d", BRIG_GEOMETRY_3D},
+	{"1da", BRIG_GEOMETRY_1DA},
+	{"1db", BRIG_GEOMETRY_1DB},
+	{"2da", BRIG_GEOMETRY_2DA},
+	{"2ddepth", BRIG_GEOMETRY_2DDEPTH},
+	{"2dadepth", BRIG_GEOMETRY_2DADEPTH},
+};
+
+
+misc::StringMap AsmService::image_query_to_str_map = 
+{
+	{"width", BRIG_IMAGE_QUERY_WIDTH},
+	{"height", BRIG_IMAGE_QUERY_HEIGHT},
+	{"depth", BRIG_IMAGE_QUERY_DEPTH},
+	{"array", BRIG_IMAGE_QUERY_ARRAY},
+	{"channelorder", BRIG_IMAGE_QUERY_CHANNELORDER},
+	{"channeltype", BRIG_IMAGE_QUERY_CHANNELTYPE}
+};
+
+
 std::string AsmService::OpcodeToString(BrigOpcode opcode)
 {
 	return opcode_to_str_map.MapValue(opcode);
@@ -529,6 +553,30 @@ std::string AsmService::MemoryOrderToString(BrigMemoryOrder memory_order)
 std::string AsmService::MemoryScopeToString(BrigMemoryScope memory_scope)
 {
 	return memory_scope_to_str_map.MapValue(memory_scope);
+}
+
+
+std::string AsmService::ImageGeometryToString(BrigImageGeometry geometry)
+{
+	return image_geometry_to_str_map.MapValue(geometry);
+}
+
+
+std::string AsmService::ImageQueryToString(BrigImageQuery query)
+{
+	return image_query_to_str_map.MapValue(query);
+}
+
+
+std::string AsmService::SamplerQueryToString(BrigSamplerQuery query)
+{
+	switch(query)
+	{
+	case BRIG_SAMPLER_QUERY_ADDRESSING: return "addressing";
+	case BRIG_SAMPLER_QUERY_COORD: return "coord";
+	case BRIG_SAMPLER_QUERY_FILTER: return "filter";
+	}
+	return "";
 }
 
 
