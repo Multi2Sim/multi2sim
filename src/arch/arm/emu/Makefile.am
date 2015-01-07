@@ -27,17 +27,7 @@ libemu_a_SOURCES = \
 	syscall.h \
 	\
 	signal.c \
-	signal.h \
-	\
-	\
-	Emu.h \
-	Emu.cc \
-	\
-	Context.h \
-	Context.cc \
-	\
-	Regs.h \
-	Regs.cc
+	signal.h 
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
