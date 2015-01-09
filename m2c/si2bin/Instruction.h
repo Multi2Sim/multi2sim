@@ -121,7 +121,7 @@ public:
 	void addArgument(std::unique_ptr<Argument> &&argument)
 	{
 		argument->setInstruction(this);
-		argument->setIndex(arguments.size() - 1);
+		argument->setIndex(arguments.size());
 		arguments.emplace_back(std::move(argument));
 	}
 
