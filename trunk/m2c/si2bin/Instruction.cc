@@ -189,11 +189,11 @@ void Instruction::Dump(std::ostream &os)
         for (auto &arg : arguments)
         {
         	arg->Dump(os);
-                if (arg->getIndex() < (int) arguments.size() - 1)
+        	if (arg->getIndex() < (int) arguments.size() - 1)
                 	os << ", ";
-	}
+        }
 
-	// End
+        // End
         os << '\n';
 }
 
