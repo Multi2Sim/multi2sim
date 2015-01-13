@@ -55,11 +55,11 @@ enum ContextMode
 };
 
 
-enum ContextInstMode
+enum ContextInstType
 {
-	ContextInstModeArm32 = 1,
-	ContextInstModeThumb16,
-	ContextInstModeThumb32
+	ContextInstTypeArm32 = 1,
+	ContextInstTypeThumb16,
+	ContextInstTypeThumb32
 };
 
 
@@ -167,6 +167,18 @@ class Context
 	// For checking if the instruction is in IF-THEN Block
 	unsigned int iteq_inst_num;
 	unsigned int iteq_block_flag;
+
+	// The type of the current instruction ARM/Thumb16/Thumb32
+	ContextInstType inst_type;
+
+	// Set instruction type
+	void setInstType(ContextInstType type) { inst_type = type; }
+
+	// Get instruction type
+	ContextInstType getInstType() { return inst_type; }
+
+	// symbol list used for getting the ARM operating mode
+	std::vector<std::unique_ptr<ELFReader::Symbol>> thumb_symbol_list;
 
 	// Fault Management
 	unsigned int fault_addr;
@@ -347,15 +359,55 @@ class Context
 
 	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
-	// 	DEFINST(J,"j%target",0x02,0x00,0x00,0x00)
+	// 	DEFINST(AND_reg, "and%cond %rd, %rn, %op2", DprReg, 0x00, 0x0)
 	// is expanded to
-	//	void ExecuteInst_adc_al_imm8();
+	//	void ExecuteInst_AND_reg();
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) void ExecuteInst_##_name();
 #include <arch/arm/asm/Inst.def>
 #undef DEFINST
 
 	// Table of functions
 	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+
+	// Prototype of a member function of class Context devoted to the
+	// execution of ISA thumb16 instructions. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef void (Context::*ExecuteInstThumb16Fn)();
+
+	// Instruction emulation functions. Each entry of Inst.def will be
+	// expanded into a function prototype. For example, entry
+	// 	DEFINST(LSL_imm, "lsls %rd, %rm, %immd5", MovshiftReg,
+	//		0x0, 0x0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff)
+	// is expanded to
+	//	void ExecuteInstThumb16_LSL_imm();
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
+	void ExecuteInstThumb16_##_name();
+#include <arch/arm/asm/InstThumb.def>
+#undef DEFINST
+
+	// Table of functions
+	static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
+
+	// Prototype of a member function of class Context devoted to the
+	// execution of ISA thumb 32 instructions. The emulator has a table indexed by an
+	// instruction identifier that points to all instruction emulation
+	// functions.
+	typedef void (Context::*ExecuteInstThumb32Fn)();
+
+	// Instruction emulation functions. Each entry of Inst.def will be
+	// expanded into a function prototype. For example, entry
+	// 	DEFINST(STREX, "strex %rt2, %rt, [%rn  %immd8]", LdStDouble,
+	//		0x1,0x0,0x0,0x1,0x04,0xffffffff,0xffffffff,0xffffffff)
+	// is expanded to
+	//	void ExecuteInstThumb32_STREX();
+#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
+	void ExecuteInstThumb32_##_name();
+#include <arch/arm/asm/InstThumb32.def>
+#undef DEFINST
+
+	// Table of functions
+	static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
 
 	///////////////////////////////////////////////////////////////////////
 	//
@@ -519,10 +571,13 @@ public:
 			& ~state); }
 
 	/// Return the context mode
-	ContextMode OperateMode(const ELFReader::File &file, unsigned int addr);
+	ContextMode OperateMode(unsigned int addr);
 
 	/// Check fault
-	unsigned int checkFault();
+	unsigned int CheckFault();
+
+	/// Check whether the operating mode is Thumb 32
+	bool IsThumb32(const char *inst_ptr);
 };
 
 }  // namespace ARM
