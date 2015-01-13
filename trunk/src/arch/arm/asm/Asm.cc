@@ -1171,6 +1171,7 @@ void Asm::Thumb32SetupTable(const char* name , const char* fmt_str ,
 			current_table[op[i]].cat32 = cat32;
 			current_table[op[i]].size = 4;
 			current_table[op[i]].inst_32 = inst_name;
+			current_table[op[i]].opcode = inst_name;
 
 			break;
 		}
@@ -1205,6 +1206,7 @@ void Asm::Thumb16SetupTable(const char* name , const char* fmt_str ,
 			current_table[op[i]].cat16 = cat16;
 			current_table[op[i]].size = 2;
 			current_table[op[i]].inst_16 = inst_name;
+			current_table[op[i]].opcode = inst_name;
 
 			break;
 		}

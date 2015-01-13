@@ -3078,7 +3078,7 @@ void Inst::Thumb16Decode(const char *buf, unsigned int ip)
 void Inst::Thumb32Decode(const char *buf, unsigned int ip)
 {
 	unsigned int byte_index;
-	this->addr = ip - 2;
+	this->addr = ip;
 	for (byte_index = 0; byte_index < 4; ++byte_index)
 		this->dword_32.bytes[byte_index] = *(unsigned char *) (buf
 			+ ((byte_index + 2) % 4));

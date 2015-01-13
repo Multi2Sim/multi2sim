@@ -874,7 +874,7 @@ struct InstInfo
 	InstCategory category;
 	const char* name;
 	const char* fmt_str;
-	unsigned int opcode;
+	InstOpcode opcode;
 	int size;
 };
 
@@ -885,7 +885,7 @@ struct InstThumb16Info
 	InstThumb16Category cat16;
 	const char* name;
 	const char* fmt_str;
-	unsigned int opcode;
+	InstThumb16Opcode opcode;
 	int size;
 	InstThumb16Info *next_table;
 	int next_table_low;
@@ -899,7 +899,7 @@ struct InstThumb32Info
 	InstThumb32Category cat32;
 	const char* name;
 	const char* fmt_str;
-	unsigned int opcode;
+	InstThumb32Opcode opcode;
 	int size;
 	InstThumb32Info *next_table;
 	int next_table_low;
@@ -1019,6 +1019,10 @@ public:
 	InstBytes *getBytes() { return &dword; }
 	InstThumb16Bytes *getThumb16Bytes() { return &dword_16; }
 	InstThumb32Bytes *getThumb32Bytes() { return &dword_32; }
+	InstOpcode getOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
+	InstThumb16Opcode getThumb16Opcode() { return info_16 ? info_16->opcode : InstThumb16OpcodeInvalid; }
+	InstThumb32Opcode getThumb32Opcode() { return info_32 ? info_32->opcode : InstThumb32OpcodeInvalid; }
+	Asm *getDisassembler() { return as; }
 
 };
 

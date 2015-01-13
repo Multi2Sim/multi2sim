@@ -27,7 +27,7 @@
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
-#include <arch/mips/asm/Inst.h>
+#include <arch/arm/asm/Inst.h>
 
 #include "Context.h"
 
@@ -212,7 +212,6 @@ public:
 
 };
 
-}
-
+}  // namespace ARM
 
 #endif // ARCH_ARM_EMU_EMU_H
