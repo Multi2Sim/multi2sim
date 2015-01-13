@@ -18,6 +18,8 @@
  */
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/Error.h>
+#include <lib/cpp/String.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +39,126 @@ Regs::Regs()
 Regs::~Regs()
 {
 
+}
+
+
+unsigned int Regs::getRegister(int n)
+{
+	// Get the register according to the register number
+	unsigned int ret_reg;
+	switch (n)
+	{
+	case 0:
+
+		ret_reg = r0;
+		break;
+
+	case 1:
+		ret_reg = r1;
+		break;
+
+	case 2:
+		ret_reg = r2;
+		break;
+
+	case 3:
+
+		ret_reg = r3;
+		break;
+
+	case 4:
+
+		ret_reg = r4;
+		break;
+
+	case 5:
+
+		ret_reg = r5;
+		break;
+
+	case 6:
+
+		ret_reg = r6;
+		break;
+
+	case 7:
+
+		ret_reg = r7;
+		break;
+
+	case 8:
+
+		ret_reg = r8;
+		break;
+
+	case 9:
+
+		ret_reg = r9;
+		break;
+
+	default:
+		throw misc::Panic(misc::fmt("the register number is not recognized"));
+	}
+	return ret_reg;
+}
+
+
+void Regs::setRegister(int n, unsigned int value)
+{
+	// Set the register according to the register number
+	switch (n)
+	{
+	case 0:
+
+		r0 = value;
+		break;
+
+	case 1:
+		r1 = value;
+		break;
+
+	case 2:
+		r2 = value;
+		break;
+
+	case 3:
+
+		r3 = value;
+		break;
+
+	case 4:
+
+		r4 = value;
+		break;
+
+	case 5:
+
+		r5 = value;
+		break;
+
+	case 6:
+
+		r6 = value;
+		break;
+
+	case 7:
+
+		r7 = value;
+		break;
+
+	case 8:
+
+		r8 = value;
+		break;
+
+	case 9:
+
+		r9 = value;
+		break;
+
+	default:
+		throw misc::Panic(misc::fmt("the register number is not recognized"));
+	}
 }
 
 }
