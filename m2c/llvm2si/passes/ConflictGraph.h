@@ -24,43 +24,99 @@
 #include <string>
 #include <list>
 
+#include <m2c/common/Pass.h>
+#include <m2c/common/PassInfo.h>
+#include <m2c/llvm2si/Function.h>
+#include <src/lib/cpp/Bitmap.h>
+#include <src/lib/cpp/Misc.h>
+
+#include "LivenessAnalysisPass.h"
+
 namespace llvm2si
 {
-	class graphNode
-	{
-		/// Name of the node
-		std::string name;
+class GraphNode
+{
+	// id of the node/symbolic register
+	int id;
 
-		/// Defines the physical register the variable is assigned to
-		int color = -1;
+	// Defines the physical register the variable is assigned to
+	int color = -1;
 
-		/// Number of neighbors
-		unsigned int degree = 0;
+	// Number of neighbors
+	unsigned int degree = 0;
 
-		/// List of adjacent nodes
-		std::list<graphNode *> adj_node_list;
+	// List of adjacent nodes
+	// std::vector<graphNode *> adj_node_list;
+	std::vector<int> adj_node_list;
 
-		/// List of neighboring nodes that are removed. Used during graph coloring
-		std::list<graphNode *> rem_node_list;
+	// List of neighboring nodes that are removed. Used during graph coloring
+	// std::vector<graphNode *> rem_node_list;
+	std::vector<int> rem_node_list;
 
 	public:
-		/// Constructor
-		graphNode(const std::string &name) :
-			name(name)
+		// Constructor
+		GraphNode (int id):
+			id(id)
 		{
 		}
 
-		/// Function to add conflict edge between two nodes if their live ranges interfere.
-		void AddConflict(graphNode *Node);
+		// Function to add conflict edge between two nodes if their live ranges interfere.
+		void AddNeighbor(GraphNode *adj_node);
 
-		/// Function to remove conflict between two nodes. Used during graph coloring.
-		void RemoveConflict(graphNode *Node);
+		// Function to remove conflict between two nodes. Used during graph coloring.
+		void RemoveNeighbor(GraphNode *adj_node);
 
-		/// Check if a particular node is already present in the list or not. Returns true if the node is found in the list.
-		bool InList(std::list<Node *> &list);
+		// Check if a particular node is already present in the list or not.
+		// Returns true if the node is found in the list.
+		bool InAdjList(int id)
+		{
+			return std::find(adj_node_list.begin(), adj_node_list.end(), id) != adj_node_list.end();
+		}
 
-		/// Dump the adjacent/removed node list
-		void DumpList(std::list<Node *> &list);
+		// Returns the number of neighbors (degree) of the node
+		int GetDegree()
+		{
+			return this->degree;
+		}
+
+		// Return name of the variable
+		int GetId()
+		{
+			return this->id;
+		}
+
+		// Dump the adjacent/removed node list
+		void DumpAdjList();
+	};
+
+	class ConflictGraphPass : public comm::Pass
+	{
+		llvm2si::Function *cgp_function;
+
+	public:
+
+		/// constructor
+		ConflictGraphPass(llvm2si::Function *function) :
+			cgp_function(function)
+		{
+			std::cout << "I am at the CG constructor\n";
+		}
+
+		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
+		template<typename ConcreteType> ConcreteType* getInfo(BasicBlock *basic_block)
+		{
+				std::cout << " CG id : " << getId() << "\n";
+				return basic_block->getPassInfoPool()->get<ConcreteType>(getId()-1);
+		}
+
+		/// run the pass and create the conflict graph
+		void run();
+
+		/// dump the graph info
+		void dump(std::ostream &os);
+
+		~ConflictGraphPass() {}
+
 	};
 
 #endif
