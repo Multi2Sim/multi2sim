@@ -156,6 +156,12 @@ public:
 	/// Read from Current Program Status Register
 	regsPsr& getCPSR(){ return cpsr; }
 
+	/// Write SP with value
+	void setSP(unsigned int value) { sp = value; }
+
+	/// Read from Stack Pointer
+	unsigned int getSP(){ return sp; }
+
 };
 
 }
