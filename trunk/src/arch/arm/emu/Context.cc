@@ -212,6 +212,17 @@ void Context::Load(const std::vector<std::string> &args,
 
 	// Load the binary
 	LoadBinary();
+
+	// Create Arm-Thumb Symbol List
+	for (int i = 0; i < loader->binary->getNumSymbols(); i++)
+	{
+		if (!(loader->binary->getSymbol(i)->getName().compare(0, 2, "$a"))
+				|| !(loader->binary->getSymbol(i)->getName().compare(0, 2, "$t")))
+		{
+			auto symbolPtr = std::unique_ptr<ELFReader::Symbol>(loader->binary->getSymbol(i));
+			thumb_symbol_list.push_back(move(symbolPtr));
+		}
+	}
 }
 
 
@@ -657,7 +668,7 @@ unsigned int Context::CheckFault()
 	unsigned int ret_val = 0;
 	switch (regs.getPC())
 	{
-	case (0xffff0fe0 + 4):
+	case 0xffff0fe0:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
@@ -665,7 +676,7 @@ unsigned int Context::CheckFault()
 		ret_val = 0xffff0fe0;
 		break;
 
-	case (0xffff0fc0 + 4):
+	case 0xffff0fc0:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
@@ -673,7 +684,7 @@ unsigned int Context::CheckFault()
 		ret_val = 0xffff0fc0;
 		break;
 
-	case (0xffff0fa0 + 4):
+	case 0xffff0fa0:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",

@@ -35,6 +35,7 @@ libemu_a_SOURCES = \
 	\
 	Context.h \
 	Context.cc \
+	ContextLoader.cc\
 	\
 	Regs.h \
 	Regs.cc
