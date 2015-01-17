@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/asm/AsmService.h>
+
 #include "Emu.h"
 #include "Variable.h"
 
@@ -85,7 +87,8 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 	if (!is_simple_format)
 	{
 		// Dump information of the argument.
-		os << misc::fmt("%s %s(0x%x)", BrigEntry::type2str(type).c_str(),
+		os << misc::fmt("%s %s(0x%x)",
+				AsmService::TypeToString((BrigTypeX)type).c_str(),
 				name.c_str(), address);
 	}
 	else

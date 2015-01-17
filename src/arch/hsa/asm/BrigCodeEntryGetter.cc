@@ -164,6 +164,7 @@ BrigWidth BrigCodeEntry::getDefaultWidth() const
             return BRIG_WIDTH_NONE;
             break;
 	}
+	return BRIG_WIDTH_NONE;
 }
 
 
@@ -663,6 +664,26 @@ std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getFirstCodeBlockEntry() const
 }
 
 
+unsigned int BrigCodeEntry::getCodeBlockEntryCount() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_KERNEL:
+	case BRIG_KIND_DIRECTIVE_FUNCTION:
+	case BRIG_KIND_DIRECTIVE_SIGNATURE:
+	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+	{
+		struct BrigDirectiveExecutable *dir =
+				(struct BrigDirectiveExecutable *)base;
+		return dir->codeBlockEntryCount;
+	}
+	default:
+		KindError("GetCodeBlockEntryCount");
+	}
+	return 0;
+}
+
+
 std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getNextModuleEntry() const
 {
 	switch(getKind())
@@ -1041,10 +1062,12 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 		{
 			return BRIG_ROUND_FLOAT_NEAR_EVEN;
 		}
+		break;
 	}
 	default:
 		return BRIG_ROUND_NONE;
 	}
+	return BRIG_ROUND_NONE;
 }
 
 

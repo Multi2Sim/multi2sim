@@ -22,40 +22,40 @@
 namespace HSA
 {
 
-Component *Component::getDefaultCPUComponent(unsigned long long handler)
+std::unique_ptr<Component> Component::getDefaultCPUComponent(unsigned long long handler)
 {
 	// The component object allocated here with be cast into a unique_ptr
 	// by the function who call this function. Therefore, no need to delete
 	// it in this function
-	Component *component = new Component(handler);
+	auto component = misc::new_unique<Component>(handler);
 
 	// Set attributes of the virtual CPU device
 	component->setName("Multi2Sim Virtual HSA CPU");
 	component->setVendorName("Northeastern University");
-	component->setIsGPU(false);
+	component->setDeviceType(HSA_DEVICE_TYPE_CPU);
 	component->setWavesize(1);
 
 	return component;
 }
 
 
-Component *Component::getDefaultGPUComponent(unsigned long long handler)
+std::unique_ptr<Component> Component::getDefaultGPUComponent(unsigned long long handler)
 {
 	// The component object allocated here with be cast into a unique_ptr
 	// by the function who call this function. Therefore, no need to delete
 	// it in this function
-	Component *component = new Component(handler);
+	auto component = misc::new_unique<Component>(handler);
 
 	// Set attributes of the virtual CPU device
 	component->setName("Multi2Sim Virtual HSA GPU");
 	component->setVendorName("Northeastern University");
-	component->setIsGPU(true);
+	component->setDeviceType(HSA_DEVICE_TYPE_GPU);
 	component->setWavesize(64);
 
 	return component;
 }
 
-
+/*
 void Component::addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue)
 {
 	// TODO Generate better debug information
@@ -64,10 +64,12 @@ void Component::addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue)
 	queue->Associate(this);
 	queues.emplace_back(std::move(queue));
 }
+*/
 
 
 bool Component::Execute()
 {
+	/*
 	// 1. Check if the tasks is being processed. If true, process it.
 	bool has_active_grid = false;
 	for(auto it = grids.begin(); it != grids.end(); it++)
@@ -92,10 +94,11 @@ bool Component::Execute()
 
 	// 3. If this component is not running and there is no pending task,
 	// 	return false indicating this component is idle.
+	*/
 	return false;
 }
 
-
+/*
 void Component::LaunchGrid(AQLDispatchPacket *packet)
 {
 	// Create grid and insert it into list
@@ -108,13 +111,14 @@ void Component::LaunchGrid(AQLDispatchPacket *packet)
 	if (Emu::aql_debug)
 		grid->Dump(Emu::aql_debug);
 }
+*/
 
 
 void Component::Dump(std::ostream &os = std::cout) const
 {
 	// Set device type
 	std::string deviceType = "CPU";
-	if (agent_info.is_GPU)
+	if (agent_info.device_type == HSA_DEVICE_TYPE_GPU)
 		deviceType = "GPU";
 
 	os << misc::fmt("\t***** %s device *****\n", deviceType.c_str());

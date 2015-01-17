@@ -20,6 +20,8 @@
 #ifndef ARCH_HSA_ASM_ASMSERVICE_H
 #define ARCH_HSA_ASM_ASMSERVICE_H
 
+#include <map>
+
 #include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
 
@@ -80,6 +82,9 @@ protected:
 
 	// Map image query to string
 	static misc::StringMap image_query_to_str_map;
+
+	// Map type to number of bytes of its size
+	static std::map<int, unsigned> type_to_size_map;
 
 public:
 
@@ -169,6 +174,9 @@ public:
 
 	/// Convert sampler query to string
 	static std::string SamplerQueryToString(BrigSamplerQuery query);
+
+	/// Convert type to its size
+	static unsigned TypeToSize(BrigTypeX type);
 
 
 

@@ -24,14 +24,19 @@
 #include <memory>
 
 #include "Emu.h"
-#include "AQLQueue.h"
-#include "Grid.h"
 
 
 namespace HSA
 {
 
 class Grid;
+
+enum HsaDeviceType
+{
+	HSA_DEVICE_TYPE_CPU = 0,
+	HSA_DEVICE_TYPE_GPU = 1,
+	HSA_DEVICE_TYPE_DSP = 2
+};
 
 /// An HSA component is an HSA agent that support HSAIL virtual ISAs
 class Component
@@ -44,7 +49,7 @@ protected:
 		unsigned long long handler;
 
 		// Determine if the device is a GPU device
-		bool is_GPU;
+		HsaDeviceType device_type;
 
 		// Name of the device
 		std::string name;
@@ -60,10 +65,10 @@ protected:
 	AgentInfo agent_info;
 
 	// List of work groups
-	std::list<std::unique_ptr<Grid>> grids;
+	// std::list<std::unique_ptr<Grid>> grids;
 
 	// List of queues associated with this component
-	std::list<std::unique_ptr<AQLQueue, void (*)(AQLQueue *)>> queues;
+	// std::list<std::unique_ptr<AQLQueue, void (*)(AQLQueue *)>> queues;
 
 public:
 
@@ -73,14 +78,14 @@ public:
 		this->agent_info.handler = handler;
 	};
 
-	/// Create and return a virtual CPU device
-	static Component *getDefaultCPUComponent(unsigned long long handler);
+	/// Create and return a standard virtual CPU device
+	static std::unique_ptr<Component> getDefaultCPUComponent(unsigned long long handler);
 
-	/// Create and return a virtual GPU device
-	static Component *getDefaultGPUComponent(unsigned long long handler);
+	/// Create and return a standard virtual GPU device
+	static std::unique_ptr<Component> getDefaultGPUComponent(unsigned long long handler);
 
 	/// Insert a queue into the queue list
-	void addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue);
+	// void addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue);
 
 	/// Execute instructions on this components
 	///
@@ -91,7 +96,7 @@ public:
 	bool Execute();
 
 	/// Create a grid from a dispatch packet
-	void LaunchGrid(AQLDispatchPacket *packet);
+	// void LaunchGrid(AQLDispatchPacket *packet);
 
 	/// Dump the information about the agent
 	void Dump(std::ostream &os) const;
@@ -113,19 +118,22 @@ public:
 	//
 
 	/// Get handler
-	unsigned long long getHandler() { return agent_info.handler; }
-
-	/// Set is_GPU field in agent_info
-	void setIsGPU(bool is_GPU){ agent_info.is_GPU = is_GPU; }
-
-	/// Get is_GPU field of agent_info
-	bool IsGPU(){ return agent_info.is_GPU; }
+	unsigned long long getHandler() const { return agent_info.handler; }
 
 	/// Set name field in agent_info
-	void setName(const std::string &name){ agent_info.name = name; }
+	void setName(const std::string &name) { agent_info.name = name; }
 
 	/// Get name field of agent_info
 	std::string getName(){ return agent_info.name; }
+
+	/// Set device type
+	void setDeviceType(HsaDeviceType type) 
+	{ 
+		agent_info.device_type = type; 
+	}
+
+	/// Get device type
+	HsaDeviceType getDeivceType() const { return agent_info.device_type; }
 
 	/// Set vendor_name field of agent_info
 	void setVendorName(const std::string &vendor_name)
@@ -134,7 +142,7 @@ public:
 	}
 
 	/// Get vendor_name of the device
-	std::string getVendorName(){ return agent_info.vendor_name; }
+	std::string getVendorName() const { return agent_info.vendor_name; }
 
 	/// Set the number of work items in a wavefront
 	void setWavesize(unsigned int wavesize)
@@ -143,7 +151,7 @@ public:
 	}
 
 	/// Get the number of work items in a wavefront
-	unsigned int getWavesize(){ return agent_info.wavesize; }
+	unsigned int getWavesize() const { return agent_info.wavesize; }
 
 
 };

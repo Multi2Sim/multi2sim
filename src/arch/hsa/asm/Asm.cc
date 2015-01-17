@@ -80,6 +80,13 @@ Asm::Asm()
 }
 
 
+bool Asm::isValidBrigELF(const std::string &path)
+{
+	BrigFile bf(path.c_str());
+	return bf.isValid();
+}
+
+
 void Asm::DisassembleBinary(const std::string &path) const
 {
 	BrigFile brig_file(path.c_str());

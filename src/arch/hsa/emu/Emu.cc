@@ -101,8 +101,7 @@ Emu::Emu() :
 		comm::Emu("hsa"),
 		manager(&memory)
 {
-	// FIXME: Allow user to set up customized HSA virtual machine
-	setDefaultComponentList();
+	InstallComponents("");
 	if (loader_debug)
 	{
 		DumpComponentList(loader_debug);
@@ -121,19 +120,30 @@ Emu *Emu::getInstance()
 }
 
 
-void Emu::setDefaultComponentList()
+void Emu::InstallComponents(const std::string& config_file = "")
+{
+	if (config_file != "")
+	{
+		throw misc::Panic("User defined component config file is "
+				"not supported yet");
+		return;
+	}
+	InstallDefaultComponents();
+}
+
+
+void Emu::InstallDefaultComponents()
 {
 	// Add a CPU device
-	Component *cpu = Component::getDefaultCPUComponent(1);
-	components.insert(std::make_pair(1, std::unique_ptr<Component>(cpu)));
+	auto cpu = Component::getDefaultCPUComponent(1);
+	components.insert(std::make_pair(1, std::move(cpu)));
 
 	// Add a simple GPU component
-	Component *gpu = Component::getDefaultGPUComponent(2);
-	components.insert(std::make_pair(2, std::unique_ptr<Component>(gpu)));
+	auto gpu = Component::getDefaultGPUComponent(2);
+	components.insert(std::make_pair(2, std::move(gpu)));
 
 	// Set the CPU as the host component
-	setHostCPUComponent(cpu);
-
+	setHostCpuDevice(cpu.get());
 }
 
 
@@ -159,6 +169,8 @@ bool Emu::Run()
 
 	bool stillRunning = false;
 
+
+	/*
 	// Let all components to execute their own task
 	for (auto it = components.begin(); it != components.end(); it++)
 	{
@@ -169,6 +181,7 @@ bool Emu::Run()
 
 	// Process list of suspended work items
 	// ProcessEvents();
+	*/
 		
 	// Still running;
 	return stillRunning;
@@ -184,7 +197,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	// Load the whole program binary
 	ProgramLoader::LoadProgram(args, env, cwd,
 			stdin_file_name, stdout_file_name);
-
+	/*
 	// Create the default queue for the host device
 	AQLQueue *queue = RuntimeLibrary::CreateQueue(host_cpu, 2,
 			HSAQueueMulti);
@@ -203,6 +216,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	// Enqueue the packet
 	aql_debug << "Packet created and enqueued: \n" << *packet;
 	queue->Enqueue(packet);
+	*/
 }
 
 }  // namespace HSA

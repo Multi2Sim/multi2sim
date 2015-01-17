@@ -86,6 +86,59 @@ misc::StringMap AsmService::type_to_str_map =
 };
 
 
+std::map<int, unsigned> AsmService::type_to_size_map =
+{
+	{BRIG_TYPE_NONE, 0},
+	{BRIG_TYPE_U8, 1},
+	{BRIG_TYPE_U16, 2},
+	{BRIG_TYPE_U32, 4},
+	{BRIG_TYPE_U64, 8},
+	{BRIG_TYPE_S8, 1},
+	{BRIG_TYPE_S16, 2},
+	{BRIG_TYPE_S32, 4},
+	{BRIG_TYPE_S64, 8},
+	{BRIG_TYPE_F16, 2},
+	{BRIG_TYPE_F32, 4},
+	{BRIG_TYPE_F64, 8},
+	{BRIG_TYPE_B1, 1},
+	{BRIG_TYPE_B8, 1},
+	{BRIG_TYPE_B16, 2},
+	{BRIG_TYPE_B32, 4},
+	{BRIG_TYPE_B64, 8},
+	{BRIG_TYPE_B128, 16},
+	{BRIG_TYPE_SAMP, 0},
+	{BRIG_TYPE_ROIMG, 0},
+	{BRIG_TYPE_WOIMG, 0},
+	{BRIG_TYPE_RWIMG, 0},
+	{BRIG_TYPE_SIG32, 4},
+	{BRIG_TYPE_SIG64, 8},
+	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_128,16},
+	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_U64 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_S64 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_32, 4},
+	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_64, 8},
+	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_128, 16},
+	{BRIG_TYPE_F64 | BRIG_TYPE_PACK_128, 16}
+};
+
+
 misc::StringMap AsmService::linkage_to_str_map = 
 {
 	{"", BRIG_LINKAGE_NONE},
@@ -577,6 +630,12 @@ std::string AsmService::SamplerQueryToString(BrigSamplerQuery query)
 	case BRIG_SAMPLER_QUERY_FILTER: return "filter";
 	}
 	return "";
+}
+
+
+unsigned AsmService::TypeToSize(BrigTypeX type)
+{
+	return type_to_size_map.at(type);
 }
 
 

@@ -22,18 +22,12 @@
 
 #include <arch/common/Arch.h>
 #include <arch/common/Emu.h>
-#include <arch/hsa/asm/BrigFile.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
-#include <arch/hsa/asm/BrigFile.h>
 #include <memory/Memory.h>
 #include <memory/Manager.h>
 
-#include "ProgramLoader.h"
 #include "Component.h"
-#include "WorkGroup.h"
-#include "RuntimeLibrary.h"
-
 
 namespace HSA
 {
@@ -78,8 +72,15 @@ class Emu : public comm::Emu
 	// Maps from a 64-bit identifier to component
 	std::map<unsigned long long, std::unique_ptr<Component>> components;
 
-	// Host CPU component, the unique_ptr is kept in the list components.
+	// Host CPU device, the execution has to be kicked start by the host CPU
 	Component *host_cpu;
+
+	// Host CPU component, the unique_ptr is kept in the list components.
+	// Component *host_cpu;
+	void InstallDefaultComponents();
+
+	/// Set host CPU device
+	void setHostCpuDevice(Component *cpu) { host_cpu = cpu; }
 
 	// Flattened memory space, the only memory space of the virtual memory
 	mem::Memory memory;
@@ -94,19 +95,17 @@ public:
 	{
 		// Guarantee everything in guest memory freed before freeing 
 		// the guest memory itself;
-		components.clear();
+		// components.clear();
 	};
 
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
 	static Emu *getInstance();
 
-	/// Set component list with default devices. A single core CPU and a
-	/// simple GPU will be installed on the virtual machine
-	void setDefaultComponentList();
-
-	/// Set host CPU component
-	void setHostCPUComponent(Component *cpu) { host_cpu = cpu; }
+	/// Install the components of the virtual machine 
+	/// Install the components according to the ini config file or install
+	/// default setup
+	void InstallComponents(const std::string& config_file);
 
 	/// Get component by handler
 	Component *getComponent(unsigned long long handler) const
@@ -156,7 +155,7 @@ public:
 			const std::string &stdout_file_name = "");
 
 	/// Return the number of components
-	unsigned int getNumberOfComponent() const { return components.size(); }
+	// unsigned int getNumberOfComponent() const { return components.size(); }
 
 	/// Return the global memory manager
 	mem::Manager *getMemoryManager() { return &manager; };

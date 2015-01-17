@@ -1,51 +1,23 @@
 lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
-		AQLPacket.h \
-		AQLPacket.cc \
+		Component.h \ 
+		Component.cc \ 
 		\
-		AQLQueue.h \
-		AQLQueue.cc \
-		\
-		Component.h \
-		Component.cc \
+		Function.h \ 
+		Function.cc \
 		\
 		Emu.h \
 		Emu.cc \
 		\
-		Grid.h \
-		Grid.cc \
+		ProgramLoader.h \ 
+		ProgramLoader.cc \ 
 		\
-		ProgramLoader.h \
-		ProgramLoader.cc \
-		\
-		RuntimeLibrary.h \
-		RuntimeLibrary.cc \
-		\
-		StackFrame.h \
-		StackFrame.cc \
-		\
-		Syscall.def \
-		\
-		Variable.h \
+		Variable.h \ 
 		Variable.cc \
 		\
-		VariableScope.h \
-		VariableScope.cc \
-		\
-		Wavefront.h \
-		Wavefront.cc \
-		\
-		WorkGroup.h \
-		WorkGroup.cc \
-		\
-		WorkItem.h \
-		WorkItem.cc \
-		WorkItemIsa.cc \
-		WorkItemSyscall.cc \
-		\
-		Function.h \
-		Function.cc 
+		VariableScope.h \ 
+		VariableScope.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 
