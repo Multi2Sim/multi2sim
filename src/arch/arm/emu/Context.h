@@ -26,6 +26,7 @@
 
 #include <arch/common/CallStack.h>
 #include <arch/arm/asm/Inst.h>
+#include <arch/arm/asm/Asm.h>
 #include <lib/cpp/ELFReader.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
@@ -40,6 +41,9 @@ namespace ARM
 
 class Context;
 class Emu;
+
+#define ARM_SET_TLS 0xF0005
+#define ARM_EXIT_GROUP 248
 
 enum ContextThumbIteq
 {
@@ -97,6 +101,13 @@ enum ContextListType
 
 	// Number of context lists
 	ContextListCount
+};
+
+/// Category of operand 2
+enum ContextOp2Catecory
+{
+	ContextOp2CatecoryImmd = 0,
+	ContextOp2CatecoryReg
 };
 
 /// ARM Context
@@ -159,10 +170,9 @@ class Context
 	std::unique_ptr<comm::CallStack> call_stack;
 
 	// Instruction pointers
-	unsigned previous_ip;	// Address of last instruction executed
-	unsigned next_ip;  		// Address of next instruction to be emulated
+	unsigned last_ip;	// Address of last instruction executed
+	unsigned target_ip;  	// Address of next instruction to be emulated
 	unsigned current_ip;  	// Address of currently emulated instruction
-	unsigned n_next_ip;  	// Address of the second next instruction to be emulated
 
 	// For checking if the instruction is in IF-THEN Block
 	unsigned int iteq_inst_num;
@@ -409,6 +419,106 @@ class Context
 	// Table of functions
 	static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
 
+	// Perform rotation right operation
+	unsigned int IsaRotr(unsigned int value, int shift);
+
+	// Get the operand 2 value
+	int IsaGetOp2(unsigned int op2, ContextOp2Catecory cat);
+
+	// FIXME
+	int IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat);
+
+	// Get the address in ARM mode 2
+	unsigned int IsaGetAddrAmode2();
+
+	// Get the address in ARM mode 3 with Imm
+	unsigned int IsaGetAddrAmode3Imm();
+
+	// Store register
+	void IsaRegStore(unsigned int reg_no, int value);
+
+	// Store register in safe mode
+	void IsaRegStoreSafe(unsigned int reg_no, unsigned int value);
+
+	// Load register
+	void IsaRegLoad(unsigned int reg_no, int &value);
+
+	// Branch operation
+	void IsaBranch();
+
+	// Check the condition
+	int IsaCheckCond();
+
+	// Store operation
+	void IsaAmode4sStr();
+
+	// Load operation
+	void IsaAmode4sLd();
+
+	// Print CPSR
+	void IsaCpsrPrint();
+
+	// Return CPSR value
+	unsigned int IsaRetCpsrVal();
+
+	// Set CPSR value
+	void IsaSetCpsrVal(unsigned int op2);
+
+	// Substract
+	void IsaSubtract(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3);
+
+	// Substract rev
+	void IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3);
+
+	// Add
+	void IsaAdd(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3);
+
+	// Multiply
+	void IsaMultiply();
+
+	// FIXME
+	unsigned int IsaBitCount(unsigned int ip_num);
+
+	// system call
+	void IsaSyscall();
+
+	// FIXME
+	bool IsaInvalidAddrStr(unsigned int addr, int value);
+	bool IsaInvalidAddrLdr(unsigned int addr, unsigned int *value);
+
+	// Thumb add
+	void IsaThumbAdd(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3, unsigned int flag_set);
+
+	// Thumb substract
+	void IsaThumbSubtract(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3, unsigned int flag_set);
+
+	// Thumb substrac rev
+	void IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
+		unsigned int op3, unsigned int flag_set);
+
+	// FIXME
+	unsigned int IsaThumb32Immd12(InstThumb32Category cat);
+
+	// Thumb32 branch link
+	void IsaThumb32BranchLink();
+
+	// Thumb32 Branch
+	void IsaThumb32Branch();
+
+	// Thumb check condition
+	unsigned int IsaThumbCheckCond(unsigned int cond);
+
+	// FIXME
+	void IsaThumbIteq();
+
+	// Thumb extend immdiate
+	unsigned int IsaThumbImmdExtend(unsigned int immd);
+
 	///////////////////////////////////////////////////////////////////////
 	//
 	// Functions and fields related with the emulation of system calls,
@@ -547,6 +657,7 @@ public:
 	/// Run one instruction for the context at the position pointed to by
 	/// register program counter.
 	void Execute();
+	void ExecuteInst();
 
 	// Finish a context group. This call does a subset of action of the
 	// Finish() call, but for all parent and child contexts sharing a
