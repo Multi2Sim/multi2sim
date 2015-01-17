@@ -391,8 +391,6 @@ void Context::LoadBinary()
 	regs.setSP(loader->environ_base);
 	regs.setPC(loader->interp.empty() ? loader->prog_entry
 			: loader->interp_prog_entry);
-	previous_ip = 0;
-	next_ip = regs.getPC();
 
 	ELFReader::Symbol *symbol = loader->binary->getSymbolByAddress(regs.getPC());
 	ContextMode mode;
@@ -409,18 +407,17 @@ void Context::LoadBinary()
 		mode = ContextModeArm;
 	}
 
-	/* Register initialization */
+	// Register initialization
 	if(mode == ContextModeArm)
 	{
-		n_next_ip = next_ip + 4;
+		regs.incPC(4);
 	}
 	else if (mode == ContextModeThumb)
 	{
-		n_next_ip = next_ip + 2;
+		regs.incPC(2);
 		// Set the Thumb Mode flag in CPSR
 		regs.getCPSR().thumb = 1;
 	}
-	n_next_ip = next_ip + 4;
 
 	//Debug
 	emu->loader_debug << misc::fmt("Program entry is 0x%x\n", regs.getPC())

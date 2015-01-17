@@ -404,14 +404,11 @@ void Context::Execute()
 	else
 		memory->setSafeDefault();
 
-	// set PC to the next instruction pointer
-	regs.setPC(next_ip);
-
 	// Change the related register according to the fault ID
 	unsigned int fault_id = CheckFault();
 	if (fault_id != 0)
 	{
-		regs.setPC(regs.getLR());
+		regs.setPC(regs.getLR() + 4);
 
 		// Hard-coded structure for fault handle
 		if(fault_id == 0xffff0fe0)
@@ -429,7 +426,7 @@ void Context::Execute()
 	}
 
 	// Get ARM operating mode
-	ContextMode arm_mode = OperateMode(regs.getPC());
+	ContextMode arm_mode = OperateMode(regs.getPC() - 2);
 
 	// Change PC according to the thumb field in CPSR
 	if (arm_mode == ContextModeArm)
@@ -460,10 +457,10 @@ void Context::Execute()
 	// Get buffer according to the Program Counter
 	char *buffer_ptr;
 	if (regs.getCPSR().thumb != 0)
-		buffer_ptr = memory->getBuffer(regs.getPC(), 2,
+		buffer_ptr = memory->getBuffer((regs.getPC() - 2), 2,
 					mem::Memory::AccessExec);
 	else
-		buffer_ptr = memory->getBuffer(regs.getPC(), 4,
+		buffer_ptr = memory->getBuffer((regs.getPC() - 4), 4,
 					mem::Memory::AccessExec);
 
 	// Return to default safe mode
@@ -474,27 +471,28 @@ void Context::Execute()
 	{
 		if (IsThumb32(buffer_ptr))
 		{
-			buffer_ptr = memory->getBuffer(regs.getPC(), 4,
+			regs.incPC(2);
+			buffer_ptr = memory->getBuffer((regs.getPC() - 4), 4,
 					mem::Memory::AccessExec);
-			inst.Thumb32Decode(buffer_ptr, regs.getPC());
+			inst.Thumb32Decode(buffer_ptr, (regs.getPC() - 4));
 			setInstType(ContextInstTypeThumb32);
 			if (inst.getThumb32Opcode() == InstThumb32OpcodeInvalid)
 				throw misc::Panic(misc::fmt("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
-					regs.getPC(), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
+					(regs.getPC() - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
 		}
 		else
 		{
-			inst.Thumb16Decode(buffer_ptr, regs.getPC());
+			inst.Thumb16Decode(buffer_ptr, (regs.getPC() - 2));
 			setInstType(ContextInstTypeThumb16);
 		}
 	}
 	else
 	{
-		inst.Decode(regs.getPC(), buffer_ptr);
+		inst.Decode((regs.getPC() - 4), buffer_ptr);
 		setInstType(ContextInstTypeArm32);
 		if (inst.getOpcode() == InstOpcodeInvalid)
 			throw misc::Panic(misc::fmt("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
-					regs.getPC(), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
+					(regs.getPC() - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
 	}
 
 	// Execute instruction
@@ -504,78 +502,100 @@ void Context::Execute()
 	}
 	else
 	{
-		// Debug
-		if (emu->isa_debug)
-		{
-			ELFReader::Symbol *symbol = (loader->binary)->getSymbolByAddress(regs.getPC());
-			std::string symbol_string = symbol->getName();
-
-			emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-					emu->getInstructions(), regs.getPC());
-			if (regs.getCPSR().thumb != 0)
-			{
-				if(getInstType() == ContextInstTypeThumb32)
-				{
-					inst.Thumb32Dump(emu->isa_debug.operator std::ostream &());
-				}
-				else if (getInstType() == ContextInstTypeThumb16)
-				{
-					inst.Thumb16Dump(emu->isa_debug.operator std::ostream &());
-				}
-			}
-			else
-			{
-				inst.Dump(emu->isa_debug.operator std::ostream &());
-				if ((regs.getPC() - previous_ip) != 4)
-					emu->isa_debug << misc::fmt("\nIN %s\n", symbol_string.c_str());
-			}
-			emu->isa_debug << misc::fmt("\n");
-		}
-
-		// Set last, current, and target instruction addresses
-		previous_ip = regs.getPC();
-		next_ip = n_next_ip;
-
-		// Call instruction emulation function
-		switch(getInstType())
-		{
-		case ContextInstTypeArm32:
-
-			n_next_ip += 4;
-			if (inst.getOpcode())
-			{
-				ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
-				(this->*fn)();
-			}
-			break;
-
-		case ContextInstTypeThumb16:
-
-			n_next_ip += 2;
-			if (inst.getThumb16Opcode())
-			{
-				ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
-				(this->*fn)();
-			}
-			break;
-
-		case ContextInstTypeThumb32:
-
-			n_next_ip += 4;
-			if (inst.getThumb32Opcode())
-			{
-				ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
-				(this->*fn)();
-			}
-			break;
-
-		default:
-			throw misc::Panic(misc::fmt("Invalid instruction type"));
-		}
+		ExecuteInst();
 	}
 
 	// Stats
 	emu->incInstructions();
+}
+
+
+void Context::ExecuteInst()
+{
+	// Set last, current, and target instruction addresses
+	last_ip = current_ip;
+	if(regs.getCPSR().thumb != 0)
+	{
+		// Thumb2 Mode
+		if(getInstType() == ContextInstTypeThumb16)
+		{
+			current_ip = regs.getPC() - 2;
+		}
+		else if (getInstType() == ContextInstTypeThumb32)
+		{
+			current_ip = regs.getPC() - 4;
+		}
+		else
+		{
+			throw misc::Panic(misc::fmt("%d : ARM Wrong Instruction Type \n", getInstType()));
+		}
+	}
+	else
+	{
+		// ARM mode
+		current_ip = regs.getPC() - 4;
+	}
+	target_ip = 0;
+
+	// Debug
+	if (emu->isa_debug)
+	{
+		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+				emu->getInstructions(), current_ip);
+		if (regs.getCPSR().thumb != 0)
+		{
+			if(getInstType() == ContextInstTypeThumb32)
+			{
+				inst.Thumb32Dump(emu->isa_debug.operator std::ostream &());
+			}
+			else if (getInstType() == ContextInstTypeThumb16)
+			{
+				inst.Thumb16Dump(emu->isa_debug.operator std::ostream &());
+			}
+		}
+		else
+		{
+			inst.Dump(emu->isa_debug.operator std::ostream &());
+		}
+		emu->isa_debug << misc::fmt("\n");
+	}
+
+	// Call instruction emulation function
+	switch(getInstType())
+	{
+	case ContextInstTypeArm32:
+
+		regs.incPC(4);
+		if (inst.getOpcode())
+		{
+			ExecuteInstFn fn = execute_inst_fn[inst.getOpcode()];
+			(this->*fn)();
+		}
+		break;
+
+	case ContextInstTypeThumb16:
+
+		regs.incPC(2);
+		if (inst.getThumb16Opcode())
+		{
+			ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
+			(this->*fn)();
+		}
+		break;
+
+	case ContextInstTypeThumb32:
+
+		regs.incPC(2);
+		if (inst.getThumb32Opcode())
+		{
+			ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
+			(this->*fn)();
+		}
+		break;
+
+	default:
+		throw misc::Panic(misc::fmt("Invalid instruction type"));
+	}
 }
 
 
@@ -668,7 +688,7 @@ unsigned int Context::CheckFault()
 	unsigned int ret_val = 0;
 	switch (regs.getPC())
 	{
-	case 0xffff0fe0:
+	case 0xffff0fe0 + 4:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
@@ -676,7 +696,7 @@ unsigned int Context::CheckFault()
 		ret_val = 0xffff0fe0;
 		break;
 
-	case 0xffff0fc0:
+	case 0xffff0fc0 + 4:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
@@ -684,7 +704,7 @@ unsigned int Context::CheckFault()
 		ret_val = 0xffff0fc0;
 		break;
 
-	case 0xffff0fa0:
+	case 0xffff0fa0 + 4:
 
 		emu->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
