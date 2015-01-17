@@ -63,7 +63,7 @@ public:
 	const std::string &getPath() const { return file.getPath(); }
 
 	/// Returns the section according to the type value passed in
-	BrigSection *getBrigSection(unsigned int index) const;
+	BrigSection *getBrigSection(BrigSectionType section_type) const;
 
 	/// Checks if the loaded brig file is a valid brig file
 	/// \return

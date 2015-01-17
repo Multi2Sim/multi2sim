@@ -1,11 +1,11 @@
-version 0:96:$full:$small; // BRIG Object Format Version 0:1
+version 0:99:$full:$small; 
 
 function &fib(arg_s32 %r)(arg_s32 %n)
 {
+	private_s32 %p;
 	ld_arg_s32	$s1, [%n];
 	cmp_lt_b1_s32	$c1, $s1, 3;
-	cbr	$c1, @return;
-	private_s32 %p;
+	cbr_b1	$c1, @return;
 	{
 		arg_s32 %nm2;
 		arg_s32 %res;
@@ -25,16 +25,6 @@ function &fib(arg_s32 %r)(arg_s32 %n)
 	}
 	ld_private_u32	$s4, [%p];
 	add_u32	$s2, $s4, $s3;
-
-	syscall_u32 $s0, 1, $s1, 1, 0;
-	syscall_u32 $s0, 11, 58, 0, 0;
-	syscall_u32 $s0, 11, 32, 0, 0;
-	syscall_u32 $s0, 1, $s3, 1, 0;
-	syscall_u32 $s0, 11, 43, 0, 0;
-	syscall_u32 $s0, 1, $s4, 0, 0;
-	syscall_u32 $s0, 11, 61, 0, 0;
-	syscall_u32 $s0, 1, $s2, 0, 0;
-	syscall_u32 $s0, 11, 10, 0, 0;
 
 	st_arg_s32	$s2, [%r];
 	ret;

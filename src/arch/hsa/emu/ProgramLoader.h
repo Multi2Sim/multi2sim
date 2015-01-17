@@ -24,7 +24,6 @@
 #include <memory>
 
 #include <arch/hsa/asm/BrigFile.h>
-#include <arch/hsa/asm/BrigDirEntry.h>
 #include <arch/common/FileTable.h>
 
 #include "Function.h"
@@ -40,7 +39,8 @@ class ProgramLoader
 	static std::unique_ptr<ProgramLoader> instance;
 
 	// Private constructor
-	ProgramLoader(){};
+	ProgramLoader()
+	{};
 
 	// Brig file to be executed.
 	// TODO extend this field to support multi-file program
@@ -60,8 +60,7 @@ class ProgramLoader
 	std::string stdout_file_name;
 
 	// Function table for the functions in the brig file
-	std::map<std::string, std::unique_ptr<Function>>
-			function_table;
+	std::map<std::string, std::unique_ptr<Function>> function_table;
 
 	// File descriptor table
 	std::shared_ptr<comm::FileTable> file_table;
@@ -76,7 +75,7 @@ class ProgramLoader
 	unsigned int loadFunctions();
 
 	// Parse and create a function object
-	void parseFunction(BrigDirEntry *dir);
+	void parseFunction(std::unique_ptr<BrigCodeEntry> dir);
 
 	// Load output arguments for a function
 	//
@@ -94,7 +93,8 @@ class ProgramLoader
 	//
 	// \return
 	// 	Pointer to next directive to parse
-	char *loadArguments(unsigned short num_arg, char *next_dir,
+	std::unique_ptr<BrigCodeEntry> loadArguments(unsigned short num_arg,
+			std::unique_ptr<BrigCodeEntry> entry,
 			bool isInput, Function* function);
 
 	// Preprocess register allocation in a function
@@ -107,7 +107,7 @@ class ProgramLoader
 	//
 	// \param function
 	// 	Pointer to the function to process
-	void preprocessRegisters(char *entry_point,
+	void preprocessRegisters(std::unique_ptr<BrigCodeEntry> first_entry,
 			unsigned int inst_count, Function* function);
 
 public:

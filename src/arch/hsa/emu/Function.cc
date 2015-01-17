@@ -19,6 +19,7 @@
 
 #include <lib/cpp/String.h>
 #include <arch/hsa/asm/BrigEntry.h>
+#include <arch/hsa/asm/AsmService.h>
 
 #include "Emu.h"
 #include "Function.h"
@@ -26,13 +27,9 @@
 namespace HSA
 {
 
-Function::Function(const std::string& name, char *directive, char *entry_point)
+Function::Function(const std::string& name) :
+		name(name)
 {
-	this->name = name;
-	this->directive = directive;
-	this->entry_point = entry_point;
-	this->last_inst = nullptr;
-	this->first_in_function_directive = nullptr;
 }
 
 
@@ -57,86 +54,43 @@ void Function::addArgument(Variable *argument)
 }
 
 
-unsigned int Function::getRegisterSizeByName(const std::string &name) const
+unsigned int Function::getRegisterOffset(BrigRegisterKind kind,
+		unsigned short number) const
 {
-
-	// First byte is '$'
-	if (name[0] != '$')
+	unsigned int offset = 0;
+	switch(kind)
 	{
-		throw Error("Invalid register name " + name
-				+ ". Expect ($) to be register prefix");
+	case BRIG_REGISTER_CONTROL:
 		return 0;
+		break;
+	case BRIG_REGISTER_SINGLE:
+		return number;
+		break;
+	case BRIG_REGISTER_DOUBLE:
+		offset += max_reg[BRIG_REGISTER_SINGLE];
+		return offset + 2 * number;
+		break;
+	case BRIG_REGISTER_QUAD:
+		offset += max_reg[BRIG_REGISTER_QUAD];
+		offset += max_reg[2] * 2;
+		return offset + 2 * number;
+		break;
 	}
-
-	// Get the index number of the register
-	unsigned int register_index = atoi(name.c_str() + 2);
-
-	switch (name[1])
-	{
-	case 'c':
-		if (register_index > 7)
-		{
-			throw Error("Invalid register name " + name
-					+ ". Expecte register index between"
-					" 0 and 7");
-			return 0;
-		}
-		return 1;
-	case 's':
-		if (register_index > 127)
-		{
-			throw Error("Invalid register name " + name
-					+ ". Expecte register index between"
-					" 0 and 127");
-			return 0;
-		}
-		return 4;
-	case 'd':
-		if (register_index > 63)
-		{
-			throw Error("Invalid register name " + name
-					+ ". Expecte register index between"
-					" 0 and 63");
-			return 0;
-		}
-		return 8;
-	case 'q':
-		if (register_index > 31)
-		{
-			throw Error("Invalid register name " + name
-					+ ". Expecte register index between"
-					" 0 and 31");
-			return 0;
-		}
-		return 16;
-	default:
-		throw Error("Invalid register name " + name +
-				+ ". Expect register type to be (c, s, d, q)");
-		return 0;
-	}
+	return 0;
 }
 
-int Function::getRegisterOffset(const std::string &name)
-{
-	auto it = reg_info.find(name);
-	if (it == reg_info.end())
-	{
-		return -1;
-	}
-	return it->second;
-}
-
-void Function::addRegister(const std::string &name)
+/*
+void Function::addRegister(BrigRegisterKind kind, unsigned short number)
 {
 	// Validate the name of the register
-	int size = getRegisterSizeByName(name);
+	int size = getRegisterSizeByName(kind);
 
 	// Skip C registers
 	// if (size == 1)
 	//	return;
 
 	// Check if the register exists
-	int offset = getRegisterOffset(name);
+	int offset = getRegisterOffset(kind, number);
 	if (offset >= 0)
 		return;
 
@@ -150,8 +104,24 @@ void Function::addRegister(const std::string &name)
 	reg_info.insert(std::make_pair(name, reg_size));
 	reg_size += size;
 }
+*/
 
 
+void Function::AllocateRegister(unsigned int *max_reg)
+{
+	std::cout << misc::fmt("Allocating registers: %d, %d, %d, %d\n",
+			max_reg[0], max_reg[1], max_reg[2], max_reg[3]);
+	reg_size += max_reg[BRIG_REGISTER_SINGLE] * 1;
+	reg_size += max_reg[BRIG_REGISTER_DOUBLE] * 2;
+	reg_size += max_reg[BRIG_REGISTER_QUAD] * 4;
+	for (unsigned int i = 0; i < 4; i++)
+	{
+		this->max_reg[i] = max_reg[i];
+	}
+}
+
+
+/*
 void Function::PassByValue(VariableScope *caller_scope,
 			VariableScope *callee_scope, BrigInstEntry *call_inst)
 {
@@ -202,8 +172,9 @@ void Function::PassByValue(VariableScope *caller_scope,
 		}
 	}
 }
+*/
 
-
+/*
 void Function::PassBackByValue(VariableScope *caller_scope,
 			VariableScope *callee_scope, BrigInstEntry *call_inst)
 {
@@ -250,6 +221,7 @@ void Function::PassBackByValue(VariableScope *caller_scope,
 	}
 
 }
+*/
 
 
 void Function::Dump(std::ostream &os = std::cout) const
@@ -297,11 +269,15 @@ void Function::DumpRegisterInfo(std::ostream &os = std::cout) const
 {
 	// Dump the argument information
 	os << misc::fmt("\n\t***** Registers *****\n");
-	for (auto it = reg_info.begin(); it != reg_info.end(); it++)
+	for (unsigned int i = 0; i < 4; i++)
 	{
-		os << misc::fmt("\tregister %s, offset %d\n",
-				it->first.c_str(),
-				it->second);
+		for (unsigned int j = 0; j < max_reg[i]; j++)
+		{
+			os << misc::fmt("\tregister %s%d, offset %d\n",
+					AsmService::RegisterKindToString((BrigRegisterKind)i).c_str(),
+					j,
+					getRegisterOffset((BrigRegisterKind)i, j));
+		}
 	}
 	os << misc::fmt("\tRegister size allocated %d bytes\n", reg_size);
 	os << misc::fmt("\t*********************\n\n");

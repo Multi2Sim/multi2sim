@@ -28,6 +28,8 @@ namespace HSA
 {
 
 class BrigEntry;
+class BrigDataEntry;
+class BrigCodeEntry;
 class BrigSection;
 
 class BrigOperandEntry : public BrigEntry

@@ -52,9 +52,9 @@ BrigFile::~BrigFile()
 }
 
 
-BrigSection *BrigFile::getBrigSection(unsigned int index) const
+BrigSection *BrigFile::getBrigSection(BrigSectionType section_type) const
 {
-	return this->brig_sections[index].get();
+	return this->brig_sections[section_type].get();
 }
 
 
