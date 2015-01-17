@@ -1016,13 +1016,16 @@ public:
 	void Thumb32InstTableDecode();
 
 	///Getters
+	unsigned int getAddress() { return addr; }
 	InstBytes *getBytes() { return &dword; }
 	InstThumb16Bytes *getThumb16Bytes() { return &dword_16; }
 	InstThumb32Bytes *getThumb32Bytes() { return &dword_32; }
 	InstOpcode getOpcode() { return info ? info->opcode : InstOpcodeInvalid; }
 	InstThumb16Opcode getThumb16Opcode() { return info_16 ? info_16->opcode : InstThumb16OpcodeInvalid; }
 	InstThumb32Opcode getThumb32Opcode() { return info_32 ? info_32->opcode : InstThumb32OpcodeInvalid; }
-	Asm *getDisassembler() { return as; }
+	InstInfo *getInstInfo() { return info; }
+	InstThumb16Info *getInstThumb16Info() { return info_16; }
+	InstThumb32Info *getInstThumb32Info() { return info_32; }
 
 };
 
