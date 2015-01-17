@@ -20,6 +20,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/asm/AsmService.h>
 #include <arch/hsa/asm/BrigOperandEntry.h>
 
 #include "Emu.h"
@@ -120,141 +122,158 @@ void ProgramLoader::LoadBinary()
 
 }
 
-
 unsigned int ProgramLoader::loadFunctions()
 {
 	unsigned int num_functions = 0;
 
 	// Get pointer to directive section
 	BrigFile *file = binary.get();
-	BrigSection *dir_section = file->getBrigSection(BrigSectionDirective);
-	const char *buffer = dir_section->getBuffer();
-	char *buffer_ptr = (char *)buffer + 4;
+	BrigSection *section = file->getBrigSection(BrigSectionHsaCode);
+	auto entry = section->getFirstEntry<BrigCodeEntry>();
+	auto next_entry = entry->NextTopLevelEntry();
 
 	// Traverse top level directive
-	while (buffer_ptr && buffer_ptr < buffer + dir_section->getSize())
+	while (entry.get())
 	{
-		BrigDirEntry dir(buffer_ptr, file);
-		if (dir.getKind() == BRIG_DIRECTIVE_FUNCTION ||
-				dir.getKind() == BRIG_DIRECTIVE_KERNEL)
+		if (entry->getKind() == BRIG_KIND_DIRECTIVE_FUNCTION ||
+				entry->getKind() == BRIG_KIND_DIRECTIVE_KERNEL)
 		{
 			// Parse and create the function, insert the function
 			// in table
-			parseFunction(&dir);
+			parseFunction(std::move(entry));
 			num_functions++;
 		}
-		// move pointer to next top level directive
-		buffer_ptr = dir.nextTop();
+		entry = std::move(next_entry);
+		if (entry.get())
+			next_entry = entry->NextTopLevelEntry();
+		else
+			return num_functions;
 	}
 
 	return num_functions;
 }
 
 
-void ProgramLoader::parseFunction(BrigDirEntry *dir)
+void ProgramLoader::parseFunction(std::unique_ptr<BrigCodeEntry> entry)
 {
-	struct BrigDirectiveFunction *dir_struct =
-			(struct BrigDirectiveFunction *)dir->getBuffer();
-
 	// Get the name of the function
-	std::string name = BrigStrEntry::GetStringByOffset(binary.get(),
-			dir_struct->name);
+	std::string name = entry->getName();
 
 	// Get the pointer to the first code
-	char *entry_point = BrigInstEntry::GetInstByOffset(binary.get(),
-			dir_struct->code);
+	auto first_entry = entry->getFirstCodeBlockEntry();
 
 	// Construct function object and insert into function_table
 	// std::unique_ptr<Function> function(new Function(name, entry_point));
-	Function *function = new Function(name, dir->getBuffer(), entry_point);
-	function_table.insert(std::make_pair(name,
-				std::unique_ptr<Function>(function)));
+	auto function = misc::new_unique<Function>(name);
 
 	// Load Arguments
-	unsigned short num_in_arg = dir_struct->inArgCount;
-	unsigned short num_out_arg = dir_struct->outArgCount;
-	char *next_dir = dir->next();
-	next_dir = loadArguments(num_out_arg, next_dir, false, function);
-	next_dir = loadArguments(num_in_arg, next_dir, true, function);
-
-	// Now next_dir should be an in-function directive
-	function->setFirstInFunctionDirective(next_dir);
+	unsigned short num_in_arg = entry->getInArgCount();
+	unsigned short num_out_arg = entry->getOutArgCount();
+	auto next_entry = entry->Next();
+	next_entry = loadArguments(num_out_arg, std::move(next_entry), false,
+			function.get());
+	next_entry = loadArguments(num_in_arg, std::move(next_entry), true,
+			function.get());
 
 	// Allocate registers
-	preprocessRegisters(entry_point, dir_struct->instCount, function);
+	preprocessRegisters(std::move(first_entry),
+			entry->getCodeBlockEntryCount(), function.get());
+
+	// Set some information for the function
+	first_entry = entry->getFirstCodeBlockEntry();
+	function->setFirstEntry(std::move(first_entry));
+	function->setFunctionDirective(std::move(entry));
 
 	// Dump the function information into loader_debug file
 	if (Emu::loader_debug)
 		function->Dump(Emu::loader_debug);
+
+	function_table.insert(std::make_pair(name, std::move(function)));
 }
 
 
-char *ProgramLoader::loadArguments(unsigned short num_arg, char *next_dir,
+std::unique_ptr<BrigCodeEntry> ProgramLoader::loadArguments(
+		unsigned short num_arg, std::unique_ptr<BrigCodeEntry> entry,
 		bool isInput, Function* function)
 {
 	// Load output arguments
 	for (int i = 0; i < num_arg; i++)
 	{
 		// Retrieve argument pointer
-		BrigDirEntry arg_entry(next_dir, binary.get());
-		struct BrigDirectiveSymbol *arg_struct =
-				(struct BrigDirectiveSymbol *)next_dir;
+		// BrigDirEntry arg_entry(next_dir, binary.get());
+		// struct BrigDirectiveSymbol *arg_struct =
+		// 		(struct BrigDirectiveSymbol *)next_dir;
 
 		// Get argument information
-		std::string arg_name = BrigStrEntry::GetStringByOffset(
-				binary.get(), arg_struct->name);
-		unsigned short type = arg_struct->type;
+		std::string arg_name = entry->getName();
+		BrigTypeX type = entry->getType();
 
 		// Add this argument to the argument table
 		Variable *argument = new Variable(arg_name, type,
-				BrigEntry::type2size(type), 0);
+				AsmService::TypeToSize(type), 0);
 		argument->setIndex(i);
 		argument->setInput(isInput);
 		function->addArgument(argument);
 
 		// Move pointer forward
-		next_dir = arg_entry.next();
+		entry = entry->Next();
 	}
-	return next_dir;
+	return entry;
 }
 
 
-void ProgramLoader::preprocessRegisters(char *entry_point,
-			unsigned int inst_count, Function* function)
+void ProgramLoader::preprocessRegisters(
+		std::unique_ptr<BrigCodeEntry> first_entry,
+		unsigned int inst_count, Function* function)
 {
-	char *inst_ptr = entry_point;
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+	auto entry = std::move(first_entry);
+
+	// Record the maximum register used
+	unsigned int max_reg[4] = {0, 0, 0, 0};
 
 	// Traverse all instructions
 	for (unsigned int i = 0; i < inst_count; i++)
 	{
-		BrigInstEntry inst_entry(inst_ptr, binary);
-		//std::cout << inst_entry << "\n";
+		entry->Dump(std::cout);
+		// Skip directives
+		if (!entry->isInstruction())
+		{
+			entry = entry->Next();
+			continue;
+		}
 
 		// Traverse each operands of an instruction
-		for (int j = 0; j < 5; j++)
+		for (unsigned int j = 0; j < entry->getOperandCount(); j++)
 		{
-			char *operand_ptr = inst_entry.getOperand(j);
-			if (!operand_ptr) break;
-			BrigOperandEntry operand_entry(operand_ptr, binary,
-					&inst_entry, j);
-			//std::cout << operand_entry << "\n";
-			if (operand_entry.getKind() == BRIG_OPERAND_REG)
-			{
+			auto operand = entry->getOperand(j);
+			if (!operand.get()) break;
 
-				std::string reg_name =
-						operand_entry.getRegisterName();
-				//std::cout << "Add register: " << reg_name << "\n";
-				function->addRegister(reg_name);
+			//operand->Dump(entry->getOperandType(j), std::cout);
+			if (operand->getKind() != BRIG_KIND_OPERAND_REG)
+				continue;
+
+			// std::string reg_name =
+			//		operand_entry.getRegisterName();
+			// std::cout << "Add register: " << reg_name << "\n";
+			BrigRegisterKind kind = operand->getRegKind();
+			unsigned short number = operand->getRegNumber() + 1;
+			if (number> max_reg[kind])
+			{
+				max_reg[kind] = number;
+
 			}
 		}
 
 		// Set the last instruction
 		if (i == inst_count-1)
-			function->setLastInst(inst_ptr);
+		{
+			function->AllocateRegister(max_reg);
+			function->setLastEntry(std::move(entry));
+			return;
+		}
 
 		// Move inst_ptr forward
-		inst_ptr = inst_entry.next();
+		entry = entry->Next();
 	}
 }
 
@@ -279,6 +298,7 @@ Function *ProgramLoader::getFunction(const std::string &name) const
 	}
 	return it->second.get();
 }
+
 
 }  // namespace HSA
 

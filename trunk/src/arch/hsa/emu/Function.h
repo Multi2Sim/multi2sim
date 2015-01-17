@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include <arch/hsa/asm/BrigInstEntry.h>
+#include <arch/hsa/asm/BrigCodeEntry.h>
 
 #include "VariableScope.h"
 #include "Variable.h"
@@ -39,18 +39,15 @@ class Function
 	// name of the function
 	std::string name;
 
-	// Entry point of the function, helps the work item to set its init pc
-	char *entry_point;
+	// The first code entry in the function
+	std::unique_ptr<BrigCodeEntry> first_entry;
 
 	// Pointer to the last instuction in the function, when pc is move to
 	// a point beyond this, return the function
-	char *last_inst;
+	std::unique_ptr<BrigCodeEntry> last_entry;
 
-	// The directive of the function declaration
-	char *directive;
-
-	// The first directive in the function;
-	char *first_in_function_directive;
+	// The directive where the function is declared
+	std::unique_ptr<BrigCodeEntry> function_directive;
 
 	/// Dump argument related information
 	void DumpArgumentInfo(std::ostream &os) const;
@@ -82,27 +79,13 @@ class Function
 	// Allocated register size
 	unsigned int reg_size = 0;
 
-	// Map the name with the offset in StackFrame::register_storage of the
-	// register
-	std::map<std::string, unsigned int> reg_info;
-
-	// Return the size of the register according to its name. It only
-	// returns the size of the register from its name, regardless of if
-	// if have been allocated. Trying to get the size of an invalid
-	// register name will raise panic.
-	// "$cx" - 1 returns 1, but its actually only 1 bit
-	// "$sx" - 4
-	// "$dx" - 8
-	// "$qx" - 16
-	// Invalid register name - 0
-	unsigned int getRegisterSizeByName(const std::string &name) const;
-
-
+	// Max register number for each register type
+	unsigned int max_reg[4];
 
 public:
 
 	/// Constructor
-	Function(const std::string &name, char *directive, char *entry_point);
+	Function(const std::string &name);
 
 	/// Destructor
 	~Function(){};
@@ -110,35 +93,36 @@ public:
 	/// Returns function name
 	std::string getName() const { return name; }
 
-	/// Set the entry point
-	void setEntryPoint(char *entry_point) { this->entry_point = entry_point; }
 
-	/// Return pointer to entry point
-	char *getEntryPoint() const { return entry_point; }
-
-	/// Set the last instruction
-	void setLastInst(char *last_inst) { this->last_inst = last_inst; }
-
-	/// Return pointer to the last instruction
-	char *getLastInst() const { return last_inst; }
-
-	/// Set the directive
-	void setDirective(char *directive) { this->directive = directive; }
-
-	/// Return the pointer to first in function directive
-	char *getFirstInFunctionDirective() const
+	/// Set first code entry
+	void setFirstEntry(std::unique_ptr<BrigCodeEntry> first_entry)
 	{
-		return first_in_function_directive;
+		this->first_entry = std::move(first_entry);
 	}
 
-	/// Set the first in-function directive
-	void setFirstInFunctionDirective(char *directive)
+	/// Return pointer to entry point
+	BrigCodeEntry *getFirstEntry() const { return first_entry.get(); }
+
+	/// Set the last entry
+	void setLastEntry(std::unique_ptr<BrigCodeEntry> last_entry)
 	{
-		first_in_function_directive = directive;
+		this->last_entry = std::move(last_entry);
+	}
+
+	/// Return pointer to the last entry
+	BrigCodeEntry *getLastEntry() const { return last_entry.get(); }
+
+	/// Set the directive
+	void setFunctionDirective(std::unique_ptr<BrigCodeEntry> directive)
+	{
+		this->function_directive = std::move(directive);
 	}
 
 	/// Return the pointer to the directive
-	char *getDirective() const { return directive; }
+	BrigCodeEntry *getFunctionDirective() const
+	{
+		return function_directive.get();
+	}
 
 	/// Add an argument information in argument table
 	void addArgument(Variable *argument);
@@ -161,29 +145,27 @@ public:
 	}
 
 	/// Add the register to the register list
-	void addRegister(const std::string &name);
+	void addRegister(BrigRegisterKind kind, unsigned short number);
+
+	/// Allocate register
+	void AllocateRegister(unsigned int *max_reg);
 
 	/// Return the offset of an register. If the register does not exist,
 	/// return -1.
-	int getRegisterOffset(const std::string &name);
-
-	/// Return register information
-	std::map<std::string, unsigned int> getRegisterInformation() const
-	{
-		return reg_info;
-	}
+	unsigned int getRegisterOffset(BrigRegisterKind kind,
+			unsigned short number) const;
 
 	/// Return the size of register required
 	unsigned int getRegisterSize() const { return reg_size; }
 
 	/// Copy variable information and value from caller's argument scope
 	/// to callee's argument scope
-	void PassByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigInstEntry *call_inst);
+	// void PassByValue(VariableScope *caller_scope,
+	//		VariableScope *callee_scope, BrigCodeEntry *call_inst);
 
 	/// Copy return value from the calle to caller
-	void PassBackByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigInstEntry *call_inst);
+	// void PassBackByValue(VariableScope *caller_scope,
+	//		VariableScope *callee_scope, BrigCodeEntry *call_inst);
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;

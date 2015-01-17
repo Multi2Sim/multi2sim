@@ -35,7 +35,7 @@
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
 //#include <arch/hsa/driver/Driver.h>
-//#include <arch/hsa/emu/Emu.h>
+#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <arch/arm/asm/Asm.h>
 #include <dram/System.h>
@@ -215,12 +215,10 @@ void LoadProgram(const std::vector<std::string> &args,
 	case 0: // ELF file for HSA Brig format do not have machine code
 		// FIXME: Rather than preload the whole brig file, modify the 
 		// 	ELFReader to support brig file validation
-		/*
 		if(HSA::Asm::isValidBrigELF(exe))
 		{
 			emu = HSA::Emu::getInstance();
 		}
-		*/
 		break;
 
 	default:
@@ -516,7 +514,7 @@ int MainProgram(int argc, char **argv)
 	RegisterOptions();
 	HSA::Asm::RegisterOptions();
 	// HSA::Driver::RegisterOptions();
-	// HSA::Emu::RegisterOptions();
+	HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
@@ -540,7 +538,7 @@ int MainProgram(int argc, char **argv)
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
 //	HSA::Driver::ProcessOptions();
-//	HSA::Emu::ProcessOptions();
+	HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();
