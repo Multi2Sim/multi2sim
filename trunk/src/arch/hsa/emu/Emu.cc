@@ -20,6 +20,7 @@
 //#include <arch/hsa/driver/Driver.h>
 
 #include "Emu.h"
+#include "AQLQueue.h"
 #include "ProgramLoader.h"
 
 namespace HSA
@@ -143,7 +144,7 @@ void Emu::InstallDefaultComponents()
 	components.insert(std::make_pair(2, std::move(gpu)));
 
 	// Set the CPU as the host component
-	setHostCpuDevice(cpu.get());
+	setHostCpuDevice(components.at(1).get());
 }
 
 
@@ -170,7 +171,7 @@ bool Emu::Run()
 	bool stillRunning = false;
 
 
-	/*
+
 	// Let all components to execute their own task
 	for (auto it = components.begin(); it != components.end(); it++)
 	{
@@ -179,9 +180,8 @@ bool Emu::Run()
 			stillRunning = true;
 	}
 
-	// Process list of suspended work items
+	// Process list of suspended contexts
 	// ProcessEvents();
-	*/
 		
 	// Still running;
 	return stillRunning;
@@ -197,11 +197,11 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	// Load the whole program binary
 	ProgramLoader::LoadProgram(args, env, cwd,
 			stdin_file_name, stdout_file_name);
-	/*
-	// Create the default queue for the host device
-	AQLQueue *queue = RuntimeLibrary::CreateQueue(host_cpu, 2,
-			HSAQueueMulti);
 
+	// Create a simple queue and add it to host cpu
+	auto queue = misc::new_unique<AQLQueue>(2, HSA_QUEUE_TYPE_MULTI);
+	AQLQueue *queue_ptr = queue.get();
+	host_cpu->addQueue(std::move(queue));
 
 	//Prepare the dispatch packet
 	AQLDispatchPacket *packet = new AQLDispatchPacket();
@@ -210,13 +210,12 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	packet->setWorkGroupSize(1, 1, 1);
 	ProgramLoader *loader = ProgramLoader::getInstance();
 	Function *main_function = loader->getMainFunction();
-	char *function_dir = main_function->getDirective();
+	unsigned int function_dir = main_function->getFunctionDirective()->getOffset();
 	packet->setKernalObjectAddress((unsigned long long)function_dir);
 
 	// Enqueue the packet
 	aql_debug << "Packet created and enqueued: \n" << *packet;
-	queue->Enqueue(packet);
-	*/
+	queue_ptr->Enqueue(packet);
 }
 
 }  // namespace HSA

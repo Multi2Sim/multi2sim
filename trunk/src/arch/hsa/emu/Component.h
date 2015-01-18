@@ -23,20 +23,16 @@
 #include <list>
 #include <memory>
 
-#include "Emu.h"
+#include <arch/hsa/driver/runtime.h>
 
+#include "Grid.h"
+#include "Emu.h"
 
 namespace HSA
 {
 
 class Grid;
-
-enum HsaDeviceType
-{
-	HSA_DEVICE_TYPE_CPU = 0,
-	HSA_DEVICE_TYPE_GPU = 1,
-	HSA_DEVICE_TYPE_DSP = 2
-};
+class AQLQueue;
 
 /// An HSA component is an HSA agent that support HSAIL virtual ISAs
 class Component
@@ -49,7 +45,7 @@ protected:
 		unsigned long long handler;
 
 		// Determine if the device is a GPU device
-		HsaDeviceType device_type;
+		hsa_device_type_t device_type;
 
 		// Name of the device
 		std::string name;
@@ -65,10 +61,10 @@ protected:
 	AgentInfo agent_info;
 
 	// List of work groups
-	// std::list<std::unique_ptr<Grid>> grids;
+	std::list<std::unique_ptr<Grid>> grids;
 
 	// List of queues associated with this component
-	// std::list<std::unique_ptr<AQLQueue, void (*)(AQLQueue *)>> queues;
+	std::list<std::unique_ptr<AQLQueue>> queues;
 
 public:
 
@@ -85,7 +81,7 @@ public:
 	static std::unique_ptr<Component> getDefaultGPUComponent(unsigned long long handler);
 
 	/// Insert a queue into the queue list
-	// void addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue);
+	void addQueue(std::unique_ptr<AQLQueue> queue);
 
 	/// Execute instructions on this components
 	///
@@ -96,7 +92,7 @@ public:
 	bool Execute();
 
 	/// Create a grid from a dispatch packet
-	// void LaunchGrid(AQLDispatchPacket *packet);
+	void LaunchGrid(AQLDispatchPacket *packet);
 
 	/// Dump the information about the agent
 	void Dump(std::ostream &os) const;
@@ -127,13 +123,16 @@ public:
 	std::string getName(){ return agent_info.name; }
 
 	/// Set device type
-	void setDeviceType(HsaDeviceType type) 
+	void setDeviceType(hsa_device_type_t type)
 	{ 
 		agent_info.device_type = type; 
 	}
 
 	/// Get device type
-	HsaDeviceType getDeivceType() const { return agent_info.device_type; }
+	hsa_device_type_t getDeivceType() const
+	{
+		return agent_info.device_type;
+	}
 
 	/// Set vendor_name field of agent_info
 	void setVendorName(const std::string &vendor_name)

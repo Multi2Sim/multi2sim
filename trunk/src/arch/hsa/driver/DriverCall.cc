@@ -174,11 +174,8 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 {
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	BrigDirectiveFunction *function_directory =
-			(BrigDirectiveFunction *)
-			(unsigned long long)callback_address;
-	std::string callback_name = BrigStrEntry::GetStringByOffset(binary,
-			function_directory->name);
+	auto function_dir = binary->getCodeEntryByOffset(callback_address);
+	std::string callback_name = function_dir->getName();
 
 	// Create new stack frame
 	Function *callback = ProgramLoader::getInstance()->getFunction(
@@ -189,20 +186,13 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	VariableScope *function_args = stack_frame->getFunctionArguments();
 
 	// Declare return argument
-	BrigDirEntry function_dir_entry((char *)function_directory, binary);
-	BrigDirectiveSymbol *out_arg_directory =
-			(BrigDirectiveSymbol *)function_dir_entry.next();
-	std::string arg_name = BrigStrEntry::GetStringByOffset(binary,
-			out_arg_directory->name);
-	function_args->DeclearVariable(arg_name, 4, out_arg_directory->type);
+	auto out_arg_directory = function_dir->Next();
+	std::string arg_name = out_arg_directory->getName();
+	function_args->DeclearVariable(arg_name, 4, out_arg_directory->getType());
 
 	// Pass argument 1 (Address handler) to the callback
-	BrigDirectiveSymbol *arg1 = (BrigDirectiveSymbol *)
-			BrigDirEntry::GetDirByOffset(binary,
-					function_directory->firstInArg);
-	BrigDirEntry arg1_entry((char *)arg1, binary);
-	std::string arg1_name = BrigStrEntry::GetStringByOffset(
-			binary, arg1->name);
+	auto arg1 = function_dir->getFirstInArg();
+	std::string arg1_name = arg1->getName();
 	function_args->DeclearVariable(arg1_name, 8, BRIG_TYPE_U64);
 	unsigned long long *callee_buffer = 
 			(unsigned long long *)function_args->
@@ -210,9 +200,8 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	*callee_buffer = componentHandler;
 
 	// Pass argument 2 (Address to the data field) to the callback
-	BrigDirectiveSymbol *arg2 = (BrigDirectiveSymbol *)arg1_entry.next();
-	std::string arg2_name = BrigStrEntry::GetStringByOffset(
-			binary, arg2->name);
+	auto arg2 = arg1->Next();
+	std::string arg2_name = arg2->getName();
 	function_args->DeclearVariable(arg2_name, 16, BRIG_TYPE_U64);
 	callee_buffer = (unsigned long long *)
 			function_args->getBuffer(arg2_name);
@@ -220,9 +209,8 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 
 	// Setup info for return callback function
 	mem::Memory *memory = Emu::getInstance()->getMemory();
-	std::unique_ptr<AgentIterateNextInfo> callback_info(
-			new AgentIterateNextInfo(work_item, memory,
-					args_ptr, componentHandler));
+	auto callback_info = misc::new_unique<AgentIterateNextInfo>(
+			work_item, memory, args_ptr, componentHandler);
 
 	// Set the stack frame to be an agent_iterate_callback
 	stack_frame->setReturnCallback(&Driver::IterateAgentNext,
@@ -309,7 +297,7 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_NODE\n");
 		break;
 	case HSA_AGENT_INFO_DEVICE:
-		if (component->IsGPU())
+		if (component->getDeivceType() == HSA_DEVICE_TYPE_GPU)
 		{
 			*value_ptr = 1;
 		}
@@ -418,20 +406,8 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	// Init queue
-	// FIXME Find a way to free the memory in guest memory
-	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
-	unsigned address = manager->Allocate(sizeof(AQLQueue));	
-	char *queue_buffer = memory->getBuffer(address, sizeof(AQLQueue), 
-			mem::Memory::AccessWrite);
-	auto new_queue = std::unique_ptr<AQLQueue, void (*)(AQLQueue*)>(
-			new(queue_buffer) AQLQueue(size, (QueueType)type),
-			AQLQueue::Deleter);
-	new_queue->setAddressInGuestMemory(address);
+	auto new_queue = misc::new_unique<AQLQueue>(size, type);
 	component->addQueue(std::move(new_queue));
-
-	// Store queue address
-	memory->Write(queue, sizeof(unsigned long long),  
-			(char *)&address);
 
 	return 0;
 }
@@ -764,7 +740,7 @@ int Driver::CallSignalAddRelease(mem::Memory *memory, unsigned args_ptr)
 	__UNIMPLEMENTED__
 	return 0;
 }
-int AgentIterateNext();
+
 
 int Driver::CallSignalAddAcqRel(mem::Memory *memory, unsigned args_ptr)
 {

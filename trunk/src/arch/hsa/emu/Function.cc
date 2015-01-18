@@ -22,6 +22,7 @@
 #include <arch/hsa/asm/AsmService.h>
 
 #include "Emu.h"
+#include "AQLQueue.h"
 #include "Function.h"
 
 namespace HSA
@@ -109,8 +110,6 @@ void Function::addRegister(BrigRegisterKind kind, unsigned short number)
 
 void Function::AllocateRegister(unsigned int *max_reg)
 {
-	std::cout << misc::fmt("Allocating registers: %d, %d, %d, %d\n",
-			max_reg[0], max_reg[1], max_reg[2], max_reg[3]);
 	reg_size += max_reg[BRIG_REGISTER_SINGLE] * 1;
 	reg_size += max_reg[BRIG_REGISTER_DOUBLE] * 2;
 	reg_size += max_reg[BRIG_REGISTER_QUAD] * 4;

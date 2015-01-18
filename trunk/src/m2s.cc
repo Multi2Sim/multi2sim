@@ -128,7 +128,8 @@ void RegisterArchitectures()
 
 	// HSA
 	arch_pool->Register("HSA",
-			HSA::Asm::getInstance());
+			HSA::Asm::getInstance(),
+			HSA::Emu::getInstance());
 
 	// Kepler
 	arch_pool->Register("Kepler",

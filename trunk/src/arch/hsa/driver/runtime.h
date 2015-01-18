@@ -24,6 +24,9 @@
 #include "stdint.h"
 #include "stddef.h"
 
+namespace HSA
+{
+
 // Calling convention and import macros
 #define HSA_CALL
 
@@ -458,3 +461,5 @@ hsa_status_t HSA_API hsa_status_string(hsa_status_t status, const char** status_
 #ifdef __cplusplus
 } //end extern "C" block
 #endif
+
+}

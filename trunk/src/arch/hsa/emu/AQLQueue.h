@@ -31,38 +31,25 @@ namespace HSA
 class AQLPacket;
 class Component;
 
-enum QueueType
-{
-	HSAQueueMulti = 0,
-	HSAQueueSingle
-};
-
 class AQLQueue
 {
-	// MULTI or SINGLE
-	unsigned int queue_type;
+	// A struct that represents information of a aql queue
+	struct AqlQueueFields {
+		unsigned int queue_type;
+		unsigned int queue_features;
+		unsigned long long base_address;
+		unsigned long long doorbell_signal;
+		unsigned int size;
+		unsigned int id;
+		unsigned long long service_queue;
+	};
 
-	// Features supported by the queue
-	unsigned int queue_feature;
+	// The queue information is stored in a struct, this data structure is
+	// stored in guest memeory
+	struct AqlQueueFields *fields;
 
-	// Base address to the buffer of packets
-	unsigned long long base_address;
-
-	// Bell signal
-	unsigned long long bell_signal;
-
-	// Maximum number of packet the queue can hold, must be a power of 2
-	unsigned int size;
-
-	// Queue id, unique in this process
-	unsigned int queue_id;
-
-	// A pointer to another User Mode Queue that can be used by the HSAIL
-	// kernel to request system services. The serviceQueue property is
-	// provided by the application to the runtime API call when the queue
-	// is created, and may be NULL, the system provided serviceQueue or an
-	// application managed queue.
-	unsigned long long service_queue;
+	// The address of the fields in guest memory
+	unsigned fields_address;
 
 	// Position where to write next
 	unsigned long long write_index;
@@ -73,18 +60,13 @@ class AQLQueue
 	// Device it associated with
 	Component *associated_component = nullptr;
 
-	// The address of this queue in guest memory. If the queue is defined
-	// in the guest memory, it should not be simply deleted, but should 
-	// be removed from the guest memmory with the Manager::Free() function
-	unsigned address_in_guest_memory;
-
 	// Convert the linear write/ read index to real position
 	unsigned long long toRecursiveIndex(unsigned long long index)
 	{
 		unsigned long long recurve_index =
-				(index - base_address)
-				% (size * sizeof(AQLPacket))
-				+ base_address;
+				(index - fields->base_address)
+				% (fields->size * sizeof(AQLPacket))
+				+ fields->base_address;
 		//std::cout << misc::fmt("Mapping linear index %lld to "
 		//		"recursive index %lld\n",
 		//		index, recurve_index);
@@ -97,7 +79,7 @@ class AQLQueue
 public:
 
 	/// Constructor
-	AQLQueue(unsigned int size, QueueType type);
+	AQLQueue(unsigned int size, unsigned int type);
 
 	/// Destructor
 	~AQLQueue();
@@ -120,12 +102,6 @@ public:
 	/// Invalid
 	AQLDispatchPacket *ReadPacket();
 
-	/// If the queue is a unique_ptr defined on guest memory, this 
-	/// function serves as a custom deleter. It avoid freeing the memory 
-	/// from the operating system, but it frees the memory from the 
-	/// Multi2Sim memory mananger.
-	static void Deleter(AQLQueue *queue);
-
 
 
 
@@ -136,68 +112,80 @@ public:
 	/// Set queue type
 	void setQueueType(unsigned int queue_type)
 	{ 
-		this->queue_type = queue_type; 
+		fields->queue_type = queue_type;
 	}
 
 	/// Get queue type
 	unsigned int getQueueType() const
 	{
-		return queue_type; 
+		return fields->queue_type;
 	}
 
 	/// Set queue feature
 	void setQueueFeature(unsigned int queue_feature)
 	{ 
-		this->queue_feature = queue_feature; 
+		fields->queue_features = queue_feature;
 	}
 
 	/// Get queue feature
 	unsigned int getQueueFeature() 
 	{
-		return queue_feature;
+		return fields->queue_features;
 	}
 
 	/// Get base address
-	unsigned long long getBaseAddress() const{ return base_address; }
+	unsigned long long getBaseAddress() const
+	{
+		return fields->base_address;
+	}
 
 	/// Set base address
-	void setBaseAddress(unsigned long long base_address){ this->base_address = base_address; }
+	void setBaseAddress(unsigned long long base_address)
+	{
+		fields->base_address = base_address;
+	}
 
 	/// Get bell signal
-	unsigned long long getBellSignal() const{ return bell_signal; }
+	unsigned long long getBellSignal() const
+	{
+		return fields->doorbell_signal;
+	}
 
 	/// Set bell signal
-	void setBellSignal(unsigned long long bell_signal){ this->bell_signal = bell_signal; }
+	void setBellSignal(unsigned long long bell_signal)
+	{
+		fields->doorbell_signal = bell_signal;
+	}
 
 	/// Get queue id
-	unsigned int getQueueId() const{ return queue_id; }
+	unsigned int getQueueId() const{ return fields->id; }
 
 	/// Set queue id
-	void setQueueId(unsigned int queue_id) { this->queue_id = queue_id; }
+	void setQueueId(unsigned int queue_id) { fields->id = queue_id; }
 
 	/// Get read index
-	unsigned long long getReadIndex() const{ return read_index; }
+	unsigned long long getReadIndex() const { return read_index; }
 
 	/// Set read index
 	//void setReadIndex(unsigned long long read_index) { this->read_index = read_index; }
 
 	/// Get service queue
-	unsigned long long getServiceQueue() const{ return service_queue; }
+	unsigned long long getServiceQueue() const
+	{
+		return fields->service_queue;
+	}
 
 	/// Set service queue
-	void setServiceQueue(unsigned long long service_queue){ this->service_queue = service_queue; }
+	void setServiceQueue(unsigned long long service_queue)
+	{
+		fields->service_queue = service_queue;
+	}
 
 	/// Get size
-	unsigned int getSize() const{ return size; }
+	unsigned int getSize() const { return fields->size; }
 
 	/// Get write index
 	unsigned long long getWriteIndex() const{ return write_index; }
-
-	/// Get the address in guest memory
-	void setAddressInGuestMemory(unsigned address)
-	{
-		address_in_guest_memory = address;
-	}
 
 };
 

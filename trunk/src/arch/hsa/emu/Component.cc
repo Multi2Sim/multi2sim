@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "AQLQueue.h"
 #include "Component.h"
 
 namespace HSA
@@ -55,8 +56,8 @@ std::unique_ptr<Component> Component::getDefaultGPUComponent(unsigned long long 
 	return component;
 }
 
-/*
-void Component::addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue)
+
+void Component::addQueue(std::unique_ptr<AQLQueue> queue)
 {
 	// TODO Generate better debug information
 	Emu::aql_debug << misc::fmt("Add a queue to component %lld\n", 
@@ -64,12 +65,11 @@ void Component::addQueue(std::unique_ptr<AQLQueue, void (*)(AQLQueue *)> queue)
 	queue->Associate(this);
 	queues.emplace_back(std::move(queue));
 }
-*/
+
 
 
 bool Component::Execute()
 {
-	/*
 	// 1. Check if the tasks is being processed. If true, process it.
 	bool has_active_grid = false;
 	for(auto it = grids.begin(); it != grids.end(); it++)
@@ -94,11 +94,10 @@ bool Component::Execute()
 
 	// 3. If this component is not running and there is no pending task,
 	// 	return false indicating this component is idle.
-	*/
 	return false;
 }
 
-/*
+
 void Component::LaunchGrid(AQLDispatchPacket *packet)
 {
 	// Create grid and insert it into list
@@ -111,7 +110,6 @@ void Component::LaunchGrid(AQLDispatchPacket *packet)
 	if (Emu::aql_debug)
 		grid->Dump(Emu::aql_debug);
 }
-*/
 
 
 void Component::Dump(std::ostream &os = std::cout) const
