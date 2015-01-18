@@ -26,7 +26,9 @@
 #include <lib/cpp/Debug.h>
 #include <memory/Memory.h>
 #include <memory/Manager.h>
+#include <arch/hsa/driver/runtime.h>
 
+#include "AQLQueue.h"
 #include "Component.h"
 
 namespace HSA
@@ -95,7 +97,7 @@ public:
 	{
 		// Guarantee everything in guest memory freed before freeing 
 		// the guest memory itself;
-		// components.clear();
+		components.clear();
 	};
 
 	/// The HSA emulator is a singleton class. The only possible instance

@@ -26,53 +26,55 @@
 namespace HSA
 {
 
-AQLQueue::AQLQueue(unsigned int size, QueueType type)
+AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 {
 	// Global queue id to assign
 	static unsigned int process_queue_id = 0;
 
+	// Allocate queue fields in quest memory
+	Emu *emu = Emu::getInstance();
+	mem::Manager *manager = emu->getMemoryManager();
+	mem::Memory *mem = emu->getMemory();
+	fields_address = manager->Allocate(
+			sizeof(AqlQueueFields));
+	fields = (struct AqlQueueFields *)mem->getBuffer(
+			fields_address, sizeof(AqlQueueFields),
+			mem::Memory::AccessWrite);
+
 	// size must be a power of two
 	if (log2(size) != floor(log2(size)))
 		throw Error("Queue size must be a power of 2!");
-	this->size = size;
+	fields->size = size;
 
 	// Set default type and feature
-	queue_type = type;
-	queue_feature = 1;
-	bell_signal = 0;
-	service_queue = 0;
-	queue_id = process_queue_id++;
+	fields->queue_type = type;
+	fields->queue_features = 1;
+	fields->doorbell_signal = 0;
+	fields->service_queue = 0;
+	fields->id = process_queue_id++;
 
 	// Allocate buffer space for the queue
-	Emu *emu = Emu::getInstance();
-	mem::Manager *manager = emu->getMemoryManager();
 	assert(sizeof(AQLDispatchPacket) == 64);
-	base_address = manager->Allocate(size * sizeof(AQLDispatchPacket),
+	fields->base_address = manager->Allocate(
+			size * sizeof(AQLDispatchPacket),
 			sizeof(AQLDispatchPacket));
 
 	// Set initial write and read index to base address
-	write_index = base_address;
-	read_index = base_address;
+	write_index = fields->base_address;
+	read_index = fields->base_address;
 }
 
 
 AQLQueue::~AQLQueue()
-{}
-
-
-void AQLQueue::Deleter(AQLQueue *queue)
 {
-	if(queue->address_in_guest_memory != 0)
-	{
-		// AQL queue is in guest memory
-		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
-		manager->Free(queue->address_in_guest_memory);
-	}
-	else
-	{
-		// AQL queue is in host memory
-		delete queue;
-	}
+	// Two things to be done in destructor
+	// 1. Free the memory allocated for the packets buffer
+	// 2. Free the memory allocated for the queue fields
+	Emu *emu = Emu::getInstance();
+	mem::Manager *manager = emu->getMemoryManager();
+	manager->Free(fields->base_address);
+	manager->Free(fields_address);
+
 }
 
 
@@ -100,7 +102,7 @@ void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 	saved_packet->Assign();
 
 	// 4. Notifying the Packet Processor of the packet
-	bell_signal = packet_id;
+	fields->doorbell_signal = packet_id;
 
 }
 
@@ -119,7 +121,7 @@ AQLDispatchPacket *AQLQueue::getPacket(unsigned long long linear_index)
 	AQLDispatchPacket *packet = (AQLDispatchPacket *)memory->getBuffer(
 			recursive_index,
 			sizeof(AQLDispatchPacket),
-			mem::Memory::AccessWrite);
+			mem::Memory::AccessRead);
 
 	// Return the packet buffer
 	return packet;

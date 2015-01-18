@@ -107,10 +107,12 @@ class AQLDispatchPacket : public AQLPacket
 public:
 
 	// Constructor
-	AQLDispatchPacket(){};
+	AQLDispatchPacket()
+	{};
 
 	// Destructor
-	~AQLDispatchPacket(){};
+	~AQLDispatchPacket()
+	{};
 
 	/// Return the dimension
 	unsigned short getDimension() const 
