@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "ProgramLoader.h"
 #include "Grid.h"
 
 namespace HSA
@@ -43,15 +44,14 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 
 	// Set root function information
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	BrigDirectiveFunction *function = (BrigDirectiveFunction *)
-					packet->getKernalObjectAddress();
-	std::string function_name = BrigStrEntry::GetStringByOffset(binary,
-			function->name);
+	auto function = binary->getCodeEntryByOffset(packet->getKernalObjectAddress());
+	std::string function_name = function->getName();
 	this->root_function = ProgramLoader::getInstance()->getFunction(
 			function_name);
 	this->kernel_args = packet->getKernargAddress();
 
 	// Create work items
+	/*
 	for (unsigned int i = 0; i < grid_size; i++)
 	{
 		unsigned int z = i / group_size_x / group_size_y;
@@ -59,6 +59,7 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
 		deployWorkItem(x, y, z);
 	}
+	*/
 
 }
 
@@ -71,11 +72,13 @@ Grid::~Grid()
 bool Grid::Execute()
 {
 	bool on_going = false;
+	/*
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		if (it->second->Execute())
 			on_going = true;
 	}
+	*/
 	return on_going;
 }
 
@@ -85,14 +88,16 @@ void Grid::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("***** %dD Grid (%d x %d x %d) *****\n",
 			dimension, getGridSizeX(),
 			getGridSizeY(), getGridSizeZ());
+	/*
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		os << *(it->second.get());
 	}
+	*/
 	os << "***** **** *****\n";
 }
 
-
+/*
 void Grid::deployWorkItem(unsigned int abs_id_x,
 			unsigned int abs_id_y,
 			unsigned int abs_id_z)
@@ -132,5 +137,6 @@ void Grid::createWorkGroup(unsigned int id_x, unsigned int id_y,
 	workgroups.insert(std::make_pair(flattened_id,
 			std::unique_ptr<WorkGroup>(work_group)));
 }
+*/
 
 }  // namespace HSA

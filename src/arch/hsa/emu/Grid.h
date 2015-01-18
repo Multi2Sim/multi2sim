@@ -20,7 +20,9 @@
 #ifndef ARCH_HSA_EMU_GRID_H
 #define ARCH_HSA_EMU_GRID_H
 
-#include "WorkGroup.h"
+#include <map>
+
+// #include "WorkGroup.h"
 #include "AQLPacket.h"
 #include "Component.h"
 
@@ -30,6 +32,7 @@ namespace HSA
 
 class WorkGroup;
 class Component;
+class Function;
 
 // A grid is an instance of a kernel execution, equivalent to NDRange in OpenCL
 class Grid
@@ -63,16 +66,16 @@ class Grid
 	unsigned long long kernel_args;
 
 	// List of work groups, maps work group flattened absolute id
-	std::map<unsigned int, std::unique_ptr<WorkGroup>> workgroups;
+	// std::map<unsigned int, std::unique_ptr<WorkGroup>> workgroups;
 
-	/// Deploy tasks on work item
-	void deployWorkItem(unsigned int abs_id_x,
-			unsigned int abs_id_y,
-			unsigned int abs_id_z);
+	// Deploy tasks on work item
+	// void deployWorkItem(unsigned int abs_id_x,
+	// 		unsigned int abs_id_y,
+	// 		unsigned int abs_id_z);
 
 	// Create work group
-	void createWorkGroup(unsigned int id_x, unsigned int id_y,
-			unsigned int id_z);
+	// void createWorkGroup(unsigned int id_x, unsigned int id_y,
+	//		unsigned int id_z);
 
 public:
 

@@ -25,6 +25,7 @@
 #include <arch/hsa/asm/BrigOperandEntry.h>
 
 #include "Emu.h"
+#include "AQLQueue.h"
 #include "ProgramLoader.h"
 
 namespace HSA
@@ -234,7 +235,6 @@ void ProgramLoader::preprocessRegisters(
 	// Traverse all instructions
 	for (unsigned int i = 0; i < inst_count; i++)
 	{
-		entry->Dump(std::cout);
 		// Skip directives
 		if (!entry->isInstruction())
 		{
