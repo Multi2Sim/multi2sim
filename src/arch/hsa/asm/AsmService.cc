@@ -520,6 +520,15 @@ std::string AsmService::RegisterKindToString(BrigRegisterKind register_kind)
 }
 
 
+std::string AsmService::RegisterToString(BrigRegisterKind register_kind,
+			unsigned short register_number)
+{
+	return misc::fmt("%s%d",
+			AsmService::RegisterKindToString(register_kind).c_str(),
+			register_number);
+}
+
+
 std::string AsmService::WidthToString(BrigWidth width)
 {
 	return width_to_str_map.MapValue(width);

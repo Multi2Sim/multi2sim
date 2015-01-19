@@ -17,8 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/hsa/asm/BrigDef.h>
-#include <arch/hsa/driver/Driver.h>
+#include <cstring>
+
+//#include <arch/hsa/driver/Driver.h>
 
 #include "WorkItem.h"
 
@@ -26,9 +27,9 @@
 namespace HSA
 {
 
-WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] = 
+WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 {
-#define DEFINST(name, opstr) \
+#define DEFINST(name, opcode, opstr) \
 		&WorkItem::ExecuteInst_##name ,
 #include <arch/hsa/asm/Inst.def>
 #undef DEFINST
@@ -45,11 +46,6 @@ void WorkItem::ExecuteInst_NOP()
 template<typename T>
 void WorkItem::Inst_ABS_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T des = abs(src0);
@@ -60,13 +56,12 @@ void WorkItem::Inst_ABS_Aux()
 void WorkItem::ExecuteInst_ABS()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -83,10 +78,10 @@ void WorkItem::ExecuteInst_ABS()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst ABS, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -101,11 +96,6 @@ void WorkItem::ExecuteInst_ABS()
 template<typename T>
 void WorkItem::Inst_ADD_Aux()
 {
-	// Retrieve action
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	//Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -117,13 +107,12 @@ void WorkItem::Inst_ADD_Aux()
 void WorkItem::ExecuteInst_ADD()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -150,10 +139,10 @@ void WorkItem::ExecuteInst_ADD()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst ADD, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -168,11 +157,6 @@ void WorkItem::ExecuteInst_ADD()
 template<typename T>
 void WorkItem::Inst_BORROW_Aux()
 {
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -190,13 +174,12 @@ void WorkItem::Inst_BORROW_Aux()
 void WorkItem::ExecuteInst_BORROW()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 		case BRIG_TYPE_U32:
@@ -216,10 +199,10 @@ void WorkItem::ExecuteInst_BORROW()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst BORROW, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -234,11 +217,6 @@ void WorkItem::ExecuteInst_BORROW()
 template<typename T>
 void WorkItem::Inst_CARRY_Aux()
 {
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -257,13 +235,12 @@ void WorkItem::Inst_CARRY_Aux()
 void WorkItem::ExecuteInst_CARRY()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 		case BRIG_TYPE_U32:
@@ -283,10 +260,10 @@ void WorkItem::ExecuteInst_CARRY()
 				throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst ADD, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -313,11 +290,6 @@ void WorkItem::ExecuteInst_COPYSIGN()
 template<typename T>
 void WorkItem::Inst_DIV_Aux()
 {
-	// Retrieve the insts
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -329,13 +301,12 @@ void WorkItem::Inst_DIV_Aux()
 void WorkItem::ExecuteInst_DIV()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -362,10 +333,10 @@ void WorkItem::ExecuteInst_DIV()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst DIV, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -398,11 +369,6 @@ void WorkItem::ExecuteInst_FRACT()
 template<typename T>
 void WorkItem::Inst_MAD_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -415,11 +381,10 @@ void WorkItem::Inst_MAD_Aux()
 void WorkItem::ExecuteInst_MAD()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Perform different action according to the type
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_S32:
 
@@ -455,11 +420,6 @@ void WorkItem::ExecuteInst_MAD()
 template<typename T>
 void WorkItem::Inst_MAX_Aux()
 {
-	// Retrieve insts
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -471,13 +431,12 @@ void WorkItem::Inst_MAX_Aux()
 void WorkItem::ExecuteInst_MAX()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -504,10 +463,10 @@ void WorkItem::ExecuteInst_MAX()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst MAX, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -522,11 +481,6 @@ void WorkItem::ExecuteInst_MAX()
 template<typename T>
 void WorkItem::Inst_MIN_Aux()
 {
-	// Retrieve insts
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -538,13 +492,12 @@ void WorkItem::Inst_MIN_Aux()
 void WorkItem::ExecuteInst_MIN()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -571,10 +524,10 @@ void WorkItem::ExecuteInst_MIN()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst MIN, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -587,11 +540,6 @@ void WorkItem::ExecuteInst_MIN()
 
 template<typename T> void WorkItem::Inst_MUL_Aux()
 {
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -603,13 +551,12 @@ template<typename T> void WorkItem::Inst_MUL_Aux()
 void WorkItem::ExecuteInst_MUL()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -636,10 +583,10 @@ void WorkItem::ExecuteInst_MUL()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst MUL, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -654,11 +601,6 @@ void WorkItem::ExecuteInst_MUL()
 template<typename T>
 void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 {
-	// Retrive the inst to execute
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Get source value
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -687,13 +629,12 @@ void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 void WorkItem::ExecuteInst_MULHI()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -720,10 +661,10 @@ void WorkItem::ExecuteInst_MULHI()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst MULHI, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -737,11 +678,6 @@ void WorkItem::ExecuteInst_MULHI()
 
 template<typename T> void WorkItem::Inst_NEG_Aux()
 {
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T des = -src0;
@@ -752,13 +688,12 @@ template<typename T> void WorkItem::Inst_NEG_Aux()
 void WorkItem::ExecuteInst_NEG()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -775,10 +710,10 @@ void WorkItem::ExecuteInst_NEG()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst NEG, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -793,11 +728,6 @@ void WorkItem::ExecuteInst_NEG()
 template<typename T>
 void WorkItem::Inst_REM_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -809,13 +739,12 @@ void WorkItem::Inst_REM_Aux()
 void WorkItem::ExecuteInst_REM()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action accoding to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -842,10 +771,10 @@ void WorkItem::ExecuteInst_REM()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst REM, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -871,11 +800,6 @@ void WorkItem::ExecuteInst_SQRT()
 
 template<typename T> void WorkItem::Inst_SUB_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -887,13 +811,12 @@ template<typename T> void WorkItem::Inst_SUB_Aux()
 void WorkItem::ExecuteInst_SUB()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	if (inst.getKind() == BRIG_INST_BASIC)
+	if (inst->getKind() == BRIG_KIND_INST_BASIC)
 	{
-		switch (inst.getType())
+		switch (inst->getType())
 		{
 		case BRIG_TYPE_S32:
 
@@ -920,10 +843,10 @@ void WorkItem::ExecuteInst_SUB()
 			throw Error("Illegal type.");
 		}
 	}
-	else if (inst.getKind() == BRIG_INST_MOD)
+	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
 		throw misc::Panic("Unimplemented Inst SUB, "
-				"kind BRIG_INST_MOD.");
+				"kind BRIG_KIND_INST_MOD.");
 	}
 	else
 	{
@@ -968,11 +891,6 @@ void WorkItem::ExecuteInst_MUL24HI()
 template<typename T>
 void WorkItem::Inst_SHL_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	unsigned int src1 = getOperandValue<unsigned int>(2);
@@ -984,11 +902,10 @@ void WorkItem::Inst_SHL_Aux()
 void WorkItem::ExecuteInst_SHL()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_S32:
 
@@ -1024,11 +941,6 @@ template<typename T>
 void WorkItem::Inst_SHR_Aux()
 {
 	// FIXME:  Logic right shift
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	unsigned int src1 = getOperandValue<unsigned int>(2);
@@ -1040,11 +952,10 @@ void WorkItem::Inst_SHR_Aux()
 void WorkItem::ExecuteInst_SHR()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_S32:
 
@@ -1079,11 +990,6 @@ void WorkItem::ExecuteInst_SHR()
 template<typename T>
 void WorkItem::Inst_AND_Aux()
 {
-	// Retrieve the inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -1095,11 +1001,10 @@ void WorkItem::Inst_AND_Aux()
 void WorkItem::ExecuteInst_AND()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_B1:
 
@@ -1129,11 +1034,6 @@ void WorkItem::ExecuteInst_AND()
 template<typename T>
 void WorkItem::Inst_NOT_Aux()
 {
-	// Retrieve the inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T des = ~src0;
@@ -1144,11 +1044,10 @@ void WorkItem::Inst_NOT_Aux()
 void WorkItem::ExecuteInst_NOT()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_B1:
 
@@ -1178,11 +1077,6 @@ void WorkItem::ExecuteInst_NOT()
 template<typename T>
 void WorkItem::Inst_OR_Aux()
 {
-	// Retrieve the inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -1194,11 +1088,10 @@ void WorkItem::Inst_OR_Aux()
 void WorkItem::ExecuteInst_OR()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_B1:
 
@@ -1228,11 +1121,6 @@ void WorkItem::ExecuteInst_OR()
 template<typename T>
 void WorkItem::Inst_POPCOUNT_Aux()
 {
-	// Retrieve the inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	unsigned int des = 0;
@@ -1248,11 +1136,10 @@ void WorkItem::Inst_POPCOUNT_Aux()
 void WorkItem::ExecuteInst_POPCOUNT()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getSourceType())
+	switch (inst->getSourceType())
 	{
 	case BRIG_TYPE_B32:
 
@@ -1277,11 +1164,6 @@ void WorkItem::ExecuteInst_POPCOUNT()
 template<typename T>
 void WorkItem::Inst_XOR_Aux()
 {
-	// Retrieve the inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Perform action
 	T src0 = getOperandValue<T>(1);
 	T src1 = getOperandValue<T>(2);
@@ -1293,11 +1175,10 @@ void WorkItem::Inst_XOR_Aux()
 void WorkItem::ExecuteInst_XOR()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_B1:
 
@@ -1327,11 +1208,6 @@ void WorkItem::ExecuteInst_XOR()
 template<typename T>
 void WorkItem::Inst_BITEXTRACT_Aux()
 {
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-
 	// Retrieve operand value
 	T src0 = getOperandValue<T>(1);
 	unsigned int src1 = getOperandValue<unsigned int>(2);
@@ -1354,11 +1230,10 @@ void WorkItem::Inst_BITEXTRACT_Aux()
 void WorkItem::ExecuteInst_BITEXTRACT()
 {
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Do different action according to the kind of the inst
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_U32:
 
@@ -1447,24 +1322,15 @@ void WorkItem::Inst_LDA_Aux()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-//	BrigInstMem * inst_buf =
-//			(BrigInstMem *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Retrieve operand
-	BrigOperandAddress *address_operand_buf =
-			(BrigOperandAddress *)inst.getOperand(1);
-	BrigDirectiveSymbol *symbol =
-			(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-					binary, address_operand_buf->symbol);
-	std::string name = BrigStrEntry::GetStringByOffset(binary,
-			symbol->name);
+	auto address_operand = inst->getOperand(1);
+	auto symbol = address_operand->getSymbol();
+	std::string name = symbol->getName();
 
 	// Get offset
-	unsigned long long offset =
-			(((unsigned long long)address_operand_buf->offsetHi)
-					<< 32)
-			+ (unsigned long long)address_operand_buf->offsetLo;
+	unsigned long long offset = address_operand->getOffset();
 
 	// Declare address
 	unsigned address;
@@ -1527,11 +1393,9 @@ void WorkItem::ExecuteInst_LDA()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-	BrigInstMem *inst_buf =
-			(BrigInstMem *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 	
-	switch(inst_buf->type)
+	switch(inst->getType())
 	{
 	case BRIG_TYPE_U32:
 		Inst_LDA_Aux<unsigned int>();
@@ -1547,77 +1411,6 @@ void WorkItem::ExecuteInst_LDA()
 	// Move PC forward.
 	MovePcForwardByOne();
 
-}
-
-
-template<typename T>
-void WorkItem::Inst_LDC_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-//	BrigInstBasic *inst_buf =
-//			(BrigInstBasic *)stack_top->getPc();
-
-	// Retrieve operand
-	BrigOperand *src_temp = (BrigOperand *)inst.getOperand(1);
-
-	// Define address and get base address to code section
-	unsigned long long address;
-	unsigned long long base_address = (unsigned long long)binary
-			->getBrigSection(BrigSectionDirective)
-			->getBuffer();
-
-	//
-	if (src_temp->kind == BRIG_OPERAND_LABEL_REF)
-	{
-		BrigOperandLabelRef *src = (BrigOperandLabelRef *)src_temp;
-		//BrigDirectiveLabel *dir_label =
-		//		(BrigDirectiveLabel *)
-		//		BrigDirEntry::GetDirByOffset(binary, src->ref);
-		address = base_address + src->ref;
-	}
-	else if (src_temp->kind == BRIG_OPERAND_FUNCTION_REF)
-	{
-		BrigOperandFunctionRef *src =
-				(BrigOperandFunctionRef *)src_temp;
-		//BrigDirectiveFunction *dir_label =
-		//		(BrigDirectiveFunction *)
-		//		BrigDirEntry::GetDirByOffset(binary, src->ref);
-		address = base_address + src->ref;
-	}
-	else
-	{
-		throw misc::Panic("Unsupported type for LDC.\n");
-	}
-
-	storeOperandValue(0, (T)address);
-}
-
-
-void WorkItem::ExecuteInst_LDC()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-	BrigInstBasic *inst_buf =
-			(BrigInstBasic *)stack_top->getPc();
-
-	switch(inst_buf->type)
-	{
-	case BRIG_TYPE_U32:
-		Inst_LDC_Aux<unsigned int>();
-		break;
-	case BRIG_TYPE_U64:
-		Inst_LDC_Aux<unsigned long long>();
-		break;
-	default:
-		throw misc::Error("Unsupported type for instruction LDA.");
-		break;
-	}
-
-	// Move PC forward.
-	MovePcForwardByOne();
 }
 
 
@@ -1643,12 +1436,10 @@ void WorkItem::ExecuteInst_MOV()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigInstBasic *inst_buf = (BrigInstBasic *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Call auxiliary function on different type
-	switch (inst_buf->type){
+	switch (inst->getType()){
 	case BRIG_TYPE_B1:
 
 		Inst_MOV_Aux<unsigned char>();
@@ -1853,16 +1644,14 @@ void WorkItem::Inst_CMP_Aux()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigInstCmp *inst_buf = (BrigInstCmp *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	//Get source value
 	SrcType src1 = getOperandValue<SrcType>(1);
 	SrcType src2 = getOperandValue<SrcType>(2);
 	DstType dst = 0;
 
-	switch (inst_buf->compare){
+	switch (inst->getCompareOperation()){
 	case BRIG_COMPARE_EQ:
 
 		if (src1 == src2)
@@ -1950,11 +1739,9 @@ void WorkItem::ExecuteInst_CMP()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigInstCmp *inst_buf = (BrigInstCmp *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
-	switch (inst_buf->sourceType){
+	switch (inst->getSourceType()){
 	case BRIG_TYPE_B1:
 	case BRIG_TYPE_B8:
 
@@ -2009,29 +1796,20 @@ void WorkItem::Inst_LD_Aux()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	BrigInstMem *inst_buf = (BrigInstMem *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get variable name
-	BrigOperandAddress *address_operand_buf =
-			(BrigOperandAddress *)inst.getOperand(1);
-	if (address_operand_buf->symbol != 0)
+	auto address_operand = inst->getOperand(1);
+	if (address_operand->getSymbol().get())
 	{
-		BrigDirectiveSymbol *symbol =
-				(BrigDirectiveSymbol *)BrigDirEntry::GetDirByOffset(
-						binary, address_operand_buf->symbol);
-		std::string name = BrigStrEntry::GetStringByOffset(binary,
-				symbol->name);
+		auto symbol = address_operand->getSymbol();
+		std::string name = symbol->getName();
 
 		// Get offset
-		unsigned long long offset =
-				(((unsigned long long)address_operand_buf->offsetHi)
-						<< 32)
-				+ (unsigned long long)address_operand_buf->offsetLo;
+		unsigned long long offset = address_operand->getOffset();
 
 		// Get buffer in host
-		char *host_buffer = getVariableBuffer(inst_buf->segment, name);
+		char *host_buffer = getVariableBuffer(inst->getSegment(), name);
 		host_buffer += offset;
 
 		// Move value from register or immediate into memory
@@ -2040,16 +1818,12 @@ void WorkItem::Inst_LD_Aux()
 	// If the address is stored in a register
 	else
 	{
-		std::string register_name =
-				BrigStrEntry::GetStringByOffset(binary,
-						address_operand_buf->reg);
+		std::string register_name = address_operand->getReg()
+					->getRegisterName();
 		unsigned address = stack_top->getRegisterValue<unsigned>(
 				register_name);
 
-		unsigned long long offset =
-				(((unsigned long long)address_operand_buf->offsetHi)
-						<< 32)
-				+ (unsigned long long)address_operand_buf->offsetLo;
+		unsigned long long offset = address_operand->getOffset();
 		address += offset;
 
 		// Get buffer in host
@@ -2067,11 +1841,10 @@ void WorkItem::ExecuteInst_LD()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	//
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_U32:
 
@@ -2119,29 +1892,20 @@ void WorkItem::Inst_ST_Aux()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-	BrigInstMem *inst_buf = (BrigInstMem *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Retrieve variable name
-	BrigOperandAddress *address_operand_buf =
-			(BrigOperandAddress *)inst.getOperand(1);
-	if (address_operand_buf->symbol != 0)
+	auto address_operand = inst->getOperand(1);
+	if (address_operand->getSymbol().get())
 	{
-		BrigDirectiveSymbol *symbol =
-				(BrigDirectiveSymbol *)
-				BrigDirEntry::GetDirByOffset(binary, 
-						address_operand_buf->symbol);
-		std::string name = BrigStrEntry::GetStringByOffset(binary,
-				symbol->name);
-
+		auto symbol = address_operand->getSymbol();
+		std::string name = symbol->getName();
 		// Get offset
-		unsigned long long offset =
-				(((unsigned long long)address_operand_buf->offsetHi)
-						<< 32)
-				+ (unsigned long long)address_operand_buf->offsetLo;
+		unsigned long long offset = address_operand->getOffset();\
 
 		// Retrieve memory accessing in the host space
-		char *host_buffer = this->getVariableBuffer(inst_buf->segment, name);
+		char *host_buffer = this->getVariableBuffer(inst->getSegment(),
+				name);
 		host_buffer += offset;
 
 		// Move value from register or immediate into memory
@@ -2150,16 +1914,12 @@ void WorkItem::Inst_ST_Aux()
 	}
 	else
 	{
-		std::string register_name =
-				BrigStrEntry::GetStringByOffset(binary,
-						address_operand_buf->reg);
+		std::string register_name = address_operand->getReg()
+				->getRegisterName();
 		unsigned address = stack_top->getRegisterValue<unsigned>(
 				register_name);
 
-		unsigned long long offset =
-				(((unsigned long long)address_operand_buf->offsetHi)
-						<< 32)
-				+ (unsigned long long)address_operand_buf->offsetLo;
+		unsigned long long offset = address_operand->getOffset();
 		address += offset;
 
 		// Get buffer in host
@@ -2178,11 +1938,10 @@ void WorkItem::ExecuteInst_ST()
 {
 	// Retrieve inst
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get type
-	switch (inst.getType())
+	switch (inst->getType())
 	{
 	case BRIG_TYPE_U8:
 	case BRIG_TYPE_S8:
@@ -2209,6 +1968,10 @@ void WorkItem::ExecuteInst_ST()
 
 		Inst_ST_Aux<unsigned long long>();
 		break;
+
+	default:
+		throw misc::Panic("Type is not supported");
+		break;
 	}
 
 	// Move the pc forward
@@ -2223,6 +1986,24 @@ void WorkItem::ExecuteInst_ATOMIC()
 
 
 void WorkItem::ExecuteInst_ATOMICNORET()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_SIGNAL()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_SIGNALNORET()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_MEMFENCE()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2246,61 +2027,13 @@ void WorkItem::ExecuteInst_STIMAGE()
 }
 
 
-void WorkItem::ExecuteInst_ATOMICIMAGE()
+void WorkItem::ExecuteInst_QUERYIMAGE()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
-void WorkItem::ExecuteInst_ATOMICIMAGENORET()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEARRAY()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEDEPTH()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEFORMAT()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEHEIGHT()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEORDER()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYIMAGEWIDTH()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYSAMPLERCOORD()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QUERYSAMPLERFILTER()
+void WorkItem::ExecuteInst_QUERYSAMPLER()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2310,8 +2043,7 @@ void WorkItem::ExecuteInst_CBR()
 {
 	// Retrieve
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-	// BrigInstBr *inst_buf = (BrigInstBr *)stack_top->getPc();
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Retrieve condition
 	unsigned char condition = getOperandValue<unsigned char>(0);
@@ -2319,18 +2051,14 @@ void WorkItem::ExecuteInst_CBR()
 	// Jump if condition is true
 	if (condition){
 		// Retrieve 1st operand
-		BrigOperand *operand1 = (BrigOperand *)inst.getOperand(1);
-		if (operand1->kind == BRIG_OPERAND_LABEL_REF)
+		auto operand1 = inst->getOperand(1);
+		if (operand1->getKind() == BRIG_KIND_OPERAND_CODE_REF)
 		{
-			BrigOperandLabelRef *op =
-					(BrigOperandLabelRef *)operand1;
-			BrigDirectiveLabel *label =
-					(BrigDirectiveLabel *)
-					BrigDirEntry::GetDirByOffset(binary,
-							op->ref);
+			auto label = operand1->getRef();
 
-			// If the label if an the end or beyond the end of the
+			// If the label is an the end or beyond the end of the
 			// function, return the function
+			/*
 			char *code = BrigInstEntry::GetInstByOffset(
 					binary, label->code);
 			if (code >= stack_top->getFunction()->getLastInst())
@@ -2338,15 +2066,10 @@ void WorkItem::ExecuteInst_CBR()
 				ReturnFunction();
 				return;
 			}
-
-			// Rewind directives.
-			stack_top->setNextDirective(
-					stack_top->getFunction()
-					->getFirstInFunctionDirective());
+			*/
 
 			// Redirect pc to a certain label
-			stack_top->setPc(BrigInstEntry::GetInstByOffset(
-					binary, label->code));
+			stack_top->setPc(std::move(label));
 			return;
 		}else{
 			throw misc::Panic("Unsupported operand type for CBR.");
@@ -2358,13 +2081,25 @@ void WorkItem::ExecuteInst_CBR()
 }
 
 
-void WorkItem::ExecuteInst_BRN()
+void WorkItem::ExecuteInst_BR()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_SBR()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
 void WorkItem::ExecuteInst_BARRIER()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_WAVEBARRIER()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2412,37 +2147,25 @@ void WorkItem::ExecuteInst_LDF()
 }
 
 
-void WorkItem::ExecuteInst_SYNC()
+void WorkItem::ExecuteInst_ACTIVELANECOUNT()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
-void WorkItem::ExecuteInst_COUNTLANE()
+void WorkItem::ExecuteInst_ACTIVELANEID()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
-void WorkItem::ExecuteInst_COUNTUPLANE()
+void WorkItem::ExecuteInst_ACTIVELANEMASK()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
-void WorkItem::ExecuteInst_MASKLANE()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_SENDLANE()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_RECEIVELANE()
+void WorkItem::ExecuteInst_ACTIVELANESHUFFLE()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2452,41 +2175,55 @@ void WorkItem::ExecuteInst_CALL()
 {
 	// Retrieve instruction
 	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
+	BrigCodeEntry *inst = stack_top->getPc();
 
-	// Retrieve the function name, following the path operand -> directive
-	// -> function name.
-	BrigOperandFunctionRef *function_operand =
-			(BrigOperandFunctionRef *)inst.getOperand(1);
-	BrigDirectiveFunction *function_directive =
-			(BrigDirectiveFunction *)BrigDirEntry::GetDirByOffset(
-					binary, function_operand->ref);
-	std::string function_name = BrigStrEntry::GetStringByOffset(binary,
-			function_directive->name);
+	// Retrieve the function name
+	auto function_operand = inst->getOperand(1);
+	std::string function_name = function_operand->getRef()->getName();
 
 	// Try to intercept the function execution if the function is runtime
 	// function
+	/*
 	if (Driver::getInstance()->Intercept(function_name, stack_top))
 	{
 		// MovePcForwardByOne();
 		return;
 	}
+	*/
 
 	// Retrieve the function
 	Function *function = loader->getFunction(function_name);
 
 	// Prepare stack frame and pass the argument by value
-	StackFrame *new_frame = new StackFrame(function, this);
+	auto new_frame = misc::new_unique<StackFrame>(function, this);
 	function->PassByValue(stack_top->getArgumentScope(),
-			new_frame->getFunctionArguments(), &inst);
+			new_frame->getFunctionArguments(), inst);
 
 	// Push frame in stack
-	stack.push_back(std::unique_ptr<StackFrame>(new_frame));
+	stack.push_back(std::move(new_frame));
 
 	// Dump backtrace information for debugging purpose
 	if (Emu::isa_debug)
 		Backtrace(Emu::isa_debug);
 
+}
+
+
+void WorkItem::ExecuteInst_SCALL()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_ICALL()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_LDI()
+{
+	throw misc::Panic("Instruction not implemented");
 }
 
 
@@ -2499,42 +2236,8 @@ void WorkItem::ExecuteInst_RET()
 }
 
 
-void WorkItem::ExecuteInst_SYSCALL()
-{
-	// Get the syscall code
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(),
-			ProgramLoader::getInstance()->getBinary());
-	unsigned int syscall_code = getOperandValue<unsigned int>(1);
-
-	// Retrieve the function to be executed
-	ExecuteSyscallFn fn = WorkItem::execute_syscall_fn[syscall_code];
-	(this->*fn)();
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-}
-
 
 void WorkItem::ExecuteInst_ALLOCA()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_CLEARDETECTEXCEPT()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_CLOCK()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_CUID()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2546,31 +2249,7 @@ void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
 }
 
 
-void WorkItem::ExecuteInst_DEBUGTRAP()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
 void WorkItem::ExecuteInst_DIM()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_DISPATCHID()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_DISPATCHPTR()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_GETDETECTEXCEPT()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2588,49 +2267,13 @@ void WorkItem::ExecuteInst_GRIDSIZE()
 }
 
 
-void WorkItem::ExecuteInst_LANEID()
+void WorkItem::ExecuteInst_PACKETCOMPLETIONSIG()
 {
 	throw misc::Panic("Instruction not implemented");
 }
 
 
-void WorkItem::ExecuteInst_MAXCUID()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_MAXWAVEID()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_NULLPTR()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QID()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_QPTR()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_SETDETECTEXCEPT()
-{
-	throw misc::Panic("Instruction not implemented");
-}
-
-
-void WorkItem::ExecuteInst_WAVEID()
+void WorkItem::ExecuteInst_PACKETID()
 {
 	throw misc::Panic("Instruction not implemented");
 }
@@ -2650,10 +2293,6 @@ void WorkItem::ExecuteInst_WORKGROUPSIZE()
 
 void WorkItem::ExecuteInst_WORKITEMABSID()
 {
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigInstEntry inst(stack_top->getPc(), binary);
-
 	unsigned int dim = getOperandValue<unsigned int>(1);
 	switch(dim)
 	{
@@ -2692,6 +2331,151 @@ void WorkItem::ExecuteInst_WORKITEMID()
 {
 	throw misc::Panic("Instruction not implemented");
 }
+
+
+void WorkItem::ExecuteInst_CLEARDETECTEXCEPT()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_GETDETECTEXCEPT()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_SETDETECTEXCEPT()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_ADDQUEUEWRITEINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_AGENTCOUNT()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_AGENTID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_CASQUEUEWRITEINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_LDK()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_LDQUEUEREADINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_LDQUEUEWRITEINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_QUEUEID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_QUEUEPTR()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_STQUEUEREADINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_STQUEUEWRITEINDEX()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_CLOCK()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_CUID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_DEBUGTRAP()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_GROUPBASEPTR()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_KERNARGBASEPTR()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_LANEID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_MAXCUID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_MAXWAVEID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_NULLPTR()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
+
+void WorkItem::ExecuteInst_WAVEID()
+{
+	throw misc::Panic("Instruction not implemented");
+}
+
 
 
 void WorkItem::ExecuteInst_unsupported()

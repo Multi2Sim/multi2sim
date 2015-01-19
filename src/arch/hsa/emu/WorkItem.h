@@ -22,9 +22,8 @@
 
 #include <memory>
 
-#include <arch/hsa/asm/BrigInstEntry.h>
-#include <arch/hsa/asm/BrigDirEntry.h>
-#include <arch/hsa/asm/BrigStrEntry.h>
+#include <arch/hsa/asm/BrigCodeEntry.h>
+#include <arch/hsa/asm/BrigDataEntry.h>
 #include <arch/hsa/asm/BrigOperandEntry.h>
 #include <arch/hsa/asm/BrigImmed.h>
 
@@ -41,6 +40,17 @@ namespace HSA
 class Emu;
 class WorkGroup;
 class ProgramLoader;
+
+/// List of HSA opcode
+enum InstOpcode
+{
+#define DEFINST(name, opcode, opstr) \
+	INST_##name,
+#include <arch/hsa/asm/Inst.def>
+#undef DEFINST
+	// Max
+	InstOpcodeCount
+};
 
 /// HSA work item
 class WorkItem
@@ -78,7 +88,7 @@ class WorkItem
 
  	// Instruction emulation functions. Each entry of Inst.def will be
  	// expanded into a function prototype.
-#define DEFINST(name, opstr) \
+#define DEFINST(name, opcode, opstr) \
  		void ExecuteInst_##name();
 #include <arch/hsa/asm/Inst.def>
 #undef DEFINST
@@ -121,30 +131,28 @@ class WorkItem
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
- 		BrigInstEntry inst(stack_top->getPc(), loader->getBinary());
- 		BrigOperandEntry operand(inst.getOperand(index), inst.getFile(),
- 				&inst, index);
+ 		BrigCodeEntry *inst = stack_top->getPc();
+ 		auto operand = inst->getOperand(index);
 
  		// Do coresponding action according to the type of operand
- 		switch (operand.getKind())
+ 		switch (operand->getKind())
  		{
- 		case BRIG_OPERAND_IMMED:
-
+ 		case BRIG_KIND_OPERAND_DATA:
  		{
- 			BrigImmed immed(operand.getImmedBytes(),
- 					operand.getOperandType());
+ 			BrigImmed immed(operand->getData(),
+ 					inst->getOperandType(index));
  			Type value = immed.getImmedValue<Type>();
  			return value;
  		}
 
- 		case BRIG_OPERAND_WAVESIZE:
+ 		case BRIG_KIND_OPERAND_WAVESIZE:
 
  			return 1;
 
- 		case BRIG_OPERAND_REG:
+ 		case BRIG_KIND_OPERAND_REG:
 
  		{
- 			std::string register_name = operand.getRegisterName();
+ 			std::string register_name = operand->getRegisterName();
  			return stack_top->getRegisterValue<Type>(register_name);
  		}
 
@@ -163,18 +171,17 @@ class WorkItem
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
- 		BrigInstEntry inst(stack_top->getPc(), loader->getBinary());
- 		BrigOperandEntry operand(inst.getOperand(index), inst.getFile(),
- 				&inst, index);
+ 		BrigCodeEntry *inst = stack_top->getPc();
+ 		auto operand = inst->getOperand(index);
 
  		// Do corresponding action according to the type of operand
  		// I do not think there should be other type except reg
- 		switch (operand.getKind())
+ 		switch (operand->getKind())
  		{
- 		case BRIG_OPERAND_REG:
+ 		case BRIG_KIND_OPERAND_REG:
 
  		{
- 			std::string register_name = operand.getRegisterName();
+ 			std::string register_name = operand->getRegisterName();
  			stack_top->setRegisterValue<Type>(register_name, value);
  			break;
  		}
@@ -189,6 +196,9 @@ class WorkItem
  	// Table of functions that implement instructions
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
 
+ 	// Process directives befor an instruction
+ 	void ProcessRelatedDirectives();
+
 
 
 
@@ -201,41 +211,6 @@ class WorkItem
 
  	// Allocate memory for variable
  	void DeclearVariable();
-
- 	// Process directives between last PC and current PC
- 	void ProcessRelatedDirectives();
-
-
-
-
- 	//
- 	// Functions and fields related to system call services
- 	//
-
- 	// Prototype of member function of class WorkItem devoted to the
-	// execution of the Syscall services
-	typedef void (WorkItem::*ExecuteSyscallFn)();
-
-	// Enumeration with all syscall codes
-	enum
-	{
-		SyscallCode_nop = 0,
-#define DEFSYSCALL(name, code) SyscallCode_##name = code,
-#include "Syscall.def"
-#undef DEFSYSCALL
-		SyscallCodeCount
-	};
-
-	// Syscall follows the SPIM simulator style. Syscall emulation
-	// functions. Each entry of Syscall.def will be expanded into a
-	// function prototype.
-#define DEFSYSCALL(name, code) \
-		void ExecuteSyscall_##name();
-#include "Syscall.def"
-#undef DEFSYSCALL
-
-	// Table of functions that implement instructions
-	static ExecuteSyscallFn execute_syscall_fn[SyscallCodeCount + 1];
 
  public:
 

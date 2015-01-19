@@ -18,6 +18,7 @@
  */
 
 #include "StackFrame.h"
+#include "WorkItem.h"
 #include "Emu.h"
 
 namespace HSA
@@ -33,10 +34,7 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 
 	// Set the program counter to be pointing to the first entry of the
 	// function
-	pc = function->getEntryPoint();
-
-	// Set next directive to be processed to the first in function directive
-	next_dir = function->getFirstInFunctionDirective();
+	pc = function->getFirstEntry();
 
 	// Allocate register space
 	this->register_storage.reset(new char[function->getRegisterSize()]);
@@ -51,10 +49,9 @@ StackFrame::~StackFrame()
 {
 }
 
-void StackFrame::setPc(char *pc)
+void StackFrame::setPc(std::unique_ptr<BrigCodeEntry> pc)
 {
-	// Otherwise move pc;
-	this->pc = pc;
+	this->pc = std::move(pc);
 }
 
 
@@ -66,8 +63,9 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("  Function: %s, \n", function->getName().c_str());
 
 	// Dump program counter and current instruction
-	os << misc::fmt("  Program counter: 0x%llx, ", (unsigned long long)pc);
-	os << BrigInstEntry(pc, ProgramLoader::getInstance()->getBinary());
+	os << misc::fmt("  Program counter (offset in code section): 0x%x, ",
+			pc->getOffset());
+	pc->Dump(os);
 	os << "\n";
 
 	// Dump Register status
@@ -164,15 +162,6 @@ void StackFrame::DumpRegister(const std::string &name,
 		break;
 	}
 	os << "\n";
-}
-
-
-unsigned int StackFrame::getCodeOffset() const
-{
-	BrigSection *code_section =
-		ProgramLoader::getInstance()->getBinary()->getBrigSection(BrigSectionCode);
-	char *code_buffer = (char *)code_section->getBuffer();
-	return pc - code_buffer;
 }
 
 }  // namespace HSA

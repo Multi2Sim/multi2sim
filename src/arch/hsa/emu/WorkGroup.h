@@ -87,7 +87,7 @@ public:
 	}
 
 	// Add work item into current work group
-	void addWorkItem(WorkItem *work_item);
+	void addWorkItem(std::unique_ptr<WorkItem> work_item);
 
 	/// Return work group flattened id
 	unsigned int getGroupFlattenedId();

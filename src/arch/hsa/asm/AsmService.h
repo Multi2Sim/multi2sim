@@ -129,6 +129,10 @@ public:
 	/// Convert register kind to string
 	static std::string RegisterKindToString(BrigRegisterKind register_kind);
 
+	/// Conver register to string
+	static std::string RegisterToString(BrigRegisterKind register_kind,
+			unsigned short register_number);
+
 	/// Convert width to string
 	static std::string WidthToString(BrigWidth width);
 

@@ -106,9 +106,7 @@ void BrigOperandEntry::DumpOperandAddress(BrigTypeX type = BRIG_TYPE_NONE,
 void BrigOperandEntry::DumpOperandData(BrigTypeX type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
-	struct BrigOperandData *operand = (struct BrigOperandData *)base;
-	auto data = getBinary()->getDataEntryByOffset(operand->data);
-	auto immed = misc::new_unique<BrigImmed>(data->getBytes(), type);
+	auto immed = misc::new_unique<BrigImmed>(getData(), type);
 	immed->Dump(os);
 }
 
@@ -192,6 +190,23 @@ void BrigOperandEntry::DumpListOfOperand(BrigDataEntry *operands,
 }
 
 
+const unsigned char *BrigOperandEntry::getData() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_DATA:
+	{
+		struct BrigOperandData *operand = (struct BrigOperandData *)base;
+		auto data = getBinary()->getDataEntryByOffset(operand->data);
+		return data->getBytes();
+	}
+	default:
+		KindError("GetData");
+	}
+	return nullptr;
+}
+
+
 std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getSymbol() const
 {
 	switch(getKind())
@@ -253,8 +268,9 @@ BrigRegisterKind BrigOperandEntry::getRegKind() const
 		return (BrigRegisterKind)operand->regKind;
 	}
 	default:
-		throw misc::Panic("GetRegKind is not vaild for type");
+		KindError("GetRegKind");
 	}
+	return BRIG_REGISTER_CONTROL;
 }
 
 
@@ -269,8 +285,25 @@ unsigned short BrigOperandEntry::getRegNumber() const
 		return operand->regNum;
 	}
 	default:
-		throw misc::Panic("GetRegNum is not vaild for type");
+		KindError("GerRegNumber");
 	}
+	return 0;
+}
+
+
+std::string BrigOperandEntry::getRegisterName() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_OPERAND_REG:
+	{
+		return AsmService::RegisterToString(getRegKind(),
+				getRegNumber());
+	}
+	default:
+		KindError("GetRegisterName");
+	}
+	return "";
 }
 
 

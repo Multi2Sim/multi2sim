@@ -707,12 +707,9 @@ std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getNextModuleEntry() const
 BrigOpcode BrigCodeEntry::getOpcode() const
 {
 	/// Check if the entry is an inst
-	if (getKind() < BRIG_KIND_INST_BEGIN 
-			|| getKind() >= BRIG_KIND_INST_END)
+	if (!isInstruction())
 	{
-		throw misc::Panic(misc::fmt(
-				"Getting opcode is invalid for "
-				"entry of kind %d\n", getKind()));
+		KindError("GetOpcode");
 	}
 
 	// Return opcode	

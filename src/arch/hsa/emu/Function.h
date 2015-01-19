@@ -79,8 +79,11 @@ class Function
 	// Allocated register size
 	unsigned int reg_size = 0;
 
-	// Max register number for each register type
-	unsigned int max_reg[4];
+	// Maps register
+	std::map<std::string, unsigned int> reg_info;
+
+	// Add register information into table
+	void AddRegister(BrigRegisterKind kind, unsigned short number);
 
 public:
 
@@ -101,7 +104,7 @@ public:
 	}
 
 	/// Return pointer to entry point
-	BrigCodeEntry *getFirstEntry() const { return first_entry.get(); }
+	std::unique_ptr<BrigCodeEntry> getFirstEntry() const;
 
 	/// Set the last entry
 	void setLastEntry(std::unique_ptr<BrigCodeEntry> last_entry)
@@ -110,7 +113,7 @@ public:
 	}
 
 	/// Return pointer to the last entry
-	BrigCodeEntry *getLastEntry() const { return last_entry.get(); }
+	std::unique_ptr<BrigCodeEntry> getLastEntry() const;
 
 	/// Set the directive
 	void setFunctionDirective(std::unique_ptr<BrigCodeEntry> directive)
@@ -130,6 +133,7 @@ public:
 	/// Return the memory size required to hold the arguments
 	unsigned getArgumentSize() const { return arg_size; }
 
+	/*
 	/// Get the beginning iterator of arguments
 	std::map<std::string, std::unique_ptr<Variable>>::iterator
 	getArgumentIteratorBegin()
@@ -143,29 +147,32 @@ public:
 	{
 		return arg_info.end();
 	}
-
-	/// Add the register to the register list
-	void addRegister(BrigRegisterKind kind, unsigned short number);
+	*/
 
 	/// Allocate register
 	void AllocateRegister(unsigned int *max_reg);
 
 	/// Return the offset of an register. If the register does not exist,
 	/// return -1.
-	unsigned int getRegisterOffset(BrigRegisterKind kind,
-			unsigned short number) const;
+	unsigned int getRegisterOffset(const std::string &name) const;
+
+	/// Return a the register offset table
+	const std::map<std::string, unsigned int> getRegisterInformation() const
+	{
+		return reg_info;
+	}
 
 	/// Return the size of register required
 	unsigned int getRegisterSize() const { return reg_size; }
 
 	/// Copy variable information and value from caller's argument scope
 	/// to callee's argument scope
-	// void PassByValue(VariableScope *caller_scope,
-	//		VariableScope *callee_scope, BrigCodeEntry *call_inst);
+	void PassByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigCodeEntry *call_inst);
 
 	/// Copy return value from the calle to caller
-	// void PassBackByValue(VariableScope *caller_scope,
-	//		VariableScope *callee_scope, BrigCodeEntry *call_inst);
+	void PassBackByValue(VariableScope *caller_scope,
+			VariableScope *callee_scope, BrigCodeEntry *call_inst);
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;

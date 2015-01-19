@@ -99,7 +99,7 @@ public:
 	{
 		if (os && active)
 			*os << prefix << val;
-		Flush();
+		// Flush();
 		return *this;
 	}
 
