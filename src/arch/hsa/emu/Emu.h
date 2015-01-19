@@ -26,7 +26,7 @@
 #include <lib/cpp/Debug.h>
 #include <memory/Memory.h>
 #include <memory/Manager.h>
-#include <arch/hsa/driver/runtime.h>
+//#include <arch/hsa/driver/runtime.h>
 
 #include "AQLQueue.h"
 #include "Component.h"
