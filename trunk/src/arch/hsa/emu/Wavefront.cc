@@ -60,9 +60,9 @@ void Wavefront::Dump(std::ostream &os = std::cout) const
 }
 
 
-void Wavefront::addWorkItem(WorkItem *work_item)
+void Wavefront::addWorkItem(std::unique_ptr<WorkItem> work_item)
 {
-	this->work_items.push_back(std::unique_ptr<WorkItem>(work_item));
+	this->work_items.push_back(std::move(work_item));
 }
 
 }  // namespace HSA

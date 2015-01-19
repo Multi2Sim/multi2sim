@@ -65,7 +65,7 @@ void WorkGroup::Dump(std::ostream &os = std::cout) const
 }
 
 
-void WorkGroup::addWorkItem(WorkItem *work_item)
+void WorkGroup::addWorkItem(std::unique_ptr<WorkItem> work_item)
 {
 	// Get work item id and wave front id it should belongs to
 	unsigned int workitem_flattened_id = work_item->getFlattenedId();
@@ -88,7 +88,7 @@ void WorkGroup::addWorkItem(WorkItem *work_item)
 
 
 	// Insert the work item into the wave front
-	wavefront->addWorkItem(work_item);
+	wavefront->addWorkItem(std::move(work_item));
 }
 
 
