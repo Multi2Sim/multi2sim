@@ -18,6 +18,8 @@
  */
 
 #include "ProgramLoader.h"
+#include "WorkGroup.h"
+#include "WorkItem.h"
 #include "Grid.h"
 
 namespace HSA
@@ -51,7 +53,6 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	this->kernel_args = packet->getKernargAddress();
 
 	// Create work items
-	/*
 	for (unsigned int i = 0; i < grid_size; i++)
 	{
 		unsigned int z = i / group_size_x / group_size_y;
@@ -59,8 +60,6 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
 		deployWorkItem(x, y, z);
 	}
-	*/
-
 }
 
 
@@ -72,13 +71,13 @@ Grid::~Grid()
 bool Grid::Execute()
 {
 	bool on_going = false;
-	/*
+
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		if (it->second->Execute())
 			on_going = true;
 	}
-	*/
+
 	return on_going;
 }
 
@@ -88,16 +87,16 @@ void Grid::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("***** %dD Grid (%d x %d x %d) *****\n",
 			dimension, getGridSizeX(),
 			getGridSizeY(), getGridSizeZ());
-	/*
+
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		os << *(it->second.get());
 	}
-	*/
+
 	os << "***** **** *****\n";
 }
 
-/*
+
 void Grid::deployWorkItem(unsigned int abs_id_x,
 			unsigned int abs_id_y,
 			unsigned int abs_id_z)
@@ -120,23 +119,23 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 	WorkGroup *work_group = it->second.get();
 
 	// Create work item
-	WorkItem *work_item = new WorkItem(work_group,
+	auto work_item = misc::new_unique<WorkItem>(work_group,
 			abs_id_x, abs_id_y, abs_id_z,
 			root_function);
 
 	// Add created work item into work group
-	work_group->addWorkItem(work_item);
+	work_group->addWorkItem(std::move(work_item));
 }
 
 
 void Grid::createWorkGroup(unsigned int id_x, unsigned int id_y,
 			unsigned int id_z)
 {
-	WorkGroup *work_group = new WorkGroup(this, id_x, id_y, id_z);
+	auto work_group = misc::new_unique<WorkGroup>(this, id_x, id_y, id_z);
 	unsigned int flattened_id = work_group->getGroupFlattenedId();
 	workgroups.insert(std::make_pair(flattened_id,
-			std::unique_ptr<WorkGroup>(work_group)));
+			std::move(work_group)));
 }
-*/
+
 
 }  // namespace HSA

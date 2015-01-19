@@ -17,12 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
 #include <lib/cpp/String.h>
-#include <arch/hsa/asm/BrigEntry.h>
+#include <arch/hsa/asm/BrigCodeEntry.h>
+#include <arch/hsa/asm/BrigOperandEntry.h>
 #include <arch/hsa/asm/AsmService.h>
 
 #include "Emu.h"
 #include "AQLQueue.h"
+#include "ProgramLoader.h"
 #include "Function.h"
 
 namespace HSA
@@ -31,6 +35,20 @@ namespace HSA
 Function::Function(const std::string& name) :
 		name(name)
 {
+}
+
+
+std::unique_ptr<BrigCodeEntry> Function::getFirstEntry() const
+{
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+	return binary->getCodeEntryByOffset(first_entry->getOffset());
+}
+
+
+std::unique_ptr<BrigCodeEntry> Function::getLastEntry() const
+{
+	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
+	return binary->getCodeEntryByOffset(last_entry->getOffset());
 }
 
 
@@ -55,84 +73,65 @@ void Function::addArgument(Variable *argument)
 }
 
 
-unsigned int Function::getRegisterOffset(BrigRegisterKind kind,
-		unsigned short number) const
+void Function::AddRegister(BrigRegisterKind kind, unsigned short number)
 {
-	unsigned int offset = 0;
+	// Get register's string representation
+	std::string register_name = AsmService::RegisterToString(kind, number);
+
+	// Check if the register has been added
+	if (reg_info.find(register_name) != reg_info.end())
+		throw misc::Panic("Duplicate register name");
+
+	// Allocate size for the register
+	reg_info.insert(std::make_pair(register_name, reg_size));
 	switch(kind)
 	{
 	case BRIG_REGISTER_CONTROL:
-		return 0;
 		break;
 	case BRIG_REGISTER_SINGLE:
-		return number;
+		reg_size += 4;
 		break;
 	case BRIG_REGISTER_DOUBLE:
-		offset += max_reg[BRIG_REGISTER_SINGLE];
-		return offset + 2 * number;
+		reg_size += 8;
 		break;
 	case BRIG_REGISTER_QUAD:
-		offset += max_reg[BRIG_REGISTER_QUAD];
-		offset += max_reg[2] * 2;
-		return offset + 2 * number;
+		reg_size += 16;
 		break;
 	}
-	return 0;
+
 }
 
-/*
-void Function::addRegister(BrigRegisterKind kind, unsigned short number)
+
+unsigned int Function::getRegisterOffset(const std::string &name) const
 {
-	// Validate the name of the register
-	int size = getRegisterSizeByName(kind);
+	auto it = reg_info.find(name);
+	if (it == reg_info.end())
+		throw misc::Panic(misc::fmt("Register %s not found",
+				name.c_str()));
 
-	// Skip C registers
-	// if (size == 1)
-	//	return;
-
-	// Check if the register exists
-	int offset = getRegisterOffset(kind, number);
-	if (offset >= 0)
-		return;
-
-	// Check if enough space is available
-	if (reg_size + size > 512)
-		throw Error(misc::fmt("No enough space to allocated register %s"
-				"in function %s.",
-				name.c_str(), this->name.c_str()));
-
-	// Insert the register information
-	reg_info.insert(std::make_pair(name, reg_size));
-	reg_size += size;
+	return it->second;
 }
-*/
 
 
 void Function::AllocateRegister(unsigned int *max_reg)
 {
-	reg_size += max_reg[BRIG_REGISTER_SINGLE] * 1;
-	reg_size += max_reg[BRIG_REGISTER_DOUBLE] * 2;
-	reg_size += max_reg[BRIG_REGISTER_QUAD] * 4;
 	for (unsigned int i = 0; i < 4; i++)
 	{
-		this->max_reg[i] = max_reg[i];
+		for(unsigned int j = 0; j < max_reg[i]; j++)
+		{
+			AddRegister((BrigRegisterKind)i, j);
+		}
 	}
 }
 
 
-/*
 void Function::PassByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigInstEntry *call_inst)
+			VariableScope *callee_scope, BrigCodeEntry *call_inst)
 {
 	// Get arguments operands
 	//BrigOperandArgumentList *out_args =
 	//		(BrigOperandArgumentList *)call_inst->getOperand(0);
-	BrigOperandArgumentList *in_args =
-			(BrigOperandArgumentList *)call_inst->getOperand(2);
-
-	// Get the binary
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-
+	auto in_args = call_inst->getOperand(2);
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		// Get argument information from the function
@@ -149,13 +148,8 @@ void Function::PassByValue(VariableScope *caller_scope,
 			unsigned int index = argument->getIndex();
 
 			// Get the directive information and name
-			BrigDirectiveVariable *variable_dir =
-					(BrigDirectiveVariable *)
-					BrigDirEntry::GetDirByOffset(binary,
-							in_args->elements[index]);
-			std::string name_in_caller =
-					BrigStrEntry::GetStringByOffset(binary,
-					variable_dir->name);
+			auto variable_decl = in_args->getElement(index);
+			std::string name_in_caller = variable_decl->getName();
 
 			// Get buffer in caller;
 			char *caller_buffer =
@@ -164,25 +158,19 @@ void Function::PassByValue(VariableScope *caller_scope,
 					callee_scope->getBuffer(argument->getName());
 
 			// Copy memory
-			memcpy(callee_buffer, caller_buffer,
-					BrigEntry::type2size(
-							argument->getType()));
-
+			BrigTypeX type = (BrigTypeX)argument->getType();
+			unsigned short arg_size = AsmService::TypeToSize(type);
+			memcpy(callee_buffer, caller_buffer, arg_size);
 		}
 	}
 }
-*/
 
-/*
+
 void Function::PassBackByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigInstEntry *call_inst)
+			VariableScope *callee_scope, BrigCodeEntry *call_inst)
 {
-	// Get the binary
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-
 	// Get arguments operands
-	BrigOperandArgumentList *out_args =
-			(BrigOperandArgumentList *)call_inst->getOperand(0);
+	auto out_args = call_inst->getOperand(0);
 
 	// Traverse all arguments
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
@@ -197,30 +185,26 @@ void Function::PassBackByValue(VariableScope *caller_scope,
 			unsigned int index = argument->getIndex();
 
 			// Get the directive information and name
-			BrigDirectiveVariable *variable_dir =
-					(BrigDirectiveVariable *)
-					BrigDirEntry::GetDirByOffset(binary,
-							out_args->elements[index]);
-			std::string name_in_caller =
-					BrigStrEntry::GetStringByOffset(binary,
-					variable_dir->name);
+			auto variable_decl = out_args->getElement(index);
+			std::string name_in_caller = variable_decl->getName();
 
 			// Get buffer in caller;
 			char *caller_buffer =
 					caller_scope->getBuffer(name_in_caller);
 			char *callee_buffer =
 					callee_scope->getBuffer(argument->getName());
+			assert(caller_buffer && callee_buffer);
 
 			// Copy memory
-			memcpy(caller_buffer, callee_buffer,
-					BrigEntry::type2size(
-							argument->getType()));
+			BrigTypeX type = (BrigTypeX)argument->getType();
+			unsigned short arg_size = AsmService::TypeToSize(type);
+			memcpy(caller_buffer, callee_buffer, arg_size);
 		}
 
 	}
 
 }
-*/
+
 
 
 void Function::Dump(std::ostream &os = std::cout) const
@@ -268,15 +252,11 @@ void Function::DumpRegisterInfo(std::ostream &os = std::cout) const
 {
 	// Dump the argument information
 	os << misc::fmt("\n\t***** Registers *****\n");
-	for (unsigned int i = 0; i < 4; i++)
+	for (auto it = reg_info.begin(); it != reg_info.end(); it++)
 	{
-		for (unsigned int j = 0; j < max_reg[i]; j++)
-		{
-			os << misc::fmt("\tregister %s%d, offset %d\n",
-					AsmService::RegisterKindToString((BrigRegisterKind)i).c_str(),
-					j,
-					getRegisterOffset((BrigRegisterKind)i, j));
-		}
+		os << misc::fmt("\tregister %s, offset %d\n",
+				it->first.c_str(),
+				getRegisterOffset(it->first));
 	}
 	os << misc::fmt("\tRegister size allocated %d bytes\n", reg_size);
 	os << misc::fmt("\t*********************\n\n");

@@ -66,16 +66,16 @@ class Grid
 	unsigned long long kernel_args;
 
 	// List of work groups, maps work group flattened absolute id
-	// std::map<unsigned int, std::unique_ptr<WorkGroup>> workgroups;
+	std::map<unsigned int, std::unique_ptr<WorkGroup>> workgroups;
 
 	// Deploy tasks on work item
-	// void deployWorkItem(unsigned int abs_id_x,
-	// 		unsigned int abs_id_y,
-	// 		unsigned int abs_id_z);
+	void deployWorkItem(unsigned int abs_id_x,
+	 		unsigned int abs_id_y,
+	 		unsigned int abs_id_z);
 
 	// Create work group
-	// void createWorkGroup(unsigned int id_x, unsigned int id_y,
-	//		unsigned int id_z);
+	void createWorkGroup(unsigned int id_x, unsigned int id_y,
+			unsigned int id_z);
 
 public:
 

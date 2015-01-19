@@ -40,10 +40,7 @@ class StackFrame
 	WorkItem *work_item;
 
 	// Pointer to the instruction to be executed
-	char *pc;
-
-	// Pointer to the directive to be executed
-	char *next_dir;
+	std::unique_ptr<BrigCodeEntry> pc;
 
 	// Function input and output arguments
 	std::unique_ptr<VariableScope> function_arguments;
@@ -87,10 +84,10 @@ public:
 	Function *getFunction() const { return function; }
 
 	/// Return the program counter
-	char *getPc() const { return pc; }
+	BrigCodeEntry *getPc() const { return pc.get(); }
 
 	/// Set the program counter
-	void setPc(char *pc);
+	void setPc(std::unique_ptr<BrigCodeEntry> pc);
 
 	/// Set return callback function
 	void setReturnCallback(CallbackFn callback,
@@ -193,16 +190,6 @@ public:
 
 	/// Return variable scope
 	VariableScope *getVariableScope() const { return variable_scope.get(); }
-
-	/// Convert the PC pointer to the offset of the current instruction
-	/// in code section
-	unsigned int getCodeOffset() const;
-
-	/// Get next directive
-	char *getNextDirective() const { return next_dir; }
-
-	/// Set next directive
-	void setNextDirective(char *directive) { next_dir = directive; }
 
 	/// Get the return callback function
 	CallbackFn getReturnCallback() const 

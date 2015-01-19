@@ -63,7 +63,7 @@ public:
 	void Dump(std::ostream &os) const;
 
 	/// Add work item into list
-	void addWorkItem(WorkItem *work_item);
+	void addWorkItem(std::unique_ptr<WorkItem> work_item);
 };
 
 }  // namespace HSA

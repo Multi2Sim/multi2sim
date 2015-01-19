@@ -78,11 +78,17 @@ public:
 	void DumpListOfOperand(BrigDataEntry *operands, BrigTypeX type,
 			std::ostream& os) const;
 
+	/// Return data bytes of data field
+	const unsigned char *getData() const;
+
 	/// Return the symbol field of the operand
 	std::unique_ptr<BrigCodeEntry> getSymbol() const;
 
 	/// Return the reg field of the operand
 	std::unique_ptr<BrigOperandEntry> getReg() const;
+
+	/// Return register name
+	std::string getRegisterName() const;
 
 	/// Return the offset field of the operand
 	unsigned long long getOffset() const;
