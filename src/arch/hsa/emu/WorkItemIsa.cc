@@ -2183,13 +2183,12 @@ void WorkItem::ExecuteInst_CALL()
 
 	// Try to intercept the function execution if the function is runtime
 	// function
-	/*
 	if (Driver::getInstance()->Intercept(function_name, stack_top))
 	{
-		// MovePcForwardByOne();
+		MovePcForwardByOne();
 		return;
 	}
-	*/
+
 
 	// Retrieve the function
 	Function *function = loader->getFunction(function_name);

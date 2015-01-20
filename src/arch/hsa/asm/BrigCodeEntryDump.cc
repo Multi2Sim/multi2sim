@@ -282,7 +282,7 @@ void BrigCodeEntry::DumpDirVersion(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstAddr(std::ostream &os = std::cout) const
 {
-	DumpIndent();
+	DumpIndent(os);
 	os << AsmService::OpcodeToString(getOpcode());	
 	AsmService::DumpUnderscore(AsmService::SegmentToString(getSegment()), 
 			os);
@@ -365,7 +365,7 @@ void BrigCodeEntry::DumpInstBr(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 {
-	DumpIndent();
+	DumpIndent(os);
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::CompareOperationToString(
 			getCompareOperation()), os);
@@ -387,7 +387,7 @@ void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpInstCvt(std::ostream &os = std::cout) const
 {
-	DumpIndent();
+	DumpIndent(os);
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
