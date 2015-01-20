@@ -21,9 +21,11 @@
 	throw misc::Panic(misc::fmt("Unimplemented driver function %s", \
 	__FUNCTION__));
 
-#include <arch/hsa/asm/BrigDef.h>
 #include <arch/hsa/emu/Emu.h>
 #include <arch/hsa/emu/Component.h>
+#include <arch/hsa/emu/WorkItem.h>
+#include <arch/hsa/emu/StackFrame.h>
+#include <arch/hsa/emu/ProgramLoader.h>
 
 #include "Driver.h"
 

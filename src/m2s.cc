@@ -34,7 +34,7 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
-//#include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <arch/arm/asm/Asm.h>
@@ -168,8 +168,8 @@ void RegisterDrivers()
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 
 	// HSA driver
-	// HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	// driver_pool->Register(hsa_driver);
+	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	driver_pool->Register(hsa_driver);
 
 	// Kepler driver
 	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
@@ -514,7 +514,7 @@ int MainProgram(int argc, char **argv)
 	// Read command line
 	RegisterOptions();
 	HSA::Asm::RegisterOptions();
-	// HSA::Driver::RegisterOptions();
+	HSA::Driver::RegisterOptions();
 	HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
@@ -538,7 +538,7 @@ int MainProgram(int argc, char **argv)
 	// Process command line
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
-//	HSA::Driver::ProcessOptions();
+	HSA::Driver::ProcessOptions();
 	HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
