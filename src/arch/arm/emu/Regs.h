@@ -162,6 +162,9 @@ public:
 	/// Read from Stack Pointer
 	unsigned int getSP(){ return sp; }
 
+	/// Read from Co-processor Register
+	regsCoproc& getCP15(){ return cp15; }
+
 };
 
 }

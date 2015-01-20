@@ -33,11 +33,15 @@ libemu_a_SOURCES = \
 	Emu.h \
 	Emu.cc \
 	\
+	Signal.h \
+	\
 	Context.h \
 	Context.cc \
 	ContextLoader.cc \
 	ContextIsa.cc \
 	ContextIsaArm32.cc \
+	ContextSyscall.cc \
+	ContextSignal.cc \
 	\
 	Regs.h \
 	Regs.cc

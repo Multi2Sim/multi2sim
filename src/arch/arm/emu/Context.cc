@@ -578,8 +578,8 @@ void Context::ExecuteInst()
 		regs.incPC(2);
 		if (inst.getThumb16Opcode())
 		{
-			ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
-			(this->*fn)();
+			// FIXME ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
+			// FIXME (this->*fn)();
 		}
 		break;
 
@@ -588,8 +588,8 @@ void Context::ExecuteInst()
 		regs.incPC(2);
 		if (inst.getThumb32Opcode())
 		{
-			ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
-			(this->*fn)();
+			// FIXME ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
+			// FIXME (this->*fn)();
 		}
 		break;
 
