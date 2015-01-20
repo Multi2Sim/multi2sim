@@ -17,7 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
 #include <arch/hsa/emu/Emu.h>
+#include <arch/hsa/emu/StackFrame.h>
+#include <arch/hsa/emu/WorkItem.h>
+#include <arch/hsa/asm/AsmService.h>
 
 #include "Driver.h"
 
@@ -178,55 +183,45 @@ void Driver::ExitInterceptedEnvironment(unsigned arg_address,
 void Driver::SerializeArguments(char *arg_buffer, StackFrame *stack_top)
 {
 	// Get the function call instruction
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	BrigInstEntry inst(stack_top->getPc(), binary);
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Since we are writing each argument into the arg_buffer, we keep 
 	// track of the offset the beginning place we are about to write to
 	unsigned offset = 0;
 
 	// Get input and output operands
-	BrigOperandArgumentList *out_args = 
-		(BrigOperandArgumentList *)inst.getOperand(0);
-	BrigOperandArgumentList *in_args = 
-		(BrigOperandArgumentList *)inst.getOperand(2);
+	auto out_args = inst->getOperand(0);
+	auto in_args = inst->getOperand(2);
 
 	// Traverse output argument, do not copy value, but make space for 
 	// them. 
-	for (unsigned int i = 0; i < out_args->elementCount; i++)
+	for (unsigned int i = 0; i < out_args->getElementCount(); i++)
 	{
 		// Get the argument definition
-		BrigDirectiveSymbol *symbol = 
-				(BrigDirectiveSymbol *)
-				BrigDirEntry::GetDirByOffset(binary, 
-						out_args->elements[i]);
+		auto symbol = out_args->getElement(i);
 
 		// Retrieve argument size
-		unsigned arg_size = BrigEntry::type2size(symbol->type);
+		unsigned arg_size = AsmService::TypeToSize(symbol->getType());
 
 		// Move the pointer forward
 		offset += arg_size;
 	}
 
 	// Traverse input arguments, copy values
-	for (unsigned int i = 0; i < in_args->elementCount; i++)
+	for (unsigned int i = 0; i < in_args->getElementCount(); i++)
 	{
 		// Retrieve argument definition
-		BrigDirectiveSymbol *symbol = 
-				(BrigDirectiveSymbol *)
-				BrigDirEntry::GetDirByOffset(binary, 
-						in_args->elements[i]);
+		auto symbol = in_args->getElement(i);
 
 		// Get argument name
-		std::string arg_name = BrigStrEntry::GetStringByOffset(binary,
-				symbol->name);
+		std::string arg_name = symbol->getName();
 
 		// Get the variable buffer in caller's stack frame
 		char *buf_in_caller = stack_top->getArgumentScope()
 				->getBuffer(arg_name);
-		
+
 		// Get argument size
-		unsigned arg_size = BrigEntry::type2size(symbol->type);
+		unsigned arg_size = AsmService::TypeToSize(symbol->getType());
 
 		// Copy value into callee's buffer
 		memcpy(arg_buffer + offset, buf_in_caller, arg_size);
@@ -243,8 +238,7 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 		StackFrame *stack_top)
 {
 	// Get the function call instruction
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	BrigInstEntry inst(stack_top->getPc(), binary);
+	// BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get the function object
 	Function *function = ProgramLoader::getInstance()
@@ -267,7 +261,7 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 	// Serialize function arguments
 	SerializeArguments(arg_buffer, stack_top);
 
-	// Put the 4 byte number indicating if it is from HSAIL in
+	// Put the 4 byte number indicating if it is from HSAIL
 	unsigned int *lang_buf = (unsigned int *)(arg_buffer + 
 			function->getArgumentSize());
 	*lang_buf = 1;
@@ -285,31 +279,24 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 void Driver::PassBackByValue(unsigned arg_address, StackFrame *stack_top)
 {
 	// Get the function instruction
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	BrigInstEntry inst(stack_top->getPc(), binary);
+	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get output arguments
-	struct BrigOperandArgumentList *out_args =
-			(struct BrigOperandArgumentList *)inst.getOperand(0);
+	auto out_args = inst->getOperand(0);
 
 	// Offset value
 	unsigned offset = 0;
 
 	// Traverse output arguments
-	for (unsigned int i = 0; i < out_args->elementCount; i++)
+	for (unsigned int i = 0; i < out_args->getElementCount(); i++)
 	{
-		struct BrigDirectiveSymbol *symbol=
-				(struct BrigDirectiveSymbol *)
-				BrigDirEntry::GetDirByOffset(binary,
-						out_args->elements[i]);
-		std::string arg_name =
-				BrigStrEntry::GetStringByOffset(binary,
-						symbol->name);
+		auto symbol= out_args->getElement(i);
+		std::string arg_name = symbol->getName();
 		char *buf_in_caller = stack_top->getArgumentScope()
 					->getBuffer(arg_name);
 
 		// Retrieve argument size
-		unsigned arg_size = BrigEntry::type2size(symbol->type);
+		unsigned arg_size = AsmService::TypeToSize(symbol->getType());
 
 		// Get argument buffer
 		char *buffer_in_callee = Emu::getInstance()->getMemory()->
