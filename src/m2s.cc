@@ -38,6 +38,7 @@
 #include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <arch/arm/asm/Asm.h>
+#include <arch/arm/emu/Emu.h>
 #include <dram/System.h>
 #include <driver/opencl/OpenCLDriver.h>
 #include <driver/opengl/OpenGLDriver.h>
@@ -141,6 +142,11 @@ void RegisterArchitectures()
 			MIPS::Asm::getInstance(),
 			MIPS::Emu::getInstance());
 
+	//ARM
+	arch_pool->Register("ARM",
+			ARM::Asm::getInstance(),
+			ARM::Emu::getInstance());
+
 }
 
 
@@ -204,8 +210,7 @@ void LoadProgram(const std::vector<std::string> &args,
 
 	case EM_ARM:
 
-		misc::fatal("%s: ARM executable not supported yet",
-				exe.c_str());
+		emu = ARM::Emu::getInstance();
 		break;
 
 	case EM_MIPS:
@@ -529,6 +534,7 @@ int MainProgram(int argc, char **argv)
 	dram::System::RegisterOptions();
 	net::System::RegisterOptions();
 	ARM::Asm::RegisterOptions();
+	ARM::Emu::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -553,6 +559,7 @@ int MainProgram(int argc, char **argv)
 	dram::System::ProcessOptions();
 	net::System::ProcessOptions();
 	ARM::Asm::ProcessOptions();
+	ARM::Emu::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers
 	RegisterArchitectures();

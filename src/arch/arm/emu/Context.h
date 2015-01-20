@@ -33,7 +33,7 @@
 #include <arch/common/FileTable.h>
 
 #include "Regs.h"
-//FIXME #include "Signal.h"
+#include "Signal.h"
 
 
 namespace ARM
@@ -343,12 +343,12 @@ class Context
 	// implemented in ContextSignal.cc.
 	//
 	///////////////////////////////////////////////////////////////////////
-	//FIXME
+
 	// Table of signal handlers, possibly shared by multiple contexts
-	//FIXME std::shared_ptr<SignalHandlerTable> signal_handler_table;
+	std::shared_ptr<SignalHandlerTable> signal_handler_table;
 
 	// Table of signal masks, each context has its own
-	//FIXME SignalMaskTable signal_mask_table;
+	SignalMaskTable signal_mask_table;
 
 	// Run a signal handler for signal \a sig. The value of \a sig must be
 	// between 1 and 64.
@@ -383,7 +383,7 @@ class Context
 	// execution of ISA thumb16 instructions. The emulator has a table indexed by an
 	// instruction identifier that points to all instruction emulation
 	// functions.
-	typedef void (Context::*ExecuteInstThumb16Fn)();
+	// FIXME typedef void (Context::*ExecuteInstThumb16Fn)();
 
 	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
@@ -391,19 +391,22 @@ class Context
 	//		0x0, 0x0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff)
 	// is expanded to
 	//	void ExecuteInstThumb16_LSL_imm();
+	// FIXME
+/*
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 	void ExecuteInstThumb16_##_name();
 #include <arch/arm/asm/InstThumb.def>
 #undef DEFINST
+ * */
 
 	// Table of functions
-	static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
+	// FIXME static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
 
 	// Prototype of a member function of class Context devoted to the
 	// execution of ISA thumb 32 instructions. The emulator has a table indexed by an
 	// instruction identifier that points to all instruction emulation
 	// functions.
-	typedef void (Context::*ExecuteInstThumb32Fn)();
+	// FIXME typedef void (Context::*ExecuteInstThumb32Fn)();
 
 	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
@@ -411,13 +414,17 @@ class Context
 	//		0x1,0x0,0x0,0x1,0x04,0xffffffff,0xffffffff,0xffffffff)
 	// is expanded to
 	//	void ExecuteInstThumb32_STREX();
+	// FIXME
+/*
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 	void ExecuteInstThumb32_##_name();
 #include <arch/arm/asm/InstThumb32.def>
 #undef DEFINST
+ *
+ */
 
 	// Table of functions
-	static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
+	// FIXME static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
 
 	// Perform rotation right operation
 	unsigned int IsaRotr(unsigned int value, int shift);
