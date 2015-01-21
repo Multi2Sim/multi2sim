@@ -30,9 +30,14 @@
 namespace ARM
 {
 
-Regs::Regs()
+Regs::Regs() : sl(0), fp(0), ip(0), sp(0), lr(0), pc(0)
 {
+	for(int i = 0; i <= 9; i++)
+	{
+		setRegister(i, 0);
+	}
 
+	getCPSR().mode = ARM_MODE_USER;
 }
 
 

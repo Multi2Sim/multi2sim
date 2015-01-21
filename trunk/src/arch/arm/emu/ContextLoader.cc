@@ -375,8 +375,8 @@ void Context::LoadBinary()
 	// we have to load the program interpreter. This means we are dealing with
 	// a dynamically linked application.
 	LoadProgramHeaders();
-	if (!loader->interp.empty())
-			LoadInterp();
+	//FIXME if (!loader->interp.empty())
+	//		LoadInterp();
 
 	// Stack
 	LoadStack();
@@ -389,8 +389,9 @@ void Context::LoadBinary()
 
 	// Register initialization
 	regs.setSP(loader->environ_base);
-	regs.setPC(loader->interp.empty() ? loader->prog_entry
-			: loader->interp_prog_entry);
+	// FIXME regs.setPC(loader->interp.empty() ? loader->prog_entry
+			//: loader->interp_prog_entry);
+	regs.setPC(loader->prog_entry);
 
 	ELFReader::Symbol *symbol = loader->binary->getSymbolByAddress(regs.getPC());
 	ContextMode mode;

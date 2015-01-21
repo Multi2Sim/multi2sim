@@ -162,6 +162,24 @@ public:
 	/// Read from Stack Pointer
 	unsigned int getSP(){ return sp; }
 
+	/// Write IP with value
+	void setIP(unsigned int value) { ip = value; }
+
+	/// Read from Instruction Pointer
+	unsigned int getIP(){ return ip; }
+
+	/// Write FP with value
+	void setFP(unsigned int value) { fp = value; }
+
+	/// Read from Frame Pointer
+	unsigned int getFP(){ return fp; }
+
+	/// Write SL with value
+	void setSL(unsigned int value) { sl = value; }
+
+	/// Read from Stack Limit
+	unsigned int getSL(){ return sl; }
+
 	/// Read from Co-processor Register
 	regsCoproc& getCP15(){ return cp15; }
 
