@@ -188,7 +188,7 @@ class Context
 	ContextInstType getInstType() { return inst_type; }
 
 	// symbol list used for getting the ARM operating mode
-	std::vector<std::unique_ptr<ELFReader::Symbol>> thumb_symbol_list;
+	std::vector<ELFReader::Symbol *> thumb_symbol_list;
 
 	// Fault Management
 	unsigned int fault_addr;
@@ -454,7 +454,7 @@ class Context
 	void IsaBranch();
 
 	// Check the condition
-	int IsaCheckCond();
+	bool IsaCheckCond();
 
 	// Store operation
 	void IsaAmode4sStr();

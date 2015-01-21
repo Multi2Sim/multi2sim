@@ -742,32 +742,32 @@ void Context::IsaRegStore(unsigned int reg_no, int value)
 
 	case AsmUserRegistersR10:
 
-		regs.setRegister(10, value);
+		regs.setSL(value);
 		break;
 
 	case AsmUserRegistersR11:
 
-		regs.setRegister(11, value);
+		regs.setFP(value);
 		break;
 
 	case AsmUserRegistersR12:
 
-		regs.setRegister(12, value);
+		regs.setIP(value);
 		break;
 
 	case AsmUserRegistersR13:
 
-		regs.setRegister(13, value);
+		regs.setSP(value);
 		break;
 
 	case AsmUserRegistersR14:
 
-		regs.setRegister(14, value);
+		regs.setLR(value);
 		break;
 
 	case AsmUserRegistersR15:
 
-		regs.setRegister(15, value + 4);
+		regs.setPC(value + 4);
 		break;
 
 	default:
@@ -834,32 +834,32 @@ void Context::IsaRegStoreSafe(unsigned int reg_no, unsigned int value)
 
 	case AsmUserRegistersR10:
 
-		regs.setRegister(10, value);
+		regs.setSL(value);
 		break;
 
 	case AsmUserRegistersR11:
 
-		regs.setRegister(11, value);
+		regs.setFP(value);
 		break;
 
 	case AsmUserRegistersR12:
 
-		regs.setRegister(12, value);
+		regs.setIP(value);
 		break;
 
 	case AsmUserRegistersR13:
 
-		regs.setRegister(13, value);
+		regs.setSP(value);
 		break;
 
 	case AsmUserRegistersR14:
 
-		regs.setRegister(14, value);
+		regs.setLR(value);
 		break;
 
 	case AsmUserRegistersR15:
 
-		regs.setRegister(15, value + 4);
+		regs.setPC(value + 4);
 		break;
 
 	default:
@@ -935,38 +935,38 @@ void Context::IsaRegLoad(unsigned int reg_no, int &value)
 
 	case AsmUserRegistersR10:
 
-		value = regs.getRegister(10);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(10));
+		value = regs.getSL();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSL());
 		break;
 
 	case AsmUserRegistersR11:
 
-		value = regs.getRegister(11);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(11));
+		value = regs.getFP();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getFP());
 		break;
 
 	case AsmUserRegistersR12:
 
-		value = regs.getRegister(12);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(12));
+		value = regs.getIP();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getIP());
 		break;
 
 	case AsmUserRegistersR13:
 
-		value = regs.getRegister(13);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(13));
+		value = regs.getSP();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSP());
 		break;
 
 	case AsmUserRegistersR14:
 
-		value = regs.getRegister(14);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(14));
+		value = regs.getLR();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getLR());
 		break;
 
 	case AsmUserRegistersR15:
 
-		value = regs.getRegister(15);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(15));
+		value = regs.getPC();
+		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getPC());
 		break;
 
 	default:
@@ -1015,7 +1015,7 @@ void Context::IsaBranch()
 }
 
 
-int Context::IsaCheckCond()
+bool Context::IsaCheckCond()
 {
 	unsigned int ret_val;
 	unsigned int cond = inst.getBytes()->brnch.cond;
@@ -1023,74 +1023,74 @@ int Context::IsaCheckCond()
 	{
 	case (AsmConditionCodesEQ):
 
-		ret_val = (regs.getCPSR().z) ? 1 : 0;
+		ret_val = (regs.getCPSR().z) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = EQ\n");
 		break;
 
 	case (AsmConditionCodesNE):
 
-		ret_val = (!(regs.getCPSR().z)) ? 1 : 0;
+		ret_val = (!(regs.getCPSR().z)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = NE\n");
 		break;
 
 	case (AsmConditionCodesCS):
 
-		ret_val = (regs.getCPSR().C) ? 1 : 0;
+		ret_val = (regs.getCPSR().C) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = CS\n");
 		break;
 
 	case (AsmConditionCodesCC):
 
-		ret_val = (!(regs.getCPSR().C)) ? 1 : 0;
+		ret_val = (!(regs.getCPSR().C)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = CC\n");
 		break;
 
 	case (AsmConditionCodesMI):
-		ret_val = (regs.getCPSR().n) ? 1 : 0;
+		ret_val = (regs.getCPSR().n) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = MI\n");
 		break;
 
 	case (AsmConditionCodesPL):
 
-		ret_val = (!(regs.getCPSR().n)) ? 1 : 0;
+		ret_val = (!(regs.getCPSR().n)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = PL\n");
 		break;
 
 	case (AsmConditionCodesVS):
 
-		ret_val = (regs.getCPSR().v) ? 1 : 0;
+		ret_val = (regs.getCPSR().v) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = VS\n");
 		break;
 
 	case (AsmConditionCodesVC):
 
-		ret_val = (!(regs.getCPSR().v)) ? 1 : 0;
+		ret_val = (!(regs.getCPSR().v)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = VC\n");
 		break;
 
 	case (AsmConditionCodesHI):
 
-		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? 1 : 0;
+		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = HI\n");
 		break;
 
 	case (AsmConditionCodesLS):
 
-		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? 1 : 0;
+		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = LS\n");
 		break;
 
 	case (AsmConditionCodesGE):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v))
-			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? 1 : 0;
+			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = GE\n");
 		break;
 
 	case (AsmConditionCodesLT):
 
 		ret_val = (((regs.getCPSR().n) & !(regs.getCPSR().v))
-			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? 1 : 0;
+			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = LT\n");
 		break;
 
@@ -1098,20 +1098,20 @@ int Context::IsaCheckCond()
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v) & !(regs.getCPSR().z))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v)
-			& !(regs.getCPSR().z))) ? 1 : 0;
+			& !(regs.getCPSR().z))) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = GT\n");
 		break;
 
 	case (AsmConditionCodesLE):
 
 		ret_val = (((regs.getCPSR().z) | (!(regs.getCPSR().n) && (regs.getCPSR().v))
-			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? 1 : 0;
+			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? true : false;
 		emu->isa_debug << misc::fmt("  Cond = LE\n");
 		break;
 
 	case (AsmConditionCodesAL):
 
-		ret_val = 1;
+		ret_val = true;
 		break;
 
 	default:
