@@ -219,8 +219,8 @@ void Context::Load(const std::vector<std::string> &args,
 		if (!(loader->binary->getSymbol(i)->getName().compare(0, 2, "$a"))
 				|| !(loader->binary->getSymbol(i)->getName().compare(0, 2, "$t")))
 		{
-			auto symbolPtr = std::unique_ptr<ELFReader::Symbol>(loader->binary->getSymbol(i));
-			thumb_symbol_list.push_back(move(symbolPtr));
+			ELFReader::Symbol *symbolPtr = loader->binary->getSymbol(i);
+			thumb_symbol_list.push_back(symbolPtr);
 		}
 	}
 }
@@ -507,6 +507,39 @@ void Context::Execute()
 
 	// Stats
 	emu->incInstructions();
+
+	if (emu->getInstructions() % 10 == 0)
+	{
+		emu->isa_debug << misc::fmt("Register Debug Dump\n");
+		emu->isa_debug << misc::fmt(
+			"r0 = 0x%x\n"
+			"r1 = 0x%x\n"
+			"r2 = 0x%x\n"
+			"r3 = 0x%x\n"
+			"r4 = 0x%x\n"
+			"r5 = 0x%x\n"
+			"r6 = 0x%x\n"
+			"r7 = 0x%x\n"
+			"r8 = 0x%x\n"
+			"r9 = 0x%x\n"
+			"r10(sl) = 0x%x\n"
+			"r11(fp) = 0x%x\n"
+			"r12(ip) = 0x%x\n"
+			"r13(sp) = 0x%x\n"
+			"r14(lr) = 0x%x\n"
+			"r15(pc) = 0x%x\n"
+			"cpsr.n	= 0x%x\n"
+			"cpsr.v	= 0x%x\n"
+			"cpsr.q	= 0x%x\n"
+			"cpsr.thumb = 0x%x\n"
+			"cpsr.C	= 0x%x\n\n",
+			regs.getRegister(0), regs.getRegister(1), regs.getRegister(2), regs.getRegister(3),
+			regs.getRegister(4), regs.getRegister(5), regs.getRegister(6), regs.getRegister(7),
+			regs.getRegister(8), regs.getRegister(9), regs.getSL(), regs.getFP(),
+			regs.getIP(), regs.getSP(), regs.getLR(), regs.getPC(),
+			regs.getCPSR().n, regs.getCPSR().v, regs.getCPSR().q,
+			regs.getCPSR().thumb, regs.getCPSR().C);
+	}
 }
 
 
@@ -556,8 +589,9 @@ void Context::ExecuteInst()
 		else
 		{
 			inst.Dump(emu->isa_debug.operator std::ostream &());
+			emu->isa_debug << misc::fmt("  (%d bytes)", 4);
 		}
-		emu->isa_debug << misc::fmt("\n");
+		//emu->isa_debug << misc::fmt("\n");
 	}
 
 	// Call instruction emulation function
@@ -596,6 +630,9 @@ void Context::ExecuteInst()
 	default:
 		throw misc::Panic(misc::fmt("Invalid instruction type"));
 	}
+
+	// debug
+	emu->isa_debug << misc::fmt("\n");
 }
 
 
@@ -646,14 +683,14 @@ void Context::Finish(int exit_code)
 
 ContextMode Context::OperateMode(unsigned int addr)
 {
-	std::unique_ptr<ELFReader::Symbol> symbol;
+	ELFReader::Symbol *symbol;
 	ContextMode mode;
 
 	// Locate the symbol tag in the sorted symbol list by input address
 	unsigned int tag_index;
 	for (unsigned int i = 0; i < thumb_symbol_list.size(); ++i)
 	{
-		symbol.reset(thumb_symbol_list[i].get());
+		symbol = thumb_symbol_list[i];
 		if(symbol->getValue() > addr)
 		{
 			tag_index = i - 1;
@@ -662,7 +699,14 @@ ContextMode Context::OperateMode(unsigned int addr)
 	}
 
 	// Get the ARM operating mode based on the symbol
-	symbol.reset(thumb_symbol_list[tag_index].get());
+	if (tag_index < 0 || tag_index >= thumb_symbol_list.size())
+	{
+		symbol = nullptr;
+	}
+	else
+	{
+		symbol = thumb_symbol_list[tag_index];
+	}
 	if(symbol)
 	{
 		if(!(symbol->getName().compare(0, 2, "$a")))
