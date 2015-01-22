@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARM_ASM_ASM_H
-#define ARM_ASM_ASM_H
+#ifndef ARCH_ARM_ASM_ASM_H
+#define ARCH_ARM_ASM_ASM_H
 
 
 #include <iostream>
@@ -276,11 +276,11 @@ public:
 		int op4 , int op5 , int op6, InstThumb16Opcode inst_name);
 
 	/// ELF file processing function
-	void ElfSymbolFunc(const ELFReader::File &file,
+	void ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, AsmDisassemblyMode disasm_mode);
-	unsigned int ElfDumpWordSymbol(const ELFReader::File &file,
+	unsigned int ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &os,
 			unsigned int inst_addr, unsigned int *inst_ptr);
-	unsigned int ElfDumpThumbWordSymbol(const ELFReader::File &file,
+	unsigned int ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostream &os,
 			unsigned int inst_addr, unsigned int *inst_ptr);
 	void ElfSymbolListCreate(const ELFReader::File &file,
 			std::vector<ELFReader::Symbol*> &symbol_list);
@@ -301,5 +301,5 @@ public:
 
 } //namespace ARM
 
-#endif // ARM_ASM_ASM_H
+#endif // ARCH_ARM_ASM_ASM_H
 

@@ -140,14 +140,14 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 	}
 	else if (this->dword.sdtr.imm == 0)
 	{
-		if(!offset)
+		if (!offset)
 		{
 			os << misc::fmt("[r%d]",
 				rn);
 		}
 		else
 		{
-			if(this->dword.sdtr.up_dn)
+			if (this->dword.sdtr.up_dn)
 				os << misc::fmt("[r%d, #%d]", rn, offset);
 			else
 				os << misc::fmt("[r%d, #-%d]", rn, offset);
@@ -164,7 +164,7 @@ void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 	unsigned int rn;
 	unsigned int rm;
 	unsigned int offset;
-	if ( cat == InstCategoryHfwrdReg)
+	if (cat == InstCategoryHfwrdReg)
 	{
 		rn = this->dword.hfwrd_reg.base_rn;
 		rm = this->dword.hfwrd_reg.off_reg;
@@ -178,7 +178,7 @@ void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 		rn = this->dword.hfwrd_imm.base_rn;
 		offset = (this->dword.hfwrd_imm.imm_off_hi << 4)
 			| (this->dword.hfwrd_imm.imm_off_lo);
-		if(offset)
+		if (offset)
 			os << misc::fmt("[r%d, #%d]", rn, offset);
 		else
 			os << misc::fmt("[r%d]", rn);
@@ -233,18 +233,21 @@ void Inst::DumpRd(std::ostream &os)
 	switch (rd)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rd);
 		break;
 	}
@@ -300,7 +303,8 @@ void Inst::DumpRn(std::ostream &os)
 	switch (rn)
 	{
 	case (AsmUserRegistersR12):
-		if(cat == InstCategoryVfp)
+
+		if (cat == InstCategoryVfp)
 		{
 			if(this->dword.vfp_mv.w)
 				os << misc::fmt("ip!");
@@ -310,8 +314,10 @@ void Inst::DumpRn(std::ostream &os)
 		else
 			os << misc::fmt("ip");
 		break;
+
 	case (AsmUserRegistersR13):
-		if(cat != InstCategoryBdtr)
+
+		if (cat != InstCategoryBdtr)
 		{
 			os << misc::fmt("sp");
 		}
@@ -320,13 +326,19 @@ void Inst::DumpRn(std::ostream &os)
 			os << misc::fmt(" ");
 		}
 		break;
+
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
 		break;
+
 	case (AsmUserRegistersR15):
+
 		os << misc::fmt("pc");
 		break;
+
 	default:
+
 		os << misc::fmt("r%d", rn);
 		break;
 	}
@@ -336,10 +348,7 @@ void Inst::DumpRn(std::ostream &os)
 void Inst::DumpRm(std::ostream &os)
 {
 	InstCategory cat = this->info->category;
-	unsigned int rm;
-
-	rm = 0;
-
+	unsigned int rm = 0;
 	if (cat == InstCategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
 	else if (cat == InstCategoryDprImm)
@@ -378,15 +387,22 @@ void Inst::DumpRm(std::ostream &os)
 	switch (rm)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
 		break;
+
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
 		break;
+
 	case (AsmUserRegistersR15):
+
 		os << misc::fmt("pc");
 		break;
+
 	default:
+
 		os << misc::fmt("r%d", rm);
 		break;
 	}
@@ -435,15 +451,22 @@ void Inst::DumpRs(std::ostream &os)
 	switch (rs)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
 		break;
+
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
 		break;
+
 	case (AsmUserRegistersR15):
+
 		os << misc::fmt("pc");
 		break;
+
 	default:
+
 		os << misc::fmt("r%d", rs);
 		break;
 	}
@@ -508,20 +531,24 @@ void Inst::DumpOp2(std::ostream &os)
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (AsmShiftOperatorLsl):
+
 				os << misc::fmt("r%d , lsl r%d", rm, rs);
-			break;
+				break;
 
 			case (AsmShiftOperatorLsr):
-		os << misc::fmt("r%d , lsr r%d", rm, rs);
-			break;
+
+				os << misc::fmt("r%d , lsr r%d", rm, rs);
+				break;
 
 			case (AsmShiftOperatorAsr):
-		os << misc::fmt("r%d , asr r%d", rm, rs);
-			break;
+
+				os << misc::fmt("r%d , asr r%d", rm, rs);
+				break;
 
 			case (AsmShiftOperatorRor):
-		os << misc::fmt("r%d , ror r%d", rm, rs);
-			break;
+
+				os << misc::fmt("r%d , ror r%d", rm, rs);
+				break;
 			}
 		}
 
@@ -530,24 +557,28 @@ void Inst::DumpOp2(std::ostream &os)
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (AsmShiftOperatorLsl):
+
 				os << misc::fmt("r%d , LSL #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
-			break;
+				break;
 
 			case (AsmShiftOperatorLsr):
+
 				os << misc::fmt("r%d , LSR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
-			break;
+				break;
 
 			case (AsmShiftOperatorAsr):
+
 				os << misc::fmt("r%d , ASR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
-			break;
+				break;
 
 			case (AsmShiftOperatorRor):
+
 				os << misc::fmt("r%d , ROR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
-			break;
+				break;
 			}
 		}
 	}
@@ -613,64 +644,79 @@ void Inst::DumpCond(std::ostream &os)
 	switch (cond)
 	{
 	case (AsmConditionCodesEQ):
+
 		os << misc::fmt("eq");
-	break;
+		break;
 
 	case (AsmConditionCodesNE):
+
 		os << misc::fmt("ne");
-	break;
+		break;
 
 	case (AsmConditionCodesCS):
+
 		os << misc::fmt("cs");
-	break;
+		break;
 
 	case (AsmConditionCodesCC):
+
 		os << misc::fmt("cc");
-	break;
+		break;
 
 	case (AsmConditionCodesMI):
+
 		os << misc::fmt("mi");
-	break;
+		break;
 
 	case (AsmConditionCodesPL):
+
 		os << misc::fmt("pl");
-	break;
+		break;
 
 	case (AsmConditionCodesVS):
+
 		os << misc::fmt("vs");
-	break;
+		break;
 
 	case (AsmConditionCodesVC):
+
 		os << misc::fmt("vc");
-	break;
+		break;
 
 	case (AsmConditionCodesHI):
+
 		os << misc::fmt("hi");
-	break;
+		break;
 
 	case (AsmConditionCodesLS):
+
 		os << misc::fmt("ls");
-	break;
+		break;
 
 	case (AsmConditionCodesGE):
+
 		os << misc::fmt("ge");
-	break;
+		break;
 
 	case (AsmConditionCodesLT):
+
 		os << misc::fmt("lt");
-	break;
+		break;
 
 	case (AsmConditionCodesGT):
+
 		os << misc::fmt("gt");
-	break;
+		break;
 
 	case (AsmConditionCodesLE):
+
 		os << misc::fmt("le");
-	break;
+		break;
 
 	case (AsmConditionCodesAL):
+
 		os << misc::fmt(" ");
-	break;
+		break;
 
 	}
 }
@@ -809,12 +855,14 @@ void Inst::DumpPsr(std::ostream &os)
 	switch (psr)
 	{
 	case (AsmPsrRegistersCPSR):
+
 		os << misc::fmt("CPSR");
-	break;
+		break;
 
 	case (AsmPsrRegistersSPSR):
+
 		os << misc::fmt("SPSR");
-	break;
+		break;
 	}
 }
 
@@ -874,15 +922,22 @@ void Inst::DumpOp2Psr(std::ostream &os)
 		switch (rm)
 		{
 		case (AsmUserRegistersR13):
+
 			os << misc::fmt("sp");
 			break;
+
 		case (AsmUserRegistersR14):
+
 			os << misc::fmt("lr");
 			break;
+
 		case (AsmUserRegistersR15):
+
 			os << misc::fmt("pc");
 			break;
+
 		default:
+
 			os << misc::fmt("r%d", rm);
 			break;
 		}
@@ -1360,15 +1415,22 @@ void Inst::DumpRt(std::ostream &os)
 	switch (rt)
 		{
 		case (AsmUserRegistersR13):
+
 			os << misc::fmt("sp");
 			break;
+
 		case (AsmUserRegistersR14):
+
 			os << misc::fmt("lr");
 			break;
+
 		case (AsmUserRegistersR15):
+
 			os << misc::fmt("pc");
 			break;
+
 		default:
+
 			os << misc::fmt("r%d", rt);
 			break;
 		}
@@ -1511,18 +1573,22 @@ void Inst::Thumb16DumpRD(std::ostream &os)
 	switch (rd)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rd);
 		break;
 	}
@@ -1572,18 +1638,22 @@ void Inst::Thumb16DumpRM(std::ostream &os)
 	switch (rm)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rm);
 		break;
 	}
@@ -1631,18 +1701,21 @@ void Inst::Thumb16DumpRN(std::ostream &os)
 	switch (rn)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rn);
 		break;
 	}
@@ -1871,64 +1944,79 @@ void Inst::Thumb16DumpCOND(std::ostream &os)
 	switch (cond)
 	{
 	case (AsmConditionCodesEQ):
+
 		os << misc::fmt("eq");
-	break;
+		break;
 
 	case (AsmConditionCodesNE):
+
 		os << misc::fmt("ne");
-	break;
+		break;
 
 	case (AsmConditionCodesCS):
+
 		os << misc::fmt("cs");
-	break;
+		break;
 
 	case (AsmConditionCodesCC):
+
 		os << misc::fmt("cc");
-	break;
+		break;
 
 	case (AsmConditionCodesMI):
+
 		os << misc::fmt("mi");
-	break;
+		break;
 
 	case (AsmConditionCodesPL):
+
 		os << misc::fmt("pl");
-	break;
+		break;
 
 	case (AsmConditionCodesVS):
+
 		os << misc::fmt("vs");
-	break;
+		break;
 
 	case (AsmConditionCodesVC):
+
 		os << misc::fmt("vc");
-	break;
+		break;
 
 	case (AsmConditionCodesHI):
+
 		os << misc::fmt("hi");
-	break;
+		break;
 
 	case (AsmConditionCodesLS):
+
 		os << misc::fmt("ls");
-	break;
+		break;
 
 	case (AsmConditionCodesGE):
+
 		os << misc::fmt("ge");
-	break;
+		break;
 
 	case (AsmConditionCodesLT):
+
 		os << misc::fmt("lt");
-	break;
+		break;
 
 	case (AsmConditionCodesGT):
+
 		os << misc::fmt("gt");
-	break;
+		break;
 
 	case (AsmConditionCodesLE):
+
 		os << misc::fmt("le");
-	break;
+		break;
 
 	case (AsmConditionCodesAL):
+
 		os << misc::fmt(" ");
-	break;
+		break;
 	}
 
 }
@@ -1986,10 +2074,7 @@ void Inst::Thumb16DumpREGS(std::ostream &os)
 			os << misc::fmt("r%d ", misc::LogBase2(i));
 		}
 	}
-
 	os << misc::fmt("}");
-
-
 }
 
 
@@ -2119,18 +2204,21 @@ void Inst::Thumb32DumpRD(std::ostream &os)
 	switch (rd)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rd);
 		break;
 	}
@@ -2180,18 +2268,22 @@ void Inst::Thumb32DumpRN(std::ostream &os)
 	switch (rn)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rn);
 		break;
 	}
@@ -2241,18 +2333,22 @@ void Inst::Thumb32DumpRM(std::ostream &os)
 	switch (rm)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rm);
 		break;
 	}
@@ -2275,18 +2371,22 @@ void Inst::Thumb32DumpRT(std::ostream &os)
 	switch (rt)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rt);
 		break;
 	}
@@ -2308,18 +2408,22 @@ void Inst::Thumb32DumpRT2(std::ostream &os)
 	switch (rt2)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rt2);
 		break;
 	}
@@ -2340,18 +2444,22 @@ void Inst::Thumb32DumpRA(std::ostream &os)
 	switch (ra)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", ra);
 		break;
 	}
@@ -2372,18 +2480,22 @@ void Inst::Thumb32DumpRDLO(std::ostream &os)
 	switch (rdlo)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rdlo);
 		break;
 	}
@@ -2404,18 +2516,22 @@ void Inst::Thumb32DumpRDHI(std::ostream &os)
 	switch (rdhi)
 	{
 	case (AsmUserRegistersR13):
+
 		os << misc::fmt("sp");
-	break;
+		break;
 
 	case (AsmUserRegistersR14):
+
 		os << misc::fmt("lr");
-	break;
+		break;
+
 	case (AsmUserRegistersR15):
 
 		os << misc::fmt("pc");
-	break;
+		break;
 
 	default:
+
 		os << misc::fmt("r%d", rdhi);
 		break;
 	}
@@ -2460,7 +2576,7 @@ void Inst::Thumb32DumpS(std::ostream &os)
 
 	else
 		throw misc::Panic(misc::fmt("%d: sign fmt not recognized", cat));
-	if(sign)
+	if (sign)
 		os << misc::fmt("s");
 }
 
@@ -2469,7 +2585,6 @@ void Inst::Thumb32dumpREGS(std::ostream &os)
 {
 	InstThumb32Category cat = this->info_32->cat32;
 	unsigned int regs;
-	unsigned int i;
 
 	if (cat == InstThumb32CategoryLdStMult)
 		regs = this->dword_32.ld_st_mult.reglist;
@@ -2480,7 +2595,7 @@ void Inst::Thumb32dumpREGS(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
 
 	os << misc::fmt("{");
-	for (i = 1; i < 65536; i *= 2)
+	for (unsigned int i = 1; i < 65536; i *= 2)
 	{
 		if(regs & (i))
 		{
@@ -2508,25 +2623,29 @@ void Inst::Thumb32DumpSHFTREG(std::ostream &os)
 	else
 		throw misc::Panic(misc::fmt("%d: shft fmt not recognized", cat));
 
-	if(shift)
+	if (shift)
 	{
 		switch(type)
 		{
 		case (AsmShiftOperatorLsl):
+
 			os << misc::fmt("{lsl #%d}", shift);
-		break;
+			break;
 
 		case (AsmShiftOperatorLsr):
+
 			os << misc::fmt("{lsr #%d}", shift);
-		break;
+			break;
 
 		case (AsmShiftOperatorAsr):
+
 			os << misc::fmt("{asr #%d}", shift);
-		break;
+			break;
 
 		case (AsmShiftOperatorRor):
+
 			os << misc::fmt("{ror #%d}", shift);
-		break;
+			break;
 		}
 	}
 
@@ -2548,14 +2667,16 @@ void Inst::Thumb32DumpIMM12(std::ostream &os)
 	else
 		throw misc::Panic(misc::fmt("%d: imm12 fmt not recognized", cat));
 
-	if(this->dword_32.ldstr_imm.add)
+	if (this->dword_32.ldstr_imm.add)
+	{
 		os << misc::fmt("#%d",immd12);
+	}
 	else
 	{
 		idx = (immd12 & 0x00000400) >> 10;
 		add = (immd12 & 0x00000200) >> 9;
 		wback = (immd12 & 0x00000100) >> 8;
-		if(add)
+		if (add)
 		{
 			if(idx == 1 && wback == 0)
 				os << misc::fmt("[#%d]",(immd12 & 0x000000ff));
@@ -2607,26 +2728,29 @@ void Inst::Thumb32DumpIMMD12(std::ostream &os)
 
 	imm4 = (i << 3) | (immd3);
 
-	if(imm4 < 4)
+	if (imm4 < 4)
 	{
 		switch(imm4)
 		{
 		case(0) :
+
 			const_val =  immd8;
-		break;
+			break;
 
 		case(1) :
+
 			const_val = (immd8 << 16) | immd8;
-		break;
+			break;
 
 		case(2) :
+
 			const_val = (immd8 << 24) | (immd8 << 8);
-		break;
+			break;
 
 		case(3) :
-			const_val = (immd8 << 24) | (immd8 << 16) | (immd8 << 8) | immd8;
-		break;
 
+			const_val = (immd8 << 24) | (immd8 << 16) | (immd8 << 8) | immd8;
+			break;
 		}
 	}
 	else
@@ -2654,7 +2778,7 @@ void Inst::Thumb32DumpIMMD8(std::ostream &os)
 		throw misc::Panic(misc::fmt("%d: immd12 fmt not recognized", cat));
 
 
-	if(immd8)
+	if (immd8)
 	{
 		if(this->dword_32.ld_st_double.add_sub)
 		{
@@ -2715,64 +2839,79 @@ void Inst::Thumb32DumpCOND(std::ostream &os)
 	switch (cond)
 	{
 	case (AsmConditionCodesEQ):
+
 		os << misc::fmt("eq");
-	break;
+		break;
 
 	case (AsmConditionCodesNE):
+
 		os << misc::fmt("ne");
-	break;
+		break;
 
 	case (AsmConditionCodesCS):
+
 		os << misc::fmt("cs");
-	break;
+		break;
 
 	case (AsmConditionCodesCC):
+
 		os << misc::fmt("cc");
-	break;
+		break;
 
 	case (AsmConditionCodesMI):
+
 		os << misc::fmt("mi");
-	break;
+		break;
 
 	case (AsmConditionCodesPL):
+
 		os << misc::fmt("pl");
-	break;
+		break;
 
 	case (AsmConditionCodesVS):
+
 		os << misc::fmt("vs");
-	break;
+		break;
 
 	case (AsmConditionCodesVC):
+
 		os << misc::fmt("vc");
-	break;
+		break;
 
 	case (AsmConditionCodesHI):
+
 		os << misc::fmt("hi");
-	break;
+		break;
 
 	case (AsmConditionCodesLS):
+
 		os << misc::fmt("ls");
-	break;
+		break;
 
 	case (AsmConditionCodesGE):
+
 		os << misc::fmt("ge");
-	break;
+		break;
 
 	case (AsmConditionCodesLT):
+
 		os << misc::fmt("lt");
-	break;
+		break;
 
 	case (AsmConditionCodesGT):
+
 		os << misc::fmt("gt");
-	break;
+		break;
 
 	case (AsmConditionCodesLE):
+
 		os << misc::fmt("le");
-	break;
+		break;
 
 	case (AsmConditionCodesAL):
+
 		os << misc::fmt(" ");
-	break;
+		break;
 	}
 
 }
@@ -2966,9 +3105,6 @@ void Inst::Thumb32Dump(std::ostream &os)
 			Thumb32DumpWID(os);
 		else if (comm::Asm::isToken(fmt_str, "cond", token_len))
 			Thumb32DumpCOND(os);
-
-
-
 		else
 			throw misc::Panic(misc::fmt("%s: token not recognized\n", fmt_str));
 

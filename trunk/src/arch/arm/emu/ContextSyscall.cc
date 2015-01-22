@@ -188,9 +188,13 @@ void Context::ExecuteSyscall()
 	emu->syscall_debug << misc::fmt("\n");
 }
 
+
+
+
 //
 // System call 'close' (code 2)
 //
+
 int Context::ExecuteSyscall_close()
 {
 	// Arguments 
@@ -222,6 +226,7 @@ int Context::ExecuteSyscall_close()
 void Context::SyscallReadWakeup()
 {
 }
+
 
 bool Context::SyscallReadCanWakeup()
 {
@@ -284,6 +289,7 @@ bool Context::SyscallReadCanWakeup()
 		misc::panic("%s: could not launch host thread", __FUNCTION__);
 	return false;
 }
+
 
 // System call 'read' (code 3)
 int Context::ExecuteSyscall_read()
@@ -354,6 +360,7 @@ void Context::SyscallWriteWakeup()
 {
 }
 
+
 bool Context::SyscallWriteCanWakeup()
 {
 	// If host thread is still running for this context, do nothing.
@@ -417,9 +424,13 @@ bool Context::SyscallWriteCanWakeup()
 	return false;
 }
 
+
+
+
 //
 // System call 'write' (code 4)
 //
+
 int Context::ExecuteSyscall_write()
 {
 	struct pollfd fds;
@@ -476,9 +487,13 @@ int Context::ExecuteSyscall_write()
 	return 0;
 }
 
+
+
+
 //
 // System call 'open' (code 5)
 //
+
 static misc::StringMap open_flags_map =
 {
 		{ "O_RDONLY",        00000000 },
@@ -498,6 +513,7 @@ static misc::StringMap open_flags_map =
 		{ "O_NOFOLLOW",      00400000 },
 		{ "O_NOATIME",       01000000 }
 };
+
 
 comm::FileDescriptor *Context::SyscallOpenVirtualFile(const std::string &path,
 		int flags, int mode)
@@ -532,6 +548,7 @@ comm::FileDescriptor *Context::SyscallOpenVirtualFile(const std::string &path,
 	return desc;
 }
 
+
 comm::FileDescriptor *Context::SyscallOpenVirtualDevice(const std::string &path,
 		int flags, int mode)
 {
@@ -556,9 +573,11 @@ comm::FileDescriptor *Context::SyscallOpenVirtualDevice(const std::string &path,
 				path.c_str(),
 				desc->getGuestIndex(),
 				desc->getHostIndex());
+
 	// Return the descriptor
 	return desc;
 }
+
 
 int Context::ExecuteSyscall_open()
 {
@@ -621,6 +640,9 @@ int Context::ExecuteSyscall_open()
 	// Return guest descriptor index
 	return desc->getGuestIndex();
 }
+
+
+
 
 //
 // System call 'brk' (code 45)
@@ -688,6 +710,8 @@ int Context::ExecuteSyscall_brk()
 }
 
 
+
+
 //
 // System call 'gettimeofday' (code 78)
 //
@@ -722,6 +746,9 @@ int Context::ExecuteSyscall_gettimeofday()
 	// Return 
 	return 0;
 }
+
+
+
 
 //
 // System call 'mmap' (code 90)
@@ -855,6 +882,9 @@ int Context::SyscallMmapAux(unsigned int addr, unsigned int len,
 	return addr;
 }
 
+
+
+
 //
 // System call 'munmap' (code 91)
 //
@@ -878,9 +908,13 @@ int Context::ExecuteSyscall_munmap()
 	return 0;
 }
 
+
+
+
 //
 // System call 'mmap2' (code 192)
 //
+
 int Context::ExecuteSyscall_mmap2()
 {
 	// Arguments 
@@ -907,6 +941,9 @@ int Context::ExecuteSyscall_mmap2()
 	// argument 'offset'. Here, it is given in memory pages.
 	return SyscallMmapAux(addr, len, prot, flags, guest_fd, offset << mem::Memory::LogPageSize);
 }
+
+
+
 
 //
 // System call 'newuname' (code 122)
@@ -950,6 +987,9 @@ int Context::ExecuteSyscall_newuname()
 	memory->Write(utsname_ptr, sizeof sim_utsname, (char *)&sim_utsname);
 	return 0;
 }
+
+
+
 
 //
 // System call 'stat64'
@@ -1008,6 +1048,9 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 		guest->size, guest->blksize, guest->blocks);
 }
 
+
+
+
 //
 // System call 'fstat64' (code 197)
 //
@@ -1036,6 +1079,9 @@ int Context::ExecuteSyscall_fstat64()
 	return 0;
 }
 
+
+
+
 //
 // System call 'getuid' (code 199)
 //
@@ -1044,6 +1090,7 @@ int Context::ExecuteSyscall_getuid()
 {
 	return getuid();
 }
+
 
 
 
