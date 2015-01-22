@@ -169,10 +169,14 @@ class Context
 	// Call stack
 	std::unique_ptr<comm::CallStack> call_stack;
 
-	// Instruction pointers
-	unsigned last_ip;	// Address of last instruction executed
-	unsigned target_ip;  	// Address of next instruction to be emulated
-	unsigned current_ip;  	// Address of currently emulated instruction
+	// Address of last instruction executed
+	unsigned last_ip;
+
+	// Address of next instruction to be emulated
+	unsigned target_ip;
+
+  	// Address of currently emulated instruction
+	unsigned current_ip;
 
 	// For checking if the instruction is in IF-THEN Block
 	unsigned int iteq_inst_num;
@@ -201,11 +205,16 @@ class Context
 	// with many group children, no tree organization.
 	Context *group_parent = nullptr;
 
-	int exit_signal = 0;  // Signal to send parent when finished
-	int exit_code = 0;  // For zombie contexts
+	// Signal to send parent when finished
+	int exit_signal = 0;
+
+	// For zombie contexts
+	int exit_code = 0;
 
 	unsigned int clear_child_tid = 0;
-	unsigned int robust_list_head = 0;  // robust futex list
+
+	// robust futex list
+	unsigned int robust_list_head = 0;
 
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
@@ -623,6 +632,8 @@ public:
 	/// Destructor
 	~Context();
 
+	/// Load a program on the context. The meaning of each argument is
+	/// identical to the prototype of comm::Emu::Load().
 	void Load(const std::vector<std::string> &args,
 			const std::vector<std::string> &env,
 			const std::string &cwd,
@@ -645,8 +656,8 @@ public:
 	/// wakeup data is internally freed by reseting the smart pointer.
 	void Wakeup();
 
-	// Check whether there is any pending unblocked signal in the context,
-	// and invoke the corresponding signal handler.
+	/// Check whether there is any pending unblocked signal in the context,
+	/// and invoke the corresponding signal handler.
 	void CheckSignalHandler();
 
 
@@ -666,16 +677,16 @@ public:
 	void Execute();
 	void ExecuteInst();
 
-	// Finish a context group. This call does a subset of action of the
-	// Finish() call, but for all parent and child contexts sharing a
-	// memory map.
+	/// Finish a context group. This call does a subset of action of the
+	/// Finish() call, but for all parent and child contexts sharing a
+	/// memory map.
 	void FinishGroup(int status);
 
-	// Finish a context. If the context has no parent, its state will be
-	// set to ContextFinished. If it has, its state is set to
-	// ContextZombie, waiting for a call to 'waitpid'. The children of the
-	// finished context will set their 'parent' attribute to null. The
-	// zombie children will be finished.
+	/// Finish a context. If the context has no parent, its state will be
+	/// set to ContextFinished. If it has, its state is set to
+	/// ContextZombie, waiting for a call to 'waitpid'. The children of the
+	/// finished context will set their 'parent' attribute to null. The
+	/// zombie children will be finished.
 	void Finish(int status);
 
 	/// Return \c true if flag \a state is part of the context state

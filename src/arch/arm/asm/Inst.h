@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARM_ASM_INST_H
-#define ARM_ASM_INST_H
+#ifndef ARCH_ARM_ASM_INST_H
+#define ARCH_ARM_ASM_INST_H
 
 #include <iostream>
 
@@ -1031,4 +1031,4 @@ public:
 
 }  // namespace ARM
 
-#endif // ARM_ASM_INST_H
+#endif // ARCH_ARM_ASM_INST_H

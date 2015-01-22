@@ -595,7 +595,7 @@ void Context::ExecuteInst()
 	}
 
 	// Call instruction emulation function
-	switch(getInstType())
+	switch (getInstType())
 	{
 	case ContextInstTypeArm32:
 
@@ -774,7 +774,7 @@ bool Context::IsThumb32(const char *inst_ptr)
 
 	// Get the argument that used to check thumb 32
 	unsigned int arg1 = (bytes[1] & 0xf8) >> 3;
-	if((arg1 == 0x1d) || (arg1 == 0x1e) || (arg1 == 0x1f))
+	if ((arg1 == 0x1d) || (arg1 == 0x1e) || (arg1 == 0x1f))
 	{
 		return true;
 	}

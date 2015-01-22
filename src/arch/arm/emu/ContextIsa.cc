@@ -159,7 +159,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 		rotate = ((op2 >> 8) & 0x0000000f);
 		imm_8r = IsaRotr( imm , rotate);
 
-		if(rotate == 0)
+		if (rotate == 0)
 		{
 			carry_ret = -1;
 		}
@@ -170,7 +170,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 		cry_bit = rotate;
 		cry_mask = (unsigned int)(1 << cry_bit);
 
-		if(cry_mask & imm)
+		if (cry_mask & imm)
 			carry_ret = 1;
 		else
 			carry_ret = 0;
@@ -191,6 +191,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case AsmShiftOperatorLsl:
+
 				cry_bit = (32 - (rs_val & 0x000000ff));
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
@@ -211,9 +212,10 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorLsr:
+
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
-				if((rs_val & 0x000000ff) == 0)
+				if ((rs_val & 0x000000ff) == 0)
 				{
 					carry_ret = -1;
 				}
@@ -231,6 +233,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorAsr:
+
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
@@ -258,6 +261,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorRor:
+
 				cry_bit = ((rs_val & 0x0000000f) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if((rs_val & 0x000000ff) == 0)
@@ -285,6 +289,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case AsmShiftOperatorLsl:
+
 				cry_bit = (32 - shift_imm);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
@@ -301,6 +306,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorLsr:
+
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
@@ -317,6 +323,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorAsr:
+
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
@@ -340,6 +347,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				break;
 
 			case AsmShiftOperatorRor:
+
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
 				if(shift_imm == 0)
@@ -444,7 +452,6 @@ unsigned int Context::IsaGetAddrAmode2()
 					throw misc::Panic(misc::fmt("shift mode NOT supported"));
 				}
 			}
-
 			else
 			{
 				// Decrement
@@ -567,10 +574,10 @@ unsigned int Context::IsaGetAddrAmode2()
 	else
 	{
 		// Register Addressing
-		if(inst.getBytes()->sdtr.idx_typ)
+		if (inst.getBytes()->sdtr.idx_typ)
 		{
 			// Pre-Indexed
-			if(!offset)
+			if (!offset)
 			{
 				ret_addr = rn_val + 0;
 			}
@@ -594,13 +601,13 @@ unsigned int Context::IsaGetAddrAmode2()
 		else
 		{
 			// Post-Index
-			if(!offset)
+			if (!offset)
 			{
 				ret_addr = rn_val + 0;
 			}
 			else
 			{
-				if(inst.getBytes()->sdtr.up_dn)
+				if (inst.getBytes()->sdtr.up_dn)
 				{
 					// Increment
 					ret_addr = rn_val;
@@ -636,11 +643,11 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 	immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
 	emu->isa_debug << misc::fmt("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
 
-	if(inst.getBytes()->hfwrd_imm.idx_typ)
+	if (inst.getBytes()->hfwrd_imm.idx_typ)
 	{
 		// Pre-Indexed
 		IsaRegLoad(inst.getBytes()->hfwrd_imm.base_rn, rn_val);
-		if(inst.getBytes()->hfwrd_imm.up_dn)
+		if (inst.getBytes()->hfwrd_imm.up_dn)
 		{
 			ret_addr = rn_val + immd8;
 		}
@@ -663,7 +670,7 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 	{
 		// Post Indexed
 		IsaRegLoad(inst.getBytes()->hfwrd_imm.base_rn, rn_val);
-		if(inst.getBytes()->hfwrd_imm.up_dn)
+		if (inst.getBytes()->hfwrd_imm.up_dn)
 		{
 			ret_addr = rn_val;
 		}
@@ -982,7 +989,7 @@ void Context::IsaBranch()
 	unsigned int br_add;
 	int rm_val;
 
-	if(inst.getInstInfo()->category == InstCategoryBrnch)
+	if (inst.getInstInfo()->category == InstCategoryBrnch)
 	{
 		offset = inst.getBytes()->brnch.off << 2;
 		br_add = offset + regs.getPC();
@@ -1132,7 +1139,7 @@ void Context::IsaAmode4sStr()
 	void *buf = &copy_buf;
 	unsigned int reg_list = inst.getBytes()->bdtr.reg_lst;
 	IsaRegLoad(inst.getBytes()->bdtr.base_rn, rn_val);
-	if(inst.getBytes()->bdtr.idx_typ)
+	if (inst.getBytes()->bdtr.idx_typ)
 	{
 		// Pre indexed
 		if (inst.getBytes()->bdtr.up_dn)
@@ -1241,26 +1248,15 @@ void Context::IsaAmode4sLd()
 			{
 				if(reg_list & (i))
 				{
-					if(misc::LogBase2(i) == 15)
+					memory->Read(read_val, 4, (char *)buf);
+					if(copy_buf % 2 && misc::LogBase2(i) == 15)
 					{
-						memory->Read(read_val, 4, (char *)buf);
-						if(copy_buf % 2)
-						{
-							copy_buf = copy_buf - 1;
-						}
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val += 4;
+						copy_buf = copy_buf - 1;
 					}
-					else
-					{
-						memory->Read(read_val, 4, (char *)buf);
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val += 4;
-					}
+					IsaRegStore(misc::LogBase2(i), copy_buf);
+					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+							misc::LogBase2(i),read_val);
+					read_val += 4;
 				}
 			}
 			if(inst.getBytes()->bdtr.wb)
@@ -1275,26 +1271,15 @@ void Context::IsaAmode4sLd()
 			{
 				if(reg_list & (i))
 				{
-					if(misc::LogBase2(i) == 15)
+					memory->Read(read_val, 4, (char *)buf);
+					if(copy_buf % 2 && misc::LogBase2(i) == 15)
 					{
-						memory->Read(read_val, 4, (char *)buf);
-						if(copy_buf % 2)
-						{
-							copy_buf = copy_buf - 1;
-						}
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val -= 4;
+						copy_buf = copy_buf - 1;
 					}
-					else
-					{
-						memory->Read(read_val, 4, (char *)buf);
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val -= 4;
-					}
+					IsaRegStore(misc::LogBase2(i), copy_buf);
+					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+							misc::LogBase2(i),read_val);
+					read_val -= 4;
 				}
 			}
 			if(inst.getBytes()->bdtr.wb)
@@ -1313,27 +1298,15 @@ void Context::IsaAmode4sLd()
 			{
 				if(reg_list & (i))
 				{
-
-					if(misc::LogBase2(i) == 15)
+					memory->Read(read_val, 4, (char *)buf);
+					if(copy_buf % 2 && misc::LogBase2(i) == 15)
 					{
-						memory->Read(read_val, 4, (char *)buf);
-						if(copy_buf % 2)
-						{
-							copy_buf = copy_buf - 1;
-						}
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val += 4;
+						copy_buf = copy_buf - 1;
 					}
-					else
-					{
-						memory->Read(read_val, 4, (char *)buf);
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val += 4;
-					}
+					IsaRegStore(misc::LogBase2(i), copy_buf);
+					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+							misc::LogBase2(i),read_val);
+					read_val += 4;
 				}
 			}
 			if(inst.getBytes()->bdtr.wb)
@@ -1348,26 +1321,15 @@ void Context::IsaAmode4sLd()
 			{
 				if(reg_list & (i))
 				{
-					if(misc::LogBase2(i) == 15)
+					memory->Read(read_val, 4, (char *)buf);
+					if(copy_buf % 2 && misc::LogBase2(i) == 15)
 					{
-						memory->Read(read_val, 4, (char *)buf);
-						if(copy_buf % 2)
-						{
-							copy_buf = copy_buf - 1;
-						}
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val -= 4;
+						copy_buf = copy_buf - 1;
 					}
-					else
-					{
-						memory->Read(read_val, 4, (char *)buf);
-						IsaRegStore(misc::LogBase2(i), copy_buf);
-						emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
-								misc::LogBase2(i),read_val);
-						read_val -= 4;
-					}
+					IsaRegStore(misc::LogBase2(i), copy_buf);
+					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+							misc::LogBase2(i),read_val);
+					read_val -= 4;
 				}
 			}
 			if(inst.getBytes()->bdtr.wb)
@@ -1429,9 +1391,9 @@ void Context::IsaSubtract(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 	IsaRegLoad(rn, rn_val);
 
-	if(!(inst.getBytes()->dpr.s_cond))
+	if (!(inst.getBytes()->dpr.s_cond))
 	{
-		if(rd == 15)
+		if (rd == 15)
 		{
 			rd_val_safe = rn_val - op2 - op3;
 			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1471,28 +1433,28 @@ void Context::IsaSubtract(unsigned int rd, unsigned int rn, int op2,
 		);
 
 		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
-		if((operand2 == 0) && (rn_val == 0))
+		if ((operand2 == 0) && (rn_val == 0))
 		{
 			regs.getCPSR().C = 1;
 		}
 
-		if(operand2 == 0)
+		if (operand2 == 0)
 		{
 			regs.getCPSR().C = 1;
 		}
@@ -1512,7 +1474,7 @@ void Context::IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 
 	IsaRegLoad( rn, rn_val);
-	if(!(inst.getBytes()->dpr.s_cond))
+	if (!(inst.getBytes()->dpr.s_cond))
 	{
 		rd_val = op2 - rn_val - op3;
 		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1545,28 +1507,28 @@ void Context::IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
 		);
 
 		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
-		if((operand2 == 0) && (rn_val == 0))
+		if ((operand2 == 0) && (rn_val == 0))
 		{
 			regs.getCPSR().C = 1;
 		}
 
-		if(operand2 == 0)
+		if (operand2 == 0)
 		{
 			regs.getCPSR().C = 1;
 		}
@@ -1585,7 +1547,7 @@ void Context::IsaAdd(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 
 	IsaRegLoad( rn, rn_val);
-	if(!(inst.getBytes()->dpr.s_cond))
+	if (!(inst.getBytes()->dpr.s_cond))
 	{
 		rd_val = rn_val + op2 + op3;
 		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
@@ -1613,19 +1575,19 @@ void Context::IsaAdd(unsigned int rd, unsigned int rn, int op2,
 		);
 
 
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
@@ -1810,7 +1772,7 @@ void Context::IsaThumbAdd(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 
 	IsaRegLoad(rn, rn_val);
-	if(!flag_set)
+	if (!flag_set)
 	{
 		rd_val = rn_val + op2 + op3;
 		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
@@ -1838,19 +1800,19 @@ void Context::IsaThumbAdd(unsigned int rd, unsigned int rn, int op2,
 		);
 
 
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
@@ -1872,9 +1834,9 @@ void Context::IsaThumbSubtract(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 
 	IsaRegLoad(rn, rn_val);
-	if(!(flag_set))
+	if (!(flag_set))
 	{
-		if(rd == 15)
+		if (rd == 15)
 		{
 			rd_val_safe = rn_val - op2 - op3;
 			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1914,28 +1876,28 @@ void Context::IsaThumbSubtract(unsigned int rd, unsigned int rn, int op2,
 		);
 
 		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
-		if((operand2 == 0) && (rn_val == 0))
+		if ((operand2 == 0) && (rn_val == 0))
 		{
 			regs.getCPSR().C = 1;
 		}
 
-		if(operand2 == 0)
+		if (operand2 == 0)
 		{
 			regs.getCPSR().C = 1;
 		}
@@ -1955,7 +1917,7 @@ void Context::IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
 	unsigned long flags = 0;
 
 	IsaRegLoad(rn, rn_val);
-	if(!(flag_set))
+	if (!(flag_set))
 	{
 		rd_val = op2 - rn_val - op3;
 		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
@@ -1988,28 +1950,28 @@ void Context::IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
 		);
 
 		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
-		if(flags & 0x00000001)
+		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
 		}
-		if(flags & 0x00008000)
+		if (flags & 0x00008000)
 		{
 			regs.getCPSR().v = 1;
 		}
-		if(flags & 0x00000040)
+		if (flags & 0x00000040)
 		{
 			regs.getCPSR().z = 1;
 		}
-		if(flags & 0x00000080)
+		if (flags & 0x00000080)
 		{
 			regs.getCPSR().n = 1;
 		}
-		if((operand2 == 0) && (rn_val == 0))
+		if ((operand2 == 0) && (rn_val == 0))
 		{
 			regs.getCPSR().C = 1;
 		}
 
-		if(operand2 == 0)
+		if (operand2 == 0)
 		{
 			regs.getCPSR().C = 1;
 		}
@@ -2046,7 +2008,7 @@ unsigned int Context::IsaThumb32Immd12(InstThumb32Category cat)
 		throw misc::Panic(misc::fmt("%d: immd12 fmt not recognized", cat));
 
 	imm4 = (i << 3) | (immd3);
-	if(imm4 < 4)
+	if (imm4 < 4)
 	{
 		switch(imm4)
 		{
@@ -2303,24 +2265,24 @@ unsigned int Context::IsaThumbImmdExtend(unsigned int immd)
 	{
 		switch(((immd & 0x00000300) >> 8))
 		{
-		case(0):
+		case 0:
 
 			immd = immd & 0x000000ff;
 			break;
 
-		case(1):
+		case 1:
 
 			immd = immd & 0x000000ff;
 			immd = (immd << 16) | immd;
 			break;
 
-		case(2):
+		case 2:
 
 			immd = immd & 0x000000ff;
 			immd = (immd << 24) | (immd << 8);
 			break;
 
-		case(3):
+		case 3:
 
 			immd = immd & 0x000000ff;
 			immd = (immd << 24) | (immd << 16) | (immd << 8) | (immd);

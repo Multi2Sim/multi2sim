@@ -810,318 +810,245 @@ void Asm::SetupInstInfo(const char* name, const char* fmt_str,
 	InstInfo *info;
 	switch (category)
 	{
-		case InstCategoryDprReg:
-			info = &inst_info[arg1 * 16 + 0 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 1 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 2 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 3 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 4 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 5 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 6 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 7 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 8 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 10 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 12 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 14 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+	case InstCategoryDprReg:
 
-		case InstCategoryDprImm:
-			for (unsigned int i = 0; i < 16; i++ )
-			{
-				info = &inst_info[arg1 * 16 + i ];
-				info->inst = inst_name;
-				info->category = category;
-				info->name = name;
-				info->fmt_str = fmt_str;
-				info->size = 4;
-				info->opcode = inst_name;
-			}
-			break;
-
-		case InstCategoryDprSat:
-			info = &inst_info[arg1 * 16 + 5 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
-
-		case InstCategoryPsr:
-			info = &inst_info[arg1 * 16 + 0 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 0];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 1];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 2];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 3];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 4];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 5];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 6];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 7];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 8];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 10];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 12];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 14];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
 		break;
 
-		case InstCategoryMult:
-			info = &inst_info[arg1 * 16 + 9 ];
+	case InstCategoryDprImm:
+
+		for (unsigned int i = 0; i < 16; i++ )
+		{
+			info = &inst_info[arg1 * 16 + i];
 			info->inst = inst_name;
 			info->category = category;
 			info->name = name;
 			info->fmt_str = fmt_str;
 			info->size = 4;
 			info->opcode = inst_name;
-			break;
+		}
+		break;
 
-		case InstCategoryMultSign:
-			info = &inst_info[arg1 * 16 + 8 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 10 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 12 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			info = &inst_info[arg1 * 16 + 14 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+	case InstCategoryDprSat:
 
-		case InstCategoryMultLn:
-			info = &inst_info[arg1 * 16 + 9 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+		info = &inst_info[arg1 * 16 + 5];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategoryMultLnSign:
-			info = &inst_info[arg1 * 16 + 8 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+	case InstCategoryPsr:
 
-		case InstCategorySdswp:
-			info = &inst_info[arg1 * 16 + 9 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+		info = &inst_info[arg1 * 16 + 0];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategoryBax:
-			info = &inst_info[arg1 * 16 + arg2 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+	case InstCategoryMult:
 
-		case InstCategoryHfwrdReg:
-			info = &inst_info[arg1 * 16 + arg2 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+		info = &inst_info[arg1 * 16 + 9];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategoryHfwrdImm:
-			info = &inst_info[arg1 * 16 + arg2 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+	case InstCategoryMultSign:
 
-		case InstCategorySdtr:
-			if (arg2 == 0xff)
-			{
-				for (unsigned int i = 0; i < 16; i++){
-					info = &inst_info[arg1 * 16 + i ];
-					info->inst = inst_name;
-					info->category = category;
-					info->name = name;
-					info->fmt_str = fmt_str;
-					info->size = 4;
-				info->opcode = inst_name;
-				}
-			}
-			else
-			{
-				info = &inst_info[arg1 * 16 + arg2 ];
-				info->inst = inst_name;
-				info->category = category;
-				info->name = name;
-				info->fmt_str = fmt_str;
-				info->size = 4;
-				info->opcode = inst_name;
-				info = &inst_info[arg1 * 16 + (arg2 + 8)];
-				info->inst = inst_name;
-				info->category = category;
-				info->name = name;
-				info->fmt_str = fmt_str;
-				info->size = 4;
-				info->opcode = inst_name;
-			}
-			break;
+		info = &inst_info[arg1 * 16 + 8];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 10];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 12];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		info = &inst_info[arg1 * 16 + 14];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategoryBrnch:
-			for (unsigned int i = 0 ; i < 16; i++)
-			{
-				for (unsigned int j = 0 ; j < 16; j++)
-				{
-					info = &inst_info[(arg1 + i) * 16 + j ];
-					info->inst = inst_name;
-					info->category = category;
-					info->name = name;
-					info->fmt_str = fmt_str;
-					info->size = 4;
-					info->opcode = inst_name;
-				}
-			}
-			break;
+	case InstCategoryMultLn:
 
-		case InstCategoryBdtr:
-			for (unsigned int i = 0; i < 16; i++)
-			{
-				info = &inst_info[arg1 * 16 + i ];
-				info->inst = inst_name;
-				info->category = category;
-				info->name = name;
-				info->fmt_str = fmt_str;
-				info->size = 4;
-				info->opcode = inst_name;
-			}
-			break;
+		info = &inst_info[arg1 * 16 + 9];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategorySwiSvc:
-			for (unsigned int i = 0 ; i < 16; i++)
-			{
-				for (unsigned int j = 0 ; j < 16; j++)
-				{
-					info = &inst_info[(arg1 + i) * 16 + j ];
-					info->inst = inst_name;
-					info->category = category;
-					info->name = name;
-					info->fmt_str = fmt_str;
-					info->size = 4;
-					info->opcode = inst_name;
-				}
-			}
-			break;
+	case InstCategoryMultLnSign:
 
-		case InstCategoryCprDtr:
-			info = &inst_info[arg1 * 16 + arg2 ];
-			info->inst = inst_name;
-			info->category = category;
-			info->name = name;
-			info->fmt_str = fmt_str;
-			info->size = 4;
-			info->opcode = inst_name;
-			break;
+		info = &inst_info[arg1 * 16 + 8];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
 
-		case InstCategoryVfp:
-			for (unsigned int i = 0; i < 16; i++)
-			{
-				info = &inst_info[arg1 * 16 + i ];
+	case InstCategorySdswp:
+
+		info = &inst_info[arg1 * 16 + 9];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
+
+	case InstCategoryBax:
+
+		info = &inst_info[arg1 * 16 + arg2];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
+
+	case InstCategoryHfwrdReg:
+
+		info = &inst_info[arg1 * 16 + arg2];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
+
+	case InstCategoryHfwrdImm:
+
+		info = &inst_info[arg1 * 16 + arg2];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
+
+	case InstCategorySdtr:
+
+		if (arg2 == 0xff)
+		{
+			for (unsigned int i = 0; i < 16; i++){
+				info = &inst_info[arg1 * 16 + i];
 				info->inst = inst_name;
 				info->category = category;
 				info->name = name;
@@ -1129,10 +1056,102 @@ void Asm::SetupInstInfo(const char* name, const char* fmt_str,
 				info->size = 4;
 				info->opcode = inst_name;
 			}
-			break;
-		default:
-			throw misc::Panic(misc::fmt("%d: not recognized", category));
-			break;
+		}
+		else
+		{
+			info = &inst_info[arg1 * 16 + arg2];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+			info = &inst_info[arg1 * 16 + (arg2 + 8)];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+		}
+		break;
+
+	case InstCategoryBrnch:
+
+		for (unsigned int i = 0 ; i < 16; i++)
+		{
+			for (unsigned int j = 0 ; j < 16; j++)
+			{
+				info = &inst_info[(arg1 + i) * 16 + j];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+		}
+		break;
+
+	case InstCategoryBdtr:
+
+		for (unsigned int i = 0; i < 16; i++)
+		{
+			info = &inst_info[arg1 * 16 + i];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+		}
+		break;
+
+	case InstCategorySwiSvc:
+
+		for (unsigned int i = 0 ; i < 16; i++)
+		{
+			for (unsigned int j = 0 ; j < 16; j++)
+			{
+				info = &inst_info[(arg1 + i) * 16 + j ];
+				info->inst = inst_name;
+				info->category = category;
+				info->name = name;
+				info->fmt_str = fmt_str;
+				info->size = 4;
+				info->opcode = inst_name;
+			}
+		}
+		break;
+
+	case InstCategoryCprDtr:
+
+		info = &inst_info[arg1 * 16 + arg2];
+		info->inst = inst_name;
+		info->category = category;
+		info->name = name;
+		info->fmt_str = fmt_str;
+		info->size = 4;
+		info->opcode = inst_name;
+		break;
+
+	case InstCategoryVfp:
+
+		for (unsigned int i = 0; i < 16; i++)
+		{
+			info = &inst_info[arg1 * 16 + i];
+			info->inst = inst_name;
+			info->category = category;
+			info->name = name;
+			info->fmt_str = fmt_str;
+			info->size = 4;
+			info->opcode = inst_name;
+		}
+		break;
+	default:
+
+		throw misc::Panic(misc::fmt("%d: not recognized", category));
+		break;
 	}
 }
 
@@ -1142,24 +1161,14 @@ void Asm::Thumb32SetupTable(const char* name , const char* fmt_str ,
 		int op4 , int op5 , int op6, int op7, int op8, InstThumb32Opcode inst_name)
 {
 	InstThumb32Info *current_table;
+
 	// We initially start with the first table arm_asm_table, with the opcode field as argument 
 	current_table = dec_table_thumb32_asm;
-	int op[8];
-	int i;
-
-	op[0] = op1;
-	op[1] = op2;
-	op[2] = op3;
-	op[3] = op4;
-	op[4] = op5;
-	op[5] = op6;
-	op[6] = op7;
-	op[7] = op8;
-
-	i = 0;
-	while(1)
+	int op[8] = {op1, op2, op3, op4, op5, op6, op7, op8};
+	int i = 0;
+	while (1)
 	{
-		if(current_table[op[i]].next_table && (op[i] >= 0))
+		if (current_table[op[i]].next_table && (op[i] >= 0))
 		{
 			current_table = current_table[op[i]].next_table;
 			i++;
@@ -1214,7 +1223,7 @@ void Asm::Thumb16SetupTable(const char* name , const char* fmt_str ,
 }
 
 
-void Asm::ElfSymbolFunc(const ELFReader::File &file,
+void Asm::ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, AsmDisassemblyMode disasm_mode)
 {
 	ELFReader::Symbol *symbol;
@@ -1222,7 +1231,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 
 	if (disasm_mode == AsmDisassemblyModeArm)
 	{
-		for ( int i = 0; i < file.getNumSymbols(); i++)
+		for (int i = 0; i < file.getNumSymbols(); i++)
 		{
 			symbol = file.getSymbol(i);
 			if(symbol->getValue() == inst_addr)
@@ -1233,7 +1242,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 				}
 				else
 				{
-					std::cout << misc::fmt("\n%08x <%s>\n",
+					os << misc::fmt("\n%08x <%s>\n",
 							symbol->getValue(),
 							symbol->getName().c_str());
 					//prev_symbol = symbol->getValue();
@@ -1244,7 +1253,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 	}
 	else if (disasm_mode == AsmDisassemblyModeThumb)
 	{
-		for ( int i = 0; i < file.getNumSymbols(); i++)
+		for (int i = 0; i < file.getNumSymbols(); i++)
 		{
 			symbol = file.getSymbol(i);
 			if(symbol->getValue() == (inst_addr + 1))
@@ -1256,7 +1265,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 				else
 				{
 
-					std::cout << misc::fmt("\n%08x <%s>\n",
+					os << misc::fmt("\n%08x <%s>\n",
 							(symbol->getValue() -1),
 							symbol->getName().c_str());
 					//prev_symbol = symbol->getValue();
@@ -1269,16 +1278,16 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file,
 }
 
 
-unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file,
+unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, unsigned int *inst_ptr)
 {
 	ELFReader::Symbol *symbol;
 	unsigned int word_flag;
 	symbol = file.getSymbolByAddress(inst_addr);
 
-	if(!(symbol->getName().compare(0, 2, "$d")))
+	if (!(symbol->getName().compare(0, 2, "$d")))
 	{
-		std::cout << misc::fmt(".word   0x%08x\n", *inst_ptr);
+		os << misc::fmt(".word   0x%08x\n", *inst_ptr);
 		word_flag = 1;
 	}
 	else
@@ -1286,20 +1295,20 @@ unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file,
 		word_flag = 0;
 	}
 
-	return (word_flag);
+	return word_flag;
 }
 
 
-unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file,
+unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, unsigned int *inst_ptr)
 {
 	ELFReader::Symbol *symbol;
 	unsigned int word_flag;
 	symbol = file.getSymbolByAddress(inst_addr);;
 
-	if(!(symbol->getName().compare(0, 2, "$d")))
+	if (!(symbol->getName().compare(0, 2, "$d")))
 	{
-		std::cout << misc::fmt(".word   0x%08x\n", *inst_ptr);
+		os << misc::fmt(".word   0x%08x\n", *inst_ptr);
 		word_flag = 1;
 	}
 	else
@@ -1307,7 +1316,7 @@ unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file,
 		word_flag = 0;
 	}
 
-	return (word_flag);
+	return word_flag;
 }
 
 
@@ -1329,19 +1338,13 @@ AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &
 		unsigned int addr)
 {
 	ELFReader::Symbol *symbol = NULL;
-
 	AsmDisassemblyMode disasm_mode;
-
 	unsigned int tag_index = 0;
 
 	// Binary search
-	int lo;
+	int lo = 0;
 	int mid;
-	int hi;
-
-	lo = 0;
-	hi = symbol_list.size() - 1;
-
+	int hi = symbol_list.size() - 1;;
 	while(lo <= hi)
 	{
 		mid = (lo + hi) / 2;
@@ -1355,6 +1358,7 @@ AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &
 			lo = mid + 1;
 	}
 
+	// Search finished
 	tag_index = mid;
 	symbol = symbol_list[tag_index];
 	if (!symbol)
@@ -1399,14 +1403,12 @@ void Asm::DisassembleBinary(const std::string &path)
 	ELFReader::Section *section;
 	std::vector<ELFReader::Symbol*> symbol_list;
 	Inst inst;
-
 	static AsmDisassemblyMode disasm_mode;
 
-
+	// Find the section
 	int i;
 	unsigned int inst_index = 0;
 	unsigned int inst_pos;
-
 	for (i = 0; i < file.getNumSections(); ++i)
 	{
 		section = file.getSection(i);
@@ -1416,6 +1418,7 @@ void Asm::DisassembleBinary(const std::string &path)
 	if (i == file.getNumSections())
 		throw misc::Panic(".text section not found!\n");
 
+	// Create the symbol list
 	ElfSymbolListCreate(file, symbol_list);
 
 	// Decode and dump instructions
@@ -1428,18 +1431,20 @@ void Asm::DisassembleBinary(const std::string &path)
 		{
 			ElfSymbolFunc(
 				file,
+				std::cout,
 				(section->getAddr() + inst_index),
 				disasm_mode);
 
 			inst.DumpHex(std::cout, (unsigned int *)(section->getBuffer() + inst_pos),
 					(section->getAddr() + inst_index));
 
-			if (!ElfDumpWordSymbol(file, (section->getAddr() + inst_index),
+			if (!ElfDumpWordSymbol(file, std::cout, (section->getAddr() + inst_index),
 				(unsigned int *)(section->getBuffer() + inst_pos)))
 			{
 				inst.Decode(section->getAddr() + inst_index, section->getBuffer() + inst_pos);
 				inst.Dump(std::cout);
 			}
+
 			// Increment instruction buffer index by 4 for ARM mode
 			inst_index += 4;
 			inst_pos += 4;
@@ -1453,19 +1458,21 @@ void Asm::DisassembleBinary(const std::string &path)
 
 				ElfSymbolFunc(
 					file,
+					std::cout,
 					(section->getAddr() + inst_index),
 					disasm_mode);
 
 				inst.Thumb32DumpHex(std::cout, (unsigned int *)(section->getBuffer() + inst_pos),
 					(section->getAddr() + inst_index));
 
-				if (!ElfDumpThumbWordSymbol(file, (section->getAddr() + inst_index),
+				if (!ElfDumpThumbWordSymbol(file, std::cout, (section->getAddr() + inst_index),
 					(unsigned int *)(section->getBuffer() + inst_pos)))
 				{
 
 					inst.Thumb32Decode(section->getBuffer() + inst_pos,
 							section->getAddr() + inst_index);
 					inst.Thumb32Dump(std::cout);
+
 					// Increment instruction buffer index by 4 for Thumb32 mode */
 					inst_index += 4;
 					inst_pos += 4;
@@ -1482,12 +1489,13 @@ void Asm::DisassembleBinary(const std::string &path)
 
 				ElfSymbolFunc(
 					file,
+					std::cout,
 					(section->getAddr() + inst_index),
 					disasm_mode);
 
 				inst.Thumb16DumpHex(std::cout, (unsigned int *)(section->getBuffer() + inst_pos),
 					(section->getAddr() + inst_index));
-				if (!ElfDumpThumbWordSymbol(file, (section->getAddr() + inst_index),
+				if (!ElfDumpThumbWordSymbol(file, std::cout, (section->getAddr() + inst_index),
 					(unsigned int *)(section->getBuffer() + inst_pos)))
 				{
 					inst.Thumb16Decode(section->getBuffer() + inst_pos, section->getAddr() + inst_index);
