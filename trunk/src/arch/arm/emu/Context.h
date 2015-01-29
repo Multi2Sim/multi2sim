@@ -392,7 +392,7 @@ class Context
 	// execution of ISA thumb16 instructions. The emulator has a table indexed by an
 	// instruction identifier that points to all instruction emulation
 	// functions.
-	// FIXME typedef void (Context::*ExecuteInstThumb16Fn)();
+	typedef void (Context::*ExecuteInstThumb16Fn)();
 
 	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
@@ -400,16 +400,13 @@ class Context
 	//		0x0, 0x0, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff)
 	// is expanded to
 	//	void ExecuteInstThumb16_LSL_imm();
-	// FIXME
-/*
-#define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
+#define DEFINST(_name, _fmt_str, _cat, _op1, _op2, _op3, _op4, _op5, _op6) \
 	void ExecuteInstThumb16_##_name();
 #include <arch/arm/asm/InstThumb.def>
 #undef DEFINST
- * */
 
 	// Table of functions
-	// FIXME static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
+	static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
 
 	// Prototype of a member function of class Context devoted to the
 	// execution of ISA thumb 32 instructions. The emulator has a table indexed by an

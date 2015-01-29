@@ -40,6 +40,7 @@ libemu_a_SOURCES = \
 	ContextLoader.cc \
 	ContextIsa.cc \
 	ContextIsaArm32.cc \
+	ContextIsaThumb16.cc \
 	ContextSyscall.cc \
 	ContextSignal.cc \
 	\

@@ -612,8 +612,8 @@ void Context::ExecuteInst()
 		regs.incPC(2);
 		if (inst.getThumb16Opcode())
 		{
-			// FIXME ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
-			// FIXME (this->*fn)();
+			ExecuteInstThumb16Fn fn = execute_inst_thumb16_fn[inst.getThumb16Opcode()];
+			(this->*fn)();
 		}
 		break;
 
