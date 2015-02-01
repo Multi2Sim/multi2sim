@@ -622,8 +622,8 @@ void Context::ExecuteInst()
 		regs.incPC(2);
 		if (inst.getThumb32Opcode())
 		{
-			// FIXME ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
-			// FIXME (this->*fn)();
+			ExecuteInstThumb32Fn fn = execute_inst_thumb32_fn[inst.getThumb32Opcode()];
+			(this->*fn)();
 		}
 		break;
 
