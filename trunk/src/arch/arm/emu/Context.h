@@ -412,7 +412,7 @@ class Context
 	// execution of ISA thumb 32 instructions. The emulator has a table indexed by an
 	// instruction identifier that points to all instruction emulation
 	// functions.
-	// FIXME typedef void (Context::*ExecuteInstThumb32Fn)();
+	typedef void (Context::*ExecuteInstThumb32Fn)();
 
 	// Instruction emulation functions. Each entry of Inst.def will be
 	// expanded into a function prototype. For example, entry
@@ -420,17 +420,14 @@ class Context
 	//		0x1,0x0,0x0,0x1,0x04,0xffffffff,0xffffffff,0xffffffff)
 	// is expanded to
 	//	void ExecuteInstThumb32_STREX();
-	// FIXME
-/*
+
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 	void ExecuteInstThumb32_##_name();
 #include <arch/arm/asm/InstThumb32.def>
 #undef DEFINST
- *
- */
 
 	// Table of functions
-	// FIXME static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
+	static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
 
 	// Perform rotation right operation
 	unsigned int IsaRotr(unsigned int value, int shift);
