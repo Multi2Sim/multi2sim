@@ -22,6 +22,9 @@ libemu_a_SOURCES = \
 		ProgramLoader.h \
 		ProgramLoader.cc \
 		\
+		SegmentManager.h \
+		SegmentManager.cc \
+		\
 		StackFrame.h \
 		StackFrame.cc \
 		\

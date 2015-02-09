@@ -28,6 +28,7 @@
 #include "AQLQueue.h"
 #include "ProgramLoader.h"
 #include "Function.h"
+#include "StackFrame.h"
 
 namespace HSA
 {
@@ -41,14 +42,22 @@ Function::Function(const std::string& name) :
 std::unique_ptr<BrigCodeEntry> Function::getFirstEntry() const
 {
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	return binary->getCodeEntryByOffset(first_entry->getOffset());
+	if(first_entry.get())
+	{
+		return binary->getCodeEntryByOffset(first_entry->getOffset());
+	}
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 
 std::unique_ptr<BrigCodeEntry> Function::getLastEntry() const
 {
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	return binary->getCodeEntryByOffset(last_entry->getOffset());
+	if(last_entry.get())
+	{
+		return binary->getCodeEntryByOffset(last_entry->getOffset());
+	}
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 
@@ -125,21 +134,29 @@ void Function::AllocateRegister(unsigned int *max_reg)
 }
 
 
-void Function::PassByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigCodeEntry *call_inst)
+void Function::PassByValue(StackFrame *caller_frame,
+		StackFrame *callee_frame, BrigCodeEntry *call_inst)
 {
 	// Get arguments operands
 	//BrigOperandArgumentList *out_args =
 	//		(BrigOperandArgumentList *)call_inst->getOperand(0);
 	auto in_args = call_inst->getOperand(2);
+
+	// Get caller's argument scope and callee's function argument
+	// scope
+	VariableScope *callee_scope = callee_frame->getFunctionArguments();
+	VariableScope *caller_scope = caller_frame->getArgumentScope();
+
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		// Get argument information from the function
 		Variable *argument = it->second.get();
 
 		// Insert argument into callee's function argument scope
+		SegmentManager *callee_segment =
+				callee_frame->getFuncArgSegment();
 		callee_scope->DeclearVariable(argument->getName(),
-				argument->getSize(), argument->getType());
+				argument->getType(), callee_segment);
 
 		// Copy argument's value
 		if (argument->isInput())
@@ -166,11 +183,16 @@ void Function::PassByValue(VariableScope *caller_scope,
 }
 
 
-void Function::PassBackByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigCodeEntry *call_inst)
+void Function::PassBackByValue(StackFrame *caller_frame,
+		StackFrame *callee_frame, BrigCodeEntry *call_inst)
 {
 	// Get arguments operands
 	auto out_args = call_inst->getOperand(0);
+
+	// Get caller's argument scope and callee's function argument
+	// scope
+	VariableScope *callee_scope = callee_frame->getFunctionArguments();
+	VariableScope *caller_scope = caller_frame->getArgumentScope();
 
 	// Traverse all arguments
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
@@ -220,6 +242,22 @@ void Function::Dump(std::ostream &os = std::cout) const
 
 	// Dump register related information
 	DumpRegisterInfo(os);
+
+	// Dump first and last entry
+	if (getFunctionDirective()->getCodeBlockEntryCount() > 0)
+	{
+		// Dump first entry
+		os << "\tFirst entry: ";
+		getFirstEntry()->Dump(os);
+
+		// Dump last entry
+		os << "\tLast entry: ";
+		getLastEntry()->Dump(os);
+	}
+	else
+	{
+		os << "\tThis function has no instruction nor directive\n";
+	}
 
 	os << misc::fmt("****************************************"
 			"***************************************\n");

@@ -67,6 +67,9 @@ class WorkItem
  	// Work group that current work item belongs to
  	WorkGroup *work_group;
 
+ 	// The private segment memory manager
+ 	std::unique_ptr<SegmentManager> private_segment;
+
  	// work item absolute ids, equivalent to global_id in OpenCL
  	unsigned int abs_id_x;
  	unsigned int abs_id_y;
@@ -119,11 +122,11 @@ class WorkItem
  	template<typename T> void Inst_XOR_Aux();
  	template<typename T> void Inst_BITEXTRACT_Aux();
 	template<typename T> void Inst_LDA_Aux();
-	template<typename T> void Inst_LDC_Aux();
  	template<typename T> void Inst_MOV_Aux();
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
+ 	template<typename T> void Inst_LDI_Aux();
 
  	// Get the value of the index-th operand
  	template <typename Type>
@@ -216,6 +219,7 @@ class WorkItem
 
  	/// Create a work item. HSA should let grid object to create work item
  	WorkItem(WorkGroup *work_group,
+ 			unsigned private_segment_size,
  			unsigned int abs_id_x,
  			unsigned int abs_id_y,
  			unsigned int abs_id_z,

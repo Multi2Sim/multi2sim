@@ -31,6 +31,7 @@ namespace HSA
 class Wavefront;
 class Grid;
 class WorkItem;
+class SegmentManager;
 
 /// Work group of an HSA component
 class WorkGroup
@@ -42,6 +43,9 @@ class WorkGroup
 	unsigned int group_id_x;
 	unsigned int group_id_y;
 	unsigned int group_id_z;
+
+	// The segment memory manager
+	std::unique_ptr<SegmentManager> group_segment;
 
 	// List of wavefronts, map wave front id to wave fronts
 	// Wave front id is not specified in the standard, but can be
@@ -58,6 +62,7 @@ public:
 	/// \param group_id
 	/// 	Work group id, assigned by the grid
 	WorkGroup(Grid *grid,
+			unsigned group_segment_size,
 			unsigned int group_id_x,
 			unsigned int group_id_y,
 			unsigned int group_id_z);
@@ -103,6 +108,9 @@ public:
 
 	/// Return the work group id z
 	unsigned int getGroupIdZ() const { return group_id_z; }
+
+	/// Return the group segment memory manager
+	SegmentManager *getGroupSegment() const { return group_segment.get(); }
 
 };
 
