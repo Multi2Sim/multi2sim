@@ -25,6 +25,7 @@
 #include <m2c/cl2llvm/Context.h>
 #include <m2c/common/Context.h>
 #include <m2c/llvm2si/Context.h>
+#include <m2c/preprocessor/Context.h>
 #include <m2c/si2bin/Context.h>
 
 #include "Wrapper.h"
@@ -54,6 +55,7 @@ int MainProgram(int argc, char **argv)
 	cl2llvm::Context::RegisterOptions();
 	llvm2si::Context::RegisterOptions();
 	si2bin::Context::RegisterOptions();
+	preprocessor::Context::RegisterOptions();
 
 	// Process command line
 	command_line->Process(argc, argv);
@@ -63,22 +65,46 @@ int MainProgram(int argc, char **argv)
 	cl2llvm::Context::ProcessOptions();
 	llvm2si::Context::ProcessOptions();
 	si2bin::Context::ProcessOptions();
+	preprocessor::Context::ProcessOptions();
 
 	// Rest of the arguments contain sources
 	comm::Context *context = comm::Context::getInstance();
 	for (int i = 0; i < command_line->getNumArguments(); i++)
 		context->AddSourceFile(command_line->getArgument(i));
 
+
+
 	// Stand-alone OpenCL front-end
 	if (cl2llvm::Context::isActive())
 	{
+		// Preprocessor
+		preprocessor::Context *preprocessor_context = 
+				preprocessor::Context::getInstance();
+		for (int i = 0; i < context->getNumSourceFiles(); i++)
+		{
+			std::string in = context->getSourceFile(i);
+			std::string out = context->getSourceFile(i, ".clp");
+			preprocessor_context->Parse(in, out);
+		}
+
 		// Compile all source files
 		cl2llvm::Context *cl2llvm_context = cl2llvm::Context::getInstance();
 		for (int i = 0; i < context->getNumSourceFiles(); i++)
 		{
-			std::string in = context->getSourceFile(i);
+			std::string in = context->getSourceFile(i, ".clp");
 			std::string out = context->getSourceFile(i, ".llvm");
 			cl2llvm_context->Parse(in, out);
+			if (!preprocessor::Context::DumpOutput())
+			{
+				//Command string
+				std::string cmd;
+	
+				// Initialize command
+				cmd = "rm " + in;
+
+				//Run command
+				system(cmd.c_str());
+			}
 		}
 	}
 	
