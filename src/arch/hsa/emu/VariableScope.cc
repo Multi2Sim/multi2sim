@@ -17,9 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/asm/AsmService.h>
+
 #include "Emu.h"
 #include "VariableScope.h"
 #include "Function.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
@@ -35,18 +38,27 @@ VariableScope::~VariableScope()
 
 
 void VariableScope::DeclearVariable(const std::string &name,
-		unsigned int size, unsigned short type)
+		BrigTypeX type, SegmentManager *segment)
 {
-	// Retrieve global memory manager
-	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+	// Get the size of the variable
+	unsigned size = AsmService::TypeToSize(type);
 
-	// Allocated memory
-	unsigned address = manager->Allocate(size, 1);
+	// Allocate the memory from segment
+	unsigned address = 0;
+	if (segment)
+	{
+		address = segment->Allocate(size, 1);
+	}
+	else
+	{
+		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+		address = manager->Allocate(size, 1);
+	}
 
 	// Set up and insert into variable list
-	Variable *arg = new Variable(name, type, size, address);
+	Variable *var = new Variable(name, type, address, segment, false);
 	variable_info.insert(std::make_pair(name,
-			std::unique_ptr<Variable>(arg)));
+			std::unique_ptr<Variable>(var)));
 }
 
 
@@ -60,12 +72,7 @@ char *VariableScope::getBuffer(const std::string &name)
 	}
 
 	// Retrieve guest address
-	unsigned int guest_address = it->second->getAddress();
-
-	// Retrieve buffer in host memory
-	mem::Memory *memory = Emu::getInstance()->getMemory();
-	return memory->getBuffer(guest_address,
-			it->second->getSize(), mem::Memory::AccessWrite);
+	return it->second->getBuffer();
 }
 
 
@@ -83,6 +90,7 @@ unsigned VariableScope::getAddress(const std::string &name) const
 
 	return guest_address;
 }
+
 
 void VariableScope::Dump(std::ostream &os, unsigned int indent) const
 {

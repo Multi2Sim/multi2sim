@@ -20,8 +20,12 @@
 #ifndef ARCH_HSA_EMU_VARIABLE_H
 #define ARCH_HSA_EMU_VARIABLE_H
 
+#include <arch/hsa/asm/BrigDef.h>
+
 namespace HSA
 {
+
+class SegmentManager;
 
 /// Information for argument
 class Variable
@@ -30,7 +34,7 @@ class Variable
 	std::string name;
 
 	// Type of the variable
-	unsigned short type;
+	BrigTypeX type;
 
 	// Size of the variable
 	unsigned size;
@@ -41,14 +45,22 @@ class Variable
 	// Is input
 	bool is_input = false;
 
+	// The segment where the variable is declared. If segment is nullptr,
+	// the variable is defined directly into memory
+	SegmentManager *segment;
+
 	// Index of the argument in the argument
 	unsigned int index = 0;
+
+	// If the variable is formal it does not occupies memory space
+	bool isFormal;
 
 public:
 
 	/// Constructor
-	Variable(const std::string& name, unsigned short type, unsigned size,
-			unsigned address);
+	Variable(const std::string& name, BrigTypeX type,
+			unsigned address, SegmentManager *segment,
+			bool isFormal);
 
 	/// Destructor
 	~Variable();
@@ -94,16 +106,22 @@ public:
 	void setSize(unsigned size) { this->size = size; }
 
 	/// Get the type of the variable
-	unsigned short getType() const { return type; }
+	BrigTypeX getType() const { return type; }
 
 	/// Set the type of the variable
-	void setType(unsigned short type) { this->type = type; }
+	void setType(BrigTypeX type) { this->type = type; }
 
 	/// Get the index of the argument in a functions argument list
 	unsigned int getIndex() const { return index; }
 
 	/// Set the index of the argument in the argument list
 	void setIndex(unsigned int index) { this->index = index; }
+
+	/// Returns the flat address of a variable
+	unsigned getFlatAddress() const;
+
+	/// Return the buffer to the variable
+	char *getBuffer() const;
 
 };
 

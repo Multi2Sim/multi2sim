@@ -1,66 +1,70 @@
-version 0:96:$full:$large;
+version 0:99:$full:$large;
 
 // Runtime definitions
 // Init/Shutdown routines
-function &hsa_init (arg_u32 %status) ();
-function &hsa_stut_down (arg_u32 %status) ();
+function &hsa_init (arg_u32 %status) () {};
+function &hsa_stut_down (arg_u32 %status) () {};
 // System
-function &hsa_system_get_info(arg_u32 %status) (arg_u32 %attribute, arg_u64 %value);
+function &hsa_system_get_info(arg_u32 %status) (arg_u32 %attribute, arg_u64 %value) {};
 // Agent
-function &hsa_iterate_agents (arg_u32 %status) (arg_u64 %call_back, arg_u64 %data);
-function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u64 %value);
+function &hsa_iterate_agents (arg_u32 %status) (arg_u64 %call_back, arg_u64 %data) {};
+function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u64 %value) {};
 // Queues
 function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u32 %size, 
 		arg_u32 %type, arg_u64 %call_back, 
-		arg_u64 %service_queue, arg_u64 %queue);
-function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue);
-function &hsa_queue_inactivate (arg_u32 %status) (arg_u64 %queue);
+		arg_u64 %service_queue, arg_u64 %queue) {};
+function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_inactivate (arg_u32 %status) (arg_u64 %queue) {};
+
+function &m2s_print_int () (arg_u32 %integer, arg_u32 %is_unsigned) {};
 
 
-function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0);
+function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0) {};
 
 // Iterate agent callback 
-function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %data)
+indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %data)
 {
+	global_u32 %type;			// Declare a local variable for storing the type of the device
 	ld_arg_u64 $d1, [%agent];		// Load argument %agent into register %d1
-	private_u32 %type;			// Declare a local variable for storing the type of the device
 	{
 		arg_u32 %err;			// Declare a variable for function return
 		arg_u32 %attribute;		// Declear an argument for the attribute to retrieve
-		st_arg_u32 13, [%attribute];	// Set the value of %attribute to be 13, for device type
-		lda_private_u64 $d0, [%type];	// Get the address of the variable %type;
 		arg_u64 %type_addr;		// Declare an argument to pass the address of the data field
-		st_arg_u64 $d0, [%type_addr];	// Set the value of %type_addr
 		arg_u64 %agent_arg;		// Declear argument for the agent handler
+
+		st_arg_u32 13, [%attribute];	// Set the value of %attribute to be 13, for device type
+		lda_global_u64 $d0, [%type];	// Get the address of the variable %type;
+		st_arg_u64 $d0, [%type_addr];	// Set the value of %type_addr
 		st_arg_u64 $d1, [%agent_arg];	// Store the value of agent handler 
+
 		call &hsa_agent_get_info (%err) (%agent_arg, %attribute, %type_addr);
 	}
 	
-	ld_private_u32 $s0, [%type];		// Store the type value to register
+	ld_global_u32 $s0, [%type];		// Store the type value to register
 
 	// If the device is a GPU
 	cmp_ne_b1_u32 $c0, $s0, 1;		// If the type is not 1, set $c0 to true;
-	cbr $c0, @not_gpu_agent;		// If $c0 is true, not GPU, branch away
+	cbr_b1 $c0, @not_gpu_agent;		// If $c0 is true, not GPU, branch away
 	ld_arg_u64 $d0, [%agent];		// Load the arguement of %agent
 	ld_arg_u64 $d1, [%data];		// Get the address of %data
-	st_arg_u64 $d0, [$d1];			// Store the agent handler to [%data]
+	st_u64 $d0, [$d1];			// Store the agent handler to [%data]
 	st_arg_u32 0, [%status];		// Set return value to 0
 	ret;
 	
 @not_gpu_agent:
 	cmp_ne_b1_u32 $c0, $s0, 0;		// If CPU device, set $c0 to false
-	cbr $c0, @not_cpu_agent;		// If not CPU, $c0 is true, then jump
+	cbr_b1 $c0, @not_cpu_agent;		// If not CPU, $c0 is true, then jump
 	ld_arg_u64 $d1, [%data];		// Get the address stored in [%data]
-	ld_arg_u64 $d0, [$d1];			// Load the value already in [$s1]
+	ld_u64 $d0, [$d1];			// Load the value already in [$s1]
 	cmp_ne_b1_u64 $c0, $d0, 1;		// If the value in $d0 is not 1, set $c0 to true, for no GPU have been found
-	cbr $c0, @add_this_cpu;			// If $c0 is true, $d0 is not 1, its safe to add this CPU
+	cbr_b1 $c0, @add_this_cpu;			// If $c0 is true, $d0 is not 1, its safe to add this CPU
 	st_arg_u32 0, [%status];		// Save return address
 	ret;
 
 @add_this_cpu:
 	ld_arg_u64 $d0, [%agent];		// Get agent handler
 	ld_arg_u64 $d1, [%data];		// Get address of %data
-	st_arg_u64 $d0, [$d1];			// Store angent handler
+	st_u64 $d0, [$d1];			// Store angent handler
 	st_arg_u32 0, [%status];		// Store return value
 	ret;
 	
@@ -70,87 +74,66 @@ function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %da
 	
 };
 
-function &test_kernel () ()
+kernel &test_kernel ()
 {
 	workitemabsid_u32 $s1, 0;
-	syscall_u32 $s1, 1, $s1, 0, 0;
-};
-
-kernel &__OpenCL_vec_add_kernel(
-  kernarg_u64 %arg_val0,
-  kernarg_u64 %arg_val1,
-  kernarg_u64 %arg_val2,
-  kernarg_u64 %arg_val3)
-{
-@__OpenCL_vec_add_kernel_entry:
-// BB#0:             // %entry
-  ld_kernarg_u64 $d0, [%arg_val3];
-  workitemabsid_u32 $s1, 0;
-  cvt_u64_u32	    $d1, $s1;
-  cmp_lt_b1_u64     $c0, $d1, $d0;
-  ld_kernarg_u64    $d0, [%arg_val2];
-  ld_kernarg_u64    $d2, [%arg_val1];
-  ld_kernarg_u64    $d3, [%arg_val0];
-  cbr $c0, @BB0_2;
-  brn @BB0_1;
-
-@BB0_1:
-  ret;    // %if. end
-@BB0_2:
-  shl_u64  $d1, $d1, 2;
-  add_u64  $d2, $d2, $d1;
-  ld_global_f64 $d2, [$d2];
-  add_u64  $d3, $d3, $d1;
-  ld_global_f64 $d3, [$d3];
-  add_f64  $d2, $d3, $d2;
-  add_u64  $d0, $d0, $d1;
-  st_global_f64 $d2, [$d0];
-  brn @BB0_1;
+	{
+		arg_u32 %integer;
+		arg_u32 %is_unsigned;
+		st_arg_u32 $s1, [%integer];
+		st_arg_u32 1, [%is_unsigned];
+		call &m2s_print_int () (%integer, %is_unsigned);
+	}
 };
 
 function &main()(){
+
+	global_u64 %device;				// Declare the device handler 
+	global_u64 %ptr_queue;				// Address to the queue
+	private_u64 %packet_id;				// Declare packet id
 
 	{
 		arg_u32 %err;				// Declare return argument
 		call &hsa_init (%err)();		// Call hsa_init
 	}
 	
-	private_u64 %device;				// Declare the device handler 
+	
 	{
 		arg_u32 %err;				// Deaclare return argument
-		lda_private_u64 $d0, [%device];		// Get the address of the device variable
 		arg_u64 %device_addr;			// Declear argument variable to hold device address
-		st_arg_u64 $d0, [%device_addr];		// Store the value in $d0 to the variable
-		ldc_u64 $d0, &select_gpu_if_possible;	// Get the address of callback
 		arg_u64 %call_back;			// Declare callback function
+
+		lda_global_u64 $d0, [%device];		// Get the address of the device variable
+		st_arg_u64 $d0, [%device_addr];		// Store the value in $d0 to the variable
+		ldi_u64 $d0, &select_gpu_if_possible;	// Get the address of callback
 		st_arg_u64 $d0, [%call_back];		// Store the value 
+		
 		call &hsa_iterate_agents (%err) (%call_back, %device_addr);
 	}
 
 	// Create AQL queue
-	private_u64 %ptr_queue;				// Address to the queue
 	{
 		arg_u64 %component;			// The queue is to be added into this component
-		ld_private_u64 $d0, [%device];		// Load the value ot %device to $d0
-		st_arg_u64 $d0, [%component];		// Store the device handler to %component
-
 		arg_u32 %queue_size;			// Declare queue size
+		arg_u32 %queue_type;			// Declare queue type
+		arg_u64 %ptr_callback;			// Declare the pointer to the callback
+		arg_u64 %ptr_dispatch_queue;		// Declare pointer to dispatch queue
+		arg_u64 %ptr_ptr_queue;			// Declare pointer to ptr_queue;
+		arg_u32 %status;			// Return value
+
+		ld_global_u64 $d0, [%device];		// Load the value ot %device to $d0
+		st_arg_u64 $d0, [%component];		// Store the device handler to %component
+		
 		st_arg_u32 4, [%queue_size];		// Set the queue size to be 4
 		
-		arg_u32 %queue_type;			// Declare queue type
 		st_arg_u32 1, [%queue_type];		// Set the queue to be queue type single
 
-		arg_u64 %ptr_callback;			// Declare the pointer to the callback
 		st_arg_u64 0, [%ptr_callback];		// Set the callback to be NULL
 
-		arg_u64 %ptr_dispatch_queue;		// Declare pointer to dispatch queue
 		st_arg_u64 0, [%ptr_dispatch_queue];	// Set the dispatch queue to be NULL
 
-		arg_u64 %ptr_ptr_queue;			// Declare pointer to ptr_queue;
-		lda_private_u64 $d0, [%ptr_queue];	// Address to the ptr_queue
+		lda_global_u64 $d0, [%ptr_queue];	// Address to the ptr_queue
 		st_arg_u64 $d0, [%ptr_ptr_queue];	// Store the ptr_ptr_queue
-
-		arg_u32 %status;			// Return value
 
 		call &hsa_queue_create (%status) (%component, %queue_size, 
 				%queue_type, %ptr_callback, 
@@ -159,13 +142,13 @@ function &main()(){
 	}
 
 	// Dispatch packet
-	private_u64 %packet_id;				// Declare packet id
-	ld_private_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
+	ld_global_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
+
 	// FIXME accessing data structures in this way is not safe
 	ld_global_u64 $d1, [$d0+8];			// Store the queue's base address to $d1;
 	st_private_u64 $d1, [%packet_id];		// Store the packet_id, which equals to the base address;
 	
-	ldc_u64 $d3, &test_kernel;			// Load the address of the kernel object
+	ldk_u64 $d3, &test_kernel;			// Load the address of the kernel object
 
 	// Prepare each field of AQLPacket
 	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1

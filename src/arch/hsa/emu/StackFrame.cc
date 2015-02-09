@@ -20,6 +20,7 @@
 #include "StackFrame.h"
 #include "WorkItem.h"
 #include "Emu.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
@@ -42,12 +43,19 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 	// Initialize argument scopes
 	function_arguments.reset(new VariableScope());
 	variable_scope.reset(new VariableScope());
+
+	// Initialize function argument segment
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	func_arg_segment.reset(new SegmentManager(memory,
+			function->getArgumentSize()));
 }
 
 
 StackFrame::~StackFrame()
 {
+	func_arg_segment.release();
 }
+
 
 void StackFrame::setPc(std::unique_ptr<BrigCodeEntry> pc)
 {

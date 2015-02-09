@@ -21,11 +21,13 @@
 //#include <arch/hsa/driver/Driver.h>
 
 #include "WorkItem.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
 
 WorkItem::WorkItem(WorkGroup *work_group,
+			unsigned private_segment_size,
 			unsigned int abs_id_x,
 			unsigned int abs_id_y,
 			unsigned int abs_id_z,
@@ -47,6 +49,10 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	// Set the first stack frame
 	StackFrame *frame = new StackFrame(root_function, this);
 	stack.push_back(std::unique_ptr<StackFrame>(frame));
+
+	// Set the private segment memory manager
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
 	if (Emu::isa_debug)
@@ -73,7 +79,8 @@ bool WorkItem::MovePcForwardByOne()
 
 	// If next pc is beyond last inst, the last instruction of the function
 	// is executed. Return the function.
-	if (next_pc->getOffset() >
+	if (!next_pc ||
+		next_pc->getOffset() >
 		stack_top->getFunction()->getLastEntry()->getOffset())
 	{
 		ReturnFunction();
@@ -139,9 +146,7 @@ bool WorkItem::ReturnFunction()
 		// Process value return
 		Function *function = callee_frame->getFunction();
 		BrigCodeEntry *inst = caller_frame->getPc();
-		function->PassBackByValue(caller_frame->getArgumentScope(),
-				callee_frame->getFunctionArguments(),
-				inst);
+		function->PassBackByValue(caller_frame, callee_frame, inst);
 
 		if (Emu::isa_debug)
 		{
@@ -227,8 +232,21 @@ void WorkItem::ProcessRelatedDirectives()
 		{
 		case BRIG_KIND_DIRECTIVE_ARG_BLOCK_START:
 
-			stack_top->StartArgumentScope();
+		{
+			auto dir = pc->Next();
+			unsigned size = 0;
+			while (dir->getKind() != BRIG_KIND_DIRECTIVE_ARG_BLOCK_END)
+			{
+				if (dir->getKind() == BRIG_KIND_DIRECTIVE_VARIABLE)
+				{
+					size += AsmService::TypeToSize(
+							dir->getType());
+				}
+				dir = dir->Next();
+			}
+			stack_top->StartArgumentScope(size);
 			break;
+		}
 
 		case BRIG_KIND_DIRECTIVE_ARG_BLOCK_END:
 
@@ -276,6 +294,7 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 	case BRIG_SEGMENT_GLOBAL:
 	case BRIG_SEGMENT_GROUP:
 	case BRIG_SEGMENT_PRIVATE:
+
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
 		return variable_scope->getBuffer(name);
@@ -354,11 +373,30 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_GLOBAL:
-	case BRIG_SEGMENT_GROUP:
-	case BRIG_SEGMENT_PRIVATE:
+
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		variable_scope->DeclearVariable(name, size, dir->getType());
+		variable_scope->DeclearVariable(name, dir->getType(), nullptr);
+		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		break;
+	}
+
+	case BRIG_SEGMENT_GROUP:
+
+	{
+		VariableScope *variable_scope = stack_top->getVariableScope();
+		SegmentManager *segment = work_group->getGroupSegment();
+		variable_scope->DeclearVariable(name, dir->getType(), segment);
+		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		break;
+	}
+
+	case BRIG_SEGMENT_PRIVATE:
+
+	{
+		VariableScope *variable_scope = stack_top->getVariableScope();
+		SegmentManager *segment = private_segment.get();
+		variable_scope->DeclearVariable(name, dir->getType(), segment);
 		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
 		break;
 	}
@@ -380,13 +418,18 @@ void WorkItem::DeclearVariable()
 
 	case BRIG_SEGMENT_ARG:
 	{
+		// Get the variable scope
 		VariableScope *variable_scope;
 		if (stack_top->getArgumentScope())
 			variable_scope = stack_top->getArgumentScope();
 		else
 			throw misc::Panic("Error creating argument, not in a "
 					"argument scope");
-		variable_scope->DeclearVariable(name, size, dir->getType());
+
+		// Get the arg segment manager
+		SegmentManager *arg_segment = stack_top->getArgSegment();
+		variable_scope->DeclearVariable(name,dir->getType(),
+				arg_segment);
 		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
 		break;
 	}
@@ -424,19 +467,22 @@ bool WorkItem::Execute()
 
 	// Record frame status before the instruction is executed
 	BrigCodeEntry *inst = stack_top->getPc();
-	Emu::isa_debug << "Executing: ";
-	Emu::isa_debug << *inst;
-
-	// Get the function according to the opcode and perform the inst
-	BrigOpcode opcode = inst->getOpcode();
-	ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-	try{
-		(this->*fn)();
-	}
-	catch(misc::Panic &panic)
+	if (inst)
 	{
-		std::cerr << panic.getMessage();
-		exit(1);
+		Emu::isa_debug << "Executing: ";
+		Emu::isa_debug << *inst;
+
+		// Get the function according to the opcode and perform the inst
+		BrigOpcode opcode = inst->getOpcode();
+		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
+		try{
+			(this->*fn)();
+		}
+		catch(misc::Panic &panic)
+		{
+			std::cerr << panic.getMessage();
+			exit(1);
+		}
 	}
 
 

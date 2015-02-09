@@ -212,6 +212,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	Function *main_function = loader->getMainFunction();
 	unsigned int function_dir = main_function->getFunctionDirective()->getOffset();
 	packet->setKernalObjectAddress((unsigned long long)function_dir);
+	packet->setPrivateSegmentSizeBytes(0x100);
+	packet->setGroupSegmentSizeBytes(0x1000);
 
 	// Enqueue the packet
 	aql_debug << "Packet created and enqueued: \n" << *packet;

@@ -21,6 +21,7 @@
 #include "WorkGroup.h"
 #include "WorkItem.h"
 #include "Grid.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
@@ -58,7 +59,8 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 		unsigned int z = i / group_size_x / group_size_y;
 		unsigned int y = i % (group_size_x *group_size_y) / group_size_x;
 		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
-		deployWorkItem(x, y, z);
+		deployWorkItem(x, y, z, packet->getPrivateSegmentSizeBytes(),
+				packet->getGroupSegmentSizeBytes());
 	}
 }
 
@@ -99,7 +101,9 @@ void Grid::Dump(std::ostream &os = std::cout) const
 
 void Grid::deployWorkItem(unsigned int abs_id_x,
 			unsigned int abs_id_y,
-			unsigned int abs_id_z)
+			unsigned int abs_id_z,
+			unsigned private_segment_size,
+			unsigned group_segment_size)
 {
 	// Get work group id
 	unsigned int group_id_x = abs_id_x / group_size_x;
@@ -113,13 +117,15 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 	auto it = workgroups.find(group_flattened_id);
 	if (it == workgroups.end())
 	{
-		createWorkGroup(group_id_x, group_id_y, group_id_z);
+		createWorkGroup(group_id_x, group_id_y, group_id_z,
+				group_segment_size);
 		it = workgroups.find(group_flattened_id);
 	}
 	WorkGroup *work_group = it->second.get();
 
 	// Create work item
 	auto work_item = misc::new_unique<WorkItem>(work_group,
+			private_segment_size,
 			abs_id_x, abs_id_y, abs_id_z,
 			root_function);
 
@@ -129,9 +135,10 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 
 
 void Grid::createWorkGroup(unsigned int id_x, unsigned int id_y,
-			unsigned int id_z)
+			unsigned int id_z, unsigned group_segment_size)
 {
-	auto work_group = misc::new_unique<WorkGroup>(this, id_x, id_y, id_z);
+	auto work_group = misc::new_unique<WorkGroup>(this, group_segment_size,
+			id_x, id_y, id_z);
 	unsigned int flattened_id = work_group->getGroupFlattenedId();
 	workgroups.insert(std::make_pair(flattened_id,
 			std::move(work_group)));

@@ -30,6 +30,8 @@
 namespace HSA
 {
 
+class SegmentManager;
+
 class VariableScope
 {
 
@@ -54,8 +56,8 @@ public:
 	///
 	/// \param type
 	/// 	Type of variable, defined in Brig.h
-	void DeclearVariable(const std::string &name, unsigned int size,
-			unsigned short type);
+	void DeclearVariable(const std::string &name, BrigTypeX type,
+			SegmentManager *segment);
 
 	/// Get the address of a certain variable, return 0 if the variable is
 	/// not defined

@@ -37,6 +37,8 @@ namespace mem
 // A delegate of a memory object for memory allocation and deallocation
 class Manager
 {
+protected:
+
 	// Debug file name, as set by user
 	static std::string debug_file;
 
@@ -229,6 +231,9 @@ public:
 	/// Constructor, assign the memory to manager
 	Manager(Memory *memory);
 
+	/// Destroctur
+	virtual ~Manager() { };
+
 	/// Debugger
 	static misc::Debug debug;
 
@@ -245,7 +250,7 @@ public:
 	/// 
 	/// \return
 	///	base address to the allocated address
-	unsigned Allocate(unsigned size, unsigned alignment = 1);
+	virtual unsigned Allocate(unsigned size, unsigned alignment = 1);
 
 	/// Free allocated memory.
 	///
@@ -257,7 +262,7 @@ public:
 	///     This function throws a Manager::Error exception if the address is
 	///     not a valid address returned by a previous call to Allocate() or
 	///     if it has been freed before.
-	void Free(unsigned address);
+	virtual void Free(unsigned address);
 
 	/// Determines if the address falls in an allocated region
 	bool isValidAddress(unsigned address);
