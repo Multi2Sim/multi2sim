@@ -45,6 +45,9 @@ class StackFrame
 	// Function input and output arguments
 	std::unique_ptr<VariableScope> function_arguments;
 
+	// The function arg segment memory manager
+	 std::unique_ptr<SegmentManager> func_arg_segment;
+
 	// Arguments scope, surrounded by {} in current function. Since
 	// argument scope cannot be nested, when we start a new one, the old
 	// one must have already been released.
@@ -52,6 +55,9 @@ class StackFrame
 
 	// All variables declared in private, group and global segment
 	std::unique_ptr<VariableScope> variable_scope;
+
+ 	// The arg segment memory manager
+ 	std::unique_ptr<SegmentManager> arg_segment;
 
 	// Register storage
 	std::unique_ptr<char> register_storage;
@@ -154,8 +160,9 @@ public:
 		*pointer = value;
 	}
 
-	/// Start an argument scope, when a '{' appears.
-	void StartArgumentScope()
+	/// Start an argument scope, when a '{' appears. Requires the size to
+	/// be allocated for the argument segment
+	void StartArgumentScope(unsigned size)
 	{
 		argument_scope.reset(new VariableScope);
 	};
@@ -167,14 +174,14 @@ public:
 	};
 
 	/// Create an argument in the argument scope
-	void CreateArgument(const std::string &name,
-			unsigned int size, unsigned short type)
-	{
-		if (argument_scope.get())
-		{
-			argument_scope->DeclearVariable(name, size, type);
-		}
-	};
+//	void CreateArgument(const std::string &name, BrigTypeX type)
+//	{
+//		if (argument_scope.get())
+//		{
+//			argument_scope->DeclearVariable(name, type,
+//					arg_segment.get());
+//		}
+//	};
 
 	/// Return current work item
 	WorkItem *getWorkItem() const { return work_item; }
@@ -187,6 +194,12 @@ public:
 	{
 		return function_arguments.get();
 	}
+
+	/// Return the argument segment memory manager
+	SegmentManager *getArgSegment() const { return arg_segment.get(); }
+
+	/// Return the function argument segment memory manager
+	SegmentManager *getFuncArgSegment() const { return func_arg_segment.get(); }
 
 	/// Return variable scope
 	VariableScope *getVariableScope() const { return variable_scope.get(); }

@@ -33,6 +33,8 @@
 namespace HSA
 {
 
+class StackFrame;
+
 /// A function encapsulates information about a HSAIL function
 class Function
 {
@@ -133,22 +135,6 @@ public:
 	/// Return the memory size required to hold the arguments
 	unsigned getArgumentSize() const { return arg_size; }
 
-	/*
-	/// Get the beginning iterator of arguments
-	std::map<std::string, std::unique_ptr<Variable>>::iterator
-	getArgumentIteratorBegin()
-	{
-		return arg_info.begin();
-	}
-
-	/// Get the beginning iterator of arguments
-	std::map<std::string, std::unique_ptr<Variable>>::iterator
-	getArgumentIteratorEnd()
-	{
-		return arg_info.end();
-	}
-	*/
-
 	/// Allocate register
 	void AllocateRegister(unsigned int *max_reg);
 
@@ -167,12 +153,12 @@ public:
 
 	/// Copy variable information and value from caller's argument scope
 	/// to callee's argument scope
-	void PassByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigCodeEntry *call_inst);
+	void PassByValue(StackFrame *caller_frame,
+			StackFrame *callee_frame, BrigCodeEntry *call_inst);
 
 	/// Copy return value from the calle to caller
-	void PassBackByValue(VariableScope *caller_scope,
-			VariableScope *callee_scope, BrigCodeEntry *call_inst);
+	void PassBackByValue(StackFrame *caller_frame,
+			StackFrame *callee_frame, BrigCodeEntry *call_inst);
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;

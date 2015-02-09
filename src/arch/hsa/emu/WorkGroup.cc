@@ -18,11 +18,13 @@
  */
 
 #include "WorkGroup.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
 
 WorkGroup::WorkGroup(Grid *grid,
+		unsigned group_segment_size,
 		unsigned int group_id_x,
 		unsigned int group_id_y,
 		unsigned int group_id_z)
@@ -34,6 +36,10 @@ WorkGroup::WorkGroup(Grid *grid,
 	this->group_id_x = group_id_x;
 	this->group_id_y = group_id_y;
 	this->group_id_z = group_id_z;
+
+	// Set the group segment memory manager
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	group_segment.reset(new SegmentManager(memory, group_segment_size));
 }
 
 

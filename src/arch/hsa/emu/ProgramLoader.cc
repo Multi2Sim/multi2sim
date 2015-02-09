@@ -136,8 +136,10 @@ unsigned int ProgramLoader::loadFunctions()
 	// Traverse top level directive
 	while (entry.get())
 	{
-		if (entry->getKind() == BRIG_KIND_DIRECTIVE_FUNCTION ||
-				entry->getKind() == BRIG_KIND_DIRECTIVE_KERNEL)
+		unsigned int kind = entry->getKind();
+		if (kind == BRIG_KIND_DIRECTIVE_FUNCTION ||
+				kind == BRIG_KIND_DIRECTIVE_KERNEL ||
+				kind == BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION)
 		{
 			// Parse and create the function, insert the function
 			// in table
@@ -210,8 +212,8 @@ std::unique_ptr<BrigCodeEntry> ProgramLoader::loadArguments(
 		BrigTypeX type = entry->getType();
 
 		// Add this argument to the argument table
-		Variable *argument = new Variable(arg_name, type,
-				AsmService::TypeToSize(type), 0);
+		Variable *argument = new Variable(arg_name, type, 0, nullptr,
+				true);
 		argument->setIndex(i);
 		argument->setInput(isInput);
 		function->addArgument(argument);
@@ -236,45 +238,41 @@ void ProgramLoader::preprocessRegisters(
 	for (unsigned int i = 0; i < inst_count; i++)
 	{
 		// Skip directives
-		if (!entry->isInstruction())
+		if (entry->isInstruction())
 		{
-			entry = entry->Next();
-			continue;
-		}
-
-		// Traverse each operands of an instruction
-		for (unsigned int j = 0; j < entry->getOperandCount(); j++)
-		{
-			auto operand = entry->getOperand(j);
-			if (!operand.get()) break;
-
-			//operand->Dump(entry->getOperandType(j), std::cout);
-			if (operand->getKind() != BRIG_KIND_OPERAND_REG)
-				continue;
-
-			// std::string reg_name =
-			//		operand_entry.getRegisterName();
-			// std::cout << "Add register: " << reg_name << "\n";
-			BrigRegisterKind kind = operand->getRegKind();
-			unsigned short number = operand->getRegNumber() + 1;
-			if (number> max_reg[kind])
+			// Traverse each operands of an instruction
+			for (unsigned int j = 0; j < entry->getOperandCount(); j++)
 			{
-				max_reg[kind] = number;
+				auto operand = entry->getOperand(j);
+				if (!operand.get()) break;
 
+				//operand->Dump(entry->getOperandType(j), std::cout);
+				if (operand->getKind() != BRIG_KIND_OPERAND_REG)
+					continue;
+
+				BrigRegisterKind kind = operand->getRegKind();
+				unsigned short number = operand->getRegNumber() + 1;
+				if (number> max_reg[kind])
+				{
+					max_reg[kind] = number;
+
+				}
 			}
 		}
 
-		// Set the last instruction
-		if (i == inst_count-1)
-		{
-			function->AllocateRegister(max_reg);
-			function->setLastEntry(std::move(entry));
-			return;
-		}
-
 		// Move inst_ptr forward
-		entry = entry->Next();
+		if (i < inst_count - 1)
+		{
+			entry = entry->Next();
+		}
 	}
+
+	// Set last entry in the function
+	unsigned int offset = entry->getOffset();
+	function->setLastEntry(std::move(binary->getCodeEntryByOffset(offset)));
+
+	// Allocate registers
+	function->AllocateRegister(max_reg);
 }
 
 

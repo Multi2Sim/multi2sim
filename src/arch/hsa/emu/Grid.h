@@ -71,11 +71,13 @@ class Grid
 	// Deploy tasks on work item
 	void deployWorkItem(unsigned int abs_id_x,
 	 		unsigned int abs_id_y,
-	 		unsigned int abs_id_z);
+	 		unsigned int abs_id_z,
+	 		unsigned private_segment_size,
+	 		unsigned group_segment_size);
 
 	// Create work group
 	void createWorkGroup(unsigned int id_x, unsigned int id_y,
-			unsigned int id_z);
+			unsigned int id_z, unsigned group_segment_size);
 
 public:
 

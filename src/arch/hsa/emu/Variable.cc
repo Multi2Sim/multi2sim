@@ -21,39 +21,49 @@
 
 #include "Emu.h"
 #include "Variable.h"
+#include "SegmentManager.h"
 
 namespace HSA
 {
 
 Variable::~Variable()
 {
-	if (address > 0)
+	if (!isFormal)
 	{
-		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
-		manager->Free(address);
+		if (segment)
+		{
+			segment->Free(address);
+		}
+		else
+		{
+			mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+			manager->Free(address);
+		}
 	}
 }
 
 
-Variable::Variable(const std::string& name, unsigned short type, unsigned size,
-		unsigned address = 0) :
+Variable::Variable(const std::string& name, BrigTypeX type,
+		unsigned address, SegmentManager *segment,
+		bool isFormal = false) :
 		name(name),
 		type(type),
-		size(size),
-		address(address)
+		size(AsmService::TypeToSize(type)),
+		address(address),
+		segment(segment),
+		isFormal(isFormal)
 {
 }
+
 
 template<typename T>
 void Variable::DumpValue(std::ostream &os) const
 {
 	// Get the buffer of the value
-	mem::Memory *memory = Emu::getInstance()->getMemory();
-	T *buffer = (T*)memory->getBuffer(address, size,
-			mem::Memory::AccessWrite);
+	char *buffer = getBuffer();
 
 	// Dump the value
-	os << *buffer;
+	os << *(T *)buffer;
 
 
 	// Dump hex format
@@ -88,7 +98,7 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 	{
 		// Dump information of the argument.
 		os << misc::fmt("%s %s(0x%x)",
-				AsmService::TypeToString((BrigTypeX)type).c_str(),
+				AsmService::TypeToString(type).c_str(),
 				name.c_str(), address);
 	}
 	else
@@ -98,8 +108,8 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 	}
 
 
-	// If address is allocated
-	if (address)
+	// If this is not a formal variable
+	if (!isFormal)
 	{
 		os << " = ";
 		switch (type)
@@ -164,6 +174,25 @@ void Variable::Dump(std::ostream &os, unsigned int indent,
 	// New line
 	// os << "\n";
 
+}
+
+
+unsigned Variable::getFlatAddress() const
+{
+	if (segment)
+	{
+		return segment->getFlatAddress(address);
+	}
+	return address;
+}
+
+
+char *Variable::getBuffer() const
+{
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	char *buffer = memory->getBuffer(getFlatAddress(), size,
+			mem::Memory::AccessWrite);
+	return buffer;
 }
 
 }  // namespace HSA

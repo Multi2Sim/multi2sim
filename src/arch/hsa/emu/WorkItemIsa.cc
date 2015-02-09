@@ -20,6 +20,7 @@
 #include <cstring>
 
 //#include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/asm/AsmService.h>
 
 #include "WorkItem.h"
 
@@ -39,7 +40,7 @@ WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 
 void WorkItem::ExecuteInst_NOP()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic("Instruction not implemented\n");
 }
 
 
@@ -277,13 +278,13 @@ void WorkItem::ExecuteInst_CARRY()
 
 void WorkItem::ExecuteInst_CEIL()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_COPYSIGN()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -350,19 +351,19 @@ void WorkItem::ExecuteInst_DIV()
 
 void WorkItem::ExecuteInst_FLOOR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_FMA()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_FRACT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -788,13 +789,13 @@ void WorkItem::ExecuteInst_REM()
 
 void WorkItem::ExecuteInst_RINT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SQRT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -860,31 +861,31 @@ void WorkItem::ExecuteInst_SUB()
 
 void WorkItem::ExecuteInst_TRUNC()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MAD24()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MAD24HI()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MUL24()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MUL24HI()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -1271,49 +1272,49 @@ void WorkItem::ExecuteInst_BITEXTRACT()
 
 void WorkItem::ExecuteInst_BITINSERT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BITMASK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BITREV()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BITSELECT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_FIRSTBIT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LASTBIT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_COMBINE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_EXPAND()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -1491,151 +1492,151 @@ void WorkItem::ExecuteInst_MOV()
 
 void WorkItem::ExecuteInst_SHUFFLE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_UNPACKHI()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_UNPACKLO()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_PACK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_UNPACK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CMOV()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CLASS()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NCOS()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NEXP2()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NFMA()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NLOG2()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NRCP()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NRSQRT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NSIN()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NSQRT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BITALIGN()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BYTEALIGN()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_PACKCVT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_UNPACKCVT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LERP()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SAD()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SADHI()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SEGMENTP()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_FTOS()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_STOF()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -1787,7 +1788,7 @@ void WorkItem::ExecuteInst_CMP()
 
 void WorkItem::ExecuteInst_CVT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -1981,61 +1982,61 @@ void WorkItem::ExecuteInst_ST()
 
 void WorkItem::ExecuteInst_ATOMIC()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ATOMICNORET()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SIGNAL()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SIGNALNORET()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MEMFENCE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_RDIMAGE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LDIMAGE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_STIMAGE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_QUERYIMAGE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_QUERYSAMPLER()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -2083,91 +2084,91 @@ void WorkItem::ExecuteInst_CBR()
 
 void WorkItem::ExecuteInst_BR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SBR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_BARRIER()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WAVEBARRIER()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ARRIVEFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_INITFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_JOINFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LEAVEFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_RELEASEFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WAITFBAR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LDF()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ACTIVELANECOUNT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ACTIVELANEID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ACTIVELANEMASK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ACTIVELANESHUFFLE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -2195,8 +2196,7 @@ void WorkItem::ExecuteInst_CALL()
 
 	// Prepare stack frame and pass the argument by value
 	auto new_frame = misc::new_unique<StackFrame>(function, this);
-	function->PassByValue(stack_top->getArgumentScope(),
-			new_frame->getFunctionArguments(), inst);
+	function->PassByValue(stack_top, new_frame.get(), inst);
 
 	// Push frame in stack
 	stack.push_back(std::move(new_frame));
@@ -2210,19 +2210,55 @@ void WorkItem::ExecuteInst_CALL()
 
 void WorkItem::ExecuteInst_SCALL()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ICALL()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+}
+
+
+template<typename T> void WorkItem::Inst_LDI_Aux()
+{
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+
+	// Get function operand
+	auto operand1 = inst->getOperand(1);
+
+	// Store the offset of the function
+	storeOperandValue<T>(0, operand1->getRef()->getOffset());
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
 void WorkItem::ExecuteInst_LDI()
 {
-	throw misc::Panic("Instruction not implemented");
+	// Retrieve instruction
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+
+	// Perform action according to type
+	switch(inst->getType())
+	{
+	case BRIG_TYPE_U32:
+		Inst_LDI_Aux<unsigned int>();
+		break;
+	case BRIG_TYPE_U64:
+		Inst_LDI_Aux<unsigned long long>();
+		break;
+	default:
+		std::string type_str = AsmService::TypeToString(
+				inst->getType());
+		throw misc::Panic(misc::fmt("Unsupported type %s for inst LDI",
+				type_str.c_str()));
+	}
+
 }
 
 
@@ -2238,55 +2274,55 @@ void WorkItem::ExecuteInst_RET()
 
 void WorkItem::ExecuteInst_ALLOCA()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_DIM()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_GRIDGROUPS()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_GRIDSIZE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_PACKETCOMPLETIONSIG()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_PACKETID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WORKGROUPID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WORKGROUPSIZE()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
@@ -2316,163 +2352,163 @@ void WorkItem::ExecuteInst_WORKITEMABSID()
 
 void WorkItem::ExecuteInst_WORKITEMFLATABSID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WORKITEMFLATID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WORKITEMID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CLEARDETECTEXCEPT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_GETDETECTEXCEPT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_SETDETECTEXCEPT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_ADDQUEUEWRITEINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_AGENTCOUNT()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_AGENTID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CASQUEUEWRITEINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LDK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LDQUEUEREADINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LDQUEUEWRITEINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_QUEUEID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_QUEUEPTR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_STQUEUEREADINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_STQUEUEWRITEINDEX()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CLOCK()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_CUID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_DEBUGTRAP()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_GROUPBASEPTR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_KERNARGBASEPTR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_LANEID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MAXCUID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_MAXWAVEID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_NULLPTR()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
 void WorkItem::ExecuteInst_WAVEID()
 {
-	throw misc::Panic("Instruction not implemented");
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
 
