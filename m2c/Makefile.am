@@ -9,6 +9,7 @@ SUBDIRS = \
 	frm2bin \
 	gl \
 	llvm2si \
+	preprocessor \
 	si2bin
 
 bin_PROGRAMS = $(top_builddir)/bin/m2c
@@ -29,6 +30,7 @@ LDADD = \
 	$(top_builddir)/m2c/gl/libgl.a \
 	$(top_builddir)/m2c/llvm2si/libllvm2si.a \
 	$(top_builddir)/m2c/llvm2si/passes/libpasses.a \
+	$(top_builddir)/m2c/preprocessor/libpreprocessor.a \
 	$(top_builddir)/m2c/si2bin/libsi2bin.a \
 	$(top_builddir)/m2c/common/libcommon.a \
 	$(top_builddir)/src/arch/fermi/asm/libasm.a \
