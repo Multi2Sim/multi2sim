@@ -1035,6 +1035,7 @@ AC_CONFIG_FILES([
 		m2c/gl/Makefile
 		m2c/llvm2si/Makefile
 		m2c/llvm2si/passes/Makefile
+		m2c/preprocessor/Makefile
 		m2c/si2bin/Makefile
 		])
 AC_OUTPUT
