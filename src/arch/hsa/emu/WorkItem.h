@@ -200,7 +200,7 @@ class WorkItem
  	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
 
  	// Process directives befor an instruction
- 	void ProcessRelatedDirectives();
+ 	void ExecuteDirective();
 
 
 
@@ -239,7 +239,7 @@ class WorkItem
  	void Backtrace(std::ostream &os) const;
 
 	/// Return the stack top stack frame
-	StackFrame* getStackTop()
+	StackFrame* getStackTop() const
 	{
 		//StackFrame *stack_top = stack.back().get();
 		return stack.back().get();

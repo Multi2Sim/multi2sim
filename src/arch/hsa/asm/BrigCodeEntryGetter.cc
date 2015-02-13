@@ -1016,6 +1016,7 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 	case BRIG_OPCODE_SUB:
 	case BRIG_OPCODE_MUL:
 	case BRIG_OPCODE_DIV:
+
 	{
 		if (getType() >= 9 && getType() <= 11)
 		{
@@ -1032,7 +1033,9 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 		}
 		return BRIG_ROUND_NONE;
 	}
+
 	case BRIG_OPCODE_CVT:
+
 	{
 		if (getSourceType() >= BRIG_TYPE_U8 
 			&& getSourceType() <= BRIG_TYPE_S64
@@ -1061,6 +1064,7 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 		}
 		break;
 	}
+
 	default:
 		return BRIG_ROUND_NONE;
 	}

@@ -221,7 +221,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	// Set the stack frame to be an agent_iterate_callback
 	stack_frame->setReturnCallback(&Driver::IterateAgentNext,
 			std::move(callback_info));
-	
+
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(std::move(stack_frame));
 }
@@ -413,6 +413,14 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 
 	// Init queue
 	auto new_queue = misc::new_unique<AQLQueue>(size, type);
+
+	// Set the address to the queue struct
+	unsigned long long *queue_addr =
+			(unsigned long long *)memory->getBuffer(queue, 16,
+					mem::Memory::AccessWrite);
+	*queue_addr = new_queue->getFieldsAddress();
+
+	// Move queue to the component
 	component->addQueue(std::move(new_queue));
 
 	return 0;

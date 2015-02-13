@@ -60,8 +60,8 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 			sizeof(AQLDispatchPacket));
 
 	// Set initial write and read index to base address
-	write_index = fields->base_address;
-	read_index = fields->base_address;
+	fields->write_index = fields->base_address;
+	fields->read_index = fields->base_address;
 }
 
 
@@ -89,7 +89,7 @@ void AQLQueue::Associate(Component *component)
 void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 {
 	// 1. Allocating an AQL packet slot
-	unsigned long long packet_id = write_index;
+	unsigned long long packet_id = fields->write_index;
 	allocatesPacketSlot();
 
 	// 2. update the AQL packet with the task particulars
@@ -135,13 +135,13 @@ AQLDispatchPacket *AQLQueue::ReadPacket()
 		return nullptr;
 
 	// Get the pointer to the packet
-	AQLDispatchPacket *packet = getPacket(read_index);
+	AQLDispatchPacket *packet = getPacket(getReadIndex());
 
 	// Set packet format to invalid
 	packet->setFormat(AQLFormatInvalid);
 
 	// Increase read index
-	read_index += 64;
+	fields->read_index += 64;
 
 	// Return the packet
 	return packet;
