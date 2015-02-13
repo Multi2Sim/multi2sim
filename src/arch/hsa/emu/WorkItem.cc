@@ -122,7 +122,7 @@ bool WorkItem::ReturnFunction()
 	StackFrame *callee_frame = stack.back().get();
 	if (Emu::isa_debug)
 	{
-		Emu::isa_debug << "Callee_frame: ";
+		Emu::isa_debug << "Callee_frame: \n";
 		callee_frame->Dump(Emu::isa_debug);
 		Emu::isa_debug << "\n";
 	}
@@ -137,7 +137,7 @@ bool WorkItem::ReturnFunction()
 	}
 
 	// Retrieve second last element
-	if (stack.size()>1)
+	if (stack.size() > 1)
 	{
 		auto it = stack.rbegin();
 		it ++;
@@ -217,56 +217,56 @@ unsigned int WorkItem::getAbsoluteFlattenedId() const
 }
 
 
-void WorkItem::ProcessRelatedDirectives()
+void WorkItem::ExecuteDirective()
 {
 	// Get current instruction offset in code section
 	StackFrame *stack_top = stack.back().get();
 	BrigCodeEntry *pc = stack_top->getPc();
 
-	// Traverse all the directives in front of current inst
-	unsigned int function_end = stack_top->getFunction()->
-			getLastEntry()->getOffset();
-	while (!pc->isInstruction() && pc->getOffset() <= function_end)
+	switch (pc->getKind())
 	{
-		switch (pc->getKind())
-		{
-		case BRIG_KIND_DIRECTIVE_ARG_BLOCK_START:
+	case BRIG_KIND_DIRECTIVE_ARG_BLOCK_START:
 
+	{
+		auto dir = pc->Next();
+		unsigned size = 0;
+		while (dir->getKind() != BRIG_KIND_DIRECTIVE_ARG_BLOCK_END)
 		{
-			auto dir = pc->Next();
-			unsigned size = 0;
-			while (dir->getKind() != BRIG_KIND_DIRECTIVE_ARG_BLOCK_END)
+			if (dir->getKind() == BRIG_KIND_DIRECTIVE_VARIABLE)
 			{
-				if (dir->getKind() == BRIG_KIND_DIRECTIVE_VARIABLE)
-				{
-					size += AsmService::TypeToSize(
-							dir->getType());
-				}
-				dir = dir->Next();
+				size += AsmService::TypeToSize(
+						dir->getType());
 			}
-			stack_top->StartArgumentScope(size);
-			break;
+			dir = dir->Next();
 		}
+		stack_top->StartArgumentScope(size);
 
-		case BRIG_KIND_DIRECTIVE_ARG_BLOCK_END:
+		// Log into debug isa
+		Emu::isa_debug << misc::fmt("Argument scope created "
+				"(size %d)\n", size);
 
-			stack_top->CloseArgumentScope();
-			break;
-
-		case BRIG_KIND_DIRECTIVE_VARIABLE:
-			DeclearVariable();
-			break;
-
-		default:
-			break;
-		}
-
-		// Move next directive pointer forwards
-		if (!this->MovePcForwardByOne())
-			return;
-		else
-			pc = stack_top->getPc();
+		break;
 	}
+
+	case BRIG_KIND_DIRECTIVE_ARG_BLOCK_END:
+
+		stack_top->CloseArgumentScope();
+		break;
+
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+
+		DeclearVariable();
+		break;
+
+	default:
+		break;
+	}
+
+	// Move next directive pointer forwards
+	if (!this->MovePcForwardByOne())
+		return;
+	else
+		pc = stack_top->getPc();
 
 
 }
@@ -317,6 +317,7 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 		break;
 
 	case BRIG_SEGMENT_ARG:
+
 	{
 		// Get argument scope if in curve bracket, otherwise, get
 		// function arguments
@@ -417,6 +418,7 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_ARG:
+
 	{
 		// Get the variable scope
 		VariableScope *variable_scope;
@@ -428,7 +430,12 @@ void WorkItem::DeclearVariable()
 
 		// Get the arg segment manager
 		SegmentManager *arg_segment = stack_top->getArgSegment();
-		variable_scope->DeclearVariable(name,dir->getType(),
+
+		// Check if the argument scope started
+		if (!arg_segment || !variable_scope)
+			throw misc::Panic("Argument segment not started\n");
+
+		variable_scope->DeclearVariable(name, dir->getType(),
 				arg_segment);
 		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
 		break;
@@ -448,26 +455,17 @@ void WorkItem::DeclearVariable()
 
 bool WorkItem::Execute()
 {
-	// Retrieve stack top
-	StackFrame *stack_top = stack.back().get();
-
-	// Deal with empty function
-	if (!stack_top->getFunction()->getFunctionDirective()
-			->getCodeBlockEntryCount())
+	if (stack.size() == 0)
 	{
-		// ProcessRelatedDirectives();
-		if (!MovePcForwardByOne())
-		{
-			return false;
-		}
+		return false;
 	}
 
-	// Process directives in front of current instruction
-	ProcessRelatedDirectives();
+	// Retrieve stack top
+	StackFrame *stack_top = getStackTop();
 
 	// Record frame status before the instruction is executed
 	BrigCodeEntry *inst = stack_top->getPc();
-	if (inst)
+	if (inst && inst->isInstruction())
 	{
 		Emu::isa_debug << "Executing: ";
 		Emu::isa_debug << *inst;
@@ -475,7 +473,8 @@ bool WorkItem::Execute()
 		// Get the function according to the opcode and perform the inst
 		BrigOpcode opcode = inst->getOpcode();
 		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-		try{
+		try
+		{
 			(this->*fn)();
 		}
 		catch(misc::Panic &panic)
@@ -484,14 +483,26 @@ bool WorkItem::Execute()
 			exit(1);
 		}
 	}
-
+	else if (inst && !inst->isInstruction())
+	{
+		Emu::isa_debug << "Executing: ";
+		Emu::isa_debug << *inst;
+		ExecuteDirective();
+	}
+	else
+	{
+		if(!MovePcForwardByOne())
+		{
+			return false;
+		}
+	}
 
 	// Return false if execution finished
 	if (stack.empty())
 		return false;
 
 	// Record frame status after the instruction is executed
-	stack_top = stack.back().get();
+	stack_top = getStackTop();
 	if (Emu::isa_debug)
 		stack_top->Dump(Emu::isa_debug);
 	Emu::isa_debug << "\n";

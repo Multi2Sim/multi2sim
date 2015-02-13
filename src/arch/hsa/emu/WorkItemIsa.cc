@@ -2186,6 +2186,13 @@ void WorkItem::ExecuteInst_CALL()
 	// function
 	if (Driver::getInstance()->Intercept(function_name, stack_top))
 	{
+		// If a call back stack frame is implanted do not move pc
+		// forward
+		StackFrame *new_stack_top = stack.back().get();
+		if (new_stack_top != stack_top)
+			return;
+
+		// Otherwize, move PC forward
 		MovePcForwardByOne();
 		return;
 	}
@@ -2412,7 +2419,7 @@ void WorkItem::ExecuteInst_CASQUEUEWRITEINDEX()
 
 void WorkItem::ExecuteInst_LDK()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	ExecuteInst_LDI();
 }
 
 

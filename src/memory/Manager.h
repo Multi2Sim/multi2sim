@@ -219,9 +219,6 @@ protected:
 	// Determine if two address are in same page
 	bool isInSamePage(unsigned addr1, unsigned addr2);
 
-	/// Dump how chunk is allocated in the managed memory
-	void DumpChunks(std::ostream &os) const;
-
 	/// Return next closest aligned address
 	unsigned getNextAlignedAddress(unsigned address,
 			unsigned alignment) const;
@@ -272,6 +269,9 @@ public:
 
 	/// Get occupied size, equals to the number of pages occupied
 	unsigned getOccupiedSize() const;
+
+	/// Dump how chunk is allocated in the managed memory
+	void DumpChunks(std::ostream &os) const;
 
 	/// Dump the memory managing status for debug purpose
 	void Dump(std::ostream &os) const;
