@@ -15,6 +15,9 @@ function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u32 %size,
 		arg_u64 %service_queue, arg_u64 %queue) {};
 function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue) {};
 function &hsa_queue_inactivate (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_acquire (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_relaxed (arg_u32 %status) (arg_u64 %queue) {};
+
 
 function &m2s_print_int () (arg_u32 %integer, arg_u32 %is_unsigned) {};
 
@@ -24,7 +27,8 @@ function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0) {};
 // Iterate agent callback 
 indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %data)
 {
-	global_u32 %type;			// Declare a local variable for storing the type of the device
+	global_u32 %type;			
+	// Declare a local variable for storing the type of the device
 	ld_arg_u64 $d1, [%agent];		// Load argument %agent into register %d1
 	{
 		arg_u32 %err;			// Declare a variable for function return
@@ -80,8 +84,10 @@ kernel &test_kernel ()
 	{
 		arg_u32 %integer;
 		arg_u32 %is_unsigned;
+
 		st_arg_u32 $s1, [%integer];
 		st_arg_u32 1, [%is_unsigned];
+
 		call &m2s_print_int () (%integer, %is_unsigned);
 	}
 };
@@ -152,17 +158,17 @@ function &main()(){
 
 	// Prepare each field of AQLPacket
 	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1
-	st_global_u16 0x00064,		[$d1+4];	// Set x dim to 2
+	st_global_u16 0x0064,		[$d1+4];	// Set x dim to 2
 	st_global_u16 0x0001,		[$d1+6];	// Set y dim to 1
 	st_global_u16 0x0001,		[$d1+8];	// Set z dim to 0 
 	st_global_u16 0x0000,		[$d1+10];	// Set reserved to 0
-	st_global_u32 0x0000000640,	[$d1+12];	// Set grid size x to 2
+	st_global_u32 0x00000064,	[$d1+12];	// Set grid size x to 2
 	st_global_u32 0x00000001,	[$d1+16];	// Set grid size y to 1
 	st_global_u32 0x00000001,	[$d1+20];	// Set grid size z to 1
-	st_global_u32 0x00000000,	[$d1+24];	// Set private seg size to 0
-	st_global_u32 0x00000000,	[$d1+28];	// Set group seg size to 0
+	st_global_u32 0x00000100,	[$d1+24];	// Set private seg size to 0
+	st_global_u32 0x00001000,	[$d1+28];	// Set group seg size to 0
 	st_global_u64 $d3,		[$d1+32];	// Set kernel object to the kernel to be executed
-	st_global_u64 0,		[$d1+40];	// Set kernel argument address to 40
+	st_global_u64 0,		[$d1+40];	// Set kernel argument address to 0
 	st_global_u64 0,		[$d1+48];	// Set reserved3 to 0
 	st_global_u64 0,		[$d1+56];	// Set completion signal to 0
 

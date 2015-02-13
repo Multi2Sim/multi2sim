@@ -162,16 +162,10 @@ public:
 
 	/// Start an argument scope, when a '{' appears. Requires the size to
 	/// be allocated for the argument segment
-	void StartArgumentScope(unsigned size)
-	{
-		argument_scope.reset(new VariableScope);
-	};
+	void StartArgumentScope(unsigned size);
 
 	/// Release an argument scope, when we find a '}'
-	void  CloseArgumentScope()
-	{
-		argument_scope.reset(nullptr);
-	};
+	void  CloseArgumentScope();
 
 	/// Create an argument in the argument scope
 //	void CreateArgument(const std::string &name, BrigTypeX type)

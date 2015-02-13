@@ -53,7 +53,16 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 
 StackFrame::~StackFrame()
 {
+	// Remove scopes
+	argument_scope.release();
+	variable_scope.release();
+	function_arguments.release();
+
 	func_arg_segment.release();
+	if (arg_segment.get())
+	{
+		arg_segment.release();
+	}
 }
 
 
@@ -61,6 +70,21 @@ void StackFrame::setPc(std::unique_ptr<BrigCodeEntry> pc)
 {
 	this->pc = std::move(pc);
 }
+
+
+void StackFrame::StartArgumentScope(unsigned size)
+{
+	argument_scope.reset(new VariableScope());
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	arg_segment.reset(new SegmentManager(memory, size));
+};
+
+
+void  StackFrame::CloseArgumentScope()
+{
+	argument_scope.reset(nullptr);
+	arg_segment.reset(nullptr);
+};
 
 
 void StackFrame::Dump(std::ostream &os = std::cout) const

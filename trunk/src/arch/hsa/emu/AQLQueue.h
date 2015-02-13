@@ -42,6 +42,12 @@ class AQLQueue
 		unsigned int size;
 		unsigned int id;
 		unsigned long long service_queue;
+
+		// Position where to write next
+		unsigned long long write_index;
+
+		// Position to read next
+		unsigned long long read_index;
 	};
 
 	// The queue information is stored in a struct, this data structure is
@@ -50,12 +56,6 @@ class AQLQueue
 
 	// The address of the fields in guest memory
 	unsigned fields_address;
-
-	// Position where to write next
-	unsigned long long write_index;
-
-	// Position to read next
-	unsigned long long read_index;
 
 	// Device it associated with
 	Component *associated_component = nullptr;
@@ -92,11 +92,11 @@ public:
 	void Associate(Component *component);
 
 	/// Determine if the queue is empty
-	bool isEmpty() const { return read_index == write_index; }
+	bool isEmpty() const { return getReadIndex() == getWriteIndex(); }
 
 	/// Allocate an AQL packet slot by incrementing the writeIndex by
 	/// size of AQLPacket
-	void allocatesPacketSlot() { write_index += sizeof(AQLPacket); }
+	void allocatesPacketSlot() { fields->write_index += sizeof(AQLPacket); }
 
 	/// Read next packet, increase read_index, mark the packet format as
 	/// Invalid
@@ -164,7 +164,7 @@ public:
 	void setQueueId(unsigned int queue_id) { fields->id = queue_id; }
 
 	/// Get read index
-	unsigned long long getReadIndex() const { return read_index; }
+	unsigned long long getReadIndex() const { return fields->read_index; }
 
 	/// Set read index
 	//void setReadIndex(unsigned long long read_index) { this->read_index = read_index; }
@@ -185,7 +185,10 @@ public:
 	unsigned int getSize() const { return fields->size; }
 
 	/// Get write index
-	unsigned long long getWriteIndex() const{ return write_index; }
+	unsigned long long getWriteIndex() const { return fields->write_index; }
+
+	/// Get the address of the queue struct in the guest memory
+	unsigned getFieldsAddress() const { return fields_address; }
 
 };
 

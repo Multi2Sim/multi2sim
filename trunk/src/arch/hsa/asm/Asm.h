@@ -40,6 +40,9 @@ protected:
 	// Indent of current line
 	int indent;
 
+	// Set if indentation is enabled
+	bool doIndent = true;
+
 	// Private constructor for singleton
 	Asm();
 
@@ -55,13 +58,22 @@ public:
 	void DisassembleBinary(const std::string &path) const;
 
 	/// Get the current indent level
-	int getIndent(){return indent;}
+	int getIndent() const
+	{
+		if (doIndent)
+			return indent;
+		else
+			return 0;
+	}
 
 	/// Increase current indent level by 1
-	void IndentMore(){++indent;}
+	void IndentMore() { ++indent; }
 
 	/// Decrease current indent level by 1
-	void IndentLess(){--indent;}
+	void IndentLess() { --indent; }
+
+	/// Disable indentation
+	void DisableIndentation() { doIndent = false; }
 
 	/// Register command-line options
 	static void RegisterOptions();

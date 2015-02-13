@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-//#include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/asm/Asm.h>
 
 #include "Emu.h"
 #include "AQLQueue.h"
@@ -103,6 +103,7 @@ Emu::Emu() :
 		manager(&memory)
 {
 	InstallComponents("");
+	Asm::getInstance()->DisableIndentation();
 	if (loader_debug)
 	{
 		DumpComponentList(loader_debug);
@@ -212,8 +213,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	Function *main_function = loader->getMainFunction();
 	unsigned int function_dir = main_function->getFunctionDirective()->getOffset();
 	packet->setKernalObjectAddress((unsigned long long)function_dir);
-	packet->setPrivateSegmentSizeBytes(0x100);
-	packet->setGroupSegmentSizeBytes(0x1000);
+	packet->setPrivateSegmentSizeBytes(0x10000);
+	packet->setGroupSegmentSizeBytes(0x10000);
 
 	// Enqueue the packet
 	aql_debug << "Packet created and enqueued: \n" << *packet;
