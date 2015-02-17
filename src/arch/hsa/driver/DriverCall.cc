@@ -18,7 +18,7 @@
  */
 
 #define __UNIMPLEMENTED__ \
-	throw misc::Panic(misc::fmt("Unimplemented driver function %s", \
+	throw misc::Panic(misc::fmt("Unimplemented driver function %s\n", \
 	__FUNCTION__));
 
 #include <arch/hsa/emu/Emu.h>
@@ -443,28 +443,100 @@ int Driver::CallQueueInactivate(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallQueueLoadReadIndexAcquire(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// value		| 0		| 8
+	// queue		| 8		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+
+	// Retrieve the read index
+	unsigned long long *read_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 48, 8, mem::Memory::AccessRead);
+
+	// Write read index back to argument
+	this->setArgumentValue<unsigned long long>(*read_index, 0, memory,
+			args_ptr);
+
 	return 0;
 }
 
 
 int Driver::CallQueueLoadReadIndexRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// value		| 0		| 8
+	// queue		| 8		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+
+	// Retrieve the read index
+	unsigned long long *read_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 48, 8, mem::Memory::AccessRead);
+
+	// Write read index back to argument
+	this->setArgumentValue<unsigned long long>(*read_index, 0, memory,
+			args_ptr);
+
 	return 0;
 }
 
 
 int Driver::CallQueueLoadWriteIndexAcquire(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// value		| 0		| 8
+	// queue		| 8		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessRead);
+
+	// Write read index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
 	return 0;
 }
 
 
 int Driver::CallQueueLoadWriteIndexRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// value		| 0		| 8
+	// queue		| 8		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessRead);
+
+	// Write read index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
 	return 0;
 }
 
@@ -513,28 +585,130 @@ int Driver::CallQueueCasWriteIndexReleased(mem::Memory *memory, unsigned args_pt
 
 int Driver::CallQueueAddWriteIndexAcqRel(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// prev_value		| 0		| 8
+	// queue		| 8		| 8
+	// value		| 16		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+				(16, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	debug << misc::fmt("\tvalue: %lld, \n", value);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessWrite);
+
+	// Write write index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
+	// Update the write index
+	*write_index = *write_index + value;
+
 	return 0;
 }
 
 
 int Driver::CallQueueAddWriteIndexAcquire(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// prev_value		| 0		| 8
+	// queue		| 8		| 8
+	// value		| 16		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+				(16, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	debug << misc::fmt("\tvalue: %lld, \n", value);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessWrite);
+
+	// Write write index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
+	// Update the write index
+	*write_index = *write_index + value;
+
 	return 0;
 }
 
 
 int Driver::CallQueueAddWriteIndexRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// prev_value		| 0		| 8
+	// queue		| 8		| 8
+	// value		| 16		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+				(16, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	debug << misc::fmt("\tvalue: %lld, \n", value);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessWrite);
+
+	// Write write index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
+	// Update the write index
+	*write_index = *write_index + value;
+
+	return 0;
 	return 0;
 }
 
 
 int Driver::CallQueueAddWriteIndexRelease(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// prev_value		| 0		| 8
+	// queue		| 8		| 8
+	// value		| 16		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+				(16, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	debug << misc::fmt("\tvalue: %lld, \n", value);
+
+	// Retrieve the read index
+	unsigned long long *write_index = (unsigned long long *)memory->
+			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessWrite);
+
+	// Write write index back to argument
+	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+			args_ptr);
+
+	// Update the write index
+	*write_index = *write_index + value;
+
+	return 0;
 	return 0;
 }
 
