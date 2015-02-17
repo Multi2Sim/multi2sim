@@ -370,7 +370,7 @@ void WorkItem::DeclearVariable()
 
 	case BRIG_SEGMENT_FLAT:
 
-		throw misc::Panic("Unsupported segment FLAT.");
+		throw misc::Panic("Cannot create variable in segment FLAT.");
 		break;
 
 	case BRIG_SEGMENT_GLOBAL:
@@ -437,7 +437,8 @@ void WorkItem::DeclearVariable()
 
 		variable_scope->DeclearVariable(name, dir->getType(),
 				arg_segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		Emu::isa_debug << misc::fmt("Declaring variable %s width"
+				" size %d\n", name.c_str(), size);
 		break;
 	}
 

@@ -15,8 +15,23 @@ function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u32 %size,
 		arg_u64 %service_queue, arg_u64 %queue) {};
 function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue) {};
 function &hsa_queue_inactivate (arg_u32 %status) (arg_u64 %queue) {};
-function &hsa_queue_load_read_index_acquire (arg_u32 %status) (arg_u64 %queue) {};
-function &hsa_queue_load_read_index_relaxed (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_acquire (arg_u64 %read_index) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_relaxed (arg_u64 %read_index) (arg_u64 %queue) {};
+function &hsa_queue_load_write_index_acquire (arg_u64 %write_index) (arg_u64 %queue) {};
+function &hsa_queue_load_write_index_relaxed (arg_u64 %write_index) (arg_u64 %queue) {};
+function &hsa_queue_store_write_index_relaxed () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_write_index_release () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_acq_rel (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_acquire (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_relaxed (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_release (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_add_write_index_acq_rel (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_acquire (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_relaxed (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_release (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_read_index_relaxed () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_read_index_release () (arg_u64 %queue, arg_u64 %value) {};
+
 
 
 function &m2s_print_int () (arg_u32 %integer, arg_u32 %is_unsigned) {};
@@ -61,7 +76,7 @@ indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, ar
 	ld_arg_u64 $d1, [%data];		// Get the address stored in [%data]
 	ld_u64 $d0, [$d1];			// Load the value already in [$s1]
 	cmp_ne_b1_u64 $c0, $d0, 1;		// If the value in $d0 is not 1, set $c0 to true, for no GPU have been found
-	cbr_b1 $c0, @add_this_cpu;			// If $c0 is true, $d0 is not 1, its safe to add this CPU
+	cbr_b1 $c0, @add_this_cpu;		// If $c0 is true, $d0 is not 1, its safe to add this CPU
 	st_arg_u32 0, [%status];		// Save return address
 	ret;
 
@@ -179,9 +194,19 @@ function &main()(){
 	st_global_u64 $d1,		[$d0+16];	// Set doorbell signal
 
 	// Update write index
-	ld_global_u64 $d2, [$d0+40];			// Get write index
-	add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
-	st_global_u64 $d2, [$d0+40];			// Write the write index back
+	{
+		arg_u64 %queue;	
+		arg_u64 %value;
+		arg_u64 %prev;
+
+		st_arg_u64 $d0, [%queue];
+		st_arg_u64 64, [%value];
+		
+		call &hsa_queue_add_write_index_acq_rel (%prev) (%queue, %value);
+	}
+	// ld_global_u64 $d2, [$d0+40];			// Get write index
+	// add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
+	// st_global_u64 $d2, [$d0+40];			// Write the write index back
 
 	// Do something and wait
 	add_u64 $d2, $d2, 1;
