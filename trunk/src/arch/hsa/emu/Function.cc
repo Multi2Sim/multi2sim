@@ -147,6 +147,8 @@ void Function::PassByValue(StackFrame *caller_frame,
 	VariableScope *callee_scope = callee_frame->getFunctionArguments();
 	VariableScope *caller_scope = caller_frame->getArgumentScope();
 
+	std::cout << "Pass by value: \n";
+
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		// Get argument information from the function
@@ -156,7 +158,10 @@ void Function::PassByValue(StackFrame *caller_frame,
 		SegmentManager *callee_segment =
 				callee_frame->getFuncArgSegment();
 		callee_scope->DeclearVariable(argument->getName(),
-				argument->getType(), callee_segment);
+				argument->getType(), argument->getDim(),
+				callee_segment);
+		std::cout << misc::fmt("Address allocated in callee scope: %x\n",
+				callee_scope->getAddress(argument->getName()));
 
 		// Copy argument's value
 		if (argument->isInput())

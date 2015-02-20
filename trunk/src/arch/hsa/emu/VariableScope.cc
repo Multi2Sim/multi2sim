@@ -38,25 +38,29 @@ VariableScope::~VariableScope()
 
 
 void VariableScope::DeclearVariable(const std::string &name,
-		BrigTypeX type, SegmentManager *segment)
+		BrigTypeX type, unsigned long long dim, SegmentManager *segment)
 {
 	// Get the size of the variable
 	unsigned size = AsmService::TypeToSize(type);
+
+	// For non-vector variables
+	if (dim == 0)
+		dim = 1;
 
 	// Allocate the memory from segment
 	unsigned address = 0;
 	if (segment)
 	{
-		address = segment->Allocate(size, 1);
+		address = segment->Allocate(size * dim, 1);
 	}
 	else
 	{
 		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
-		address = manager->Allocate(size, 1);
+		address = manager->Allocate(size * dim, 1);
 	}
 
 	// Set up and insert into variable list
-	Variable *var = new Variable(name, type, address, segment, false);
+	Variable *var = new Variable(name, type, dim, address, segment, false);
 	variable_info.insert(std::make_pair(name,
 			std::unique_ptr<Variable>(var)));
 }
