@@ -44,11 +44,12 @@ Variable::~Variable()
 
 
 Variable::Variable(const std::string& name, BrigTypeX type,
-		unsigned address, SegmentManager *segment,
-		bool isFormal = false) :
+		unsigned long long dim, unsigned address,
+		SegmentManager *segment, bool isFormal = false) :
 		name(name),
 		type(type),
 		size(AsmService::TypeToSize(type)),
+		dim(dim),
 		address(address),
 		segment(segment),
 		isFormal(isFormal)

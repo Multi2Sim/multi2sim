@@ -192,13 +192,13 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	std::string arg_name = out_arg_directory->getName();
 	SegmentManager *func_arg_seg = stack_frame->getFuncArgSegment();
 	function_args->DeclearVariable(arg_name, out_arg_directory->getType(),
-			func_arg_seg);
+			out_arg_directory->getDim(), func_arg_seg);
 
 	// Pass argument 1 (Address handler) to the callback
 	auto arg1 = function_dir->getFirstInArg();
 	std::string arg1_name = arg1->getName();
 	function_args->DeclearVariable(arg1_name, BRIG_TYPE_U64,
-			func_arg_seg);
+			arg1->getDim(), func_arg_seg);
 	unsigned long long *callee_buffer = 
 			(unsigned long long *)function_args->
 			getBuffer(arg1_name);
@@ -208,7 +208,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 	auto arg2 = arg1->Next();
 	std::string arg2_name = arg2->getName();
 	function_args->DeclearVariable(arg2_name, BRIG_TYPE_U64,
-			func_arg_seg);
+			arg2->getDim(), func_arg_seg);
 	callee_buffer = (unsigned long long *)
 			function_args->getBuffer(arg2_name);
 	*callee_buffer = data_address;

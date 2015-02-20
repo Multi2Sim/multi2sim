@@ -210,9 +210,11 @@ std::unique_ptr<BrigCodeEntry> ProgramLoader::loadArguments(
 		// Get argument information
 		std::string arg_name = entry->getName();
 		BrigTypeX type = entry->getType();
+		unsigned long long dim = entry->getDim();
 
 		// Add this argument to the argument table
-		Variable *argument = new Variable(arg_name, type, 0, nullptr,
+		Variable *argument = new Variable(arg_name, type,
+				dim, 0, nullptr,
 				true);
 		argument->setIndex(i);
 		argument->setInput(isInput);
