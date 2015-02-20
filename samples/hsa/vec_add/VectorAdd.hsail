@@ -74,7 +74,7 @@ indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, ar
 	cmp_ne_b1_u32 $c0, $s0, 0;		// If CPU device, set $c0 to false
 	cbr_b1 $c0, @not_cpu_agent;		// If not CPU, $c0 is true, then jump
 	ld_arg_u64 $d1, [%data];		// Get the address stored in [%data]
-	ld_u64 $d0, [$d1];			// Load the value already in [$s1]
+	ld_u64 $d0, [$d1];			// Load the value already in [$d1]
 	cmp_ne_b1_u64 $c0, $d0, 1;		// If the value in $d0 is not 1, set $c0 to true, for no GPU have been found
 	cbr_b1 $c0, @add_this_cpu;		// If $c0 is true, $d0 is not 1, its safe to add this CPU
 	st_arg_u32 0, [%status];		// Save return address
@@ -112,6 +112,10 @@ function &main()(){
 	global_u64 %device;				// Declare the device handler 
 	global_u64 %ptr_queue;				// Address to the queue
 	private_u64 %packet_id;				// Declare packet id
+
+	global_u64 %vector1[100];
+	global_u64 %vector2[100];
+	global_u64 %result[100];
 
 	{
 		arg_u32 %err;				// Declare return argument
@@ -161,6 +165,27 @@ function &main()(){
 				%ptr_dispatch_queue, 
 				%ptr_ptr_queue);
 	}
+
+	// Prepare the vectors
+	mov_u64 $d5, 0;
+
+	cmp_ge_b1_u64 $c1, $d5, 100;
+	cbr_b1 $c1, @finish_set_vector_loop;
+
+	mul_u64 $d6, $d5, 8;
+	lda_global_u64 $d7, [%vector1];
+	add_u64 $d8, $d6, $d7;
+
+	lda_global_u64 $d7, [%vector2];
+	add_u64 $d9, $d6, $d7;
+
+	st_global_u64 $d5, [$d8];
+	st_global_u64 $d5, [$d9];
+
+	add_u64 $d5, $d5, 1;
+
+@finish_set_vector_loop:
+
 
 	// Dispatch packet
 	ld_global_u64 $d0, [%ptr_queue];		// Get the queue address in $d0

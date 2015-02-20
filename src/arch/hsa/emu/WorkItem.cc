@@ -377,8 +377,11 @@ void WorkItem::DeclearVariable()
 
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
-		variable_scope->DeclearVariable(name, dir->getType(), nullptr);
-		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		unsigned long long dim = dir->getDim();
+		variable_scope->DeclearVariable(name, dir->getType(),
+				dim, nullptr);
+		Emu::isa_debug << misc::fmt("Declaring variable %s with "
+				"size %d[%lld]\n", name.c_str(), size, dim);
 		break;
 	}
 
@@ -387,8 +390,11 @@ void WorkItem::DeclearVariable()
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
 		SegmentManager *segment = work_group->getGroupSegment();
-		variable_scope->DeclearVariable(name, dir->getType(), segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		unsigned long long dim = dir->getDim();
+		variable_scope->DeclearVariable(name, dir->getType(),
+				dim, segment);
+		Emu::isa_debug << misc::fmt("Declaring variable %s with "
+						"size %d[%lld]\n", name.c_str(), size, dim);
 		break;
 	}
 
@@ -397,8 +403,11 @@ void WorkItem::DeclearVariable()
 	{
 		VariableScope *variable_scope = stack_top->getVariableScope();
 		SegmentManager *segment = private_segment.get();
-		variable_scope->DeclearVariable(name, dir->getType(), segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s width size %d\n", name.c_str(), size);
+		unsigned long long dim = dir->getDim();
+		variable_scope->DeclearVariable(name, dir->getType(),
+				dim, segment);
+		Emu::isa_debug << misc::fmt("Declaring variable %s with "
+				"size %d[%lld]\n", name.c_str(), size, dim);
 		break;
 	}
 
@@ -436,7 +445,7 @@ void WorkItem::DeclearVariable()
 			throw misc::Panic("Argument segment not started\n");
 
 		variable_scope->DeclearVariable(name, dir->getType(),
-				arg_segment);
+				dir->getDim(), arg_segment);
 		Emu::isa_debug << misc::fmt("Declaring variable %s width"
 				" size %d\n", name.c_str(), size);
 		break;

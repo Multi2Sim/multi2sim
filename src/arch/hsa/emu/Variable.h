@@ -39,6 +39,9 @@ class Variable
 	// Size of the variable
 	unsigned size;
 
+	// Dim of the variable
+	unsigned long long dim;
+
 	// Beginning address of the variable
 	unsigned address;
 
@@ -59,7 +62,8 @@ public:
 
 	/// Constructor
 	Variable(const std::string& name, BrigTypeX type,
-			unsigned address, SegmentManager *segment,
+			unsigned long long dim, unsigned address,
+			SegmentManager *segment,
 			bool isFormal);
 
 	/// Destructor
@@ -116,6 +120,12 @@ public:
 
 	/// Set the index of the argument in the argument list
 	void setIndex(unsigned int index) { this->index = index; }
+
+	/// Get the dim
+	unsigned long long getDim() const { return dim; }
+
+	/// Set the dim
+	void setDim(unsigned long long dim) { this->dim = dim; };
 
 	/// Returns the flat address of a variable
 	unsigned getFlatAddress() const;
