@@ -34,7 +34,8 @@ function &hsa_queue_store_read_index_release () (arg_u64 %queue, arg_u64 %value)
 
 
 
-function &m2s_print_int () (arg_u32 %integer, arg_u32 %is_unsigned) {};
+function &m2s_print_u32 () (arg_u32 %integer) {};
+function &m2s_print_u64 () (arg_u64 %integer) {};
 
 
 function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0) {};
@@ -93,17 +94,28 @@ indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, ar
 	
 };
 
-kernel &test_kernel ()
+kernel &test_kernel (kernarg_u64 %in1, kernarg_u64 %in2, kernarg_u64 %out, kernarg_u64 %len)
 {
 	workitemabsid_u32 $s1, 0;
+
+	ld_kernarg_u64 $d1, [%in1];
+	mul_u32 $s2, $s1, 8;
+	cvt_u64_u32 $d4, $s2;
+	add_u64 $d3, $d1, $d4;
+	ld_global_u64 $d5, [$d3]; 
+
+	ld_kernarg_u64 $d2, [%in2];
+	add_u64 $d2, $d2, $d4;
+	ld_global_u64 $d6, [$d2];
+	
+	add_u64 $d7, $d6, $d5;
+
 	{
-		arg_u32 %integer;
-		arg_u32 %is_unsigned;
+		arg_u64 %integer;
 
-		st_arg_u32 $s1, [%integer];
-		st_arg_u32 1, [%is_unsigned];
+		st_arg_u64 $d7, [%integer];
 
-		call &m2s_print_int () (%integer, %is_unsigned);
+		call &m2s_print_u64 () (%integer);
 	}
 };
 
@@ -116,6 +128,8 @@ function &main()(){
 	global_u64 %vector1[100];
 	global_u64 %vector2[100];
 	global_u64 %result[100];
+
+	global_u64 %kernel_arg[4];			// Kernel Arguments
 
 	{
 		arg_u32 %err;				// Declare return argument
@@ -169,6 +183,7 @@ function &main()(){
 	// Prepare the vectors
 	mov_u64 $d5, 0;
 
+@start_set_vector_loop:
 	cmp_ge_b1_u64 $c1, $d5, 100;
 	cbr_b1 $c1, @finish_set_vector_loop;
 
@@ -183,9 +198,19 @@ function &main()(){
 	st_global_u64 $d5, [$d9];
 
 	add_u64 $d5, $d5, 1;
+	cbr_b1 1, @start_set_vector_loop;
 
 @finish_set_vector_loop:
 
+	lda_global_u64 $d10, [%kernel_arg];		// Load the kernel argument address
+	lda_global_u64 $d11, [%vector1];
+	st_global_u64 $d11, [$d10];
+	lda_global_u64 $d11, [%vector2];
+	st_global_u64 $d11, [$d10+8];
+	lda_global_u64 $d11, [%result];
+	st_global_u64 $d11, [$d10+16];
+	st_global_u64 100, [$d10+24];
+	
 
 	// Dispatch packet
 	ld_global_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
@@ -208,7 +233,7 @@ function &main()(){
 	st_global_u32 0x00000100,	[$d1+24];	// Set private seg size to 0
 	st_global_u32 0x00001000,	[$d1+28];	// Set group seg size to 0
 	st_global_u64 $d3,		[$d1+32];	// Set kernel object to the kernel to be executed
-	st_global_u64 0,		[$d1+40];	// Set kernel argument address to 0
+	st_global_u64 $d10,		[$d1+40];	// Set kernel argument address to 0
 	st_global_u64 0,		[$d1+48];	// Set reserved3 to 0
 	st_global_u64 0,		[$d1+56];	// Set completion signal to 0
 

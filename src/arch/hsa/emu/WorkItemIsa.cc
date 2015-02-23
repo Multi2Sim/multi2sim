@@ -1786,9 +1786,52 @@ void WorkItem::ExecuteInst_CMP()
 }
 
 
+template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_chop_Aux()
+{
+	SrcType src = getOperandValue<SrcType>(1);
+	DstType dst = 0;
+
+	// Use memcpy to chop
+	memcpy(&dst, &src, sizeof(DstType));
+
+	storeOperandValue<DstType>(0, dst);
+}
+
+
+template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_zext_Aux()
+{
+	SrcType src = getOperandValue<SrcType>(1);
+	storeOperandValue<DstType>(0, src);
+}
+
+
 void WorkItem::ExecuteInst_CVT()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+
+	// Get src type and dst type
+	BrigTypeX src_type = inst->getSourceType();
+	BrigTypeX dst_type = inst->getType();
+
+	if (src_type == BRIG_TYPE_U16 && dst_type == BRIG_TYPE_U32)
+	{
+		Inst_CVT_zext_Aux<unsigned short, unsigned int>();
+	}
+	else if (src_type == BRIG_TYPE_U32 && dst_type == BRIG_TYPE_U64)
+	{
+		Inst_CVT_zext_Aux<unsigned int, unsigned long long>();
+	}
+	else
+	{
+		throw misc::Panic(misc::fmt("Conversion between %s and %s "
+				"is not supported\n",
+				AsmService::TypeToString(src_type).c_str(),
+				AsmService::TypeToString(dst_type).c_str()));
+	}
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 

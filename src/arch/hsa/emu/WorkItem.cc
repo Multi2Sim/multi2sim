@@ -303,7 +303,18 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 
 	case BRIG_SEGMENT_KERNARG:
 
-		throw misc::Panic("Unsupported segment KERNARG.");
+		{
+			VariableScope *kernel_arguments = work_group->
+					getGrid()->getKernelArguments();
+			char *buffer;
+			if (kernel_arguments)
+			{
+				buffer = kernel_arguments->getBuffer(name);
+			}
+
+			return buffer;
+			break;
+		}
 		break;
 
 	case BRIG_SEGMENT_READONLY:
@@ -394,7 +405,8 @@ void WorkItem::DeclearVariable()
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, segment);
 		Emu::isa_debug << misc::fmt("Declaring variable %s with "
-						"size %d[%lld]\n", name.c_str(), size, dim);
+						"size %d[%lld]\n", name.c_str(),
+						size, dim);
 		break;
 	}
 
@@ -413,7 +425,7 @@ void WorkItem::DeclearVariable()
 
 	case BRIG_SEGMENT_KERNARG:
 
-		throw misc::Panic("Unsupported segment KERNARG.");
+		throw misc::Panic("Cannot declare variable in KERNARG segment");
 		break;
 
 	case BRIG_SEGMENT_READONLY:

@@ -56,7 +56,11 @@ public:
 	///
 	/// \param type
 	/// 	Type of variable, defined in Brig.h
-	void DeclearVariable(const std::string &name, BrigTypeX type,
+	///
+	/// \return
+	///	The address of the newly created variable
+	///
+	unsigned DeclearVariable(const std::string &name, BrigTypeX type,
 			unsigned long long dim, SegmentManager *segment);
 
 	/// Get the address of a certain variable, return 0 if the variable is
