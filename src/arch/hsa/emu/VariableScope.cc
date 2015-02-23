@@ -37,7 +37,7 @@ VariableScope::~VariableScope()
 }
 
 
-void VariableScope::DeclearVariable(const std::string &name,
+unsigned VariableScope::DeclearVariable(const std::string &name,
 		BrigTypeX type, unsigned long long dim, SegmentManager *segment)
 {
 	// Get the size of the variable
@@ -63,6 +63,8 @@ void VariableScope::DeclearVariable(const std::string &name,
 	Variable *var = new Variable(name, type, dim, address, segment, false);
 	variable_info.insert(std::make_pair(name,
 			std::unique_ptr<Variable>(var)));
+
+	return address;
 }
 
 

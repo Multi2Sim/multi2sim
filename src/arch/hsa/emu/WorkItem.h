@@ -124,6 +124,8 @@ class WorkItem
 	template<typename T> void Inst_LDA_Aux();
  	template<typename T> void Inst_MOV_Aux();
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
+ 	template<typename SrcType, typename DstType> void Inst_CVT_chop_Aux();
+ 	template<typename SrcType, typename DstType> void Inst_CVT_zext_Aux();
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
  	template<typename T> void Inst_LDI_Aux();
