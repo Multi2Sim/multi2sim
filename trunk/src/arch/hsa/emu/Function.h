@@ -135,6 +135,9 @@ public:
 	/// Return the memory size required to hold the arguments
 	unsigned getArgumentSize() const { return arg_size; }
 
+	/// Return the number of arguments
+	unsigned getArgumentCount() const { return arg_info.size(); }
+
 	/// Allocate register
 	void AllocateRegister(unsigned int *max_reg);
 

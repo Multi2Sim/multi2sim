@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
+#include <arch/hsa/asm/AsmService.h>
+
 #include "ProgramLoader.h"
 #include "WorkGroup.h"
 #include "WorkItem.h"
@@ -38,7 +42,6 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	grid_size_z = packet->getGridSizeZ();
 	grid_size = grid_size_x * grid_size_y * grid_size_z;
 
-
 	// Set work group information
 	group_size_x = packet->getWorkGroupSizeX();
 	group_size_y = packet->getWorkGroupSizeY();
@@ -49,9 +52,36 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	auto function = binary->getCodeEntryByOffset(packet->getKernalObjectAddress());
 	std::string function_name = function->getName();
-	this->root_function = ProgramLoader::getInstance()->getFunction(
+	root_function = ProgramLoader::getInstance()->getFunction(
 			function_name);
-	this->kernel_args = packet->getKernargAddress();
+	kernel_args = packet->getKernargAddress();
+
+	// Create kernel argument
+	mem::Memory *memory = Emu::getInstance()->getMemory();
+	kernarg_segment.reset(new SegmentManager(memory,
+			root_function->getArgumentSize()));
+	kernel_arguments.reset(new VariableScope());
+	BrigCodeEntry *function_directive =
+			root_function->getFunctionDirective();
+	auto arg_entry = function_directive->Next();
+	for (int i = 0; i < function_directive->getInArgCount(); i++)
+	{
+		std::string name = arg_entry->getName();
+		unsigned inseg_address = kernel_arguments->DeclearVariable(name,
+				arg_entry->getType(), arg_entry->getDim(),
+				kernarg_segment.get());
+		unsigned size = AsmService::TypeToSize(arg_entry->getType());
+
+		// Get the buffer from both host and guest
+		char *buffer = kernel_arguments->getBuffer(name);
+		char *host_buffer = memory->getBuffer(kernel_args + inseg_address,
+				size, mem::Memory::AccessRead);
+		memcpy(buffer, host_buffer, size);
+
+		// Move arg_entry forward
+		arg_entry = arg_entry->Next();
+	}
+
 
 	// Create work items
 	for (unsigned int i = 0; i < grid_size; i++)
@@ -90,6 +120,12 @@ void Grid::Dump(std::ostream &os = std::cout) const
 			dimension, getGridSizeX(),
 			getGridSizeY(), getGridSizeZ());
 
+	// Dump kernel arguments
+	os << misc::fmt("\n\t***** Arguments *****\n");
+	kernel_arguments->Dump(os, 2);
+	os << misc::fmt("\n\t***** ********* *****\n");
+
+	// Dump work items
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		os << *(it->second.get());

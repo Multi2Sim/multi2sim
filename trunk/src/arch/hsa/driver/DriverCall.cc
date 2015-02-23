@@ -1028,26 +1028,27 @@ int Driver::CallStatusString(mem::Memory *memory, unsigned args_ptr)
 }
 
 
-int Driver::CallPrintInt(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallPrintU32(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments		| Offset	| Size
-	// integer		| 0		| 4
-	// is_unsigned 		| 4		| 4
+	// integer		| 0		| 4);
 
-	unsigned int is_unsigned = getArgumentValue<unsigned int>
-				(4, memory, args_ptr);
-	if (is_unsigned)
-	{
-		unsigned int integer = getArgumentValue<unsigned int>
-				(0, memory, args_ptr);
-		std::cout << integer;
-	}
-	else
-	{
-		int integer = getArgumentValue<int>
-				(0, memory, args_ptr);
-		std::cout << integer;
-	}
+	unsigned int integer = getArgumentValue<unsigned int>
+			(0, memory, args_ptr);
+	std::cout << integer;
+
+	return 0;
+}
+
+
+int Driver::CallPrintU64(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// integer		| 0		| 8
+
+	unsigned int integer = getArgumentValue<unsigned int>
+			(0, memory, args_ptr);
+	std::cout << integer;
 
 	return 0;
 }

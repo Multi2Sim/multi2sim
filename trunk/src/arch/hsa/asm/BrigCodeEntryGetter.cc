@@ -618,8 +618,9 @@ unsigned short BrigCodeEntry::getInArgCount() const
 		return dir->inArgCount;
 	}
 	default:
-		throw misc::Panic("Get inArgCount is not valid for kind.\n");	
-	}	
+		KindError("GetInArgCount");
+	}
+	return 0;
 }
 
 
@@ -638,8 +639,10 @@ std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getFirstInArg() const
 		return getBinary()->getCodeEntryByOffset(offset);
 	}
 	default:
-		throw misc::Panic("Get inArgCount is not valid for kind.\n");	
-	}	
+		KindError("GetFirstInArg");
+	}
+
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 
@@ -658,9 +661,10 @@ std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getFirstCodeBlockEntry() const
 		return getBinary()->getCodeEntryByOffset(offset);
 	}
 	default:
-		throw misc::Panic("Get firstCodeBlockEntry is not valid for "
-			"kind.\n");	
+		KindError("GetFirstCodeBlockEntry");
 	}
+
+	return std::unique_ptr<BrigCodeEntry>(nullptr);
 }
 
 
