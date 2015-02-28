@@ -1,0 +1,56 @@
+version 0:99:$full:$small; 
+
+function &m2s_print_int () (arg_s32 %integer, arg_u32 %is_unsigned){};
+
+function &fib(arg_s32 %r)(arg_s32 %n)
+{
+	private_s32 %p;
+	ld_arg_s32	$s1, [%n];
+	cmp_lt_b1_s32	$c1, $s1, 3;
+	cbr_b1	$c1, @return;
+	{
+		arg_s32 %nm2;
+		arg_s32 %res;
+		sub_s32	$s2, $s1, 2;
+		st_arg_s32	$s2, [%nm2];
+		call	&fib (%res) (%nm2);
+		ld_arg_s32	$s3, [%res];
+	}
+	st_private_s32	$s3, [%p];
+	{
+		arg_s32 %nm2;
+		arg_s32 %res;
+		sub_s32	$s2, $s1, 1;
+		st_arg_s32	$s2, [%nm2];
+		call	&fib (%res) (%nm2);
+		ld_arg_u32	$s3, [%res];
+	}
+	ld_private_u32	$s4, [%p];
+	add_u32	$s2, $s4, $s3;
+
+	st_arg_s32	$s2, [%r];
+	ret;
+
+@return:
+	st_arg_s32	1, [%r];
+	ret;
+};
+
+function &main()()
+{
+	{
+		arg_s32 %n;
+		arg_s32 %r;
+		st_arg_s32 10, [%n];
+		call	&fib (%r) (%n);
+		ld_arg_s32 $s0, [%r];
+	}
+	{
+		arg_s32 %result;
+		arg_u32 %is_unsigned;
+		st_arg_s32 $s0, [%result];
+		st_arg_u32 0, [%is_unsigned];
+		call &m2s_print_int () (%result, %is_unsigned);
+	}
+	ret;
+};

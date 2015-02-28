@@ -1,0 +1,368 @@
+[ General ] 
+Frequency = 3000
+
+; ---- Networks ----
+
+[ Network.net-x86-l1-0-l2-0 ]
+DefaultInputBufferSize = 256
+DefaultOutputBufferSize = 256
+DefaultBandwidth = 16
+
+[ Network.net-x86-l1-1-l2-1 ]
+DefaultInputBufferSize = 256
+DefaultOutputBufferSize = 256
+DefaultBandwidth = 16
+
+[ Network.net-x86-l1-2-l2-2 ]
+DefaultInputBufferSize = 256
+DefaultOutputBufferSize = 256
+DefaultBandwidth = 16
+
+[ Network.net-x86-l1-3-l2-3 ]
+DefaultInputBufferSize = 256
+DefaultOutputBufferSize = 256
+DefaultBandwidth = 16
+
+[ Network.net-si-l1-all-l2-all ]
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 32 
+
+[ Network.net-l2-l3 ]
+DefaultInputBufferSize = 1024
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 32
+
+[ Network.net-l3-mm ]
+DefaultInputBufferSize = 1024
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 32
+
+
+; L3-mm nodes
+
+[ Network.net-l3-mm.Node.mm-high ]
+Type = EndNode
+
+[ Network.net-l3-mm.Node.l3-mm-switch ]
+Type = Switch
+
+[ Network.net-l3-mm.Node.l3-low ]
+Type = EndNode
+
+[ Network.net-l3-mm.Link.l3-switch ]
+Type = Bidirectional
+Source = l3-low
+Dest = l3-mm-switch
+
+[ Network.net-l3-mm.Link.switch-mm ]
+Type = Bidirectional
+Source = l3-mm-switch
+Dest = mm-high
+
+
+; L2-L3 nodes
+
+[ Network.net-l2-l3.Node.l3-high ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.l2-l3-switch ]
+Type = Switch
+
+[ Network.net-l2-l3.Node.x86-l2-0-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.x86-l2-1-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.x86-l2-2-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.x86-l2-3-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.si-l2-0-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.si-l2-1-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.si-l2-2-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Node.si-l2-3-low ]
+Type = EndNode
+
+[ Network.net-l2-l3.Link.switch-l3 ]
+Type = Bidirectional
+Source = l3-high
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.x86-l2-0-switch ]
+Type = Bidirectional
+Source = x86-l2-0-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.x86-l2-1-switch ]
+Type = Bidirectional
+Source = x86-l2-1-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.x86-l2-2-switch ]
+Type = Bidirectional
+Source = x86-l2-2-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.x86-l2-3-switch ]
+Type = Bidirectional
+Source = x86-l2-3-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.si-l2-0-switch ]
+Type = Bidirectional
+Source = si-l2-0-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.si-l2-1-switch ]
+Type = Bidirectional
+Source = si-l2-1-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.si-l2-2-switch ]
+Type = Bidirectional
+Source = si-l2-2-low
+Dest = l2-l3-switch
+
+[ Network.net-l2-l3.Link.si-l2-3-switch ]
+Type = Bidirectional
+Source = si-l2-3-low
+Dest = l2-l3-switch
+
+
+; L1-L2 nodes
+
+
+[ Network.net-x86-l1-0-l2-0.Node.x86-l2-0-high ]
+Type = EndNode
+
+[ Network.net-x86-l1-0-l2-0.Node.x86-l1-0-l2-0-switch ]
+Type = Switch
+
+[ Network.net-x86-l1-0-l2-0.Node.x86-l1-0-data-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-0-l2-0.Node.x86-l1-0-inst-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-1-l2-1.Node.x86-l2-1-high ]
+Type = EndNode
+
+[ Network.net-x86-l1-1-l2-1.Node.x86-l1-1-l2-1-switch ]
+Type = Switch
+
+[ Network.net-x86-l1-1-l2-1.Node.x86-l1-1-data-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-1-l2-1.Node.x86-l1-1-inst-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-2-l2-2.Node.x86-l2-2-high ]
+Type = EndNode
+
+[ Network.net-x86-l1-2-l2-2.Node.x86-l1-2-l2-2-switch ]
+Type = Switch
+
+[ Network.net-x86-l1-2-l2-2.Node.x86-l1-2-data-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-2-l2-2.Node.x86-l1-2-inst-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-3-l2-3.Node.x86-l2-3-high ]
+Type = EndNode
+
+[ Network.net-x86-l1-3-l2-3.Node.x86-l1-3-l2-3-switch ]
+Type = Switch
+
+[ Network.net-x86-l1-3-l2-3.Node.x86-l1-3-data-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-3-l2-3.Node.x86-l1-3-inst-low ]
+Type = EndNode
+
+[ Network.net-x86-l1-0-l2-0.Link.switch-x86-l2-0 ]
+Type = Bidirectional
+Source = x86-l2-0-high
+Dest = x86-l1-0-l2-0-switch
+
+[ Network.net-x86-l1-0-l2-0.Link.x86-l1-0-data-switch ]
+Type = Bidirectional
+Source = x86-l1-0-data-low
+Dest = x86-l1-0-l2-0-switch
+
+[ Network.net-x86-l1-0-l2-0.Link.x86-l1-0-inst-switch ]
+Type = Bidirectional
+Source = x86-l1-0-inst-low
+Dest = x86-l1-0-l2-0-switch
+
+[ Network.net-x86-l1-1-l2-1.Link.switch-x86-l2-1 ]
+Type = Bidirectional
+Source = x86-l2-1-high
+Dest = x86-l1-1-l2-1-switch
+
+[ Network.net-x86-l1-1-l2-1.Link.x86-l1-1-data-switch ]
+Type = Bidirectional
+Source = x86-l1-1-data-low
+Dest = x86-l1-1-l2-1-switch
+
+[ Network.net-x86-l1-1-l2-1.Link.x86-l1-1-inst-switch ]
+Type = Bidirectional
+Source = x86-l1-1-inst-low
+Dest = x86-l1-1-l2-1-switch
+
+[ Network.net-x86-l1-2-l2-2.Link.switch-x86-l2-2 ]
+Type = Bidirectional
+Source = x86-l2-2-high
+Dest = x86-l1-2-l2-2-switch
+
+[ Network.net-x86-l1-2-l2-2.Link.x86-l1-2-data-switch ]
+Type = Bidirectional
+Source = x86-l1-2-data-low
+Dest = x86-l1-2-l2-2-switch
+
+[ Network.net-x86-l1-2-l2-2.Link.x86-l1-2-inst-switch ]
+Type = Bidirectional
+Source = x86-l1-2-inst-low
+Dest = x86-l1-2-l2-2-switch
+
+[ Network.net-x86-l1-3-l2-3.Link.switch-x86-l2-3 ]
+Type = Bidirectional
+Source = x86-l2-3-high
+Dest = x86-l1-3-l2-3-switch
+
+[ Network.net-x86-l1-3-l2-3.Link.x86-l1-3-data-switch ]
+Type = Bidirectional
+Source = x86-l1-3-data-low
+Dest = x86-l1-3-l2-3-switch
+
+[ Network.net-x86-l1-3-l2-3.Link.x86-l1-3-inst-switch ]
+Type = Bidirectional
+Source = x86-l1-3-inst-low
+Dest = x86-l1-3-l2-3-switch
+
+
+[ Network.net-si-l1-all-l2-all.Node.si-l2-0-high ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l2-1-high ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l2-2-high ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l2-3-high ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-all-l2-all-switch ]
+Type = Switch
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-0-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-1-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-2-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-3-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-4-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-5-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-6-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-l1-7-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-sl1-0-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Node.si-sl1-1-low ]
+Type = EndNode
+
+[ Network.net-si-l1-all-l2-all.Link.switch-si-l2-0 ]
+Type = Bidirectional
+Source = si-l2-0-high
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.switch-si-l2-1 ]
+Type = Bidirectional
+Source = si-l2-1-high
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.switch-si-l2-2 ]
+Type = Bidirectional
+Source = si-l2-2-high
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.switch-si-l2-3 ]
+Type = Bidirectional
+Source = si-l2-3-high
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-0-switch ]
+Type = Bidirectional
+Source = si-l1-0-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-1-switch ]
+Type = Bidirectional
+Source = si-l1-1-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-2-switch ]
+Type = Bidirectional
+Source = si-l1-2-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-3-switch ]
+Type = Bidirectional
+Source = si-l1-3-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-4-switch ]
+Type = Bidirectional
+Source = si-l1-4-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-5-switch ]
+Type = Bidirectional
+Source = si-l1-5-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-6-switch ]
+Type = Bidirectional
+Source = si-l1-6-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-l1-7-switch ]
+Type = Bidirectional
+Source = si-l1-7-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-sl1-0-switch ]
+Type = Bidirectional
+Source = si-sl1-0-low
+Dest = si-l1-all-l2-all-switch
+
+[ Network.net-si-l1-all-l2-all.Link.si-sl1-1-switch ]
+Type = Bidirectional
+Source = si-sl1-1-low
+Dest = si-l1-all-l2-all-switch
+

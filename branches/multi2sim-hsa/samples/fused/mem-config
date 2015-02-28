@@ -1,0 +1,362 @@
+[ General ]
+Frequency = 3000 
+
+; 32KB x86 L1 data cache (1 per core)
+[ CacheGeometry geo-x86-l1-data ]
+Sets = 64
+Assoc = 8
+BlockSize = 64
+Latency = 1
+
+; 32KB x86 L1 instruction cache (1 per core)
+[ CacheGeometry geo-x86-l1-inst ]
+Sets = 64
+Assoc = 8
+BlockSize = 64
+Latency = 1
+
+; 16KB SI L1 cache (1 per compute unit)
+[ CacheGeometry geo-si-l1 ]
+Sets = 64
+Assoc = 4
+BlockSize = 64
+Latency = 1
+
+; 256KB x86 L2 cache (1 per core)
+[ CacheGeometry geo-x86-l2 ]
+Sets = 512
+Assoc = 8
+BlockSize = 64
+Latency = 4
+
+; 128KB SI L2 cache (4 for entire GPU)
+[ CacheGeometry geo-si-l2 ]
+Sets = 128
+Assoc = 16
+BlockSize = 64
+Latency = 10
+
+; 8MB L3 cache (shared between devices)
+[ CacheGeometry geo-shared-l3 ]
+Sets = 8192
+Assoc = 16
+BlockSize = 64
+Latency = 20
+
+
+; ---- Main Memory ----
+
+[ Module mod-shared-mm ]
+Type = MainMemory
+BlockSize = 64
+Latency = 40
+HighNetwork = net-l3-mm
+HighNetworkNode = mm-high
+
+
+; ---- Shared L3 Cache ----
+
+[ Module mod-shared-l3 ]
+Type = Cache
+Geometry = geo-shared-l3
+HighNetwork = net-l2-l3
+HighNetworkNode = l3-high
+LowNetwork = net-l3-mm
+LowNetworkNode = l3-low
+LowModules = mod-shared-mm
+
+
+; ---- x86 L2 Caches ----
+
+[ Module mod-x86-l2-0 ]
+Type = Cache
+Geometry = geo-x86-l2
+HighNetwork = net-x86-l1-0-l2-0
+HighNetworkNode = x86-l2-0-high
+LowNetwork = net-l2-l3
+LowNetworkNode = x86-l2-0-low
+LowModules = mod-shared-l3
+
+[ Module mod-x86-l2-1 ]
+Type = Cache
+Geometry = geo-x86-l2
+HighNetwork = net-x86-l1-1-l2-1
+HighNetworkNode = x86-l2-1-high
+LowNetwork = net-l2-l3
+LowNetworkNode = x86-l2-1-low
+LowModules = mod-shared-l3
+
+[ Module mod-x86-l2-2 ]
+Type = Cache
+Geometry = geo-x86-l2
+HighNetwork = net-x86-l1-2-l2-2
+HighNetworkNode = x86-l2-2-high
+LowNetwork = net-l2-l3
+LowNetworkNode = x86-l2-2-low
+LowModules = mod-shared-l3
+
+[ Module mod-x86-l2-3 ]
+Type = Cache
+Geometry = geo-x86-l2
+HighNetwork = net-x86-l1-3-l2-3
+HighNetworkNode = x86-l2-3-high
+LowNetwork = net-l2-l3
+LowNetworkNode = x86-l2-3-low
+LowModules = mod-shared-l3
+
+
+; ---- SI L2 Caches ----
+
+[ Module mod-si-l2-0 ]
+Type = Cache
+Geometry = geo-si-l2
+AddressRange = ADDR DIV 64 MOD 4 EQ 0
+HighNetwork = net-si-l1-all-l2-all
+HighNetworkNode = si-l2-0-high
+LowNetwork = net-l2-l3
+LowNetworkNode = si-l2-0-low
+LowModules = mod-shared-l3
+
+[ Module mod-si-l2-1 ]
+Type = Cache
+Geometry = geo-si-l2
+AddressRange = ADDR DIV 64 MOD 4 EQ 1
+HighNetwork = net-si-l1-all-l2-all
+HighNetworkNode = si-l2-1-high
+LowNetwork = net-l2-l3
+LowNetworkNode = si-l2-1-low
+LowModules = mod-shared-l3
+
+[ Module mod-si-l2-2 ]
+Type = Cache
+Geometry = geo-si-l2
+AddressRange = ADDR DIV 64 MOD 4 EQ 2
+HighNetwork = net-si-l1-all-l2-all
+HighNetworkNode = si-l2-2-high
+LowNetwork = net-l2-l3
+LowNetworkNode = si-l2-2-low
+LowModules = mod-shared-l3
+
+[ Module mod-si-l2-3 ]
+Type = Cache
+Geometry = geo-si-l2
+AddressRange = ADDR DIV 64 MOD 4 EQ 3
+HighNetwork = net-si-l1-all-l2-all
+HighNetworkNode = si-l2-3-high
+LowNetwork = net-l2-l3
+LowNetworkNode = si-l2-3-low
+LowModules = mod-shared-l3
+
+
+; ---- x86 L1 Caches ----
+
+[ Module mod-x86-l1-0-data ]
+Type = Cache
+Geometry = geo-x86-l1-data
+LowNetwork = net-x86-l1-0-l2-0
+LowNetworkNode = x86-l1-0-data-low
+LowModules = mod-x86-l2-0
+
+[ Module mod-x86-l1-0-inst ]
+Type = Cache
+Geometry = geo-x86-l1-inst
+LowNetwork = net-x86-l1-0-l2-0
+LowNetworkNode = x86-l1-0-inst-low
+LowModules = mod-x86-l2-0
+
+[ Module mod-x86-l1-1-data ]
+Type = Cache
+Geometry = geo-x86-l1-data
+LowNetwork = net-x86-l1-1-l2-1
+LowNetworkNode = x86-l1-1-data-low
+LowModules = mod-x86-l2-1
+
+[ Module mod-x86-l1-1-inst ]
+Type = Cache
+Geometry = geo-x86-l1-inst
+LowNetwork = net-x86-l1-1-l2-1
+LowNetworkNode = x86-l1-1-inst-low
+LowModules = mod-x86-l2-1
+
+[ Module mod-x86-l1-2-data ]
+Type = Cache
+Geometry = geo-x86-l1-data
+LowNetwork = net-x86-l1-2-l2-2
+LowNetworkNode = x86-l1-2-data-low
+LowModules = mod-x86-l2-2
+
+[ Module mod-x86-l1-2-inst ]
+Type = Cache
+Geometry = geo-x86-l1-inst
+LowNetwork = net-x86-l1-2-l2-2
+LowNetworkNode = x86-l1-2-inst-low
+LowModules = mod-x86-l2-2
+
+[ Module mod-x86-l1-3-data ]
+Type = Cache
+Geometry = geo-x86-l1-data
+LowNetwork = net-x86-l1-3-l2-3
+LowNetworkNode = x86-l1-3-data-low
+LowModules = mod-x86-l2-3
+
+[ Module mod-x86-l1-3-inst ]
+Type = Cache
+Geometry = geo-x86-l1-inst
+LowNetwork = net-x86-l1-3-l2-3
+LowNetworkNode = x86-l1-3-inst-low
+LowModules = mod-x86-l2-3
+
+
+; ---- SI L1 Caches ----
+
+[ Module si-vec-l1-cu00 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-0-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu01 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-1-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu02 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-2-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu03 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-3-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu04 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-4-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu05 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-5-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu06 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-6-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-vec-l1-cu07 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-l1-7-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-scalar-l1-0 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-sl1-0-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+[ Module si-scalar-l1-1 ]
+Type = Cache
+Geometry = geo-si-l1
+LowNetwork = net-si-l1-all-l2-all
+LowNetworkNode = si-sl1-1-low
+LowModules = mod-si-l2-0 mod-si-l2-1 mod-si-l2-2 mod-si-l2-3 
+
+
+; ---- Associating x86 cores with L1s ----
+
+[ Entry x86-core-0 ]
+Arch = x86
+Core = 0
+Thread = 0
+DataModule = mod-x86-l1-0-data
+InstModule = mod-x86-l1-0-inst
+
+[ Entry x86-core-1 ]
+Arch = x86
+Core = 1
+Thread = 0
+DataModule = mod-x86-l1-1-data
+InstModule = mod-x86-l1-1-inst
+
+[ Entry x86-core-2 ]
+Arch = x86
+Core = 2
+Thread = 0
+DataModule = mod-x86-l1-2-data
+InstModule = mod-x86-l1-2-inst
+
+[ Entry x86-core-3 ]
+Arch = x86
+Core = 3
+Thread = 0
+DataModule = mod-x86-l1-3-data
+InstModule = mod-x86-l1-3-inst
+
+
+; ---- Associating SI compute units with L1s ----
+
+[ Entry si-cu-0 ]
+Arch = SouthernIslands
+ComputeUnit = 0
+DataModule = si-vec-l1-cu00
+ConstantDataModule = si-scalar-l1-0
+
+[ Entry si-cu-1 ]
+Arch = SouthernIslands
+ComputeUnit = 1
+DataModule = si-vec-l1-cu01
+ConstantDataModule = si-scalar-l1-0
+
+[ Entry si-cu-2 ]
+Arch = SouthernIslands
+ComputeUnit = 2
+DataModule = si-vec-l1-cu02
+ConstantDataModule = si-scalar-l1-0
+
+[ Entry si-cu-3 ]
+Arch = SouthernIslands
+ComputeUnit = 3
+DataModule = si-vec-l1-cu03
+ConstantDataModule = si-scalar-l1-0
+
+[ Entry si-cu-4 ]
+Arch = SouthernIslands
+ComputeUnit = 4
+DataModule = si-vec-l1-cu04
+ConstantDataModule = si-scalar-l1-1
+
+[ Entry si-cu-5 ]
+Arch = SouthernIslands
+ComputeUnit = 5
+DataModule = si-vec-l1-cu05
+ConstantDataModule = si-scalar-l1-1
+
+[ Entry si-cu-6 ]
+Arch = SouthernIslands
+ComputeUnit = 6
+DataModule = si-vec-l1-cu06
+ConstantDataModule = si-scalar-l1-1
+
+[ Entry si-cu-7 ]
+Arch = SouthernIslands
+ComputeUnit = 7
+DataModule = si-vec-l1-cu07
+ConstantDataModule = si-scalar-l1-1

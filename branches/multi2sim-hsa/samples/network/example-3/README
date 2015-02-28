@@ -1,0 +1,4 @@
+An example using BUS in Multi2sim.
+Run the following:
+
+--net-sim mynet --net-config net-bus --net-injection-rate 5 --net-max-cycles 1000 --net-msg-size 1 --net-visual net.vis

@@ -1,0 +1,4 @@
+SUBDIRS = \
+	asm \
+	driver \
+	emu

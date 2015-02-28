@@ -1,0 +1,267 @@
+version 0:99:$full:$large;
+
+// Runtime definitions
+// Init/Shutdown routines
+function &hsa_init (arg_u32 %status) () {};
+function &hsa_stut_down (arg_u32 %status) () {};
+// System
+function &hsa_system_get_info(arg_u32 %status) (arg_u32 %attribute, arg_u64 %value) {};
+// Agent
+function &hsa_iterate_agents (arg_u32 %status) (arg_u64 %call_back, arg_u64 %data) {};
+function &hsa_agent_get_info (arg_u32 %status) (arg_u64 %agent, arg_u32 %attribute, arg_u64 %value) {};
+// Queues
+function &hsa_queue_create (arg_u32 %status) (arg_u64 %agent, arg_u32 %size, 
+		arg_u32 %type, arg_u64 %call_back, 
+		arg_u64 %service_queue, arg_u64 %queue) {};
+function &hsa_queue_destory (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_inactivate (arg_u32 %status) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_acquire (arg_u64 %read_index) (arg_u64 %queue) {};
+function &hsa_queue_load_read_index_relaxed (arg_u64 %read_index) (arg_u64 %queue) {};
+function &hsa_queue_load_write_index_acquire (arg_u64 %write_index) (arg_u64 %queue) {};
+function &hsa_queue_load_write_index_relaxed (arg_u64 %write_index) (arg_u64 %queue) {};
+function &hsa_queue_store_write_index_relaxed () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_write_index_release () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_acq_rel (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_acquire (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_relaxed (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_cas_write_index_release (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %expected, arg_u64 %value) {};
+function &hsa_queue_add_write_index_acq_rel (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_acquire (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_relaxed (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_add_write_index_release (arg_u64 %prev_value) (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_read_index_relaxed () (arg_u64 %queue, arg_u64 %value) {};
+function &hsa_queue_store_read_index_release () (arg_u64 %queue, arg_u64 %value) {};
+
+
+
+function &m2s_print_u32 () (arg_u32 %integer) {};
+function &m2s_print_u64 () (arg_u64 %integer) {};
+
+
+function &get_global_id(arg_u32 %ret_val) (arg_u32 %arg_val0) {};
+
+// Iterate agent callback 
+indirect function &select_gpu_if_possible (arg_u32 %status) ( arg_u64 %agent, arg_u64 %data)
+{
+	global_u32 %type;			
+	// Declare a local variable for storing the type of the device
+	ld_arg_u64 $d1, [%agent];		// Load argument %agent into register %d1
+	{
+		arg_u32 %err;			// Declare a variable for function return
+		arg_u32 %attribute;		// Declear an argument for the attribute to retrieve
+		arg_u64 %type_addr;		// Declare an argument to pass the address of the data field
+		arg_u64 %agent_arg;		// Declear argument for the agent handler
+
+		st_arg_u32 13, [%attribute];	// Set the value of %attribute to be 13, for device type
+		lda_global_u64 $d0, [%type];	// Get the address of the variable %type;
+		st_arg_u64 $d0, [%type_addr];	// Set the value of %type_addr
+		st_arg_u64 $d1, [%agent_arg];	// Store the value of agent handler 
+
+		call &hsa_agent_get_info (%err) (%agent_arg, %attribute, %type_addr);
+	}
+	
+	ld_global_u32 $s0, [%type];		// Store the type value to register
+
+	// If the device is a GPU
+	cmp_ne_b1_u32 $c0, $s0, 1;		// If the type is not 1, set $c0 to true;
+	cbr_b1 $c0, @not_gpu_agent;		// If $c0 is true, not GPU, branch away
+	ld_arg_u64 $d0, [%agent];		// Load the arguement of %agent
+	ld_arg_u64 $d1, [%data];		// Get the address of %data
+	st_u64 $d0, [$d1];			// Store the agent handler to [%data]
+	st_arg_u32 0, [%status];		// Set return value to 0
+	ret;
+	
+@not_gpu_agent:
+	cmp_ne_b1_u32 $c0, $s0, 0;		// If CPU device, set $c0 to false
+	cbr_b1 $c0, @not_cpu_agent;		// If not CPU, $c0 is true, then jump
+	ld_arg_u64 $d1, [%data];		// Get the address stored in [%data]
+	ld_u64 $d0, [$d1];			// Load the value already in [$d1]
+	cmp_ne_b1_u64 $c0, $d0, 1;		// If the value in $d0 is not 1, set $c0 to true, for no GPU have been found
+	cbr_b1 $c0, @add_this_cpu;		// If $c0 is true, $d0 is not 1, its safe to add this CPU
+	st_arg_u32 0, [%status];		// Save return address
+	ret;
+
+@add_this_cpu:
+	ld_arg_u64 $d0, [%agent];		// Get agent handler
+	ld_arg_u64 $d1, [%data];		// Get address of %data
+	st_u64 $d0, [$d1];			// Store angent handler
+	st_arg_u32 0, [%status];		// Store return value
+	ret;
+	
+@not_cpu_agent:
+	st_arg_u32 0, [%status];		// Store return value
+	ret;
+	
+};
+
+kernel &test_kernel (kernarg_u64 %in1, kernarg_u64 %in2, kernarg_u64 %out, kernarg_u64 %len)
+{
+	workitemabsid_u32 $s1, 0;
+
+	ld_kernarg_u64 $d1, [%in1];
+	mul_u32 $s2, $s1, 8;
+	cvt_u64_u32 $d4, $s2;
+	add_u64 $d3, $d1, $d4;
+	ld_global_u64 $d5, [$d3]; 
+
+	ld_kernarg_u64 $d2, [%in2];
+	add_u64 $d2, $d2, $d4;
+	ld_global_u64 $d6, [$d2];
+	
+	add_u64 $d7, $d6, $d5;
+
+	{
+		arg_u64 %integer;
+
+		st_arg_u64 $d7, [%integer];
+
+		call &m2s_print_u64 () (%integer);
+	}
+};
+
+function &main()(){
+
+	global_u64 %device;				// Declare the device handler 
+	global_u64 %ptr_queue;				// Address to the queue
+	private_u64 %packet_id;				// Declare packet id
+
+	global_u64 %vector1[100];
+	global_u64 %vector2[100];
+	global_u64 %result[100];
+
+	global_u64 %kernel_arg[4];			// Kernel Arguments
+
+	{
+		arg_u32 %err;				// Declare return argument
+		call &hsa_init (%err)();		// Call hsa_init
+	}
+	
+	
+	{
+		arg_u32 %err;				// Deaclare return argument
+		arg_u64 %device_addr;			// Declear argument variable to hold device address
+		arg_u64 %call_back;			// Declare callback function
+
+		lda_global_u64 $d0, [%device];		// Get the address of the device variable
+		st_arg_u64 $d0, [%device_addr];		// Store the value in $d0 to the variable
+		ldi_u64 $d0, &select_gpu_if_possible;	// Get the address of callback
+		st_arg_u64 $d0, [%call_back];		// Store the value 
+		
+		call &hsa_iterate_agents (%err) (%call_back, %device_addr);
+	}
+
+	// Create AQL queue
+	{
+		arg_u64 %component;			// The queue is to be added into this component
+		arg_u32 %queue_size;			// Declare queue size
+		arg_u32 %queue_type;			// Declare queue type
+		arg_u64 %ptr_callback;			// Declare the pointer to the callback
+		arg_u64 %ptr_dispatch_queue;		// Declare pointer to dispatch queue
+		arg_u64 %ptr_ptr_queue;			// Declare pointer to ptr_queue;
+		arg_u32 %status;			// Return value
+
+		ld_global_u64 $d0, [%device];		// Load the value ot %device to $d0
+		st_arg_u64 $d0, [%component];		// Store the device handler to %component
+		
+		st_arg_u32 4, [%queue_size];		// Set the queue size to be 4
+		
+		st_arg_u32 1, [%queue_type];		// Set the queue to be queue type single
+
+		st_arg_u64 0, [%ptr_callback];		// Set the callback to be NULL
+
+		st_arg_u64 0, [%ptr_dispatch_queue];	// Set the dispatch queue to be NULL
+
+		lda_global_u64 $d0, [%ptr_queue];	// Address to the ptr_queue
+		st_arg_u64 $d0, [%ptr_ptr_queue];	// Store the ptr_ptr_queue
+
+		call &hsa_queue_create (%status) (%component, %queue_size, 
+				%queue_type, %ptr_callback, 
+				%ptr_dispatch_queue, 
+				%ptr_ptr_queue);
+	}
+
+	// Prepare the vectors
+	mov_u64 $d5, 0;
+
+@start_set_vector_loop:
+	cmp_ge_b1_u64 $c1, $d5, 100;
+	cbr_b1 $c1, @finish_set_vector_loop;
+
+	mul_u64 $d6, $d5, 8;
+	lda_global_u64 $d7, [%vector1];
+	add_u64 $d8, $d6, $d7;
+
+	lda_global_u64 $d7, [%vector2];
+	add_u64 $d9, $d6, $d7;
+
+	st_global_u64 $d5, [$d8];
+	st_global_u64 $d5, [$d9];
+
+	add_u64 $d5, $d5, 1;
+	cbr_b1 1, @start_set_vector_loop;
+
+@finish_set_vector_loop:
+
+	lda_global_u64 $d10, [%kernel_arg];		// Load the kernel argument address
+	lda_global_u64 $d11, [%vector1];
+	st_global_u64 $d11, [$d10];
+	lda_global_u64 $d11, [%vector2];
+	st_global_u64 $d11, [$d10+8];
+	lda_global_u64 $d11, [%result];
+	st_global_u64 $d11, [$d10+16];
+	st_global_u64 100, [$d10+24];
+	
+
+	// Dispatch packet
+	ld_global_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
+
+	// FIXME accessing data structures in this way is not safe
+	ld_global_u64 $d1, [$d0+8];			// Store the queue's base address to $d1;
+	st_private_u64 $d1, [%packet_id];		// Store the packet_id, which equals to the base address;
+	
+	ldk_u64 $d3, &test_kernel;			// Load the address of the kernel object
+
+	// Prepare each field of AQLPacket
+	st_global_u32 0x00004000,	[$d1];		// Set header to 0 and dimension to 1
+	st_global_u16 0x0064,		[$d1+4];	// Set x dim to 2
+	st_global_u16 0x0001,		[$d1+6];	// Set y dim to 1
+	st_global_u16 0x0001,		[$d1+8];	// Set z dim to 0 
+	st_global_u16 0x0000,		[$d1+10];	// Set reserved to 0
+	st_global_u32 0x00000064,	[$d1+12];	// Set grid size x to 2
+	st_global_u32 0x00000001,	[$d1+16];	// Set grid size y to 1
+	st_global_u32 0x00000001,	[$d1+20];	// Set grid size z to 1
+	st_global_u32 0x00000100,	[$d1+24];	// Set private seg size to 0
+	st_global_u32 0x00001000,	[$d1+28];	// Set group seg size to 0
+	st_global_u64 $d3,		[$d1+32];	// Set kernel object to the kernel to be executed
+	st_global_u64 $d10,		[$d1+40];	// Set kernel argument address to 0
+	st_global_u64 0,		[$d1+48];	// Set reserved3 to 0
+	st_global_u64 0,		[$d1+56];	// Set completion signal to 0
+
+	// Dispatch packet
+	st_global_u32 0x00024000,	[$d1];		// Dispatch packet
+
+	// Set bell signal	
+	st_global_u64 $d1,		[$d0+16];	// Set doorbell signal
+
+	// Update write index
+	{
+		arg_u64 %queue;	
+		arg_u64 %value;
+		arg_u64 %prev;
+
+		st_arg_u64 $d0, [%queue];
+		st_arg_u64 64, [%value];
+		
+		call &hsa_queue_add_write_index_acq_rel (%prev) (%queue, %value);
+	}
+	// ld_global_u64 $d2, [$d0+40];			// Get write index
+	// add_u64 $d2, $d2, 64;				// Add write index by 64 (AQLPacket size);
+	// st_global_u64 $d2, [$d0+40];			// Write the write index back
+
+	// Do something and wait
+	add_u64 $d2, $d2, 1;
+
+
+	ret;						// Return
+
+};
