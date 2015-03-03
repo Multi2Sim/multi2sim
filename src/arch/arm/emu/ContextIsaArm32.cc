@@ -1121,7 +1121,10 @@ void Context::ExecuteInst_MUL()
 
 void Context::ExecuteInst_MULS()
 {
-	throw misc::Panic("Unimplemented instruction");
+	if(IsaCheckCond())
+	{
+		IsaMultiplySettingCF();
+	}
 }
 
 void Context::ExecuteInst_MLA()
@@ -1134,7 +1137,10 @@ void Context::ExecuteInst_MLA()
 
 void Context::ExecuteInst_MLAS()
 {
-	throw misc::Panic("Unimplemented instruction");
+	if(IsaCheckCond())
+	{
+		IsaMultiplySettingCF();
+	}
 }
 
 void Context::ExecuteInst_SMLA()
@@ -1205,7 +1211,10 @@ void Context::ExecuteInst_UMLALS()
 
 void Context::ExecuteInst_SMULL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	if(IsaCheckCond())
+	{
+		IsaSignedMultiplyLong();
+	}
 }
 
 void Context::ExecuteInst_SMULLS()

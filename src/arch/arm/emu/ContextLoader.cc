@@ -376,7 +376,7 @@ void Context::LoadBinary()
 	// a dynamically linked application.
 	LoadProgramHeaders();
 	//FIXME if (!loader->interp.empty())
-	//		LoadInterp();
+	//FIXME		LoadInterp();
 
 	// Stack
 	LoadStack();
@@ -389,11 +389,11 @@ void Context::LoadBinary()
 
 	// Register initialization
 	regs.setSP(loader->environ_base);
-	// FIXME regs.setPC(loader->interp.empty() ? loader->prog_entry
-			//: loader->interp_prog_entry);
+	//FIXME regs.setPC(loader->interp.empty() ? loader->prog_entry
+			//FIXME : loader->interp_prog_entry);
 	regs.setPC(loader->prog_entry);
 
-	ELFReader::Symbol *symbol = loader->binary->getSymbolByAddress(regs.getPC());
+	ELFReader::Symbol *symbol = loader->binary->getSymbolByAddress(loader->prog_entry);
 	ContextMode mode;
 	if(!symbol->getName().compare(0, 2, "$t"))
 	{
