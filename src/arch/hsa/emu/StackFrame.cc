@@ -122,6 +122,12 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 		argument_scope->Dump(os, 4);
 	os << "  ***** ******** ***** *****\n\n";
 
+	// Kernal argument
+	os << "  ***** Kernel Argument *****\n";
+	work_item->getWorkGroup()->getGrid()->getKernelArguments()
+			->Dump(os, 4);
+	os << "  ***** ****** ******** ****\n\n";
+
 	// Variable scope, 4
 	os << "  ***** Variables *****\n";
 	variable_scope->Dump(os, 4);
