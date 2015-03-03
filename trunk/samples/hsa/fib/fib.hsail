@@ -36,7 +36,7 @@ function &fib(arg_s32 %r)(arg_s32 %n)
 	ret;
 };
 
-function &main()()
+kernel &main ()
 {
 	{
 		arg_s32 %n;
