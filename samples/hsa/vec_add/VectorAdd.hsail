@@ -214,8 +214,6 @@ function &main()(){
 
 	// Dispatch packet
 	ld_global_u64 $d0, [%ptr_queue];		// Get the queue address in $d0
-
-	// FIXME accessing data structures in this way is not safe
 	ld_global_u64 $d1, [$d0+8];			// Store the queue's base address to $d1;
 	st_private_u64 $d1, [%packet_id];		// Store the packet_id, which equals to the base address;
 	

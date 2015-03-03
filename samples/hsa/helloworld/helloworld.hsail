@@ -1,0 +1,19 @@
+version 0:99:$full:$small;
+
+function &m2s_print_u32 () (arg_u32 %integer) {};
+
+kernel &main ()
+{
+	mov_u32 $s0, 1;
+	mov_u32 $s1, 2;
+
+	add_u32 $s2, $s0, $s1;
+
+	{
+		arg_u32 %num;
+		st_arg_u32 $s2, [%num];
+		
+		call &m2s_print_u32 () (%num);
+	}
+};
+

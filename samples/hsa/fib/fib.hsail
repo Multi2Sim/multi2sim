@@ -1,6 +1,6 @@
 version 0:99:$full:$small; 
 
-function &m2s_print_int () (arg_s32 %integer, arg_u32 %is_unsigned){};
+function &m2s_print_u32 () (arg_u32 %integer){};
 
 function &fib(arg_s32 %r)(arg_s32 %n)
 {
@@ -46,11 +46,9 @@ function &main()()
 		ld_arg_s32 $s0, [%r];
 	}
 	{
-		arg_s32 %result;
-		arg_u32 %is_unsigned;
-		st_arg_s32 $s0, [%result];
-		st_arg_u32 0, [%is_unsigned];
-		call &m2s_print_int () (%result, %is_unsigned);
+		arg_u32 %result;
+		st_arg_u32 $s0, [%result];
+		call &m2s_print_u32 () (%result);
 	}
 	ret;
 };
