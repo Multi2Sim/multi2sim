@@ -489,6 +489,12 @@ class Context
 	// Multiply
 	void IsaMultiply();
 
+	// Multiply with setting condition flag
+	void IsaMultiplySettingCF();
+
+	// Multiply long
+	void IsaSignedMultiplyLong();
+
 	// FIXME
 	unsigned int IsaBitCount(unsigned int ip_num);
 

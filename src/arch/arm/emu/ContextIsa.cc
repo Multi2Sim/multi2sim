@@ -1629,6 +1629,123 @@ void Context::IsaMultiply()
 }
 
 
+void Context::IsaMultiplySettingCF()
+{
+	int rm_val;
+	int rs_val;
+	int rd_val;
+	int rn_val;
+	unsigned long flags = 0;
+
+	if (!(inst.getBytes()->dpr.s_cond))
+		throw misc::Panic(misc::fmt("The S bit should be set!!!"));
+
+	if (!(inst.getBytes()->mult.m_acc))
+	{
+		IsaRegLoad( inst.getBytes()->mult.op1_rs, rs_val);
+		IsaRegLoad( inst.getBytes()->mult.op0_rm, rm_val);
+
+		//Perform rd_val = rm_val * rs_val;
+		asm volatile (
+				"push %4\n\t"
+				"popf\n\t"
+				"mov %2, %%eax\n\t"
+				"mov %3, %%edx\n\t"
+				"imul %%edx\n\t"
+				"mov %%eax, %1\n\t"
+				"pushf\n\t"
+				"pop %0\n\t"
+				: "=g" (flags), "=m" (rd_val)
+				: "m" (rs_val), "m" (rm_val), "g" (flags)
+				: "eax", "edx"
+		);
+
+		if (flags & 0x00000040)
+		{
+			regs.getCPSR().z = 1;
+		}
+		if (flags & 0x00000080)
+		{
+			regs.getCPSR().n = 1;
+		}
+
+		IsaRegStore(inst.getBytes()->mult.dst_rd, rd_val);
+		IsaCpsrPrint();
+	}
+	else
+	{
+
+		IsaRegLoad( inst.getBytes()->mult.op1_rs, rs_val);
+		IsaRegLoad( inst.getBytes()->mult.op0_rm, rm_val);
+		IsaRegLoad( inst.getBytes()->mult.op2_rn, rn_val);
+
+		//rd_val = (rm_val * rs_val) + rn_val;
+		asm volatile (
+				"push %4\n\t"
+				"popf\n\t"
+				"mov %2, %%eax\n\t"
+				"mov %3, %%edx\n\t"
+				"imul %%edx\n\t"
+				"add %4, %%eax\n\t"
+				"mov %%eax, %1\n\t"
+				"pushf\n\t"
+				"pop %0\n\t"
+				: "=g" (flags), "=m" (rd_val)
+				  : "m" (rs_val), "m" (rm_val), "m" (rn_val), "g" (flags)
+				    : "eax", "edx"
+		);
+
+		if (flags & 0x00000040)
+		{
+			regs.getCPSR().z = 1;
+		}
+		if (flags & 0x00000080)
+		{
+			regs.getCPSR().n = 1;
+		}
+
+		IsaRegStore(inst.getBytes()->mult.dst_rd, rd_val);
+		IsaCpsrPrint();
+	}
+
+
+}
+
+
+void Context::IsaSignedMultiplyLong()
+{
+	int rm_val;
+	int rs_val;
+	int rd_val_lo;
+	int rd_val_hi;
+
+	if (!(inst.getBytes()->mult_ln.m_acc))
+	{
+		IsaRegLoad( inst.getBytes()->mult.op1_rs, rs_val);
+		IsaRegLoad( inst.getBytes()->mult.op0_rm, rm_val);
+
+		// perform rd_val = rm_val * rs_val;
+		asm volatile (
+				"mov %2, %%eax\n\t"
+				"mov %3, %%edx\n\t"
+				"imul %%edx\n\t"
+				"mov %%eax, %0\n\t"
+				"mov %%edx, %1\n\t"
+				: "=m" (rd_val_lo), "=m" (rd_val_hi)
+				  : "m" (rm_val), "m" (rs_val)
+				    : "eax", "edx"
+		);
+
+		IsaRegStore(inst.getBytes()->mult_ln.dst_hi, rd_val_hi);
+		IsaRegStore(inst.getBytes()->mult_ln.dst_lo, rd_val_lo);
+	}
+	else
+	{
+
+		//TODO
+	}
+}
+
 unsigned int Context::IsaBitCount(unsigned int ip_num)
 {
 	unsigned int count = 0;

@@ -154,15 +154,16 @@ std::string getFullPath(const std::string &path, const std::string &cwd)
 {
 	// Remove './' prefix from path
 	std::string path_local = path;
+
+	// File name is given as an absolute path
+	if (path_local[0] == '/')
+		return path_local;
+
 	while (StringPrefix(path_local, "./"))
 		path_local.erase(0, 2);
 
 	// File name is empty
 	if (path_local.empty())
-		return path_local;
-
-	// File name is given as an absolute path
-	if (path_local[0] == '/')
 		return path_local;
 	
 	// Default value for base directory
