@@ -232,8 +232,6 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 			mem::Memory::AccessWrite);
 	*(unsigned int *)kernarg_buf = argc;
 	*(unsigned long long *)(kernarg_buf + 4) = argv;
-	std::cout << misc::fmt("Kern address 0x%x, argv 0x%llx\n", 
-			kernarg_address, argv);
 
 	// Create a simple queue and add it to host cpu
 	auto queue = misc::new_unique<AQLQueue>(2, HSA_QUEUE_TYPE_MULTI);
