@@ -27,16 +27,20 @@ namespace HSA
 SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
 		Manager(memory)
 {
-	this->size = size;
+	this->size = size + 4;
 
-	if (size > 0)
+	if (this->size > 0)
 	{
 		// Request the memory of certain size from the main memory manager
-		mem::Manager *main_manager = Emu::getInstance()->getMemoryManager();
-		base_address = main_manager->Allocate(size);
+		mem::Manager *main_manager = 
+				Emu::getInstance()->getMemoryManager();
+		base_address = main_manager->Allocate(this->size);
 
 		// Create a hole for the entire segment
-		CreateHole(base_address, size);
+		CreateHole(base_address, this->size);
+
+		// Always allocate 4 byte space for the null pointer
+		Allocate(4, 1);
 	}
 }
 
