@@ -1046,10 +1046,50 @@ int Driver::CallPrintU64(mem::Memory *memory, unsigned args_ptr)
 	// Arguments		| Offset	| Size
 	// integer		| 0		| 8
 
-	unsigned int integer = getArgumentValue<unsigned int>
+	unsigned int integer = getArgumentValue<unsigned long long>
 			(0, memory, args_ptr);
 	std::cout << integer;
 
+	return 0;
+}
+
+int Driver::CallPrintString(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// str_ptr		| 0		| 8
+
+	unsigned long long addr = getArgumentValue<unsigned long long>
+			(0, memory, args_ptr);
+	char *string = Emu::getInstance()->getMemory()->getBuffer(addr, 
+			2, mem::Memory::AccessWrite);
+					
+	std::cout << misc::fmt("%s", string);
+
+	return 0;
+}
+
+int Driver::CallStringToU32(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// integer		| 0		| 4
+	// str_ptr		| 4		| 8
+
+	unsigned long long addr = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	char *buf = Emu::getInstance()->getMemory()->getBuffer(addr, 
+			2, mem::Memory::AccessWrite);
+	std::string str(buf);
+	
+	unsigned int integer;
+	try
+	{
+		integer = stoi(str);
+	}
+	catch (int e)
+	{
+		throw Error("Failed to convert string to integer");
+	}
+	setArgumentValue<unsigned int>(integer, 0, memory, args_ptr);
 	return 0;
 }
 
