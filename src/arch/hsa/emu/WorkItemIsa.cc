@@ -1822,6 +1822,18 @@ void WorkItem::ExecuteInst_CVT()
 	{
 		Inst_CVT_zext_Aux<unsigned int, unsigned long long>();
 	}
+	else if (src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_U32)
+	{
+		Inst_CVT_chop_Aux<unsigned long long, unsigned int>();
+	}
+	else if (src_type == BRIG_TYPE_U32 && dst_type == BRIG_TYPE_U8)
+	{
+		Inst_CVT_chop_Aux<unsigned int, unsigned char>();
+	}
+	else if (src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_U8)
+	{
+		Inst_CVT_chop_Aux<unsigned long long, unsigned char>();
+	}
 	else
 	{
 		throw misc::Panic(misc::fmt("Conversion between %s and %s "

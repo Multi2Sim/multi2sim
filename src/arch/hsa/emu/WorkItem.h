@@ -282,6 +282,12 @@ class WorkItem
  	/// Return absolute flattened id
  	unsigned int getAbsoluteFlattenedId() const;
 
+	/// Return the work group that this workitem is in
+	WorkGroup *getWorkGroup() const
+	{
+		return work_group;
+	}
+
 };
 
 }  // namespace HSA

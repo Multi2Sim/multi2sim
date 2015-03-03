@@ -1,6 +1,7 @@
 version 0:99:$full:$small; 
 
 function &m2s_print_u32 () (arg_u32 %integer){};
+function &m2s_string_to_u32 (arg_u32 %integer) (arg_u64 %string) {};
 
 function &fib(arg_s32 %r)(arg_s32 %n)
 {
@@ -36,12 +37,32 @@ function &fib(arg_s32 %r)(arg_s32 %n)
 	ret;
 };
 
-kernel &main ()
+kernel &main (kernarg_u32 %argc, kernarg_u64 %argv)
 {
+	ld_kernarg_u32 $s0, [%argc];
+	cmp_ne_b1_u32 $c0, $s0, 2;
+	cbr_b1 $c0, @format_error;
+	ld_kernarg_u64 $d0, [%argv];
+	cvt_u32_u64 $s0, $d0;
+	ld_u64 $d0, [$s0];
+	cvt_u32_u64 $s0, $d0;
+
+	// Call m2s function to convert the integer string 
+	{
+		arg_u64 %string;
+		arg_u32 %integer;
+
+		st_arg_u64 $d0, [%string];
+
+		call &m2s_string_to_u32 (%integer) (%string);
+
+		ld_arg_u32 $s0, [%integer];
+	}
+
 	{
 		arg_s32 %n;
 		arg_s32 %r;
-		st_arg_s32 10, [%n];
+		st_arg_s32 $s0, [%n];
 		call	&fib (%r) (%n);
 		ld_arg_s32 $s0, [%r];
 	}
@@ -50,5 +71,10 @@ kernel &main ()
 		st_arg_u32 $s0, [%result];
 		call &m2s_print_u32 () (%result);
 	}
+
+@return:
+	ret;
+
+@format_error:
 	ret;
 };

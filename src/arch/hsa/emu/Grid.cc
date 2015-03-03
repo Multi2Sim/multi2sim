@@ -74,7 +74,8 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 
 		// Get the buffer from both host and guest
 		char *buffer = kernel_arguments->getBuffer(name);
-		char *host_buffer = memory->getBuffer(kernel_args + inseg_address,
+		char *host_buffer = memory->getBuffer(
+				kernel_args + inseg_address - 4,
 				size, mem::Memory::AccessRead);
 		memcpy(buffer, host_buffer, size);
 
