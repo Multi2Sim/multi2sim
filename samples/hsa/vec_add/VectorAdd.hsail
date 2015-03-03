@@ -119,7 +119,8 @@ kernel &test_kernel (kernarg_u64 %in1, kernarg_u64 %in2, kernarg_u64 %out, kerna
 	}
 };
 
-function &main()(){
+kernel &main ()
+{
 
 	global_u64 %device;				// Declare the device handler 
 	global_u64 %ptr_queue;				// Address to the queue
@@ -193,9 +194,10 @@ function &main()(){
 
 	lda_global_u64 $d7, [%vector2];
 	add_u64 $d9, $d6, $d7;
+	add_u64 $d6, $d5, 1;
 
 	st_global_u64 $d5, [$d8];
-	st_global_u64 $d5, [$d9];
+	st_global_u64 $d6, [$d9];
 
 	add_u64 $d5, $d5, 1;
 	cbr_b1 1, @start_set_vector_loop;
