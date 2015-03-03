@@ -4,7 +4,7 @@ function &m2s_print_u32 () (arg_u32 %integer) {};
 function &m2s_print_u64 () (arg_u64 %integer) {};
 function &m2s_print_string () (arg_u64 %ptr_string) {};
 
-function &main () ()
+kernel &main ()
 {
 	global_u8 %str[13];
 
