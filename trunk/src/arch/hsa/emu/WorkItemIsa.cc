@@ -142,8 +142,23 @@ void WorkItem::ExecuteInst_ADD()
 	}
 	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
-		throw misc::Panic("Unimplemented Inst ADD, "
-				"kind BRIG_KIND_INST_MOD.");
+		switch (inst->getType())
+		{
+		case BRIG_TYPE_F32:
+
+			Inst_ADD_Aux<float>();
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_ADD_Aux<double>();
+			break;
+
+		default:
+
+			throw Error("Illegal type.");
+		}
+
 	}
 	else
 	{
@@ -336,8 +351,23 @@ void WorkItem::ExecuteInst_DIV()
 	}
 	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
-		throw misc::Panic("Unimplemented Inst DIV, "
-				"kind BRIG_KIND_INST_MOD.");
+		switch (inst->getType())
+		{
+		case BRIG_TYPE_F32:
+
+			Inst_DIV_Aux<float>();
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_DIV_Aux<double>();
+			break;
+
+		default:
+
+			throw Error("Illegal type.");
+		}
+
 	}
 	else
 	{
@@ -585,9 +615,23 @@ void WorkItem::ExecuteInst_MUL()
 		}
 	}
 	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		throw misc::Panic("Unimplemented Inst MUL, "
-				"kind BRIG_KIND_INST_MOD.");
+	{	
+		switch (inst->getType())
+		{
+		case BRIG_TYPE_F32:
+
+			Inst_MUL_Aux<float>();
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_MUL_Aux<double>();
+			break;
+
+		default:
+
+			throw Error("Illegal type.");
+		}
 	}
 	else
 	{
@@ -713,8 +757,22 @@ void WorkItem::ExecuteInst_NEG()
 	}
 	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
-		throw misc::Panic("Unimplemented Inst NEG, "
-				"kind BRIG_KIND_INST_MOD.");
+		switch (inst->getType())
+		{
+		case BRIG_TYPE_F32:
+
+			Inst_NEG_Aux<float>();
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_NEG_Aux<double>();
+			break;
+
+		default:
+
+			throw Error("Illegal type.");
+		}
 	}
 	else
 	{
@@ -846,8 +904,22 @@ void WorkItem::ExecuteInst_SUB()
 	}
 	else if (inst->getKind() == BRIG_KIND_INST_MOD)
 	{
-		throw misc::Panic("Unimplemented Inst SUB, "
-				"kind BRIG_KIND_INST_MOD.");
+		switch (inst->getType())
+		{
+		case BRIG_TYPE_F32:
+
+			Inst_SUB_Aux<float>();
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_SUB_Aux<double>();
+			break;
+
+		default:
+
+			throw Error("Illegal type.");
+		}
 	}
 	else
 	{
@@ -2112,18 +2184,6 @@ void WorkItem::ExecuteInst_CBR()
 		{
 			auto label = operand1->getRef();
 
-			// If the label is an the end or beyond the end of the
-			// function, return the function
-			/*
-			char *code = BrigInstEntry::GetInstByOffset(
-					binary, label->code);
-			if (code >= stack_top->getFunction()->getLastInst())
-			{
-				ReturnFunction();
-				return;
-			}
-			*/
-
 			// Redirect pc to a certain label
 			stack_top->setPc(std::move(label));
 			return;
@@ -2139,7 +2199,25 @@ void WorkItem::ExecuteInst_CBR()
 
 void WorkItem::ExecuteInst_BR()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	// Retrieve
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+
+	// Retrieve 1st operand
+	auto operand0 = inst->getOperand(0);
+	if (operand0->getKind() == BRIG_KIND_OPERAND_CODE_REF)
+	{
+		auto label = operand0->getRef();
+
+		// Redirect pc to a certain label
+		stack_top->setPc(std::move(label));
+		return;
+	}else{
+		throw misc::Panic("Unsupported operand type for CBR.");
+	}
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
@@ -2360,7 +2438,33 @@ void WorkItem::ExecuteInst_GRIDGROUPS()
 
 void WorkItem::ExecuteInst_GRIDSIZE()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	unsigned int dim_number = getOperandValue<unsigned int>(1);
+	unsigned int size;
+	
+	switch(dim_number)
+	{
+	case 0:
+
+		size = work_group->getGrid()->getGridSizeX();
+		break;
+
+	case 1:
+
+		size = work_group->getGrid()->getGridSizeY();
+		break;
+
+	case 2:
+
+		size = work_group->getGrid()->getGridSizeZ();
+		break;
+		
+	default:
+		
+		throw Error(misc::fmt("Invaid dim_number %d.\n", dim_number));
+	}
+
+	storeOperandValue<unsigned int>(0, size);
+	MovePcForwardByOne();
 }
 
 
