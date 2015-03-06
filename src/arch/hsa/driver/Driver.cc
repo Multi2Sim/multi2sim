@@ -176,7 +176,7 @@ void Driver::ExitInterceptedEnvironment(unsigned arg_address,
 	PassBackByValue(arg_address, stack_top);
 
 	// Move the PC in the host by one
-	// stack_top->getWorkItem()->MovePcForwardByOne();
+	stack_top->getWorkItem()->MovePcForwardByOne();
 }
 
 
