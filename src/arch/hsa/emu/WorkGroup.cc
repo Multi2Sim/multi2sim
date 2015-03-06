@@ -54,6 +54,30 @@ bool WorkGroup::Execute()
 	return on_going;
 }
 
+
+void WorkGroup::HitBarrier(unsigned int abs_flat_id)
+{
+	// Add an record to the set of suspended work items
+	work_items_on_hold.insert(abs_flat_id);
+		
+	// Check if all the work item reaches the barrier
+	if (work_items_on_hold.size() == num_work_items)
+	{
+		ActivateAllWorkItems();
+		work_items_on_hold.clear();
+	}
+}
+
+
+void WorkGroup::ActivateAllWorkItems()
+{
+	for (auto it = wavefronts.begin(); it != wavefronts.end(); it++)
+	{
+		it->second->ActivateAllWorkItems();
+	}
+}
+
+
 void WorkGroup::Dump(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("  ***** %dD Work group (%d, %d, %d) ****\n",
@@ -95,6 +119,9 @@ void WorkGroup::addWorkItem(std::unique_ptr<WorkItem> work_item)
 
 	// Insert the work item into the wave front
 	wavefront->addWorkItem(std::move(work_item));
+
+	// Increase the work item count by one
+	num_work_items ++;
 }
 
 

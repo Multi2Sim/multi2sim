@@ -42,6 +42,9 @@ class Grid
 	// Component it belongs to
 	Component *component;
 
+	// The packet that launches this kernel
+	AQLDispatchPacket *packet;
+
 	// Dimension
 	unsigned short dimension;
 

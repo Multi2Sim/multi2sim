@@ -20,6 +20,8 @@
 #ifndef ARCH_HSA_EMU_WORKGROUP_H
 #define ARCH_HSA_EMU_WORKGROUP_H
 
+#include <set>
+
 #include "Wavefront.h"
 #include "WorkItem.h"
 #include "Grid.h"
@@ -44,6 +46,9 @@ class WorkGroup
 	unsigned int group_id_y;
 	unsigned int group_id_z;
 
+	// Number of workitems in the workgroup
+	unsigned int num_work_items;
+
 	// The segment memory manager
 	std::unique_ptr<SegmentManager> group_segment;
 
@@ -52,8 +57,9 @@ class WorkGroup
 	// calculated with work-item flattened id / wavefront size
 	std::map<unsigned int, std::unique_ptr<Wavefront>> wavefronts;
 
-	// Determines if the work item is active
-	bool is_active = false;
+	// A set of work item absolute flattened id. Those work items are
+	// suspended due to a barrier
+	std::set<unsigned int> work_items_on_hold;
 
 public:
 
@@ -67,18 +73,18 @@ public:
 			unsigned int group_id_y,
 			unsigned int group_id_z);
 
-	/// Set is_active
-	void setActive(bool is_active) {this->is_active = is_active;}
-
-	/// Get is_active field
-	bool isActive() const {return is_active;}
-
 	/// Execute each wavefront of the work group
 	///
 	/// \return
 	/// 	True, if the execution have not finished
 	///	False, if the execution finished
 	bool Execute();
+
+	/// Notify the workgroup that one of the work item hits a barrier
+	void HitBarrier(unsigned int abs_flat_id);
+
+	/// Activate all work items
+	void ActivateAllWorkItems();
 
 	/// Dump the work group formation information for debug purpose
 	void Dump(std::ostream &os) const;
