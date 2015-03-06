@@ -32,6 +32,9 @@ namespace HSA
 
 Grid::Grid(Component *component, AQLDispatchPacket *packet)
 {
+	// Set packet
+	this->packet = packet;
+
 	// Set component
 	this->component = component;
 
@@ -109,6 +112,12 @@ bool Grid::Execute()
 	{
 		if (it->second->Execute())
 			on_going = true;
+	}
+
+	// Send completion signal when finished execution
+	if (!on_going)
+	{
+		packet->setCompletionSignal(1);
 	}
 
 	return on_going;

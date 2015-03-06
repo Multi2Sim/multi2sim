@@ -1046,12 +1046,26 @@ int Driver::CallPrintU64(mem::Memory *memory, unsigned args_ptr)
 	// Arguments		| Offset	| Size
 	// integer		| 0		| 8
 
-	unsigned int integer = getArgumentValue<unsigned long long>
+	unsigned long long integer = getArgumentValue<unsigned long long>
 			(0, memory, args_ptr);
 	std::cout << integer;
 
 	return 0;
 }
+
+
+int Driver::CallPrintF32(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// number		| 0		| 8
+
+	float number = getArgumentValue<float>
+			(0, memory, args_ptr);
+	std::cout << number << "\n";
+
+	return 0;
+}
+
 
 int Driver::CallPrintString(mem::Memory *memory, unsigned args_ptr)
 {

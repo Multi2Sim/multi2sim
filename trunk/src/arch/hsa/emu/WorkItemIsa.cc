@@ -1877,6 +1877,13 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_zext_Aux()
 }
 
 
+template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_u2f_Aux()
+{
+	SrcType src = getOperandValue<SrcType>(1);
+	storeOperandValue<DstType>(0, src);
+}
+
+
 void WorkItem::ExecuteInst_CVT()
 {
 	StackFrame *stack_top = stack.back().get();
@@ -1905,6 +1912,10 @@ void WorkItem::ExecuteInst_CVT()
 	else if (src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_U8)
 	{
 		Inst_CVT_chop_Aux<unsigned long long, unsigned char>();
+	}
+	else if(src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_F32)
+	{
+		Inst_CVT_u2f_Aux<unsigned long long, float>();
 	}
 	else
 	{
@@ -2085,16 +2096,22 @@ void WorkItem::ExecuteInst_ST()
 
 	case BRIG_TYPE_U32:
 	case BRIG_TYPE_S32:
-	case BRIG_TYPE_F32:
 
 		Inst_ST_Aux<unsigned int>();
 		break;
 
+	case BRIG_TYPE_F32:
+		Inst_ST_Aux<float>();
+		break;
+
 	case BRIG_TYPE_U64:
 	case BRIG_TYPE_S64:
-	case BRIG_TYPE_F64:
 
 		Inst_ST_Aux<unsigned long long>();
+		break;
+
+	case BRIG_TYPE_F64:
+		Inst_ST_Aux<double>();
 		break;
 
 	default:
@@ -2229,7 +2246,14 @@ void WorkItem::ExecuteInst_SBR()
 
 void WorkItem::ExecuteInst_BARRIER()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	// Suspend the work item
+	status = WorkItemStatusSuspend;
+
+	// Notify the work group
+	work_group->HitBarrier(getAbsoluteFlattenedId());
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
