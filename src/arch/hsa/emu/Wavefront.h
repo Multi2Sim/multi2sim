@@ -51,6 +51,9 @@ public:
 	/// Execute instructions
 	bool Execute();
 
+	/// Activate all work items
+	void ActivateAllWorkItems();
+
 	/// Operator \c << invoking the function Dump on an output stream
 	friend std::ostream &operator<<(std::ostream &os,
 			const Wavefront &wavefront)

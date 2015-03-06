@@ -46,6 +46,15 @@ bool Wavefront::Execute()
 }
 
 
+void Wavefront::ActivateAllWorkItems()
+{
+	for (auto it = work_items.begin(); it != work_items.end(); it++)
+	{
+		(*it)->setStatus(WorkItem::WorkItemStatusActive);
+	}
+}
+
+
 void Wavefront::Dump(std::ostream &os = std::cout) const
 {
 	os << "    ***** Wavefront *****\n";

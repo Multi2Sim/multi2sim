@@ -55,6 +55,17 @@ enum InstOpcode
 /// HSA work item
 class WorkItem
 {
+public: 
+	
+	/// Stuatus of the work item
+	enum WorkItemStatus
+	{
+		WorkItemStatusActive = 0,
+		WorkItemStatusSuspend
+	};
+
+private:
+
  	// Emulator that is belongs to 
  	Emu *emu;
 
@@ -69,6 +80,9 @@ class WorkItem
 
  	// The private segment memory manager
  	std::unique_ptr<SegmentManager> private_segment;
+
+	// The status of the work item;
+	WorkItemStatus status;
 
  	// work item absolute ids, equivalent to global_id in OpenCL
  	unsigned int abs_id_x;
@@ -126,6 +140,7 @@ class WorkItem
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_chop_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_zext_Aux();
+ 	template<typename SrcType, typename DstType> void Inst_CVT_u2f_Aux();
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
  	template<typename T> void Inst_LDI_Aux();
@@ -281,6 +296,15 @@ class WorkItem
 
  	/// Return absolute flattened id
  	unsigned int getAbsoluteFlattenedId() const;
+
+	/// Return the status of the work item
+	WorkItemStatus getStatue() const { return status; }
+
+	/// Set the status of the work item
+	void setStatus(WorkItemStatus status) 
+	{
+		this->status = status;
+	}
 
 	/// Return the work group that this workitem is in
 	WorkGroup *getWorkGroup() const

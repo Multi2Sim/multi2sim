@@ -50,6 +50,9 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	StackFrame *frame = new StackFrame(root_function, this);
 	stack.push_back(std::unique_ptr<StackFrame>(frame));
 
+	// Set the status of the work item to be active
+	status = WorkItemStatusActive;
+
 	// Set the private segment memory manager
 	mem::Memory *memory = Emu::getInstance()->getMemory();
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
@@ -477,6 +480,10 @@ void WorkItem::DeclearVariable()
 
 bool WorkItem::Execute()
 {
+	// Only execute the active work item
+	if (status != WorkItemStatusActive)
+		return true;
+
 	if (stack.size() == 0)
 	{
 		return false;
@@ -489,6 +496,8 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
+		Emu::isa_debug << misc::fmt("WorkItem: %d\n",
+				getAbsoluteFlattenedId());
 		Emu::isa_debug << "Executing: ";
 		Emu::isa_debug << *inst;
 
@@ -504,11 +513,21 @@ bool WorkItem::Execute()
 			std::cerr << panic.getMessage();
 			exit(1);
 		}
+		// Return false if execution finished
+		if (stack.empty())
+			return false;
+		
+		// Record frame status after the instruction is executed
+		stack_top = getStackTop();
+		if (Emu::isa_debug)
+			stack_top->Dump(Emu::isa_debug);
+		Emu::isa_debug << "\n";
+
 	}
 	else if (inst && !inst->isInstruction())
 	{
-		Emu::isa_debug << "Executing: ";
-		Emu::isa_debug << *inst;
+	//	Emu::isa_debug << "Executing: ";
+	//	Emu::isa_debug << *inst;
 		ExecuteDirective();
 	}
 	else
@@ -518,17 +537,10 @@ bool WorkItem::Execute()
 			return false;
 		}
 	}
-
 	// Return false if execution finished
 	if (stack.empty())
 		return false;
-
-	// Record frame status after the instruction is executed
-	stack_top = getStackTop();
-	if (Emu::isa_debug)
-		stack_top->Dump(Emu::isa_debug);
-	Emu::isa_debug << "\n";
-
+		
 	// Return true, since the execution is not finished
 	return true;
 }
