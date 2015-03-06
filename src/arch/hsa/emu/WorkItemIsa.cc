@@ -2350,7 +2350,7 @@ void WorkItem::ExecuteInst_CALL()
 			return;
 
 		// Otherwize, move PC forward
-		MovePcForwardByOne();
+		// MovePcForwardByOne();
 		return;
 	}
 
