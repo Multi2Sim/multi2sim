@@ -90,9 +90,9 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	// Create work items
 	for (unsigned int i = 0; i < grid_size; i++)
 	{
-		unsigned int z = i / group_size_x / group_size_y;
-		unsigned int y = i % (group_size_x *group_size_y) / group_size_x;
-		unsigned int x = i % (group_size_x * group_size_y) % group_size_x;
+		unsigned int z = i / grid_size_x / grid_size_y;
+		unsigned int y = i % (grid_size_x * grid_size_y) / grid_size_x;
+		unsigned int x = i % (grid_size_x * grid_size_y) % grid_size_x;
 		deployWorkItem(x, y, z, packet->getPrivateSegmentSizeBytes(),
 				packet->getGroupSegmentSizeBytes());
 	}
@@ -111,7 +111,11 @@ bool Grid::Execute()
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
 	{
 		if (it->second->Execute())
+		{
+			//std::cout << "Executing work group: \n";
+			//it->second->Dump(std::cout);
 			on_going = true;
+		}
 	}
 
 	// Send completion signal when finished execution
@@ -131,9 +135,9 @@ void Grid::Dump(std::ostream &os = std::cout) const
 			getGridSizeY(), getGridSizeZ());
 
 	// Dump kernel arguments
-	os << misc::fmt("\n\t***** Arguments *****\n");
+	os << misc::fmt("\n\t***** Arguments *****\n\n");
 	kernel_arguments->Dump(os, 2);
-	os << misc::fmt("\n\t***** ********* *****\n");
+	os << misc::fmt("\n\t***** ********* *****\n\n");
 
 	// Dump work items
 	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
