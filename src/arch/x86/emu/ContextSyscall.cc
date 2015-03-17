@@ -25,6 +25,7 @@
 #include <syscall.h>
 #include <unistd.h>
 #include <utime.h>
+#include <algorithm>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
@@ -40,6 +41,7 @@
 #include <arch/common/Runtime.h>
 
 #include "Context.h"
+#include "Regs.h"
 #include "Emu.h"
 
 	
@@ -2211,7 +2213,61 @@ int Context::ExecuteSyscall_lstat()
 
 int Context::ExecuteSyscall_readlink()
 {
-	__UNIMPLEMENTED__
+	unsigned int path_ptr;
+	unsigned int buf;
+	unsigned int bufsz;
+
+	std::string path;
+	std::string full_path;
+	std::string dest_path;
+
+	int dest_size;
+	int err;
+
+	/* Arguments */
+	path_ptr = regs.getEbx();
+	buf = regs.getEcx();
+	bufsz = regs.getEdx();
+	Emu::syscall_debug << misc::fmt("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n",
+				path_ptr, buf, bufsz);
+
+	/* Read path */
+//	len = mem_read_string(mem, path_ptr, sizeof path, path);
+//	if (len == sizeof path)
+//		fatal("%s: buffer too small", __FUNCTION__);
+	path = memory->ReadString(path_ptr);
+
+	/* Get full path */
+	full_path = getFullPath(path);
+	Emu::syscall_debug << misc::fmt("  path='%s', full_path='%s'\n",
+				path.c_str(), full_path.c_str());
+
+	/* Special file '/proc/self/exe' intercepted */
+	if (full_path == "/proc/self/exe")
+	{
+		/* Return path to simulated executable */
+		dest_path == loader->exe;
+	}
+	else
+	{
+		/* Host call */
+		//memset(dest_path, 0, sizeof dest_path);
+		char dest_buf[1024];
+		err = readlink(full_path.c_str(), dest_buf, 1024);
+		if (err == sizeof dest_buf)
+			throw misc::Panic(misc::fmt("%s: buffer too small", __FUNCTION__));
+		if (err == -1)
+			return -errno;
+		dest_path = std::string(dest_buf);
+	}
+
+	/* Copy name to guest memory. The string is not null-terminated. */
+	dest_size = std::min((unsigned int)dest_path.length(), bufsz);
+	memory->Write(buf, dest_size, dest_path.c_str());
+	Emu::syscall_debug << misc::fmt("  dest_path='%s'\n", dest_path.c_str());
+
+	/* Return number of bytes copied */
+	return dest_size;
 }
 
 
