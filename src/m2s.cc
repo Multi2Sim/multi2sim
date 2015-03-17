@@ -218,7 +218,9 @@ void LoadProgram(const std::vector<std::string> &args,
 		emu = MIPS::Emu::getInstance();
 		break;
 
-	case 0: // ELF file for HSA Brig format do not have machine code
+	case 0: 
+		
+		// ELF file for HSA Brig format do not have machine code
 		// FIXME: Rather than preload the whole brig file, modify the 
 		// 	ELFReader to support brig file validation
 		if(HSA::Asm::isValidBrigELF(exe))
