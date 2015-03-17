@@ -948,6 +948,7 @@ AC_CONFIG_FILES([
 		runtime/glut/Makefile
 		runtime/opencl/Makefile
 		runtime/opengl/Makefile
+		runtime/hsa/Makefile
 		runtime/include/Makefile
 
 		src/Makefile

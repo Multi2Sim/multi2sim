@@ -8,5 +8,7 @@ EXTRA_DIST = \
 	GL/gl.h \
 	GL/glew.h \
 	GL/glu.h \
-	GL/glut.h
+	GL/glut.h \
+	\
+	hsa.h
 
