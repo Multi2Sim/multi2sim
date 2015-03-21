@@ -44,7 +44,6 @@ struct _cl_platform_id
 extern struct opencl_platform_t *opencl_platform;
 
 /* Global OpenCL devices */
-extern struct opencl_device_t *opencl_hsa_device;
 extern struct opencl_device_t *opencl_si_device;
 extern struct opencl_device_t *opencl_union_device;
 extern struct opencl_device_t *opencl_x86_device;

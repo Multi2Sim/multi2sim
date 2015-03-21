@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2012  Yifan Sun (yifansun@coe.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,47 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "../include/hsa.h"
+#include <stdlib.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+
+#include "debug.h"
+#include "hsa.h"
+
+struct hsa_runtime_t *hsa_runtime;
 
 hsa_status_t HSA_API hsa_init()
 {
+	if (hsa_runtime == NULL)
+	{
+		hsa_runtime = calloc(1, sizeof(struct hsa_runtime_t));
+		hsa_runtime->fd = open("/dev/hsa", O_RDWR);
+		if (hsa_runtime->fd < 0)
+			fatal("Cannot communicate with the HSA driver\n\n"
+				"This error could be due to an incompatibility between the\n"
+				"Multi2Sim HSA driver version and the version of the simulator.\n"
+				"Please download the latest versions and retry.");
+
+		ioctl(hsa_runtime->fd, Init);
+
+		return HSA_STATUS_SUCCESS;
+	}
+	else
+	{
+		// Success sliently
+		return HSA_STATUS_SUCCESS;
+	}
+}
+
+hsa_status_t HSA_API hsa_shut_down()
+{
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API hsa_iterate_agents(
+			hsa_status_t (*callback)(hsa_agent_t agent, void *data),
+            void *data)
+{
+	//ioctl(hsa_runtime->fd, IterateAgents, );
 	return HSA_STATUS_SUCCESS;
 }

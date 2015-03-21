@@ -161,6 +161,9 @@ void RegisterRuntimes()
 	// OpenCL runtime
 	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
 
+	// HSA runtime
+	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
+
 #ifdef HAVE_OPENGL
 	// OpenGL runtime
 	runtime_pool->Register("OpenGL", "libOpenGL", "libm2s-opengl");
