@@ -23,7 +23,6 @@
 
 
 
-
 namespace net
 {
 
@@ -159,7 +158,7 @@ void System::RegisterOptions()
 	// Network traffic snapshot
 	command_line->RegisterInt32("--net-snapshot <number> (default = 0)",
 			snapshot_period,
-			"Accumulates the network traffic in sepcified periods "
+			"Accumulates the network traffic in specified periods "
 			"and creates a plot for each individual network, "
 			"showing the traffic pattern ");
 
@@ -199,6 +198,15 @@ void System::ProcessOptions()
 	// Configuration
 	if (!config_file.empty())
 		net_system->ParseConfiguration(config_file);
+
+	// Stand-Alone requires config file
+	if (net_system->stand_alone)
+	{
+		if (config_file.empty())
+			throw Error(misc::fmt("Option --net-sim requires "
+									" --net-config option "));
+	}
+
 
 }
 

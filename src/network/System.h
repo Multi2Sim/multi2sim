@@ -25,6 +25,7 @@
 #include <cassert>
 
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 
 
@@ -117,6 +118,19 @@ public:
 	{
 		return networks;
 	}
+
+    /// Class representing a runtime error in a memory object
+    class Error : public misc::Error
+    {
+    public:
+
+            /// Constructor
+            Error(const std::string &message) : misc::Error(message)
+            {
+                    // Set module prefix
+                    AppendPrefix("Network");
+            }
+    };
 
 	/// Find and returns a network in the network system given its name.
 	///
