@@ -93,7 +93,6 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 	 *   1) x86
 	 *   2) Southern Islands
 	 *   3) Union
-	 *   4) HSA
 	 *
 	 * In native mode, only the x86 devices is available.
 	 */
@@ -103,7 +102,7 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 		if (opencl_native_mode)
 			devices = "x86";
 		else
-			devices = "x86,southern-islands,union,hsa";
+			devices = "x86,southern-islands,union";
 	}
 	
 	/* Process devices string */
@@ -149,20 +148,6 @@ static void opencl_platform_add_devices(struct opencl_platform_t *platform)
 			list_add(platform->device_list, device);
 			opencl_union_device = device;
 			opencl_debug("\tUnion device added to the platform\n");
-		}
-		else if (!strcasecmp(token, "hsa"))
-		{
-			/* Not available in native mode */
-			if (opencl_native_mode)
-				fatal("HSA device not available in native mode");
-
-			/* Add HSA device */
-			/*device = opencl_device_create();
-			device->arch_device = opencl_hsa_device_create(device);
-			list_add(platform->device_list, device);
-			opencl_hsa_device = device;
-			opencl_debug("\tHSA device added to the platform\n");*/
-			warning("HSA device not available yet");
 		}
 		else
 		{

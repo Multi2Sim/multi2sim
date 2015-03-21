@@ -37,6 +37,7 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("Executing driver function %s.\n", __FUNCTION__);
 	debug << misc::fmt("Finished executing driver function %s, "
 			"returning %d.\n", __FUNCTION__, 0);
+	std::cout << __FUNCTION__ << "\n";
 	return 0;
 }
 
