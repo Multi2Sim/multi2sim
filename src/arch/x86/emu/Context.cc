@@ -724,8 +724,8 @@ void Context::Execute()
 	// Read instruction from memory. Memory should be accessed here in unsafe mode
 	// (i.e., allowing segmentation faults) if executing speculatively.
 	char buffer[20];
-	char *buffer_ptr = memory->getBuffer(regs.getEip(), 20,
-			mem::Memory::AccessExec);
+	unsigned char *buffer_ptr = (unsigned char *)memory->getBuffer(
+			regs.getEip(), 20, mem::Memory::AccessExec);
 	if (!buffer_ptr)
 	{
 		// Disable safe mode. If a part of the 20 read bytes does not
@@ -733,8 +733,8 @@ void Context::Execute()
 		// no permissions, this would generate an undesired protection
 		// fault.
 		memory->setSafe(false);
-		buffer_ptr = buffer;
-		memory->Access(regs.getEip(), 20, buffer_ptr,
+		buffer_ptr = (unsigned char *)buffer;
+		memory->Access(regs.getEip(), 20, (char *)buffer_ptr,
 				mem::Memory::AccessExec);
 	}
 
@@ -742,12 +742,15 @@ void Context::Execute()
 	memory->setSafeDefault();
 
 	// Disassemble
-	inst.Decode(buffer_ptr, regs.getEip());
+	inst.Decode((char *)buffer_ptr, regs.getEip());
 	if (inst.getOpcode() == InstOpcodeInvalid && !spec_mode)
+	{
+		inst.Dump(std::cout);
 		throw Error(misc::fmt("Unsupported instruction "
-				"(%02x %02x %02x %02x...)",
+				"(%02x %02x %02x %02x...)\n",
 				buffer_ptr[0], buffer_ptr[1],
 				buffer_ptr[2], buffer_ptr[3]));
+	}
 
 	// Clear existing list of microinstructions, though the architectural
 	// simulator might have cleared it already. A new list will be generated
