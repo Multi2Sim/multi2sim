@@ -21,6 +21,8 @@
 	throw misc::Panic(misc::fmt("Unimplemented driver function %s\n", \
 	__FUNCTION__));
 
+#include <arch/x86/emu/Context.h>
+#include <arch/x86/emu/Emu.h>
 #include <arch/hsa/emu/Emu.h>
 #include <arch/hsa/emu/Component.h>
 #include <arch/hsa/emu/WorkItem.h>
@@ -37,7 +39,13 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("Executing driver function %s.\n", __FUNCTION__);
 	debug << misc::fmt("Finished executing driver function %s, "
 			"returning %d.\n", __FUNCTION__, 0);
-	std::cout << __FUNCTION__ << "\n";
+
+	// If the args 0, the call is from the x86 host
+	if (args_ptr == 0)
+	{
+
+	}
+
 	return 0;
 }
 
@@ -101,7 +109,7 @@ int Driver::IterateAgentNext(DriverCallbackInfo *args)
 		StackFrame *stack_top = work_item->getStackTop();
 		driver->ExitInterceptedEnvironment(args_ptr, stack_top);
 
-		// Return 0 to tell the function finised its execution
+		// Return 0 to tell the function finished its execution
 		return 0;
 	}
 
@@ -124,7 +132,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	// callback		| 4		| 8
 	// data			| 12		| 8
 	// host_language	| 20		| 4
-	// workitem_prt		| 24		| 8
+	// workitem_ptr		| 24		| 8
 
 	// Dump the argument information
 	debug << misc::fmt("In function %s", __FUNCTION__);
@@ -150,7 +158,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 		setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0, 
 				memory, args_ptr);
 
-		// Return 0 to tell the function finised its execution
+		// Return 0 to tell the function finished its execution
 		return 0;
 	}
 
@@ -1025,6 +1033,54 @@ int Driver::CallSignalCasAcqRel(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallStatusString(mem::Memory *memory, unsigned args_ptr)
 {
 	__UNIMPLEMENTED__
+	return 0;
+}
+
+
+int Driver::CallInitFromX86(mem::Memory *memory, unsigned args_ptr)
+{
+	// This function is designed only to be called from the host.
+	// args_ptr is the process id of the context running the host
+	// program.
+
+	x86::Emu *x86_emu = x86::Emu::getInstance();
+	x86::Context *host_context = x86_emu->getContext(args_ptr);
+	Emu::getInstance()->setMemory(host_context->__getMemSharedPtr());
+
+	return 0;
+}
+
+
+int Driver::CallNextAgent(mem::Memory *memory, unsigned args_ptr)
+{
+	// This function is designed only to be called from the host.
+	// Returns the next agent that has a greater agent_id
+	// Returns 0 if there is no more agent
+
+	// Arguments		| Offset	| Size
+	// next_agent_id	| 0		| 8
+	// present_agnet_id	| 8		| 16
+
+	// Set the first next agent id to 0
+	int next_agent_id = getArgumentValue<unsigned long long>
+		(8, memory, args_ptr);
+
+	// Get next component
+	Emu *emu = Emu::getInstance();
+	Component *component = emu->getNextComponent(next_agent_id);
+
+	// If no more component,
+	if (!component)
+	{
+		setArgumentValue<unsigned long long>(0, 0, memory, args_ptr);
+	}
+	else
+	{
+		// If component exist return the handler
+		setArgumentValue<unsigned long long>(component->getHandler(), 0,
+				memory, args_ptr);
+	}
+
 	return 0;
 }
 

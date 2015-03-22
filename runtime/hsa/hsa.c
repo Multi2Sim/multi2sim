@@ -18,8 +18,11 @@
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "debug.h"
 #include "hsa.h"
@@ -38,13 +41,15 @@ hsa_status_t HSA_API hsa_init()
 				"Multi2Sim HSA driver version and the version of the simulator.\n"
 				"Please download the latest versions and retry.");
 
-		ioctl(hsa_runtime->fd, Init);
+		// Call the driver init hsa environment
+		ioctl(hsa_runtime->fd, InitFromX86, getpid());
 
+		// Return success
 		return HSA_STATUS_SUCCESS;
 	}
 	else
 	{
-		// Success sliently
+		// Success silently
 		return HSA_STATUS_SUCCESS;
 	}
 }
@@ -55,9 +60,22 @@ hsa_status_t HSA_API hsa_shut_down()
 }
 
 hsa_status_t HSA_API hsa_iterate_agents(
-			hsa_status_t (*callback)(hsa_agent_t agent, void *data),
-            void *data)
+		hsa_status_t (*callback)(hsa_agent_t agent, void *data),
+		void *data)
 {
-	//ioctl(hsa_runtime->fd, IterateAgents, );
+	unsigned long long agent_ids[2];
+	agent_ids[0] = 1;
+	agent_ids[1] = 0;
+
+	// Traverse all agent
+	while(agent_ids[0] != 0)
+	{
+		ioctl(hsa_runtime->fd, NextAgent, agent_ids);
+		if (agent_ids[0] != 0)
+		{
+			callback(agent_ids[0], data);
+			agent_ids[1] = agent_ids[0];
+		}
+	}
 	return HSA_STATUS_SUCCESS;
 }

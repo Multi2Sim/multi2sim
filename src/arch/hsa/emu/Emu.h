@@ -85,10 +85,10 @@ class Emu : public comm::Emu
 	void setHostCpuDevice(Component *cpu) { host_cpu = cpu; }
 
 	// Flattened memory space, the only memory space of the virtual memory
-	mem::Memory memory;
+	std::shared_ptr<mem::Memory> memory;
 
 	// Global memory manager
-	mem::Manager manager;
+	std::unique_ptr<mem::Manager> manager;
 
 public:
 
@@ -160,10 +160,17 @@ public:
 	// unsigned int getNumberOfComponent() const { return components.size(); }
 
 	/// Return the global memory manager
-	mem::Manager *getMemoryManager() { return &manager; };
+	mem::Manager *getMemoryManager() { return manager.get(); };
 
 	/// Return the pointer to the global memory
-	mem::Memory *getMemory() { return &memory; };
+	mem::Memory *getMemory() { return memory.get(); };
+
+	/// Set the memory object
+	void setMemory(std::shared_ptr<mem::Memory> mem)
+	{
+		memory = mem;
+		manager.reset(new mem::Manager(memory.get()));
+	}
 
 };
 

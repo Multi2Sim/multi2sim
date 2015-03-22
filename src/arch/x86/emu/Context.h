@@ -874,6 +874,13 @@ public:
 		assert(memory.get());
 		return *memory;
 	}
+
+	/// Return a pointer of the memory. This is used when an hsa environment
+	/// is created and the hsa emulator uses the host programs memory object
+	std::shared_ptr<mem::Memory> __getMemSharedPtr() {
+		assert(memory.get());
+		return memory;
+	}
 };
 
 }  // namespace x86
