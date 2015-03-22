@@ -101,10 +101,11 @@ void Emu::ProcessOptions()
 
 
 Emu::Emu() :
-		comm::Emu("hsa"),
-		manager(&memory)
+		comm::Emu("hsa")
 {
 	InstallComponents("");
+	// memory = std::make_shared<mem::Memory>();
+	// manager.reset(new mem::Manager(memory.get()));
 	Asm::getInstance()->DisableIndentation();
 	if (loader_debug)
 	{
@@ -210,14 +211,14 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 
 	// Create an array of kernel arguments
 	unsigned int argc = args.size();
-	unsigned long long argv = manager.Allocate(8 * argc);
-	char *arguments_buf = memory.getBuffer(argv, 8 * argc, 
+	unsigned long long argv = manager->Allocate(8 * argc);
+	char *arguments_buf = memory->getBuffer(argv, 8 * argc,
 			mem::Memory::AccessWrite);
 	for (unsigned int i = 0; i < argc; i++)
 	{
 		unsigned int str_size = args.at(i).length() + 1;
-		unsigned int str_addr = manager.Allocate(str_size);
-		char *str_buffer = memory.getBuffer(str_addr, str_size, 
+		unsigned int str_addr = manager->Allocate(str_size);
+		char *str_buffer = memory->getBuffer(str_addr, str_size,
 				mem::Memory::AccessWrite);
 		memcpy(str_buffer, args.at(i).c_str(), str_size - 1);
 		str_buffer[str_size - 1] = 0;
@@ -227,8 +228,8 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	}
 
 	// Create kernel argument memory spaces
-	unsigned kernarg_address = manager.Allocate(12);
-	char *kernarg_buf = memory.getBuffer(kernarg_address, 12, 
+	unsigned kernarg_address = manager->Allocate(12);
+	char *kernarg_buf = memory->getBuffer(kernarg_address, 12,
 			mem::Memory::AccessWrite);
 	*(unsigned int *)kernarg_buf = argc;
 	*(unsigned long long *)(kernarg_buf + 4) = argv;
