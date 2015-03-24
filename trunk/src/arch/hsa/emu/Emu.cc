@@ -104,8 +104,8 @@ Emu::Emu() :
 		comm::Emu("hsa")
 {
 	InstallComponents("");
-	// memory = std::make_shared<mem::Memory>();
-	// manager.reset(new mem::Manager(memory.get()));
+	memory = std::make_shared<mem::Memory>();
+	manager.reset(new mem::Manager(memory.get()));
 	Asm::getInstance()->DisableIndentation();
 	if (loader_debug)
 	{
@@ -167,6 +167,8 @@ bool Emu::Run()
 	// Stop if maxmum number of CPU instructions exceeded
 	// if(max_instructions && instructions >= max_instructions)
 		// esim->Finish("hsaMaxInst");
+
+	//std::cout << "HSA emu running \n";
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())

@@ -40,12 +40,6 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("Finished executing driver function %s, "
 			"returning %d.\n", __FUNCTION__, 0);
 
-	// If the args 0, the call is from the x86 host
-	if (args_ptr == 0)
-	{
-
-	}
-
 	return 0;
 }
 
@@ -61,7 +55,80 @@ int Driver::CallShutDown(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// attribute		| 4		| 4
+	// data			| 8		| 12
+
+	unsigned int attribute = getArgumentValue<unsigned int>(4, memory,
+			args_ptr);
+	unsigned int data_ptr = getArgumentValue<unsigned int>(8, memory,
+			args_ptr);
+
+	switch (attribute)
+	{
+	case HSA_SYSTEM_INFO_VERSION_MAJOR:
+
+	{
+		unsigned *data = (unsigned *)memory->getBuffer(
+				data_ptr, 4, mem::Memory::AccessWrite);
+		*data = 0;
+		break;
+	}
+
+	case HSA_SYSTEM_INFO_VERSION_MINOR:
+
+	{
+		unsigned *data = (unsigned *)memory->getBuffer(
+				data_ptr, 4, mem::Memory::AccessWrite);
+		*data = 99;
+		break;
+	}
+
+	case HSA_SYSTEM_INFO_TIMESTAMP:
+
+	{
+		unsigned long long *data = (unsigned long long *)
+				memory->getBuffer(data_ptr, 4,
+						mem::Memory::AccessWrite);
+		*data = time(NULL);
+		break;
+	}
+
+	case HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY:
+
+	{
+		unsigned long long *data = (unsigned long long *)
+				memory->getBuffer(data_ptr, 4,
+						mem::Memory::AccessWrite);
+		*data = 1;
+		break;
+	}
+
+	case HSA_SYSTEM_INFO_SIGNAL_MAX_WAIT:
+
+	{
+		unsigned long long *data = (unsigned long long *)
+				memory->getBuffer(data_ptr, 4,
+						mem::Memory::AccessWrite);
+		*data = 100;
+		break;
+	}
+
+	default:
+
+		// Return error
+		setArgumentValue<unsigned int>(
+				HSA_STATUS_ERROR_INVALID_ARGUMENT, 0,
+				memory, args_ptr);
+		return 0;
+	}
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
 	return 0;
 }
 
@@ -243,8 +310,6 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	// agent		| 4		| 8
 	// attribute		| 12		| 4
 	// value		| 16		| 8
-	// host_language	| 24		| 4
-	// workitem_ptr		| 28		| 8
 
 	// Retrieve agent handler
 	unsigned long long agent_handler = 
@@ -273,11 +338,21 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	switch(attribute)
 	{
 	case HSA_AGENT_INFO_NAME:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_NAME\n");
+
+	{
+		std::string name =component->getName();
+		strcpy(value_ptr, name.c_str());
 		break;
+	}
+
 	case HSA_AGENT_INFO_VENDOR_NAME:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INF_VENDOR_NAME\n");
+
+	{
+		std::string vendor_name =component->getVendorName();
+		strcpy(value_ptr, vendor_name.c_str());
 		break;
+	}
+
 	case HSA_AGENT_INFO_FEATURE:
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_FEATURE\n");
 		break;
@@ -373,6 +448,8 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	// callback		| 20			| 8
 	// service_queue	| 28			| 8
 	// queue		| 36			| 8
+	// host_lang		| 44			| 4
+	// work_item_ptr	| 48			| 8
 
 	// Declare arguments as variables
 	unsigned long long agent = getArgumentValue<unsigned long long>
