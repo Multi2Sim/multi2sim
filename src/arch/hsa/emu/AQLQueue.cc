@@ -59,9 +59,9 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 			size * sizeof(AQLDispatchPacket),
 			sizeof(AQLDispatchPacket));
 
-	// Set initial write and read index to base address
-	fields->write_index = fields->base_address;
-	fields->read_index = fields->base_address;
+	// Set initial write and read index to 0
+	fields->write_index = 0;
+	fields->read_index = 0;
 }
 
 

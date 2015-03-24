@@ -358,6 +358,28 @@ enum hsa_dim_t {
   HSA_DIM_Z = 2,
 };
 
+typedef enum {
+  HSA_PROFILE_BASE = 0,
+  HSA_PROFILE_FULL = 1
+} hsa_profile_t;
+
+typedef struct hsa_code_object_s {
+  uint64_t handle;
+} hsa_code_object_t;
+
+typedef struct hsa_executable_s {
+  uint64_t handle;
+} hsa_executable_t;
+
+typedef struct hsa_executable_symbol_s {
+  uint64_t handle;
+} hsa_executable_symbol_t;
+
+typedef enum {
+  HSA_EXECUTABLE_STATE_UNFROZEN = 0,
+  HSA_EXECUTABLE_STATE_FROZEN = 1
+} hsa_executable_state_t;
+
 typedef struct hsa_runtime_caller_s { uint64_t caller; } hsa_runtime_caller_t;
 
 typedef hsa_status_t (*hsa_runtime_alloc_data_callback_t)(
@@ -551,6 +573,23 @@ hsa_signal_value_t HSA_API hsa_signal_cas_acq_rel(hsa_signal_t signal,
 //---------------------------------------------------------------------------//
 hsa_status_t HSA_API
     hsa_status_string(hsa_status_t status, const char **status_string);
+
+//---------------------------------------------------------------------------//
+//  Code                                                                     //
+//---------------------------------------------------------------------------//
+hsa_status_t HSA_API
+    hsa_executable_create(hsa_profile_t profile,
+		          hsa_executable_state_t executable_stat,
+		          const char *options,
+		          hsa_executable_t *executable);
+
+hsa_status_t HSA_API
+    hsa_executable_get_symbol(hsa_executable_t executable,
+                              const char *module_name,
+                              const char *symbol_name,
+                              hsa_agent_t agent,
+                              int32_t call_convention,
+                              hsa_executable_symbol_t *symbol);
 
 //---------------------------------------------------------------------------//
 //  Extensions - NOT YET IMPLEMENTED!                                        //
