@@ -23,8 +23,7 @@
 #include <list>
 #include <memory>
 
-#include <arch/hsa/driver/runtime.h>
-
+#include "../driver/runtime.h"
 #include "Grid.h"
 #include "Emu.h"
 

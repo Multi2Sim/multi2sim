@@ -61,10 +61,10 @@ class AQLQueue
 	Component *associated_component = nullptr;
 
 	// Convert the linear write/ read index to real position
+
 	unsigned long long toRecursiveIndex(unsigned long long index)
 	{
-		unsigned long long recurve_index =
-				(index - fields->base_address)
+		unsigned long long recurve_index = index
 				% (fields->size * sizeof(AQLPacket))
 				+ fields->base_address;
 		//std::cout << misc::fmt("Mapping linear index %lld to "
@@ -72,6 +72,7 @@ class AQLQueue
 		//		index, recurve_index);
 		return recurve_index;
 	}
+
 
 	/// Return the packet starts at a certain linear index
 	AQLDispatchPacket *getPacket(unsigned long long linear_index);
