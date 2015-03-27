@@ -29,7 +29,7 @@ void m2s_hsa_fatal(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "\nOpenCL runtime error: ");
+	fprintf(stderr, "\nHSA runtime error: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n\n");
 	fflush(NULL);
@@ -41,7 +41,7 @@ void m2s_hsa_panic(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "\nOpenCL runtime panic: ");
+	fprintf(stderr, "\nHSA runtime panic: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n\n");
 	fflush(NULL);
@@ -53,7 +53,7 @@ void m2s_hsa_warning(char *fmt, ...)
 {
 	va_list va;
 	va_start(va, fmt);
-	fprintf(stderr, "\nOpenCL runtime warning: ");
+	fprintf(stderr, "\nHSA runtime warning: ");
 	vfprintf(stderr, fmt, va);
 	fprintf(stderr, "\n\n");
 }
