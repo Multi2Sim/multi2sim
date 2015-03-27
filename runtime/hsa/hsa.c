@@ -182,4 +182,95 @@ uint64_t HSA_API hsa_queue_add_write_index_relaxed(
 }
 
 
+hsa_status_t HSA_API hsa_ext_program_create(
+	hsa_machine_model_t machine_model,
+	hsa_profile_t profile,
+	hsa_default_float_rounding_mode_t default_float_rounding_mode,
+	const char *options,
+	hsa_ext_program_t *program)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API hsa_ext_program_add_module(
+	hsa_ext_program_t program,
+	hsa_ext_module_t module)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API hsa_ext_program_finalize(
+	hsa_ext_program_t program,
+	hsa_isa_t isa,
+	int32_t call_convention,
+	hsa_ext_control_directives_t control_directives,
+	const char *options,
+	hsa_code_object_type_t code_object_type,
+	hsa_code_object_t *code_object )
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API
+    hsa_executable_get_symbol(hsa_executable_t executable,
+                              const char *module_name,
+                              const char *symbol_name,
+                              hsa_agent_t agent,
+                              int32_t call_convention,
+                              hsa_executable_symbol_t *symbol)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API hsa_code_object_get_symbol(
+	hsa_code_object_t code_object,
+	const char *symbol_name,
+	hsa_code_symbol_t *symbol)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t HSA_API
+    hsa_executable_create(hsa_profile_t profile,
+		          hsa_executable_state_t executable_stat,
+		          const char *options,
+		          hsa_executable_t *executable)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t hsa_executable_load_code_object(
+	hsa_executable_t executable,
+	hsa_agent_t agent,
+	hsa_code_object_t code_object,
+	const char *options)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t hsa_executable_freeze(
+	hsa_executable_t executable,
+	const char *options)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+hsa_status_t hsa_executable_symbol_get_info(
+	hsa_executable_symbol_t executable_symbol,
+	hsa_executable_symbol_info_t attribute,
+	void *value)
+{
+	fatal("Runtime function %s not implemented", __FUNCTION__);
+	return HSA_STATUS_SUCCESS;
+}
+
+
 
