@@ -172,6 +172,17 @@ typedef enum hsa_extension_t {
   HSA_SVEXT_START = 10000
 } hsa_extension_t;
 
+typedef enum {
+	HSA_MACHINE_MODEL_SMALL = 0,
+	HSA_MACHINE_MODEL_LARGE = 1
+} hsa_machine_model_t;
+
+typedef enum {
+	HSA_DEFAULT_FLOAT_ROUNDING_MODE_DEFAULT = 0,
+	HSA_DEFAULT_FLOAT_ROUNDING_MODE_ZERO = 1,
+	HSA_DEFAULT_FLOAT_ROUNDING_MODE_NEAR = 2
+} hsa_default_float_rounding_mode_t;
+
 typedef enum hsa_agent_feature_s {
   HSA_AGENT_FEATURE_DISPATCH = 1,
   HSA_AGENT_FEATURE_AGENT_DISPATCH = 2
@@ -380,6 +391,43 @@ typedef enum {
   HSA_EXECUTABLE_STATE_FROZEN = 1
 } hsa_executable_state_t;
 
+typedef struct hsa_isa_s {
+	uint64_t handle;
+} hsa_isa_t;
+
+typedef enum {
+	HSA_CODE_OBJECT_TYPE_PROGRAM = 0
+} hsa_code_object_type_t;
+
+typedef struct hsa_code_symbol_s {
+	uint64_t handle;
+} hsa_code_symbol_t;
+
+typedef enum {
+	HSA_EXECUTABLE_SYMBOL_INFO_TYPE = 0,
+	HSA_EXECUTABLE_SYMBOL_INFO_NAME_LENGTH = 1,
+	HSA_EXECUTABLE_SYMBOL_INFO_NAME = 2,
+	HSA_EXECUTABLE_SYMBOL_INFO_MODULE_NAME_LENGTH = 3,
+	HSA_EXECUTABLE_SYMBOL_INFO_MODULE_NAME = 4,
+	HSA_EXECUTABLE_SYMBOL_INFO_AGENT = 20,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_ADDRESS = 21,
+	HSA_EXECUTABLE_SYMBOL_INFO_LINKAGE = 5,
+	HSA_EXECUTABLE_SYMBOL_INFO_IS_DEFINITION = 17,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_ALLOCATION = 6,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_SEGMENT = 7,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_ALIGNMENT = 8,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_SIZE = 9,
+	HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_IS_CONST = 10,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT = 22,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE = 11,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_ALIGNMENT = 12,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE = 13,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE = 14,
+	HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_DYNAMIC_CALLSTACK = 15,
+	HSA_EXECUTABLE_SYMBOL_INFO_INDIRECT_FUNCTION_OBJECT = 23,
+	HSA_EXECUTABLE_SYMBOL_INFO_INDIRECT_FUNCTION_CALL_CONVENTION = 16
+} hsa_executable_symbol_info_t;
+
 typedef struct hsa_runtime_caller_s { uint64_t caller; } hsa_runtime_caller_t;
 
 typedef hsa_status_t (*hsa_runtime_alloc_data_callback_t)(
@@ -577,6 +625,7 @@ hsa_status_t HSA_API
 //---------------------------------------------------------------------------//
 //  Code                                                                     //
 //---------------------------------------------------------------------------//
+
 hsa_status_t HSA_API
     hsa_executable_create(hsa_profile_t profile,
 		          hsa_executable_state_t executable_stat,
@@ -591,6 +640,34 @@ hsa_status_t HSA_API
                               int32_t call_convention,
                               hsa_executable_symbol_t *symbol);
 
+hsa_status_t hsa_code_object_get_symbol(
+	hsa_code_object_t code_object,
+	const char *symbol_name,
+	hsa_code_symbol_t *symbol);
+
+hsa_status_t hsa_executable_load_code_object(
+	hsa_executable_t executable,
+	hsa_agent_t agent,
+	hsa_code_object_t code_object,
+	const char *options);
+
+hsa_status_t hsa_executable_freeze(
+	hsa_executable_t executable,
+	const char *options);
+
+hsa_status_t hsa_executable_get_symbol(
+	hsa_executable_t executable,
+	const char *module_name,
+	const char *symbol_name,
+	hsa_agent_t agent,
+	int32_t call_convention,
+	hsa_executable_symbol_t *symbol);
+
+hsa_status_t hsa_executable_symbol_get_info(
+	hsa_executable_symbol_t executable_symbol,
+	hsa_executable_symbol_info_t attribute,
+	void *value);
+
 //---------------------------------------------------------------------------//
 //  Extensions - NOT YET IMPLEMENTED!                                        //
 //---------------------------------------------------------------------------//
@@ -599,6 +676,54 @@ hsa_status_t HSA_API
 //hsa_status_t HSA_API hsa_vendor_extension_query(hsa_extension_t extension,
 //												void* extension_structure,
 //												int* result);
+
+typedef struct hsa_ext_program_s {
+	uint64_t handle;
+} hsa_ext_program_t;
+
+typedef char * hsa_ext_module_t;
+
+typedef enum {
+	HSA_EXT_FINALIZER_CALL_CONVENTION_AUTO = -1
+}hsa_ext_finalizer_call_convention_t;
+
+typedef struct hsa_ext_control_directives_s {
+	uint64_t control_directives_mask ;
+	uint16_t break_exceptions_mask ;
+	uint16_t detect_exceptions_mask ;
+	uint32_t max_dynamic_group_size;
+	uint64_t max_flat_grid_size;
+	uint32_t max_flat_workgroup_size;
+	uint32_t reserved1;
+	uint64_t required_grid_size[3];
+	hsa_dim3_t required_workgroup_size;
+	uint8_t required_dim;
+	uint8_t reserved2[75];
+} hsa_ext_control_directives_t;
+
+
+hsa_status_t HSA_API hsa_ext_program_create(
+	hsa_machine_model_t machine_model,
+	hsa_profile_t profile,
+	hsa_default_float_rounding_mode_t default_float_rounding_mode,
+	const char *options,
+	hsa_ext_program_t *program);
+
+hsa_status_t HSA_API hsa_ext_program_add_module(
+	hsa_ext_program_t program,
+	hsa_ext_module_t module);
+
+hsa_status_t HSA_API hsa_ext_program_finalize(
+	hsa_ext_program_t program,
+	hsa_isa_t isa,
+	int32_t call_convention,
+	hsa_ext_control_directives_t control_directives,
+	const char *options,
+	hsa_code_object_type_t code_object_type,
+	hsa_code_object_t *code_object );
+
+
+
 
 #ifdef __cplusplus
 }  // end extern "C" block
