@@ -189,16 +189,33 @@ hsa_status_t HSA_API hsa_ext_program_create(
 	const char *options,
 	hsa_ext_program_t *program)
 {
-	fatal("Runtime function %s not implemented", __FUNCTION__);
-	return HSA_STATUS_SUCCESS;
+	unsigned int args[8] = {0};
+	memcpy(args + 1, &machine_model, 4);
+	memcpy(args + 2, &profile, 4);
+	memcpy(args + 3, &default_float_rounding_mode, 4);
+	memcpy(args + 4, &options, 4);
+	memcpy(args + 6, &program, 4);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ProgramCreate, args);
+	return args[0];
 }
 
 hsa_status_t HSA_API hsa_ext_program_add_module(
 	hsa_ext_program_t program,
 	hsa_ext_module_t module)
 {
-	fatal("Runtime function %s not implemented", __FUNCTION__);
-	return HSA_STATUS_SUCCESS;
+	unsigned int args[5] = {0};
+	memcpy(args + 1, &program, 8);
+	memcpy(args + 3, &module, 8);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ProgramAddModule, args);
+	return args[0];
 }
 
 hsa_status_t HSA_API hsa_ext_program_finalize(
@@ -210,8 +227,20 @@ hsa_status_t HSA_API hsa_ext_program_finalize(
 	hsa_code_object_type_t code_object_type,
 	hsa_code_object_t *code_object )
 {
-	fatal("Runtime function %s not implemented", __FUNCTION__);
-	return HSA_STATUS_SUCCESS;
+	unsigned int args[57] = {0};
+	memcpy(args + 1, &program, 8);
+	memcpy(args + 3, &isa, 8);
+	memcpy(args + 5, &call_convention, 4);
+	memcpy(args + 6, &control_directives, 144);
+	memcpy(args + 42, &options, 8);
+	memcpy(args + 44, &code_object_type, 4);
+	memcpy(args + 45, &code_object, 8);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ProgramFinalize, args);
+	return args[0];
 }
 
 hsa_status_t HSA_API

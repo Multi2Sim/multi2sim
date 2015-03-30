@@ -33,10 +33,22 @@ BrigFile::BrigFile(const std::string &path):
 		file(path),
 		brig_sections()
 {	
+	PrepareSections();
+}
+
+BrigFile::BrigFile(char *file, unsigned size):
+		file(file, size)
+{
+	PrepareSections();
+}
+
+
+void BrigFile::PrepareSections()
+{
 	for (int i = 0; i < file.getNumSections(); i++)
 	{
 		// Skip empty section
-		if (file.getSection(i)->getSize() == 0) 
+		if (file.getSection(i)->getSize() == 0)
 			continue;
 
 		// Create section
@@ -49,6 +61,7 @@ BrigFile::BrigFile(const std::string &path):
 
 BrigFile::~BrigFile()
 {
+
 }
 
 

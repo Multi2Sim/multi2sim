@@ -51,10 +51,16 @@ class BrigFile
 	// ... More costomized sections
 	std::vector<std::unique_ptr<BrigSection>> brig_sections;
 
+	// Read the file and create sections
+	void PrepareSections();
+
 public:
 
-	/// Loads a BRIG File from the file system, create sections
+	/// Loads a BRIG file from the file system, create sections
 	BrigFile(const std::string &path);
+
+	/// Loads a BRIG file from a memory block
+	BrigFile(char *file, unsigned size);
 
 	/// Destructor
 	~BrigFile();
