@@ -681,7 +681,7 @@ typedef struct hsa_ext_program_s {
 	uint64_t handle;
 } hsa_ext_program_t;
 
-typedef char * hsa_ext_module_t;
+typedef char *hsa_ext_module_t;
 
 typedef enum {
 	HSA_EXT_FINALIZER_CALL_CONVENTION_AUTO = -1
