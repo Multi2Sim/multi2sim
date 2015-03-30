@@ -906,7 +906,7 @@ DEFINST(LDRH_ofim,
 	0xb)
 
 DEFINST(LDRH_prim, 
-	"ldrh%cond %rd, %amode3", 
+	"ldrh%cond %rd, %amode3%idx", 
 	HfwrdImm, 
 	0x17,
 	0xb)

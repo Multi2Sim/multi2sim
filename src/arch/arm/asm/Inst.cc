@@ -117,22 +117,22 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 			switch ((shift >> 1) & 0x00000003)
 			{
 			case (AsmShiftOperatorLsl):
-				os << misc::fmt("[r%d, r%d, lsl #-%d]",
+				os << misc::fmt("[r%d, -r%d, lsl #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
 			case (AsmShiftOperatorLsr):
-				os << misc::fmt("[r%d, r%d, lsr #-%d]",
+				os << misc::fmt("[r%d, -r%d, lsr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
 			case (AsmShiftOperatorAsr):
-				os << misc::fmt("[r%d, r%d, asr #-%d]",
+				os << misc::fmt("[r%d, -r%d, asr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
 			case (AsmShiftOperatorRor):
-				os << misc::fmt("[r%d, r%d, ror #-%d]",
+				os << misc::fmt("[r%d, -r%d, ror #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 			}
@@ -142,8 +142,7 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 	{
 		if (!offset)
 		{
-			os << misc::fmt("[r%d]",
-				rn);
+			os << misc::fmt("[r%d]", rn);
 		}
 		else
 		{
@@ -168,23 +167,77 @@ void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 	{
 		rn = this->dword.hfwrd_reg.base_rn;
 		rm = this->dword.hfwrd_reg.off_reg;
-		if (rm)
-			os << misc::fmt("[r%d, #%d]", rn, rm);
+		// Post index
+		if (this->dword.hfwrd_imm.idx_typ == 0 && this->dword.hfwrd_imm.wb == 1)
+		{
+			if (rm)
+			{
+				if (this->dword.hfwrd_reg.up_dn)
+					os << misc::fmt("[r%d], r%d", rn, rm);
+				else
+					os << misc::fmt("[r%d], -r%d", rn, rm);
+			}
+			else
+			{
+				throw misc::Panic(misc::fmt("%d: amode 3 disasm fmt not recognized", cat));
+			}
+		}
+		// Pre index or offset
 		else
-			os << misc::fmt("[r%d]", rn);
+		{
+			if (rm)
+			{
+				if (this->dword.hfwrd_reg.up_dn)
+					os << misc::fmt("[r%d, r%d]", rn, rm);
+				else
+					os << misc::fmt("[r%d, -r%d]", rn, rm);
+			}
+			else
+			{
+				os << misc::fmt("[r%d]", rn);
+			}
+		}
 	}
 	else if (cat == InstCategoryHfwrdImm)
 	{
 		rn = this->dword.hfwrd_imm.base_rn;
 		offset = (this->dword.hfwrd_imm.imm_off_hi << 4)
 			| (this->dword.hfwrd_imm.imm_off_lo);
-		if (offset)
-			os << misc::fmt("[r%d, #%d]", rn, offset);
+		// Post index
+		if (this->dword.hfwrd_imm.idx_typ == 0 && this->dword.hfwrd_imm.wb == 1)
+		{
+			if (offset)
+			{
+				if (this->dword.hfwrd_imm.up_dn)
+					os << misc::fmt("[r%d], #%d", rn, offset);
+				else
+					os << misc::fmt("[r%d], #-%d", rn, offset);
+			}
+			else
+			{
+				throw misc::Panic(misc::fmt("%d: amode 3 disasm fmt not recognized", cat));
+			}
+		}
+		// Pre index or offset
 		else
-			os << misc::fmt("[r%d]", rn);
+		{
+			if (offset)
+			{
+				if (this->dword.hfwrd_imm.up_dn)
+					os << misc::fmt("[r%d, #%d]", rn, offset);
+				else
+					os << misc::fmt("[r%d, #-%d]", rn, offset);
+			}
+			else
+			{
+				os << misc::fmt("[r%d]", rn);
+			}
+		}
 	}
 	else
+	{
 		throw misc::Panic(misc::fmt("%d: amode 3 disasm fmt not recognized", cat));
+	}
 }
 
 
@@ -1030,7 +1083,7 @@ void Inst::DumpAMode2(std::ostream &os)
 void Inst::DumpIdx(std::ostream &os)
 {
 	InstCategory cat = this->info->category;
-	unsigned int idx;
+	unsigned int idx, wb;
 
 	if (cat == InstCategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
@@ -1051,11 +1104,17 @@ void Inst::DumpIdx(std::ostream &os)
 	else if (cat == InstCategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 	else if (cat == InstCategoryHfwrdImm)
-		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
+	{
+		idx = this->dword.hfwrd_imm.idx_typ;
+		wb = this->dword.hfwrd_imm.wb;
+	}
 	else if (cat == InstCategoryBax)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 	else if (cat == InstCategorySdtr)
+	{
 		idx = this->dword.sdtr.idx_typ;
+		wb = this->dword.sdtr.wb;
+	}
 	else if (cat == InstCategorySdswp)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 	else if (cat == InstCategoryCprRtr)
@@ -1067,7 +1126,7 @@ void Inst::DumpIdx(std::ostream &os)
 	else
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 
-	if (idx == 1)
+	if (idx == 1 && wb == 1)
 	{
 		if(this->dword.sdtr.off)
 			os << misc::fmt("!");
