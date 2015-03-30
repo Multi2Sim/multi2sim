@@ -26,7 +26,7 @@
 enum hsa_abi_call_t
 {
 	hsa_abi_invalid,
-#define DEFCALL(name, code, func) name = code,
+#define DEFCALL(name, code, func) name,
 #include "../../src/arch/hsa/driver/Driver.def"
 #undef DEFCALL
 	hsa_abi_call_count

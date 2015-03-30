@@ -30,6 +30,7 @@
 #include <arch/hsa/emu/ProgramLoader.h>
 
 #include "HsaProgram.h"
+#include "HsaExecutable.h"
 #include "Driver.h"
 
 namespace HSA
@@ -796,7 +797,6 @@ int Driver::CallQueueAddWriteIndexRelease(mem::Memory *memory, unsigned args_ptr
 	*write_index = *write_index + value;
 
 	return 0;
-	return 0;
 }
 
 
@@ -1199,19 +1199,86 @@ int Driver::CallProgramFinalize(mem::Memory *memory, unsigned args_ptr)
 	unsigned long long program = getArgumentValue<unsigned long long>
 			(4, memory, args_ptr);
 	unsigned long long code_object = getArgumentValue<unsigned long long>
-				(180, memory, args_ptr);
+			(180, memory, args_ptr);
 
 	// Print debug information
 	debug << misc::fmt("program: 0x%016llx,\n", program);
 	debug << misc::fmt("code_object: 0x%016llx,\n", code_object);
 
 	// Create an new code object from the program
-	HsaCodeObject *new_code_object = new HsaCodeObject();
-	memcpy(new_code_object, (const char *)program, sizeof(HsaProgram));
+	HsaCodeObject *new_code_object = new HsaCodeObject(*(HsaProgram *)program);
 
 	// Write back
 	char *buffer = memory->getBuffer(code_object, 8, mem::Memory::AccessWrite);
 	*(unsigned long long *)buffer = (unsigned long long)new_code_object;
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+	return 0;
+}
+
+
+int Driver::CallExecutableCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments 		| Offset	| Size
+	// hsa_status_t		| 0 		| 4
+	// profile		| 4		| 8
+	// executable_stat	| 12		| 4
+	// options		| 16		| 8
+	// executable 		| 24		| 8
+
+	// Retrieve data
+	unsigned long long executable = getArgumentValue<unsigned long long>
+			(24, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("executable: 0x%016llx, \n", executable);
+
+	// Create executable
+	HsaExecutable *new_executable = new HsaExecutable();
+	
+	// Write back
+	char *buffer = memory->getBuffer(executable, 8, mem::Memory::AccessWrite);
+	*(unsigned long long *)buffer = (unsigned long long)new_executable;
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+	return 0;
+}
+
+
+int Driver::CallExecutableLoadCodeObject(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments 		| Offset	| Size
+	// hsa_status_t		| 0 		| 4
+	// executable		| 4		| 8
+	// agent		| 12		| 8
+	// code_object		| 20		| 8
+	// options 		| 28		| 8
+
+	// Retrieve data
+	unsigned long long executable = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned long long code_object = getArgumentValue<unsigned long long>
+			(20, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("executable: 0x%016llx, \n", executable);
+	debug << misc::fmt("code_object: 0x%016llx, \n", code_object);
+
+	// Create executable
+	((HsaExecutable *)executable)->LoadCodeObject((HsaCodeObject *)code_object);
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
 
 	return 0;
 }
