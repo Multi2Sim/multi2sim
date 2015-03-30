@@ -10,6 +10,9 @@ libdriver_a_SOURCES = \
 		\
 		Driver.def \
 		\
+		HsaProgram.h \
+		HsaProgram.cc \
+		\
 		runtime.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@

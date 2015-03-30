@@ -29,6 +29,7 @@
 #include <arch/hsa/emu/StackFrame.h>
 #include <arch/hsa/emu/ProgramLoader.h>
 
+#include "HsaProgram.h"
 #include "Driver.h"
 
 namespace HSA
@@ -1110,6 +1111,108 @@ int Driver::CallSignalCasAcqRel(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallStatusString(mem::Memory *memory, unsigned args_ptr)
 {
 	__UNIMPLEMENTED__
+	return 0;
+}
+
+
+int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// machine_model	| 4		| 4
+	// profile		| 8		| 4
+	// default_float_rounding_mode | 12 	| 4
+	// options		| 16 		| 8
+	// program		| 24 		| 8
+
+	unsigned int machine_model = getArgumentValue<unsigned int>
+			(4, memory, args_ptr);
+	unsigned int profile = getArgumentValue<unsigned int>
+			(8, memory, args_ptr);
+	unsigned int rounding = getArgumentValue<unsigned int>
+			(12, memory, args_ptr);
+	unsigned long long options = getArgumentValue<unsigned long long>
+			(16, memory, args_ptr);
+	unsigned long long program = getArgumentValue<unsigned long long>
+			(24, memory, args_ptr);
+
+	debug << misc::fmt("machine_model: %d,\n", machine_model);
+	debug << misc::fmt("profile: %d,\n", profile);
+	debug << misc::fmt("rounding: %d,\n", rounding);
+	debug << misc::fmt("options: 0x%016llx,\n", options);
+	debug << misc::fmt("program: 0x%016llx,\n", program);
+
+	// Create new program and write the address to the handle
+	HsaProgram *new_program = new HsaProgram();
+	char *buffer = memory->getBuffer(program, 8, mem::Memory::AccessWrite);
+	*(unsigned long long *)buffer = (unsigned long long)new_program;
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+	return 0;
+}
+
+
+int Driver::CallProgramAddModule(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// program		| 4		| 8
+	// module		| 12		| 8
+	unsigned long long program = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned long long module = getArgumentValue<unsigned long long>
+				(12, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("program: 0x%016llx,\n", program);
+	debug << misc::fmt("module: 0x%016llx,\n", module);
+
+	// Add module to program
+	char *module_name = memory->getBuffer((unsigned int)module, 5,
+			mem::Memory::AccessRead);
+	((HsaProgram *)program)->AddModule(module_name);
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+	return 0;
+}
+
+int Driver::CallProgramFinalize(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// program		| 4		| 8
+	// isa			| 12		| 8
+	// call_convention	| 20		| 4
+	// control_directives	| 24 		| 144
+	// options		| 168		| 8
+	// code_object_type	| 176		| 4
+	// code_object 		| 180		| 8
+
+	// Retrieve data
+	unsigned long long program = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned long long code_object = getArgumentValue<unsigned long long>
+				(180, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("program: 0x%016llx,\n", program);
+	debug << misc::fmt("code_object: 0x%016llx,\n", code_object);
+
+	// Create an new code object from the program
+	HsaCodeObject *new_code_object = new HsaCodeObject();
+	memcpy(new_code_object, (const char *)program, sizeof(HsaProgram));
+
+	// Write back
+	char *buffer = memory->getBuffer(code_object, 8, mem::Memory::AccessWrite);
+	*(unsigned long long *)buffer = (unsigned long long)new_code_object;
+
 	return 0;
 }
 

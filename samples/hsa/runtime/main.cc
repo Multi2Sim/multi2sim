@@ -78,20 +78,8 @@ int main()
 	hsa_queue_t *queue;
 	hsa_queue_create(kernel_agent, 4, HSA_QUEUE_TYPE_SINGLE, NULL, NULL, &queue);
 
-	// Load brig file
-	FILE *file = fopen("fir_Kernels.brig", "r");
-	if (file == NULL)
-	{
-		perror("Fail to open brig file.\n");
-		exit(1);
-	}
-	fseek(file, 0, SEEK_END);
-	const size_t file_size = (size_t)ftell(file);
-	fseek(file, 0, SEEK_SET);
-	char *binary = (char *)malloc(file_size);
-	fread(binary, 1, file_size, file);
-	
 	// Create HSA program
+	char binary[] = "fir_Kernels.brig";
 	hsa_ext_program_t program;
 	hsa_ext_program_create(
 			HSA_MACHINE_MODEL_LARGE, 
@@ -99,6 +87,7 @@ int main()
 			HSA_DEFAULT_FLOAT_ROUNDING_MODE_DEFAULT, 
 			NULL, 
 			&program);
+	printf("Program: 0x%016llx\n", program.handle);
 	hsa_ext_program_add_module(
 			program, 
 			(hsa_ext_module_t)binary);
@@ -107,6 +96,7 @@ int main()
 	hsa_code_object_t code_object;
 	hsa_isa_t isa;	
 	hsa_ext_control_directives_t control_directives;
+	printf("Size: %d\n", sizeof(hsa_ext_control_directives_t));
 	hsa_ext_program_finalize(
 			program, 
 			isa, 
@@ -115,6 +105,7 @@ int main()
 			NULL, 
 			HSA_CODE_OBJECT_TYPE_PROGRAM, 
 			&code_object);
+	printf("Code object: 0x%016llx\n", code_object.handle);
 
 	// Prepare the executable
 	hsa_executable_t executable;
