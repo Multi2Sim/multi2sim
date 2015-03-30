@@ -10,6 +10,9 @@ libdriver_a_SOURCES = \
 		\
 		Driver.def \
 		\
+		HsaExecutable.h \
+		HsaExecutable.cc \
+		\
 		HsaProgram.h \
 		HsaProgram.cc \
 		\

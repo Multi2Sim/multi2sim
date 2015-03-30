@@ -264,14 +264,23 @@ hsa_status_t HSA_API hsa_code_object_get_symbol(
 	return HSA_STATUS_SUCCESS;
 }
 
-hsa_status_t HSA_API
-    hsa_executable_create(hsa_profile_t profile,
-		          hsa_executable_state_t executable_stat,
-		          const char *options,
-		          hsa_executable_t *executable)
+hsa_status_t HSA_API hsa_executable_create(
+		hsa_profile_t profile,
+		hsa_executable_state_t executable_stat,
+		const char *options,
+		hsa_executable_t *executable)
 {
-	fatal("Runtime function %s not implemented", __FUNCTION__);
-	return HSA_STATUS_SUCCESS;
+	unsigned int args[8] = {0};
+	memcpy(args + 1, &profile, 8);
+	memcpy(args + 3, &executable_stat, 4);
+	memcpy(args + 4, &options, 8);
+	memcpy(args + 6, &executable, 8);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ExecutableCreate, args);
+	return args[0];
 }
 
 hsa_status_t hsa_executable_load_code_object(
@@ -280,8 +289,17 @@ hsa_status_t hsa_executable_load_code_object(
 	hsa_code_object_t code_object,
 	const char *options)
 {
-	fatal("Runtime function %s not implemented", __FUNCTION__);
-	return HSA_STATUS_SUCCESS;
+	unsigned int args[9] = {0};
+	memcpy(args + 1, &executable, 8);
+	memcpy(args + 3, &agent, 8);
+	memcpy(args + 5, &code_object, 8);
+	memcpy(args + 7, &options, 8);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ExecutableLoadCodeObject, args);
+	return args[0];
 }
 
 hsa_status_t hsa_executable_freeze(

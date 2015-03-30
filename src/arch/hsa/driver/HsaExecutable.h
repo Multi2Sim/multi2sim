@@ -16,42 +16,51 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <lib/cpp/Misc.h>
 
-#include <arch/hsa/asm/BrigFile.h>
-
-#include "HsaProgram.h"
+#ifndef ARCH_HSA_EMU_HSAEXECUTABLE_H
+#define ARCH_HSA_EMU_HSAEXECUTABLE_H
 
 namespace HSA
 {
+class HsaProgram;
+class BrigFile;
 
-HsaProgram::HsaProgram() :
-		modules()
+/**
+ * An HsaExecutable is a finished executable
+ */
+class HsaExecutable
 {
-}
+private:
 
+	// Modules in the HSA executable
+	std::vector<std::unique_ptr<BrigFile>> modules;
 
-HsaProgram::HsaProgram(const HsaProgram &program):
-		HsaProgram()
-{
-	for (auto it = modules.begin(); it != modules.end(); it++)
+public:
+
+	/**
+	 * Constructor
+	 */
+	HsaExecutable();
+
+	/**
+	 * Destructor
+	 */
+	~HsaExecutable()
 	{
-		AddModule((*it)->getPath().c_str());
-	}
-}
+	};
 
+	/**
+	 * Load code object
+	 */
+	void LoadCodeObject(HsaCodeObject *code_object);
 
-HsaProgram::~HsaProgram()
-{
-}
+	/**
+	 * Add a module to the module list
+	 */
+	void AddModule(const char *module);
 
-
-void HsaProgram::AddModule(const char *module)
-{
-	std::string filename(module);
-	auto binary = misc::new_unique<BrigFile>(filename);
-	modules.push_back(std::move(binary));
-}
+};
 
 }  // namespace HSA
 
+#endif

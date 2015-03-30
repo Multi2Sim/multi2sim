@@ -114,6 +114,7 @@ int main()
 			HSA_EXECUTABLE_STATE_UNFROZEN, 
 			NULL, 
 			&executable);
+	printf("Executable: 0x%016llx\n", executable.handle);
 	hsa_executable_load_code_object(
 			executable, 
 			kernel_agent, 

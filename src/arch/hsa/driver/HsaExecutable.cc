@@ -16,37 +16,32 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <lib/cpp/Misc.h>
 
 #include <arch/hsa/asm/BrigFile.h>
 
 #include "HsaProgram.h"
+#include "HsaExecutable.h"
 
 namespace HSA
 {
 
-HsaProgram::HsaProgram() :
-		modules()
+HsaExecutable::HsaExecutable():
+	modules()
 {
 }
 
 
-HsaProgram::HsaProgram(const HsaProgram &program):
-		HsaProgram()
+void HsaExecutable::LoadCodeObject(HsaCodeObject *code_object)
 {
-	for (auto it = modules.begin(); it != modules.end(); it++)
+	const std::vector<std::unique_ptr<BrigFile>> *modules = code_object->getModules();
+	for (auto it = modules->begin(); it != modules->end(); it++)
 	{
-		AddModule((*it)->getPath().c_str());
+		AddModule((*it)->getPath().c_str());	
 	}
 }
 
 
-HsaProgram::~HsaProgram()
-{
-}
-
-
-void HsaProgram::AddModule(const char *module)
+void HsaExecutable::AddModule(const char *module)
 {
 	std::string filename(module);
 	auto binary = misc::new_unique<BrigFile>(filename);
@@ -54,4 +49,3 @@ void HsaProgram::AddModule(const char *module)
 }
 
 }  // namespace HSA
-
