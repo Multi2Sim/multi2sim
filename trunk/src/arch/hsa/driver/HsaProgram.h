@@ -36,10 +36,16 @@ private:
 	std::vector<std::unique_ptr<BrigFile>> modules;
 
 public:
+
 	/**
 	 * Constructor
 	 */
 	HsaProgram();
+
+	/**
+	 * Copy constructor
+	 */
+	HsaProgram(const HsaProgram &program);
 
 	/**
 	 * Destructor
@@ -50,6 +56,15 @@ public:
 	 * Add and HSA module to program
 	 */
 	void AddModule(const char *module);
+
+	/**
+	 * Get the modules
+	 */
+	const std::vector<std::unique_ptr<BrigFile>> *getModules() const 
+	{
+		return &modules;
+	}
+	
 };
 
 /**

@@ -40,7 +40,9 @@ class Driver: public comm::Driver
 	static std::string debug_file;
 
 	/// Constructor
-	Driver() : comm::Driver("HSA", "/dev/hsa"){};
+	Driver() : comm::Driver("HSA", "/dev/hsa")
+	{
+	};
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
@@ -58,7 +60,8 @@ class Driver: public comm::Driver
 	// latest ABI call found in the file.
 	enum
 	{
-#define DEFCALL(name, code, func) CallCode##name = code,
+		CallInvalid,
+#define DEFCALL(name, code, func) CallCode##name,
 #include "Driver.def"
 #undef DEFCALL
 		CallCodeCount
