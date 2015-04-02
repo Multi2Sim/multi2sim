@@ -36,7 +36,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	// Set global emulator object
 	emu = Emu::getInstance();
 	loader = ProgramLoader::getInstance();
-	binary = loader->getBinary();
+	executable = root_function->getExecutable();
 
 	// Set work group
 	this->work_group = work_group;

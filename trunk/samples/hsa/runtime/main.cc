@@ -96,7 +96,6 @@ int main()
 	hsa_code_object_t code_object;
 	hsa_isa_t isa;	
 	hsa_ext_control_directives_t control_directives;
-	printf("Size: %d\n", sizeof(hsa_ext_control_directives_t));
 	hsa_ext_program_finalize(
 			program, 
 			isa, 
@@ -130,10 +129,44 @@ int main()
 			kernel_agent,
 			HSA_EXT_FINALIZER_CALL_CONVENTION_AUTO,
 			&symbol);
+	printf("Symbol: 0x%016llx\n", symbol.handle);
 	unsigned long long kernel_object;
 	hsa_executable_symbol_get_info(symbol, 
 			HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT,
 			&kernel_object);
+	printf("Kernel object: 0x%016llx\n", kernel_object);
+
+	// Prepare kernel argument
+	unsigned long long offset_0 = 0;
+	unsigned long long offset_1 = 0;
+	unsigned long long offset_2 = 0;
+	unsigned long long printf_buffer = 0;
+	unsigned long long vqueue_pointer = 0;
+	unsigned long long aqlwrap_pointer = 0;
+	float input[128];
+	float output[128];
+	float coeff[3];
+	unsigned int numTap = 3;
+	coeff[0] = 1;
+	coeff[1] = 2;
+	coeff[2] = 3;
+	for (int i = 0; i < 128; i++)
+	{
+		input[i] = i;
+	}
+
+	unsigned int args[19] = {0};
+	memcpy(args + 0, &offset_0, 8);
+	memcpy(args + 2, &offset_1, 8);
+	memcpy(args + 4, &offset_2, 8);
+	memcpy(args + 6, &printf_buffer, 8);
+	memcpy(args + 8, &vqueue_pointer, 8);
+	memcpy(args + 10, &aqlwrap_pointer, 8);
+	memcpy(args + 12, &output, 4);
+	memcpy(args + 14, &coeff, 4);
+	memcpy(args + 16, &input, 4);
+	memcpy(args + 18, &numTap, 4);
+
 	
 	// Read index and write index
 	unsigned long long read_index;
@@ -159,7 +192,7 @@ int main()
 	packet->private_segment_size = 100;
 	packet->group_segment_size = 1000;
 	packet->kernel_object_address = kernel_object;
-	packet->kernarg_address = 0;	
+	packet->kernarg_address = (unsigned long long)args;	
 	packet->completion_signal = 0;
 
 	// Release the packet

@@ -19,6 +19,7 @@
 
 #include <cstring>
 
+#include <lib/cpp/Misc.h>
 #include <arch/hsa/asm/Asm.h>
 
 #include "Emu.h"
@@ -211,6 +212,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	}
 	*/
 
+	/*
 	// Create an array of kernel arguments
 	unsigned int argc = args.size();
 	unsigned long long argv = manager->Allocate(8 * argc);
@@ -258,6 +260,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 	// Enqueue the packet
 	aql_debug << "Packet created and enqueued: \n" << *packet;
 	queue_ptr->Enqueue(packet);
+	*/
 }
 
 }  // namespace HSA

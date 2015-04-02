@@ -20,10 +20,15 @@
 #ifndef ARCH_HSA_EMU_HSAEXECUTABLE_H
 #define ARCH_HSA_EMU_HSAEXECUTABLE_H
 
+#include "HsaProgram.h"
+
 namespace HSA
 {
 class HsaProgram;
 class BrigFile;
+class Function;
+class BrigCodeEntry;
+class HsaExecutableSymbol;
 
 /**
  * An HsaExecutable is a finished executable
@@ -35,29 +40,81 @@ private:
 	// Modules in the HSA executable
 	std::vector<std::unique_ptr<BrigFile>> modules;
 
+	// Function table for the functions in the brig file
+	std::map<std::string, std::unique_ptr<Function>> function_table;
+
+	// Load functions in the brig file.
+	//
+	// \return
+	// 	Number of functions loaded
+	unsigned int loadFunctions(BrigFile *file);
+
+	// Parse and create a function object
+	void parseFunction(BrigFile *file, std::unique_ptr<BrigCodeEntry> dir);
+
+	// Preprocess register allocation in a function
+	//
+	// \param entry_point
+	// 	Pointer to first instruction to parse
+	//
+	// \param inst_count
+	// 	Number of instructions in the function
+	//
+	// \param function
+	// 	Pointer to the function to process
+	void preprocessRegisters(BrigFile *binary,
+			std::unique_ptr<BrigCodeEntry> first_entry,
+			unsigned int inst_count, Function* function);
+
+	// Load output arguments for a function
+	//
+	// \param num_out_arg
+	// 	Number of output arguments
+	//
+	// \param next_dir
+	// 	Pointer to the argument to start with
+	//
+	// \param isInput
+	//	if true, add input arguments. Otherwise, add output arguments
+	//
+	// \param function
+	// 	Pointer to the function to load arguments
+	//
+	// \return
+	// 	Pointer to next directive to parse
+	//
+	std::unique_ptr<BrigCodeEntry> loadArguments(
+			BrigFile *file,
+			unsigned short num_arg,
+			std::unique_ptr<BrigCodeEntry> entry,
+			bool isInput, Function* function);
+
+
+	/// Return the Brig binary
+	///BrigFile *getBinary() const { return binary.get(); }
+
+
 public:
 
-	/**
-	 * Constructor
-	 */
+	/// Constructor
 	HsaExecutable();
 
-	/**
-	 * Destructor
-	 */
+	/// Destructor
 	~HsaExecutable()
 	{
 	};
 
-	/**
-	 * Load code object
-	 */
+	/// Load code object
 	void LoadCodeObject(HsaCodeObject *code_object);
 
-	/**
-	 * Add a module to the module list
-	 */
+	/// Add a module to the module list
 	void AddModule(const char *module);
+
+	/// Get the symbol name
+	HsaExecutableSymbol *getSymbol(const char *symbol_name);
+
+	/// Return the pointer to the function by the name
+	Function *getFunction(const std::string &name) const;
 
 };
 
