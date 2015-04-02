@@ -16,44 +16,54 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <lib/cpp/Misc.h>
-#include <lib/cpp/String.h>
-#include <arch/hsa/asm/BrigFile.h>
 
-#include "HsaProgram.h"
+#ifndef ARCH_HSA_DRIVER_HSAEXECUTABLESYMBOL_H
+#define ARCH_HSA_DRIVER_HSAEXECUTABLESYMBOL_H
 
 namespace HSA
 {
 
-HsaProgram::HsaProgram() :
-		modules()
+class HsaExecutable;
+class BrigCodeEntry;
+
+class HsaExecutableSymbol
 {
-}
+
+	// The executable that this symbol belongs to
+	const HsaExecutable *executable;
 
 
-HsaProgram::HsaProgram(const HsaProgram &program):
-		HsaProgram()
-{
-	for (auto it = program.modules.begin();
-			it != program.modules.end();
-			it++)
+	// The directive that declares the symbol
+	BrigCodeEntry *directive;
+
+public:
+
+	/// Constructor
+	HsaExecutableSymbol(const HsaExecutable *executable,
+			BrigCodeEntry *directive):
+			executable(executable),
+			directive(directive)
 	{
-		AddModule((*it)->getPath().c_str());
 	}
-}
 
+	/// Destructor
+	~HsaExecutableSymbol()
+	{
+	}
 
-HsaProgram::~HsaProgram()
-{
-}
+	/// Get executable
+	const HsaExecutable *getExecutable() const
+	{
+		return executable;
+	}
 
-
-void HsaProgram::AddModule(const char *module)
-{
-	std::string filename(module);
-	auto binary = misc::new_unique<BrigFile>(filename);
-	modules.push_back(std::move(binary));
-}
+	/// Get directive
+	BrigCodeEntry *getDirective() const
+	{
+		return directive;
+	}
+};
 
 }  // namespace HSA
 
+#endif

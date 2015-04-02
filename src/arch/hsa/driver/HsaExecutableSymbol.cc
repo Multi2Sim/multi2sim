@@ -16,44 +16,10 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-#include <lib/cpp/Misc.h>
-#include <lib/cpp/String.h>
-#include <arch/hsa/asm/BrigFile.h>
 
-#include "HsaProgram.h"
+#include "HsaExecutableSymbol.h"
 
 namespace HSA
 {
 
-HsaProgram::HsaProgram() :
-		modules()
-{
-}
-
-
-HsaProgram::HsaProgram(const HsaProgram &program):
-		HsaProgram()
-{
-	for (auto it = program.modules.begin();
-			it != program.modules.end();
-			it++)
-	{
-		AddModule((*it)->getPath().c_str());
-	}
-}
-
-
-HsaProgram::~HsaProgram()
-{
-}
-
-
-void HsaProgram::AddModule(const char *module)
-{
-	std::string filename(module);
-	auto binary = misc::new_unique<BrigFile>(filename);
-	modules.push_back(std::move(binary));
-}
-
-}  // namespace HSA
-
+} // namespace HSA

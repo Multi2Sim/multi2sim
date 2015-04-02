@@ -20,6 +20,8 @@
 #include <cstring>
 
 #include <arch/hsa/asm/AsmService.h>
+#include <arch/hsa/driver/HsaExecutable.h>
+#include <arch/hsa/driver/HsaExecutableSymbol.h>
 
 #include "ProgramLoader.h"
 #include "WorkGroup.h"
@@ -51,12 +53,12 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	group_size_z = packet->getWorkGroupSizeZ();
 	group_size = group_size_x * group_size_y * group_size_z;
 
-	// Set root function information
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	auto function = binary->getCodeEntryByOffset(packet->getKernalObjectAddress());
-	std::string function_name = function->getName();
-	root_function = ProgramLoader::getInstance()->getFunction(
-			function_name);
+	// Get kernel object
+	HsaExecutableSymbol *kernel_object = (HsaExecutableSymbol *)
+			packet->getKernalObjectAddress();
+	std::string function_name = kernel_object->getDirective()->getName();
+	root_function = kernel_object->getExecutable()->
+			getFunction(function_name);
 	kernel_args = packet->getKernargAddress();
 
 	// Create kernel argument

@@ -19,8 +19,8 @@
 
 #include <cstring>
 
-//#include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/asm/AsmService.h>
+#include <arch/hsa/driver/HsaExecutable.h>
 
 #include "WorkItem.h"
 
@@ -2356,7 +2356,7 @@ void WorkItem::ExecuteInst_CALL()
 
 
 	// Retrieve the function
-	Function *function = loader->getFunction(function_name);
+	Function *function = executable->getFunction(function_name);
 
 	// Prepare stack frame and pass the argument by value
 	auto new_frame = misc::new_unique<StackFrame>(function, this);

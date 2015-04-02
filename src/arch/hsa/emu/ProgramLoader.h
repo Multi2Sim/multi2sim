@@ -43,7 +43,6 @@ class ProgramLoader
 	{};
 
 	// Brig file to be executed.
-	// TODO extend this field to support multi-file program
 	std::unique_ptr<BrigFile> binary;
 
 	// Command-line arguments
@@ -59,56 +58,10 @@ class ProgramLoader
 	std::string stdin_file_name;
 	std::string stdout_file_name;
 
-	// Function table for the functions in the brig file
-	std::map<std::string, std::unique_ptr<Function>> function_table;
-
 	// File descriptor table
 	std::shared_ptr<comm::FileTable> file_table;
 
-	// Load and parse Brig ELF binary
-	void LoadBinary();
 
-	// Load functions in the brig file.
-	//
-	// \return
-	// 	Number of functions loaded
-	unsigned int loadFunctions();
-
-	// Parse and create a function object
-	void parseFunction(std::unique_ptr<BrigCodeEntry> dir);
-
-	// Load output arguments for a function
-	//
-	// \param num_out_arg
-	// 	Number of output arguments
-	//
-	// \param next_dir
-	// 	Pointer to the argument to start with
-	//
-	// \param isInput
-	//	if true, add input arguments. Otherwise, add output arguments
-	//
-	// \param function
-	// 	Pointer to the function to load arguments
-	//
-	// \return
-	// 	Pointer to next directive to parse
-	std::unique_ptr<BrigCodeEntry> loadArguments(unsigned short num_arg,
-			std::unique_ptr<BrigCodeEntry> entry,
-			bool isInput, Function* function);
-
-	// Preprocess register allocation in a function
-	//
-	// \param entry_point
-	// 	Pointer to first instruction to parse
-	//s
-	// \param inst_count
-	// 	Number of instructions in the function
-	//
-	// \param function
-	// 	Pointer to the function to process
-	void preprocessRegisters(std::unique_ptr<BrigCodeEntry> first_entry,
-			unsigned int inst_count, Function* function);
 
 public:
 
@@ -126,14 +79,11 @@ public:
 	/// program has been loaded
 	static ProgramLoader *getInstance();
 
-	/// Return the Brig binary
-	BrigFile *getBinary() const { return binary.get(); }
+	/// Determine if the HSA program loader has loaded a program.
+	static bool isLoaded();
 
-	/// Return the pointer to the main function
-	Function *getMainFunction() const;
-
-	/// Return the pointer to the function by the name
-	Function *getFunction(const std::string &name) const;
+	/// Load binary
+	void LoadBinary();
 
 	/// Return pointer to file table
 	comm::FileTable *getFileTable() const { return file_table.get(); };

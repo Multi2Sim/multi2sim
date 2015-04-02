@@ -100,11 +100,11 @@ bool Component::Execute()
 
 void Component::LaunchGrid(AQLDispatchPacket *packet)
 {
-	// Create grid
-	auto grid = misc::new_unique<Grid>(this, packet);
-
 	// Dump debug information
 	Emu::aql_debug << "Packet dispatched: \n" << *packet;
+
+	// Create grid
+	auto grid = misc::new_unique<Grid>(this, packet);
 	Emu::aql_debug << "Grid formed and launched: \n";
 	if (Emu::aql_debug)
 		grid->Dump(Emu::aql_debug);
