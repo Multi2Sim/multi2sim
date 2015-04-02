@@ -34,12 +34,19 @@ namespace HSA
 {
 
 class StackFrame;
+class HsaExecutable;
 
 /// A function encapsulates information about a HSAIL function
 class Function
 {
 	// name of the function
 	std::string name;
+
+	// The executable that this function belongs to
+	HsaExecutable *executable;
+
+	// The module that this function belongs to
+	BrigFile *binary;
 
 	// The first code entry in the function
 	std::unique_ptr<BrigCodeEntry> first_entry;
@@ -172,6 +179,30 @@ public:
 	{
 		function.Dump(os);
 		return os;
+	}
+
+	/// Set executable
+	void setExecutable(HsaExecutable *executable)
+	{
+		this->executable = executable;
+	}
+
+	/// Get executable
+	HsaExecutable *getExecutable()
+	{
+		return executable;;
+	}
+
+	/// Set executable
+	void setModule(BrigFile *binary)
+	{
+		this->binary = binary;
+	}
+
+	/// Get executable
+	BrigFile *getModule()
+	{
+		return binary;
 	}
 
 };

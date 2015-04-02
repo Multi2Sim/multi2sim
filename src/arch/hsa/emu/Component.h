@@ -74,10 +74,12 @@ public:
 	};
 
 	/// Create and return a standard virtual CPU device
-	static std::unique_ptr<Component> getDefaultCPUComponent(unsigned long long handler);
+	static std::unique_ptr<Component> getDefaultCPUComponent(
+			unsigned long long handler);
 
 	/// Create and return a standard virtual GPU device
-	static std::unique_ptr<Component> getDefaultGPUComponent(unsigned long long handler);
+	static std::unique_ptr<Component> getDefaultGPUComponent(
+			unsigned long long handler);
 
 	/// Insert a queue into the queue list
 	void addQueue(std::unique_ptr<AQLQueue> queue);

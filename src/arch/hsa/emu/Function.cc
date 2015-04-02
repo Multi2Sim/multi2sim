@@ -41,7 +41,6 @@ Function::Function(const std::string& name) :
 
 std::unique_ptr<BrigCodeEntry> Function::getFirstEntry() const
 {
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	if(first_entry.get())
 	{
 		return binary->getCodeEntryByOffset(first_entry->getOffset());
@@ -52,7 +51,6 @@ std::unique_ptr<BrigCodeEntry> Function::getFirstEntry() const
 
 std::unique_ptr<BrigCodeEntry> Function::getLastEntry() const
 {
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	if(last_entry.get())
 	{
 		return binary->getCodeEntryByOffset(last_entry->getOffset());

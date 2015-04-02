@@ -252,6 +252,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 		unsigned long long data_address,
 		unsigned args_ptr)
 {
+	/*
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	auto function_dir = binary->getCodeEntryByOffset(callback_address);
@@ -302,6 +303,7 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(std::move(stack_frame));
+	*/
 }
 
 
@@ -1206,7 +1208,7 @@ int Driver::CallProgramFinalize(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("code_object: 0x%016llx,\n", code_object);
 
 	// Create an new code object from the program
-	HsaCodeObject *new_code_object = new HsaCodeObject(*(HsaProgram *)program);
+	HsaProgram *new_code_object = new HsaProgram(*(HsaProgram *)program);
 
 	// Write back
 	char *buffer = memory->getBuffer(code_object, 8, mem::Memory::AccessWrite);
@@ -1274,6 +1276,94 @@ int Driver::CallExecutableLoadCodeObject(mem::Memory *memory, unsigned args_ptr)
 
 	// Create executable
 	((HsaExecutable *)executable)->LoadCodeObject((HsaCodeObject *)code_object);
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+	return 0;
+}
+
+
+int Driver::CallExecutableGetSymbol(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments 		| Offset	| Size
+	// hsa_status_t		| 0 		| 4
+	// executable		| 4		| 8
+	// module_name		| 12		| 8
+	// symbol_name		| 20		| 8
+	// agent 		| 28		| 8
+	// call_convention	| 36		| 4
+	// symbol 		| 40		| 8
+
+	// Retrieve data
+	unsigned long long executable = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned long long symbol_name = getArgumentValue<unsigned long long>
+			(20, memory, args_ptr);
+	unsigned long long symbol = getArgumentValue<unsigned long long>
+			(40, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("executable: 0x%016llx, \n", executable);
+	debug << misc::fmt("symbol_name: 0x%016llx, \n", symbol_name);
+	debug << misc::fmt("symbol: 0x%016llx, \n", symbol);
+
+	// Get the symbol object
+	HsaExecutable *exe = (HsaExecutable *)executable;
+	char *symbol_name_str = memory->getBuffer(symbol_name, 1,
+			mem::Memory::AccessRead);
+	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str);
+//	std::cout << misc::fmt("executable symbol address 0x%016llx\n",
+//			(unsigned long long)exe_sym);
+
+	// Write back
+	char *buffer = memory->getBuffer(symbol, 8, mem::Memory::AccessRead);
+	*(unsigned long long *)buffer = (unsigned long long)exe_sym;
+
+	// Return success
+	setArgumentValue<unsigned int>(
+				HSA_STATUS_SUCCESS, 0,
+				memory, args_ptr);
+
+	return 0;
+}
+
+
+int Driver::CallExecutableSymbolGetInfo(mem::Memory *memory, unsigned args_ptr)
+{
+	// Arguments 		| Offset	| Size
+	// hsa_status_t		| 0 		| 4
+	// executable_symbol	| 4		| 8
+	// attribute		| 12		| 4
+	// value		| 16		| 8
+
+	// Retrieve data
+	unsigned long long executable_symbol = getArgumentValue
+			<unsigned long long>(4, memory, args_ptr);
+	unsigned int attribute = getArgumentValue<unsigned int>
+			(12, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+			(16, memory, args_ptr);
+
+	// Print debug information
+	debug << misc::fmt("executable_symbol: 0x%016llx, \n", executable_symbol);
+	debug << misc::fmt("attribute: %d, \n", attribute);
+	debug << misc::fmt("value: 0x%016llx, \n", value);
+
+	// Dispatch by attribute
+	switch (attribute)
+	{
+	case HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT:
+	{
+		char *buffer = memory->getBuffer(value, 8, mem::Memory::AccessRead);
+		*((unsigned long long *)buffer) = executable_symbol;
+		break;
+	}
+	default:
+		throw misc::Panic("Unsupported kernel object attribute.\n");
+	}
 
 	// Return success
 	setArgumentValue<unsigned int>(

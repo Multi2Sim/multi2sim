@@ -25,6 +25,7 @@
 #include <arch/hsa/asm/AsmService.h>
 
 #include "Driver.h"
+#include "HsaExecutable.h"
 
 namespace HSA
 {
@@ -241,7 +242,7 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 	// BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get the function object
-	Function *function = ProgramLoader::getInstance()
+	Function *function = stack_top->getFunction()->getExecutable()
 			->getFunction(function_name);
 
 	// Allocate memory for arguments
@@ -323,4 +324,4 @@ Driver::~Driver()
 {
 }
 
-} /* namespace HSA */
+}  // namespace HSA

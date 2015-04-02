@@ -40,6 +40,7 @@ namespace HSA
 class Emu;
 class WorkGroup;
 class ProgramLoader;
+class HsaExecutable;
 
 /// List of HSA opcode
 enum InstOpcode
@@ -57,7 +58,7 @@ class WorkItem
 {
 public: 
 	
-	/// Stuatus of the work item
+	/// Status of the work item
 	enum WorkItemStatus
 	{
 		WorkItemStatusActive = 0,
@@ -72,8 +73,8 @@ private:
  	// Loader object
  	ProgramLoader *loader;
 
- 	// Binary file
- 	BrigFile *binary;
+ 	// Executable
+ 	HsaExecutable *executable;
 
  	// Work group that current work item belongs to
  	WorkGroup *work_group;
