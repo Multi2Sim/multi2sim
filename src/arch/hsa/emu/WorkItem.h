@@ -70,9 +70,6 @@ private:
  	// Emulator that is belongs to 
  	Emu *emu;
 
- 	// Loader object
- 	ProgramLoader *loader;
-
  	// Executable
  	HsaExecutable *executable;
 
