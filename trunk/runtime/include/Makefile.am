@@ -10,5 +10,6 @@ EXTRA_DIST = \
 	GL/glu.h \
 	GL/glut.h \
 	\
-	hsa.h
+	hsa.h \
+	has_ext_finalize.h
 

@@ -56,6 +56,7 @@ DEFINST(bound_r16_rm32, 0x62, SKIP, SKIP, REG, SKIP, X86InstPrefixOp)
 DEFINST(bound_r32_rm64, 0x62, SKIP, SKIP, REG, SKIP, X86InstPrefixOp)
 
 DEFINST(bsf_r32_rm32, 0x0f, 0xbc, SKIP, REG, SKIP, 0)
+DEFINST(tzcnt_r32_rm32, 0x0f, 0xbc, SKIP, REG, SKIP, X86InstPrefixRep)
 
 DEFINST(bsr_r32_rm32, 0x0f, 0xbd, SKIP, REG, SKIP, 0)
 
