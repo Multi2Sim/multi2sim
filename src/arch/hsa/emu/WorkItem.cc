@@ -35,7 +35,6 @@ WorkItem::WorkItem(WorkGroup *work_group,
 {
 	// Set global emulator object
 	emu = Emu::getInstance();
-	loader = ProgramLoader::getInstance();
 	executable = root_function->getExecutable();
 
 	// Set work group
@@ -58,10 +57,12 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
-	if (Emu::isa_debug)
-	{
-		frame->Dump(Emu::isa_debug);
-		Emu::isa_debug << "\n";
+	if (getAbsoluteFlattenedId() == 0) {
+		if (Emu::isa_debug)
+		{
+			frame->Dump(Emu::isa_debug);
+			Emu::isa_debug << "\n";
+		}
 	}
 
 }
@@ -123,11 +124,13 @@ bool WorkItem::ReturnFunction()
 {
 	// Dump stack frame information
 	StackFrame *callee_frame = stack.back().get();
-	if (Emu::isa_debug)
-	{
-		Emu::isa_debug << "Callee_frame: \n";
-		callee_frame->Dump(Emu::isa_debug);
-		Emu::isa_debug << "\n";
+	if (getAbsoluteFlattenedId() == 0) {
+		if (Emu::isa_debug)
+		{
+			Emu::isa_debug << "Callee_frame: \n";
+			callee_frame->Dump(Emu::isa_debug);
+			Emu::isa_debug << "\n";
+		}
 	}
 
 	// Check if this frame have a call back function when it return
@@ -151,11 +154,13 @@ bool WorkItem::ReturnFunction()
 		BrigCodeEntry *inst = caller_frame->getPc();
 		function->PassBackByValue(caller_frame, callee_frame, inst);
 
-		if (Emu::isa_debug)
-		{
-			Emu::isa_debug << "Caller frame \n";
-			caller_frame->Dump(Emu::isa_debug);
-			Emu::isa_debug << "\n";
+		if (getAbsoluteFlattenedId() == 0) {
+			if (Emu::isa_debug)
+			{
+				Emu::isa_debug << "Caller frame \n";
+				caller_frame->Dump(Emu::isa_debug);
+				Emu::isa_debug << "\n";
+			}
 		}
 
 	}
@@ -245,8 +250,10 @@ void WorkItem::ExecuteDirective()
 		stack_top->StartArgumentScope(size);
 
 		// Log into debug isa
-		Emu::isa_debug << misc::fmt("Argument scope created "
-				"(size %d)\n", size);
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("Argument scope created "
+					"(size %d)\n", size);
+		}
 
 		break;
 	}
@@ -394,8 +401,10 @@ void WorkItem::DeclearVariable()
 		unsigned long long dim = dir->getDim();
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, nullptr);
-		Emu::isa_debug << misc::fmt("Declaring variable %s with "
-				"size %d[%lld]\n", name.c_str(), size, dim);
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("Declaring variable %s with "
+					"size %d[%lld]\n", name.c_str(), size, dim);
+		}
 		break;
 	}
 
@@ -407,9 +416,11 @@ void WorkItem::DeclearVariable()
 		unsigned long long dim = dir->getDim();
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s with "
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("Declaring variable %s with "
 						"size %d[%lld]\n", name.c_str(),
 						size, dim);
+		}
 		break;
 	}
 
@@ -421,8 +432,10 @@ void WorkItem::DeclearVariable()
 		unsigned long long dim = dir->getDim();
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s with "
-				"size %d[%lld]\n", name.c_str(), size, dim);
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("Declaring variable %s with "
+					"size %d[%lld]\n", name.c_str(), size, dim);
+		}
 		break;
 	}
 
@@ -461,8 +474,10 @@ void WorkItem::DeclearVariable()
 
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dir->getDim(), arg_segment);
-		Emu::isa_debug << misc::fmt("Declaring variable %s width"
-				" size %d\n", name.c_str(), size);
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("Declaring variable %s width"
+					" size %d\n", name.c_str(), size);
+		}
 		break;
 	}
 
@@ -471,10 +486,11 @@ void WorkItem::DeclearVariable()
 		throw misc::Panic("Unsupported segment.");
 		break;
 	}
-
-	Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
-			AsmService::TypeToString(dir->getType()).c_str(),
-			name.c_str(), size);
+	if (getAbsoluteFlattenedId() == 0) {
+		Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
+				AsmService::TypeToString(dir->getType()).c_str(),
+				name.c_str(), size);
+	}
 }
 
 
@@ -496,10 +512,12 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		Emu::isa_debug << misc::fmt("WorkItem: %d\n",
-				getAbsoluteFlattenedId());
-		Emu::isa_debug << "Executing: ";
-		Emu::isa_debug << *inst;
+		if (getAbsoluteFlattenedId() == 0) {
+			Emu::isa_debug << misc::fmt("WorkItem: %d\n",
+					getAbsoluteFlattenedId());
+			Emu::isa_debug << "Executing: ";
+			Emu::isa_debug << *inst;
+		}
 
 		// Get the function according to the opcode and perform the inst
 		BrigOpcode opcode = inst->getOpcode();
@@ -519,9 +537,11 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (Emu::isa_debug)
-			stack_top->Dump(Emu::isa_debug);
-		Emu::isa_debug << "\n";
+		if (getAbsoluteFlattenedId() == 0) {
+			if (Emu::isa_debug)
+				stack_top->Dump(Emu::isa_debug);
+			Emu::isa_debug << "\n";
+		}
 
 	}
 	else if (inst && !inst->isInstruction())

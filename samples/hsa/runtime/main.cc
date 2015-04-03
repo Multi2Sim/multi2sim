@@ -143,14 +143,15 @@ int main()
 	unsigned long long printf_buffer = 0;
 	unsigned long long vqueue_pointer = 0;
 	unsigned long long aqlwrap_pointer = 0;
-	float input[128];
-	float output[128];
-	float coeff[3];
-	unsigned int numTap = 3;
+	float input[1024];
+	float output[1024];
+	float coeff[4];
+	unsigned int numTap = 4;
 	coeff[0] = 1;
 	coeff[1] = 2;
 	coeff[2] = 3;
-	for (int i = 0; i < 128; i++)
+	coeff[3] = 4;
+	for (int i = 0; i < 1024; i++)
 	{
 		input[i] = i;
 	}
@@ -162,9 +163,12 @@ int main()
 	memcpy(args + 6, &printf_buffer, 8);
 	memcpy(args + 8, &vqueue_pointer, 8);
 	memcpy(args + 10, &aqlwrap_pointer, 8);
-	memcpy(args + 12, &output, 4);
-	memcpy(args + 14, &coeff, 4);
-	memcpy(args + 16, &input, 4);
+	args[12] = (unsigned)output;
+	args[14] = (unsigned)coeff;
+	args[16] = (unsigned)input;
+	//memcpy(args + 12, &output, 4);
+	//memcpy(args + 14, &coeff, 4);
+//	memcpy(args + 16, &input, 4);
 	memcpy(args + 18, &numTap, 4);
 
 	
@@ -192,7 +196,9 @@ int main()
 	packet->private_segment_size = 100;
 	packet->group_segment_size = 1000;
 	packet->kernel_object_address = kernel_object;
-	packet->kernarg_address = (unsigned long long)args;	
+	packet->kernarg_address = (unsigned)args;
+	//memcpy(&(packet->kernarg_address), &args, 4);
+	printf("Kernal args: %p, packet->kernarg_address: 0x%016llx\n", args, packet->kernarg_address);
 	packet->completion_signal = 0;
 
 	// Release the packet
@@ -205,6 +211,12 @@ int main()
 	{
 		if (packet->completion_signal == 1) break;
 	}
+
+	for (int i = 0; i < 1024; i++)
+	{
+		printf("%f\n", output[i]);
+	}
+
 
 	return 1;
 
