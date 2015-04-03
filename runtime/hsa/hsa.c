@@ -95,7 +95,9 @@ hsa_status_t HSA_API hsa_iterate_agents(
 		ioctl(hsa_runtime->fd, NextAgent, agent_ids);
 		if (agent_ids[0] != 0)
 		{
-			callback(agent_ids[0], data);
+			hsa_agent_t curr_agent;
+			curr_agent.handle = agent_ids[0];
+			callback(curr_agent, data);
 			agent_ids[1] = agent_ids[0];
 		}
 	}
@@ -124,10 +126,12 @@ hsa_status_t HSA_API hsa_agent_get_info(hsa_agent_t agent,
 }
 
 
-hsa_status_t HSA_API hsa_queue_create(hsa_agent_t agent,
-		size_t size, hsa_queue_type_t type,
-		void (*callback)(hsa_status_t status, hsa_queue_t *queue),
-		const hsa_queue_t *service_queue, hsa_queue_t **queue)
+hsa_status_t HSA_API hsa_queue_create(
+		hsa_agent_t agent, uint32_t size, hsa_queue_type_t type,
+		void (*callback)(hsa_status_t status, hsa_queue_t *source,
+				void *data),
+		void *data, uint32_t private_segment_size,
+		uint32_t group_segment_size, hsa_queue_t **queue)
 {
 	// Set arguments
 	char args[56] = {0};
@@ -135,11 +139,12 @@ hsa_status_t HSA_API hsa_queue_create(hsa_agent_t agent,
 	memcpy(args + 12, &size, 4);
 	memcpy(args + 16, &type, 4);
 	memcpy(args + 20, &callback, 4);
-	//printf("callback %d\n", (unsigned)callback);
-	memcpy(args + 28, &service_queue, 4);
-	memcpy(args + 36, &queue, 4);
+	memcpy(args + 28, &data, 4);
+	memcpy(args + 36, &private_segment_size, 4);
+	memcpy(args + 40, &group_segment_size, 4);
+	memcpy(args + 44, &queue, 4);
 	unsigned int host_lang = 1;
-	memcpy(args+44, &host_lang, 4);
+	memcpy(args + 52, &host_lang, 4);
 
 	if (!hsa_runtime)
 	{
@@ -153,7 +158,7 @@ hsa_status_t HSA_API hsa_queue_create(hsa_agent_t agent,
 }
 
 
-uint64_t HSA_API hsa_queue_load_read_index_relaxed(hsa_queue_t *queue)
+uint64_t HSA_API hsa_queue_load_read_index_relaxed(const hsa_queue_t *queue)
 {
 	unsigned long long args[2] = {0};
 	memcpy(args + 1, &queue, 4);
@@ -162,7 +167,7 @@ uint64_t HSA_API hsa_queue_load_read_index_relaxed(hsa_queue_t *queue)
 }
 
 
-uint64_t HSA_API hsa_queue_load_write_index_relaxed(hsa_queue_t *queue)
+uint64_t HSA_API hsa_queue_load_write_index_relaxed(const hsa_queue_t *queue)
 {
 	unsigned long long args[2] = {0};
 	memcpy(args + 1, &queue, 4);
@@ -172,7 +177,7 @@ uint64_t HSA_API hsa_queue_load_write_index_relaxed(hsa_queue_t *queue)
 
 
 uint64_t HSA_API hsa_queue_add_write_index_relaxed(
-		hsa_queue_t *queue, uint64_t value)
+		const hsa_queue_t *queue, uint64_t value)
 {
 	unsigned long long args[3] = {0};
 	memcpy(args + 1, &queue, 4);

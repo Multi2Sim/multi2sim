@@ -149,12 +149,13 @@ int main()
 	float coeff[4];
 	unsigned int numTap = 4;
 	coeff[0] = 1;
-	coeff[1] = 2;
-	coeff[2] = 3;
-	coeff[3] = 4;
+	coeff[1] = 1;
+	coeff[2] = 1;
+	coeff[3] = 1;
 	for (int i = 0; i < 1024; i++)
 	{
-		input[i] = i;
+		input[i] = 1;
+		printf("%f\n", input[i]);
 	}
 
 	unsigned int args[19] = {0};
@@ -188,7 +189,7 @@ int main()
 	hsa_dispatch_packet_s *packet = (hsa_dispatch_packet_s *)base_address + write_index;
 	memset(packet, 0, sizeof(hsa_dispatch_packet_s));
 	packet->dimensions = 1;
-	packet->workgroup_size_x = 256;
+	packet->workgroup_size_x = 201;
 	packet->workgroup_size_y = 1;
 	packet->workgroup_size_z = 1;
 	packet->grid_size_x = 1024;
@@ -213,13 +214,10 @@ int main()
 		if (packet->completion_signal == 1) break;
 	}
 
-	std::cout << output[0];
-	/*
 	for (int i = 0; i < 1024; i++)
 	{
-		printf("%f", output[i]);
+		printf("%f\n", output[i]);
 	}
-	*/
 
 
 	return 1;
