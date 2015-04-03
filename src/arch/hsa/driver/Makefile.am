@@ -16,6 +16,9 @@ libdriver_a_SOURCES = \
 		HsaProgram.h \
 		HsaProgram.cc \
 		\
+		HsaExecutableSymbol.h \
+		HsaExecutableSymbol.cc \
+		\
 		runtime.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@

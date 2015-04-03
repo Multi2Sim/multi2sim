@@ -2,6 +2,7 @@
 #include <string.h>
 #include <cstdio>
 #include <cstdlib>
+#include <iostream>
 
 hsa_status_t iterate_agent_callback(hsa_agent_t agent, void *data)
 {
@@ -212,10 +213,13 @@ int main()
 		if (packet->completion_signal == 1) break;
 	}
 
+	std::cout << output[0];
+	/*
 	for (int i = 0; i < 1024; i++)
 	{
-		printf("%f\n", output[i]);
+		printf("%f", output[i]);
 	}
+	*/
 
 
 	return 1;
