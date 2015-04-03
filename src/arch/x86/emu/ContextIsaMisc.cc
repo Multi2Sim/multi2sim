@@ -75,8 +75,7 @@ void Context::ExecuteInst_bsf_r32_rm32()
 	newUInst(UInstShift, UInstDepRm32, 0, 0, UInstDepR32, UInstDepZps, 0, 0);
 }
 
-/*
-void Context::ExecuteInst_rep_bsf_r32_rm32()
+void Context::ExecuteInst_tzcnt_r32_rm32()
 {
 	unsigned int r32 = LoadR32();
 	unsigned int rm32 = LoadRm32();
@@ -87,7 +86,7 @@ void Context::ExecuteInst_rep_bsf_r32_rm32()
 		"push %4\n\t"
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
-		"rep bsf %3, %%eax\n\t"
+		"tzcnt %3, %%eax\n\t"
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
@@ -102,7 +101,6 @@ void Context::ExecuteInst_rep_bsf_r32_rm32()
 
 	newUInst(UInstShift, UInstDepRm32, 0, 0, UInstDepR32, UInstDepZps, 0, 0);
 }
-*/
 
 
 void Context::ExecuteInst_bsr_r32_rm32()

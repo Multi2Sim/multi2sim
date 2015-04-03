@@ -1,5 +1,4 @@
-/*
- *  Multi2Sim
+/*  Multi2Sim
  *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -72,6 +71,36 @@ void x86_isa_bsf_r32_rm32_impl(X86Context *ctx)
 		"popf\n\t"
 		"mov %2, %%eax\n\t"
 		"bsf %3, %%eax\n\t"
+		"mov %%eax, %1\n\t"
+		"pushf\n\t"
+		"pop %0\n\t"
+		: "=g" (flags), "=g" (r32)
+		: "g" (r32), "g" (rm32), "g" (flags)
+		: "eax"
+	);
+	__X86_ISA_ASM_END__
+
+	X86ContextStoreR32(ctx, r32);
+	regs->eflags = flags;
+
+	x86_uinst_new(ctx, x86_uinst_shift, x86_dep_rm32, 0, 0, x86_dep_r32, x86_dep_zps, 0, 0);
+}
+
+
+void x86_isa_tzcnt_r32_rm32_impl(X86Context *ctx)
+{
+	struct x86_regs_t *regs = ctx->regs;
+
+	unsigned int r32 = X86ContextLoadR32(ctx);
+	unsigned int rm32 = X86ContextLoadRm32(ctx);
+	unsigned long flags = regs->eflags;
+
+	__X86_ISA_ASM_START__
+	asm volatile (
+		"push %4\n\t"
+		"popf\n\t"
+		"mov %2, %%eax\n\t"
+		"tzcnt %3, %%eax\n\t"
 		"mov %%eax, %1\n\t"
 		"pushf\n\t"
 		"pop %0\n\t"
