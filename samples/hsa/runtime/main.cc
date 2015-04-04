@@ -1,14 +1,16 @@
-#include <hsa.h>
 #include <string.h>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
+#include <hsa.h>
+#include <hsa_ext_finalize.h>
+
 hsa_status_t iterate_agent_callback(hsa_agent_t agent, void *data)
 {
 	printf("----- HSA Agent -----\n");
 
-	printf("Agent Id: %lld\n", (unsigned long long)agent);
+	printf("Agent Id: %lld\n", agent.handle);
 
 	// Agent name and vendor name
 	char buf[64];
@@ -28,7 +30,7 @@ hsa_status_t iterate_agent_callback(hsa_agent_t agent, void *data)
 		break;
 	case 1:
 		printf("GPU\n");
-		*(unsigned long long *)data = agent;
+		*(unsigned long long *)data = agent.handle;
 		break;
 	case 2:
 		printf("DSP\n");
@@ -73,11 +75,19 @@ int main()
 	printf("\n----- HSA Devices -----\n");
 	hsa_iterate_agents(&iterate_agent_callback, &kernel_agent);
 	printf("----- --- ------- -----\n\n");
-	printf("Device selected %lld.\n", kernel_agent);
+	printf("Device selected %lld.\n", kernel_agent.handle);
 
 	// Create queue
 	hsa_queue_t *queue;
-	hsa_queue_create(kernel_agent, 4, HSA_QUEUE_TYPE_SINGLE, NULL, NULL, &queue);
+	hsa_queue_create(
+		kernel_agent, 
+		4, 
+		HSA_QUEUE_TYPE_SINGLE, 
+		NULL, 
+		NULL, 
+		10000, 
+		100000,
+		&queue);
 
 	// Create HSA program
 	char binary[] = "fir_Kernels.brig";
@@ -180,15 +190,16 @@ int main()
 	unsigned long long base_address;
 	read_index = hsa_queue_load_read_index_relaxed(queue);
 	write_index = hsa_queue_load_write_index_relaxed(queue);
-	base_address = queue->base_address;
+	base_address = (unsigned long long)queue->base_address;
 	printf("Read Index: %lld\n", read_index);
 	printf("Write Index: %lld\n", write_index);
-	printf("Base address %lld\n", base_address);
+	printf("Base address 0x%016llx\n", base_address);
 
 	// Create packet
-	hsa_dispatch_packet_s *packet = (hsa_dispatch_packet_s *)base_address + write_index;
-	memset(packet, 0, sizeof(hsa_dispatch_packet_s));
-	packet->dimensions = 1;
+	hsa_kernel_dispatch_packet_t *packet = 
+		(hsa_kernel_dispatch_packet_t *)base_address + write_index;
+	memset(packet, 0, sizeof(hsa_kernel_dispatch_packet_t));
+	packet->setup = 1;
 	packet->workgroup_size_x = 201;
 	packet->workgroup_size_y = 1;
 	packet->workgroup_size_z = 1;
@@ -197,21 +208,21 @@ int main()
 	packet->grid_size_z = 1;
 	packet->private_segment_size = 100;
 	packet->group_segment_size = 1000;
-	packet->kernel_object_address = kernel_object;
-	packet->kernarg_address = (unsigned)args;
+	packet->kernel_object = kernel_object;
+	packet->kernarg_address = args;
 	//memcpy(&(packet->kernarg_address), &args, 4);
-	printf("Kernal args: %p, packet->kernarg_address: 0x%016llx\n", args, packet->kernarg_address);
-	packet->completion_signal = 0;
+	printf("Kernal args: %p, packet->kernarg_address: %p\n", args, packet->kernarg_address);
+	packet->completion_signal.handle = 0;
 
 	// Release the packet
 	*(unsigned int *)packet = 2;
-	queue->doorbell_signal = (unsigned long long)packet;
-	hsa_queue_add_write_index_relaxed(queue, sizeof(hsa_dispatch_packet_s));
+	queue->doorbell_signal.handle = (unsigned long long)packet;
+	hsa_queue_add_write_index_relaxed(queue, sizeof(hsa_kernel_dispatch_packet_t));
 
 	// Wait the kernel execution finish
 	while(1)
 	{
-		if (packet->completion_signal == 1) break;
+		if (packet->completion_signal.handle == 1) break;
 	}
 
 	for (int i = 0; i < 1024; i++)

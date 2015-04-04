@@ -134,7 +134,7 @@ hsa_status_t HSA_API hsa_queue_create(
 		uint32_t group_segment_size, hsa_queue_t **queue)
 {
 	// Set arguments
-	char args[56] = {0};
+	char args[64] = {0};
 	memcpy(args + 4, &agent, 8);
 	memcpy(args + 12, &size, 4);
 	memcpy(args + 16, &type, 4);
