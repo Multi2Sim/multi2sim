@@ -26,7 +26,8 @@
 #include <memory/Memory.h>
 
 #include "DriverCallbackInfo.h"
-#include "runtime.h"
+#include "../../../../runtime/include/hsa.h"
+#include "../../../../runtime/include/hsa_ext_finalize.h"
 
 namespace HSA
 {

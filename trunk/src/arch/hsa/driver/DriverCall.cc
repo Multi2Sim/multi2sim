@@ -358,39 +358,92 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	}
 
 	case HSA_AGENT_INFO_FEATURE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_FEATURE\n");
 		break;
+
+	case HSA_AGENT_INFO_MACHINE_MODEL:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_FEATURE\n");
+		break;
+
+	case HSA_AGENT_INFO_PROFILE:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_PROFILE\n");
+		break;
+
+	case HSA_AGENT_INFO_DEFAULT_FLOAT_ROUNDING_MODE:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_DEFAULT_FLOAT_ROUNDING_MODE\n");
+		break;
+
+	case HSA_AGENT_INFO_BASE_PROFILE_DEFAULT_FLOAT_ROUNDING_MODES:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_BASE_PROFILE_DEFAULT_FLOAT_ROUNDING_MODES\n");
+		break;
+
+	case HSA_AGENT_INFO_FAST_F16_OPERATION:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_FAST_F16_OPERATION\n");
+		break;
+
 	case HSA_AGENT_INFO_WAVEFRONT_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_WAVEFRONT_SIZE\n");
 		break;
+
 	case HSA_AGENT_INFO_WORKGROUP_MAX_DIM:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_WORKGROUP_MAX_DIM\n");
 		break;
+
 	case HSA_AGENT_INFO_WORKGROUP_MAX_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_WORKGROUP_MAX_SIZE\n");
 		break;
+
 	case HSA_AGENT_INFO_GRID_MAX_DIM:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_GRID_MAX_DIM\n");
 		break;
+
 	case HSA_AGENT_INFO_GRID_MAX_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_GRID_MAX_SIZE\n");
 		break;
+
 	case HSA_AGENT_INFO_FBARRIER_MAX_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_FBARRIER_MAX_SIZE\n");
 		break;
+
 	case HSA_AGENT_INFO_QUEUES_MAX:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_QUEUES_MAX\n");
 		break;
+
+	case HSA_AGENT_INFO_QUEUE_MIN_SIZE:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_QUEUE_MIN_SIZE\n");
+		break;
+
 	case HSA_AGENT_INFO_QUEUE_MAX_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_QUEUE_MAX_SIZE\n");
 		break;
+
 	case HSA_AGENT_INFO_QUEUE_TYPE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_QUEUE_TYPE\n");
 		break;
+
 	case HSA_AGENT_INFO_NODE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_NODE\n");
 		break;
+
 	case HSA_AGENT_INFO_DEVICE:
+
 		if (component->getDeivceType() == HSA_DEVICE_TYPE_GPU)
 		{
 			*value_ptr = 1;
@@ -400,33 +453,32 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 			*value_ptr = 0;
 		}
 		break;
+
 	case HSA_AGENT_INFO_CACHE_SIZE:
+
 		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_CACHE_SIZE\n");
 		break;
-	case HSA_EXT_AGENT_INFO_IMAGE1D_MAX_DIM:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE1D_MAX_DIM\n");
+
+	case HSA_AGENT_INFO_ISA:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_ISA\n");
 		break;
-	case HSA_EXT_AGENT_INFO_IMAGE2D_MAX_DIM:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE2D_MAX_DIM\n");
+
+	case HSA_AGENT_INFO_EXTENSIONS:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_EXTENSIONS\n");
 		break;
-	case HSA_EXT_AGENT_INFO_IMAGE3D_MAX_DIM:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE3D_MAX_DIM\n");
+
+	case HSA_AGENT_INFO_VERSION_MAJOR:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_VERSION_MAJOR\n");
 		break;
-	case HSA_EXT_AGENT_INFO_IMAGE_ARRAY_MAX_SIZE:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE_ARRAY_MAX_SIZE\n");
+
+	case HSA_AGENT_INFO_VERSION_MINOR:
+
+		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_VERSION_MINOR\n");
 		break;
-	case HSA_EXT_AGENT_INFO_IMAGE_RD_MAX:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE_RD_MAX\n");
-		break;
-	case HSA_EXT_AGENT_INFO_IMAGE_RDWR_MAX:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_IMAGE_RDWR_MAX\n");
-		break;
-	case HSA_EXT_AGENT_INFO_SAMPLER_MAX:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_SAMPLER_MAX\n");
-		break;
-	case HSA_AGENT_INFO_COUNT:
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_COUNT\n");
-		break;
+
 	default:
 		setArgumentValue<unsigned int>(
 				HSA_STATUS_ERROR_INVALID_ARGUMENT, 
@@ -450,10 +502,12 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	// size			| 12			| 4
 	// type			| 16			| 4
 	// callback		| 20			| 8
-	// service_queue	| 28			| 8
-	// queue		| 36			| 8
-	// host_lang		| 44			| 4
-	// work_item_ptr	| 48			| 8
+	// data			| 28			| 8
+	// private_segment_size | 36			| 4
+	// group_segment_size   | 40			| 4
+	// queue		| 44			| 8
+	// host_lang		| 52			| 4
+	// work_item_ptr	| 56			| 8
 
 	// Declare arguments as variables
 	unsigned long long agent = getArgumentValue<unsigned long long>
@@ -464,14 +518,14 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 			(16, memory, args_ptr);
 	unsigned long long callback = getArgumentValue<unsigned long long>
 			(20, memory, args_ptr);
-	unsigned long long service_queue = getArgumentValue<unsigned long long>
+	unsigned long long data = getArgumentValue<unsigned long long>
 			(28, memory, args_ptr);
 	unsigned long long queue = getArgumentValue<unsigned long long>
-			(36, memory, args_ptr);
-	unsigned int host_lang = getArgumentValue<unsigned int>
 			(44, memory, args_ptr);
+	unsigned int host_lang = getArgumentValue<unsigned int>
+			(52, memory, args_ptr);
 	unsigned long long work_item = getArgumentValue<unsigned long long>
-			(48, memory, args_ptr);
+			(56, memory, args_ptr);
 	
 	// Dump argument for debug purpose
 	debug << misc::fmt("\tStatus: %d, \n", getArgumentValue
@@ -480,7 +534,7 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("\tSize: %d, \n", size);
 	debug << misc::fmt("\tType: %d, \n", type);
 	debug << misc::fmt("\tCallback: 0x%016llx, \n", callback);
-	debug << misc::fmt("\tService queue: 0x%016llx, \n", service_queue);
+	debug << misc::fmt("\tData: 0x%016llx, \n", data);
 	debug << misc::fmt("\tQueue: 0x%016llx, \n", queue);
 	debug << misc::fmt("\tHost language: %d, \n", host_lang);
 	debug << misc::fmt("\tWork item address: 0x%016llx\n", work_item);
@@ -488,9 +542,6 @@ int Driver::CallQueueCreate(mem::Memory *memory, unsigned args_ptr)
 	// No support for callback and service queue yet
 	if (callback != 0)
 		throw misc::Panic("Call back in runtime function create \
-				queue is not supported");
-	if (service_queue != 0)
-		throw misc::Panic("Service queue in runtime function create \
 				queue is not supported");
 
 	// Retrieve component
