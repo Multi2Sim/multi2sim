@@ -8,7 +8,6 @@ libasm_a_SOURCES = \
 	inst.c \
 	inst.h \
 	\
-	Asm.dat \
 	Asm.cc \
 	Asm.h \
 	\
