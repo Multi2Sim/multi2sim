@@ -173,9 +173,9 @@ bool Emu::Run()
 
 	// Stop if any previous reason met
 	if (esim->hasFinished())
-		return true;
+		return false;
 
-	bool stillRunning = false;
+	bool active = true;
 
 
 
@@ -184,14 +184,14 @@ bool Emu::Run()
 	{
 		bool running = it->second->Execute();
 		if (running)
-			stillRunning = true;
+			active = true;
 	}
 
 	// Process list of suspended contexts
 	// ProcessEvents();
 		
 	// Still running;
-	return stillRunning;
+	return active;
 }
 
 
