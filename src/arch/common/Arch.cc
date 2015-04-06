@@ -72,7 +72,6 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 			if (!emu)
 				continue;
 
-
 			// Run
 			bool active = emu->Run();
 			arch->setActive(active);
