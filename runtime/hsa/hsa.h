@@ -23,7 +23,7 @@
 #include "../include/hsa.h"
 #include "../include/hsa_ext_finalize.h"
 
-/* Function code to pass as a first argument of a system call */
+// Function code to pass as a first argument of a system call
 enum hsa_abi_call_t
 {
 	hsa_abi_invalid,
@@ -43,5 +43,8 @@ struct hsa_runtime_t
 	// File descriptor to communicate with the hsa driver
 	int fd;
 };
+
+/// The global hsa runtime instance
+struct hsa_runtime_t *hsa_runtime;
 
 #endif /* RUNTIME_HSA_HSA_H_ */
