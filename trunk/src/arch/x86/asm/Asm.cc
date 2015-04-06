@@ -158,7 +158,7 @@ Asm::Asm()
 	info->imm = __imm; \
 	info->prefixes = __prefixes; \
 	info->fmt = #__name;
-#include "Asm.dat"
+#include "Inst.def"
 #undef DEFINST
 
 	// Initialize table of prefixes

@@ -164,7 +164,7 @@ void X86AsmCreate(X86Asm *self)
 	info->imm = __imm; \
 	info->prefixes = __prefixes; \
 	info->fmt = #__name;
-#include "Inst.def"
+#include "asm.dat"
 #undef DEFINST
 
 	/* Initialize table of prefixes */
