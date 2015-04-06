@@ -1,3 +1,3 @@
 all:
-	g++ -mno-sse -mno-bmi -O0 -m32 main.cc -o main -I/home/yifan/Documents/hsa/multi2sim/runtime/include -lm2s-hsa -L/home/yifan/Documents/hsa/multi2sim/lib/.libs --static
+	g++ -mno-sse -mno-bmi -O0 -m32 main.cc -o main -I../../runtime/include -lm2s-hsa -L../../lib/.libs --static
 

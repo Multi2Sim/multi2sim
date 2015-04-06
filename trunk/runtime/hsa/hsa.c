@@ -28,8 +28,6 @@
 #include "debug.h"
 #include "hsa.h"
 
-struct hsa_runtime_t *hsa_runtime;
-
 hsa_status_t HSA_API hsa_init()
 {
 	if (hsa_runtime == NULL)

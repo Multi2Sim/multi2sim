@@ -1,0 +1,43 @@
+/* Copyright 2014 HSA Foundation Inc.  All Rights Reserved.
+ *
+ * HSAF is granting you permission to use this software and documentation (if
+ * any) (collectively, the "Materials") pursuant to the terms and conditions
+ * of the Software License Agreement included with the Materials.  If you do
+ * not have a copy of the Software License Agreement, contact the  HSA Foundation for a copy.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE SOFTWARE.
+ */
+
+module &m:1:0:$full:$large:$default;
+
+decl prog function &abort()();
+
+prog kernel &__vector_copy_kernel(
+	kernarg_u64 %a,
+	kernarg_u64 %b)
+{
+@__vector_copy_kernel_entry:
+	// BB#0:                                // %entry
+	workitemabsid_u32	$s0, 0;
+	cvt_s64_s32	$d0, $s0;
+	shl_u64	$d0, $d0, 2;
+	ld_kernarg_align(8)_width(all)_u64	$d1, [%b];
+	add_u64	$d1, $d1, $d0;
+	ld_kernarg_align(8)_width(all)_u64	$d2, [%a];
+	add_u64	$d0, $d2, $d0;
+	ld_global_u32	$s0, [$d0];
+	st_global_u32	$s0, [$d1];
+	ret;
+};
