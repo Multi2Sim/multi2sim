@@ -108,25 +108,29 @@ Grid::~Grid()
 
 bool Grid::Execute()
 {
-	bool on_going = false;
-
-	for (auto it = workgroups.begin(); it != workgroups.end(); it++)
+	bool active = false;
+	auto it = workgroups.begin();
+	while (it != workgroups.end())
 	{
+
 		if (it->second->Execute())
 		{
-			//std::cout << "Executing work group: \n";
-			//it->second->Dump(std::cout);
-			on_going = true;
+			active = true;
+			it++;
+		}
+		else
+		{
+			it = workgroups.erase(it);
 		}
 	}
 
 	// Send completion signal when finished execution
-	if (!on_going)
+	if (!active)
 	{
 		packet->setCompletionSignal(1);
 	}
 
-	return on_going;
+	return active;
 }
 
 

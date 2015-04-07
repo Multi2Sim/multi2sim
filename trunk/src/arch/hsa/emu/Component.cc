@@ -69,12 +69,22 @@ void Component::addQueue(std::unique_ptr<AQLQueue> queue)
 
 bool Component::Execute()
 {
+	//std::cout << misc::fmt("Component %lld executing\n", this->getHandler());
 	// 1. Check if the tasks is being processed. If true, process it.
 	bool has_active_grid = false;
-	for(auto it = grids.begin(); it != grids.end(); it++)
+	auto it = grids.begin();
+	while (it != grids.end())
 	{
 		if ((*it)->Execute())
+		{
 			has_active_grid = true;
+			it++;
+		}
+		else
+		{
+			it = grids.erase(it);
+			std::cout << misc::fmt("Grid erase %d\n", grids.size());
+		}
 	}
 	if (has_active_grid)
 		return true;
