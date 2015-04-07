@@ -22,10 +22,10 @@
 namespace HSA
 {
 
-Wavefront::Wavefront(WorkGroup *work_group)
+Wavefront::Wavefront(unsigned int wavefront_id, WorkGroup *work_group) :
+		wavefront_id(wavefront_id),
+		work_group(work_group)
 {
-	this->work_group = work_group;
-
 }
 
 

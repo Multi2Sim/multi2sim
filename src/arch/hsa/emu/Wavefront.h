@@ -32,6 +32,8 @@ class WorkItem;
 
 class Wavefront
 {
+	// The wavefront_id
+	unsigned int wavefront_id;
 
 	// The work group it belongs to
 	WorkGroup *work_group;
@@ -43,7 +45,7 @@ class Wavefront
 public:
 
 	/// Constructor
-	Wavefront(WorkGroup *work_group);
+	Wavefront(unsigned int wavefront_id, WorkGroup *work_group);
 
 	/// Destructor
 	~Wavefront();

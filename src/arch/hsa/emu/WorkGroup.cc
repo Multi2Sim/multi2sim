@@ -42,16 +42,29 @@ WorkGroup::WorkGroup(Grid *grid,
 	group_segment.reset(new SegmentManager(memory, group_segment_size));
 }
 
+WorkGroup::~WorkGroup()
+{
+	std::cout << "Work group removed\n";
+}
+
 
 bool WorkGroup::Execute()
 {
-	bool on_going = false;
-	for (auto it = wavefronts.begin(); it != wavefronts.end(); it++)
+	bool active = false;
+	auto it = wavefronts.begin();
+	while (it != wavefronts.end())
 	{
 		if (it->second->Execute())
-			on_going = true;
+		{
+			active = true;
+			it++;
+		}
+		else
+		{
+			it = wavefronts.erase(it);
+		}
 	}
-	return on_going;
+	return active;
 }
 
 
@@ -107,15 +120,15 @@ void WorkGroup::addWorkItem(std::unique_ptr<WorkItem> work_item)
 	Wavefront *wavefront;
 	if (it == wavefronts.end())
 	{
-		wavefront = new Wavefront(this);
 		wavefronts.insert(std::make_pair(wavefront_id,
-				std::unique_ptr<Wavefront>(wavefront)));
+				misc::new_unique<Wavefront>(wavefront_id, this)
+				));
+		wavefront = wavefronts.at(wavefront_id).get();
 	}
 	else
 	{
 		wavefront = it->second.get();
 	}
-
 
 	// Insert the work item into the wave front
 	wavefront->addWorkItem(std::move(work_item));

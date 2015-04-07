@@ -175,9 +175,7 @@ bool Emu::Run()
 	if (esim->hasFinished())
 		return false;
 
-	bool active = true;
-
-
+	bool active = false;
 
 	// Let all components to execute their own task
 	for (auto it = components.begin(); it != components.end(); it++)
