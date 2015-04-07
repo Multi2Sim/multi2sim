@@ -73,6 +73,9 @@ public:
 			unsigned int group_id_y,
 			unsigned int group_id_z);
 
+	/// Destructor
+	~WorkGroup();
+
 	/// Execute each wavefront of the work group
 	///
 	/// \return

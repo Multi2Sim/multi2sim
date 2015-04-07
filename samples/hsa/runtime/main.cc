@@ -6,6 +6,8 @@
 #include <hsa.h>
 #include <hsa_ext_finalize.h>
 
+#define LENGTH 1024
+
 hsa_status_t iterate_agent_callback(hsa_agent_t agent, void *data)
 {
 	printf("----- HSA Agent -----\n");
@@ -154,17 +156,17 @@ int main()
 	unsigned long long printf_buffer = 0;
 	unsigned long long vqueue_pointer = 0;
 	unsigned long long aqlwrap_pointer = 0;
-	float input[1024];
-	float output[1024];
+	float input[LENGTH];
+	float output[LENGTH];
 	float coeff[4];
 	unsigned int numTap = 4;
-	coeff[0] = 1;
-	coeff[1] = 1;
-	coeff[2] = 1;
-	coeff[3] = 1;
-	for (int i = 0; i < 1024; i++)
+	coeff[0] = 0.1;
+	coeff[1] = 0.2;
+	coeff[2] = 0.3;
+	coeff[3] = 0.4;
+	for (int i = 0; i < LENGTH; i++)
 	{
-		input[i] = 1;
+		input[i] = (float)i / 100.0;
 		printf("%f\n", input[i]);
 	}
 
@@ -203,7 +205,7 @@ int main()
 	packet->workgroup_size_x = 201;
 	packet->workgroup_size_y = 1;
 	packet->workgroup_size_z = 1;
-	packet->grid_size_x = 1024;
+	packet->grid_size_x = LENGTH;
 	packet->grid_size_y = 1;
 	packet->grid_size_z = 1;
 	packet->private_segment_size = 100;
@@ -225,7 +227,7 @@ int main()
 		if (packet->completion_signal.handle == 1) break;
 	}
 
-	for (int i = 0; i < 1024; i++)
+	for (int i = 0; i < LENGTH; i++)
 	{
 		printf("%f\n", output[i]);
 	}
