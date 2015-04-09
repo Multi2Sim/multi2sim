@@ -13,7 +13,9 @@ libasm_a_SOURCES = \
 	\
 	Inst.cc \
 	Inst.def \
-	Inst.h
+	Inst.h \
+	\
+	asm.dat
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
