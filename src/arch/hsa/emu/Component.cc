@@ -83,7 +83,6 @@ bool Component::Execute()
 		else
 		{
 			it = grids.erase(it);
-			std::cout << misc::fmt("Grid erase %d\n", grids.size());
 		}
 	}
 	if (has_active_grid)
