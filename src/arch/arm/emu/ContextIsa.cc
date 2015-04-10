@@ -632,15 +632,13 @@ unsigned int Context::IsaGetAddrAmode2()
 
 unsigned int Context::IsaGetAddrAmode3Imm()
 {
-	unsigned int imm4l;
-	unsigned int imm4h;
-	unsigned int immd8;
 	int rn_val;
 	unsigned int ret_addr;
 
-	imm4l = inst.getBytes()->hfwrd_imm.imm_off_lo;
-	imm4h = inst.getBytes()->hfwrd_imm.imm_off_hi;
-	immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
+	// Obtain the immediate from the encoded instruction
+	unsigned int imm4l = inst.getBytes()->hfwrd_imm.imm_off_lo;
+	unsigned int imm4h = inst.getBytes()->hfwrd_imm.imm_off_hi;
+	unsigned int immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
 	emu->isa_debug << misc::fmt("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
 
 	if (inst.getBytes()->hfwrd_imm.idx_typ)
@@ -1852,6 +1850,20 @@ bool Context::IsaInvalidAddrLdr(unsigned int addr, unsigned int *value)
 		if(!page)
 		{
 			*(value) = 0x81cc4;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	else if (addr == 0x8fd74)
+	{
+		page = memory->getPage(addr);
+
+		if(!page)
+		{
+			*(value) = 0x85670;
 			return true;
 		}
 		else

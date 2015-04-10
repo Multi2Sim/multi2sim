@@ -413,7 +413,9 @@ void Context::Execute()
 		// Hard-coded structure for fault handle
 		if(fault_id == 0xffff0fe0)
 		{
+			//FIXME
 			regs.setRegister(0, 0x5bd4c0);
+			//regs.setRegister(0, 0x954c0);
 		}
 		else if(fault_id == 0xffff0fc0)
 		{
