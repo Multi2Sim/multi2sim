@@ -1567,7 +1567,18 @@ void Context::ExecuteInst_LDRH_ofim()
 
 void Context::ExecuteInst_LDRH_prim()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int addr;
+	int value;
+	void *buf;
+
+	if (IsaCheckCond())
+	{
+		buf = &value;
+		addr = IsaGetAddrAmode3Imm();
+		memory->Read(addr, 4, (char *)buf);
+		value = value & (0x0000ffff);
+		IsaRegStore(inst.getBytes()->hfwrd_imm.dst_rd, value);
+	}
 }
 
 void Context::ExecuteInst_LDRH_ofip()
@@ -2645,9 +2656,20 @@ void Context::ExecuteInst_STRB_ofim()
 	}
 }
 
+//STRB pre-index immediate minus
 void Context::ExecuteInst_STRB_prim()
 {
-	throw misc::Panic("Unimplemented instruction");
+	unsigned int addr;
+	void *buf = 0;
+	int value = 0;
+	if (IsaCheckCond())
+	{
+		buf = &value;
+		addr = IsaGetAddrAmode2();
+		IsaRegLoad(inst.getBytes()->sdtr.src_dst_rd, value);
+		value = value & (0x000000ff);
+		memory->Write(addr, 1, (char *)buf);
+	}
 }
 
 void Context::ExecuteInst_STRB_ofip()
