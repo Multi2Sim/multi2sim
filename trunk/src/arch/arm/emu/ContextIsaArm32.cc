@@ -146,7 +146,13 @@ void Context::ExecuteInst_RSB_reg()
 
 void Context::ExecuteInst_RSBS_reg()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int operand2;
+	if(IsaCheckCond())
+	{
+		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryReg);
+		IsaSubtractRev(inst.getBytes()->dpr.dst_reg,
+				inst.getBytes()->dpr.op1_reg, operand2, 0);
+	}
 }
 
 void Context::ExecuteInst_ADD_reg()
@@ -185,7 +191,14 @@ void Context::ExecuteInst_ADC_reg()
 
 void Context::ExecuteInst_ADCS_reg()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int operand2;
+	unsigned int carry = regs.getCPSR().C;
+	if(IsaCheckCond())
+	{
+		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryReg);
+		IsaAdd(inst.getBytes()->dpr.dst_reg, inst.getBytes()->dpr.op1_reg,
+				operand2, carry);
+	}
 }
 
 void Context::ExecuteInst_SBC_reg()
@@ -753,12 +766,30 @@ void Context::ExecuteInst_SBCS_imm()
 
 void Context::ExecuteInst_RSC_imm()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int operand2;
+	unsigned int carry;
+
+	carry = regs.getCPSR().C;
+	if(IsaCheckCond())
+	{
+		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryImmd);
+		IsaSubtractRev(inst.getBytes()->dpr.dst_reg, inst.getBytes()->dpr.op1_reg,
+				operand2, ~(carry));
+	}
 }
 
 void Context::ExecuteInst_RSCS_imm()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int operand2;
+	unsigned int carry;
+
+	carry = regs.getCPSR().C;
+	if(IsaCheckCond())
+	{
+		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryImmd);
+		IsaSubtractRev(inst.getBytes()->dpr.dst_reg, inst.getBytes()->dpr.op1_reg,
+				operand2, ~(carry));
+	}
 }
 
 void Context::ExecuteInst_TSTS_imm()

@@ -1475,13 +1475,13 @@ void Context::IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
 	if (!(inst.getBytes()->dpr.s_cond))
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emu->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
 		IsaRegStore(rd, rd_val);
 	}
 	else
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emu->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
 
 		operand2 = (-1 * (rn_val + op3));
 
