@@ -542,6 +542,18 @@ void Context::Execute()
 			regs.getCPSR().n, regs.getCPSR().v, regs.getCPSR().q,
 			regs.getCPSR().thumb, regs.getCPSR().C);
 	}
+
+	// For debug purpose
+	char *stack_value;
+	if (false)
+	{
+		emu->isa_debug << misc::fmt("Stack Dump\n");
+		for(unsigned int i = 0; i < 64; i = i + 4)
+		{
+			stack_value = memory->getBuffer(regs.getSP() + i, 4, mem::Memory::AccessRead);
+			emu->isa_debug << misc::fmt("[0x%x]: 0x%x\n", regs.getSP() + i, *((int *)stack_value));
+		}
+	}
 }
 
 
