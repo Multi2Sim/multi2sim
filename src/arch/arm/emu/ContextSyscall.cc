@@ -1166,6 +1166,26 @@ int Context::ExecuteSyscall_ARM_set_tls()
 }
 
 
+int Context::ExecuteSyscall_times()
+{
+	// Get the buffer address in the guest memory
+	unsigned int tms_buff = regs.getRegister(0);
+	emu->syscall_debug << misc::fmt("  buff address: 0x%x\n", tms_buff);
+
+	// Get the time value by using the host syscall
+	struct tms sim_tmsbuff;
+	clock_t ret =  times(&sim_tmsbuff);
+
+	// Write guest memory
+	memory->Write(tms_buff, 4, (char *)&(sim_tmsbuff.tms_utime));
+	memory->Write(tms_buff + 4, 4, (char *)&(sim_tmsbuff.tms_stime));
+	memory->Write(tms_buff + 8, 4, (char *)&(sim_tmsbuff.tms_cutime));
+	memory->Write(tms_buff + 12, 4, (char *)&(sim_tmsbuff.tms_cstime));
+
+	return (int)ret;
+}
+
+
 int Context::ExecuteSyscall_restart_syscall()
 {
 	__UNIMPLEMENTED__
@@ -1395,12 +1415,6 @@ int Context::ExecuteSyscall_dup()
 
 
 int Context::ExecuteSyscall_pipe()
-{
-	__UNIMPLEMENTED__
-}
-
-
-int Context::ExecuteSyscall_times()
 {
 	__UNIMPLEMENTED__
 }
