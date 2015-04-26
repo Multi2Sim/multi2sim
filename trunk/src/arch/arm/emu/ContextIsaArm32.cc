@@ -746,12 +746,20 @@ void Context::ExecuteInst_ADCS_imm()
 
 void Context::ExecuteInst_SBC_imm()
 {
-	throw misc::Panic("Unimplemented instruction");
+	int operand2;
+	unsigned int carry;
+
+	carry = regs.getCPSR().C;
+	if(IsaCheckCond())
+	{
+		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryImmd);
+		IsaSubtract(inst.getBytes()->dpr.dst_reg, inst.getBytes()->dpr.op1_reg,
+				operand2, ~(carry));
+	}
 }
 
 void Context::ExecuteInst_SBCS_imm()
 {
-
 	int operand2;
 	unsigned int carry;
 
@@ -1232,7 +1240,34 @@ void Context::ExecuteInst_UMULLS()
 
 void Context::ExecuteInst_UMLAL()
 {
-	throw misc::Panic("Unimplemented instruction");
+	// Decalre local variable
+	unsigned long long result;
+	int rm_val;
+	int rs_val;
+
+	// Sanity check
+	if (inst.getBytes()->mult.m_acc == 0)
+		throw misc::Panic("Instruction UMLAL decode error\n");
+
+	// Get Rn and Rm
+	IsaRegLoad(inst.getBytes()->mult_ln.op1_rs, rs_val);
+	IsaRegLoad(inst.getBytes()->mult.op0_rm, rm_val);
+	emu->isa_debug << misc::fmt("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
+
+	// Perform operation of instruction
+	unsigned int rs =(unsigned int)rs_val;
+	unsigned int rm =(unsigned int)rm_val;
+	unsigned long long result_hi = inst.getBytes()->mult_ln.dst_hi;
+	unsigned long long result_lo = inst.getBytes()->mult_ln.dst_lo;
+	result = result_hi << 32 | result_lo;
+	result += (unsigned long long)rm*rs;
+	emu->isa_debug << misc::fmt("  result = 0x%llx\n", result);
+
+	// Store result to Rd
+	unsigned int rdhi = (0xffffffff00000000 & result) >> 32;
+	unsigned int rdlo = 0x00000000ffffffff & result;
+	IsaRegStore(inst.getBytes()->mult_ln.dst_hi, rdhi);
+	IsaRegStore(inst.getBytes()->mult_ln.dst_lo, rdlo);
 }
 
 void Context::ExecuteInst_UMLALS()

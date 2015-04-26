@@ -405,23 +405,21 @@ void Context::Execute()
 		memory->setSafeDefault();
 
 	// Change the related register according to the fault ID
-	unsigned int fault_id = CheckFault();
-	if (fault_id != 0)
+	unsigned int helper_id = CheckKuserHelper();
+	if (helper_id != 0)
 	{
 		regs.setPC(regs.getLR() + 4);
 
-		// Hard-coded structure for fault handle
-		if(fault_id == 0xffff0fe0)
+		if(helper_id == 0xffff0fe0)
 		{
-			//FIXME
-			regs.setRegister(0, 0x5bd4c0);
-			//regs.setRegister(0, 0x954c0);
+			// Get TLS value
+			regs.setRegister(0, regs.getCP15().c13_tls3);
 		}
-		else if(fault_id == 0xffff0fc0)
+		else if(helper_id == 0xffff0fc0)
 		{
 			regs.setRegister(3, 0);
 		}
-		else if(fault_id == 0xffff0fa0)
+		else if(helper_id == 0xffff0fa0)
 		{
 
 		}
@@ -740,7 +738,7 @@ ContextMode Context::OperateMode(unsigned int addr)
 }
 
 
-unsigned int Context::CheckFault()
+unsigned int Context::CheckKuserHelper()
 {
 	//FIXME
 	unsigned int ret_val = 0;
@@ -749,7 +747,7 @@ unsigned int Context::CheckFault()
 	case 0xffff0fe0 + 4:
 
 		emu->isa_debug <<
-			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
+			misc::fmt("  TLS Helper handled\n Helper location : 0x%x\n pc restored at : 0x%x\n\n",
 				regs.getPC(), regs.getLR());
 		ret_val = 0xffff0fe0;
 		break;
