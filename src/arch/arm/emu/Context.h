@@ -702,8 +702,8 @@ public:
 	/// Return the context mode
 	ContextMode OperateMode(unsigned int addr);
 
-	/// Check fault
-	unsigned int CheckFault();
+	/// Check Kuser helper
+	unsigned int CheckKuserHelper();
 
 	/// Check whether the operating mode is Thumb 32
 	bool IsThumb32(const char *inst_ptr);
