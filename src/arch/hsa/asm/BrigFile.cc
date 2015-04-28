@@ -16,33 +16,31 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
+#include <cstring>
 
 #include <lib/cpp/Misc.h>
 
-#include "BrigDef.h"
-#include "BrigSection.h"
-#include "BrigDataEntry.h"
-#include "BrigCodeEntry.h"
-#include "BrigOperandEntry.h"
+#include "Brig.h"
 #include "BrigFile.h"
 
 namespace HSA
 {
 
-BrigFile::BrigFile(const std::string &path): 
-		file(path),
-		brig_sections()
+BrigFile::BrigFile(const std::string &path)
 {	
-	PrepareSections();
 }
 
-BrigFile::BrigFile(char *file, unsigned size):
-		file(file, size)
+
+BrigFile::BrigFile(char *file)
 {
-	PrepareSections();
+	// Check if the file is a BRIG file
+	if (!isBrigFile(file))
+	{
+		throw misc::Error("Not an valid BRIG file.");
+	}
 }
 
-
+/*
 void BrigFile::PrepareSections()
 {
 	for (int i = 0; i < file.getNumSections(); i++)
@@ -69,33 +67,17 @@ BrigSection *BrigFile::getBrigSection(BrigSectionType section_type) const
 {
 	return this->brig_sections[section_type].get();
 }
+*/
 
-
-bool BrigFile::isValid() const
+bool BrigFile::isBrigFile(char *file) const
 {
-	// If the section names match BRIG standard, it is considered to be
-	// a valid brig file
-	std::vector<std::string> secNames =
-	{
-		"hsa_data", 
-		"hsa_code",
-		"hsa_operand",
-	};
-
-	// Traverse all sections and compare the names
-	for(unsigned int i=1; i<secNames.size(); i++)
-	{
-		BrigSection *sec = this->brig_sections[i].get();
-		if(!(sec->getName() == secNames[i])) 
-		{
-			// section name does not match
-			return false;
-		}
-	}
-	return true;
+	BrigModuleHeader *header = (BrigModuleHeader *)file;
+	if (strcmp(header->identification, "HSA BRIG") == 0)
+		return true;
+	return false;
 }
 
-
+/*
 std::unique_ptr<BrigCodeEntry> BrigFile::getCodeEntryByOffset(
 		unsigned int offset) const
 {
@@ -135,7 +117,6 @@ std::unique_ptr<BrigOperandEntry> BrigFile::getOperandByOffset(
 }
 
 
-/*
 char *BrigFile::findMainFunction()
 {
 	// get pointers to code and dir section
