@@ -23,7 +23,7 @@
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 
-#include "BrigDef.h"
+#include "Brig.h"
 #include "BrigEntry.h"
 
 namespace HSA

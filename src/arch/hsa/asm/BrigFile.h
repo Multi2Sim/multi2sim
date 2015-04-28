@@ -31,28 +31,23 @@
 namespace HSA
 {
 
-class BrigCodeEntry;
-class BrigDataEntry;
-class BrigOperandEntry;
-class BrigSection;
-
 /// This class represents the ELF file defined by HSA standard, or called 
 /// BRIG format. It encapsulates the ELFReader class and provide unique 
 /// interfaces to the other parts of the Multi2sim.
 class BrigFile
 {
 	// The elf file, read by ELFReader
-	ELFReader::File file;
+	std::unique_ptr<char> buffer;
 
 	// A vector that holds 5 sections defined in BRIG standard;
 	// brigSections[0] - hsa_data
 	// brigSections[1] - hsa_code
 	// brigSections[2] - hsa_operand
 	// ... More costomized sections
-	std::vector<std::unique_ptr<BrigSection>> brig_sections;
+	// std::vector<std::unique_ptr<BrigSection>> brig_sections;
 
 	// Read the file and create sections
-	void PrepareSections();
+	// void PrepareSections();
 
 public:
 
@@ -60,45 +55,42 @@ public:
 	BrigFile(const std::string &path);
 
 	/// Loads a BRIG file from a memory block
-	BrigFile(char *file, unsigned size);
+	/// BrigFile(char *file, unsigned size);
+
+	/// Load the file from a chunk of memory
+	BrigFile(char *file);
 
 	/// Destructor
 	~BrigFile();
 
 	/// Returns the path to the BRIG file
-	const std::string &getPath() const { return file.getPath(); }
+	// const std::string &getPath() const { return file.getPath(); }
 
 	/// Returns the section according to the type value passed in
-	BrigSection *getBrigSection(BrigSectionType section_type) const;
+	// BrigSection *getBrigSection(BrigSectionType section_type) const;
 
-	/// Checks if the loaded brig file is a valid brig file
+	/// Checks if the loaded brig file is a brig file
+	///
 	/// \return
 	///	Returns \c true if the loaded file is valid
-	bool isValid() const;
+	///
+	bool isBrigFile(char *file) const;
 
 	/// Retrieve an entry in the code section
-	std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(
-			unsigned int offset) const;
+	// std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(
+	//		unsigned int offset) const;
 
 	/// Return the string that is stored in the hsa_data section by its 
 	/// offset
-	const std::string getStringByOffset(unsigned int offset) const;
+	// const std::string getStringByOffset(unsigned int offset) const;
 
 	/// Return the data entry at a certain offset
-	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
-			unsigned int offset) const;
+	// std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
+	//		unsigned int offset) const;
 
 	/// Return an operand from the operand section by offset
-	std::unique_ptr<BrigOperandEntry> getOperandByOffset(
-			unsigned int offset) const;
-
-	/// Search for the main function 
-	/// \return
-	/// 	Returns the pointer to the first insts in main function or 
-	/// 	nullptr if main function is not found;
-	/*
-	char *findMainFunction();
-	*/
+	// std::unique_ptr<BrigOperandEntry> getOperandByOffset(
+	//		unsigned int offset) const;
 };
 
 } // namespace HSA

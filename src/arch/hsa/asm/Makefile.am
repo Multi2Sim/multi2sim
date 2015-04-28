@@ -2,37 +2,10 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	BrigDef.h \
-	\
-	Asm.h \
-	Asm.cc \
-	\
-	AsmService.h \
-	AsmService.cc \
-	\
-	BrigEntry.h \
-	BrigEntry.cc \
+	Brig.h \
 	\
 	BrigFile.h \
-	BrigFile.cc \
-	\
-	BrigImmed.h \
-	BrigImmed.cc \
-	\
-	BrigSection.h \
-	BrigSection.cc \
-	\
-	BrigCodeEntry.h \
-	BrigCodeEntryDump.cc \
-	BrigCodeEntryGetter.cc \
-	\
-	BrigDataEntry.h \
-	BrigDataEntry.cc \
-	\
-	BrigOperandEntry.h \
-	BrigOperandEntry.cc \
-	\
-	Inst.def
+	BrigFile.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
