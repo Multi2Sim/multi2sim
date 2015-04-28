@@ -69,7 +69,7 @@ BrigSection *BrigFile::getBrigSection(BrigSectionType section_type) const
 }
 */
 
-bool BrigFile::isBrigFile(char *file) const
+bool BrigFile::isBrigFile(char *file)
 {
 	BrigModuleHeader *header = (BrigModuleHeader *)file;
 	if (strcmp(header->identification, "HSA BRIG") == 0)

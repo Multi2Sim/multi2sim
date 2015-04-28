@@ -1,7 +1,7 @@
 AC_INIT([multi2sim], [4.2])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/m2s.cc])
-AM_INIT_AUTOMAKE([nostdinc])
+AM_INIT_AUTOMAKE([nostdinc subdir-objects])
 AM_PROG_AS
 AC_PROG_CC([gcc])
 AC_PROG_INSTALL
@@ -846,6 +846,31 @@ fi
 
 
 
+#####################
+# Set GTest Variables
+#####################
+ACX_PTHREAD([have_pthread=yes])
+
+GTEST_VERSION="1.7.0"
+if test "x$have_pthread" = "xyes"; then
+	GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=1"
+	GTEST_CXXFLAGS="$PTHREAD_CFLAGS"
+	GTEST_LDFLAGS=
+	GTEST_LIBS="$PTHREAD_LIBS"
+else
+	GTEST_CPPFLAGS="-DGTEST_HAS_PTHREAD=0"
+	GTEST_CXXFLAGS=
+	GTEST_LDFLAGS=
+	GTEST_LIBS=
+fi
+AC_SUBST([GTEST_VERSION])
+AC_SUBST([GTEST_CPPFLAGS])
+AC_SUBST([GTEST_CXXFLAGS])
+AC_SUBST([GTEST_LDFLAGS])
+AC_SUBST([GTEST_LIBS])
+	
+
+
 ##########
 # Test GTK
 ##########
@@ -987,6 +1012,7 @@ AC_CONFIG_FILES([
 
 		src/arch/hsa/Makefile
 		src/arch/hsa/asm/Makefile
+		src/arch/hsa/asm/tests/Makefile
 		src/arch/hsa/emu/Makefile
 		src/arch/hsa/driver/Makefile
 
@@ -1025,6 +1051,7 @@ AC_CONFIG_FILES([
 		src/lib/class/Makefile
 		src/lib/cpp/Makefile
 		src/lib/esim/Makefile
+		src/lib/gtest/Makefile
 		src/lib/mhandle/Makefile
 		src/lib/util/Makefile
 
