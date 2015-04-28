@@ -24,7 +24,7 @@
 #include <map>
 #include <elf.h>
 
-#include <lib/cpp/ELFReader.h>
+#include <lib/cpp/Error.h>
 
 #include "BrigSection.h"
 
@@ -74,7 +74,7 @@ public:
 	/// \return
 	///	Returns \c true if the loaded file is valid
 	///
-	bool isBrigFile(char *file) const;
+	static bool isBrigFile(char *file);
 
 	/// Retrieve an entry in the code section
 	// std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(

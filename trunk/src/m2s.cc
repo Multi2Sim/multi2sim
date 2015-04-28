@@ -33,9 +33,9 @@
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
-#include <arch/hsa/asm/Asm.h>
-#include <arch/hsa/driver/Driver.h>
-#include <arch/hsa/emu/Emu.h>
+//#include <arch/hsa/asm/Asm.h>
+//#include <arch/hsa/driver/Driver.h>
+//#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <arch/arm/asm/Asm.h>
 #include <arch/arm/emu/Emu.h>
@@ -128,9 +128,11 @@ void RegisterArchitectures()
 	arch_pool->Register("SouthernIslands");
 
 	// HSA
+	/*
 	arch_pool->Register("HSA",
 			HSA::Asm::getInstance(),
 			HSA::Emu::getInstance());
+	*/
 
 	// Kepler
 	arch_pool->Register("Kepler",
@@ -162,7 +164,7 @@ void RegisterRuntimes()
 	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
 
 	// HSA runtime
-	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
+	// runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
 
 #ifdef HAVE_OPENGL
 	// OpenGL runtime
@@ -177,8 +179,8 @@ void RegisterDrivers()
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 
 	// HSA driver
-	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	driver_pool->Register(hsa_driver);
+	// HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	// driver_pool->Register(hsa_driver);
 
 	// Kepler driver
 	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
@@ -221,6 +223,7 @@ void LoadProgram(const std::vector<std::string> &args,
 		emu = MIPS::Emu::getInstance();
 		break;
 
+	/*
 	case 0: 
 		
 		// ELF file for HSA Brig format do not have machine code
@@ -231,6 +234,7 @@ void LoadProgram(const std::vector<std::string> &args,
 			emu = HSA::Emu::getInstance();
 		}
 		break;
+	*/
 
 	default:
 		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
@@ -413,7 +417,7 @@ void RegisterOptions()
 			"specified order. The list of devices should be "
 			"separated by commas. This option is equivalent to "
 			"environment variable M2S_OPENCL_DEVICES. "
-			"Possible values are: x86, hsa, southern-islands, "
+			"Possible values are: x86, southern-islands, "
 			"union.");
 	
 	// Binary
@@ -523,9 +527,9 @@ int MainProgram(int argc, char **argv)
 {
 	// Read command line
 	RegisterOptions();
-	HSA::Asm::RegisterOptions();
-	HSA::Driver::RegisterOptions();
-	HSA::Emu::RegisterOptions();
+	// HSA::Asm::RegisterOptions();
+	// HSA::Driver::RegisterOptions();
+	// HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
@@ -548,9 +552,9 @@ int MainProgram(int argc, char **argv)
 	
 	// Process command line
 	ProcessOptions();
-	HSA::Asm::ProcessOptions();
-	HSA::Driver::ProcessOptions();
-	HSA::Emu::ProcessOptions();
+	// HSA::Asm::ProcessOptions();
+	// HSA::Driver::ProcessOptions();
+	// HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();

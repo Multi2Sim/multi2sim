@@ -1,8 +1,8 @@
 SUBDIRS = \
+	lib \
 	arch \
 	dram \
 	driver \
-	lib \
 	memory \
 	network \
 	visual
