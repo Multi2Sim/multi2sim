@@ -237,6 +237,11 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		instruction->addScalarRegister(function->getNumOfWG() + dim);
 		assert(instruction->hasValidArguments());
 	}
+	else if (func_name == "barrier")
+	{
+		Instruction *instruction = addInstruction(SI::INST_S_BARRIER);
+		assert(instruction->hasValidArguments());
+	}
 	else
 	{
 		throw Error("Invalid built-in function: " + func_name);
@@ -1049,7 +1054,7 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	// Here is the corresponding SI assembly code.
 	//
 	// 		s_mov_b32     s0, 0x6f800000
-	//  	v_mov_b32     v2, 0x2f800000
+	//              v_mov_b32     v2, 0x2f800000
 	//		s_waitcnt     vmcnt(1)
 	//		v_cmp_gt_f32  vcc, abs(v1), s0
 	//		v_cndmask_b32  v2, 1.0, v2, vcc
@@ -1233,6 +1238,355 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	assert(instruction->hasValidArguments());
 }
 
+void BasicBlock::EmitUrem(llvm::BinaryOperator *llvm_inst)
+{
+	// Only supported for 32-bit integers
+	llvm::Type *llvm_type = llvm_inst->getType();
+	if (!llvm_type->isIntegerTy(32))
+		throw misc::Panic("Only supported for 32-bit integers");
+
+	// Only supported for 2 operands (op1, op2)
+	if (llvm_inst->getNumOperands() != 2)
+		throw misc::Panic(misc::fmt("2 operands supported, %d found",
+				llvm_inst->getNumOperands()));
+
+	// Get operands (vreg, literal)
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
+	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
+
+	// Only the first operand can be a constant, so swap them if there is
+	// a constant in the second.
+	if (arg2->getType() != Argument::TypeVectorRegister)
+		arg1.swap(arg2);
+	arg1->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced);
+	arg2->ValidTypes(Argument::TypeVectorRegister);
+
+	// Allocate vector register and create symbol for return value
+	std::string ret_name = llvm_inst->getName();
+	int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+	// LLVM IR is shown below to calcuate a = b/c.
+	//
+	// 		%a = urem i32 %b, %c
+	// 
+	ArgVectorRegister *arg1_vector = dynamic_cast<ArgVectorRegister *>(arg1.get());
+	ArgVectorRegister *arg2_vector = dynamic_cast<ArgVectorRegister *>(arg2.get());
+	int numerator_vreg = arg1_vector->getId();
+	int divisor_vreg = arg2_vector->getId();
+
+	// fdivisor = UINT_TO_FLT(Divisor)
+	Instruction *instruction;
+	int fdivisor_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction->addVectorRegister(fdivisor_vreg);
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
+
+	// approx_frecip = RECIP(fdivisor)
+	int approx_frecip_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction->addVectorRegister(approx_frecip_vreg);
+	instruction->addVectorRegister(fdivisor_vreg);
+	assert(instruction->hasValidArguments());
+
+	// scaled_frecip = MUL_V(approx_frecip, 2**32-1)
+	int scaled_frecip_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction->addVectorRegister(scaled_frecip_vreg);
+	instruction->addLiteral(0x4f800000);
+	instruction->addVectorRegister(fdivisor_vreg);
+	assert(instruction->hasValidArguments());
+
+	// approx_recip = FLT_TO_UINT(scaled_frecip)
+	int approx_recip_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction->addVectorRegister(approx_recip_vreg);
+	instruction->addVectorRegister(scaled_frecip_vreg);
+	assert(instruction->hasValidArguments());
+
+	// approx_one = MULLO_UINT(approx_recip,divisor);
+	int approx_one_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction->addVectorRegister(approx_one_vreg);
+	instruction->addVectorRegister(divisor_vreg);
+	instruction->addVectorRegister(approx_recip_vreg);
+	assert(instruction->hasValidArguments());
+
+	// approx_one_hi = MULHI_UINT(approx_recip,divisor);
+	int approx_one_hi_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction->addVectorRegister(approx_one_hi_vreg);
+	instruction->addVectorRegister(divisor_vreg);
+	instruction->addVectorRegister(approx_recip_vreg);
+	assert(instruction->hasValidArguments());
+
+	// error = ~approx_one
+	int init_error_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction->addVectorRegister(init_error_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addLiteral(0);
+	instruction->addVectorRegister(approx_one_vreg);
+	assert(instruction->hasValidArguments());
+
+	// if (approx_one_hi == 0) error = error else error = approx_one
+	int cond_approx_one_hi_eq_zero_sreg = function->AllocSReg(2, 2);
+	instruction = addInstruction(SI::INST_V_CMP_NE_I32_VOP3a);
+	instruction->addScalarRegisterSeries(cond_approx_one_hi_eq_zero_sreg, 
+					     cond_approx_one_hi_eq_zero_sreg + 1);
+	instruction->addLiteral(0);
+	instruction->addVectorRegister(approx_one_hi_vreg);
+	assert(instruction->hasValidArguments());
+
+	// Notice the condition is NE in previous instruction, need to swap src0 and src1
+	int error_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction->addVectorRegister(error_vreg);
+	instruction->addVectorRegister(init_error_vreg);
+	instruction->addVectorRegister(approx_one_vreg);
+	instruction->addScalarRegisterSeries(cond_approx_one_hi_eq_zero_sreg, 
+		cond_approx_one_hi_eq_zero_sreg + 1);
+	assert(instruction->hasValidArguments());
+
+	// recip_corrector = MULHI_UINT(error,approx_recip)
+	int recip_corrector_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction->addVectorRegister(recip_corrector_vreg);
+	instruction->addVectorRegister(error_vreg);
+	instruction->addVectorRegister(approx_recip_vreg);
+	assert(instruction->hasValidArguments());
+
+	// better_recip_1 = approx_recip - recip_corrector;
+  	// if approx_recip is higher, need to subtract recip_corrector
+  	int better_recip_1_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction->addVectorRegister(better_recip_1_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addVectorRegister(approx_recip_vreg);
+	instruction->addVectorRegister(recip_corrector_vreg);
+	assert(instruction->hasValidArguments());
+
+	// better_recip_2 = approx_recip + recip_corrector;
+  	// if approx_recip is lower, need to add recip_corrector
+  	int better_recip_2_vreg = function->AllocVReg();
+  	instruction = addInstruction(SI::INST_V_ADD_I32);
+  	instruction->addVectorRegister(better_recip_2_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+  	instruction->addVectorRegister(approx_recip_vreg);
+	instruction->addVectorRegister(recip_corrector_vreg);
+	assert(instruction->hasValidArguments());
+	
+	//if (approx_one_hi == 0) better_recip = better_recip_2
+  	//	else better_recip = better_recip_1
+  	// Notice the condition is NE in previous instruction, need to swap src0 and src1
+  	int better_recip_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction->addVectorRegister(better_recip_vreg);
+	instruction->addVectorRegister(better_recip_2_vreg);
+	instruction->addVectorRegister(better_recip_1_vreg);
+	instruction->addScalarRegisterSeries(cond_approx_one_hi_eq_zero_sreg, 
+					     cond_approx_one_hi_eq_zero_sreg + 1);
+	assert(instruction->hasValidArguments());
+
+	// approx_Quotient = MULHI_UINT (Numerator,better_recip)
+	int approx_quotient_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction->addVectorRegister(approx_quotient_vreg);
+	instruction->addVectorRegister(better_recip_vreg);
+	instruction->addVectorRegister(numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+	// approx_numerator =  MULLO_UINT(approx_Quotient,Divisor);
+	int approx_numerator_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction->addVectorRegister(approx_numerator_vreg);
+	instruction->addVectorRegister(approx_quotient_vreg);
+	instruction->addVectorRegister(divisor_vreg);
+	assert(instruction->hasValidArguments());
+
+	// approx_remainder = Numerator - approx_numerator;
+	int approx_remainder_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction->addVectorRegister(approx_remainder_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addVectorRegister(numerator_vreg);
+	instruction->addVectorRegister(approx_numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+	// rem_gtr_approx_rem = Numerator >= approx_numerator
+	int cond_numberator_ge_approx_numberator_sregs = function->AllocSReg(2, 2);	
+	instruction = addInstruction(SI::INST_V_CMP_GE_U32_VOP3a);
+	instruction->addScalarRegisterSeries(cond_numberator_ge_approx_numberator_sregs,
+		cond_numberator_ge_approx_numberator_sregs + 1);
+	instruction->addVectorRegister(numerator_vreg);
+	instruction->addVectorRegister(approx_numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+	// // remainder_decrement = approx_remainder - Divisor;
+	// int remainder_decrement_vreg = function->AllocVReg();
+	// instruction = addInstruction(SI::INST_V_SUB_I32);
+	// instruction->addVectorRegister(remainder_decrement_vreg);
+	// instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	// instruction->addVectorRegister(approx_remainder_vreg);
+	// instruction->addVectorRegister(divisor_vreg);
+	// assert(instruction->hasValidArguments());
+
+	// +1
+	int approx_quotient_plus_one_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction->addVectorRegister(approx_quotient_plus_one_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addLiteral(1);
+	instruction->addVectorRegister(approx_quotient_vreg);
+	assert(instruction->hasValidArguments());
+
+	// -1
+	int approx_quotient_plus_negone_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction->addVectorRegister(approx_quotient_plus_negone_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addLiteral(-1);
+	instruction->addVectorRegister(approx_quotient_vreg);
+	assert(instruction->hasValidArguments());
+
+	// If (approx_remainder >= divisor && numerator >= approx numerator)
+	//   Remainder = remainder_decrement;
+	// else Remainder = approx_remainder;
+	// int cond_approx_remainder_ge_divisor_sregs = function->AllocSReg(2, 2);
+	instruction = addInstruction(SI::INST_V_CMP_GE_U32_VOP3a);
+	// instruction->addScalarRegisterSeries(cond_approx_remainder_ge_divisor_sregs,
+	// 	cond_approx_remainder_ge_divisor_sregs + 1);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addVectorRegister(approx_remainder_vreg);
+	instruction->addVectorRegister(divisor_vreg);
+	assert(instruction->hasValidArguments());
+
+	// &&
+	// int combined_cond_sregs = function->AllocSReg(2, 2);
+	instruction = addInstruction(SI::INST_S_AND_B64);
+	// instruction->addScalarRegisterSeries(combined_cond_sregs,
+	// 	combined_cond_sregs + 1);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addScalarRegisterSeries(cond_numberator_ge_approx_numberator_sregs, 
+		cond_numberator_ge_approx_numberator_sregs + 1);
+	// instruction->addScalarRegisterSeries(cond_approx_remainder_ge_divisor_sregs,
+	// 	cond_approx_remainder_ge_divisor_sregs + 1);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	assert(instruction->hasValidArguments());
+
+	// cnd1
+	int cnd1_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction->addVectorRegister(cnd1_vreg);
+	instruction->addVectorRegister(approx_quotient_vreg);
+	instruction->addVectorRegister(approx_quotient_plus_one_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	assert(instruction->hasValidArguments());
+
+	// cnd2
+	int cnd2_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction->addVectorRegister(cnd2_vreg);
+	instruction->addVectorRegister(approx_quotient_plus_negone_vreg);
+	instruction->addVectorRegister(cnd1_vreg);
+	instruction->addScalarRegisterSeries(cond_numberator_ge_approx_numberator_sregs,
+		cond_numberator_ge_approx_numberator_sregs + 1);
+	// instruction->addScalarRegisterSeries(combined_cond_sregs,
+	// 	combined_cond_sregs + 1);
+	assert(instruction->hasValidArguments());
+
+	// numerator == 0 ?	
+	instruction = addInstruction(SI::INST_V_CMP_NE_U32);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addLiteral(0);
+	instruction->addVectorRegister(numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+	// assign
+	int update_numerator_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction->addVectorRegister(update_numerator_vreg);
+	instruction->addLiteral(-1);
+	instruction->addVectorRegister(cnd2_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	assert(instruction->hasValidArguments());
+
+	// mullo numerator
+	int mul_lo_numerator_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction->addVectorRegister(mul_lo_numerator_vreg);
+	instruction->addVectorRegister(update_numerator_vreg);
+	instruction->addVectorRegister(numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+	// Remainder sub
+	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addVectorRegister(divisor_vreg);
+	instruction->addVectorRegister(mul_lo_numerator_vreg);
+	assert(instruction->hasValidArguments());
+
+
+
+	// // Assign remainder
+	// int remainder_vreg = function->AllocVReg();
+	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction->addVectorRegister(remainder_vreg);
+	// instruction->addVectorRegister(remainder_decrement_vreg);
+	// instruction->addVectorRegister(approx_remainder_vreg);
+	// instruction->addScalarRegisterSeries(combined_cond_sregs, 
+	// 	combined_cond_sregs + 1);
+	// assert(instruction->hasValidArguments());
+
+	// // If (numerator < approx_numerator) Remainder += Divisor
+	// int remainder_plus_divisor_vreg = function->AllocVReg();
+	// instruction = addInstruction(SI::INST_V_ADD_I32);
+	// instruction->addVectorRegister(remainder_plus_divisor_vreg);
+	// instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	// instruction->addVectorRegister(remainder_vreg);
+	// instruction->addVectorRegister(divisor_vreg);
+	// assert(instruction->hasValidArguments());
+
+	// int cond_numberator_lt_approx_numberator_sregs = function->AllocSReg(2, 2);
+	// instruction = addInstruction(SI::INST_V_CMP_LT_I32_VOP3a);
+	// instruction->addScalarRegisterSeries(cond_numberator_lt_approx_numberator_sregs,
+	// 	cond_numberator_lt_approx_numberator_sregs + 1);
+	// instruction->addVectorRegister(numerator_vreg);
+	// instruction->addVectorRegister(approx_numerator_vreg);
+	// assert(instruction->hasValidArguments());
+
+	// FIXME: Optimization is ignored for now
+	// IF, OPTFLAG_IS_ON, OPT_VALUE_NUMBER,
+	// THEN,
+	// 	If (divisor == 0) Remainder = 0xffffffff; else Remainder = Remainder;
+	// 	MAKE, CNDE_INT, T3, A3, NEG_ONE_INT, T0,
+	// Create a special UMOD operation to give value number a chance to optimize.
+	// Mov the inputs to temps first in case inputs are reused as output.
+	// 	MAKE, MOV_V, T4, A2,
+	// 	MAKE, MOV_V, T5, A3,
+	// 	MAKE, IR_UMOD_PREVN, A1, T4, T5, T3,
+	// ELSE,
+	// 	If (divisor == 0) Remainder = 0xffffffff; else Remainder = Remainder;
+	// 	MAKE, CNDE_INT, A1, A3, NEG_ONE_INT, T0,
+	// ENDIF,
+
+	// Return remainder
+	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction->addVectorRegister(ret_vreg);
+	// instruction->addVectorRegister(remainder_plus_divisor_vreg);
+	// instruction->addVectorRegister(remainder_vreg);
+	// instruction->addScalarRegisterSeries(cond_numberator_lt_approx_numberator_sregs, 
+	// 	cond_numberator_lt_approx_numberator_sregs + 1);
+	// assert(instruction->hasValidArguments());
+
+}
 
 void BasicBlock::EmitSExt(llvm::SExtInst *llvm_inst)
 {
@@ -1474,6 +1828,11 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 			EmitFDiv(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
+		case llvm::Instruction::URem:
+
+			EmitUrem(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			break;
+
 		case llvm::Instruction::ExtractElement:
 			
 			EmitExtractElement(misc::cast<llvm::ExtractElementInst *>
@@ -1509,7 +1868,8 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 		default:
 
 			throw misc::Panic(misc::fmt("LLVM opcode not supported "
-					"(%d)", llvm_inst.getOpcode()));
+					"(%d) %s", llvm_inst.getOpcode(), 
+					llvm_inst.getOpcodeName(llvm_inst.getOpcode())));
 		}
 	}
 }
