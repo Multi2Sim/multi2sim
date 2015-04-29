@@ -80,6 +80,7 @@ class BasicBlock : public comm::BasicBlock
 	void EmitAnd(llvm::BinaryOperator *llvm_inst);
 	void EmitOr(llvm::BinaryOperator *llvm_inst);
 	void EmitXor(llvm::BinaryOperator *llvm_inst);
+	void EmitUrem(llvm::BinaryOperator *llvm_inst);
 	void EmitSExt(llvm::SExtInst *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
