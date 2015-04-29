@@ -17,8 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 #include <cstring>
+#include <fstream>
+#include <istream>
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
+#include <lib/cpp/Error.h>
 
 #include "Brig.h"
 #include "BrigFile.h"
@@ -26,12 +30,34 @@
 namespace HSA
 {
 
-BrigFile::BrigFile(const std::string &path)
+void BrigFile::LoadFileByPath(const std::string &path)
 {	
+	// Open file
+	std::ifstream f(path);
+	if (!f)
+		throw misc::Error(misc::fmt("Cannot open file %s.", 
+					path.c_str()));
+
+	// Get file size
+	f.seekg(0, std::ios_base::end);
+	int size = f.tellg();
+	f.seekg(0, std::ios_base::beg);
+
+	// Load the entire file into buffer and close
+	buffer.reset(new char[size]);
+	f.read(buffer.get(), size);
+	f.close();
+
+	// Verify the file is valid
+	if (!isBrigFile(buffer.get()))
+	{
+		throw misc::Error(misc::fmt("%s is not an valid BRIG file",
+					path.c_str()));
+	}
 }
 
 
-BrigFile::BrigFile(char *file)
+void BrigFile::LoadFileFromBuffer(const char *file)
 {
 	// Check if the file is a BRIG file
 	if (!isBrigFile(file))
@@ -39,6 +65,13 @@ BrigFile::BrigFile(char *file)
 		throw misc::Error("Not an valid BRIG file.");
 	}
 }
+
+
+BrigFile::~BrigFile()
+{
+
+}
+
 
 /*
 void BrigFile::PrepareSections()
@@ -57,19 +90,13 @@ void BrigFile::PrepareSections()
 }
 
 
-BrigFile::~BrigFile()
-{
-
-}
-
-
 BrigSection *BrigFile::getBrigSection(BrigSectionType section_type) const
 {
 	return this->brig_sections[section_type].get();
 }
 */
 
-bool BrigFile::isBrigFile(char *file)
+bool BrigFile::isBrigFile(const char *file)
 {
 	BrigModuleHeader *header = (BrigModuleHeader *)file;
 	if (strcmp(header->identification, "HSA BRIG") == 0)
