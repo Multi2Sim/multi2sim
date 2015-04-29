@@ -5,6 +5,5 @@ SUBDIRS = \
 	glu \
 	glut \
 	opencl \
-	hsa \
 	include
 
