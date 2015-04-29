@@ -48,9 +48,6 @@ protected:
 
 public:
 
-	/// Checks if the elf file to be loaded
-	static bool isValidBrigELF(const std::string &path);
-	
 	/// Returns the pointer to the only instance of has disassembler
 	static Asm *getInstance();
 

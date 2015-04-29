@@ -19,8 +19,6 @@
 
 #include "Asm.h"
 #include "BrigFile.h"
-#include "BrigCodeEntry.h"
-#include "BrigSection.h"
 
 namespace HSA
 {
@@ -78,14 +76,6 @@ Asm::Asm()
 {
 	indent = 0;
 }
-
-
-bool Asm::isValidBrigELF(const std::string &path)
-{
-	BrigFile bf(path.c_str());
-	return bf.isValid();
-}
-
 
 void Asm::DisassembleBinary(const std::string &path) const
 {

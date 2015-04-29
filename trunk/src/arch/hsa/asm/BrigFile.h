@@ -36,6 +36,9 @@ namespace HSA
 /// interfaces to the other parts of the Multi2sim.
 class BrigFile
 {
+	// The path to the file
+	std::string path;
+
 	// The elf file, read by ELFReader
 	std::unique_ptr<char> buffer;
 
@@ -51,14 +54,17 @@ class BrigFile
 
 public:
 
+	/// Constructor
+	BrigFile() {};
+
 	/// Loads a BRIG file from the file system, create sections
-	BrigFile(const std::string &path);
+	void LoadFileByPath(const std::string &path);
 
 	/// Loads a BRIG file from a memory block
 	/// BrigFile(char *file, unsigned size);
 
 	/// Load the file from a chunk of memory
-	BrigFile(char *file);
+	void LoadFileFromBuffer(const char *file);
 
 	/// Destructor
 	~BrigFile();
@@ -74,7 +80,7 @@ public:
 	/// \return
 	///	Returns \c true if the loaded file is valid
 	///
-	static bool isBrigFile(char *file);
+	static bool isBrigFile(const char *file);
 
 	/// Retrieve an entry in the code section
 	// std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(
