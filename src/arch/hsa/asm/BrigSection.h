@@ -43,10 +43,13 @@ protected:
 public:
 
 	/// Creates the BRIG section, set the type and read in buffer
-	BrigSection(BrigFile *binary, char *buffer);
+	BrigSection(char *buffer);
 
 	/// Deconstructor
 	~BrigSection();
+
+	/// Set the binary file that this section belongs to
+	void setBinary(BrigFile *binary) { this->binary = binary; }
 
 	/// Return the binary file that contains this section
 	BrigFile *getBinary() const { return binary; }
@@ -86,7 +89,10 @@ public:
 			return std::unique_ptr<T>(nullptr);
 
 		char *entry_base = (char *)getBuffer() + offset;
-		return std::unique_ptr<T>(new T(entry_base, this));
+		auto entry = misc::new_unique<T>(entry_base);
+		entry->setSection(this);
+		return entry;
+		
 	}
 
 };

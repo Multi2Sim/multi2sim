@@ -20,7 +20,7 @@
 #include <lib/cpp/String.h>
 
 #include "Asm.h"
-#include "BrigDef.h"
+#include "Brig.h"
 #include "BrigSection.h"
 #include "AsmService.h"
 #include "BrigCodeEntry.h"
@@ -42,10 +42,10 @@ std::map<unsigned, BrigCodeEntry::DumpEntryFn> BrigCodeEntry::dump_entry_fn =
 	{BRIG_KIND_DIRECTIVE_KERNEL, &BrigCodeEntry::DumpDirKernel},
 	{BRIG_KIND_DIRECTIVE_LABEL, &BrigCodeEntry::DumpDirLabel},
 	{BRIG_KIND_DIRECTIVE_LOC, &BrigCodeEntry::DumpDirLoc},
+	{BRIG_KIND_DIRECTIVE_MODULE, &BrigCodeEntry::DumpDirLoc},
 	{BRIG_KIND_DIRECTIVE_PRAGMA, &BrigCodeEntry::DumpDirPragma},
 	{BRIG_KIND_DIRECTIVE_SIGNATURE,  &BrigCodeEntry::DumpDirSignature},
 	{BRIG_KIND_DIRECTIVE_VARIABLE, &BrigCodeEntry::DumpDirVariable},
-	{BRIG_KIND_DIRECTIVE_VERSION, &BrigCodeEntry::DumpDirVersion},
 
 	{BRIG_KIND_INST_ADDR, &BrigCodeEntry::DumpInstAddr},
 	{BRIG_KIND_INST_ATOMIC, &BrigCodeEntry::DumpInstAtomic},
@@ -222,6 +222,12 @@ void BrigCodeEntry::DumpDirLoc(std::ostream &os = std::cout) const
 }
 
 
+void BrigCodeEntry::DumpDirModule(std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Directive: %s, not supported\n", "MODULE");
+}
+
+
 void BrigCodeEntry::DumpDirPragma(std::ostream &os = std::cout) const
 {
 	os << "pragma ";
@@ -266,17 +272,6 @@ void BrigCodeEntry::DumpDirVariable(std::ostream &os = std::cout) const
 	// FIXME Deal with variable init
 
 	os << ";\n";
-}
-
-
-void BrigCodeEntry::DumpDirVersion(std::ostream &os = std::cout) const
-{
-	os << "version ";
-	os << getHsailMajor() << ":";
-	os << getHsailMinor() << ":";
-	os << AsmService::ProfileToString(getProfile()) << ":";
-	os << AsmService::MachineModelToString(getMachineModel()) << ";";
-	os << "\n";
 }
 
 
@@ -371,8 +366,8 @@ void BrigCodeEntry::DumpInstCmp(std::ostream &os = std::cout) const
 			getCompareOperation()), os);
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
-	AsmService::DumpUnderscore(AsmService::RoundingToString(
-			getRounding()), os);
+	// AsmService::DumpUnderscore(AsmService::RoundingToString(
+	//		getRounding()), os);
 	AsmService::DumpUnderscore(AsmService::PackToString(
 			getPack()), os);
 	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
@@ -391,11 +386,13 @@ void BrigCodeEntry::DumpInstCvt(std::ostream &os = std::cout) const
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
+	/*
 	if (getRounding() != getDefaultRounding())
 	{
 		AsmService::DumpUnderscore(AsmService::RoundingToString(
 				getRounding()), os);
 	}
+	*/
 	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
 	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
 			os);
@@ -519,9 +516,11 @@ void BrigCodeEntry::DumpInstMod(std::ostream &os = std::cout) const
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
+	/*
 	if (getRounding() != getDefaultRounding())
 		AsmService::DumpUnderscore(AsmService::RoundingToString(
 				getRounding()), os);
+	*/
 	AsmService::DumpUnderscore(AsmService::PackToString(getPack()), os);
 	if (useType())
 		AsmService::DumpUnderscore(AsmService::TypeToString(getType()), 
@@ -655,6 +654,7 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 	}
 
 	// Dump square bracket if the symbol is array
+	/*
 	if (isFlexArray())
 	{
 		os << "[]";
@@ -663,6 +663,7 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 	{
 		os << "[" << getDim() << "]";
 	}
+	*/
 
 }
 
@@ -734,7 +735,7 @@ void BrigCodeEntry::DumpOperands(std::ostream &os = std::cout) const
 		if (i > 0) 
 			os << ", ";
 		std::unique_ptr<BrigOperandEntry> operand = getOperand(i);
-		BrigTypeX type = getOperandType(i);
+		BrigType type = getOperandType(i);
 		operand->Dump(type, os);
 	}	
 }

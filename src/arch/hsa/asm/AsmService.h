@@ -25,7 +25,7 @@
 #include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
 
-#include "BrigDef.h"
+#include "Brig.h"
 
 namespace HSA
 {
@@ -99,7 +99,7 @@ public:
 	static std::string OpcodeToString(BrigOpcode opcode);
 
 	/// Convert type to type string
-	static std::string TypeToString(BrigTypeX type);
+	static std::string TypeToString(BrigType type);
 
 	/// Convert profile to profile string
 	static std::string ProfileToString(BrigProfile profile);
@@ -152,7 +152,7 @@ public:
 	static std::string VectorModifierToString(unsigned vectorModifier);
 
 	/// Convert kind to string
-	static std::string KindToString(BrigKinds kind);
+	static std::string KindToString(BrigKind kind);
 
 	/// Convert nonull to string
 	static std::string NoNullToString(bool is_no_null);
@@ -180,7 +180,7 @@ public:
 	static std::string SamplerQueryToString(BrigSamplerQuery query);
 
 	/// Convert type to its size
-	static unsigned TypeToSize(BrigTypeX type);
+	static unsigned TypeToSize(BrigType type);
 
 
 

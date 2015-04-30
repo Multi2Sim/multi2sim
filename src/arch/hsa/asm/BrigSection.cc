@@ -24,8 +24,7 @@
 
 namespace HSA{
 
-BrigSection::BrigSection(BrigFile *binary, char *buffer):
-		binary(binary),
+BrigSection::BrigSection(char *buffer):
 		buffer(buffer)
 {
 }

@@ -45,14 +45,16 @@ protected:
 public:
 
 	/// Constructor
-	BrigEntry(const char *buf, const BrigSection *section) :
-			base(buf),
-			section(section)
+	BrigEntry(const char *buffer) :
+			base(buffer)
 	{	
 	};
 
-	/// Get the offset of this entry int the section
+	/// Get the offset of this entry in the section
 	unsigned int getOffset() const;
+
+	/// Set the BRIG section is belongs to
+	void setSection(const BrigSection *section) { this->section = section; }
 
 	/// Return the section that has this entry
 	const BrigSection *getSection() const { return section; }

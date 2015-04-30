@@ -41,10 +41,10 @@ class BrigOperandEntry : public BrigEntry
 public:
 
 	/// Constructor
-	BrigOperandEntry(const char *buf, const BrigSection *section);
+	BrigOperandEntry(const char *buf);
 
 	/// Prototype of functions that dump the entry
-	typedef void (BrigOperandEntry::*DumpEntryFn)(BrigTypeX type, 
+	typedef void (BrigOperandEntry::*DumpEntryFn)(BrigType type, 
 			std::ostream &os) const;
 
 	/// A binary search tree that maps the kind of the entry to the
@@ -52,7 +52,7 @@ public:
 	static std::map<unsigned, DumpEntryFn> dump_entry_fn;
 
 	// Dump the operand
-	void Dump(BrigTypeX type = BRIG_TYPE_NONE, 
+	void Dump(BrigType type = BRIG_TYPE_NONE, 
 			std::ostream &os = std::cout) const
 	{
 		DumpEntryFn fn = BrigOperandEntry::dump_entry_fn[getKind()];
@@ -60,26 +60,28 @@ public:
 	}
 
 	/// Return the kind field of the entry
-	BrigKinds getKind() const;
+	BrigKind getKind() const;
 
 	/// Dump operand functions
-	void DumpOperandAddress(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandData(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandCodeList(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandCodeRef(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandImageProperties(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandOperandList(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandReg(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandSamplerProperties(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandString(BrigTypeX type, std::ostream &os) const;
-	void DumpOperandWavesize(BrigTypeX type, std::ostream &os) const;
+	void DumpOperandAddress(BrigType type, std::ostream &os) const;
+	void DumpOperandAlign(BrigType type, std::ostream &os) const;
+	void DumpOperandCodeList(BrigType type, std::ostream &os) const;
+	void DumpOperandCodeRef(BrigType type, std::ostream &os) const;
+	void DumpOperandConstantBytes(BrigType type, std::ostream &os) const;
+	void DumpOperandConstantImage(BrigType type, std::ostream &os) const;
+	void DumpOperandConstantOperandList(BrigType type, std::ostream &os) const;
+	void DumpOperandConstantSampler(BrigType type, std::ostream &os) const;
+	void DumpOperandOperandList(BrigType type, std::ostream &os) const;
+	void DumpOperandRegister(BrigType type, std::ostream &os) const;
+	void DumpOperandString(BrigType type, std::ostream &os) const;
+	void DumpOperandWavesize(BrigType type, std::ostream &os) const;
 
 	/// Dump a list of operand
-	void DumpListOfOperand(BrigDataEntry *operands, BrigTypeX type,
+	void DumpListOfOperand(BrigDataEntry *operands, BrigType type,
 			std::ostream& os) const;
 
 	/// Return data bytes of data field
-	const unsigned char *getData() const;
+	const unsigned char *getBytes() const;
 
 	/// Return the symbol field of the operand
 	std::unique_ptr<BrigCodeEntry> getSymbol() const;

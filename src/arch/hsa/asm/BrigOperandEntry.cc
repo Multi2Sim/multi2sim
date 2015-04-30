@@ -19,7 +19,7 @@
 
 #include <lib/cpp/String.h>
 
-#include "BrigDef.h"
+#include "Brig.h"
 #include "BrigImmed.h"
 #include "BrigFile.h"
 #include "BrigDataEntry.h"
@@ -33,13 +33,15 @@ namespace HSA
 std::map<unsigned, BrigOperandEntry::DumpEntryFn> BrigOperandEntry::dump_entry_fn = 
 {
 	{BRIG_KIND_OPERAND_ADDRESS, &BrigOperandEntry::DumpOperandAddress},
-	{BRIG_KIND_OPERAND_DATA, &BrigOperandEntry::DumpOperandData},
+	{BRIG_KIND_OPERAND_ALIGN, &BrigOperandEntry::DumpOperandAlign},
 	{BRIG_KIND_OPERAND_CODE_LIST, &BrigOperandEntry::DumpOperandCodeList},
 	{BRIG_KIND_OPERAND_CODE_REF, &BrigOperandEntry::DumpOperandCodeRef},
-	{BRIG_KIND_OPERAND_IMAGE_PROPERTIES, &BrigOperandEntry::DumpOperandImageProperties},
+	{BRIG_KIND_OPERAND_CONSTANT_BYTES, &BrigOperandEntry::DumpOperandConstantBytes},
+	{BRIG_KIND_OPERAND_CONSTANT_IMAGE, &BrigOperandEntry::DumpOperandConstantImage},
+	{BRIG_KIND_OPERAND_CONSTANT_OPERAND_LIST, &BrigOperandEntry::DumpOperandConstantOperandList},
+	{BRIG_KIND_OPERAND_CONSTANT_SAMPLER, &BrigOperandEntry::DumpOperandConstantSampler},
 	{BRIG_KIND_OPERAND_OPERAND_LIST, &BrigOperandEntry::DumpOperandOperandList},
-	{BRIG_KIND_OPERAND_REG,  &BrigOperandEntry::DumpOperandReg},
-	{BRIG_KIND_OPERAND_SAMPLER_PROPERTIES, &BrigOperandEntry::DumpOperandSamplerProperties},
+	{BRIG_KIND_OPERAND_REGISTER,  &BrigOperandEntry::DumpOperandRegister},
 	{BRIG_KIND_OPERAND_STRING, &BrigOperandEntry::DumpOperandString},
 	{BRIG_KIND_OPERAND_WAVESIZE, &BrigOperandEntry::DumpOperandWavesize},
 };
@@ -53,21 +55,20 @@ void BrigOperandEntry::KindError(const std::string &str) const
 }
 
 
-BrigOperandEntry::BrigOperandEntry(const char *buf,
-		const BrigSection *section) :
-		BrigEntry(buf, section)
+BrigOperandEntry::BrigOperandEntry(const char *buf) :
+		BrigEntry(buf)
 {
 }
 
 
-BrigKinds BrigOperandEntry::getKind() const
+BrigKind BrigOperandEntry::getKind() const
 {
 	BrigBase *brig_base = (BrigBase *)base;
-	return (BrigKinds)brig_base->kind;
+	return (BrigKind)brig_base->kind;
 }
 
 	
-void BrigOperandEntry::DumpOperandAddress(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandAddress(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	auto symbol = getSymbol();
@@ -103,15 +104,14 @@ void BrigOperandEntry::DumpOperandAddress(BrigTypeX type = BRIG_TYPE_NONE,
 }
 
 
-void BrigOperandEntry::DumpOperandData(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandAlign(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
-	auto immed = misc::new_unique<BrigImmed>(getData(), type);
-	immed->Dump(os);
+	os << misc::fmt("Operand: %s, not supported\n", "ALIGN");
 }
 
 
-void BrigOperandEntry::DumpOperandCodeList(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandCodeList(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	os << "(";
@@ -124,21 +124,43 @@ void BrigOperandEntry::DumpOperandCodeList(BrigTypeX type = BRIG_TYPE_NONE,
 }
 
 
-void BrigOperandEntry::DumpOperandCodeRef(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandCodeRef(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	os << getRef()->getName();
 }
 
 
-void BrigOperandEntry::DumpOperandImageProperties(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandConstantBytes(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Operand: %s, not supported\n", "IMAGE_PROPERTIES");
+	auto immed = misc::new_unique<BrigImmed>(getBytes(), type);
+	immed->Dump(os);
 }
 
 
-void BrigOperandEntry::DumpOperandOperandList(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandConstantImage(BrigType type = BRIG_TYPE_NONE,
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "CONSTANT_IMAGE");
+}
+
+
+void BrigOperandEntry::DumpOperandConstantOperandList(BrigType type = BRIG_TYPE_NONE,
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "CONSTANT_OPERAND_LIST");
+}
+
+
+void BrigOperandEntry::DumpOperandConstantSampler(BrigType type = BRIG_TYPE_NONE,
+		std::ostream &os = std::cout) const
+{
+	os << misc::fmt("Operand: %s, not supported\n", "CONSTANT_SAMPLER");
+}
+
+
+void BrigOperandEntry::DumpOperandOperandList(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	os << "(";
@@ -147,28 +169,21 @@ void BrigOperandEntry::DumpOperandOperandList(BrigTypeX type = BRIG_TYPE_NONE,
 }
 
 
-void BrigOperandEntry::DumpOperandReg(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandRegister(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	os << AsmService::RegisterKindToString(getRegKind()) << getRegNumber();
 }
 
 
-void BrigOperandEntry::DumpOperandSamplerProperties(BrigTypeX type = BRIG_TYPE_NONE, 
-		std::ostream &os = std::cout) const
-{
-	os << misc::fmt("Operand: %s, not supported\n", "SAMPLER_PROPERTIES");
-}
-
-
-void BrigOperandEntry::DumpOperandString(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandString(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	AsmService::DumpStringLiteral(getString(), os);
 }
 
 
-void BrigOperandEntry::DumpOperandWavesize(BrigTypeX type = BRIG_TYPE_NONE, 
+void BrigOperandEntry::DumpOperandWavesize(BrigType type = BRIG_TYPE_NONE, 
 		std::ostream &os = std::cout) const
 {
 	os << "WAVESIZE";
@@ -176,7 +191,7 @@ void BrigOperandEntry::DumpOperandWavesize(BrigTypeX type = BRIG_TYPE_NONE,
 
 
 void BrigOperandEntry::DumpListOfOperand(BrigDataEntry *operands, 
-		BrigTypeX type, std::ostream& os = std::cout) const
+		BrigType type, std::ostream& os = std::cout) const
 {
 	unsigned size = operands->getByteCount() / 4;
 	for (unsigned i = 0; i < size; i++)
@@ -190,14 +205,15 @@ void BrigOperandEntry::DumpListOfOperand(BrigDataEntry *operands,
 }
 
 
-const unsigned char *BrigOperandEntry::getData() const
+const unsigned char *BrigOperandEntry::getBytes() const
 {
 	switch(getKind())
 	{
-	case BRIG_KIND_OPERAND_DATA:
+	case BRIG_KIND_OPERAND_CONSTANT_BYTES:
 	{
-		struct BrigOperandData *operand = (struct BrigOperandData *)base;
-		auto data = getBinary()->getDataEntryByOffset(operand->data);
+		struct BrigOperandConstantBytes *operand = 
+				(struct BrigOperandConstantBytes *)base;
+		auto data = getBinary()->getDataEntryByOffset(operand->bytes);
 		return data->getBytes();
 	}
 	default:
@@ -261,16 +277,16 @@ BrigRegisterKind BrigOperandEntry::getRegKind() const
 {
 	switch(getKind())
 	{
-	case BRIG_KIND_OPERAND_REG:
+	case BRIG_KIND_OPERAND_REGISTER:
 	{
-		struct BrigOperandReg *operand = 
-				(struct BrigOperandReg *)base;
+		struct BrigOperandRegister *operand = 
+				(struct BrigOperandRegister *)base;
 		return (BrigRegisterKind)operand->regKind;
 	}
 	default:
 		KindError("GetRegKind");
 	}
-	return BRIG_REGISTER_CONTROL;
+	return BRIG_REGISTER_KIND_CONTROL;
 }
 
 
@@ -278,10 +294,10 @@ unsigned short BrigOperandEntry::getRegNumber() const
 {
 	switch(getKind())
 	{
-	case BRIG_KIND_OPERAND_REG:
+	case BRIG_KIND_OPERAND_REGISTER:
 	{
-		struct BrigOperandReg *operand = 
-				(struct BrigOperandReg *)base;
+		struct BrigOperandRegister *operand = 
+				(struct BrigOperandRegister *)base;
 		return operand->regNum;
 	}
 	default:
@@ -295,7 +311,7 @@ std::string BrigOperandEntry::getRegisterName() const
 {
 	switch(getKind())
 	{
-	case BRIG_KIND_OPERAND_REG:
+	case BRIG_KIND_OPERAND_REGISTER:
 	{
 		return AsmService::RegisterToString(getRegKind(),
 				getRegNumber());
