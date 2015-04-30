@@ -33,7 +33,7 @@
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
-//#include <arch/hsa/asm/Asm.h>
+#include <arch/hsa/asm/Asm.h>
 //#include <arch/hsa/driver/Driver.h>
 //#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
@@ -527,7 +527,7 @@ int MainProgram(int argc, char **argv)
 {
 	// Read command line
 	RegisterOptions();
-	// HSA::Asm::RegisterOptions();
+	HSA::Asm::RegisterOptions();
 	// HSA::Driver::RegisterOptions();
 	// HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
@@ -552,7 +552,7 @@ int MainProgram(int argc, char **argv)
 	
 	// Process command line
 	ProcessOptions();
-	// HSA::Asm::ProcessOptions();
+	HSA::Asm::ProcessOptions();
 	// HSA::Driver::ProcessOptions();
 	// HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();

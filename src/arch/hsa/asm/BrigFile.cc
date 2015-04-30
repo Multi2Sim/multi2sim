@@ -54,6 +54,9 @@ void BrigFile::LoadFileByPath(const std::string &path)
 		throw misc::Error(misc::fmt("%s is not an valid BRIG file",
 					path.c_str()));
 	}
+
+	// Prepare sections
+	PrepareSections();
 }
 
 
@@ -64,6 +67,8 @@ void BrigFile::LoadFileFromBuffer(const char *file)
 	{
 		throw misc::Error("Not an valid BRIG file.");
 	}
+
+	// FIXME: copy file content to local buffer
 }
 
 
@@ -73,36 +78,54 @@ BrigFile::~BrigFile()
 }
 
 
-/*
+unsigned int BrigFile::getNumSections() const 
+{
+	BrigModuleHeader *header = (BrigModuleHeader *)buffer.get();
+	return header->sectionCount;
+}
+
+
 void BrigFile::PrepareSections()
 {
-	for (int i = 0; i < file.getNumSections(); i++)
+	for (unsigned int i = 0; i < getNumSections(); i++)
 	{
-		// Skip empty section
-		if (file.getSection(i)->getSize() == 0)
-			continue;
+		// Get section index
+		BrigModuleHeader *header = (BrigModuleHeader *)buffer.get();
+		unsigned long long *section_indices = 
+			(unsigned long long *)
+			(buffer.get() + header->sectionIndex);
+
+		// From the section index, get section offset
+		unsigned long long section_offset = section_indices[i];
 
 		// Create section
 		auto section = misc::new_unique<BrigSection>(
-				file.getSection(i), this);
-		brig_sections.push_back(std::move(section));
+				this, buffer.get() + section_offset);
+		sections.push_back(std::move(section));
 	}
 }
 
 
-BrigSection *BrigFile::getBrigSection(BrigSectionType section_type) const
+BrigSection *BrigFile::getBrigSection(BrigSectionIndex section_index) const
 {
-	return this->brig_sections[section_type].get();
+	return sections[section_index].get();
 }
-*/
+
 
 bool BrigFile::isBrigFile(const char *file)
 {
 	BrigModuleHeader *header = (BrigModuleHeader *)file;
-	if (strcmp(header->identification, "HSA BRIG") == 0)
+	if (strncmp(header->identification, "HSA BRIG", 8) == 0)
+	{
 		return true;
+	}
+	else 
+	{
+		printf("Identification: %s\n", header->identification);
+	}
 	return false;
 }
+
 
 /*
 std::unique_ptr<BrigCodeEntry> BrigFile::getCodeEntryByOffset(
