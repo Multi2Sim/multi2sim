@@ -82,6 +82,76 @@ int BasicBlock::getPointedLlvmTypeSize(llvm::Type *llvm_type)
 }
 
 
+enum SI::InstBufDataFormat BasicBlock::getBufDataFormat32(int num_elems)
+{
+	enum SI::InstBufDataFormat buf_data_format = SI::InstBufDataFormatInvalid;
+
+	switch (num_elems)
+	{
+	case 1:
+		buf_data_format = SI::InstBufDataFormat32;
+		break;
+	case 2:
+		buf_data_format = SI::InstBufDataFormat32_32;
+		break;
+	case 3:
+		buf_data_format = SI::InstBufDataFormat32_32_32;
+		break;
+	case 4:
+		buf_data_format = SI::InstBufDataFormat32_32_32_32;
+		break;
+	default:
+		break;
+	}
+
+	return buf_data_format;
+
+}
+
+
+enum SI::InstBufDataFormat BasicBlock::getBufDataFormat(llvm::Type *llvm_type)
+{
+	enum SI::InstBufDataFormat buf_data_format = SI::InstBufDataFormatInvalid;
+	
+	if (llvm_type->isIntegerTy() || llvm_type->isFloatTy())
+	{
+		buf_data_format = SI::InstBufDataFormat32;
+	}
+	else if (llvm_type->isVectorTy())
+	{
+		buf_data_format = getBufDataFormatVector(llvm_type);
+	}
+	else
+	{
+		llvm_type->dump();
+		throw misc::Panic("Unsupported LLVM type kind");
+	}
+
+	return buf_data_format;
+}
+
+
+enum SI::InstBufDataFormat BasicBlock::getBufDataFormatVector(llvm::Type *llvm_type)
+{
+	enum SI::InstBufDataFormat buf_data_format;
+
+	int num_elems = llvm_type->getVectorNumElements();
+	llvm::Type *elem_type = llvm_type->getVectorElementType();
+
+	if (elem_type->isIntegerTy() || elem_type->isFloatTy())
+	{
+		buf_data_format = getBufDataFormat32(num_elems);
+	}
+	else
+	{
+		llvm_type->dump();
+		throw misc::Panic("Unsupported LLVM type kind");
+	}
+
+	return buf_data_format;
+}
+
+
 void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 {
 	// Only supported for 32-bit integers
@@ -528,36 +598,121 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 		throw Error(misc::fmt("Address space 1 expected, %d found",
 				addr_space));
 
-	// Get return type (data) - only support 4-byte types for now
+	// Get return type (data)
 	llvm_type = llvm_inst->getType();
-	if (!llvm_type->isIntegerTy(32) && !llvm_type->isFloatTy())
-		throw misc::Panic("Only 4-byte int/float types supported");
+	if (llvm_type->isIntegerTy(32) && llvm_type->isFloatTy())
+	{
+		// Allocate vector register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
-	// Allocate vector register and create symbol for return value
-	std::string ret_name = llvm_inst->getName();
-	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = function->addSymbol(ret_name);
-	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+		// Emit memory load instruction.
+		//
+		// tbuffer_load_format_x v[value_symbol->vreg], v[pointer_symbol->vreg],
+		// 	s[sreg_uav,sreg_uav+3],
+		//	0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
+		//
+		Instruction *instruction = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addArgument(std::move(arg_addr));
+		instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+		instruction->addMemoryAddress(new ArgLiteral(0),
+				new ArgMaddrQual(true, false, 0),
+				SI::InstBufDataFormat32,
+				SI::InstBufNumFormatFloat);
+		assert(instruction->hasValidArguments());
 
-	// Emit memory load instruction.
-	//
-	// tbuffer_load_format_x v[value_symbol->vreg], v[pointer_symbol->vreg],
-	// 	s[sreg_uav,sreg_uav+3],
-	//	0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
-	//
-	Instruction *instruction = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
-	instruction->addVectorRegister(ret_vreg);
-	instruction->addArgument(std::move(arg_addr));
-	instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
-	instruction->addMemoryAddress(new ArgLiteral(0),
-			new ArgMaddrQual(true, false, 0),
-			SI::InstBufDataFormat32,
-			SI::InstBufNumFormatFloat);
-	assert(instruction->hasValidArguments());
-	
-	instruction = addInstruction(SI::INST_S_WAITCNT);
-	instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
-	assert(instruction->hasValidArguments());
+		instruction = addInstruction(SI::INST_S_WAITCNT);
+		instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
+		assert(instruction->hasValidArguments());
+	}
+	else if (llvm_type->isVectorTy())
+	{
+		llvm::Type *elem_type = llvm_type->getVectorElementType();
+
+		if (elem_type->isIntegerTy(32) || elem_type->isFloatTy())
+		{
+			int num_elems = llvm_type->getVectorNumElements();
+
+			// Need several vGRPs to store the values
+			int num_vregs = num_elems;
+
+			// If # of elements is greater than 4, need to emit several instructions
+			int num_insts = (num_elems + 3) / 4;
+			int num_vregs_per_inst = num_vregs / num_insts;
+			int num_elems_per_inst = num_vregs_per_inst;
+			int offset_width = getLlvmTypeSize(elem_type) * num_elems_per_inst;
+
+			// Allocate vector registers and create symbol for return value
+			std::string ret_name = llvm_inst->getName();
+			int ret_vreg = function->AllocVReg(num_vregs, 1);
+			Symbol *ret_symbol = function->addSymbol(ret_name);
+			ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg,
+				ret_vreg + num_vregs);
+
+			// Get corresponding instruction opcode
+			SI::InstOpcode inst_op;
+			switch (num_elems_per_inst)
+			{
+			case 1:
+				inst_op = SI::INST_TBUFFER_LOAD_FORMAT_X;
+				break;
+			case 2:
+				inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XY;
+				break;
+			case 3:
+				inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XYZ;
+				break;
+			case 4:
+				inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XYZW;
+				break;
+			}
+
+			// Get corresponding buffer data format
+			enum SI::InstBufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
+
+			ArgVectorRegister *arg_addr_reg = dynamic_cast<ArgVectorRegister *>(arg_addr.get());
+			int arg_addr_vreg = arg_addr_reg->getId();
+
+			// Emit memory load instruction.
+			for (int inst_count = 0; inst_count < num_insts; ++inst_count)
+			{
+				// VGPR series don't overlap
+				int vreg_lo = ret_vreg + inst_count * num_vregs_per_inst;
+				int vreg_hi = vreg_lo + num_vregs_per_inst - 1;
+
+				// Make sure in range
+				assert(vreg_lo >= ret_vreg);
+				assert(vreg_hi <= ret_vreg + num_vregs);
+				
+				// Offset start from 0 if multiple instructions needed
+				int offset = inst_count * offset_width;
+
+				Instruction *instruction = addInstruction(inst_op);
+				instruction->addVectorRegisterSeries(vreg_lo, vreg_hi);	
+				instruction->addVectorRegister(arg_addr_vreg);
+				instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+				instruction->addMemoryAddress(new ArgLiteral(offset),
+						new ArgMaddrQual(true, false, 0),
+						buf_data_format,
+						SI::InstBufNumFormatFloat);
+				assert(instruction->hasValidArguments());		
+
+				instruction = addInstruction(SI::INST_S_WAITCNT);
+				instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
+				assert(instruction->hasValidArguments());				
+			}
+		}
+		else
+			throw misc::Panic("Only 4-byte int/float vector types supported");
+	}
+	else
+	{
+		llvm_type->dump();
+		throw misc::Panic("Unsupported LLVM type kind");
+	}
 }
 
 
@@ -801,28 +956,113 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 
 	// Get type of data - only support 4-byte types for now
 	llvm_type = llvm_arg_data->getType();
-	if (!llvm_type->isIntegerTy(32) && !llvm_type->isFloatTy())
-		throw misc::Panic("Only 4-byte int/float types supported");
+	if (llvm_type->isIntegerTy(32) && llvm_type->isFloatTy())
+	{
+		// Emit memory write.
+		//
+		// tbuffer_store_format_x v[value_symbol->vreg], s[pointer_symbol->vreg],
+		// 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
+		// 	BUF_NUM_FORMAT_FLOAT]
+		//
+		Instruction *instruction = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
+		instruction->addArgument(std::move(arg_data));
+		instruction->addArgument(std::move(arg_addr));
+		instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+		instruction->addMemoryAddress(new ArgLiteral(0),
+				new ArgMaddrQual(true, false, 0),
+				SI::InstBufDataFormat32,
+				SI::InstBufNumFormatFloat);
+		assert(instruction->hasValidArguments());
 
-	// Emit memory write.
-	//
-	// tbuffer_store_format_x v[value_symbol->vreg], s[pointer_symbol->vreg],
-	// 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
-	// 	BUF_NUM_FORMAT_FLOAT]
-	//
-	Instruction *instruction = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
-	instruction->addArgument(std::move(arg_data));
-	instruction->addArgument(std::move(arg_addr));
-	instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
-	instruction->addMemoryAddress(new ArgLiteral(0),
-			new ArgMaddrQual(true, false, 0),
-			SI::InstBufDataFormat32,
-			SI::InstBufNumFormatFloat);
-	assert(instruction->hasValidArguments());
+		instruction = addInstruction(SI::INST_S_WAITCNT);
+		instruction->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
+		assert(instruction->hasValidArguments());		
+	}
+	else if (llvm_type->isVectorTy())
+	{
+		llvm::Type *elem_type = llvm_type->getVectorElementType();
 
-	instruction = addInstruction(SI::INST_S_WAITCNT);
-	instruction->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
-	assert(instruction->hasValidArguments());
+		if (elem_type->isIntegerTy(32) || elem_type->isFloatTy())
+		{
+			int num_elems = llvm_type->getVectorNumElements();
+
+			// Need several vGRPs to store the values
+			int num_vregs = num_elems;
+
+			// If # of elements is greater than 4, need to emit several instructions
+			int num_insts = (num_elems + 3) / 4;
+			int num_vregs_per_inst = num_vregs / num_insts;
+			int num_elems_per_inst = num_vregs_per_inst;
+			int offset_width = getLlvmTypeSize(elem_type) * num_elems_per_inst;
+
+			// Get corresponding instruction opcode
+			SI::InstOpcode inst_op;
+			switch (num_elems_per_inst)
+			{
+			case 1:
+				inst_op = SI::INST_TBUFFER_STORE_FORMAT_X;
+				break;
+			case 2:
+				inst_op = SI::INST_TBUFFER_STORE_FORMAT_XY;
+				break;
+			case 3:
+				throw misc::Panic("Vector 3 type store not supported");
+				break;
+			case 4:
+				inst_op = SI::INST_TBUFFER_STORE_FORMAT_XYZW;
+				break;
+			default:
+				throw misc::Panic("Invalid buffer store format");
+				break;
+			}
+
+			// Get corresponding buffer data format
+			enum SI::InstBufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
+
+			// VGPR info
+			ArgVectorRegister *arg_addr_reg = dynamic_cast<ArgVectorRegister *>(arg_addr.get());
+			ArgVectorRegister *arg_data_reg = dynamic_cast<ArgVectorRegister *>(arg_data.get());
+
+			int arg_data_vreg = arg_data_reg->getId();
+			int arg_addr_vreg = arg_addr_reg->getId();
+
+			// Emit memory store instruction.
+			for (int inst_count = 0; inst_count < num_insts; ++inst_count)
+			{
+				// VGPR series don't overlap
+				int vreg_lo = arg_data_vreg + inst_count * num_vregs_per_inst;
+				int vreg_hi = vreg_lo + num_vregs_per_inst - 1;
+
+				// Make sure in range
+				assert(vreg_lo >= arg_data_vreg);
+				assert(vreg_hi <= arg_data_vreg + num_vregs);
+				
+				// Offset start from 0 if multiple instructions needed
+				int offset = inst_count * offset_width;
+
+				Instruction *instruction = addInstruction(inst_op);
+				instruction->addVectorRegisterSeries(vreg_lo, vreg_hi);	
+				instruction->addVectorRegister(arg_addr_vreg);
+				instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
+				instruction->addMemoryAddress(new ArgLiteral(offset),
+						new ArgMaddrQual(true, false, 0),
+						buf_data_format,
+						SI::InstBufNumFormatFloat);
+				assert(instruction->hasValidArguments());
+
+				instruction = addInstruction(SI::INST_S_WAITCNT);
+				instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
+				assert(instruction->hasValidArguments());
+			}
+		}
+		else
+			throw misc::Panic("Only 4-byte int/float vector types supported");
+	}
+	else
+	{
+		llvm_type->dump();
+		throw misc::Panic("Unsupported LLVM type kind");
+	}
 }
 
 

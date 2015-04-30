@@ -62,6 +62,15 @@ class BasicBlock : public comm::BasicBlock
 	// LLVM pointer.
 	static int getPointedLlvmTypeSize(llvm::Type *llvm_type);
 
+	// Return corresponding SI buffer format
+	static enum SI::InstBufDataFormat getBufDataFormat32(int num_elems);
+
+	// Return corresponding SI buffer format
+	static enum SI::InstBufDataFormat getBufDataFormat(llvm::Type *llvm_type);
+
+	// Return corresponding SI buffer vector format
+	static enum SI::InstBufDataFormat getBufDataFormatVector(llvm::Type *llvm_type);
+
 	// Emit instructions
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitCall(llvm::CallInst *llvm_inst);
