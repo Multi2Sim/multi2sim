@@ -19,7 +19,7 @@
 
 #include <iomanip>
 
-#include "BrigDef.h"
+#include "Brig.h"
 #include "AsmService.h"
 #include "BrigImmed.h"
 
@@ -50,6 +50,8 @@ BrigImmed::dump_immed_fn =
 	{BRIG_TYPE_SAMP, &BrigImmed::dumpImmedSAMP},
 	{BRIG_TYPE_ROIMG, &BrigImmed::dumpImmedROIMG},
 	{BRIG_TYPE_RWIMG, &BrigImmed::dumpImmedRWIMG},
+	{BRIG_TYPE_SIG32, &BrigImmed::dumpImmedU32},
+	{BRIG_TYPE_SIG64, &BrigImmed::dumpImmedU64},
 	{BRIG_TYPE_U8X4, &BrigImmed::dumpImmedU8X4},
 	{BRIG_TYPE_U8X8, &BrigImmed::dumpImmedU8X8},
 	{BRIG_TYPE_U8X16, &BrigImmed::dumpImmedU8X16},
@@ -100,6 +102,8 @@ std::map<int, int> BrigImmed::type_to_size_map =
 	{BRIG_TYPE_SAMP, 	0},
 	{BRIG_TYPE_ROIMG, 	0},
 	{BRIG_TYPE_RWIMG, 	0},
+	{BRIG_TYPE_SIG32, 	4},
+	{BRIG_TYPE_SIG64, 	8},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_32 , 4},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_64 , 8},
 	{BRIG_TYPE_U8  | BRIG_TYPE_PACK_128, 16},

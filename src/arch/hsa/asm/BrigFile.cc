@@ -25,6 +25,9 @@
 #include <lib/cpp/Error.h>
 
 #include "Brig.h"
+#include "BrigOperandEntry.h"
+#include "BrigCodeEntry.h"
+#include "BrigDataEntry.h"
 #include "BrigFile.h"
 
 namespace HSA
@@ -100,7 +103,8 @@ void BrigFile::PrepareSections()
 
 		// Create section
 		auto section = misc::new_unique<BrigSection>(
-				this, buffer.get() + section_offset);
+				buffer.get() + section_offset);
+		section->setBinary(this);
 		sections.push_back(std::move(section));
 	}
 }
@@ -127,11 +131,10 @@ bool BrigFile::isBrigFile(const char *file)
 }
 
 
-/*
 std::unique_ptr<BrigCodeEntry> BrigFile::getCodeEntryByOffset(
 		unsigned int offset) const
 {
-	BrigSection *code_section = getBrigSection(BrigSectionHsaCode);
+	BrigSection *code_section = getBrigSection(BRIG_SECTION_INDEX_CODE);
 	std::unique_ptr<BrigCodeEntry> entry =
 			code_section->getEntryByOffset<BrigCodeEntry>(offset);
 	return entry;
@@ -140,7 +143,7 @@ std::unique_ptr<BrigCodeEntry> BrigFile::getCodeEntryByOffset(
 
 const std::string BrigFile::getStringByOffset(unsigned int offset) const
 {
-	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
+	BrigSection *data_section = getBrigSection(BRIG_SECTION_INDEX_DATA);
 	std::unique_ptr<BrigDataEntry> data_entry =
 			data_section->getEntryByOffset<BrigDataEntry>(offset);
 	return data_entry->getString();
@@ -150,7 +153,7 @@ const std::string BrigFile::getStringByOffset(unsigned int offset) const
 std::unique_ptr<BrigDataEntry> BrigFile::getDataEntryByOffset(
 		unsigned int offset) const
 {
-	BrigSection *data_section = getBrigSection(BrigSectionHsaData);
+	BrigSection *data_section = getBrigSection(BRIG_SECTION_INDEX_DATA);
 	std::unique_ptr<BrigDataEntry> data_entry =
 			data_section->getEntryByOffset<BrigDataEntry>(offset);
 	return data_entry;
@@ -160,13 +163,13 @@ std::unique_ptr<BrigDataEntry> BrigFile::getDataEntryByOffset(
 std::unique_ptr<BrigOperandEntry> BrigFile::getOperandByOffset(
 		unsigned int offset) const
 {
-	BrigSection *operand_section = getBrigSection(BrigSectionHsaOperand);
+	BrigSection *operand_section = getBrigSection(BRIG_SECTION_INDEX_OPERAND);
 	std::unique_ptr<BrigOperandEntry> entry = operand_section->
 			getEntryByOffset<BrigOperandEntry>(offset);
 	return entry;
 }
 
-
+/*
 char *BrigFile::findMainFunction()
 {
 	// get pointers to code and dir section

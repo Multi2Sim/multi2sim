@@ -20,7 +20,7 @@
 #include <lib/cpp/String.h>
 #include <lib/cpp/Error.h>
 
-#include "BrigDef.h"
+#include "Brig.h"
 #include "BrigDataEntry.h"
 #include "BrigSection.h"
 #include "BrigFile.h"
@@ -65,10 +65,10 @@ unsigned BrigCodeEntry::getSize() const
 }
 
 
-BrigKinds BrigCodeEntry::getKind() const
+BrigKind BrigCodeEntry::getKind() const
 {
 	BrigBase *brig_base = (BrigBase *)base;
-	return (BrigKinds)brig_base->kind;
+	return (BrigKind)brig_base->kind;
 }
 
 
@@ -123,8 +123,6 @@ BrigWidth BrigCodeEntry::getDefaultWidth() const
         case BRIG_OPCODE_ACTIVELANEID: 
         	return BRIG_WIDTH_1;
         case BRIG_OPCODE_ACTIVELANEMASK: 
-        	return BRIG_WIDTH_1;
-        case BRIG_OPCODE_ACTIVELANESHUFFLE: 
         	return BRIG_WIDTH_1;
         case BRIG_OPCODE_ALLOCA: 
         	return BRIG_WIDTH_NONE;
@@ -206,100 +204,6 @@ bool BrigCodeEntry::isCallInst() const
 }
 
 
-unsigned int BrigCodeEntry::getHsailMajor() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("hsailMajor field is only valid for "
-				"directive version");
-	}
-
-	return directive->hsailMajor;
-}
-
-
-unsigned int BrigCodeEntry::getHsailMinor() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("hsailMinor field is only valid for "
-				"directive version");
-	}
-
-	return directive->hsailMinor;
-
-}
-
-
-unsigned int BrigCodeEntry::getBrigMajor() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("brigMajor field is only valid for "
-				"directive version");
-	}
-
-	return directive->brigMajor;
-
-}
-
-
-unsigned int BrigCodeEntry::getBrigMinor() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("brigMinor field is only valid for "
-				"directive version");
-	}
-
-	return directive->brigMinor;
-
-}
-
-
-BrigProfile BrigCodeEntry::getProfile() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("brigMinor field is only valid for "
-				"directive version");
-	}
-
-	return (BrigProfile)directive->profile;
-
-}
-
-
-BrigMachineModel BrigCodeEntry::getMachineModel() const
-{
-	struct BrigDirectiveVersion *directive = 
-			(struct BrigDirectiveVersion *)base;
-
-	if (directive->base.kind != BRIG_KIND_DIRECTIVE_VERSION)
-	{
-		throw misc::Panic("brigMinor field is only valid for "
-				"directive version");
-	}
-
-	return (BrigMachineModel)directive->machineModel;
-}
-
-
 std::string BrigCodeEntry::getName() const
 {
 	switch(getKind())
@@ -345,7 +249,7 @@ bool BrigCodeEntry::isDefinition() const
 		struct BrigDirectiveVariable *dir = 
 				(struct BrigDirectiveVariable *)base;	
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+		return !!(modifier & BRIG_VARIABLE_DEFINITION);
 	}
 	case BRIG_KIND_DIRECTIVE_KERNEL:
 	case BRIG_KIND_DIRECTIVE_FUNCTION:
@@ -355,14 +259,14 @@ bool BrigCodeEntry::isDefinition() const
 		struct BrigDirectiveExecutable *dir = 
 				(struct BrigDirectiveExecutable *)base;	
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+		return !!(modifier & BRIG_VARIABLE_DEFINITION);
 	}
 	case BRIG_KIND_DIRECTIVE_FBARRIER:
 	{
 		struct BrigDirectiveFbarrier *dir = 
 				(struct BrigDirectiveFbarrier *)base;
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_DEFINITION);
+		return !!(modifier & BRIG_VARIABLE_DEFINITION);
 	}
 	default:
 		throw misc::Panic("Get isDefinition is not valid for type\n");
@@ -379,7 +283,7 @@ bool BrigCodeEntry::isConst() const
 		struct BrigDirectiveVariable *dir = 
 				(struct BrigDirectiveVariable *)base;	
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_CONST);
+		return !!(modifier & BRIG_VARIABLE_CONST);
 	}
 	case BRIG_KIND_DIRECTIVE_KERNEL:
 	case BRIG_KIND_DIRECTIVE_FUNCTION:
@@ -389,7 +293,7 @@ bool BrigCodeEntry::isConst() const
 		struct BrigDirectiveExecutable *dir = 
 				(struct BrigDirectiveExecutable *)base;	
 		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_CONST);
+		return !!(modifier & BRIG_VARIABLE_CONST);
 	}
 	case BRIG_KIND_INST_MEM:
 	{
@@ -404,61 +308,7 @@ bool BrigCodeEntry::isConst() const
 	return false;
 }
 
-
-bool BrigCodeEntry::isArray() const
-{
-	switch(getKind())
-	{
-	case BRIG_KIND_DIRECTIVE_VARIABLE:
-	{
-		struct BrigDirectiveVariable *dir = 
-				(struct BrigDirectiveVariable *)base;	
-		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_ARRAY);
-	}
-	case BRIG_KIND_DIRECTIVE_KERNEL:
-	case BRIG_KIND_DIRECTIVE_FUNCTION:
-	case BRIG_KIND_DIRECTIVE_SIGNATURE:
-	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
-	{
-		struct BrigDirectiveExecutable *dir = 
-				(struct BrigDirectiveExecutable *)base;	
-		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_ARRAY);
-	}
-	default:
-		throw misc::Panic("Get isArray is not valid for type\n");
-	}
-}
-
-
-bool BrigCodeEntry::isFlexArray() const
-{
-	switch(getKind())
-	{
-	case BRIG_KIND_DIRECTIVE_VARIABLE:
-	{
-		struct BrigDirectiveVariable *dir = 
-				(struct BrigDirectiveVariable *)base;	
-		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_FLEX_ARRAY);
-	}
-	case BRIG_KIND_DIRECTIVE_KERNEL:
-	case BRIG_KIND_DIRECTIVE_FUNCTION:
-	case BRIG_KIND_DIRECTIVE_SIGNATURE:
-	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
-	{
-		struct BrigDirectiveExecutable *dir = 
-				(struct BrigDirectiveExecutable *)base;	
-		unsigned char modifier = (unsigned char)dir->modifier.allBits;
-		return !!(modifier & BRIG_SYMBOL_FLEX_ARRAY);
-	}
-	default:
-		throw misc::Panic("Get isFlexArray is not valid for type\n");
-	}
-}
-
-
+	
 unsigned char BrigCodeEntry::getLinkage() const
 {
 	switch(getKind())
@@ -668,26 +518,6 @@ std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getFirstCodeBlockEntry() const
 }
 
 
-unsigned int BrigCodeEntry::getCodeBlockEntryCount() const
-{
-	switch(getKind())
-	{
-	case BRIG_KIND_DIRECTIVE_KERNEL:
-	case BRIG_KIND_DIRECTIVE_FUNCTION:
-	case BRIG_KIND_DIRECTIVE_SIGNATURE:
-	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
-	{
-		struct BrigDirectiveExecutable *dir =
-				(struct BrigDirectiveExecutable *)base;
-		return dir->codeBlockEntryCount;
-	}
-	default:
-		KindError("GetCodeBlockEntryCount");
-	}
-	return 0;
-}
-
-
 std::unique_ptr<BrigCodeEntry> BrigCodeEntry::getNextModuleEntry() const
 {
 	switch(getKind())
@@ -722,7 +552,7 @@ BrigOpcode BrigCodeEntry::getOpcode() const
 }
 
 
-BrigTypeX BrigCodeEntry::getType() const
+BrigType BrigCodeEntry::getType() const
 {
 	/// Check if the entry is an inst
 	if (getKind() >= BRIG_KIND_INST_BEGIN 
@@ -730,13 +560,13 @@ BrigTypeX BrigCodeEntry::getType() const
 	{
 		// Return type
 		struct BrigInstBase *inst = (struct BrigInstBase *)base;
-		return (BrigTypeX)inst->type;
+		return (BrigType)inst->type;
 	}
 	else if(getKind() == BRIG_KIND_DIRECTIVE_VARIABLE)
 	{
 		struct BrigDirectiveVariable *dir = 
 				(struct BrigDirectiveVariable *)base;
-		return (BrigTypeX)dir->type;
+		return (BrigType)dir->type;
 	}
 	else
 	{
@@ -819,7 +649,7 @@ std::unique_ptr<BrigOperandEntry> BrigCodeEntry::getOperand(unsigned char index)
 }
 
 
-BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
+BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 {
 	// This function is only valid for instruction
 	if (!isInstruction())
@@ -870,7 +700,6 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_WORKITEMID) return BRIG_TYPE_U32;
 		break;
 	case 2:
-		if (opcode == BRIG_OPCODE_ACTIVELANESHUFFLE) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_BITMASK) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_CLASS) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_SHL) return BRIG_TYPE_U32;
@@ -892,7 +721,6 @@ BrigTypeX BrigCodeEntry::getOperandType(unsigned char index) const
 		break;
 	case 4:
 		if (opcode == BRIG_OPCODE_BITINSERT) return BRIG_TYPE_B32;
-		if (opcode == BRIG_OPCODE_ACTIVELANESHUFFLE) return BRIG_TYPE_B1;
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
 		break;
 	default:
@@ -946,67 +774,41 @@ BrigAluModifier BrigCodeEntry::getAluModifier() const
 }
 
 
-BrigTypeX BrigCodeEntry::getSourceType() const
+BrigType BrigCodeEntry::getSourceType() const
 {
 	switch(getKind())
 	{
 	case BRIG_KIND_INST_CMP:
 	{
 		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
-		return (BrigTypeX)inst->sourceType;
+		return (BrigType)inst->sourceType;
 	}	
 	case BRIG_KIND_INST_SOURCE_TYPE:
 	{
 		struct BrigInstSourceType *inst = 
 				(struct BrigInstSourceType *)base;
-		return (BrigTypeX)inst->sourceType;
+		return (BrigType)inst->sourceType;
 	}
 	case BRIG_KIND_INST_SEG_CVT:
 	{
 		struct BrigInstSegCvt *inst = 
 				(struct BrigInstSegCvt *)base;
-		return (BrigTypeX)inst->sourceType;
+		return (BrigType)inst->sourceType;
 	}
 	case BRIG_KIND_INST_CVT:
 	{
 		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
-		return (BrigTypeX)inst->sourceType;
+		return (BrigType)inst->sourceType;
 	}
 	case BRIG_KIND_INST_LANE:
 	{
 		struct BrigInstLane *inst = (struct BrigInstLane *)base;
-		return (BrigTypeX)inst->sourceType;
+		return (BrigType)inst->sourceType;
 	}
 	default: 
 		KindError("GetSourceType");
 	}	
 	return BRIG_TYPE_NONE;
-}
-
-
-BrigRound BrigCodeEntry::getRounding() const
-{
-	switch(getKind())
-	{
-	case BRIG_KIND_INST_MOD:
-	{
-		struct BrigInstMod *inst = (struct BrigInstMod *)base;
-		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
-	}
-	case BRIG_KIND_INST_CMP:
-	{
-		struct BrigInstCmp *inst = (struct BrigInstCmp *)base;
-		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
-	}
-	case BRIG_KIND_INST_CVT:
-	{
-		struct BrigInstCvt *inst = (struct BrigInstCvt *)base;
-		return (BrigRound)(inst->modifier.allBits & BRIG_ALU_ROUND);
-	}		
-	default: 
-		KindError("GetRounding");
-	}
-	return BRIG_ROUND_NONE;
 }
 
 
@@ -1253,14 +1055,14 @@ BrigAtomicOperation BrigCodeEntry::getSignalOperation() const
 }
 
 
-BrigTypeX BrigCodeEntry::getSignalType() const
+BrigType BrigCodeEntry::getSignalType() const
 {
 	switch(getKind())
 	{
 	case BRIG_KIND_INST_SIGNAL:
 	{
 		struct BrigInstSignal *inst = (struct BrigInstSignal *)base;
-		return (BrigTypeX)inst->signalType;
+		return (BrigType)inst->signalType;
 	}
 	default:
 		KindError("GetSignalType");
@@ -1291,20 +1093,20 @@ BrigImageGeometry BrigCodeEntry::getGeometry() const
 }
 
 
-BrigTypeX BrigCodeEntry::getImageType() const
+BrigType BrigCodeEntry::getImageType() const
 {
 	switch(getKind())
 	{
 	case BRIG_KIND_INST_IMAGE:
 	{
 		struct BrigInstImage *inst = (struct BrigInstImage *)base;
-		return (BrigTypeX)inst->imageType;
+		return (BrigType)inst->imageType;
 	}
 	case BRIG_KIND_INST_QUERY_IMAGE:
 	{
 		struct BrigInstQueryImage *inst = 
 				(struct BrigInstQueryImage *)base;
-		return (BrigTypeX)inst->imageType;
+		return (BrigType)inst->imageType;
 	}
 	default:
 		KindError("GetImageType");
@@ -1313,14 +1115,14 @@ BrigTypeX BrigCodeEntry::getImageType() const
 }
 
 
-BrigTypeX BrigCodeEntry::getCoordType() const
+BrigType BrigCodeEntry::getCoordType() const
 {
 	switch(getKind())
 	{
 	case BRIG_KIND_INST_IMAGE:
 	{
 		struct BrigInstImage *inst = (struct BrigInstImage *)base;
-		return (BrigTypeX)inst->coordType;
+		return (BrigType)inst->coordType;
 	}
 	default:
 		KindError("GetCoordType");

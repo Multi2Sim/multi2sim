@@ -23,9 +23,11 @@
 #include <map>
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
 
-#include "BrigDef.h"
+#include "Brig.h"
+#include "AsmService.h" 
 
 namespace HSA
 {
@@ -37,12 +39,12 @@ class BrigImmed
 	const unsigned char* ptr;
 
 	// type of the item
-	BrigTypeX type;
+	BrigType type;
 
 public:
 
 	/// Constructor
-	BrigImmed(const unsigned char* ptr, BrigTypeX type) : 
+	BrigImmed(const unsigned char* ptr, BrigType type) : 
 			ptr(ptr),
 			type(type)
 	{}
@@ -75,7 +77,17 @@ public:
 	{
 		// os << "Dump immed type: " << BrigEntry::type2str(this->type);
 		DumpImmedFn fn = 
-			BrigImmed::dump_immed_fn[this->type];
+			BrigImmed::dump_immed_fn[type];
+
+		// Check if the function is 
+		if (!fn)
+		{
+			throw misc::Panic(misc::fmt(
+					"Immed type %s not supported\n", 
+					AsmService::TypeToString(type).c_str()));
+		}
+
+		// Call function to dump
 		(this->*fn)(this->ptr, os);
 	}
 
