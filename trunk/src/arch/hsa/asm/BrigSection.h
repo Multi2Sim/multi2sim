@@ -24,7 +24,6 @@
 #include <lib/cpp/Misc.h>
 
 #include "Brig.h"
-#include "BrigEntry.h"
 
 namespace HSA
 {
@@ -34,19 +33,17 @@ class BrigFile;
 /// This class represents a section in a BRIG file. 
 class BrigSection
 {
-
 protected:
+	// The BRIG file that this section belongs to
+	BrigFile *binary;	
 
-	// Brig file that this section belongs to
-	BrigFile *binary;
-
-	// The section of the elf file. 
-	ELFReader::Section *elf_section;
+	// Buffer to the section
+	char *buffer;
 
 public:
 
 	/// Creates the BRIG section, set the type and read in buffer
-	BrigSection(ELFReader::Section *elfSection, BrigFile *binary);
+	BrigSection(BrigFile *binary, char *buffer);
 
 	/// Deconstructor
 	~BrigSection();
@@ -55,13 +52,13 @@ public:
 	BrigFile *getBinary() const { return binary; }
 
 	/// Returns the name of section
-	const std::string &getName() const { return elf_section->getName(); }
+	std::string getName() const;
 
 	/// Returns the size of the section
-	Elf32_Word getSize() const { return elf_section->getSize(); }
+	unsigned long long getSize() const;
 
 	/// Returns a pointer to the section contest. 
-	const char *getBuffer() const { return elf_section->getBuffer(); }
+	const char *getBuffer() const { return buffer; }
 
 	/// Dump section on stdout in HEX
 	void DumpSectionHex(std::ostream &os) const;
@@ -70,8 +67,8 @@ public:
 	template <typename T>
 	std::unique_ptr<T> getFirstEntry() const
 	{
-		struct BrigSectionHeader *header =
-				(struct BrigSectionHeader *)getBuffer();
+		BrigSectionHeader *header =
+				(BrigSectionHeader *)getBuffer();
 		return getEntryByOffset<T>(header->headerByteCount);
 	}
 
@@ -80,8 +77,8 @@ public:
 	template<typename T>	
 	std::unique_ptr<T> getEntryByOffset(unsigned int offset) const
 	{
-		struct BrigSectionHeader *header =
-				(struct BrigSectionHeader *)getBuffer();
+		BrigSectionHeader *header =
+				(BrigSectionHeader *)getBuffer();
 		if (offset < header->headerByteCount)
 			return std::unique_ptr<T>(nullptr);
 

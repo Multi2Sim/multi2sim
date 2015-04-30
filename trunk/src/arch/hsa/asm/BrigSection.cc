@@ -20,15 +20,13 @@
 #include <lib/cpp/String.h>
 
 #include "BrigFile.h"
-#include "BrigEntry.h"
-#include "BrigDataEntry.h"
 #include "BrigSection.h"
 
 namespace HSA{
 
-BrigSection::BrigSection(ELFReader::Section *elfSection, BrigFile *binary):
+BrigSection::BrigSection(BrigFile *binary, char *buffer):
 		binary(binary),
-		elf_section(elfSection)
+		buffer(buffer)
 {
 }
 
@@ -38,15 +36,29 @@ BrigSection::~BrigSection()
 }
 
 
+unsigned long long BrigSection::getSize() const
+{
+	BrigSectionHeader *header = (BrigSectionHeader *)buffer;	
+	return header->byteCount;
+}
+
+
+std::string BrigSection::getName() const
+{
+	BrigSectionHeader *header = (BrigSectionHeader *)buffer;	
+	return std::string((char *)header->name, 0, 
+			header->nameLength);
+}
+
+
 void BrigSection::DumpSectionHex(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n********** Section %s **********\n", 
 			this->getName().c_str());
 	
-	const unsigned char *buf = (const unsigned char *)this->getBuffer();
 	for (unsigned int i=0; i<this->getSize(); i++)
 	{
-		os << misc::fmt("%02x", buf[i]);
+		os << misc::fmt("%02x", ((unsigned char *)buffer)[i]);
 		if ((i + 1) % 4 == 0)
 		{
 			os << " ";

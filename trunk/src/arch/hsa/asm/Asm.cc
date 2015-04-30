@@ -17,8 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Asm.h"
+#include "Brig.h"
 #include "BrigFile.h"
+#include "BrigSection.h"
+#include "Asm.h"
 
 namespace HSA
 {
@@ -79,16 +81,20 @@ Asm::Asm()
 
 void Asm::DisassembleBinary(const std::string &path) const
 {
-	BrigFile brig_file(path.c_str());
+	BrigFile brig_file;
+	brig_file.LoadFileByPath(path);
 	BrigSection *brig_section = 
-			brig_file.getBrigSection(BrigSectionHsaCode);
+			brig_file.getBrigSection(BRIG_SECTION_INDEX_CODE);
+	brig_section->DumpSectionHex(std::cout);
 
+ 	/*
 	auto entry = brig_section->getFirstEntry<BrigCodeEntry>();
 	while(entry.get())
 	{
 		entry->Dump(std::cout);
 		entry = entry->NextTopLevelEntry();
 	}
+	*/
 }
 
 }  // namespace HSA
