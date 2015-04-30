@@ -32,7 +32,7 @@ namespace mem
 
 
 /// Memory management unit. This class represents a 32-bit physical memory
-/// space and provides a virtual-to-physical memory translations. The physical
+/// space and provides virtual-to-physical memory translations. The physical
 /// memory space supports creation of multiple virtual memory spaces.
 class MMU
 {

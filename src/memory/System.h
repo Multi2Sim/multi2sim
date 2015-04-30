@@ -20,7 +20,11 @@
 #ifndef MEMORY_SYSTEM_H
 #define MEMORY_SYSTEM_H
 
+#include <memory>
+
 #include <lib/cpp/Debug.h>
+#include <lib/esim/FrequencyDomain.h>
+#include <lib/esim/Event.h>
 
 
 namespace mem
@@ -29,7 +33,130 @@ namespace mem
 /// Memory system
 class System
 {
+	// Unique instance of this class
+	static std::unique_ptr<System> instance;
+
+	// Private constructor
+	System();
+
+	// Event handlers
+	static void evLoadHandler(esim::EventType *, esim::EventFrame *);
+	static void evStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void evNCStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void evPrefetchHandler(esim::EventType *, esim::EventFrame *);
+	static void evFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+	static void evEvictHandler(esim::EventType *, esim::EventFrame *);
+	static void evWriteRequestHandler(esim::EventType *, esim::EventFrame *);
+	static void evReadRequestHandler(esim::EventType *, esim::EventFrame *);
+	static void evInvalidateHandler(esim::EventType *, esim::EventFrame *);
+	static void evPeerHandler(esim::EventType *, esim::EventFrame *);
+	static void evMessageHandler(esim::EventType *, esim::EventFrame *);
+	static void evFlushHandler(esim::EventType *, esim::EventFrame *);
+	static void evLocalLoadHandler(esim::EventType *, esim::EventFrame *);
+	static void evLocalStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void evLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+
 public:
+
+	// Frequency domain for memory system
+	static esim::FrequencyDomain *frequency_domain;
+
+	// NMOESI event types
+	static esim::EventType *ev_load;
+	static esim::EventType *ev_load_lock;
+	static esim::EventType *ev_load_action;
+	static esim::EventType *ev_load_miss;
+	static esim::EventType *ev_load_unlock;
+	static esim::EventType *ev_load_finish;
+
+	static esim::EventType *ev_store;
+	static esim::EventType *ev_store_lock;
+	static esim::EventType *ev_store_action;
+	static esim::EventType *ev_store_unlock;
+	static esim::EventType *ev_store_finish;
+
+	static esim::EventType *ev_nc_store;
+	static esim::EventType *ev_nc_store_lock;
+	static esim::EventType *ev_nc_store_writeback;
+	static esim::EventType *ev_nc_store_action;
+	static esim::EventType *ev_nc_store_miss;
+	static esim::EventType *ev_nc_store_unlock;
+	static esim::EventType *ev_nc_store_finish;
+
+	static esim::EventType *ev_prefetch;
+	static esim::EventType *ev_prefetch_lock;
+	static esim::EventType *ev_prefetch_action;
+	static esim::EventType *ev_prefetch_miss;
+	static esim::EventType *ev_prefetch_unlock;
+	static esim::EventType *ev_prefetch_finish;
+
+	static esim::EventType *ev_find_and_lock;
+	static esim::EventType *ev_find_and_lock_port;
+	static esim::EventType *ev_find_and_lock_action;
+	static esim::EventType *ev_find_and_lock_finish;
+
+	static esim::EventType *ev_evict;
+	static esim::EventType *ev_evict_invalid;
+	static esim::EventType *ev_evict_action;
+	static esim::EventType *ev_evict_receive;
+	static esim::EventType *ev_evict_process;
+	static esim::EventType *ev_evict_process_noncoherent;
+	static esim::EventType *ev_evict_reply;
+	static esim::EventType *ev_evict_reply_receive;
+	static esim::EventType *ev_evict_finish;
+
+	static esim::EventType *ev_write_request;
+	static esim::EventType *ev_write_request_receive;
+	static esim::EventType *ev_write_request_action;
+	static esim::EventType *ev_write_request_exclusive;
+	static esim::EventType *ev_write_request_updown;
+	static esim::EventType *ev_write_request_updown_finish;
+	static esim::EventType *ev_write_request_downup;
+	static esim::EventType *ev_write_request_downup_finish;
+	static esim::EventType *ev_write_request_reply;
+	static esim::EventType *ev_write_request_finish;
+
+	static esim::EventType *ev_read_request;
+	static esim::EventType *ev_read_request_receive;
+	static esim::EventType *ev_read_request_action;
+	static esim::EventType *ev_read_request_updown;
+	static esim::EventType *ev_read_request_updown_miss;
+	static esim::EventType *ev_read_request_updown_finish;
+	static esim::EventType *ev_read_request_downup;
+	static esim::EventType *ev_read_request_downup_wait_for_reqs;
+	static esim::EventType *ev_read_request_downup_finish;
+	static esim::EventType *ev_read_request_reply;
+	static esim::EventType *ev_read_request_finish;
+
+	static esim::EventType *ev_invalidate;
+	static esim::EventType *ev_invalidate_finish;
+
+	static esim::EventType *ev_peer_send;
+	static esim::EventType *ev_peer_receive;
+	static esim::EventType *ev_peer_reply;
+	static esim::EventType *ev_peer_finish;
+
+	static esim::EventType *ev_message;
+	static esim::EventType *ev_message_receive;
+	static esim::EventType *ev_message_action;
+	static esim::EventType *ev_message_reply;
+	static esim::EventType *ev_message_finish;
+
+	static esim::EventType *ev_flush;
+	static esim::EventType *ev_flush_finish;
+	
+	static esim::EventType *ev_local_load;
+	static esim::EventType *ev_local_load_lock;
+	static esim::EventType *ev_local_load_finish;
+
+	static esim::EventType *ev_local_store;
+	static esim::EventType *ev_local_store_lock;
+	static esim::EventType *ev_local_store_finish;
+
+	static esim::EventType *ev_local_find_and_lock;
+	static esim::EventType *ev_local_find_and_lock_port;
+	static esim::EventType *ev_local_find_and_lock_action;
+	static esim::EventType *ev_local_find_and_lock_finish;
 
 	/// Memory system trace
 	static misc::Debug trace;
@@ -42,7 +169,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
-
+	
+	/// Obtain singleton instance.
+	static System *getInstance();
 };
 
 }  // namespace mem
