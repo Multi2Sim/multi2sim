@@ -17,49 +17,31 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_ASM_BRIGDATA_H
-#define ARCH_HSA_ASM_BRIGDATA_H
+#include "gtest/gtest.h"
 
-#include <iostream>
-#include <memory>
+#include <lib/cpp/Error.h>
 
-#include "Brig.h"
-#include "BrigEntry.h"
+#include "../BrigSection.h"
 
-namespace HSA
+namespace HSA 
 {
 
-class BrigEntry;
-
-/// A BrigEntry is an entry in the hsa_data section. The major difference is
-/// that is uses 4 bytes for the size of the entry
-class BrigDataEntry : public BrigEntry
+TEST(TestBrigSection, TestGetName) 
 {
-	// The struct that of the data entry
-	struct BrigData *data;
+	// Setup buffer
+	std::unique_ptr<char> buffer = std::unique_ptr<char>(new char[24]);	
+	BrigSectionHeader *header = (BrigSectionHeader *)buffer.get();
+	header->byteCount = 24;
+	header->headerByteCount = 24;
+	header->nameLength = 8;
+	char *name = (char *)&header->name;
+	strncpy(name, "abcdefgh", 8);
 
-public:
+	// Create BrigSection
+	BrigSection section(buffer.get());
 
-	/// Constructor
-	BrigDataEntry(const char *buf) : 
-			BrigEntry(buf)
-	{
-		data = (BrigData *)buf;
-	}
+	// Compare result
+	EXPECT_STREQ("abcdefgh", section.getName().c_str());
+}
 
-	/// Return the data as string
-	const std::string getString() const;
-
-	/// Return the byte count of the data entry
-	unsigned int getByteCount() const;
-
-	/// Return the pointer to the byte field 
-	const unsigned char *getBytes() const;
-
-};
-	
-}  // namespace HSA
-
-#endif
-
-
+}

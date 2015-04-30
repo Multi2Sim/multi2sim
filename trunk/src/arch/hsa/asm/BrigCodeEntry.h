@@ -24,7 +24,7 @@
 #include <memory>
 #include <map>
 
-#include "BrigDef.h"
+#include "Brig.h"
 #include "BrigEntry.h"
 
 namespace HSA
@@ -48,12 +48,13 @@ class BrigCodeEntry : public BrigEntry
 public:
 	
 	/// Constructor
-	BrigCodeEntry(const char *buf, const BrigSection *section) : 
-			BrigEntry(buf, section)
-	{}
+	BrigCodeEntry(const char *buffer) : 
+			BrigEntry(buffer)
+	{
+	}
 
 	/// Return the kind field of the entry
-	BrigKinds getKind() const;
+	BrigKind getKind() const;
 
 	/// Return the size in bytes of the entry
 	unsigned getSize() const;
@@ -88,10 +89,10 @@ public:
 	void DumpDirKernel(std::ostream &os) const;
 	void DumpDirLabel(std::ostream &os) const;
 	void DumpDirLoc(std::ostream &os) const;
+	void DumpDirModule(std::ostream &os) const;
 	void DumpDirPragma(std::ostream &os) const;
 	void DumpDirSignature(std::ostream &os) const;
 	void DumpDirVariable(std::ostream &os) const;
-	void DumpDirVersion(std::ostream &os) const;
 
 	/// Dump instruction functions
 	void DumpInstAddr(std::ostream &os) const;
@@ -168,24 +169,6 @@ public:
 	/// Return true if instruction is call
 	bool isCallInst() const;
 
-	/// Return the hsailMajor field for the version directive
-	unsigned int getHsailMajor() const;
-
-	/// Return the hsailMinor field for the version directive
-	unsigned int getHsailMinor() const;
-
-	/// Return the brigMajor field for the version directive
-	unsigned int getBrigMajor() const;
-
-	/// Return the brigMinor field for the version directive
-	unsigned int getBrigMinor() const;
-
-	/// Return the profile field for the version directive
-	BrigProfile getProfile() const;
-	
-	/// Return the machineModel field for the version directive
-	BrigMachineModel getMachineModel() const;
-
 	/// Return the string represented by the name field
 	std::string getName() const;
 
@@ -194,12 +177,6 @@ public:
 
 	/// Return true if the variable is const
 	bool isConst() const;
-
-	/// Return true if the variable is an array
-	bool isArray() const;
-
-	/// Return true if the variable is a flexible array
-	bool isFlexArray() const;
 
 	/// Return linkage field
 	unsigned char getLinkage() const;
@@ -235,7 +212,7 @@ public:
 	BrigOpcode getOpcode() const;
 
 	/// Return the type field of an instruction
-	BrigTypeX getType() const;
+	BrigType getType() const;
 
 	/// Return the align field of an entry
 	BrigAlignment getAlign() const;
@@ -251,7 +228,7 @@ public:
 
 	/// Get operand type of current instruction according to the operand 
 	/// index
-	BrigTypeX getOperandType(unsigned char index) const;
+	BrigType getOperandType(unsigned char index) const;
 
 	/// Get compare operation field
 	BrigCompareOperation getCompareOperation() const;
@@ -260,10 +237,7 @@ public:
 	BrigAluModifier getAluModifier() const;
 
 	/// Return source type field
-	BrigTypeX getSourceType() const;
-
-	/// Return the rounding 
-	BrigRound getRounding() const;
+	BrigType getSourceType() const;
 
 	/// Return the default rounding of an instruction
 	BrigRound getDefaultRounding() const;
@@ -290,16 +264,16 @@ public:
 	BrigAtomicOperation getSignalOperation() const;
 
 	/// Return the signal type
-	BrigTypeX getSignalType() const;
+	BrigType getSignalType() const;
 
 	/// Return the geometry
 	BrigImageGeometry getGeometry() const;
 
 	/// Return the image type
-	BrigTypeX getImageType() const;
+	BrigType getImageType() const;
 
 	/// Return the coord type
-	BrigTypeX getCoordType() const;
+	BrigType getCoordType() const;
 
 	/// Return the global segment memory scope
 	BrigMemoryScope getGlobalSegmentScope() const;
