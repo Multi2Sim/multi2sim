@@ -21,15 +21,17 @@
 #define ARCH_HSA_ASM_BRIGFILE_H
 
 #include <cstdint>
-#include <map>
-#include <elf.h>
+#include <memory>
+#include <vector>
 
 #include <lib/cpp/Error.h>
 
+#include "Brig.h"
 #include "BrigSection.h"
 
 namespace HSA
 {
+class BrigSection;
 
 /// This class represents the ELF file defined by HSA standard, or called 
 /// BRIG format. It encapsulates the ELFReader class and provide unique 
@@ -39,18 +41,14 @@ class BrigFile
 	// The path to the file
 	std::string path;
 
-	// The elf file, read by ELFReader
+	// The buffer of the file content
 	std::unique_ptr<char> buffer;
 
-	// A vector that holds 5 sections defined in BRIG standard;
-	// brigSections[0] - hsa_data
-	// brigSections[1] - hsa_code
-	// brigSections[2] - hsa_operand
-	// ... More costomized sections
-	// std::vector<std::unique_ptr<BrigSection>> brig_sections;
+	// An list of BRIG sections, maps section index to section
+	std::vector<std::unique_ptr<BrigSection>> sections;
 
-	// Read the file and create sections
-	// void PrepareSections();
+	// Set the section vector
+	void PrepareSections();
 
 public:
 
@@ -70,10 +68,10 @@ public:
 	~BrigFile();
 
 	/// Returns the path to the BRIG file
-	// const std::string &getPath() const { return file.getPath(); }
+	const std::string &getPath() const { return path; }
 
 	/// Returns the section according to the type value passed in
-	// BrigSection *getBrigSection(BrigSectionType section_type) const;
+	BrigSection *getBrigSection(BrigSectionIndex section_index) const;
 
 	/// Checks if the loaded brig file is a brig file
 	///
@@ -81,6 +79,10 @@ public:
 	///	Returns \c true if the loaded file is valid
 	///
 	static bool isBrigFile(const char *file);
+
+
+	/// Returns the number of sections in the BRIG file
+	unsigned int getNumSections() const;
 
 	/// Retrieve an entry in the code section
 	// std::unique_ptr<BrigCodeEntry> getCodeEntryByOffset(
