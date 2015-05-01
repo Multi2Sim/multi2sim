@@ -35,8 +35,11 @@ protected:
 	// Pointer to the first byte of the entry
 	const char *base;
 
-	// A Pointer to the file that this brig entry belongs to 
+	// A Pointer to the section that this brig entry belongs to 
 	const BrigSection *section;
+
+	// A Pointer to the file that this brig entry belongs to
+	const BrigFile *binary;
 
 	// Return the pointer to the brig data. Accessing the buffer should 
 	// be forbidden from the ouside of this function
@@ -54,13 +57,16 @@ public:
 	unsigned int getOffset() const;
 
 	/// Set the BRIG section is belongs to
-	void setSection(const BrigSection *section) { this->section = section; }
+	void setSection(const BrigSection *section);
 
 	/// Return the section that has this entry
 	const BrigSection *getSection() const { return section; }
 
 	/// Returns the file that has this entry
-	BrigFile *getBinary() const;
+	const BrigFile *getBinary() const { return binary; };
+
+	/// Set the file that this entry belongs to
+	void setBinary(const BrigFile *binary) { this->binary = binary; }
 
 };
 

@@ -42,7 +42,7 @@ std::map<unsigned, BrigCodeEntry::DumpEntryFn> BrigCodeEntry::dump_entry_fn =
 	{BRIG_KIND_DIRECTIVE_KERNEL, &BrigCodeEntry::DumpDirKernel},
 	{BRIG_KIND_DIRECTIVE_LABEL, &BrigCodeEntry::DumpDirLabel},
 	{BRIG_KIND_DIRECTIVE_LOC, &BrigCodeEntry::DumpDirLoc},
-	{BRIG_KIND_DIRECTIVE_MODULE, &BrigCodeEntry::DumpDirLoc},
+	{BRIG_KIND_DIRECTIVE_MODULE, &BrigCodeEntry::DumpDirModule},
 	{BRIG_KIND_DIRECTIVE_PRAGMA, &BrigCodeEntry::DumpDirPragma},
 	{BRIG_KIND_DIRECTIVE_SIGNATURE,  &BrigCodeEntry::DumpDirSignature},
 	{BRIG_KIND_DIRECTIVE_VARIABLE, &BrigCodeEntry::DumpDirVariable},
@@ -224,7 +224,17 @@ void BrigCodeEntry::DumpDirLoc(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpDirModule(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("Directive: %s, not supported\n", "MODULE");
+	os << "module ";
+	os << getName() << ":";
+	os << getHsailMajor() << ":";
+	os << getHsailMinor() <<  ":";
+	os << AsmService::ProfileToString(getProfile()) << ":";
+	os << AsmService::MachineModelToString(getMachineModel()) << ":";
+	std::string roundStr = AsmService::RoundingToString(
+			getDefaultFloatRound());
+	if (roundStr == "")
+		roundStr = "$default";
+	os << roundStr << ";\n";
 }
 
 

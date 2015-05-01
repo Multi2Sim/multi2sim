@@ -1,4 +1,6 @@
-AM_CPPFLAGS = -isystem $(top_srcdir)/src/lib/gtest/include $(GTEST_CPPFLAGS) \
+AM_CPPFLAGS = -isystem \
+	      $(top_srcdir)/src/lib/gtest/include \
+	      $(GTEST_CPPFLAGS) \
 	      @M2S_INCLUDES@
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
 AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
@@ -15,7 +17,8 @@ check_PROGRAMS += hsa_asm_test
 
 hsa_asm_test_SOURCES = \
 	TestBrigFile.cc \
-	TestBrigSection.cc
+	TestBrigSection.cc \
+	TestBrigCodeEntry.cc
 
 hsa_asm_test_LDADD = \
 	$(top_builddir)/src/arch/hsa/asm/libasm.a \

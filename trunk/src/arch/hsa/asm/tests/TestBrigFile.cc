@@ -44,7 +44,8 @@ TEST(TestBrigFile, TestOpenFileByPath)
 {
 	// Should throw error if no such file
 	BrigFile file;
-	EXPECT_THROW(file.LoadFileByPath("no_such_file.brig"), misc::Error);
+	EXPECT_THROW(file.LoadFileByPath("no_such_file.brig"), 
+			misc::Error);
 
 	// Should throw error if the file is not of brig type
 	EXPECT_THROW(file.LoadFileByPath("Makefile"), misc::Error);
