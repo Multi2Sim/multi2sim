@@ -651,7 +651,9 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 			getLinkage()), os);
 	AsmService::DumpWithSpace(AsmService::AllocationToString(
 			getAllocation(), getSegment()), os);
-	// FIXME: add align and const support
+	// FIXME: add align support
+	AsmService::DumpWithSpace(AsmService::ConstToString(
+			isConst()), os);
 
 	// Dump memory segment and type
 	os << AsmService::SegmentToString(getSegment());
@@ -664,8 +666,7 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 	}
 
 	// Dump square bracket if the symbol is array
-	/*
-	if (isFlexArray())
+	if (isArray() && getDim() == 0)
 	{
 		os << "[]";
 	}
@@ -673,7 +674,6 @@ void BrigCodeEntry::DumpSymbolDeclaration(std::ostream &os = std::cout) const
 	{
 		os << "[" << getDim() << "]";
 	}
-	*/
 
 }
 

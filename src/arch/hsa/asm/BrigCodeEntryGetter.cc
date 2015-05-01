@@ -477,6 +477,30 @@ BrigSegment BrigCodeEntry::getSegment() const
 }
 
 
+bool BrigCodeEntry::isArray() const
+{
+	switch(getKind())
+	{
+	case BRIG_KIND_DIRECTIVE_VARIABLE:
+
+	{
+		BrigType type = getType();
+		if (type & BRIG_TYPE_ARRAY)
+			return true;
+		else
+			return false;
+	}
+
+	default:
+
+		KindError("GetDim");
+
+	}
+	return false;
+
+}
+
+
 unsigned long long BrigCodeEntry::getDim() const
 {
 	switch(getKind())

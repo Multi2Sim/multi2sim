@@ -28,7 +28,7 @@
 namespace HSA
 {
 
-TEST(BrigCodeEntry, should_dump_module_directive_correctly)
+TEST(TestBrigCodeEntry, should_dump_module_directive_correctly)
 {
 	// Mock up an BrigFile Class
 	class MockupBrigFile : public BrigFile
@@ -58,8 +58,6 @@ TEST(BrigCodeEntry, should_dump_module_directive_correctly)
 
 	// Init object
 	BrigCodeEntry dir((char *)module.get());
-	file->getStringByOffset(0);
-	((BrigFile *)file)->getStringByOffset(0);
 	dir.setBinary(file);
 
 	// Dump
@@ -70,6 +68,93 @@ TEST(BrigCodeEntry, should_dump_module_directive_correctly)
 	EXPECT_STREQ("module &module:12:34:$base:$small:$default;\n",
 			output.c_str());
 }
+
+
+TEST(TestBrigCodeEntry, should_dump_directive_variable_right)
+{
+	// Mockup an BrigFile class
+	class MockupBrigFile : public BrigFile
+	{
+	public:
+		const std::string getStringByOffset(unsigned int offset) const
+			override
+		{
+			return "&variable";
+		}
+	};
+	MockupBrigFile *file = new MockupBrigFile();
+
+	// Set directive buffer
+	auto dir = misc::new_unique<BrigDirectiveVariable>();
+	dir->base.byteCount = 100;
+	dir->base.kind = BRIG_KIND_DIRECTIVE_VARIABLE;
+	dir->name = 0;
+	dir->init = 0;
+	dir->type = BRIG_TYPE_U32;
+	dir->segment = BRIG_SEGMENT_GLOBAL;
+	dir->align = BRIG_ALIGNMENT_NONE;
+	dir->dim.lo = 0;
+	dir->dim.hi = 0;
+	dir->modifier.allBits = 3;
+	dir->linkage = BRIG_LINKAGE_NONE;
+	dir->allocation = BRIG_ALLOCATION_AUTOMATIC;
+
+	// Init object
+	BrigCodeEntry entry((char *)dir.get());
+	entry.setBinary(file);
+	std::ostringstream os;
+
+	// Dump
+	entry.Dump(os);
+
+	// Result
+	std::string output = os.str();
+	EXPECT_STREQ("const global_u32 &variable;\n", output.c_str());
+}
+
+
+TEST(TestBrigCodeEntry, should_dump_variable_array_right)
+{
+	// Mockup an BrigFile class
+	class MockupBrigFile : public BrigFile
+	{
+	public:
+		const std::string getStringByOffset(unsigned int offset) const
+			override
+		{
+			return "&variable";
+		}
+	};
+	MockupBrigFile *file = new MockupBrigFile();
+
+	// Set directive buffer
+	auto dir = misc::new_unique<BrigDirectiveVariable>();
+	dir->base.byteCount = 100;
+	dir->base.kind = BRIG_KIND_DIRECTIVE_VARIABLE;
+	dir->name = 0;
+	dir->init = 0;
+	dir->type = BRIG_TYPE_S32_ARRAY;
+	dir->segment = BRIG_SEGMENT_PRIVATE;
+	dir->align = BRIG_ALIGNMENT_NONE;
+	dir->dim.lo = 10;
+	dir->dim.hi = 0;
+	dir->modifier.allBits = 1;
+	dir->linkage = BRIG_LINKAGE_NONE;
+	dir->allocation = BRIG_ALLOCATION_AUTOMATIC;
+
+	// Init object
+	BrigCodeEntry entry((char *)dir.get());
+	entry.setBinary(file);
+	std::ostringstream os;
+
+	// Dump
+	entry.Dump(os);
+
+	// Result
+	std::string output = os.str();
+	EXPECT_STREQ("private_s32 &variable[10];\n", output.c_str());
+}
+
 
 }
 
