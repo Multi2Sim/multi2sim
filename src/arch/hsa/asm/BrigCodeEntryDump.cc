@@ -396,13 +396,11 @@ void BrigCodeEntry::DumpInstCvt(std::ostream &os = std::cout) const
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
-	/*
-	if (getRounding() != getDefaultRounding())
+	if (getRound() != getDefaultRounding())
 	{
 		AsmService::DumpUnderscore(AsmService::RoundingToString(
-				getRounding()), os);
+				getRound()), os);
 	}
-	*/
 	AsmService::DumpUnderscore(AsmService::TypeToString(getType()), os);
 	AsmService::DumpUnderscore(AsmService::TypeToString(getSourceType()), 
 			os);
@@ -526,11 +524,9 @@ void BrigCodeEntry::DumpInstMod(std::ostream &os = std::cout) const
 	os << AsmService::OpcodeToString(getOpcode());
 	AsmService::DumpUnderscore(AsmService::AluModifierToString(
 			getAluModifier()), os);
-	/*
-	if (getRounding() != getDefaultRounding())
+	if (getRound() != getDefaultRounding())
 		AsmService::DumpUnderscore(AsmService::RoundingToString(
-				getRounding()), os);
-	*/
+				getRound()), os);
 	AsmService::DumpUnderscore(AsmService::PackToString(getPack()), os);
 	if (useType())
 		AsmService::DumpUnderscore(AsmService::TypeToString(getType()), 

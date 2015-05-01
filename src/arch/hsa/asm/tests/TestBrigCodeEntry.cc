@@ -23,7 +23,9 @@
 #include <lib/cpp/Error.h>
 
 #include "../BrigFile.h"
+#include "../BrigDataEntry.h"
 #include "../BrigCodeEntry.h"
+#include "../BrigOperandEntry.h"
 
 namespace HSA
 {
@@ -154,6 +156,64 @@ TEST(TestBrigCodeEntry, should_dump_variable_array_right)
 	std::string output = os.str();
 	EXPECT_STREQ("private_s32 &variable[10];\n", output.c_str());
 }
+
+
+TEST(TestBrigCodeEntry, should_dump_float_point_operation_right)
+{
+	// Mockup an BrigFile class
+	class MockupBrigFile : public BrigFile
+	{
+	public:
+		std::unique_ptr<BrigOperandEntry> getOperandByOffset(
+				unsigned int offset) const 
+		{
+			printf("Get operand by offset %d\n", offset);
+			auto operand = misc::new_unique<BrigOperandConstantBytes>();
+			operand->base.byteCount = 0;
+			operand->base.kind = BRIG_KIND_OPERAND_CONSTANT_BYTES;
+			operand->type = BRIG_TYPE_F32;
+			operand->bytes = 200;
+			return misc::new_unique<BrigOperandEntry>(
+					(char *)operand.get());
+		}
+
+		std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
+				unsigned offset) const
+		{
+			// Set operand list to have 0 operand
+			auto data = misc::new_unique<BrigData>();
+			data->byteCount = 0;
+			return misc::new_unique<BrigDataEntry>(
+					(char *)data.get());
+		}
+	};
+	MockupBrigFile *file = new MockupBrigFile();
+
+
+	// Set directive buffer
+	auto inst = misc::new_unique<BrigInstMod>();
+	inst->base.base.byteCount = 100;
+	inst->base.base.kind = BRIG_KIND_INST_MOD;
+	inst->base.opcode = 2;
+	inst->base.type = BRIG_TYPE_F32;
+	inst->base.operands = 100;
+	inst->modifier.allBits = 0;
+	inst->pack = BRIG_PACK_NONE;
+	inst->round = BRIG_ROUND_FLOAT_ZERO;
+
+	// Init object
+	BrigCodeEntry entry((char *)inst.get());
+	entry.setBinary(file);
+	std::ostringstream os;
+
+	// Dump
+	entry.Dump(os);
+
+	// Result
+	std::string output = os.str();
+	EXPECT_STREQ("add_zero_f32;\n", output.c_str());
+}
+
 
 
 }
