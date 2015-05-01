@@ -160,6 +160,21 @@ public:
 	/// Return true if the instruction use type
 	bool useType() const;
 
+	/// Return version major
+	unsigned int getHsailMajor() const;
+
+	/// Return version minor
+	unsigned int getHsailMinor() const;
+
+	/// Return profile
+	BrigProfile getProfile() const;
+
+	/// Return machine model
+	BrigMachineModel getMachineModel() const;
+
+	/// Return default rounding
+	BrigRound getDefaultFloatRound() const;
+
 	/// Return default width
 	BrigWidth getDefaultWidth() const;
 

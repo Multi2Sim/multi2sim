@@ -93,7 +93,7 @@ public:
 
 	/// Return the string that is stored in the hsa_data section by its 
 	/// offset
-	const std::string getStringByOffset(unsigned int offset) const;
+	virtual const std::string getStringByOffset(unsigned int offset) const;
 
 	/// Return the data entry at a certain offset
 	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(

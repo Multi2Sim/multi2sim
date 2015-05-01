@@ -23,9 +23,10 @@
 namespace HSA
 {
 
-BrigFile *BrigEntry::getBinary() const 
+void BrigEntry::setSection(const BrigSection *section) 
 { 
-	return section->getBinary(); 
+	this->section = section; 
+	this->binary = section->getBinary();
 }
 
 
