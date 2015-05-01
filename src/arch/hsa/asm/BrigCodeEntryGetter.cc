@@ -895,21 +895,62 @@ BrigType BrigCodeEntry::getSourceType() const
 }
 
 
+BrigRound BrigCodeEntry::getRound() const
+{
+	switch(getKind()) 
+	{
+	case BRIG_KIND_INST_MOD:
+	
+	{
+		BrigInstMod *inst = (BrigInstMod *)base;	
+		return (BrigRound)inst->round;
+		break;
+	}
+
+	case BRIG_KIND_INST_CVT:
+	
+	{
+		BrigInstCvt *inst = (BrigInstCvt *)base;	
+		return (BrigRound)inst->round;
+		break;
+	}
+
+	default:
+
+		KindError("GetRound");
+		break;
+
+	}
+	return BRIG_ROUND_NONE;
+}
+
+
 BrigRound BrigCodeEntry::getDefaultRounding() const
 {
 	switch(getOpcode())
 	{
 	case BRIG_OPCODE_ABS:
+
 		return BRIG_ROUND_NONE;
+
 	case BRIG_OPCODE_ADD:
 	case BRIG_OPCODE_SUB:
 	case BRIG_OPCODE_MUL:
 	case BRIG_OPCODE_DIV:
 
 	{
-		if (getType() >= 9 && getType() <= 11)
+		if (getType() ==  BRIG_TYPE_U32 || 
+				getType() == BRIG_TYPE_U64 ||
+				getType() == BRIG_TYPE_S32 ||
+				getType() == BRIG_TYPE_S64)
 		{
-			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+			return BRIG_ROUND_NONE;
+		}
+		if (getType() == BRIG_TYPE_F16 ||
+				getType() == BRIG_TYPE_F32 ||
+				getType() == BRIG_TYPE_F64)
+		{
+			return BRIG_ROUND_FLOAT_DEFAULT;
 		}
 		if (getType() == BRIG_TYPE_F16X2 || 
 				getType() == BRIG_TYPE_F16X4 ||
@@ -918,7 +959,7 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 				getType() == BRIG_TYPE_F32X4 ||
 				getType() == BRIG_TYPE_F64X2)
 		{
-			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+			return BRIG_ROUND_FLOAT_DEFAULT;
 		}
 		return BRIG_ROUND_NONE;
 	}

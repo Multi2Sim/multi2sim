@@ -257,6 +257,9 @@ public:
 	/// Return source type field
 	BrigType getSourceType() const;
 
+	/// Return the round field
+	BrigRound getRound() const;
+
 	/// Return the default rounding of an instruction
 	BrigRound getDefaultRounding() const;
 
