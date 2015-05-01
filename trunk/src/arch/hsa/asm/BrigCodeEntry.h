@@ -202,6 +202,9 @@ public:
 	/// Return segment field
 	BrigSegment getSegment() const;
 
+	/// Return true is variable is array
+	bool isArray() const;
+
 	/// Return the dim field
 	unsigned long long getDim() const;
 
