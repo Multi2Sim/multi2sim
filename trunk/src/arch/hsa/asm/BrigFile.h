@@ -96,11 +96,11 @@ public:
 	virtual const std::string getStringByOffset(unsigned int offset) const;
 
 	/// Return the data entry at a certain offset
-	std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
+	virtual std::unique_ptr<BrigDataEntry> getDataEntryByOffset(
 			unsigned int offset) const;
 
 	/// Return an operand from the operand section by offset
-	std::unique_ptr<BrigOperandEntry> getOperandByOffset(
+	virtual std::unique_ptr<BrigOperandEntry> getOperandByOffset(
 			unsigned int offset) const;
 };
 
