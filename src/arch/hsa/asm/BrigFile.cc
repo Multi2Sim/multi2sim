@@ -123,10 +123,6 @@ bool BrigFile::isBrigFile(const char *file)
 	{
 		return true;
 	}
-	else 
-	{
-		printf("Identification: %s\n", header->identification);
-	}
 	return false;
 }
 

@@ -111,6 +111,51 @@ bool BrigCodeEntry::useType() const
 }
 
 
+unsigned int BrigCodeEntry::getHsailMajor() const
+{
+	if (getKind() != BRIG_KIND_DIRECTIVE_MODULE)
+		KindError("GetHsailMajor");
+	BrigDirectiveModule *module = (BrigDirectiveModule *)base;	
+	return module->hsailMajor;
+}
+
+
+unsigned int BrigCodeEntry::getHsailMinor() const
+{
+	if (getKind() != BRIG_KIND_DIRECTIVE_MODULE)
+		KindError("GetHsailMinor");
+	BrigDirectiveModule *module = (BrigDirectiveModule *)base;	
+	return module->hsailMinor;
+}
+
+
+BrigProfile BrigCodeEntry::getProfile() const
+{
+	if (getKind() != BRIG_KIND_DIRECTIVE_MODULE)
+		KindError("GetProfile");
+	BrigDirectiveModule *module = (BrigDirectiveModule *)base;	
+	return (BrigProfile)module->profile;
+}
+
+
+BrigMachineModel BrigCodeEntry::getMachineModel() const
+{
+	if (getKind() != BRIG_KIND_DIRECTIVE_MODULE)
+		KindError("GetMachineModel");
+	BrigDirectiveModule *module = (BrigDirectiveModule *)base;	
+	return (BrigMachineModel)module->machineModel;
+}
+
+
+BrigRound BrigCodeEntry::getDefaultFloatRound() const
+{
+	if (getKind() != BRIG_KIND_DIRECTIVE_MODULE)
+		KindError("GetDefaultFloatRound");
+	BrigDirectiveModule *module = (BrigDirectiveModule *)base;	
+	return (BrigRound)module->defaultFloatRound;
+}
+
+
 BrigWidth BrigCodeEntry::getDefaultWidth() const
 {
 	if (!isInstruction()){
@@ -208,31 +253,45 @@ std::string BrigCodeEntry::getName() const
 {
 	switch(getKind())
 	{
+	case BRIG_KIND_DIRECTIVE_MODULE:
+
+	{
+		BrigDirectiveModule *dir = (BrigDirectiveModule *)base;
+		return getBinary()->getStringByOffset(dir->name);
+	}
+
 	case BRIG_KIND_DIRECTIVE_COMMENT:
 	case BRIG_KIND_DIRECTIVE_LABEL:
 	case BRIG_KIND_DIRECTIVE_EXTENSION:
 	case BRIG_KIND_DIRECTIVE_VARIABLE:
+
 	{
 		struct BrigDirectiveComment *dir = 
 				(struct BrigDirectiveComment *)base;
 		return getBinary()->getStringByOffset(dir->name);
 	}
+
 	case BRIG_KIND_DIRECTIVE_KERNEL:
 	case BRIG_KIND_DIRECTIVE_FUNCTION:
 	case BRIG_KIND_DIRECTIVE_SIGNATURE:
 	case BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION:
+
 	{
 		struct BrigDirectiveExecutable *dir = 
 				(struct BrigDirectiveExecutable *)base;
 		return getBinary()->getStringByOffset(dir->name);
 	}
+
 	case BRIG_KIND_DIRECTIVE_FBARRIER:
+
 	{
 		struct BrigDirectiveFbarrier *dir = 
 				(struct BrigDirectiveFbarrier *)base;
 		return getBinary()->getStringByOffset(dir->name);
 	}
+
 	default: 
+
 		throw misc::Panic(misc::fmt("Name field are not valid "
 				"for entry 0x%x\n", getKind()));
 	}
