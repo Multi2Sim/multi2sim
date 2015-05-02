@@ -764,6 +764,7 @@ BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_CLASS) return getSourceType();
 		if (opcode == BRIG_OPCODE_CMP) return getSourceType();
 		if (opcode == BRIG_OPCODE_CVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_CMOV) return BRIG_TYPE_B1;
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
 		if (opcode == BRIG_OPCODE_UNPACKCVT) return getSourceType();
 		if (opcode == BRIG_OPCODE_SAD) return getSourceType();
@@ -773,6 +774,8 @@ BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_EXPAND) return getSourceType();
 		if (opcode == BRIG_OPCODE_FIRSTBIT) return getSourceType();
 		if (opcode == BRIG_OPCODE_LASTBIT) return getSourceType();
+		if (opcode == BRIG_OPCODE_SEGMENTP) return getSourceType();
+		if (opcode == BRIG_OPCODE_STOF) return getSourceType();
 		if (opcode == BRIG_OPCODE_FTOS) return getSourceType();
 		if (opcode == BRIG_OPCODE_CURRENTWORKGROUPSIZE) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_GRIDGROUPS) return BRIG_TYPE_U32;
@@ -784,6 +787,7 @@ BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_WORKITEMID) return BRIG_TYPE_U32;
 		break;
 	case 2:
+		if (opcode == BRIG_OPCODE_BITEXTRACT) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_BITMASK) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_CLASS) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_SHL) return BRIG_TYPE_U32;
