@@ -21,6 +21,7 @@
 #include <lib/cpp/Error.h>
 
 #include "Brig.h"
+#include "AsmService.h"
 #include "BrigDataEntry.h"
 #include "BrigSection.h"
 #include "BrigFile.h"
@@ -939,25 +940,11 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 	case BRIG_OPCODE_DIV:
 
 	{
-		if (getType() ==  BRIG_TYPE_U32 || 
-				getType() == BRIG_TYPE_U64 ||
-				getType() == BRIG_TYPE_S32 ||
-				getType() == BRIG_TYPE_S64)
+		if (AsmService::isInteger(getType()))
 		{
 			return BRIG_ROUND_NONE;
 		}
-		if (getType() == BRIG_TYPE_F16 ||
-				getType() == BRIG_TYPE_F32 ||
-				getType() == BRIG_TYPE_F64)
-		{
-			return BRIG_ROUND_FLOAT_DEFAULT;
-		}
-		if (getType() == BRIG_TYPE_F16X2 || 
-				getType() == BRIG_TYPE_F16X4 ||
-				getType() == BRIG_TYPE_F16X8 ||
-				getType() == BRIG_TYPE_F32X2 ||
-				getType() == BRIG_TYPE_F32X4 ||
-				getType() == BRIG_TYPE_F64X2)
+		if (AsmService::isFloat(getType()))
 		{
 			return BRIG_ROUND_FLOAT_DEFAULT;
 		}
@@ -967,36 +954,55 @@ BrigRound BrigCodeEntry::getDefaultRounding() const
 	case BRIG_OPCODE_CVT:
 
 	{
-		if (getSourceType() >= BRIG_TYPE_U8 
-			&& getSourceType() <= BRIG_TYPE_S64
-			&& getType() >= BRIG_TYPE_F16
-			&& getType() <= BRIG_TYPE_F64)
+		if ((getSourceType() == BRIG_TYPE_B1 ||
+				AsmService::isInteger(getSourceType())) &&
+				AsmService::isInteger(getType()))
 		{
-			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+			return BRIG_ROUND_NONE;
 		}
-		else if (getType() >= BRIG_TYPE_U8 
-			&& getType() <= BRIG_TYPE_S64
-			&& getSourceType() >= BRIG_TYPE_F16
-			&& getSourceType() <= BRIG_TYPE_F64)
+		else if (getSourceType() == BRIG_TYPE_B1 &&
+				AsmService::isFloat(getType()))
+		{
+			return BRIG_ROUND_NONE;
+		}
+		else if (AsmService::isInteger(getSourceType()) && 
+				AsmService::isFloat(getType()))
+		{
+			return BRIG_ROUND_FLOAT_DEFAULT;
+		}
+		else if (AsmService::isFloat(getSourceType()) &&
+			getType() == BRIG_TYPE_B1)
+		{
+			return BRIG_ROUND_NONE;
+		}
+		else if (AsmService::isFloat(getSourceType()) &&
+				AsmService::isInteger(getType()))
 		{
 			return BRIG_ROUND_INTEGER_ZERO;
 		}
-		else if (getSourceType() == BRIG_TYPE_F32
-			&& getType() == BRIG_TYPE_F16)
+		else if(getSourceType() == BRIG_TYPE_F32 && 
+				getType() == BRIG_TYPE_F16)
 		{
-			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+			return BRIG_ROUND_FLOAT_DEFAULT;
 		}
-		else if (getSourceType() == BRIG_TYPE_F64
-			&& (getType() == BRIG_TYPE_F32 
-			|| getType() == BRIG_TYPE_F16))
+		else if (getSourceType() == BRIG_TYPE_F64 && 
+				(getType() == BRIG_TYPE_F32 ||
+				 getType() == BRIG_TYPE_F16))
 		{
-			return BRIG_ROUND_FLOAT_NEAR_EVEN;
+			return BRIG_ROUND_FLOAT_DEFAULT;
+		}
+		else if (AsmService::isFloat(getSourceType()) &&
+				AsmService::isFloat(getType()))
+		{
+			return BRIG_ROUND_NONE;
 		}
 		break;
 	}
 
 	default:
+
 		return BRIG_ROUND_NONE;
+
 	}
 	return BRIG_ROUND_NONE;
 }

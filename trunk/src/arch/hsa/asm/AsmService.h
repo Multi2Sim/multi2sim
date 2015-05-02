@@ -88,6 +88,18 @@ protected:
 
 public:
 
+	/// Check if type is an integer
+	static bool isInteger(BrigType type);
+
+	/// Check if type is float
+	static bool isFloat(BrigType type);
+
+	/// Check if type is packed
+	static bool isPacked(BrigType type);
+
+	/// Check if type is array
+	static bool isArray(BrigType type);
+
 
 
 
@@ -201,7 +213,7 @@ public:
 	/// empty
 	static void DumpWithSpace(const std::string &string,
 			std::ostream &os);
-	
+
 };
 
 }
