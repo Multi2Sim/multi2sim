@@ -215,6 +215,31 @@ TEST(TestBrigCodeEntry, should_dump_float_point_operation_right)
 }
 
 
+TEST(TestBrigCodeEntry, should_dump_memfence_right)
+{
+	// Set buffer
+	auto inst = misc::new_unique<BrigInstMemFence>();
+	inst->base.base.byteCount = 100;
+	inst->base.base.kind = BRIG_KIND_INST_MEM_FENCE;
+	inst->base.opcode = BRIG_OPCODE_MEMFENCE;
+	inst->base.type = BRIG_TYPE_NONE;
+	inst->memoryOrder = BRIG_MEMORY_ORDER_SC_ACQUIRE_RELEASE;
+	inst->globalSegmentMemoryScope = BRIG_MEMORY_SCOPE_AGENT;
+	inst->groupSegmentMemoryScope = BRIG_MEMORY_SCOPE_AGENT;
+	inst->imageSegmentMemoryScope = BRIG_MEMORY_SCOPE_NONE;
+
+	// Init object
+	BrigCodeEntry entry((char *)inst.get());
+
+	// Dump
+	std::ostringstream os;
+	entry.Dump(os);
+
+	// Result
+	EXPECT_STREQ("memfence_scar_agent;\n", os.str().c_str());
+}
+
+
 
 }
 

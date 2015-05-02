@@ -166,6 +166,8 @@ BrigWidth BrigCodeEntry::getDefaultWidth() const
 	{
 	case BRIG_OPCODE_ACTIVELANECOUNT: 
 		return BRIG_WIDTH_1;
+	case BRIG_OPCODE_ACTIVELANEPERMUTE: 
+		return BRIG_WIDTH_1;
         case BRIG_OPCODE_ACTIVELANEID: 
         	return BRIG_WIDTH_1;
         case BRIG_OPCODE_ACTIVELANEMASK: 
@@ -799,6 +801,9 @@ BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
 		if (opcode == BRIG_OPCODE_SAD) return getSourceType();
 		if (opcode == BRIG_OPCODE_SADHI) return getSourceType();
+		if (opcode == BRIG_OPCODE_LDIMAGE) return getCoordType();
+		if (opcode == BRIG_OPCODE_STIMAGE) return getCoordType();
+		if (opcode == BRIG_OPCODE_ACTIVELANEPERMUTE) return BRIG_TYPE_U32;
 		break;
 	case 3:
 		if (opcode == BRIG_OPCODE_BITEXTRACT) return BRIG_TYPE_U32;
@@ -806,10 +811,20 @@ BrigType BrigCodeEntry::getOperandType(unsigned char index) const
 		if (opcode == BRIG_OPCODE_PACK) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_SAD) return BRIG_TYPE_U32;
 		if (opcode == BRIG_OPCODE_SHUFFLE) return BRIG_TYPE_B32;
+		if (opcode == BRIG_OPCODE_SIGNAL) 
+		{
+			if (getSignalOperation() == BRIG_ATOMIC_WAITTIMEOUT_EQ ||
+					getSignalOperation() == BRIG_ATOMIC_WAITTIMEOUT_NE ||
+					getSignalOperation() == BRIG_ATOMIC_WAITTIMEOUT_LT ||
+					getSignalOperation() == BRIG_ATOMIC_WAITTIMEOUT_GTE)
+				return BRIG_TYPE_U64;
+		}
+		if (opcode == BRIG_OPCODE_RDIMAGE) return getCoordType();
 		break;
 	case 4:
 		if (opcode == BRIG_OPCODE_BITINSERT) return BRIG_TYPE_B32;
 		if (opcode == BRIG_OPCODE_PACKCVT) return getSourceType();
+		if (opcode == BRIG_OPCODE_ACTIVELANEPERMUTE) return BRIG_TYPE_B1;
 		break;
 	default:
 		throw misc::Panic("Operand index out of range");
@@ -1254,12 +1269,16 @@ BrigType BrigCodeEntry::getCoordType() const
 	switch(getKind())
 	{
 	case BRIG_KIND_INST_IMAGE:
+
 	{
 		struct BrigInstImage *inst = (struct BrigInstImage *)base;
 		return (BrigType)inst->coordType;
 	}
+
 	default:
+
 		KindError("GetCoordType");
+
 	}	
 	return BRIG_TYPE_NONE;	
 }
