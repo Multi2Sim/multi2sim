@@ -446,10 +446,10 @@ misc::StringMap AsmService::memory_scope_to_str_map =
 {
 	{"", BRIG_MEMORY_SCOPE_NONE},
 	{"wi", BRIG_MEMORY_SCOPE_WORKITEM},
-	{"wv", BRIG_MEMORY_SCOPE_WAVEFRONT},
+	{"wave", BRIG_MEMORY_SCOPE_WAVEFRONT},
 	{"wg", BRIG_MEMORY_SCOPE_WORKGROUP},
 	{"agent", BRIG_MEMORY_SCOPE_AGENT},
-	{"sys", BRIG_MEMORY_SCOPE_SYSTEM}
+	{"system", BRIG_MEMORY_SCOPE_SYSTEM}
 };
 
 
