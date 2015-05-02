@@ -18,7 +18,8 @@ check_PROGRAMS += hsa_asm_test
 hsa_asm_test_SOURCES = \
 	TestBrigFile.cc \
 	TestBrigSection.cc \
-	TestBrigCodeEntry.cc
+	TestBrigCodeEntry.cc \
+	TestBrigImmed.cc
 
 hsa_asm_test_LDADD = \
 	$(top_builddir)/src/arch/hsa/asm/libasm.a \
