@@ -46,7 +46,7 @@ BrigImmed::dump_immed_fn =
 	{BRIG_TYPE_B16, &BrigImmed::dumpImmedB16},
 	{BRIG_TYPE_B32, &BrigImmed::dumpImmedB32},
 	{BRIG_TYPE_B64, &BrigImmed::dumpImmedB64},
-	{BRIG_TYPE_B128, &BrigImmed::dumpImmedB128},
+	{BRIG_TYPE_B128, &BrigImmed::dumpImmedU8X16},
 	{BRIG_TYPE_SAMP, &BrigImmed::dumpImmedSAMP},
 	{BRIG_TYPE_ROIMG, &BrigImmed::dumpImmedROIMG},
 	{BRIG_TYPE_RWIMG, &BrigImmed::dumpImmedRWIMG},
@@ -403,7 +403,7 @@ const unsigned char * BrigImmed::dumpImmedU8X16(const unsigned char *ptr = nullp
 	unsigned int pack = 16;
 	unsigned int lastIndex = size * pack - size;
 	const unsigned char *value = (const unsigned char *) &ptr[lastIndex];
-	os << "_u" << size*8 << "x" << pack << "(";
+	os << "u" << size*8 << "x" << pack << "(";
 	for (unsigned int i=0; i<pack; i++)
 	{
 		if (i > 0) os << ",";
