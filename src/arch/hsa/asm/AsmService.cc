@@ -477,6 +477,49 @@ misc::StringMap AsmService::image_query_to_str_map =
 };
 
 
+bool AsmService::isInteger(BrigType type) 
+{
+	if (type == BRIG_TYPE_U8 || 
+			type == BRIG_TYPE_U16 || 
+			type == BRIG_TYPE_U32 ||
+			type == BRIG_TYPE_U64 || 
+			type == BRIG_TYPE_S8 ||
+			type == BRIG_TYPE_S16 ||
+			type == BRIG_TYPE_S32 ||
+			type == BRIG_TYPE_S64)
+		return true;
+	return false;
+}
+
+
+bool AsmService::isFloat(BrigType type) 
+{
+	if (type == BRIG_TYPE_F16 || 
+			type == BRIG_TYPE_F32 ||
+			type == BRIG_TYPE_F64)
+		return true;
+	return false;
+}
+
+
+bool AsmService::isPacked(BrigType type)
+{
+	if (type & BRIG_TYPE_PACK_32 ||
+			type & BRIG_TYPE_PACK_64 ||
+			type & BRIG_TYPE_PACK_128)
+		return true;
+	return false;
+}
+
+
+bool AsmService::isArray(BrigType type)
+{
+	if (type & BRIG_TYPE_ARRAY);
+		return true;
+	return false;
+}
+
+
 std::string AsmService::OpcodeToString(BrigOpcode opcode)
 {
 	return opcode_to_str_map.MapValue(opcode);
