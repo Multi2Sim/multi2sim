@@ -500,20 +500,9 @@ void BrigCodeEntry::DumpInstMemFence(std::ostream &os = std::cout) const
 			getMemoryOrder()), os);
 	if (getGlobalSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
 	{
-		os << "_global(" << AsmService::MemoryScopeToString(
-				getGlobalSegmentScope()) << ")";
+		AsmService::DumpUnderscore(AsmService::MemoryScopeToString(
+				getGlobalSegmentScope()), os);
 	}
-	if (getGroupSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
-	{
-		os << "_group(" << AsmService::MemoryScopeToString(
-				getGroupSegmentScope()) << ")";
-	}
-	if (getImageSegmentScope() != BRIG_MEMORY_SCOPE_NONE)
-	{
-		os << "_image(" << AsmService::MemoryScopeToString(
-				getImageSegmentScope()) << ")";
-	}
-	DumpOperands(os);
 	os << ";\n";
 }
 
