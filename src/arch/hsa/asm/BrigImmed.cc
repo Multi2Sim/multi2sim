@@ -50,8 +50,8 @@ BrigImmed::dump_immed_fn =
 	{BRIG_TYPE_SAMP, &BrigImmed::dumpImmedSAMP},
 	{BRIG_TYPE_ROIMG, &BrigImmed::dumpImmedROIMG},
 	{BRIG_TYPE_RWIMG, &BrigImmed::dumpImmedRWIMG},
-	{BRIG_TYPE_SIG32, &BrigImmed::dumpImmedU32},
-	{BRIG_TYPE_SIG64, &BrigImmed::dumpImmedU64},
+	{BRIG_TYPE_SIG32, &BrigImmed::dumpImmedSIG32},
+	{BRIG_TYPE_SIG64, &BrigImmed::dumpImmedSIG64},
 	{BRIG_TYPE_U8X4, &BrigImmed::dumpImmedU8X4},
 	{BRIG_TYPE_U8X8, &BrigImmed::dumpImmedU8X8},
 	{BRIG_TYPE_U8X16, &BrigImmed::dumpImmedU8X16},
@@ -183,6 +183,27 @@ const unsigned char * BrigImmed::dumpImmedU64(const unsigned char *ptr = nullptr
 	os << misc::fmt("%llu", *value);
 	return ptr + 8;
 }
+
+
+const unsigned char *BrigImmed::dumpImmedSIG32(const unsigned char *ptr = nullptr,
+		std::ostream &os = std::cout) const
+{
+	if (!ptr) ptr = this->ptr;
+	unsigned int *value = (unsigned int *)ptr;
+	os << misc::fmt("sig32(%u)", *value);
+	return ptr + 4;
+}
+
+
+const unsigned char * BrigImmed::dumpImmedSIG64(const unsigned char *ptr = nullptr,
+		std::ostream &os = std::cout) const
+{
+	if (!ptr) ptr = this->ptr;
+	unsigned long long *value = (unsigned long long *)ptr;
+	os << misc::fmt("sig64(%llu)", *value);
+	return ptr + 8;
+}
+
 
 
 const unsigned char * BrigImmed::dumpImmedS8(const unsigned char *ptr = nullptr,

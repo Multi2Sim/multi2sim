@@ -105,6 +105,8 @@ public:
 	const unsigned char* dumpImmedU16(const unsigned char *ptr, std::ostream &os) const;
 	const unsigned char* dumpImmedU32(const unsigned char *ptr, std::ostream &os) const;
 	const unsigned char* dumpImmedU64(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedSIG32(const unsigned char *ptr, std::ostream &os) const;
+	const unsigned char* dumpImmedSIG64(const unsigned char *ptr, std::ostream &os) const;
 	const unsigned char* dumpImmedS8(const unsigned char *ptr, std::ostream &os) const;
 	const unsigned char* dumpImmedS16(const unsigned char *ptr, std::ostream &os) const;
 	const unsigned char* dumpImmedS32(const unsigned char *ptr, std::ostream &os) const;
