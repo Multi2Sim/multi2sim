@@ -14,13 +14,13 @@ check_PROGRAMS =
 TESTS += src_arch_hsa_asm_test
 check_PROGRAMS += src_arch_hsa_asm_test
 
+src_arch_hsa_asm_test_LDADD = \
+	$(top_builddir)/src/arch/hsa/asm/libasm.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a
+
 src_arch_hsa_asm_test_SOURCES = \
 	TestBrigFile.cc \
 	TestBrigSection.cc \
 	TestBrigCodeEntry.cc \
 	TestBrigImmed.cc
-
-src_arch_hsa_asm_test_LDADD = \
-	$(top_builddir)/src/arch/hsa/asm/libasm.a \
-	$(top_builddir)/src/lib/cpp/libcpp.a
 

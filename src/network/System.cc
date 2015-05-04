@@ -185,7 +185,7 @@ void System::RegisterOptions()
 void System::ProcessOptions()
 {
 	// Get the system
-	System* net_system = System::getInstance();
+	System *net_system = System::getInstance();
 
 	// Debugger
 	if (!debug_file.empty())

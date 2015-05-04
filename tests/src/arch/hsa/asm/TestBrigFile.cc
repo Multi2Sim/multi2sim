@@ -21,7 +21,7 @@
 
 #include <lib/cpp/Error.h>
 
-#include "../BrigFile.h"
+#include <arch/hsa/asm/BrigFile.h>
 
 namespace HSA 
 {

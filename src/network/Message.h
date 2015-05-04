@@ -46,10 +46,6 @@ public:
 	/// Destructor
 	~Message() {};
 
-	/// Create message
-	static Message *CreateMessage(Node *source, Node *destination, 
-			unsigned int size);
-
 	/// Set source node
 	void setSource(Node *source) { source_node = source; }
 

@@ -22,7 +22,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
 
-#include "../BrigImmed.h"
+#include <arch/hsa/asm/BrigImmed.h>
 
 namespace HSA
 {
