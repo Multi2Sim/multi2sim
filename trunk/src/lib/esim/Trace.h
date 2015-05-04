@@ -42,10 +42,13 @@ class TraceSystem
 	// ZIP file object
 	gzFile gz_file;
 
-	// Write a message to the trace file, prepending it will a cycle number
-	// if this is the first message for the cycle. The trace system must be
-	// active.
-	void Write(const std::string &s);
+	// Last cycle when a trace message was printed
+	long long last_cycle = -1;
+
+	// Write a message to the trace file. If argument 'print_cycle' is set,
+	// a line with the current cycle will be printed if this is the first
+	// message for the cycle. The trace system must be active.
+	void Write(const std::string &s, bool print_cycle = true);
 
 public:
 
@@ -78,6 +81,9 @@ public:
 		// Return reference to this for chaining
 		return *this;
 	}
+	
+	/// 
+	void Header(const std::string &s);
 };
 
 class Trace
@@ -102,7 +108,11 @@ public:
 	/// Dump a header into the trace file. Headers are lines printed before
 	/// the first cycle. Headers can only be printed before regular cycle-
 	/// by-cycle information has been dumped with the "<<" operator.
-	void Header(const std::string &s);
+	void Header(const std::string &s)
+	{
+		if (active)
+			trace_system->Header(s);
+	}
 
 	/// Dump a value into the trace file if both the current trace object
 	/// and the trace system are active. This call will cause the current
