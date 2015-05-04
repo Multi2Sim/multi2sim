@@ -44,27 +44,11 @@ public:
 class Node
 {
 
-	/// Node types
-	enum Type
-	{
-		TypeInvalid = 0,
-		TypeEndNode,
-		TypeSwitch,
-		TypeBus,
-		TypePhotonic
-	};
-
-	/// String map for type
-	misc::StringMap TypeMap;
-
 	// Network that it belongs to
 	Network *network;
 
 	// Node Name
 	std::string name;
-
-	// Node Type
-	Type type;
 
 	// Node index
 	int id;
@@ -73,12 +57,13 @@ class Node
 	NodeData *user_data;
 
 	// Node bandwidth, required for bus and switch
-	int bandwidth;
+	// int bandwidth;
 
 	// Input/Output Buffer List
-	std::vector<std::unique_ptr<Buffer>> input_buffers;
-	std::vector<std::unique_ptr<Buffer>> output_buffers;
+	// std::vector<std::unique_ptr<Buffer>> input_buffers;
+	// std::vector<std::unique_ptr<Buffer>> output_buffers;
 
+	/*
 	// Bus and photonic nodes
 	std::vector<std::unique_ptr<Bus>> bus_lanes;
 
@@ -97,6 +82,7 @@ class Node
 	// index of the last bus (in case there are multiple lanes) that
 	// has been assigned to a node to transmit data on.
 	int last_bus_index;
+	*/
 
 public:
 
@@ -124,9 +110,11 @@ public:
 	/// \param user_data
 	///	user_data associated with the node which is used in memory
 	///	system.
+	/*
 	Node(const std::string &name, int input_buffer_size, Type type,
 			int output_buffer_size, int bandwidth, int index,
 			NodeData *user_data);
+	*/
 
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers
@@ -134,7 +122,7 @@ public:
 	///
 	/// \param buffer_name
 	///	name of the buffer.
-	Buffer *getBufferByName(const std::string &buffer_name);
+	//Buffer *getBufferByName(const std::string &buffer_name);
 };
 
 
