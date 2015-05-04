@@ -22,10 +22,10 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
 
-#include "../BrigFile.h"
-#include "../BrigDataEntry.h"
-#include "../BrigCodeEntry.h"
-#include "../BrigOperandEntry.h"
+#include <arch/hsa/asm/BrigFile.h>
+#include <arch/hsa/asm/BrigDataEntry.h>
+#include <arch/hsa/asm/BrigCodeEntry.h>
+#include <arch/hsa/asm/BrigOperandEntry.h>
 
 namespace HSA
 {
