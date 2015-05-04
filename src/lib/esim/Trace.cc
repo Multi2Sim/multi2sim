@@ -23,6 +23,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
+#include "Engine.h"
 #include "Trace.h"
 
 
@@ -73,14 +74,40 @@ void TraceSystem::setPath(const std::string &path)
 }
 
 
-void TraceSystem::Write(const std::string &s)
+void TraceSystem::Write(const std::string &s, bool print_cycle)
 {
 	// Trace system must be active
 	assert(active);
+	
+	// Print cycle
+	if (print_cycle)
+	{
+		esim::Engine *engine = esim::Engine::getInstance();
+		long long cycle = engine->getCycle();
+		if (cycle > last_cycle)
+		{
+			gzprintf(gz_file, "c clk=%lld\n", cycle);
+			last_cycle = cycle;
+		}
+	}
 
 	// Dump string
 	gzwrite(gz_file, s.c_str(), s.length());
 }
+
+
+void TraceSystem::Header(const std::string &s)
+{
+	// Check that no cycle-by-cycle info has been dumped yet
+	if (last_cycle >= 0)
+		throw misc::Panic("Trace header written after "
+				"simulation started");
+
+	// Write it
+	Write(s, false);
+}
+
+
 
 
 Trace::Trace()

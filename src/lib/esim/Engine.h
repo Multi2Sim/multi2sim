@@ -20,6 +20,7 @@
 #ifndef LIB_CPP_ESIM_ENGINE_H
 #define LIB_CPP_ESIM_ENGINE_H
 
+#include <cassert>
 #include <memory>
 #include <list>
 #include <queue>
@@ -193,6 +194,13 @@ public:
 
 	/// Return the current simulated time in picoseconds.
 	long long getTime() const { return current_time; }
+
+	/// Return the current cycle in the fastest registered frequency domain
+	long long getCycle() const
+	{
+		assert(shortest_cycle_time);
+		return current_time / shortest_cycle_time + 1;
+	}
 
 	/// Return a null event type. This type can be used in calls to
 	/// ScheduleEvent() to schedule useless events.
