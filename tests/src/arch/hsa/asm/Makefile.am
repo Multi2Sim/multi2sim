@@ -8,20 +8,19 @@ AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
 	     $(GTEST_LIBS) $(GTEST_LDFLAGS) -pthread
 
 
-TESTS =
+TESTS = 
 check_PROGRAMS = 
 
+TESTS += src_arch_hsa_asm_test
+check_PROGRAMS += src_arch_hsa_asm_test
 
-TESTS += hsa_asm_test
-check_PROGRAMS += hsa_asm_test
-
-hsa_asm_test_SOURCES = \
+src_arch_hsa_asm_test_SOURCES = \
 	TestBrigFile.cc \
 	TestBrigSection.cc \
 	TestBrigCodeEntry.cc \
 	TestBrigImmed.cc
 
-hsa_asm_test_LDADD = \
+src_arch_hsa_asm_test_LDADD = \
 	$(top_builddir)/src/arch/hsa/asm/libasm.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 

@@ -37,7 +37,7 @@ class Network;
 
 class System
 {
-	/// Traffic pattern states for network system
+	// Traffic pattern states for network system
 	enum TrafficPattern
 	{
 		TrafficPatternInvalid = 0,
@@ -45,7 +45,7 @@ class System
 		TrafficPatternCommand
 	};
 
-	/// String map for traffic pattern
+	// String map for traffic pattern
 	static const misc::StringMap TrafficPatternMap;
 
 	// Debugger file
@@ -87,7 +87,7 @@ class System
 	// Stand-alone simulator instantiator
 	static bool stand_alone;
 
-	/// Networks configuration file
+	// Networks configuration file
 	static misc::IniFile ini_file;
 
 	// Unique instance of singleton
@@ -113,24 +113,24 @@ public:
 	/// Constructor
 	System() { assert(instance == nullptr); }
 
-	// Get the list of networks
+	/// Get the list of networks
 	std::vector<std::unique_ptr<Network>> &getNetworks()
 	{
 		return networks;
 	}
 
-    /// Class representing a runtime error in a memory object
-    class Error : public misc::Error
-    {
-    public:
+	/// Class representing a runtime error in a memory object
+	class Error : public misc::Error
+	{
+	public:
 
-            /// Constructor
-            Error(const std::string &message) : misc::Error(message)
-            {
-                    // Set module prefix
-                    AppendPrefix("Network");
-            }
-    };
+		/// Constructor
+		Error(const std::string &message) : misc::Error(message)
+		{
+			// Set module prefix
+			AppendPrefix("Network");
+		}
+	};
 
 	/// Find and returns a network in the network system given its name.
 	///
@@ -153,8 +153,8 @@ public:
 	/// Parse a configuration file
 	void ParseConfiguration(const std::string &path);
 
-    /// Returns whether or not Network is running as a stand alone simulator.
-    bool isStandAlone() { return stand_alone; }
+	/// Returns whether or not Network is running as a stand alone simulator.
+	bool isStandAlone() { return stand_alone; }
 
 };
 

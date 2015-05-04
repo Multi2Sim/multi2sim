@@ -34,5 +34,3 @@ libasm_a_SOURCES = \
 	Inst.def
 
 AM_CPPFLAGS = @M2S_INCLUDES@
-
-SUBDIRS = . tests
