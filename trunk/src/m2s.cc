@@ -49,8 +49,9 @@
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
-#include <lib/esim/Engine.h>
 #include <lib/esim/Action.h>
+#include <lib/esim/Engine.h>
+#include <lib/esim/Trace.h>
 
 #include "Wrapper.h"
 
@@ -471,6 +472,13 @@ void ProcessOptions()
 		esim->TestLoop(m2s_esim_config);
 		exit(0);
 	}
+
+	// Trace file
+	if (!m2s_trace_file.empty())
+	{
+		esim::TraceSystem *trace_system = esim::TraceSystem::getInstance();
+		trace_system->setPath(m2s_trace_file);
+	}
 }
 
 
@@ -580,7 +588,7 @@ int MainProgram(int argc, char **argv)
 		
 	// Main simulation loop
 	MainLoop();
-	
+
 	// Success
 	return 0;
 }
