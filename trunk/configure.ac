@@ -1002,7 +1002,6 @@ AC_CONFIG_FILES([
 
 		src/arch/hsa/Makefile
 		src/arch/hsa/asm/Makefile
-		src/arch/hsa/asm/tests/Makefile
 
 		src/arch/kepler/Makefile
 		src/arch/kepler/asm/Makefile
@@ -1053,6 +1052,13 @@ AC_CONFIG_FILES([
 		m2c/llvm2si/passes/Makefile
 		m2c/preprocessor/Makefile
 		m2c/si2bin/Makefile
+	
+		tests/Makefile
+		tests/src/Makefile
+		tests/src/arch/Makefile
+		tests/src/arch/hsa/Makefile
+		tests/src/arch/hsa/asm/Makefile
+
 		])
 AC_OUTPUT
 

@@ -28,8 +28,8 @@ namespace net
 
 const misc::StringMap System::TrafficPatternMap =
 {
-		{ "command", TrafficPatternCommand },
-		{ "uniform", TrafficPatternUniform }
+	{ "command", TrafficPatternCommand },
+	{ "uniform", TrafficPatternUniform }
 };
 
 net::System::TrafficPattern System::traffic_pattern = net::System::TrafficPatternUniform;
@@ -59,7 +59,6 @@ int System::snapshot_period = 0;
 bool System::net_help = false;
 
 bool System::stand_alone = false;
-
 
 
 std::unique_ptr<System> System::instance;
@@ -111,7 +110,7 @@ void System::RegisterOptions()
 			"with option '--net-config <file>'.");
 
 	// Message size for network stand-alone simulator
-	command_line->RegisterInt32("--net-msg-size <number> (default = 1 Byte",
+	command_line->RegisterInt32("--net-msg-size <number> (default = 1 Byte)",
 			msg_size,
 			"For network simulation, packet size in bytes. An entire"
 			" packet is assumed to fit in a node's buffer, but its "
@@ -182,6 +181,7 @@ void System::RegisterOptions()
 			"commands");
 }
 
+
 void System::ProcessOptions()
 {
 	// Get the system
@@ -204,10 +204,8 @@ void System::ProcessOptions()
 	{
 		if (config_file.empty())
 			throw Error(misc::fmt("Option --net-sim requires "
-									" --net-config option "));
+					" --net-config option "));
 	}
-
-
 }
 
 }
