@@ -23,7 +23,10 @@ libesim_a_SOURCES = \
 	FrequencyDomain.h \
 	\
 	Queue.cc \
-	Queue.h
+	Queue.h \
+	\
+	Trace.cc \
+	Trace.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
