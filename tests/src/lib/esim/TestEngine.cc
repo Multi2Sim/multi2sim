@@ -37,21 +37,26 @@ void test_handler(EventType *type, EventFrame *frame)
 
 TEST(TestEngine, should_be_able_to_schedule_event)
 {
+	// Set up esim engine
 	Engine *engine = Engine::getInstance();
 	FrequencyDomain domain("Test frequency domain", 2e3);
 	EventType type("test event", test_handler, &domain);
 	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
+
+	// Schedule next event in next 10 events
 	engine->Next(&type, 10, 0);
 
+	// Process events should go to next cycle, and the scheduled
+	// event should not be triggered
 	long long cycle_before = engine->getCycle();
 	engine->ProcessEvents();
 	long long cycle_after = engine->getCycle();
 	EXPECT_EQ(1, cycle_after - cycle_before);
+	EXPECT_FALSE(handler_called);
 
+	// Skip for 10 cycles, the handler should be invoked 
 	for (int i = 0; i < 10; i++)
-	{
 		engine->ProcessEvents();
-	}
 	cycle_after = engine->getCycle();
 	EXPECT_EQ(11, cycle_after - cycle_before);
 	EXPECT_TRUE(handler_called);
