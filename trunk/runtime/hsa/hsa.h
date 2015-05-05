@@ -23,6 +23,9 @@
 #include "../include/hsa.h"
 #include "../include/hsa_ext_finalize.h"
 
+#define __HSA_RUNTIME_NOT_IMPLEMENTED__ \
+		panic("HSA runtime function %s not implemented\n", __FUNCTION__);
+
 // Function code to pass as a first argument of a system call
 enum hsa_abi_call_t
 {

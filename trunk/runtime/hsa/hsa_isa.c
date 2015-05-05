@@ -28,41 +28,33 @@
 #include "debug.h"
 #include "hsa.h"
 
-hsa_status_t HSA_API hsa_init()
+hsa_status_t HSA_API hsa_isa_from_name(
+    const char* name,
+    hsa_isa_t* isa)
 {
-	if (hsa_runtime == NULL)
-	{
-		hsa_runtime = calloc(1, sizeof(struct hsa_runtime_t));
-		hsa_runtime->fd = open("/dev/hsa", O_RDWR);
-		if (hsa_runtime->fd < 0)
-			fatal("Cannot communicate with the HSA driver\n\n"
-				"This error could be due to an incompatibility between the\n"
-				"Multi2Sim HSA driver version and the version of the simulator.\n"
-				"Please download the latest versions and retry.");
-
-		// Call the driver init hsa environment
-		ioctl(hsa_runtime->fd, InitFromX86, getpid());
-
-		// Return success
-		return HSA_STATUS_SUCCESS;
-	}
-	else
-	{
-		// Success silently
-		return HSA_STATUS_SUCCESS;
-	}
-}
-
-
-hsa_status_t HSA_API hsa_shut_down()
-{
+	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
 }
 
 
+hsa_status_t HSA_API hsa_isa_get_info(
+    hsa_isa_t isa,
+    hsa_isa_info_t attribute,
+    uint32_t index,
+    void* value)
+{
+	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	return HSA_STATUS_SUCCESS;
+}
 
 
-
-
+hsa_status_t HSA_API hsa_isa_compatible(
+    hsa_isa_t code_object_isa,
+    hsa_isa_t agent_isa,
+    bool* result)
+{
+	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	return HSA_STATUS_SUCCESS;
+}
 
 
