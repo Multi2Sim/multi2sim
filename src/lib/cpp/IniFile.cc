@@ -176,24 +176,42 @@ static const char *ini_file_err_format =
 
 void IniFile::Load(const std::string &path)
 {
-	std::string line;
-	std::string section;
-	std::string var;
-	std::string value;
-
-	int line_num;
-	bool ok;
-
 	// Open file
 	this->path = path;
 	std::ifstream f(path);
 	if (!f)
 		fatal("%s: cannot read from file", path.c_str());
 	
+	// Parse 
+	Parse((std::istream *)&f);
+	
+	// End
+	f.close();
+}
+
+
+void IniFile::LoadFromString(const std::string &string)
+{
+	// Convert the string into istream
+	std::istringstream f(string);
+	
+	// Parse
+	Parse((std::istream *)&f);
+}
+
+
+void IniFile::Parse(std::istream *f)
+{
+	std::string line;
+	std::string section;
+	std::string var;
+	std::string value;
+
 	// Read lines
-	line_num = 0;
+	bool ok;
+	int line_num = 0;
 	section = "";
-	while (getline(f, line))
+	while (getline(*f, line))
 	{
 		// One more line
 		line_num++;
@@ -248,9 +266,6 @@ void IniFile::Load(const std::string &path)
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str());
 	}
-	
-	// End
-	f.close();
 }
 
 

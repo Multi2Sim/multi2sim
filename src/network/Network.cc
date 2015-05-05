@@ -32,13 +32,6 @@ Network::Network(const std::string &name)
 
 }
 
-Network::Network(const std::string &name, const std::string &section,
-		misc::IniFile &config)
-:
-				Network(name)
-{
-	ParseConfiguration(section, config);
-}
 
 void Network::ParseConfiguration(const std::string &section,
 		misc::IniFile &config)
@@ -56,9 +49,10 @@ void Network::ParseConfiguration(const std::string &section,
 	if (!DefaultOutputBufferSize || !DefaultInputBufferSize ||
 			!DefaultBandwidth)
 	{
-		misc::fatal(
-				("%s:%s:\nDefault values can not be "
-						"zero/non-existent.\n"),__FILE__, __FUNCTION__);
+		throw misc::Error(misc::fmt(
+				"%s:%s:\nDefault values can not be "
+				"zero/non-existent.\n", __FILE__, 
+				__FUNCTION__));
 	}
 
 	PacketSize = config.ReadInt(section, "DefaultPacketSize", 0);
