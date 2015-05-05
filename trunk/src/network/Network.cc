@@ -37,17 +37,14 @@ void Network::ParseConfiguration(const std::string &section,
 		misc::IniFile &config)
 {
 	// Non-empty values
-	DefaultOutputBufferSize = config.ReadInt(section,
+	default_output_buffer_size = config.ReadInt(section,
 			"DefaultOutputBufferSize", 0);
-
-	DefaultInputBufferSize = config.ReadInt(section,
+	default_input_buffer_size = config.ReadInt(section,
 			"DefaultInputBufferSize",0);
-
-	DefaultBandwidth = config.ReadInt(section,
+	default_bandwidth = config.ReadInt(section,
 			"DefaultBandwidth",0);
-
-	if (!DefaultOutputBufferSize || !DefaultInputBufferSize ||
-			!DefaultBandwidth)
+	if (!default_output_buffer_size || !default_input_buffer_size ||
+			!default_bandwidth)
 	{
 		throw misc::Error(misc::fmt(
 				"%s:%s:\nDefault values can not be "
@@ -55,10 +52,25 @@ void Network::ParseConfiguration(const std::string &section,
 				__FUNCTION__));
 	}
 
-	PacketSize = config.ReadInt(section, "DefaultPacketSize", 0);
-	netFrequency = config.ReadInt(section, "Frequency", 0);
+	// Packet size and frequency
+	packet_size = config.ReadInt(section, "DefaultPacketSize", 0);
+	net_frequency = config.ReadInt(section, "Frequency", 0);
 
+	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
+}
+
+
+void Network::Dump(std::ostream &os = std::cout) const
+{
+	// Dump network information
+	os << misc::fmt("\n***** Network %s *****\n", name.c_str());
+	os << misc::fmt("\tDefault input buffer size: %d\n", 
+			default_input_buffer_size);
+	os << misc::fmt("\tDefault output buffer size: %d\n", 
+			default_output_buffer_size);
+	os << misc::fmt("\tDefault bandwidth: %d\n", 
+			default_bandwidth);
 }
 
 }
