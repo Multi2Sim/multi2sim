@@ -12,10 +12,14 @@ TESTS =
 TESTS += \
 	src_lib_esim_test \
 	\
+	src_network_test \
+	\
 	src_arch_hsa_asm_test 
 
 check_PROGRAMS = \
 	src_lib_esim_test \
+	\
+	src_network_test \
 	\
 	src_arch_hsa_asm_test 
 
@@ -27,6 +31,14 @@ src_lib_esim_test_LDADD = \
 
 src_lib_esim_test_SOURCES = \
 	src/lib/esim/TestEngine.cc 
+
+
+src_network_test_LDADD = \
+	$(top_builddir)/src/network/libnetwork.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a
+
+src_network_test_SOURCES = \
+	src/network/TestNetwork.cc
 
 
 src_arch_hsa_asm_test_LDADD = \

@@ -53,8 +53,8 @@ void System::ParseConfiguration(const std::string &path)
 
 		std::string network_name = tokens[1];
 
-		Network * net = new Network(network_name,
-				section, ini_file);
+		Network * net = new Network(network_name);
+		net->ParseConfiguration(section, ini_file);
 		networks.emplace_back(net);
 		network_map.emplace(network_name,net);
 	}

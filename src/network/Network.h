@@ -65,11 +65,15 @@ class Network
 	// Last offered bandwidth recorded for the snapshot
 	long long last_recorded_offered_bandwidth;
 
-	///
-	/// Default Values
-	///
 
-	/// DefaultBufferSizes
+
+
+
+	//
+	// Default Values
+	//
+
+	// DefaultBufferSizes
 	int DefaultInputBufferSize;
 	int DefaultOutputBufferSize;
 	int DefaultBandwidth;
@@ -77,6 +81,9 @@ class Network
 	// Network Specific Values
 	int PacketSize;
 	int netFrequency;
+
+
+
 
 	//
 	// Statistics
@@ -95,8 +102,6 @@ public:
 
 	/// Constructors
 	Network(const std::string &name);
-	Network(const std::string &name, const std::string &section,
-			misc::IniFile &config);
 
 	/// Configuration Parser
 	void ParseConfiguration(const std::string &section,

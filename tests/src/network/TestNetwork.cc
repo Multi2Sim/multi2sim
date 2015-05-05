@@ -1,6 +1,6 @@
-/* 
+/*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Yifan Sun (yifansun@coe.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,42 +17,18 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_MESSAGE_H
-#define NETWORK_MESSAGE_H
+#include "gtest/gtest.h"
 
-namespace net 
+#include <network/Network.h>
+
+namespace net
 {
 
-class Message
+TEST(TestNetwork, should_create_according_to_ini_file)
 {
-	// Source node
-	Node *source_node;
-
-	// Destination node
-	Node *destination_node;
-
-	// Id of the message
-	unsigned long long id;
-
-	// Size of the message
-	unsigned int size;
-
-public:
-
-	/// Constructor
-	Message() {};
-
-	/// Destructor
-	~Message() {};
-
-	/// Set source node
-	void setSource(Node *source) { source_node = source; }
-
-	/// Set destination node
-	void setDestination(Node *destination) { destination_node = destination; }
+	
+}
 
 }
 
-}  // namespace net
 
-#endif
