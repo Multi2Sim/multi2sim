@@ -69,7 +69,13 @@ libtiming_a_SOURCES = \
 	uop-queue.h \
 	\
 	writeback.c \
-	writeback.h
+	writeback.h \
+	\
+	Thread.h\
+	\
+	Uop.h\
+	\
+	Bpred.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
