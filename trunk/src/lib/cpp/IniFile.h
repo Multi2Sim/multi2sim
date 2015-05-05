@@ -101,6 +101,9 @@ class IniFile
 	static bool getVarValue(const std::string &s, std::string &var,
 			std::string &value);
 
+	/// Parse the INI file from an input stream
+	void Parse(std::istream *f);
+
 	bool InsertSection(std::string section);
 
 	bool InsertVariable(std::string section, std::string var,
@@ -119,6 +122,9 @@ public:
 
 	/// Load the INI file content from the file system
 	void Load(const std::string &path);
+
+	/// Load the INI file from string
+	void LoadFromString(const std::string &string);
 
 	/// Store the INI file into the file system
 	void Save(const std::string &path) const;
