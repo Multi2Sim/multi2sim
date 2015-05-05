@@ -10,7 +10,17 @@ __top_builddir__lib_libm2s_hsa_la_SOURCES = \
 		debug.c \
 		\
 		hsa.h \
-		hsa.c
+		hsa.c \
+		\
+		hsa_agent.c \
+		hsa_code_object.c \
+		hsa_executable.c \
+		hsa_finalize.c \
+		hsa_isa.c \
+		hsa_queue.c \
+		hsa_region.c \
+		hsa_signal.c \
+		hsa_system.c 
 	
 
 AM_CFLAGS = -m32 -D_GNU_SOURCE
