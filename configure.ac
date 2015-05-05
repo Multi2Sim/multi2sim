@@ -1054,11 +1054,6 @@ AC_CONFIG_FILES([
 		m2c/si2bin/Makefile
 	
 		tests/Makefile
-		tests/src/Makefile
-		tests/src/arch/Makefile
-		tests/src/arch/hsa/Makefile
-		tests/src/arch/hsa/asm/Makefile
-
 		])
 AC_OUTPUT
 
