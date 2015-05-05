@@ -74,13 +74,13 @@ class Network
 	//
 
 	// DefaultBufferSizes
-	int DefaultInputBufferSize;
-	int DefaultOutputBufferSize;
-	int DefaultBandwidth;
+	int default_input_buffer_size;
+	int default_output_buffer_size;
+	int default_bandwidth;
 
 	// Network Specific Values
-	int PacketSize;
-	int netFrequency;
+	int packet_size;
+	int net_frequency;
 
 
 
@@ -106,6 +106,17 @@ public:
 	/// Configuration Parser
 	void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
+
+	/// Dump the Network formation
+	void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking function Dump() on an output stream.
+	friend std::ostream &operator<<(std::ostream &os,
+			const Network &network)
+	{
+		network.Dump(os);
+		return os;
+	}
 
 	/// find and returns node in the network using node name
 	///
