@@ -28,7 +28,7 @@
 namespace mem
 {
 
-misc::Debug System::trace;
+esim::Trace System::trace;
 
 misc::Debug System::debug;
 
