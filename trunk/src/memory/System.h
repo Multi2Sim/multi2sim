@@ -98,7 +98,7 @@ class System
 	
 	void ConfigCheckRoutes();
 
-	void CalculateSubBlockSizes();
+	void ConfigCalculateSubBlockSizes();
 
 	void ConfigSetModuleLevel(Module *module, int level);
 

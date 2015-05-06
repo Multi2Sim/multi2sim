@@ -125,8 +125,8 @@ class ArchPool
 	// List of architectures
 	std::list<std::unique_ptr<Arch>> arch_list;
 
-	// Private constructor for singleton
-	ArchPool() { }
+	// List of architectures with timing simulation
+	std::list<Arch *> timing_arch_list;
 
 public:
 
@@ -156,6 +156,32 @@ public:
 	///	The two arguments in this function are return values used to
 	///	decide whether the main simulation loop should stop.
 	void Run(int &num_emu_active, int &num_timing_active);
+
+	/// Return an iterator to the first architecture in the architecture
+	/// list.
+	std::list<std::unique_ptr<Arch>>::iterator begin()
+	{
+		return arch_list.begin();
+	}
+
+	/// Return a past-the-end iterator to the architecture list.
+	std::list<std::unique_ptr<Arch>>::iterator end()
+	{
+		return arch_list.end();
+	}
+
+	/// Return an iterator to the first architecture with timing simulation.
+	std::list<Arch *>::iterator timing_begin()
+	{
+		return timing_arch_list.begin();
+	}
+
+	/// Return a past-the-end iterator to the list of architectures with
+	/// timing simulation.
+	std::list<Arch *>::iterator timing_end()
+	{
+		return timing_arch_list.end();
+	}
 };
 
 
