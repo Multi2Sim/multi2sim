@@ -159,10 +159,18 @@ void vi_net_buffer_free (struct vi_net_buffer_t *buffer)
 	struct list_t *packet_list;
 	packet_list = buffer->packet_list;
 
+
+	/* This portion was removed. This is because we free the packets
+	 * via the net->packet_list. The only remaining thing here, at
+	 * this scenario is the pointers to non-existant packets. Make sure.
+	 */
+	/* Free packets */
 	int i;
-	/* Free accesses */
+
 	LIST_FOR_EACH(packet_list, i)
 		vi_net_packet_free(list_get(packet_list, i));
+
+	list_clear(packet_list);
 	list_free(packet_list);
 
 	free(buffer->name);
