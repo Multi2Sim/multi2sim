@@ -396,6 +396,14 @@ void vi_net_graph_finalize(struct vi_net_graph_t *net_graph)
                 edge = list_get(graph->edge_list, i);
                 edge_data = (struct vi_net_edge_data_t *) edge->data;
 
+                // reverse data due to reversal
+                if (edge->reversed)
+                {
+                	struct vi_net_link_t *temp;
+                	temp = edge_data->downstream;
+                	edge_data->downstream = edge_data->upstream;
+                	edge_data->upstream = temp;
+                }
                 if (edge_data->downstream)
                 {
                         struct vi_net_sub_link_t *subLink = vi_net_sub_link_create();

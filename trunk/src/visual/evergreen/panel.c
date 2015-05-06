@@ -384,15 +384,15 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 
 	/* Layout */
 	GtkWidget *layout;
-	GdkColor color;
+	GdkRGBA color;
 	layout = gtk_layout_new(NULL, NULL);
-	gdk_color_parse("white", &color);
-	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color);
+	gdk_rgba_parse(&color,"white");
+	gtk_widget_override_background_color(layout, GTK_STATE_NORMAL, &color);
 
 	/* Scrolled window */
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), layout);
+	gtk_container_add(GTK_CONTAINER(scrolled_window), layout);
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
 	/* Boards */
@@ -412,7 +412,7 @@ struct vi_evg_panel_t *vi_evg_panel_create(void)
 	}
 
 	/* Sizes of scrolled window */
-	gtk_widget_set_size_request(layout, layout_width, layout_height);
+	gtk_layout_set_size(GTK_LAYOUT(layout), layout_width, layout_height);
 	gtk_widget_set_size_request(scrolled_window, VI_CU_BOARD_WIDTH * 3 / 2, layout_height);
 
 	/* Widget */

@@ -111,7 +111,7 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
 	/* Scrolled window */
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), layout);
+	gtk_container_add(GTK_CONTAINER(scrolled_window), layout);
 	gtk_widget_set_size_request(scrolled_window, VI_NODE_BOARD_WIDTH * 3 / 2, VI_NODE_BOARD_HEIGHT * 3 / 2);
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
@@ -130,8 +130,8 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
 			subLink = list_get(link->sublink_list , i);
 			struct vi_link_board_t *drwlink;
 			drwlink= vi_link_board_create(subLink->link);
-			/* updating X and Ys to Center */
 
+			/* updating X and Ys to Center */
 			if (subLink->src_x < subLink->dst_x)
 			{
 				drwlink->src_x = ((VI_NODE_BOARD_WIDTH/2 + VI_NODE_BOARD_PADDING) +
@@ -236,7 +236,7 @@ struct vi_net_widget_t *vi_net_widget_create(struct vi_net_t *net)
 	}
 
 	/* Set layout size */
-	gtk_widget_set_size_request(layout, layout_width, layout_height);
+	gtk_layout_set_size(GTK_LAYOUT(layout), layout_width, layout_height);
 
 	/* Assign panel widget */
 	panel->widget = frame;
@@ -487,9 +487,7 @@ static gboolean vi_link_board_draw (GtkWidget *widget, GdkEventConfigure *event,
 	{
 		Alpha = atan((board->dst_y - board->src_y) /(board->dst_x - board->src_x ));
 	}
-/*	fprintf(stderr, "(%f,%f) --> (%f,%f), Alpha = %f(%f) \n %s --> %s %s \n",
-			board->src_x, board->src_y , board->dst_x, board->dst_y, Alpha * 180 / M_PI, Alpha,
-			board->link->src_node->name , board->link->dst_node->name, board->link->name); */
+
 	if (Alpha < 0 )
 	{
 		C = -C;
@@ -569,6 +567,16 @@ void vi_net_widget_refresh (struct vi_net_widget_t *net_widget)
 	cycle = vi_cycle_bar_get_cycle();
 	vi_state_go_to_cycle(cycle);
 
+	/* New. Queues a draw for the draw stage of GTK */
+	gtk_widget_queue_draw(net_widget->widget);
+
+	/* Refresh all Link boards */
+	LIST_FOR_EACH(net_widget->link_board_list, board_id)
+	{
+		link = list_get(net_widget->link_board_list, board_id);
+		vi_link_board_refresh(link);
+	}
+
 	/* Refresh all Node boards */
 	LIST_FOR_EACH(net_widget->node_board_list, board_id)
 	{
@@ -577,12 +585,6 @@ void vi_net_widget_refresh (struct vi_net_widget_t *net_widget)
 			vi_node_window_refresh(node_board->node_window);
 	}
 
-	/* Refresh all Link boards */
-	LIST_FOR_EACH(net_widget->link_board_list, board_id)
-	{
-		link = list_get(net_widget->link_board_list, board_id);
-		vi_link_board_refresh(link);
-	}
 }
 static void vi_node_window_refresh(struct vi_node_window_t *window)
 {
@@ -593,5 +595,5 @@ static void vi_node_window_refresh(struct vi_node_window_t *window)
 static void vi_link_board_refresh(struct vi_link_board_t *board)
 {
 	vi_link_color_per_cycle(board->link);
-	vi_link_board_draw(board->widget, NULL, board);
+//	vi_link_board_draw(board->widget, NULL, board);
 }
