@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Event.h>
@@ -27,6 +28,13 @@
 
 namespace mem
 {
+
+
+// Configuration options
+std::string System::config_file;
+std::string System::debug_file;
+bool System::help = false;
+
 
 esim::Trace System::trace;
 
@@ -233,6 +241,49 @@ System::System()
 			frequency_domain);
 	ev_local_find_and_lock_finish = esim->RegisterEventType("ev_local_find_and_lock_finish", evLocalFindAndLockHandler,
 			frequency_domain);
+}
+
+
+void System::RegisterOptions()
+{
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+
+	// Category
+	command_line->setCategory("Memory System");
+
+	// Debug information
+	command_line->RegisterString("--mem-debug <file>", debug_file,
+			"Debug information related with the memory system, "
+			"including caches and coherence protocol.");
+
+	// Configuration INI file for memory system
+	command_line->RegisterString("--mem-config <file>", config_file,
+			"Memory configuration file. For a detailed description "
+			"of the sections and variables supported for this file "
+			"use option '--mem-help'.");
+	
+	// Help message for memory system
+	command_line->RegisterBool("--mem-help",
+			help,
+			"Print help message describing the memory configuration"
+			" file, passed in option '--mem-config <file>'.");
+	command_line->setIncompatible("--mem-help");
+
+}
+
+
+void System::ProcessOptions()
+{
+	// Show help message
+	if (help)
+	{
+		std::cerr << help_message;
+		exit(1);
+	}
+
+	// Debug file
+	debug.setPath(debug_file);
 }
 
 

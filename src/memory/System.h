@@ -42,14 +42,29 @@ class System
 	// Unique instance of this class
 	static std::unique_ptr<System> instance;
 
+	// Frequency domain for memory system
+	esim::FrequencyDomain *frequency_domain;
+
 	// Private constructor
 	System();
 
-
+	
+	
 	//
 	// Memory system configuration. These functions are defined in
 	// SystemConfig.cc
 	//
+	
+	// Configuration file name
+	static std::string config_file;
+
+	// Debug file name
+	static std::string debug_file;
+
+	// Show memory configuration file
+	static bool help;
+
+	static const std::string help_message;
 
 	// Parse memory hierarchy configuration file, or generate default if
 	// user didn't pass '--mem-config' command-line option.
@@ -91,7 +106,7 @@ class System
 
 	void ConfigTrace();
 
-	void ConfigReadCommands();
+	void ConfigReadCommands(misc::IniFile *ini_file);
 
 
 	//
@@ -116,9 +131,6 @@ class System
 	static void evLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
 
 public:
-
-	// Frequency domain for memory system
-	static esim::FrequencyDomain *frequency_domain;
 
 	// NMOESI event types
 	static esim::EventType *ev_load;
