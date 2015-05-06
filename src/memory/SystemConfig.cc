@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/Arch.h>
+#include <arch/common/Timing.h>
+#include <lib/esim/Engine.h>
+
 #include "System.h"
 
 
@@ -217,94 +221,166 @@ const std::string System::help_message =
 	"\n";
 
 
-void System::ConfigRead()
+void System::ConfigReadGeneral(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigReadGeneral(misc::IniFile *ini_file)
+void System::ConfigReadNetworks(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigReadNetworks(misc::IniFile *ini_file)
-{
-}
-
-
-void ConfigReadCache(misc::IniFile *ini_file,
+void System::ConfigReadCache(misc::IniFile *ini_file,
 		const std::string &section)
 {
 }
 
 
-void ConfigReadMainMemory(misc::IniFile *ini_file,
+void System::ConfigReadMainMemory(misc::IniFile *ini_file,
 		const std::string &section)
 {
 }
 
 
-void ConfigReadModuleAddressRange(misc::IniFile *ini_file,
+void System::ConfigReadModuleAddressRange(misc::IniFile *ini_file,
 		Module *module,
 		const std::string &section)
 {
 }
 
 
-void ConfigReadModules(misc::IniFile *ini_file)
+void System::ConfigReadModules(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigCheckRouteToMainMemory(Module *module,
+void System::ConfigCheckRouteToMainMemory(Module *module,
 		int block_size,
 		int level)
 {
 }
 
 
-void ConfigReadLowModules(misc::IniFile *ini_file)
+void System::ConfigReadLowModules(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigReadEntries(misc::IniFile *ini_file)
+void System::ConfigReadEntries(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigCreateSwitches(misc::IniFile *ini_file)
+void System::ConfigCreateSwitches(misc::IniFile *ini_file)
 {
 }
 
 
-void ConfigCheckRoutes()
+void System::ConfigCheckRoutes()
 {
 }
 
 
-void CalculateSubBlockSizes()
+void System::ConfigCalculateSubBlockSizes()
 {
 }
 
 
-void ConfigSetModuleLevel(Module *module, int level)
+void System::ConfigSetModuleLevel(Module *module, int level)
 {
 }
 
 
-void ConfigCalculateModuleLevels()
+void System::ConfigCalculateModuleLevels()
 {
 }
 
 
-void ConfigTrace()
+void System::ConfigTrace()
 {
 }
 
 
-void ConfigReadCommands(misc::IniFile *ini_file)
+void System::ConfigReadCommands(misc::IniFile *ini_file)
 {
+}
+
+
+void System::ConfigRead()
+{
+	// Create frequency domain
+	esim::Engine *engine = esim::Engine::getInstance();
+	frequency_domain = engine->RegisterFrequencyDomain("Memory", 1000);
+
+	// Load memory system configuration file. If no file name has been given
+	// by the user, create a default configuration for each architecture.
+	misc::IniFile ini_file;
+	if (config_file.empty())
+	{
+		// Create default configuration files for each architecture
+		comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+		for (auto it = arch_pool->timing_begin(),
+				e = arch_pool->timing_end();
+				it != e;
+				++it)
+		{
+			comm::Timing *timing = (*it)->getTiming();
+			assert(timing);
+			timing->WriteMemoryConfiguration(&ini_file);
+		}
+	}
+	else
+	{
+		// Load from file
+		ini_file.Load(config_file);
+	}
+
+	// Read general variables
+	ConfigReadGeneral(&ini_file);
+
+	// Read networks
+	ConfigReadNetworks(&ini_file);
+
+	// Read modules
+	ConfigReadModules(&ini_file);
+
+	// Read low level caches
+	ConfigReadLowModules(&ini_file);
+
+	// Read entries from requesting devices (CPUs/GPUs) to memory system
+	// entries. This is presented in [Entry <name>] sections in the
+	// configuration file.
+	ConfigReadEntries(&ini_file);
+
+	// Create switches in internal networks
+	ConfigCreateSwitches(&ini_file);
+
+	// Read commands from the configuration file. Commands are used to
+	// artificially alter the initial state of the memory hierarchy for
+	// debugging purposes.
+	ConfigReadCommands(&ini_file);
+
+	// Check that all enforced sections and variables were specified.
+	ini_file.Check();
+
+	// Check routes to low and high modules
+	ConfigCheckRoutes();
+
+	// Check for disjoint memory hierarchies for different architectures.
+	// FIXME We don't know if device is fused until runtime, so we can't
+	// check this in advance.
+	// arch_for_each(mem_config_check_disjoint, NULL);
+
+	// Compute sub-block sizes, based on high modules. This function also
+	// initializes the directories in modules other than L1.
+	ConfigCalculateSubBlockSizes();
+
+	// Compute cache levels relative to the CPU/GPU entry points
+	ConfigCalculateModuleLevels();
+
+	// Dump configuration to trace file
+	ConfigTrace();
 }
 
 
