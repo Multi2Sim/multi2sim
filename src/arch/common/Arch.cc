@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
 #include "Arch.h"
 #include "Emu.h"
 #include "Timing.h"
@@ -39,7 +41,7 @@ ArchPool *ArchPool::getInstance()
 		return instance.get();
 	
 	// Create new architecture pool
-	instance.reset(new ArchPool());
+	instance = misc::new_unique<ArchPool>();
 	return instance.get();
 }
 	
@@ -49,8 +51,11 @@ void ArchPool::Register(const std::string &name,
 		Timing *timing)
 {
 	// Create new architecture in place
-	Arch *arch = new Arch(name, as, emu, timing);
-	arch_list.emplace_back(arch);
+	arch_list.emplace_back(misc::new_unique<Arch>(name, as, emu, timing));
+
+	// Add to list of timing simulators, if applicable
+	if (timing)
+		timing_arch_list.push_back(arch_list.back().get());
 }
 
 void ArchPool::Run(int &num_emu_active, int &num_timing_active)
