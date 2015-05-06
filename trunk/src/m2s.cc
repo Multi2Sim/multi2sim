@@ -44,6 +44,7 @@
 #include <driver/opengl/OpenGLDriver.h>
 #include <memory/MMU.h>
 #include <memory/Manager.h>
+#include <memory/System.h>
 #include <network/System.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Environment.h>
@@ -548,6 +549,7 @@ int MainProgram(int argc, char **argv)
 	SI::Driver::RegisterOptions();
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
+	mem::System::RegisterOptions();
 	dram::System::RegisterOptions();
 	net::System::RegisterOptions();
 	ARM::Asm::RegisterOptions();
@@ -573,6 +575,7 @@ int MainProgram(int argc, char **argv)
 	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
+	mem::System::ProcessOptions();
 	dram::System::ProcessOptions();
 	net::System::ProcessOptions();
 	ARM::Asm::ProcessOptions();
