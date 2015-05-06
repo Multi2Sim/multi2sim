@@ -23,12 +23,18 @@
 #include <memory>
 
 #include <lib/cpp/Debug.h>
-#include <lib/esim/FrequencyDomain.h>
 #include <lib/esim/Event.h>
+#include <lib/esim/FrequencyDomain.h>
+#include <lib/esim/Trace.h>
+#include <lib/cpp/IniFile.h>
 
 
 namespace mem
 {
+
+
+// Forward declarations
+class Module;
 
 /// Memory system
 class System
@@ -39,7 +45,60 @@ class System
 	// Private constructor
 	System();
 
-	// Event handlers
+
+	//
+	// Memory system configuration. These functions are defined in
+	// SystemConfig.cc
+	//
+
+	// Parse memory hierarchy configuration file, or generate default if
+	// user didn't pass '--mem-config' command-line option.
+	void ConfigRead();
+
+	void ConfigReadGeneral(misc::IniFile *ini_file);
+
+	void ConfigReadNetworks(misc::IniFile *ini_file);
+
+	void ConfigReadCache(misc::IniFile *ini_file,
+			const std::string &section);
+
+	void ConfigReadMainMemory(misc::IniFile *ini_file,
+			const std::string &section);
+
+	void ConfigReadModuleAddressRange(misc::IniFile *ini_file,
+			Module *module,
+			const std::string &section);
+
+	void ConfigReadModules(misc::IniFile *ini_file);
+
+	void ConfigCheckRouteToMainMemory(Module *module,
+			int block_size,
+			int level);
+
+	void ConfigReadLowModules(misc::IniFile *ini_file);
+
+	void ConfigReadEntries(misc::IniFile *ini_file);
+	
+	void ConfigCreateSwitches(misc::IniFile *ini_file);
+	
+	void ConfigCheckRoutes();
+
+	void CalculateSubBlockSizes();
+
+	void ConfigSetModuleLevel(Module *module, int level);
+
+	void ConfigCalculateModuleLevels();
+
+	void ConfigTrace();
+
+	void ConfigReadCommands();
+
+
+	//
+	// Event handlers for NMOESI cache coherence protocol. These functions
+	// are defined in SystemCoherenceProtocol.cc.
+	//
+
 	static void evLoadHandler(esim::EventType *, esim::EventFrame *);
 	static void evStoreHandler(esim::EventType *, esim::EventFrame *);
 	static void evNCStoreHandler(esim::EventType *, esim::EventFrame *);
@@ -159,7 +218,7 @@ public:
 	static esim::EventType *ev_local_find_and_lock_finish;
 
 	/// Memory system trace
-	static misc::Debug trace;
+	static esim::Trace trace;
 
 	/// Memory system debugger
 	static misc::Debug debug;

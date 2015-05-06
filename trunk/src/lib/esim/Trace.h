@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <string>
+#include <sstream>
 #include <zlib.h>
 
 

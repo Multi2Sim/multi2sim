@@ -72,6 +72,7 @@ libmemory_a_SOURCES = \
 	SpecMem.h \
 	\
 	System.cc \
+	SystemConfig.cc \
 	System.h \
 	\
 	Wrapper.cc \
