@@ -84,6 +84,7 @@ struct graph_edge_t
 
 	/* Edge additional Data */
 	void *data;
+	int reversed;
 };
 
 

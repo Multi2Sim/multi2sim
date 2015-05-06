@@ -18,6 +18,7 @@
  */
 
 #include <assert.h>
+#include <stdio.h>
 
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/list.h>
@@ -86,6 +87,7 @@ struct graph_edge_t *graph_edge_create(void)
 	struct graph_edge_t *edge;
 	edge = xcalloc(1, sizeof (struct graph_edge_t));
 	edge->direction = graph_edge_uni_direction;
+	edge->reversed = 0;
 	return edge;
 }
 
@@ -196,6 +198,7 @@ static void graph_greedy_cycle_removal (struct graph_t *graph)
 			temp = edge->dst_vertex;
 			edge->dst_vertex = edge->src_vertex;
 			edge->src_vertex = temp;
+			edge->reversed = 1;
 
 		}
 	}
