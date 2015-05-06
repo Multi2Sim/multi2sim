@@ -100,7 +100,7 @@ void vi_led_free(struct vi_led_t *led)
 void vi_led_set_color(struct vi_led_t *led, GdkColor *color)
 {
 	led->color = *color;
-	vi_led_draw(led->widget, NULL, led);
+//	vi_led_draw(led->widget, NULL, led);
 }
 
 

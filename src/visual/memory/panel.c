@@ -270,6 +270,8 @@ static void vi_mod_board_refresh(struct vi_mod_board_t *board)
 
 	char *access_name;
 
+	gtk_widget_queue_draw(board->widget);
+
 	/* Empty access list */
 	while (vi_list_count(board->access_list))
 		free(vi_list_remove_at(board->access_list, 0));
@@ -347,12 +349,14 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	panel = xcalloc(1, sizeof(struct vi_mem_panel_t));
 	panel->board_list = list_create();
 
+
 	/* Layout */
 	GtkWidget *layout;
-	GdkColor color;
+	GdkRGBA color;
 	layout = gtk_layout_new(NULL, NULL);
-	gdk_color_parse("white", &color);
-	gtk_widget_modify_bg(layout, GTK_STATE_NORMAL, &color);
+
+	gdk_rgba_parse(&color, "white");
+	gtk_widget_override_background_color(layout, GTK_STATE_NORMAL,&color);
 
 	/* Frame */
 	GtkWidget *frame;
@@ -361,7 +365,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	/* Scrolled window */
 	GtkWidget *scrolled_window;
 	scrolled_window = gtk_scrolled_window_new(NULL, NULL);
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(scrolled_window), layout);
+	gtk_container_add(GTK_CONTAINER(scrolled_window), layout);
 	gtk_widget_set_size_request(scrolled_window, VI_MOD_BOARD_WIDTH * 3 / 2, VI_MOD_BOARD_HEIGHT * 3 / 2);
 	gtk_container_add(GTK_CONTAINER(frame), scrolled_window);
 
@@ -434,7 +438,7 @@ struct vi_mem_panel_t *vi_mem_panel_create(void)
 	}
 
 	/* Set layout size */
-	gtk_widget_set_size_request(layout, layout_width, layout_height);
+	gtk_layout_set_size(GTK_LAYOUT(layout), layout_width, layout_height);
 
 	/* Assign panel widget */
 	panel->widget = frame;

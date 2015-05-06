@@ -111,7 +111,11 @@ void vi_net_free(struct vi_net_t *net)
 	{
 		node = list_get(net->node_list, i);
 		if (node->name)
-			hash_table_remove(net->node_table, node->name);
+		{
+			struct vi_net_node_t *table_node;
+			table_node = hash_table_remove(net->node_table, node->name);
+			assert(node == table_node);
+		}
 		vi_net_node_free(node);
 	}
 	list_free(net->node_list);

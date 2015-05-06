@@ -59,7 +59,9 @@ void vi_net_packet_free(struct vi_net_packet_t *packet)
 	if (packet->net_name)
 		str_free(packet->net_name);
 	if (packet->name)
+	{
 		str_free(packet->name);
+	}
 	if (packet->state)
 		str_free(packet->state);
 	free(packet);

@@ -35,7 +35,7 @@
  * State checkpoint
  */
 
-#define VI_STATE_CHECKPOINT_INTERVAL  500
+#define VI_STATE_CHECKPOINT_INTERVAL  1000
 #define VI_STATE_PROGRESS_INTERVAL  100000
 
 struct vi_state_checkpoint_t
