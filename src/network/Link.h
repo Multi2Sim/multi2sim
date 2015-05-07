@@ -31,6 +31,8 @@ class Buffer;
 
 class Link
 {
+protected: 
+
 	// Network associated with the link
 	Network *network;
 
@@ -86,23 +88,40 @@ class Link
 	// Number of bytes that was transfered through the links
 	long long transferred_bytes;
 
-
 public:
-	/// Link Constructor
-	///
-	/// \param name
-	///	link name
-	///
-	/// \param source_node
-	///	Source node that is connected to link. Buffer will be added to
-	///	this node.
-	///
-	Link(const std::string &name,
-			Node *source_node,
-			Node *destination_node,
-			int source_buffer_size,
-			int destination_buffer_size,
-			int virtual_channels);
+
+	/// Virtual destructor
+	virtual ~Link() {};
+
+	/// Set name
+	void setName(const std::string &name) { this->name = name; }
+
+	/// Get the name of the link
+	std::string getName() const { return name; }
+
+	/// Set source node
+	void setSourceNode(Node *node) { this->source_node = node; }
+
+	/// Get source node
+	Node *getSourceNode() const { return source_node; }
+
+	/// Set destination node
+	void setDestinationNode(Node *node) { this->destination_node = node; }
+
+	/// Get destination node
+	Node *getDestinationNode() const { return destination_node; }
+
+	/// Dump link information
+	virtual void Dump(std::ostream &os) const;
+
+	/// Operator \c << invoking function Dump() on an output stream.
+	friend std::ostream &operator<<(std::ostream &os,
+			const Link &link)
+	{
+		link.Dump(os);
+		return os;
+	}
+
 
 };
 

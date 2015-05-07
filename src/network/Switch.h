@@ -17,29 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_ENDNODE_H
-#define NETWORK_ENDNODE_H
+#ifndef NETWORK_SWITCH_H
+#define NETWORK_SWITCH_H
 
 #include "Node.h"
 
 namespace net
 {
 
-// An end node is where the packet is generated and consumed
-class EndNode : public Node
+// A switch is a node that passes packets to next link
+class Switch : public Node
 {
-protected: 
+protected:
 
 public:
 
 	/// Return the type of the node
-	std::string getType() const { return "EndNode"; }
+	std::string getType() const { return "Switch"; }
 
 	/// Dump node information
 	void Dump(std::ostream &os) const;
 
 };
 
-}  // namespace net
+}
 
 #endif

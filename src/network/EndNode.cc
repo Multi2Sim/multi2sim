@@ -24,7 +24,8 @@ namespace net
 
 	void EndNode::Dump(std::ostream &os) const
 	{
-		os << misc::fmt("\n***** End Node: %s *****\n", 
+		os << misc::fmt("\n***** %s: %s *****\n", 
+				getType().c_str(),
 				getName().c_str());
 	}
 

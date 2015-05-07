@@ -30,6 +30,7 @@ Network::Network(const std::string &name) :
 		name(name)
 {
 	node_factory.reset(new NodeFactory());
+	link_factory.reset(new LinkFactory());
 }
 
 
@@ -58,6 +59,9 @@ void Network::ParseConfiguration(const std::string &section,
 
 	// Parse the configure file for nodes
 	ParseConfigurationForNodes(config);
+
+	// Parse the configure file for links
+	ParseConfigurationForLinks(config);
 
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
@@ -93,6 +97,48 @@ void Network::ParseConfigurationForNodes(misc::IniFile &config)
 }
 
 
+void Network::ParseConfigurationForLinks(misc::IniFile &config)
+{
+	for (int i = 0; i < config.getNumSections(); i++)
+	{
+		std::string section = config.getSection(i);
+		
+		// Tokenize section name
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 4)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "Link"))
+			continue;
+
+		// Create string
+		std::unique_ptr<Link> link = 
+				link_factory->ProduceLinkByIniSection(
+						this, section, config);
+		links.push_back(std::move(link));
+	}
+}
+
+
+Node *Network::getNodeByName(const std::string &name) const
+{
+	for (auto &node : nodes)
+	{
+		if (node->getName() == name)
+		{
+			return node.get();
+		}
+	}
+	return nullptr;
+}
+
+
 void Network::Dump(std::ostream &os = std::cout) const
 {
 	// Dump network information
@@ -110,6 +156,11 @@ void Network::Dump(std::ostream &os = std::cout) const
 		node->Dump(os);
 	}
 
+	// Print links
+	for (auto &link : links)
+	{
+		link->Dump(os);
+	}
 }
 
 }

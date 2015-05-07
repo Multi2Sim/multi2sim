@@ -30,6 +30,7 @@
 #include <lib/cpp/String.h>
 
 #include "NodeFactory.h"
+#include "LinkFactory.h"
 
 namespace net
 {
@@ -69,8 +70,14 @@ class Network
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &config);
 
+	// Parse the config file to add all the nodes belongs to the network
+	void ParseConfigurationForLinks(misc::IniFile &config);
+
 	// A node factory that produces nodes
 	std::unique_ptr<NodeFactory> node_factory;
+
+	// A link factory that produces links
+	std::unique_ptr<LinkFactory> link_factory;
 
 
 
@@ -119,6 +126,12 @@ public:
 		this->node_factory = std::move(node_factory);
 	}
 
+	/// Inject link factory
+	void setLinkFactory(std::unique_ptr<LinkFactory> link_factory)
+	{
+		this->link_factory = std::move(link_factory);
+	}
+
 	/// Dump the network formation
 	void Dump(std::ostream &os) const;
 
@@ -133,11 +146,17 @@ public:
 	/// Get the string 
 	std::string getName() const { return name; }
 
+	/// Add node to the network
+	virtual void addNode(std::unique_ptr<Node> node) 
+	{
+		nodes.push_back(std::move(node));
+	}
+
 	/// find and returns node in the network using node name
 	///
 	/// \param name
 	///	node name
-	Node *getNodeByName(const std::string &name);
+	virtual Node *getNodeByName(const std::string &name) const;
 
 	/// finds and returns node in the network using user data
 	///
