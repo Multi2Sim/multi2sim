@@ -508,42 +508,42 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 		// Read and Execute .PO mode value
 		if (format.po == 0)
 		{
-			dst = src1 + src2 + (format.x ? ReadCC() : 0);
+			dst = src1 + src2 + (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl1 + srcl2 + (format.x ? ReadCC() : 0) > 0xffffffff)
-					WriteCC(1);
+				if (srcl1 + srcl2 + (format.x ? ReadCC_CF() : 0) > 0xffffffff)
+					WriteCC_CF(1);
 			}
 		}
 
 		else if (format.po == 1) // subtraction mode
 		{
-			dst = src1 - src2 - (format.x ? ReadCC() : 0);
+			dst = src1 - src2 - (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl1 < srcl2 + (format.x ? ReadCC() : 0))
-					WriteCC(1);
+				if (srcl1 < srcl2 + (format.x ? ReadCC_CF() : 0))
+					WriteCC_CF(1);
 			}
 		}
 		else if (format.po == 2)
 		{
-			dst = src2 - src1 - (format.x ? ReadCC() : 0);
+			dst = src2 - src1 - (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl2 < srcl1 + (format.x ? ReadCC() : 0))
-					WriteCC(1);
+				if (srcl2 < srcl1 + (format.x ? ReadCC_CF() : 0))
+					WriteCC_CF(1);
 			}
 		}
 		else
@@ -639,42 +639,42 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 		// Read and Execute .PO mode value
 		if (format.po == 0)
 		{
-			dst = src1 + src2 + (format.x ? ReadCC() : 0);
+			dst = src1 + src2 + (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl1 + srcl2 + (format.x ? ReadCC() : 0) > 0xffffffff)
-					WriteCC(1);
+				if (srcl1 + srcl2 + (format.x ? ReadCC_CF() : 0) > 0xffffffff)
+					WriteCC_CF(1);
 			}
 		}
 
 		else if (format.po == 1) // subtraction mode
 		{
-			dst = src1 - src2 - (format.x ? ReadCC() : 0);
+			dst = src1 - src2 - (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl1 < srcl2 + (format.x ? ReadCC() : 0))
-					WriteCC(1);
+				if (srcl1 < srcl2 + (format.x ? ReadCC_CF() : 0))
+					WriteCC_CF(1);
 			}
 		}
 		else if (format.po == 2)
 		{
-			dst = src2 - src1 - (format.x ? ReadCC() : 0);
+			dst = src2 - src1 - (format.x ? ReadCC_CF() : 0);
 
 			if (format.cc)
 			{
 				srcl1 = src1;
 				srcl2 = src2;
 
-				if (srcl2 < srcl1 + (format.x ? ReadCC() : 0))
-					WriteCC(1);
+				if (srcl2 < srcl1 + (format.x ? ReadCC_CF() : 0))
+					WriteCC_CF(1);
 			}
 		}
 		else
@@ -756,7 +756,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		x = (format.mod1 >> 4) & 0x1;
 
 		srcA_id = format.mod0;
-		srcA = this->ReadGPR(srcA_id) - (x ? ReadCC() : 0);
+		srcA = this->ReadGPR(srcA_id) - (x ? ReadCC_CF() : 0);
 		srcB_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
