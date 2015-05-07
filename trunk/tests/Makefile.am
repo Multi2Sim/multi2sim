@@ -40,7 +40,8 @@ src_network_test_LDADD = \
 
 src_network_test_SOURCES = \
 	src/network/TestNetwork.cc \
-	src/network/TestNodeFactory.cc
+	src/network/TestNodeFactory.cc \
+	src/network/TestLinkFactory.cc
 
 
 

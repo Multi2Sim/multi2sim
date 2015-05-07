@@ -25,6 +25,7 @@
 #include <network/NodeFactory.h>
 #include <network/Node.h>
 #include <network/EndNode.h>
+#include <network/Switch.h>
 
 namespace net
 {
@@ -53,6 +54,21 @@ TEST(TestNodeFactory, should_produce_end_node)
 
 	// Assertion
 	EXPECT_TRUE(dynamic_cast<EndNode *>(node.get()) != 0);
+}
+
+
+TEST(TestNodeFactory, should_produce_switch)
+{
+	// Init variables
+	NodeFactory factory;
+	Network net("Test network");
+
+	// Produce node
+	std::unique_ptr<Node> node = factory.ProduceNode(
+			&net, "Switch", "N1");
+
+	// Assertion
+	EXPECT_TRUE(dynamic_cast<Switch *>(node.get()) != 0);
 }
 
 

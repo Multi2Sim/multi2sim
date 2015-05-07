@@ -17,26 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_ENDNODE_H
-#define NETWORK_ENDNODE_H
+#ifndef NETWORK_LINKFACTORY_H
+#define NETWORK_LINKFACTORY_H
 
-#include "Node.h"
+#include <memory>
+
+#include "Link.h"
+
+namespace misc
+{
+class IniFile;
+}
 
 namespace net
 {
 
-// An end node is where the packet is generated and consumed
-class EndNode : public Node
+class LinkFactory
 {
-protected: 
-
 public:
 
-	/// Return the type of the node
-	std::string getType() const { return "EndNode"; }
+	/// Produce a Link by INI file section
+	virtual std::unique_ptr<Link> ProduceLinkByIniSection(Network *network,
+			const std::string &section, misc::IniFile &config);
 
-	/// Dump node information
-	void Dump(std::ostream &os) const;
+	/// Produce a node by type string
+	virtual std::unique_ptr<Link> ProduceLink(Network *network,
+			const std::string &name, 
+			Node *source_node, Node *destination_node);
 
 };
 
