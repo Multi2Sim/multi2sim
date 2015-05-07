@@ -220,9 +220,60 @@ const std::string System::help_message =
 	"      indicate that data and instruction caches are unified.\n"
 	"\n";
 
+const char *System::err_config_note =
+	"\tPlease run 'm2s --mem-help' or consult the Multi2Sim Guide for "
+	"a description of the memory system configuration file format.\n";
+
+const char *System::err_config_net =
+	"\tNetwork identifiers need to be declared either in the cache " 
+	"configuration file, or in the network configuration file (option " 
+	"'--net-config').\n";
+
+const char *System::err_levels =
+	"\tThe path from a cache into main memory exceeds 10 levels of cache. "
+	"This might be a symptom of a recursive reference in 'LowModules' "
+	"lists. If you really intend to have a high number of cache levels, "
+	"increase variable MEM_SYSTEM_MAX_LEVELS in '" __FILE__ "'\n";
+
+const char *System::err_block_size =
+	"\tBlock size in a cache must be greater or equal than its\n" 
+	"\tlower-level cache for correct behavior of directories and\n" 
+	"\tcoherence protocols.\n";
+
+const char *System::err_connect =
+	"\tAn external network is used that does not provide connectivity\n"
+	"\tbetween a memory module and an associated low/high module. Please\n"
+	"\tadd the necessary links in the network configuration file.\n";
+
+const char *System::err_mem_disjoint =
+	"\tIn current versions of Multi2Sim, it is not allowed having a\n" 
+	"\tmemory module shared for different architectures. Please make sure\n"
+	"\tthat the sets of modules accessible by different architectures\n"
+	"\tare disjoint.\n";
 
 void System::ConfigReadGeneral(misc::IniFile *ini_file)
 {
+	// Section with general parameters
+	std::string section = "General";
+
+	// Frequency
+	frequency = ini_file->ReadInt(section, "Frequency", frequency);
+	if (!esim::Engine::isValidFrequency(frequency))
+		throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
+				"must be between 1MHz and 1000GHz.\n%s",
+				ini_file->getPath().c_str(),
+				err_config_note));
+	
+	// Create frequency domain
+	esim::Engine *engine = esim::Engine::getInstance();
+	frequency_domain = engine->RegisterFrequencyDomain("Memory", frequency);
+
+	// Peer transfers
+	// FIXME Disabling this option for now.  Potentially removing it
+	// entirely.  See description in mod-stack.c
+	//
+	//mem_peer_transfers = config_read_bool(config, section, 
+	//	"PeerTransfers", 1);
 }
 
 
@@ -309,10 +360,6 @@ void System::ConfigReadCommands(misc::IniFile *ini_file)
 
 void System::ConfigRead()
 {
-	// Create frequency domain
-	esim::Engine *engine = esim::Engine::getInstance();
-	frequency_domain = engine->RegisterFrequencyDomain("Memory", 1000);
-
 	// Load memory system configuration file. If no file name has been given
 	// by the user, create a default configuration for each architecture.
 	misc::IniFile ini_file;
