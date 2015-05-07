@@ -32,6 +32,9 @@
 namespace SI
 {
 
+// Singleton                                                                     
+std::unique_ptr<Asm> Asm::instance;
+
 Asm::Asm()
 {
 	InstInfo *info;
@@ -180,6 +183,16 @@ Asm::Asm()
 	}
 }
 
+Asm *Asm::getInstance()                                                          
+{                                                                                
+	// Instance already exists                                               
+	if (instance.get())                                                      
+		return instance.get();                                           
+
+	// Create instance                                                       
+	instance.reset(new Asm());                                               
+	return instance.get();                                                   
+} 
 
 void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 {

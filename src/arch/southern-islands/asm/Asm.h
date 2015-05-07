@@ -34,6 +34,9 @@ namespace SI
 
 class Asm
 {
+	// Unique instance of Southern Islands Disassembler                          
+	static std::unique_ptr<Asm> instance;  
+
 	static const int dec_table_sopp_count = 24;
 	static const int dec_table_sopc_count = 17;
 	static const int dec_table_sop1_count = 54;
@@ -90,6 +93,11 @@ public:
 
 	// Constructor
 	Asm();
+
+	/// Get the only instance of the Southern Islands disassembler. If the       
+	/// instance does not exist yet, it will be created, and will remain     
+	/// allocated until the end of the execution.                            
+	static Asm *getInstance(); 
 
 	// Disassemblers
 	void DisassembleBinary(std::string path);
