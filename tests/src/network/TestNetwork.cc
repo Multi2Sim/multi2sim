@@ -27,17 +27,46 @@ namespace net
 
 TEST(TestNetwork, should_create_according_to_ini_file)
 {
+	class MockupNode : public Node
+	{
+		void Dump(std::ostream &os = std::cout) const override
+		{
+			os << misc::fmt("\nMockup node : %s\n",
+					name.c_str());
+		}
+	};
+
+	class MockupNodeFactory : public NodeFactory
+	{
+		std::unique_ptr<Node> ProduceNodeByIniSection(Network *network,
+				const std::string &section, 
+				misc::IniFile &config) override
+		{
+			std::unique_ptr<Node> node = 
+				std::unique_ptr<MockupNode>(new MockupNode());
+			node->setName(section);
+			return node;
+		}
+	};
+
 	// Setup ini file
 	std::string ini_file = 
 		"[ Network.mynet ]\n"
 		"DefaultInputBufferSize = 16 \n"
 		"DefaultOutputBufferSize = 16 \n"
-		"DefaultBandwidth = 1 \n";
+		"DefaultBandwidth = 1 \n"
+		"\n"
+		"[ Network.mynet.Node.N1 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N2 ]\n"
+		"Type = EndNode ";
 	misc::IniFile ini;
 	ini.LoadFromString(ini_file);
 
 	// Setup network
 	Network net("mynet");
+	auto factory = misc::new_unique<MockupNodeFactory>();
+	net.setNodeFactory(std::move(factory));
 	net.ParseConfiguration("Network.mynet", ini);
 
 	// Output stream
@@ -48,7 +77,9 @@ TEST(TestNetwork, should_create_according_to_ini_file)
 	std::string target = "\n***** Network mynet *****\n"
 			"\tDefault input buffer size: 16\n"
 			"\tDefault output buffer size: 16\n"
-			"\tDefault bandwidth: 1\n";
+			"\tDefault bandwidth: 1\n"
+			"\nMockup node : Network.mynet.Node.N1\n"
+			"\nMockup node : Network.mynet.Node.N2\n";
 	EXPECT_STREQ(target.c_str(), oss.str().c_str());
 }
 

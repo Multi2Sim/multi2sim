@@ -101,7 +101,7 @@ class IniFile
 	static bool getVarValue(const std::string &s, std::string &var,
 			std::string &value);
 
-	/// Parse the INI file from an input stream
+	// Parse the INI file from an input stream
 	void Parse(std::istream *f);
 
 	bool InsertSection(std::string section);

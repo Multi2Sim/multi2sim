@@ -33,12 +33,15 @@ src_lib_esim_test_SOURCES = \
 	src/lib/esim/TestEngine.cc 
 
 
+
 src_network_test_LDADD = \
 	$(top_builddir)/src/network/libnetwork.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_network_test_SOURCES = \
-	src/network/TestNetwork.cc
+	src/network/TestNetwork.cc \
+	src/network/TestNodeFactory.cc
+
 
 
 src_arch_hsa_asm_test_LDADD = \
