@@ -95,10 +95,10 @@ class System
 
 	void ConfigReadNetworks(misc::IniFile *ini_file);
 
-	void ConfigReadCache(misc::IniFile *ini_file,
+	Module *ConfigReadCache(misc::IniFile *ini_file,
 			const std::string &section);
 
-	void ConfigReadMainMemory(misc::IniFile *ini_file,
+	Module *ConfigReadMainMemory(misc::IniFile *ini_file,
 			const std::string &section);
 
 	void ConfigReadModuleAddressRange(misc::IniFile *ini_file,

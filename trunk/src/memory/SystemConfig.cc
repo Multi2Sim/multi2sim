@@ -21,6 +21,7 @@
 #include <arch/common/Timing.h>
 #include <lib/esim/Engine.h>
 
+#include "Module.h"
 #include "System.h"
 
 
@@ -321,15 +322,174 @@ void System::ConfigReadNetworks(misc::IniFile *ini_file)
 }
 
 
-void System::ConfigReadCache(misc::IniFile *ini_file,
+Module *System::ConfigReadCache(misc::IniFile *ini_file,
 		const std::string &section)
 {
+#if 0
+	// Cache parameters
+	std::string geometry_section = "CacheGeometry " +
+			ini_file->ReadString(section, "Geometry");
+	ini_file->Enforce(section, "Geometry");
+	ini_file->Enforce(geometry_section);
+	ini_file->Enforce(geometry_section, "Latency");
+	ini_file->Enforce(geometry_section, "Sets");
+	ini_file->Enforce(geometry_section, "Assoc");
+	ini_file->Enforce(geometry_section, "BlockSize");
+
+	// Module name
+	std::string module_name = section;
+	assert(!strncasecmp(section.c_str(), "Module ", 7));
+	module_name.erase(0, 7);
+	
+	// Geometry values
+	int num_sets = ini_file->ReadInt(geometry_section, "Sets", 16);
+	int assoc = ini_file->ReadInt(geometry_section, "Assoc", 2);
+	int block_size = ini_file->ReadInt(geometry_section, "BlockSize", 256);
+	int latency = ini_file->ReadInt(geometry_section, "Latency", 1);
+	int dir_latency = ini_file->ReadInt(geometry_section, "DirectoryLatency", 0);
+	std::string replacement_policy_str = ini_file->ReadString(geometry_section,
+			"Policy", "LRU");
+	std::string write_policy_str = ini_file->ReadString(geometry_section,
+			"WritePolicy", "WriteBack");
+	int mshr_size = ini_file->ReadInt(geometry_section, "MSHR", 16);
+	int num_ports = ini_file->ReadInt(geometry_section, "Ports", 2);
+	bool enable_prefetcher = ini_file->ReadBool(geometry_section, 
+			"EnablePrefetcher", false);
+	std::string prefetcher_type_str = ini_file->ReadString(geometry_section,
+			"PrefetcherType", "GHB_PC_CS");
+	int prefetcher_ghb_size = ini_file->ReadInt(geometry_section, 
+			"PrefetcherGHBSize", 256);
+	int prefetcher_it_size = ini_file->ReadInt(geometry_section, 
+			"PrefetcherITSize", 64);
+	int prefetcher_lookup_depth = ini_file->ReadInt(geometry_section, 
+			"PrefetcherLookupDepth", 2);
+
+	// Check replacement policy
+	Cache::ReplacementPolicy replacement_policy =
+			(Cache::ReplacementPolicy)
+			Cache::ReplacementPolicyMap.MapString
+			(replacement_policy_str);
+	if (!replacement_policy)
+		throw misc::Error(misc::fmt("%s: Cache %s: %s: "
+				"Invalid block replacement policy.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				replacement_policy_str.c_str(),
+				err_config_note));
+
+	// Check write policy
+	Cache::WritePolicy write_policy =
+			(Cache::WritePolicy)
+			Cache::WritePolicyMap.MapString(write_policy_str);
+	if (!write_policy)
+		throw misc::Error(misc::fmt("%s: Cache %s: %s: "
+				"Invalid write policy.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				write_policy_str.c_str(),
+				err_config_note));
+	if (write_policy == Cache::WriteThrough)
+		misc::Warning("%s: Cache %s: %s: Write policy "
+				"not yet implemented, "
+				"WriteBack policy being used.\n",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				write_policy_str.c_str());
+#endif
+#if 0
+	if (num_sets < 1 || (num_sets & (num_sets - 1)))
+		fatal("%s: cache %s: number of sets must be a power of two "
+			"greater than 1.\n%s", mem_config_file_name, mod_name, 
+			mem_err_config_note);
+	if (assoc < 1 || (assoc & (assoc - 1)))
+		fatal("%s: cache %s: associativity must be power of two "
+			"and > 1.\n%s", mem_config_file_name, mod_name, 
+			mem_err_config_note);
+	if (block_size < 4 || (block_size & (block_size - 1)))
+		fatal("%s: cache %s: block size must be power of two and "
+			"at least 4.\n%s", mem_config_file_name, mod_name, 
+			mem_err_config_note);
+	if (dir_latency < 0)
+		fatal("%s: cache %s: invalid value for variable "
+			"'DirectoryLatency'.\n%s", mem_config_file_name, 
+			mod_name, mem_err_config_note);
+	if (latency < 0)
+		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
+			mem_config_file_name, mod_name, mem_err_config_note);
+	if (mshr_size < 1)
+		fatal("%s: cache %s: invalid value for variable 'MSHR'.\n%s",
+			mem_config_file_name, mod_name, mem_err_config_note);
+	if (num_ports < 1)
+		fatal("%s: cache %s: invalid value for variable 'Ports'.\n%s",
+			mem_config_file_name, mod_name, mem_err_config_note);
+	if (enable_prefetcher)
+	{
+		prefetcher_type = str_map_string_case(&prefetcher_type_map, 
+			prefetcher_type_str);
+		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 ||
+		    prefetcher_type == prefetcher_type_invalid || 
+		    prefetcher_lookup_depth < 2 || 
+		    prefetcher_lookup_depth > PREFETCHER_LOOKUP_DEPTH_MAX)
+		{
+			fatal("%s: cache %s: invalid prefetcher "
+				"configuration.\n%s",
+				mem_config_file_name, mod_name, 
+				mem_err_config_note);
+		}
+	}
+
+	/* Create module */
+	mod = mod_create(mod_name, mod_kind_cache, num_ports,
+		block_size, latency);
+	
+	/* Initialize */
+	mod->mshr_size = mshr_size;
+	mod->dir_assoc = assoc;
+	mod->dir_num_sets = num_sets;
+	mod->dir_size = num_sets * assoc;
+	mod->dir_latency = dir_latency;
+
+	/* High network */
+	net_name = config_read_string(config, section, "HighNetwork", "");
+	net_node_name = config_read_string(config, section, 
+		"HighNetworkNode", "");
+	mem_config_insert_module_in_network(config, mod, net_name, net_node_name,
+		&net, &net_node);
+	mod->high_net = net;
+	mod->high_net_node = net_node;
+
+	/* Low network */
+	net_name = config_read_string(config, section, "LowNetwork", "");
+	net_node_name = config_read_string(config, section, 
+		"LowNetworkNode", "");
+	mem_config_insert_module_in_network(config, mod, net_name, 
+		net_node_name, &net, &net_node);
+	mod->low_net = net;
+	mod->low_net_node = net_node;
+
+	/* Create cache */
+	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, 
+		policy, writepolicy);
+
+	/* Fill in prefetcher parameters */
+	if (enable_prefetcher)
+	{
+		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, 
+			prefetcher_it_size, prefetcher_lookup_depth, 
+			prefetcher_type);
+	}
+
+	/* Return */
+	return mod;
+#endif
+	return nullptr;
 }
 
 
-void System::ConfigReadMainMemory(misc::IniFile *ini_file,
+Module *System::ConfigReadMainMemory(misc::IniFile *ini_file,
 		const std::string &section)
 {
+	return nullptr;
 }
 
 
