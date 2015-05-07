@@ -120,77 +120,77 @@ esim::EventType *System::ev_local_find_and_lock_action;
 esim::EventType *System::ev_local_find_and_lock_finish;
 
 
-void System::evLoadHandler(esim::EventType *, esim::EventFrame *)
+void System::evLoadHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evStoreHandler(esim::EventType *, esim::EventFrame *)
+void System::evStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evNCStoreHandler(esim::EventType *, esim::EventFrame *)
+void System::evNCStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evPrefetchHandler(esim::EventType *, esim::EventFrame *)
+void System::evPrefetchHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evFindAndLockHandler(esim::EventType *, esim::EventFrame *)
+void System::evFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evEvictHandler(esim::EventType *, esim::EventFrame *)
+void System::evEvictHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evWriteRequestHandler(esim::EventType *, esim::EventFrame *)
+void System::evWriteRequestHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evReadRequestHandler(esim::EventType *, esim::EventFrame *)
+void System::evReadRequestHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evInvalidateHandler(esim::EventType *, esim::EventFrame *)
+void System::evInvalidateHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evPeerHandler(esim::EventType *, esim::EventFrame *)
+void System::evPeerHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evMessageHandler(esim::EventType *, esim::EventFrame *)
+void System::evMessageHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evFlushHandler(esim::EventType *, esim::EventFrame *)
+void System::evFlushHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evLocalLoadHandler(esim::EventType *, esim::EventFrame *)
+void System::evLocalLoadHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evLocalStoreHandler(esim::EventType *, esim::EventFrame *)
+void System::evLocalStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
 
-void System::evLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *)
+void System::evLocalFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
