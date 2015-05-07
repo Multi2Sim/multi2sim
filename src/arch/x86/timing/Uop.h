@@ -113,9 +113,6 @@ public:
 	/// Destructor
 	~Uop();
 
-	/// Return unique instance of the Uop
-	Uop *getInstance();
-
 	void FreeIfNotQueued();
 	void Dump();
 
