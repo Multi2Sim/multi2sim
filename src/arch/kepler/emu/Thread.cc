@@ -52,7 +52,10 @@ Thread::Thread(Warp *warp, int id)
 		WriteGPR(i, 0);
 
 	// Initialize CC register
-	WriteCC(0);
+	this->WriteCC_CF(0);
+	this->WriteCC_OF(0);
+	this->WriteCC_SF(0);
+	this->WriteCC_ZF(0);
 
 	// Initialize special registers
 	for (int i = 0; i < 82; ++i)
