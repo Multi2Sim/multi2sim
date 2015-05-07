@@ -29,7 +29,8 @@
 #include <arch/x86/emu/Context.h>
 
 #include "Uop.h"
-#include "Bpred.h"
+#include "BranchPredictor.h"
+#include "TraceCache.h"
 
 namespace x86
 {
@@ -81,16 +82,24 @@ private:
 	int reg_file_xmm_count;
 
 	// Private structures
-	std::vector<Uop *> fetch_queue;
-	std::vector<Uop *> uop_queue;
-	std::list<Uop *> iq;
-	std::list<Uop *> lq;
-	std::list<Uop *> sq;
-	std::list<Uop *> preq;
+	std::vector<std::unique_ptr<Uop>> fetch_queue;
+	std::vector<std::unique_ptr<Uop>> uop_queue;
+
+	// Instruction queue
+	std::list<std::unique_ptr<Uop>> iq;
+
+	// Load queue
+	std::list<std::unique_ptr<Uop>> lq;
+
+	// Store queue
+	std::list<std::unique_ptr<Uop>> sq;
+
+	// Prefetch queue?
+	std::list<std::unique_ptr<Uop>> preq;
 
 	//FIXME
-	std::unique_ptr<Bpred> bpred;  // branch predictor
-	//struct x86_trace_cache_t *trace_cache;  // trace cache
+	std::unique_ptr<BranchPredictor> branch_predictor;
+	std::unique_ptr<TraceCache> trace_cache;
 	//struct x86_reg_file_t *reg_file;  // physical register file
 
 	// Fetch
@@ -103,8 +112,8 @@ private:
 	long long fetch_stall_until;  // Cycle until which fetching is stalled (inclussive)
 
 	// Entries to the memory system
-	std::unique_ptr<mem::Module> data_mod;  // Entry for data
-	std::unique_ptr<mem::Module> inst_mod;  // Entry for instructions
+	std::shared_ptr<mem::Module> data_mod;  // Entry for data
+	std::shared_ptr<mem::Module> inst_mod;  // Entry for instructions
 
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle;
@@ -177,7 +186,7 @@ public:
 
 	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions implemented in ThreadBpred.cc. These are the functions
+	// Functions implemented in ThreadBranchPredictor.cc. These are the functions
 	// related with the Branch prediction.
 	//
 	///////////////////////////////////////////////////////////////////////
@@ -189,6 +198,42 @@ public:
 	unsigned int LookupBTB(Uop &uop);
 	void UpdateBTB(Uop &uop);
 	unsigned int GetNextBranch(unsigned int eip, unsigned int bsize);
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions implemented in ThreadTraceCache.cc. These are the functions
+	// related with the Trace cache.
+	//
+	///////////////////////////////////////////////////////////////////////
+	void DumpTraceCacheReport();
+
+	void RecordUopInTraceCache(Uop &uop);
+	int LookupTraceCache(unsigned int eip, int pred,
+			int &mop_count, unsigned int &mop_array[], unsigned int &neip);
+
+	///////////////////////////////////////////////////////////////////////
+	//
+	// Functions implemented in ThreadRegFile.cc. These are the functions
+	// related with the register file.
+	//
+	///////////////////////////////////////////////////////////////////////
+	void DumpRegFile();
+
+	int RequestIntReg();
+	int RequestFPReg();
+	int RequestXMMReg();
+
+	bool CanRenameUop(Uop &uop);
+	void RenameUop(Uop &uop);
+
+	bool IsUopReady(Uop &uop);
+
+	void WriteUop(Uop &uop);
+	void UndoUop(Uop &uop);
+	void CommitUop(Uop &uop);
+
+	void CheckRegFile();
+
 
 };
 
