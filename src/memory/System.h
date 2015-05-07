@@ -20,6 +20,7 @@
 #ifndef MEMORY_SYSTEM_H
 #define MEMORY_SYSTEM_H
 
+#include <list>
 #include <memory>
 
 #include <lib/cpp/Debug.h>
@@ -27,6 +28,9 @@
 #include <lib/esim/FrequencyDomain.h>
 #include <lib/esim/Trace.h>
 #include <lib/cpp/IniFile.h>
+#include <network/Network.h>
+
+#include "Module.h"
 
 
 namespace mem
@@ -146,6 +150,13 @@ class System
 	static void evLocalLoadHandler(esim::EventType *, esim::EventFrame *);
 	static void evLocalStoreHandler(esim::EventType *, esim::EventFrame *);
 	static void evLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+
+
+	// List of networks
+	std::list<std::unique_ptr<net::Network>> networks;
+
+	// List of modules
+	std::list<std::unique_ptr<Module>> modules;
 
 public:
 

@@ -263,6 +263,7 @@ void System::ConfigReadGeneral(misc::IniFile *ini_file)
 				"must be between 1MHz and 1000GHz.\n%s",
 				ini_file->getPath().c_str(),
 				err_config_note));
+	debug << "Memory system frequency set to " << frequency << "MHz\n";
 	
 	// Create frequency domain
 	esim::Engine *engine = esim::Engine::getInstance();
@@ -279,6 +280,44 @@ void System::ConfigReadGeneral(misc::IniFile *ini_file)
 
 void System::ConfigReadNetworks(misc::IniFile *ini_file)
 {
+	// Create networks
+	debug << "Creating internal networks:\n";
+	for (auto it = ini_file->sections_begin(),
+			e = ini_file->sections_end();
+			it != e;
+			++it)
+	{
+		// Check if this is the name of a network
+		std::string name = *it;
+		if (strncasecmp(name.c_str(), "Network ", 8))
+			continue;
+		name.erase(0, 8);
+
+		// Create network
+		networks.emplace_back(misc::new_unique<net::Network>(name));
+		debug << "\tNetwork '" << name << "' created\n";
+	}
+	debug << '\n';
+
+	// Add network pointers to configuration file. This needs to be done 
+	// separately, because configuration file writes alter enumeration of 
+	// sections. Also check integrity of sections.
+	for (auto it = networks.begin(), e = networks.end(); it != e; ++it)
+	{
+		// Get network section name
+		net::Network *network = it->get();
+		std::string section = "Network " + network->getName();
+		assert(ini_file->Exists(section));
+
+		// Add pointer
+		ini_file->WritePointer(section, "ptr", network);
+
+		// Check section integrity
+		ini_file->Enforce(section, "DefaultInputBufferSize");
+		ini_file->Enforce(section, "DefaultOutputBufferSize");
+		ini_file->Enforce(section, "DefaultBandwidth");
+		ini_file->Check(section);
+	}
 }
 
 

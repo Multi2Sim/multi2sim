@@ -134,7 +134,8 @@ public:
 
 	/// Alternative syntax to dump file into output stream
 	friend std::ostream &operator<<(std::ostream &os,
-			const IniFile &ini_file) {
+			const IniFile &ini_file)
+	{
 		ini_file.Dump(os);
 		return os;
 	}
@@ -156,9 +157,23 @@ public:
 
 	/// Return the name of the section at position \a index. The result is
 	/// undefined if \a index is an invalid position.
-	const std::string &getSection(int index) const {
+	const std::string &getSection(int index) const
+	{
 		assert(index >= 0 && index < (int) sections.size());
 		return sections[index];
+	}
+
+	/// Return an iterator to the first section in the file.
+	std::vector<std::string>::iterator sections_begin()
+	{
+		return sections.begin();
+	}
+
+	/// Return a past-the-end iterator to the list of sections in the INI
+	/// file.
+	std::vector<std::string>::iterator sections_end()
+	{
+		return sections.end();
 	}
 	
 	/// Add a new variable to a section. If the section doesn't exist, it
@@ -253,6 +268,10 @@ public:
 	/// file, and that all variables/sections present in the file are
 	/// allowed.
 	void Check() const;
+
+	/// Check that all enforced variables are present in the given section,
+	/// and that all variables present in the section are allowed.
+	void Check(const std::string &section) const;
 
 	/// Activate debug information for the Inifile parser.
 	///
