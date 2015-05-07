@@ -176,10 +176,28 @@ public :
 	}
 
 	/// Read value of Condition Code register
-	bool ReadCC() { return registers.ReadCC(); }
+	unsigned ReadCC_ZF() { return registers.ReadCC_ZF(); }
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_SF() { return registers.ReadCC_SF(); }
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_CF() { return registers.ReadCC_CF(); }
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_OF() { return registers.ReadCC_OF(); }
 
 	/// Write value of Condition Code register
-	void WriteCC(bool value) { registers.WriteCC(value); }
+	void WriteCC_ZF(unsigned value) { registers.WriteCC_ZF(value); }
+
+	/// Write value of Condition Code register
+	void WriteCC_SF(unsigned value) { registers.WriteCC_SF(value); }
+
+	/// Write value of Condition Code register
+	void WriteCC_CF(unsigned value) { registers.WriteCC_CF(value); }
+
+	/// Write value of Condition Code register
+	void WriteCC_OF(unsigned value) { registers.WriteCC_OF(value); }
 
 	/// Get value of the active thread mask
 	int GetActive();

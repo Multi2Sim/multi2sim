@@ -32,6 +32,14 @@ union RegValue
 	float f;
 };
 
+struct CC
+{
+	unsigned zf;
+	unsigned sf;
+	unsigned cf;
+	unsigned of;
+};
+
 enum RegValueType
 {
 	RegValueTypeU32 = 0,
@@ -49,7 +57,7 @@ private:
 	RegValue gpr[256];  /* General purpose registers */
 	RegValue sr[82];  /* Special registers */
 	unsigned pr[8];  /* Predicate registers */
-	bool cc;
+	CC cc;
 
 public:
 
@@ -95,10 +103,28 @@ public:
 	void WritePred(int pr_id, unsigned value) { pr[pr_id] = value; };
 
 	/// Read value of Condition Code register
-	bool ReadCC() { return cc; };
+	unsigned ReadCC_ZF() { return cc.zf; };
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_SF() { return cc.sf; };
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_CF() { return cc.cf; };
+
+	/// Read value of Condition Code register
+	unsigned ReadCC_OF() { return cc.of; };
 
 	/// Write value of Condition register
-	void WriteCC(bool value) { cc = value; };
+	void WriteCC_ZF(unsigned value) { cc.zf = value; };
+
+	/// Write value of Condition register
+	void WriteCC_SF(unsigned value) { cc.sf = value; };
+
+	/// Write value of Condition register
+	void WriteCC_CF(unsigned value) { cc.cf = value; };
+
+	/// Write value of Condition register
+	void WriteCC_OF(unsigned value) { cc.of = value; };
 };
 
 }        // namespace
