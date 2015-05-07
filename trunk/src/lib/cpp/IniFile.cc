@@ -22,8 +22,10 @@
 #include <fstream>
 #include <sstream>
 
+#include "Error.h"
 #include "IniFile.h"
 #include "Misc.h"
+#include "String.h"
 
 
 namespace misc
@@ -180,7 +182,8 @@ void IniFile::Load(const std::string &path)
 	this->path = path;
 	std::ifstream f(path);
 	if (!f)
-		fatal("%s: cannot read from file", path.c_str());
+		throw Error(fmt("%s: cannot read from file",
+				path.c_str()));
 	
 	// Parse 
 	Parse(dynamic_cast<std::istream *>(&f));
@@ -231,9 +234,11 @@ void IniFile::Parse(std::istream *f)
 			// Insert section
 			ok = InsertSection(section);
 			if (!ok)
-				fatal("%s: line %d: duplicated section '%s'.\n%s",
-					path.c_str(), line_num,
-					section.c_str(), ini_file_err_format);
+				throw misc::Error(misc::fmt("%s: line %d: "
+						"duplicated section '%s'.\n%s",
+						path.c_str(), line_num,
+						section.c_str(),
+						ini_file_err_format));
 
 			// Debug
 			debug << fmt("%s: found section [%s]\n",
@@ -245,21 +250,26 @@ void IniFile::Parse(std::istream *f)
 
 		// Check that there is an active section
 		if (section == "")
-			fatal("%s: line %d: section name expected.\n%s",
-				path.c_str(), line_num, ini_file_err_format);
+			throw Error(fmt("%s: line %d: "
+					"section name expected.\n%s",
+					path.c_str(), line_num,
+					ini_file_err_format));
 		
 		// New "<var> = <value>" entry.
 		ok = getVarValue(line, var, value);
 		if (!ok)
-			fatal("%s: line %d: invalid format.\n%s",
-				path.c_str(), line_num, ini_file_err_format);
+			throw Error(fmt("%s: line %d: "
+					"invalid format.\n%s",
+					path.c_str(), line_num,
+					ini_file_err_format));
 
 		// New variable
 		ok = InsertVariable(section, var, value);
 		if (!ok)
-			fatal("%s: line %d: duplicated variable '%s'.\n%s",
-				path.c_str(), line_num, var.c_str(),
-				ini_file_err_format);
+			throw Error(fmt("%s: line %d: "
+					"duplicated variable '%s'.\n%s",
+					path.c_str(), line_num, var.c_str(),
+					ini_file_err_format));
 
 		// Debug
 		debug << fmt("%s: parsed section [%s], variable '%s', value '%s'\n",
@@ -274,7 +284,7 @@ void IniFile::Save(const std::string &path) const
 	// Open file
 	std::ofstream f(path);
 	if (!f)
-		fatal("%s: cannot write to file", path.c_str());
+		throw Error(fmt("%s: cannot write to file", path.c_str()));
 	
 	// Dump
 	Dump(f);
@@ -408,8 +418,8 @@ void IniFile::WriteEnum(const std::string &section, const std::string &var,
 	// Translate value
 	s = map.MapValue(value, error);
 	if (error)
-		fatal("%s: invalid value for enumeration (%d)",
-				__FUNCTION__, value);
+		throw Error(fmt("%s: invalid value for enumeration (%d)",
+				__FUNCTION__, value));
 	
 	// Write
 	WriteString(section, var, s);
@@ -479,9 +489,9 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 	// Interpret
 	result = StringToInt(value, error);
 	if (error)
-		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
+		throw Error(fmt("%s: section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
-				value.c_str(), StringErrorToString(error));
+				value.c_str(), StringErrorToString(error)));
 
 	// Return
 	debug << fmt("%s: read section [%s], "
@@ -519,9 +529,10 @@ long long IniFile::ReadInt64(const std::string &section,
 	// Interpret
 	result = StringToInt64(value, error);
 	if (error)
-		fatal("%s: section [%s], variable '%s', value '%s': %s\n",
+		throw Error(fmt("%s: section [%s], variable '%s', "
+				"value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
-				value.c_str(), StringErrorToString(error));
+				value.c_str(), StringErrorToString(error)));
 
 	// Return
 	debug << fmt("%s: read section [%s], "
@@ -580,9 +591,9 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 	}
 
 	// Invalid value
-	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
+	throw Error(fmt("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are {t|True|On|f|False|Off}\n",
-			path.c_str(), section.c_str(), var.c_str(), s.c_str());
+			path.c_str(), section.c_str(), var.c_str(), s.c_str()));
 	return false;
 }
 
@@ -609,8 +620,10 @@ double IniFile::ReadDouble(const std::string &section,
 	ss.str(s);
 	ss >> value;
 	if (!ss || !ss.eof())
-		fatal("%s: section [%s], variable '%s', invalid double value '%s'\n",
-				path.c_str(), section.c_str(), var.c_str(), s.c_str());
+		throw Error(fmt("%s: section [%s], variable '%s', "
+				"invalid double value '%s'\n",
+				path.c_str(), section.c_str(), var.c_str(),
+				s.c_str()));
 	
 	// Convert
 	debug << fmt("%s: read section [%s], "
@@ -657,10 +670,10 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 	}
 
 	// Error, show options
-	fatal("%s: section [%s], variable '%s', invalid value '%s'\n"
+	throw Error(fmt("%s: section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are %s",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str(),
-			map.toString().c_str());
+			map.toString().c_str()));
 	return 0;
 }
 
@@ -749,11 +762,11 @@ void IniFile::Check() const
 		// Item not present
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			fatal("%s: section [%s] missing",
-				path.c_str(), section.c_str());
+			throw Error(fmt("%s: section [%s] missing",
+				path.c_str(), section.c_str()));
 		else
-			fatal("%s: section [%s], variable '%s' missing",
-				path.c_str(), section.c_str(), var.c_str());
+			throw Error(fmt("%s: section [%s], variable '%s' missing",
+				path.c_str(), section.c_str(), var.c_str()));
 	}
 
 	// Check that all present items are allowed
@@ -767,11 +780,63 @@ void IniFile::Check() const
 		// Item not allowed
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			fatal("%s: invalid section [%s]",
-				path.c_str(), section.c_str());
+			throw Error(fmt("%s: invalid section [%s]",
+				path.c_str(), section.c_str()));
 		else
-			fatal("%s: section [%s], invalid variable '%s'",
-				path.c_str(), section.c_str(), var.c_str());
+			throw Error(fmt("%s: section [%s], invalid variable '%s'",
+				path.c_str(), section.c_str(), var.c_str()));
+	}
+}
+
+
+void IniFile::Check(const std::string &ref_section) const
+{
+	// Check that all mandatory items are present
+	for (auto it = enforced_items.begin(); it != enforced_items.end(); ++it)
+	{
+		// Skip item if it is not associated with the given section
+		std::string item = *it;
+		if (!StringPrefix(item, ref_section + "|"))
+			continue;
+
+		// Item is present
+		if (items.count(item))
+			continue;
+
+		// Item not present
+		std::string section;
+		std::string var;
+		ItemToSectionVar(item, section, var);
+		if (var == "")
+			throw Error(fmt("%s: section [%s] missing",
+				path.c_str(), section.c_str()));
+		else
+			throw Error(fmt("%s: section [%s], variable '%s' missing",
+				path.c_str(), section.c_str(), var.c_str()));
+	}
+
+	// Check that all present items are allowed
+	for (auto it = items.begin(); it != items.end(); ++it)
+	{
+		// Skip item if it is not associated with the given section
+		std::string item = it->first;
+		if (!StringPrefix(item, ref_section + "|"))
+			continue;
+
+		// Item is allowed
+		if (allowed_items.count(item))
+			continue;
+
+		// Item not allowed
+		std::string section;
+		std::string var;
+		ItemToSectionVar(item, section, var);
+		if (var == "")
+			throw Error(fmt("%s: invalid section [%s]",
+				path.c_str(), section.c_str()));
+		else
+			throw Error(fmt("%s: section [%s], invalid variable '%s'",
+				path.c_str(), section.c_str(), var.c_str()));
 	}
 }
 
