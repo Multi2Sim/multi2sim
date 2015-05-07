@@ -88,44 +88,14 @@ protected:
 
 public:
 
-	/// Node object constructor
-	///
-	/// \param name
-	///	node name
-	///
-	/// \param node_type
-	///	node type identifier
-	///
-	/// \param input_buffer_size
-	///	buffer size of node's input buffers
-	///
-	/// \param output_buffer_size
-	///	buffer size of node's output buffers
-	///
-	/// \param bandwidth
-	///	if switch, Bus or photonic, this is the bandwidth of crossbar
-	///	or bus lanes
-	///
-	/// \param index
-	///	node index in Network::nodes list
-	///
-	/// \param user_data
-	///	user_data associated with the node which is used in memory
-	///	system.
-	/*
-	Node(const std::string &name, int input_buffer_size, Type type,
-			int output_buffer_size, int bandwidth, int index,
-			NodeData *user_data);
-	*/
-
-	/// Virtual destrutor
-	virtual ~Node() {};
-
 	/// Get name
-	std::string getName() const { return name; }
+	virtual std::string getName() const { return name; }
 
 	/// Set name
 	void setName(const std::string &name) { this->name = name; }
+
+	/// Get the type of the node
+	virtual std::string getType() const = 0;
 
 	/// Dump the node information. 
 	virtual void Dump(std::ostream &os) const = 0;

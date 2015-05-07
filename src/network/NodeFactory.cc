@@ -21,6 +21,7 @@
 
 #include "Node.h"
 #include "EndNode.h"
+#include "Switch.h"
 
 #include "NodeFactory.h"
 
@@ -63,6 +64,13 @@ std::unique_ptr<Node> NodeFactory::ProduceNode(Network *network,
 	{
 		std::unique_ptr<Node> node = 
 			std::unique_ptr<EndNode>(new EndNode());
+		node->setName(name);
+		return node;
+	}
+	else if (!strcmp(type.c_str(), "Switch"))
+	{
+		std::unique_ptr<Node> node = 
+			std::unique_ptr<Switch>(new Switch());
 		node->setName(name);
 		return node;
 	}

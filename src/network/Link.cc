@@ -17,29 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_ENDNODE_H
-#define NETWORK_ENDNODE_H
-
-#include "Node.h"
+#include "Link.h"
 
 namespace net
 {
 
-// An end node is where the packet is generated and consumed
-class EndNode : public Node
+void Link::Dump(std::ostream &os = std::cout) const
 {
-protected: 
+	os << misc::fmt("\n***** Link %s *****\n", name.c_str());
+}
 
-public:
-
-	/// Return the type of the node
-	std::string getType() const { return "EndNode"; }
-
-	/// Dump node information
-	void Dump(std::ostream &os) const;
-
-};
-
-}  // namespace net
-
-#endif
+}

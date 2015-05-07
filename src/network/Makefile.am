@@ -48,6 +48,10 @@ libnetwork_a_SOURCES = \
 	EndNode.cc \
 	\
 	Link.h \
+	Link.cc \
+	\
+	LinkFactory.h \
+	LinkFactory.cc \
 	\
 	Network.cc \
 	Network.h \
@@ -60,6 +64,9 @@ libnetwork_a_SOURCES = \
 	\
 	System.cc \
 	System.h \
-	SystemConfig.cc
+	SystemConfig.cc \
+	\
+	Switch.h \
+	Switch.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@

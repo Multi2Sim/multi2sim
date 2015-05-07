@@ -34,7 +34,6 @@ class Network;
 
 class NodeFactory
 {
-
 public: 
 
 	/// Produce a node by INI file section
