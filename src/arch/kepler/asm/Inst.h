@@ -462,6 +462,26 @@ struct InstBytesIADD
 	unsigned long long int op2:			  1; // 63
 };
 
+
+// IMUL
+struct InstBytesIMUL
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1: 		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2: 	 	 19; // 41:23
+	unsigned long long int hi: 	  		  1; // 42
+	unsigned long long int u_s: 		  2; // 44:43
+	unsigned long long int unknown1: 	  5; // 49:45
+	unsigned long long int cc: 			  1; // 50
+	unsigned long long int unknown2: 	  2; // 53:51
+	unsigned long long int op1: 		  9; // 62:54
+	unsigned long long int op2:			  1; // 63
+};
+
+
 union InstBytes
 {
 	unsigned char as_uchar[8];
@@ -484,6 +504,7 @@ union InstBytes
 	InstBytesPCNT	  pcnt;
 	InstBytesCAL      cal;
 	InstBytesIADD     iadd;
+	InstBytesIMUL     imul;
 };
 
 
