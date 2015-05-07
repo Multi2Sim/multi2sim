@@ -34,6 +34,7 @@ namespace mem
 std::string System::config_file;
 std::string System::debug_file;
 bool System::help = false;
+int System::frequency = 1000;
 
 
 esim::Trace System::trace;
@@ -57,9 +58,16 @@ System *System::getInstance()
 
 System::System()
 {
-	esim::Engine *esim = esim::Engine::getInstance();
+	// Read memory configuration from '--mem-config', or create default
+	// configuration for all architectures with a timing simulation.
+	ConfigRead();
 
+
+	//
 	// NMOESI events
+	//
+	
+	esim::Engine *esim = esim::Engine::getInstance();
 
 	ev_load = esim->RegisterEventType("ev_load", evLoadHandler,
 			frequency_domain);

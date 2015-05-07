@@ -29,6 +29,7 @@
 
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
+#include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 #include <lib/cpp/Timer.h>
 
@@ -223,6 +224,13 @@ public:
 	///	can be used later in calls to RegisterEventType().
 	FrequencyDomain *RegisterFrequencyDomain(const std::string &name,
 			int frequency);
+
+	/// Return whether a frequency is in the valid range between 1MHz and
+	/// 1000GHz.
+	static bool isValidFrequency(int frequency)
+	{
+		return misc::inRange(frequency, 1, 1000000);
+	}
 
 	/// Register a new event type.
 	///

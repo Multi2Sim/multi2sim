@@ -48,6 +48,19 @@ class System
 	// Private constructor
 	System();
 
+
+
+	//
+	// Error messages
+	//
+
+	static const char *err_config_note;
+	static const char *err_config_net;
+	static const char *err_levels;
+	static const char *err_block_size;
+	static const char *err_connect;
+	static const char *err_mem_disjoint;
+
 	
 	
 	//
@@ -64,7 +77,11 @@ class System
 	// Show memory configuration file
 	static bool help;
 
+	// Message to display with '--mem-help'
 	static const std::string help_message;
+
+	// Frequency of memory system in MHz
+	static int frequency;
 
 	// Parse memory hierarchy configuration file, or generate default if
 	// user didn't pass '--mem-config' command-line option.

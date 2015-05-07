@@ -582,9 +582,18 @@ int MainProgram(int argc, char **argv)
 	ARM::Emu::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers
+	// FIXME - This initialization should be lazy, meaning that a particular
+	// emulator, timing simulator, runtime, or driver should only be
+	// initialized once we find that it is actually needed, leveraging
+	// calls to getInstance() of singletons.
 	RegisterArchitectures();
 	RegisterRuntimes();
 	RegisterDrivers();
+
+	// Initialize memory system
+	// FIXME - Should be done only if there is at least one timing
+	// simulation active.
+	mem::System::getInstance();
 
 	// Load programs
 	LoadPrograms();
