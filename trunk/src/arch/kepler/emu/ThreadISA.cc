@@ -481,18 +481,15 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	// Operand
 	unsigned src1, src2, dst;
 
-	// for extended precision add
-	long long unsigned srcl1, srcl2;
-
 	// Execute
 	if (active == 1 && pred == 1)
 	{
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
 		if((format.op0 == 2) && (format.op2 == 1)) // src2 is register mode
 		{
-			// Read src1 value
-			src1_id = format.src1;
-			src1 = this->ReadGPR(src1_id);
-
 			// src2 ID
 			unsigned src2_id;
 
@@ -500,60 +497,78 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 			src2_id = format.src2;
 			src2 = this->ReadGPR(src2_id);
 		}
+		else if ((format.op0 == 1) && (format.op2 == 1)) // src2 is IMM20
+		{
+			src2 = format.src2;
+		}
+
+		// Determine least significant bit value for the add
+		unsigned lsb = 0;
+		if (format.po == 3)
+			lsb = 1; // .PO Plus one(for averaging)
 		else
 		{
-			this->ISAUnsupportedFeature(inst);
-		}
-
-		// Read and Execute .PO mode value
-		if (format.po == 0)
-		{
-			dst = src1 + src2 + (format.x ? ReadCC_CF() : 0);
-
-			if (format.cc)
+			if (format.po == 1)
 			{
-				srcl1 = src1;
-				srcl2 = src2;
-
-				if (srcl1 + srcl2 + (format.x ? ReadCC_CF() : 0) > 0xffffffff)
-					WriteCC_CF(1);
+				src2 = ~src2; // negate src2
+				lsb = 1;
+			}
+			if (format.po == 2)
+			{
+				src1 = ~src1; // negate src1
+				lsb = 1;
 			}
 		}
 
-		else if (format.po == 1) // subtraction mode
+		// Extended precision addition read carry bit
+		if (format.x == 1)
+			lsb = this->ReadCC_CF(); // Illegal to combine .PO and .X
+
+		// Execute .PO and .X flag
+		dst = src1 + src2 + lsb;
+
+		// Update .CC flag
+		if (format.cc == 1)
 		{
-			dst = src1 - src2 - (format.x ? ReadCC_CF() : 0);
+			unsigned zf, sf, cf, of;
 
-			if (format.cc)
+			// Update zero flag
+			if (format.x == 1)
 			{
-				srcl1 = src1;
-				srcl2 = src2;
-
-				if (srcl1 < srcl2 + (format.x ? ReadCC_CF() : 0))
-					WriteCC_CF(1);
+				zf = ((dst == 0) && this->ReadCC_ZF()) ? 1 : 0;
+				this->WriteCC_ZF(zf);
 			}
-		}
-		else if (format.po == 2)
-		{
-			dst = src2 - src1 - (format.x ? ReadCC_CF() : 0);
-
-			if (format.cc)
+			else
 			{
-				srcl1 = src1;
-				srcl2 = src2;
-
-				if (srcl2 < srcl1 + (format.x ? ReadCC_CF() : 0))
-					WriteCC_CF(1);
+				zf = (dst == 0)? 1 : 0;
+				this->WriteCC_ZF(zf);
 			}
+
+			// Update sign flag
+			sf = (dst >> 31) & 0x00000001;
+			this->WriteCC_SF(sf);
+
+			// Update overflow flag (for signed arithmetic)
+			long long of_tmp, src1_tmp, src2_tmp;
+			src1_tmp = (int) src1;
+			src2_tmp = (int) src2;
+			of_tmp = src1_tmp + src2_tmp + lsb;
+			of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
+			this->WriteCC_OF(of);
+
+			// Update carry flag (for unsigned arithmetic)
+			unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
+			src1_tmp1 = src1;
+			src2_tmp1 = src2;
+			cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
+			cf = (cf_tmp >> 32) & 0x00000001;
+			this->WriteCC_CF(cf);
 		}
-		else
-			this->ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
-
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
