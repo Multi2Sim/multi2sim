@@ -183,7 +183,7 @@ void IniFile::Load(const std::string &path)
 		fatal("%s: cannot read from file", path.c_str());
 	
 	// Parse 
-	Parse((std::istream *)&f);
+	Parse(dynamic_cast<std::istream *>(&f));
 	
 	// End
 	f.close();
@@ -196,7 +196,7 @@ void IniFile::LoadFromString(const std::string &string)
 	std::istringstream f(string);
 	
 	// Parse
-	Parse((std::istream *)&f);
+	Parse(dynamic_cast<std::istream *>(&f));
 }
 
 

@@ -44,6 +44,9 @@ libnetwork_a_SOURCES = \
 	\
 	Bus.h \
 	\
+	EndNode.h \
+	EndNode.cc \
+	\
 	Link.h \
 	\
 	Network.cc \
@@ -51,6 +54,9 @@ libnetwork_a_SOURCES = \
 	\
 	Node.cc \
 	Node.h \
+	\
+	NodeFactory.h \
+	NodeFactory.cc \
 	\
 	System.cc \
 	System.h \
