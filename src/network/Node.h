@@ -40,9 +40,11 @@ public:
 	virtual ~NodeData();
 };
 
-
+// A node in a interconnect network is where the packet is generated, 
+// forwarded and consumed
 class Node
 {
+protected:
 
 	// Network that it belongs to
 	Network *network;
@@ -115,6 +117,27 @@ public:
 			int output_buffer_size, int bandwidth, int index,
 			NodeData *user_data);
 	*/
+
+	/// Virtual destrutor
+	virtual ~Node() {};
+
+	/// Get name
+	std::string getName() const { return name; }
+
+	/// Set name
+	void setName(const std::string &name) { this->name = name; }
+
+	/// Dump the node information. 
+	virtual void Dump(std::ostream &os) const = 0;
+
+	/// Operator \c << invoking function Dump() on an output stream.
+	friend std::ostream &operator<<(std::ostream &os,
+			const Node &node)
+	{
+		node.Dump(os);
+		return os;
+	}
+
 
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers

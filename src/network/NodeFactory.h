@@ -1,6 +1,6 @@
-/* 
+/*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2014  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,35 +17,37 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_MESSAGE_H
-#define NETWORK_MESSAGE_H
+#ifndef NETWORK_NODEFACTORY_H
+#define NETWORK_NODEFACTORY_H
 
-namespace net 
+#include <memory>
+
+namespace misc
 {
-
-class Message
-{
-	// Source node
-	Node *source_node;
-
-	// Destination node
-	Node *destination_node;
-
-	// Id of the message
-	int id;
-
-	// Size of the message
-	unsigned int size;
-
-public:
-	/// Set source node
-	void setSourceNode(Node *source) { source_node = source; }
-
-	/// Set destination node
-	void setDestinationNode(Node *destination) { destination_node = destination; }
-
+class IniFile;
 }
 
+namespace net
+{
+class Node;
+class Network;
+
+class NodeFactory
+{
+
+public: 
+
+	/// Produce a node by INI file section
+	virtual std::unique_ptr<Node> ProduceNodeByIniSection(Network *network,
+			const std::string &section, misc::IniFile &config);
+
+	/// Produce a node by type string
+	virtual std::unique_ptr<Node> ProduceNode(Network *network, 
+			const std::string &type, const std::string &name);
+
+};
+	
 }  // namespace net
 
 #endif
+

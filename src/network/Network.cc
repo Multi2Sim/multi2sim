@@ -20,16 +20,16 @@
 #include <cstring>
 #include <csignal>
 
+#include "NodeFactory.h"
 #include "Network.h"
 
 namespace net
 {
 
-Network::Network(const std::string &name)
-:
-				name(name)
+Network::Network(const std::string &name) :
+		name(name)
 {
-
+	node_factory.reset(new NodeFactory());
 }
 
 
@@ -56,8 +56,40 @@ void Network::ParseConfiguration(const std::string &section,
 	packet_size = config.ReadInt(section, "DefaultPacketSize", 0);
 	net_frequency = config.ReadInt(section, "Frequency", 0);
 
+	// Parse the configure file for nodes
+	ParseConfigurationForNodes(config);
+
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
+}
+
+
+void Network::ParseConfigurationForNodes(misc::IniFile &config)
+{
+	for (int i = 0; i < config.getNumSections(); i++)
+	{
+		std::string section = config.getSection(i);
+		
+		// Tokenize section name
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 4)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "Node"))
+			continue;
+
+		// Create string
+		std::unique_ptr<Node> node = 
+				node_factory->ProduceNodeByIniSection(
+						this, section, config);
+		nodes.push_back(std::move(node));
+	}
 }
 
 
@@ -71,6 +103,13 @@ void Network::Dump(std::ostream &os = std::cout) const
 			default_output_buffer_size);
 	os << misc::fmt("\tDefault bandwidth: %d\n", 
 			default_bandwidth);
+
+	// Print node information
+	for (auto &node : nodes)
+	{
+		node->Dump(os);
+	}
+
 }
 
 }

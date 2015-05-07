@@ -29,13 +29,14 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/String.h>
 
+#include "NodeFactory.h"
+
 namespace net
 {
 
 class Node;
 class NodeData;
 class Link;
-
 
 class Network
 {
@@ -65,6 +66,11 @@ class Network
 	// Last offered bandwidth recorded for the snapshot
 	long long last_recorded_offered_bandwidth;
 
+	// Parse the config file to add all the nodes belongs to the network
+	void ParseConfigurationForNodes(misc::IniFile &config);
+
+	// A node factory that produces nodes
+	std::unique_ptr<NodeFactory> node_factory;
 
 
 
@@ -107,7 +113,13 @@ public:
 	void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
 
-	/// Dump the Network formation
+	/// Inject node factory
+	void setNodeFactory(std::unique_ptr<NodeFactory> node_factory)
+	{
+		this->node_factory = std::move(node_factory);
+	}
+
+	/// Dump the network formation
 	void Dump(std::ostream &os) const;
 
 	/// Operator \c << invoking function Dump() on an output stream.
@@ -117,6 +129,9 @@ public:
 		network.Dump(os);
 		return os;
 	}
+
+	/// Get the string 
+	std::string getName() const { return name; }
 
 	/// find and returns node in the network using node name
 	///
