@@ -117,8 +117,10 @@ void Driver::ProcessOptions()
 	// Run SI disassembler                                                  
 	if (!binary_file.empty())                                                       
 	{        
-		std::cout<<"\n\n"<<binary_file<<"\n\n";
-		Asm *as = Asm::getInstance();                                    
+		// Get disassembler singleton
+		Asm *as = Asm::getInstance();
+
+		// Disassemble binary
 		as->DisassembleBinary(binary_file);                                     
 		exit(0);                                                         
 	} 
