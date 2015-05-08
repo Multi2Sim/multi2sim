@@ -29,15 +29,25 @@
 namespace x86
 {
 
-// Enumeration of branch predictor type
-enum BranchPredictorType
+// Enumeration of branch predictor Kind
+enum BranchPredictorKind
 {
-	BranchPredictorTypePerfect = 0,
-	BranchPredictorTypeTaken,
-	BranchPredictorTypeNottaken,
-	BranchPredictorTypeBimod,
-	BranchPredictorTypeTwolevel,
-	BranchPredictorTypeComb
+	BranchPredictorKindPerfect = 0,
+	BranchPredictorKindTaken,
+	BranchPredictorKindNottaken,
+	BranchPredictorKindBimod,
+	BranchPredictorKindTwolevel,
+	BranchPredictorKindCombined
+};
+
+misc::StringMap BranchPredictorKindMap
+{
+	{ "Perfect", BranchPredictorKindPerfect},
+	{ "Taken", BranchPredictorKindTaken },
+	{"NotTaken", BranchPredictorKindNottaken},
+	{"Bimodal", BranchPredictorKindBimod},
+	{"TwoLevel", BranchPredictorKindTwolevel},
+	{"Combined", BranchPredictorKindCombined}
 };
 
 // Branch Predictor class
@@ -84,6 +94,7 @@ private:
 	long long hits;
 
 	// Branch predictor parameter
+	static BranchPredictorKind branch_predictor_kind;
 	static int btb_sets;
 	static int btb_assoc;
 	static int ras_size;
@@ -97,10 +108,17 @@ private:
 public:
 
 	/// Constructor
-	BranchPredictor(std::string &name);
+	BranchPredictor();
+
+	/// Create branch preditor instance
+	void Create(std::string &branch_predictor_name);
 
 	/// Read branch predictor configuration from configuration file
-	static void ReadBranchPredictorConfig(std::string &config);
+	void ParseConfiguration(const std::string &section,
+			misc::IniFile &config);
+
+	/// Dump configuration
+	void DumpConfig(std::ostream &os = std::cout);
 };
 
 }
