@@ -87,7 +87,8 @@ public:
 	RegFile();
 
 	/// Read register file configuration from configuration file
-	static void ReadRegFileConfig(std::string &config);
+	void ParseConfiguration(const std::string &section,
+				misc::IniFile &config);
 };
 
 }

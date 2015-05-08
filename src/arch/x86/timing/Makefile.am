@@ -75,7 +75,10 @@ libtiming_a_SOURCES = \
 	\
 	Uop.h\
 	\
-	BranchPredictor.h
+	RegFile.h\
+	\
+	BranchPredictor.h\
+	BranchPredictor.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

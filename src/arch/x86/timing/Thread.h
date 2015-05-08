@@ -39,8 +39,9 @@ namespace x86
 class Context;
 class Core;
 class Cpu;
-class Bpred;
-
+class BranchPredictor;
+class TraceCache;
+class RegFile;
 
 /// X86 Thread
 class Thread
@@ -97,10 +98,10 @@ private:
 	// Prefetch queue?
 	std::list<std::unique_ptr<Uop>> preq;
 
-	//FIXME
+	// Component pointer
 	std::unique_ptr<BranchPredictor> branch_predictor;
 	std::unique_ptr<TraceCache> trace_cache;
-	//struct x86_reg_file_t *reg_file;  // physical register file
+	std::unique_ptr<RegFile> reg_file; // physical register file
 
 	// Fetch
 	unsigned int fetch_eip, fetch_neip;  // eip and next eip
@@ -120,9 +121,9 @@ private:
 
 	// Statistics
 	long long num_fetched_uinst;
-	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
-	long long num_issued_uinst_array[x86_uinst_opcode_count];
-	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_dispatched_uinst_array[UInstOpcodeCount];
+	long long num_issued_uinst_array[UInstOpcodeCount];
+	long long num_committed_uinst_array[UInstOpcodeCount];
 	long long num_squashed_uinst;
 	long long num_branch_uinst;
 	long long num_mispred_branch_uinst;
@@ -209,7 +210,7 @@ public:
 
 	void RecordUopInTraceCache(Uop &uop);
 	int LookupTraceCache(unsigned int eip, int pred,
-			int &mop_count, unsigned int &mop_array[], unsigned int &neip);
+			int &mop_count, unsigned int mop_array[], unsigned int &neip);
 
 	///////////////////////////////////////////////////////////////////////
 	//
