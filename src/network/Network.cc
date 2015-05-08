@@ -20,7 +20,9 @@
 #include <cstring>
 #include <csignal>
 
-#include "NodeFactory.h"
+#include "Switch.h"
+#include "EndNode.h"
+#include "Link.h"
 #include "Network.h"
 
 namespace net
@@ -29,8 +31,6 @@ namespace net
 Network::Network(const std::string &name) :
 		name(name)
 {
-	node_factory.reset(new NodeFactory());
-	link_factory.reset(new LinkFactory());
 }
 
 
@@ -89,11 +89,67 @@ void Network::ParseConfigurationForNodes(misc::IniFile &config)
 			continue;
 
 		// Create string
-		std::unique_ptr<Node> node = 
-				node_factory->ProduceNodeByIniSection(
-						this, section, config);
-		nodes.push_back(std::move(node));
+		std::unique_ptr<Node> node = ProduceNodeByIniSection(
+						section, config);
+		AddNode(std::move(node));
 	}
+}
+
+
+std::unique_ptr<Node> Network::ProduceNodeByIniSection(
+			const std::string &section, 
+			misc::IniFile &config)
+{
+	// Verify section name
+	std::vector<std::string> tokens;
+	misc::StringTokenize(section, tokens, ".");
+	if (tokens.size() != 4 &&
+			tokens[0] != "Network" &&
+			tokens[1] != getName() &&
+			tokens[2] != "Node")
+		throw misc::Error(misc::fmt("Section %s is not a node", 
+					section.c_str()));
+
+	// Get name of the node
+	std::string name = tokens[3];
+
+	// Get type string
+	std::string type = config.ReadString(section, "Type");
+
+	// Get the node
+	return ProduceNode(type, name);
+}
+
+
+std::unique_ptr<Node> Network::ProduceNode(
+			const std::string &type, 
+			const std::string &name)
+{
+	if (!strcmp(type.c_str(), "EndNode"))
+	{
+		// Produce end node
+		std::unique_ptr<Node> node = 
+			std::unique_ptr<EndNode>(new EndNode());
+		node->setName(name);
+		return node;
+	}
+	else if (!strcmp(type.c_str(), "Switch"))
+	{
+		// Produce switch
+		std::unique_ptr<Node> node = 
+			std::unique_ptr<Switch>(new Switch());
+		node->setName(name);
+		return node;
+	}
+	else
+	{
+		// Unsupported node type
+		throw misc::Error(misc::fmt("Unsupported node type %s\n", 
+					type.c_str()));
+	};
+
+	// Should not get here
+	return std::unique_ptr<Node>(nullptr);
 }
 
 
@@ -118,11 +174,86 @@ void Network::ParseConfigurationForLinks(misc::IniFile &config)
 			continue;
 
 		// Create string
-		std::unique_ptr<Link> link = 
-				link_factory->ProduceLinkByIniSection(
-						this, section, config);
-		links.push_back(std::move(link));
+		std::unique_ptr<Link> link = ProduceLinkByIniSection(
+						section, config);
+		AddLink(std::move(link));
 	}
+}
+
+
+void Network::AddLink(std::unique_ptr<Link> link)
+{
+	// Verify if the source and the destination is a node in the list
+	std::string src_name = link->getSourceNode()->getName();
+	std::string dst_name = link->getDestinationNode()->getName();
+	if (!getNodeByName(src_name))
+		throw misc::Error(misc::fmt("Source node %s not in network", 
+					src_name.c_str()));
+	if (!getNodeByName(dst_name))
+		throw misc::Error(misc::fmt("Destinatio node %s not in network", 
+					dst_name.c_str()));
+
+	// Insert the link
+	links.push_back(std::move(link));
+			
+}
+
+
+std::unique_ptr<Link> Network::ProduceLinkByIniSection(
+			const std::string &section, 
+			misc::IniFile &config)
+{
+	// Verify section name
+	std::vector<std::string> tokens;
+	misc::StringTokenize(section, tokens, ".");
+	if (tokens.size() != 4 &&
+			tokens[0] != "Network" &&
+			tokens[1] != getName() &&
+			tokens[2] != "Link")
+		throw misc::Error(misc::fmt("Section %s is not a link", 
+					section.c_str()));
+
+	// Get name string
+	std::string name = tokens[3];
+
+	// Get type string
+	std::string type = config.ReadString(section, "Type");
+
+	// Get source node
+	std::string source_name = config.ReadString(section, "Source");
+	if (source_name == "")
+		throw misc::Panic(misc::fmt("Source not set in section %s", 
+					section.c_str()));
+	Node *source_node = getNodeByName(source_name);
+	if (!source_node)
+		throw misc::Panic(misc::fmt("Source %s not in network", 
+					source_name.c_str()));
+
+	// Get destination node
+	std::string destination_name = config.ReadString(section, "Dest");
+	if (destination_name == "")
+		throw misc::Panic(misc::fmt("Destination not set in section %s", 
+					section.c_str()));
+	Node *destination_node = getNodeByName(destination_name);
+	if (!destination_node)
+		throw misc::Panic(misc::fmt("Destination %s not in network", 
+					destination_name.c_str()));
+
+	// Get the Link
+	return ProduceLink(name, source_node, destination_node);
+}
+
+
+std::unique_ptr<Link> Network::ProduceLink(
+			const std::string &name, 
+			Node *source_node, 
+			Node *destination_node)
+{
+	std::unique_ptr<Link> link = std::unique_ptr<Link>(new Link());
+	link->setName(name);	
+	link->setSourceNode(source_node);
+	link->setDestinationNode(destination_node);
+	return link;
 }
 
 
@@ -133,6 +264,19 @@ Node *Network::getNodeByName(const std::string &name) const
 		if (node->getName() == name)
 		{
 			return node.get();
+		}
+	}
+	return nullptr;
+}
+
+
+Link *Network::getLinkByName(const std::string &name) const
+{
+	for (auto &link : links)
+	{
+		if (link->getName() == name)
+		{
+			return link.get();
 		}
 	}
 	return nullptr;

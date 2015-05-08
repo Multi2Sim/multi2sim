@@ -14,18 +14,14 @@ TESTS += \
 	\
 	src_network_test \
 	\
-	src_arch_hsa_asm_test \
-	\
-	src_arch_x86_timing_test
+	src_arch_hsa_asm_test
 
 check_PROGRAMS = \
 	src_lib_esim_test \
 	\
 	src_network_test \
 	\
-	src_arch_hsa_asm_test \
-	\
-	src_arch_x86_timing_test
+	src_arch_hsa_asm_test
 
 
 
@@ -43,9 +39,7 @@ src_network_test_LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_network_test_SOURCES = \
-	src/network/TestNetwork.cc \
-	src/network/TestNodeFactory.cc \
-	src/network/TestLinkFactory.cc
+	src/network/TestNetwork.cc
 
 
 
@@ -59,9 +53,4 @@ src_arch_hsa_asm_test_SOURCES = \
 	src/arch/hsa/asm/TestBrigCodeEntry.cc \
 	src/arch/hsa/asm/TestBrigImmed.cc
 	
-src_arch_x86_timing_test_LDADD = \
-	$(top_builddir)/src/arch/x86/timing/libasm.a \
-	$(top_builddir)/src/lib/cpp/libcpp.a
 
-src_arch_x86_timing_test_SOURCES = \
-	src/arch/x86/timing/TestBranchPredictor.cc
