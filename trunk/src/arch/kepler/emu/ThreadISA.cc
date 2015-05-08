@@ -123,7 +123,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	InstBytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
 	Warp* warp = getWarp();
@@ -134,9 +134,9 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	unsigned active;
 
     // Operands
-	unsigned dst_id, src_id;
-	int dst;
-	int srcA, srcB;
+	unsigned dst_id, src1_id, src2_id;
+	unsigned long long temp;
+	unsigned src1, src2, dst;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -162,42 +162,60 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		src_id = format.mod0;
-		srcA = ReadGPR(src_id);
-		src_id = format.srcB;
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+		src2_id = format.src2;
 
-		if (format.op0 == 1  && format.op1 == 0x107 && format.srcB_mod)
-			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
-
-		else if (format.op0 == 2 && format.op1 == 0x187 && format.srcB_mod)
-			srcB = ReadGPR(src_id);
-
-		else	//check it
-			ISAUnimplemented(inst);
+		if ((format.op0 == 2) && (format.op2 == 1))
+		{
+			// Register Mode
+			src2 = ReadGPR(src2_id);
+		}
+		else if ((format.op0 == 1) && (format.op2 == 1))
+		{
+			//Immediate Mode
+			src2 = format.src2;
+		}
 
 		// Execute
-		dst = srcA * srcB;
+		temp = src1 * src2;
+
+		// Execute .HI flag
+		if (format.hi == 1)
+			dst = temp >> 32;
+		else
+			dst = temp;
+
+		// Execute .CC flag
+		if (format.cc == 1)
+		{
+			unsigned zf, sf;
+			zf = (dst == 0) ? 1 : 0;
+			this->WriteCC_ZF(zf);
+			sf = (dst >> 31) & 0x00000001;
+			this->WriteCC_SF(sf);
+			this->WriteCC_CF(0);
+			this->WriteCC_OF(0);
+		}
 
 		// Write
-
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
-
 }
 
 void Thread::ExecuteInst_IMUL_B(Inst *inst)
 {
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	InstBytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
-	Warp* warp = getWarp();
+	Emu *emu = Emu::getInstance();
+	Warp *warp = getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -205,9 +223,9 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	unsigned active;
 
     // Operands
-	unsigned dst_id, src_id;
-	int dst;
-	int srcA, srcB;
+	unsigned src1_id, src2_id, dst_id;
+	unsigned long long temp;
+	unsigned src1, src2, dst;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -233,24 +251,51 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		src_id = format.mod0;
-		srcA = ReadGPR(src_id);
-		src_id = format.srcB;
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+		src2_id = format.src2;
 
-		if (format.op0 == 1  && format.op1 == 0x107 && format.srcB_mod)
+		// Check it
+		if ((format.op0 == 2) && (format.op2 == 1))
 		{
-			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+			// Register Mode
+			src2 = ReadGPR(src2_id);
 		}
-		else if (format.op0 == 2 && format.op1 == 0x187 && format.srcB_mod)
-			srcB = ReadGPR(src_id);
-		else	//check it
-			ISAUnimplemented(inst);
+		else if ((format.op0 == 1) && (format.op2 == 1))
+		{
+			//Immediate Mode
+			src2 = format.src2;
+		}
+		else if (format.op2 == 0)
+		{
+			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+		}
+		//else
+		//	src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
+
 
 		// Execute
-		dst = srcA * srcB;
+		temp = src1 * src2;
 
-		// Write
+		// Execute .HI flag
+		if (format.hi == 1)
+			dst = temp >> 32;
+		else
+			dst = temp;
 
+		// Execute .CC flag
+		if (format.cc == 1)
+		{
+			unsigned zf, sf;
+			zf = (dst == 0) ? 1 : 0;
+			this->WriteCC_ZF(zf);
+			sf = (dst >> 31) & 0x00000001;
+			this->WriteCC_SF(sf);
+			this->WriteCC_CF(0);
+			this->WriteCC_OF(0);
+		}
+
+		// Write result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
 	}
