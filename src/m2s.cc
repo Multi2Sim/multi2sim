@@ -34,8 +34,8 @@
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
 #include <arch/hsa/asm/Asm.h>
-//#include <arch/hsa/driver/Driver.h>
-//#include <arch/hsa/emu/Emu.h>
+#include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/emu/Emu.h>
 #include <arch/southern-islands/driver/Driver.h>
 #include <arch/arm/asm/Asm.h>
 #include <arch/arm/emu/Emu.h>
@@ -130,11 +130,9 @@ void RegisterArchitectures()
 	arch_pool->Register("SouthernIslands");
 
 	// HSA
-	/*
 	arch_pool->Register("HSA",
 			HSA::Asm::getInstance(),
 			HSA::Emu::getInstance());
-	*/
 
 	// Kepler
 	arch_pool->Register("Kepler",
@@ -166,7 +164,7 @@ void RegisterRuntimes()
 	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
 
 	// HSA runtime
-	// runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
+	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
 
 #ifdef HAVE_OPENGL
 	// OpenGL runtime
@@ -181,8 +179,8 @@ void RegisterDrivers()
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 
 	// HSA driver
-	// HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	// driver_pool->Register(hsa_driver);
+	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	driver_pool->Register(hsa_driver);
 
 	// Kepler driver
 	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
@@ -537,8 +535,8 @@ int MainProgram(int argc, char **argv)
 	// Read command line
 	RegisterOptions();
 	HSA::Asm::RegisterOptions();
-	// HSA::Driver::RegisterOptions();
-	// HSA::Emu::RegisterOptions();
+	HSA::Driver::RegisterOptions();
+	HSA::Emu::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emu::RegisterOptions();
@@ -563,8 +561,8 @@ int MainProgram(int argc, char **argv)
 	// Process command line
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
-	// HSA::Driver::ProcessOptions();
-	// HSA::Emu::ProcessOptions();
+	HSA::Driver::ProcessOptions();
+	HSA::Emu::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emu::ProcessOptions();

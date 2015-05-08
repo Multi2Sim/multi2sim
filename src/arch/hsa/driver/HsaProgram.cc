@@ -50,8 +50,8 @@ HsaProgram::~HsaProgram()
 
 void HsaProgram::AddModule(const char *module)
 {
-	std::string filename(module);
-	auto binary = misc::new_unique<BrigFile>(filename);
+	auto binary = misc::new_unique<BrigFile>();
+	binary->LoadFileFromBuffer(module);
 	modules.push_back(std::move(binary));
 }
 

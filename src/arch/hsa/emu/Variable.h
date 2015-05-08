@@ -20,7 +20,7 @@
 #ifndef ARCH_HSA_EMU_VARIABLE_H
 #define ARCH_HSA_EMU_VARIABLE_H
 
-#include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/asm/Brig.h>
 
 namespace HSA
 {
@@ -34,7 +34,7 @@ class Variable
 	std::string name;
 
 	// Type of the variable
-	BrigTypeX type;
+	BrigType type;
 
 	// Size of the variable
 	unsigned size;
@@ -61,7 +61,7 @@ class Variable
 public:
 
 	/// Constructor
-	Variable(const std::string& name, BrigTypeX type,
+	Variable(const std::string& name, BrigType type,
 			unsigned long long dim, unsigned address,
 			SegmentManager *segment,
 			bool isFormal);
@@ -110,10 +110,10 @@ public:
 	void setSize(unsigned size) { this->size = size; }
 
 	/// Get the type of the variable
-	BrigTypeX getType() const { return type; }
+	BrigType getType() const { return type; }
 
 	/// Set the type of the variable
-	void setType(BrigTypeX type) { this->type = type; }
+	void setType(BrigType type) { this->type = type; }
 
 	/// Get the index of the argument in a functions argument list
 	unsigned int getIndex() const { return index; }

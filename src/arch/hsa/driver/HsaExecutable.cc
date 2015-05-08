@@ -53,8 +53,8 @@ void HsaExecutable::LoadCodeObject(HsaCodeObject *code_object)
 
 void HsaExecutable::AddModule(const char *module)
 {
-	std::string filename(module);
-	auto binary = misc::new_unique<BrigFile>(filename);
+	auto binary = misc::new_unique<BrigFile>();
+	binary->LoadFileFromBuffer(module);
 	loadFunctions(binary.get());
 	modules.push_back(std::move(binary));
 }
@@ -75,7 +75,8 @@ Function *HsaExecutable::getFunction(const std::string &name) const
 void HsaExecutable::preprocessRegisters(
 		BrigFile *binary,
 		std::unique_ptr<BrigCodeEntry> first_entry,
-		unsigned int inst_count, Function* function)
+		std::unique_ptr<BrigCodeEntry> next_module_entry,
+		Function* function)
 {
 	auto entry = std::move(first_entry);
 
@@ -83,7 +84,7 @@ void HsaExecutable::preprocessRegisters(
 	unsigned int max_reg[4] = {0, 0, 0, 0};
 
 	// Traverse all instructions
-	for (unsigned int i = 0; i < inst_count; i++)
+	while(entry.get() != next_module_entry.get())
 	{
 		// Skip directives
 		if (entry->isInstruction())
@@ -95,7 +96,7 @@ void HsaExecutable::preprocessRegisters(
 				if (!operand.get()) break;
 
 				//operand->Dump(entry->getOperandType(j), std::cout);
-				if (operand->getKind() != BRIG_KIND_OPERAND_REG)
+				if (operand->getKind() != BRIG_KIND_OPERAND_REGISTER)
 					continue;
 
 				BrigRegisterKind kind = operand->getRegKind();
@@ -106,12 +107,6 @@ void HsaExecutable::preprocessRegisters(
 
 				}
 			}
-		}
-
-		// Move inst_ptr forward
-		if (i < inst_count - 1)
-		{
-			entry = entry->Next();
 		}
 	}
 
@@ -139,7 +134,7 @@ std::unique_ptr<BrigCodeEntry> HsaExecutable::loadArguments(
 
 		// Get argument information
 		std::string arg_name = entry->getName();
-		BrigTypeX type = entry->getType();
+		BrigType type = entry->getType();
 		unsigned long long dim = entry->getDim();
 
 		// Add this argument to the argument table
@@ -165,6 +160,7 @@ void HsaExecutable::parseFunction(BrigFile *file,
 
 	// Get the pointer to the first code
 	auto first_entry = entry->getFirstCodeBlockEntry();
+	auto next_module_entry = entry->getNextModuleEntry();
 
 	// Construct function object and insert into function_table
 	auto function = misc::new_unique<Function>(name);
@@ -182,7 +178,7 @@ void HsaExecutable::parseFunction(BrigFile *file,
 
 	// Allocate registers
 	preprocessRegisters(file, std::move(first_entry),
-			entry->getCodeBlockEntryCount(), function.get());
+			std::move(next_module_entry), function.get());
 
 	// Set some information for the function
 	first_entry = entry->getFirstCodeBlockEntry();
@@ -204,7 +200,7 @@ unsigned int HsaExecutable::loadFunctions(BrigFile *file)
 	unsigned int num_functions = 0;
 
 	// Get pointer to directive section
-	BrigSection *section = file->getBrigSection(BrigSectionHsaCode);
+	BrigSection *section = file->getBrigSection(BRIG_SECTION_INDEX_CODE);
 	auto entry = section->getFirstEntry<BrigCodeEntry>();
 	auto next_entry = entry->NextTopLevelEntry();
 
