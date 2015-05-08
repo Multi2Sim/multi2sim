@@ -26,10 +26,6 @@
 
 namespace Kepler
 {
-/*
- * Public Functions
- */
-
 
 Thread::Thread(Warp *warp, int id)
 {
@@ -94,12 +90,12 @@ Thread::Thread(Warp *warp, int id)
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
 		WritePred(i, 0);
-
 	WritePred(7, 1);
 
-	/* Add thread to warp */
+	// Add thread to warp
 	//warp->threads[this->id_in_warp] = this;
 }
+
 
 void Thread::Execute(InstOpcode opcode, Inst *inst)
 {
@@ -124,6 +120,7 @@ void Thread::ISAUnimplemented(Inst *inst)
 			"www.multi2sim.org requesting support for it.",
 			inst->getName()));
 }
+
 
 void Thread::ISAUnsupportedFeature(Inst *inst)
 {
