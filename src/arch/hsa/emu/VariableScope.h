@@ -60,7 +60,7 @@ public:
 	/// \return
 	///	The address of the newly created variable
 	///
-	unsigned DeclearVariable(const std::string &name, BrigTypeX type,
+	unsigned DeclearVariable(const std::string &name, BrigType type,
 			unsigned long long dim, SegmentManager *segment);
 
 	/// Get the address of a certain variable, return 0 if the variable is

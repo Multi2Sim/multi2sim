@@ -959,6 +959,7 @@ AC_CONFIG_FILES([
 		 
 		runtime/Makefile
 		runtime/cuda/Makefile
+		runtime/hsa/Makefile
 		runtime/glew/Makefile
 		runtime/glu/Makefile
 		runtime/glut/Makefile
@@ -1002,6 +1003,8 @@ AC_CONFIG_FILES([
 
 		src/arch/hsa/Makefile
 		src/arch/hsa/asm/Makefile
+		src/arch/hsa/driver/Makefile
+		src/arch/hsa/emu/Makefile
 
 		src/arch/kepler/Makefile
 		src/arch/kepler/asm/Makefile

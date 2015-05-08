@@ -38,7 +38,7 @@ VariableScope::~VariableScope()
 
 
 unsigned VariableScope::DeclearVariable(const std::string &name,
-		BrigTypeX type, unsigned long long dim, SegmentManager *segment)
+		BrigType type, unsigned long long dim, SegmentManager *segment)
 {
 	// Get the size of the variable
 	unsigned size = AsmService::TypeToSize(type);

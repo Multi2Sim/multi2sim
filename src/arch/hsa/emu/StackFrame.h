@@ -168,7 +168,7 @@ public:
 	void  CloseArgumentScope();
 
 	/// Create an argument in the argument scope
-//	void CreateArgument(const std::string &name, BrigTypeX type)
+//	void CreateArgument(const std::string &name, BrigType type)
 //	{
 //		if (argument_scope.get())
 //		{

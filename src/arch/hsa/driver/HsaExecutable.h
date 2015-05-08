@@ -64,7 +64,8 @@ private:
 	// 	Pointer to the function to process
 	void preprocessRegisters(BrigFile *binary,
 			std::unique_ptr<BrigCodeEntry> first_entry,
-			unsigned int inst_count, Function* function);
+			std::unique_ptr<BrigCodeEntry> next_module_entry,
+			Function* function);
 
 	// Load output arguments for a function
 	//

@@ -215,7 +215,7 @@ public:
 	unsigned short getInArgCount() const;
 
 	/// Return number of entries in a code block
-	unsigned int getCodeBlockEntryCount() const;
+	// unsigned int getCodeBlockEntryCount() const;
 
 	/// Return unique pointer to the BrigEntry of the first input argument
 	std::unique_ptr<BrigCodeEntry> getFirstInArg() const;

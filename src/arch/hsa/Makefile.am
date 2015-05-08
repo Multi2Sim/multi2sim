@@ -1,2 +1,4 @@
 SUBDIRS = \
-	asm
+	asm \
+	driver \
+	emu
