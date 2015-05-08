@@ -50,17 +50,11 @@ libnetwork_a_SOURCES = \
 	Link.h \
 	Link.cc \
 	\
-	LinkFactory.h \
-	LinkFactory.cc \
-	\
 	Network.cc \
 	Network.h \
 	\
 	Node.cc \
 	Node.h \
-	\
-	NodeFactory.h \
-	NodeFactory.cc \
 	\
 	System.cc \
 	System.h \

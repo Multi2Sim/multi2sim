@@ -38,11 +38,18 @@ class Message
 	unsigned int size;
 
 public:
+
 	/// Set source node
-	void setSourceNode(Node *source) { source_node = source; }
+	void setSourceNode(Node *source_node) 
+	{ 
+		this->source_node = source_node; 
+	}
 
 	/// Set destination node
-	void setDestinationNode(Node *destination) { destination_node = destination; }
+	void setDestinationNode(Node *destination_node) 
+	{ 
+		this->destination_node = destination_node; 
+	}
 
 }
 
