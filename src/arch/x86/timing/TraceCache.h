@@ -106,10 +106,11 @@ private:
 public:
 
 	/// Constructor
-	void TraceCache();
+	TraceCache();
 
 	/// Read trace cache configuration from configuration file
-	static void ReadTraceCacheConfig(std::string &config);
+	void ParseConfiguration(const std::string &section,
+				misc::IniFile &config);
 
 };
 
