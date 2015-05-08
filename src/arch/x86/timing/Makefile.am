@@ -77,6 +77,8 @@ libtiming_a_SOURCES = \
 	\
 	RegFile.h\
 	\
+	TraceCache.h\
+	\
 	BranchPredictor.h\
 	BranchPredictor.cc
 
