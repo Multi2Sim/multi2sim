@@ -155,9 +155,9 @@ private:
  		// Do coresponding action according to the type of operand
  		switch (operand->getKind())
  		{
- 		case BRIG_KIND_OPERAND_DATA:
+ 		case BRIG_KIND_OPERAND_CONSTANT_BYTES:
  		{
- 			BrigImmed immed(operand->getData(),
+ 			BrigImmed immed(operand->getBytes(),
  					inst->getOperandType(index));
  			Type value = immed.getImmedValue<Type>();
  			return value;
@@ -167,7 +167,7 @@ private:
 
  			return 1;
 
- 		case BRIG_KIND_OPERAND_REG:
+ 		case BRIG_KIND_OPERAND_REGISTER:
 
  		{
  			std::string register_name = operand->getRegisterName();
@@ -196,7 +196,7 @@ private:
  		// I do not think there should be other type except reg
  		switch (operand->getKind())
  		{
- 		case BRIG_KIND_OPERAND_REG:
+ 		case BRIG_KIND_OPERAND_REGISTER:
 
  		{
  			std::string register_name = operand->getRegisterName();

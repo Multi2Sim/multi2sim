@@ -1567,7 +1567,5 @@ struct BrigModuleHeader {
     uint64_t sectionIndex;
 };
 
-typedef BrigModuleHeader* BrigModule_t;
-
 #endif // defined(INCLUDED_BRIG_H)
 //}

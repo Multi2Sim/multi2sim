@@ -1890,8 +1890,8 @@ void WorkItem::ExecuteInst_CVT()
 	BrigCodeEntry *inst = stack_top->getPc();
 
 	// Get src type and dst type
-	BrigTypeX src_type = inst->getSourceType();
-	BrigTypeX dst_type = inst->getType();
+	BrigType src_type = inst->getSourceType();
+	BrigType dst_type = inst->getType();
 
 	if (src_type == BRIG_TYPE_U16 && dst_type == BRIG_TYPE_U32)
 	{
@@ -2172,6 +2172,12 @@ void WorkItem::ExecuteInst_STIMAGE()
 }
 
 
+void WorkItem::ExecuteInst_IMAGEFENCE()
+{
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+}
+
+
 void WorkItem::ExecuteInst_QUERYIMAGE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -2323,7 +2329,7 @@ void WorkItem::ExecuteInst_ACTIVELANEMASK()
 }
 
 
-void WorkItem::ExecuteInst_ACTIVELANESHUFFLE()
+void WorkItem::ExecuteInst_ACTIVELANEPERMUTE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
@@ -2401,31 +2407,6 @@ template<typename T> void WorkItem::Inst_LDI_Aux()
 }
 
 
-void WorkItem::ExecuteInst_LDI()
-{
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Perform action according to type
-	switch(inst->getType())
-	{
-	case BRIG_TYPE_U32:
-		Inst_LDI_Aux<unsigned int>();
-		break;
-	case BRIG_TYPE_U64:
-		Inst_LDI_Aux<unsigned long long>();
-		break;
-	default:
-		std::string type_str = AsmService::TypeToString(
-				inst->getType());
-		throw misc::Panic(misc::fmt("Unsupported type %s for inst LDI",
-				type_str.c_str()));
-	}
-
-}
-
-
 void WorkItem::ExecuteInst_RET()
 {
 	// Return the function
@@ -2443,6 +2424,12 @@ void WorkItem::ExecuteInst_ALLOCA()
 
 
 void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
+{
+	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+}
+
+
+void WorkItem::ExecuteInst_CURRENTWORKITEMFLATID()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
@@ -2582,27 +2569,9 @@ void WorkItem::ExecuteInst_ADDQUEUEWRITEINDEX()
 }
 
 
-void WorkItem::ExecuteInst_AGENTCOUNT()
-{
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_AGENTID()
-{
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
 void WorkItem::ExecuteInst_CASQUEUEWRITEINDEX()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_LDK()
-{
-	ExecuteInst_LDI();
 }
 
 
@@ -2613,18 +2582,6 @@ void WorkItem::ExecuteInst_LDQUEUEREADINDEX()
 
 
 void WorkItem::ExecuteInst_LDQUEUEWRITEINDEX()
-{
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_QUEUEID()
-{
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_QUEUEPTR()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }

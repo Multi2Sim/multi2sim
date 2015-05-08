@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <arch/hsa/asm/BrigDef.h>
+#include <arch/hsa/asm/Brig.h>
 #include <arch/hsa/asm/AsmService.h>
 #include <arch/hsa/asm/BrigOperandEntry.h>
 

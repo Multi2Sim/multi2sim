@@ -43,7 +43,7 @@ Variable::~Variable()
 }
 
 
-Variable::Variable(const std::string& name, BrigTypeX type,
+Variable::Variable(const std::string& name, BrigType type,
 		unsigned long long dim, unsigned address,
 		SegmentManager *segment, bool isFormal = false) :
 		name(name),

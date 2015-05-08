@@ -93,15 +93,15 @@ void Function::AddRegister(BrigRegisterKind kind, unsigned short number)
 	reg_info.insert(std::make_pair(register_name, reg_size));
 	switch(kind)
 	{
-	case BRIG_REGISTER_CONTROL:
+	case BRIG_REGISTER_KIND_CONTROL:
 		break;
-	case BRIG_REGISTER_SINGLE:
+	case BRIG_REGISTER_KIND_SINGLE:
 		reg_size += 4;
 		break;
-	case BRIG_REGISTER_DOUBLE:
+	case BRIG_REGISTER_KIND_DOUBLE:
 		reg_size += 8;
 		break;
-	case BRIG_REGISTER_QUAD:
+	case BRIG_REGISTER_KIND_QUAD:
 		reg_size += 16;
 		break;
 	}
@@ -175,7 +175,7 @@ void Function::PassByValue(StackFrame *caller_frame,
 					callee_scope->getBuffer(argument->getName());
 
 			// Copy memory
-			BrigTypeX type = (BrigTypeX)argument->getType();
+			BrigType type = (BrigType)argument->getType();
 			unsigned short arg_size = AsmService::TypeToSize(type);
 			memcpy(callee_buffer, caller_buffer, arg_size);
 		}
@@ -218,7 +218,7 @@ void Function::PassBackByValue(StackFrame *caller_frame,
 			assert(caller_buffer && callee_buffer);
 
 			// Copy memory
-			BrigTypeX type = (BrigTypeX)argument->getType();
+			BrigType type = (BrigType)argument->getType();
 			unsigned short arg_size = AsmService::TypeToSize(type);
 			memcpy(caller_buffer, callee_buffer, arg_size);
 		}
@@ -244,7 +244,8 @@ void Function::Dump(std::ostream &os = std::cout) const
 	DumpRegisterInfo(os);
 
 	// Dump first and last entry
-	if (getFunctionDirective()->getCodeBlockEntryCount() > 0)
+	BrigCodeEntry *function_dir = getFunctionDirective();
+	if (function_dir->Next().get() != function_dir->getNextModuleEntry().get())
 	{
 		// Dump first entry
 		os << "\tFirst entry: ";
