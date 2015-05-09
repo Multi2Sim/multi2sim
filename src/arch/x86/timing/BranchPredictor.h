@@ -112,10 +112,7 @@ private:
 public:
 
 	/// Constructor
-	//BranchPredictor();
-
-	/// Create branch preditor instance
-	void Create(std::string &branch_predictor_name);
+	BranchPredictor(const std::string &branch_predictor_name = "");
 
 	/// Read branch predictor configuration from configuration file
 	void ParseConfiguration(const std::string &section,
