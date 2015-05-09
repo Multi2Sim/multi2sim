@@ -29,6 +29,18 @@
 namespace x86
 {
 
+BranchPredictor::Kind BranchPredictor::kind;
+int BranchPredictor::btb_sets;
+int BranchPredictor::btb_assoc;
+int BranchPredictor::ras_size;
+int BranchPredictor::bimod_size;
+int BranchPredictor::choice_size;
+int BranchPredictor::twolevel_l1size;
+int BranchPredictor::twolevel_l2size;
+int BranchPredictor::twolevel_hist_size;
+int BranchPredictor::twolevel_l2height;
+
+
 void BranchPredictor::Create(std::string &branch_predictor_name)
 {
 	// Initialize
@@ -36,8 +48,7 @@ void BranchPredictor::Create(std::string &branch_predictor_name)
 	ras = std::unique_ptr<int[]> (new int[ras_size]);
 
 	/* Bimodal predictor */
-	if (branch_predictor_kind == BranchPredictorKindBimod ||
-			branch_predictor_kind == BranchPredictorKindCombined)
+	if (kind == KindBimod || kind == KindCombined)
 	{
 		bimod = std::unique_ptr<char[]> (new char[bimod_size]);
 		for (int i = 0; i < bimod_size; i++)
@@ -45,8 +56,7 @@ void BranchPredictor::Create(std::string &branch_predictor_name)
 	}
 
 	// Two-level adaptive branch predictor
-	if (branch_predictor_kind == BranchPredictorKindTwolevel ||
-			branch_predictor_kind == BranchPredictorKindCombined)
+	if (kind == KindTwolevel || kind == KindCombined)
 	{
 		twolevel_bht = std::unique_ptr<unsigned int[]> (new unsigned int[twolevel_l1size]);
 		twolevel_pht = std::unique_ptr<char[]> (new char[twolevel_l2size * twolevel_l2height]);
@@ -55,7 +65,7 @@ void BranchPredictor::Create(std::string &branch_predictor_name)
 	}
 
 	// Choice predictor
-	if (branch_predictor_kind == BranchPredictorKindCombined)
+	if (kind == KindCombined)
 	{
 		choice = std::unique_ptr<char[]> (new char[choice_size]);
 		for (int i = 0; i < choice_size; i++)
@@ -74,8 +84,8 @@ void BranchPredictor::ParseConfiguration(const std::string &section,
 		misc::IniFile &config)
 {
 	// Load branch predictor type
-	branch_predictor_kind = (BranchPredictorKind)config.ReadEnum(section, "Kind",
-			BranchPredictorKindMap, BranchPredictorKindTwolevel);
+	kind = (Kind)config.ReadEnum(section, "Kind",
+			KindMap, KindTwolevel);
 
 	// Load branch predictor parameter
 	btb_sets = config.ReadInt(section, "BTB.Sets", 256);

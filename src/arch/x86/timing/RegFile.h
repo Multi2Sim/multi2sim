@@ -33,42 +33,46 @@ const int RegFileMinINTSize = UInstDepIntCount + UInstMaxODeps;
 const int RegFileMinFPSize = UInstDepFpCount + UInstMaxODeps;
 const int RegFileMinXMMSize = UInstDepXmmCount + UInstMaxODeps;
 
-// enumeration of register file
-enum RegFileType
-{
-	RegFileTypeShared = 0,
-	RegFileTypePrivate
-};
-
 // class register file
 class RegFile
 {
+public:
+
+	// enumeration of register file
+	enum Type
+	{
+		TypeInvalid = 0,
+		TypeShared,
+		TypePrivate
+	};
+
 private:
 
 	// Structure of physical register
-	struct PhyReg
+	struct PhysicalRegister
 	{
-		int pending;  /* not completed (bit) */
-		int busy;  /* number of mapped logical registers */
+		int pending;  // not completed (bit) 
+		int busy;  // number of mapped logical registers 
 	};
-	/* Integer registers */
+
+	// Integer registers 
 	int int_rat[UInstDepIntCount];
-	std::unique_ptr<PhyReg> int_phy_reg;
+	std::unique_ptr<PhysicalRegister> int_phy_reg;
 	int int_phy_reg_count;
 	std::unique_ptr<int> int_free_phy_reg;
 	int int_free_phy_reg_count;
 
-	/* FP registers */
-	int fp_top_of_stack;  /* Value between 0 and 7 */
+	// FP registers 
+	int fp_top_of_stack;  // Value between 0 and 7 
 	int fp_rat[UInstDepFpCount];
-	std::unique_ptr<PhyReg> fp_phy_reg;
+	std::unique_ptr<PhysicalRegister> fp_phy_reg;
 	int fp_phy_reg_count;
 	std::unique_ptr<int> fp_free_phy_reg;
 	int fp_free_phy_reg_count;
 
-	/* XMM registers */
+	// XMM registers 
 	int xmm_rat[UInstDepXmmCount];
-	std::unique_ptr<PhyReg> xmm_phy_reg;
+	std::unique_ptr<PhysicalRegister> xmm_phy_reg;
 	int xmm_phy_reg_count;
 	std::unique_ptr<int> xmm_free_phy_regg;
 	int xmm_free_phy_reg_count;

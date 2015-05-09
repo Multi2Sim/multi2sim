@@ -71,6 +71,8 @@ libtiming_a_SOURCES = \
 	writeback.c \
 	writeback.h \
 	\
+	CPU.h\
+	\
 	Thread.h\
 	\
 	Uop.h\
