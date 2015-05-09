@@ -29,30 +29,34 @@
 namespace x86
 {
 
-// Enumeration of branch predictor Kind
-enum BranchPredictorKind
-{
-	BranchPredictorKindPerfect = 0,
-	BranchPredictorKindTaken,
-	BranchPredictorKindNottaken,
-	BranchPredictorKindBimod,
-	BranchPredictorKindTwolevel,
-	BranchPredictorKindCombined
-};
-
-misc::StringMap BranchPredictorKindMap
-{
-	{ "Perfect", BranchPredictorKindPerfect},
-	{ "Taken", BranchPredictorKindTaken },
-	{"NotTaken", BranchPredictorKindNottaken},
-	{"Bimodal", BranchPredictorKindBimod},
-	{"TwoLevel", BranchPredictorKindTwolevel},
-	{"Combined", BranchPredictorKindCombined}
-};
-
 // Branch Predictor class
 class BranchPredictor
 {
+public:
+
+	// Enumeration of branch predictor Kind
+	enum Kind
+	{
+		KindInvalid = 0,
+		KindPerfect,
+		KindTaken,
+		KindNottaken,
+		KindBimod,
+		KindTwolevel,
+		KindCombined
+	};
+
+	// string map of branch predictor kind
+	misc::StringMap KindMap
+	{
+		{ "Perfect", KindPerfect},
+		{ "Taken", KindTaken },
+		{"NotTaken", KindNottaken},
+		{"Bimodal", KindBimod},
+		{"TwoLevel", KindTwolevel},
+		{"Combined", KindCombined}
+	};
+
 private:
 
 	// The defined name
@@ -94,7 +98,7 @@ private:
 	long long hits;
 
 	// Branch predictor parameter
-	static BranchPredictorKind branch_predictor_kind;
+	static Kind kind;
 	static int btb_sets;
 	static int btb_assoc;
 	static int ras_size;
@@ -108,7 +112,7 @@ private:
 public:
 
 	/// Constructor
-	BranchPredictor();
+	//BranchPredictor();
 
 	/// Create branch preditor instance
 	void Create(std::string &branch_predictor_name);
