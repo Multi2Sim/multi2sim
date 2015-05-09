@@ -28,12 +28,17 @@
 #include <arch/x86/emu/UInst.h>
 #include <arch/x86/emu/Emu.h>
 
+#include "Core.h"
+#include "Uop.h"
+
 namespace x86
 {
 
 // Forward declaration
 class Uop;
 class Emu;
+class Core;
+class MMU;
 
 // Class CPU
 class CPU
@@ -116,7 +121,7 @@ private:
 	std::vector<std::unique_ptr<Core>> cores;
 
 	// MMU used by this CPU 
-	std::unique_ptr<MMU> mmu;
+	std::unique_ptr<mem::MMU> mmu;
 
 	// Some fields 
 	// Counter of uop ID assignment 
@@ -145,9 +150,9 @@ private:
 	// Statistics 
 	long long num_fast_forward_inst;  // Fast-forwarded x86 instructions 
 	long long num_fetched_uinst;
-	long long num_dispatched_uinst_array[x86_uinst_opcode_count];
-	long long num_issued_uinst_array[x86_uinst_opcode_count];
-	long long num_committed_uinst_array[x86_uinst_opcode_count];
+	long long num_dispatched_uinst_array[UInstOpcodeCount];
+	long long num_issued_uinst_array[UInstOpcodeCount];
+	long long num_committed_uinst_array[UInstOpcodeCount];
 	long long num_committed_uinst;  // Committed micro-instructions 
 	long long num_committed_inst;  // Committed x86 instructions 
 	long long num_squashed_uinst;
