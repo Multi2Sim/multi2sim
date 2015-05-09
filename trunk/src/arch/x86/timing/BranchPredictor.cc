@@ -41,7 +41,9 @@ int BranchPredictor::twolevel_hist_size;
 int BranchPredictor::twolevel_l2height;
 
 
-void BranchPredictor::Create(std::string &branch_predictor_name)
+BranchPredictor::BranchPredictor(const std::string &branch_predictor_name)
+	:
+	ras_index(0), accesses(0), hits(0)
 {
 	// Initialize
 	name = branch_predictor_name;

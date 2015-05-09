@@ -78,11 +78,11 @@ private:
 	};
 
 	// Trace cache lines ('sets' * 'assoc' elements) 
-	std::unique_ptr<TraceCacheEntry> entry;
+	std::unique_ptr<TraceCacheEntry[]> entry;
 
 	// Temporary trace, progressively filled up in the commit stage,
 	// and dumped into the trace cache when full.
-	std::unique_ptr<TraceCacheEntry> temp;
+	std::unique_ptr<TraceCacheEntry[]> temp;
 
 	// Statistics 
 	long long accesses;
@@ -106,11 +106,14 @@ private:
 public:
 
 	/// Constructor
-	TraceCache();
+	TraceCache(const std::string &trace_cache_name = "");
 
 	/// Read trace cache configuration from configuration file
 	void ParseConfiguration(const std::string &section,
 				misc::IniFile &config);
+
+	/// Dump configuration
+	void DumpConfig(std::ostream &os = std::cout);
 
 };
 

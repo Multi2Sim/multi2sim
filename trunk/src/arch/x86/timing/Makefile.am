@@ -73,13 +73,18 @@ libtiming_a_SOURCES = \
 	\
 	CPU.h\
 	\
+	Core.h\
+	\
 	Thread.h\
+	\
+	FunctionUnit.h\
 	\
 	Uop.h\
 	\
 	RegFile.h\
 	\
 	TraceCache.h\
+	TraceCache.cc\
 	\
 	BranchPredictor.h\
 	BranchPredictor.cc
