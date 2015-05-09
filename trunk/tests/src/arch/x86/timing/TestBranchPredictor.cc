@@ -30,16 +30,15 @@ TEST(ReadINIFile, TestBranchPredictor)
 	// Setup configuration file
 	std::string config =
 		"[ BranchPredictor ]\n"
-		"Kind = Perfect \n"
-		"BTB.Sets = 128"
-		"BTB.Assoc = 16 \n"
-		"Bimod.Size = 512 \n"
+		"Kind = Perfect\n"
+		"BTB.Sets = 128\n"
+		"BTB.Assoc = 16\n"
+		"Bimod.Size = 512\n"
 		"Choice.Size = 2048\n"
 		"RAS.Size = 64\n"
 		"TwoLevel.L1Size = 2\n"
 		"TwoLevel.L2Size = 2048\n"
-		"TwoLevel.HistorySize = 16\n"
-		"\n";
+		"TwoLevel.HistorySize = 16";
 
 	// Set up INI file
 	misc::IniFile ini_file;
