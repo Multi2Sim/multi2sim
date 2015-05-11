@@ -2347,6 +2347,7 @@ void WorkItem::ExecuteInst_CALL()
 
 	// Try to intercept the function execution if the function is runtime
 	// function
+	/*
 	if (Driver::getInstance()->Intercept(function_name, stack_top))
 	{
 		// If a call back stack frame is implanted do not move pc
@@ -2359,6 +2360,7 @@ void WorkItem::ExecuteInst_CALL()
 		// MovePcForwardByOne();
 		return;
 	}
+	*/
 
 
 	// Retrieve the function
