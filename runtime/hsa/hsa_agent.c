@@ -44,7 +44,10 @@ hsa_status_t HSA_API hsa_iterate_agents(
 		{
 			hsa_agent_t curr_agent;
 			curr_agent.handle = agent_ids[0];
-			callback(curr_agent, data);
+			hsa_status_t callback_status =
+					callback(curr_agent, data);
+			if (callback_status != HSA_STATUS_SUCCESS)
+				return callback_status;
 			agent_ids[1] = agent_ids[0];
 		}
 	}

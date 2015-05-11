@@ -122,7 +122,7 @@ int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
 	return (this->*fn)(memory, args_ptr);
 }
 
-
+/*
 bool Driver::Intercept(const std::string &function_name, 
 		StackFrame *stack_top)
 {
@@ -165,8 +165,9 @@ bool Driver::Intercept(const std::string &function_name,
 	// Return true to tell the caller that this function is excepted
 	return true;
 }
+*/
 
-
+/*
 void Driver::ExitInterceptedEnvironment(unsigned arg_address, 
 		StackFrame *stack_top)
 {
@@ -179,8 +180,9 @@ void Driver::ExitInterceptedEnvironment(unsigned arg_address,
 	// Move the PC in the host by one
 	stack_top->getWorkItem()->MovePcForwardByOne();
 }
+*/
 
-
+/*
 void Driver::SerializeArguments(char *arg_buffer, StackFrame *stack_top)
 {
 	// Get the function call instruction
@@ -233,8 +235,9 @@ void Driver::SerializeArguments(char *arg_buffer, StackFrame *stack_top)
 
 	return;
 }
+*/
 
-
+/*
 unsigned Driver::PassArgumentsInByValue(const std::string &function_name, 
 		StackFrame *stack_top)
 {
@@ -275,8 +278,9 @@ unsigned Driver::PassArgumentsInByValue(const std::string &function_name,
 
 	return arg_address;
 }
+*/
 
-
+/*
 void Driver::PassBackByValue(unsigned arg_address, StackFrame *stack_top)
 {
 	// Get the function instruction
@@ -318,6 +322,7 @@ void Driver::PassBackByValue(unsigned arg_address, StackFrame *stack_top)
 	
 	return;
 }
+*/
 
 
 Driver::~Driver()

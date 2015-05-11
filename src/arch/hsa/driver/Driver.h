@@ -40,6 +40,9 @@ class Driver: public comm::Driver
 	// Debug file name, as set by user
 	static std::string debug_file;
 
+	// Maps from the function name in HSAIL to call number
+	static misc::StringMap function_name_to_call_map;
+
 	/// Constructor
 	Driver() : comm::Driver("HSA", "/dev/hsa")
 	{
@@ -81,11 +84,6 @@ class Driver: public comm::Driver
 		unsigned args_ptr);
 #include "Driver.def"
 #undef DEFCALL
-
-	// Stores the argument received when agent_iterate is called, when
-	// next_agent function is called, reuse the arguments
-	mem::Memory *agent_iterator_memory;
-	unsigned agent_iterator_args_ptr;
 
 	// ABI call names
 	static const char *call_name[CallCodeCount];
@@ -142,6 +140,13 @@ public:
 	/// Destructor
 	~Driver();
 
+/*
+
+	// Stores the argument received when agent_iterate is called, when
+	// next_agent function is called, reuse the arguments
+	mem::Memory *agent_iterator_memory;
+	unsigned agent_iterator_args_ptr;
+
 	/// Used as callback function to iterate next device
 	static int IterateAgentNext(DriverCallbackInfo *args);
 
@@ -160,9 +165,6 @@ public:
 	//
 
 private:
-
-	// Maps from the function name in HSAIL to call number
-	static misc::StringMap function_name_to_call_map;
 
 	// Copy the arguments into a certain place in memory
 	void SerializeArguments(char *arg_buffer, StackFrame *stack_top);
@@ -205,7 +207,7 @@ public:
 	/// argument and move the host pc forward.
 	void ExitInterceptedEnvironment(unsigned arg_address, 
 			StackFrame *stack_top);
-
+*/
 };
 
 } /* namespace HSA */

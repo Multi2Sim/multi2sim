@@ -134,7 +134,7 @@ int Driver::CallSystemGetInfo(mem::Memory *memory, unsigned args_ptr)
 	return 0;
 }
 
-
+/*
 int Driver::IterateAgentNext(DriverCallbackInfo *args)
 {
 	// Convert the info object to be this function specific
@@ -192,6 +192,7 @@ int Driver::IterateAgentNext(DriverCallbackInfo *args)
 
 	return 1;
 }
+*/
 
 
 int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
@@ -200,8 +201,6 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	// hsa_status_t		| 0		| 4
 	// callback		| 4		| 8
 	// data			| 12		| 8
-	// host_language	| 20		| 4
-	// workitem_ptr		| 24		| 8
 
 	// Dump the argument information
 	debug << misc::fmt("In function %s", __FUNCTION__);
@@ -211,11 +210,6 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 		getArgumentValue<unsigned long long>(4, memory, args_ptr);
 	debug << misc::fmt(", \n\tdata: 0x%llx", getArgumentValue
 			<unsigned long long>(12, memory, args_ptr));
-	debug << ", \n\thost_lang: " <<
-		getArgumentValue<unsigned int>(20, memory, args_ptr);
-	debug << ", \n\tworkitem_ptr: " << 
-		getArgumentValue<unsigned long long>(24, memory, args_ptr)
-		<< "\n";
 
 	// Get virtual machine setup
 	Emu *emu = Emu::getInstance();
@@ -230,7 +224,7 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 		// Return 0 to tell the function finished its execution
 		return 0;
 	}
-
+/*
 	// Construct a stack frame and implant it the the caller stack
 	WorkItem *workitem = (WorkItem *)getArgumentValue<unsigned long long>(
 			24, memory, args_ptr);
@@ -241,18 +235,18 @@ int Driver::CallIterateAgents(mem::Memory *memory, unsigned args_ptr)
 	StartAgentIterateCallback(workitem, callback_address, 
 			component->getHandler(), data_address,
 			args_ptr);
+			*/
 
 	return 1;
 }
 
-
+/*
 void Driver::StartAgentIterateCallback(WorkItem *work_item,
 		unsigned callback_address, 
 		unsigned long long componentHandler, 
 		unsigned long long data_address,
 		unsigned args_ptr)
 {
-	/*
 	// Get call back function name
 	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
 	auto function_dir = binary->getCodeEntryByOffset(callback_address);
@@ -303,8 +297,8 @@ void Driver::StartAgentIterateCallback(WorkItem *work_item,
 
 	// Add stack frame to the work item;
 	work_item->PushStackFrame(std::move(stack_frame));
-	*/
 }
+*/
 
 
 int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
@@ -319,7 +313,6 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 	unsigned long long agent_handler = 
 			getArgumentValue<unsigned long long>(4, memory, 
 					args_ptr);
-
 	// Try to find the agent
 	Component *component = Emu::getInstance()->getComponent(agent_handler);
 	if (component == nullptr)
@@ -429,7 +422,7 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 	case HSA_AGENT_INFO_QUEUE_MAX_SIZE:
 
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_QUEUE_MAX_SIZE\n");
+		*(unsigned int *)value_ptr = 16384;
 		break;
 
 	case HSA_AGENT_INFO_QUEUE_TYPE:
@@ -444,15 +437,11 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 	case HSA_AGENT_INFO_DEVICE:
 
-		if (component->getDeivceType() == HSA_DEVICE_TYPE_GPU)
-		{
-			*value_ptr = 1;
-		}
-		else
-		{
-			*value_ptr = 0;
-		}
+	{
+		unsigned int type = component->getDeivceType();
+		memcpy(value_ptr, &type, 4);
 		break;
+	}
 
 	case HSA_AGENT_INFO_CACHE_SIZE:
 
@@ -487,7 +476,7 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 		break;
 	}
 	setArgumentValue<unsigned int>(
-			HSA_STATUS_ERROR_INVALID_ARGUMENT, 
+			HSA_STATUS_SUCCESS, 
 			0, memory, args_ptr);
 	return 0;
 }
