@@ -47,15 +47,7 @@ public:
 	};
 
 	// string map of branch predictor kind
-	misc::StringMap KindMap
-	{
-		{ "Perfect", KindPerfect},
-		{ "Taken", KindTaken },
-		{"NotTaken", KindNottaken},
-		{"Bimodal", KindBimod},
-		{"TwoLevel", KindTwolevel},
-		{"Combined", KindCombined}
-	};
+	static misc::StringMap KindMap;
 
 private:
 
@@ -115,7 +107,7 @@ public:
 	BranchPredictor(const std::string &branch_predictor_name = "");
 
 	/// Read branch predictor configuration from configuration file
-	void ParseConfiguration(const std::string &section,
+	static void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
 
 	/// Dump configuration

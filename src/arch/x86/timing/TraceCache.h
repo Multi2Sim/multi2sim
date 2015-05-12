@@ -109,7 +109,7 @@ public:
 	TraceCache(const std::string &trace_cache_name = "");
 
 	/// Read trace cache configuration from configuration file
-	void ParseConfiguration(const std::string &section,
+	static void ParseConfiguration(const std::string &section,
 				misc::IniFile &config);
 
 	/// Dump configuration
