@@ -40,6 +40,16 @@ int BranchPredictor::twolevel_l2size;
 int BranchPredictor::twolevel_hist_size;
 int BranchPredictor::twolevel_l2height;
 
+misc::StringMap BranchPredictor::KindMap =
+{
+	{ "Perfect", KindPerfect},
+	{ "Taken", KindTaken },
+	{"NotTaken", KindNottaken},
+	{"Bimodal", KindBimod},
+	{"TwoLevel", KindTwolevel},
+	{"Combined", KindCombined}
+};
+
 
 BranchPredictor::BranchPredictor(const std::string &branch_predictor_name)
 	:

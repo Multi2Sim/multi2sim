@@ -76,17 +76,17 @@ void TraceCache::ParseConfiguration(const std::string &section,
 
 	// Integrity checks
 	if ((num_sets & (num_sets - 1)) || !num_sets)
-		misc::Panic(misc::fmt("%s: 'Sets' must be a power of 2 greater than 0", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: 'Sets' must be a power of 2 greater than 0", section.c_str()));
 	if ((assoc & (assoc - 1)) || !assoc)
-		misc::Panic(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
 	if (!trace_size)
-		misc::Panic(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
 	if (!branch_max)
-		misc::Panic(misc::fmt("%s: Invalid value for 'BranchMax'", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: Invalid value for 'BranchMax'", section.c_str()));
 	if (branch_max > trace_size)
-		misc::Panic(misc::fmt("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str()));
 	if (branch_max > 31)
-		misc::Panic(misc::fmt("%s: Maximum value for 'BranchMax' is 31", section.c_str()));
+		throw misc::Panic(misc::fmt("%s: Maximum value for 'BranchMax' is 31", section.c_str()));
 }
 
 

@@ -21,6 +21,7 @@
 #define X86_ARCH_TIMING_CORE_H
 
 #include <vector>
+#include <string>
 
 #include <arch/x86/emu/UInst.h>
 
@@ -32,6 +33,7 @@ namespace x86
 
 // Forward declaration
 class Uop;
+class CPU;
 
 // Class Core
 class Core
@@ -61,7 +63,7 @@ private:
 	// Array of threads 
 	std::vector<std::unique_ptr<Thread>> threads;
 
-	char *name;
+	std::string &name;
 
 	// Unique ID in CPU 
 	int id;
@@ -140,8 +142,8 @@ private:
 
 public:
 
-	/// Create
-	void Create(std::string &name);
+	/// Constructor
+	Core(std::string &name);
 
 };
 
