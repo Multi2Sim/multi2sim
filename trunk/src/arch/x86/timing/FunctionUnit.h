@@ -79,11 +79,11 @@ private:
 	// static member
 	static std::string name[ClassCount];
 	static ReservationPool reservation_pool[ClassCount];
-	Class class_table[UInstOpcodeCount];
+	static Class class_table[UInstOpcodeCount];
 
 public:
 	/// Read function unit configuration from configuration file
-	void ParseConfiguration(const std::string &section,
+	static void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
 
 	/// Dump configuration
