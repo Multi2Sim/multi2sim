@@ -229,6 +229,21 @@ template<typename T, typename... Args> std::unique_ptr<T>
 }
 
 
+/// Create a unique pointer to an array of elements of type T. The elements of
+/// the array will be initialized to zero. The following example allocated a
+/// dynamic array of 10 integers initialized to zero:
+///
+///    std::unique_ptr<int[]> A;
+///    A = misc::new_unique_array<int>(10);
+///
+template<typename T> std::unique_ptr<T[]>new_unique_array(int size)
+{
+	return std::unique_ptr<T[]>(new T[size]());
+}
+
+
+
+
 
 } // namespace misc
 
