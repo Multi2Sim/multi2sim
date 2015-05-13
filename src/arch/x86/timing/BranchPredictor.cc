@@ -50,15 +50,14 @@ misc::StringMap BranchPredictor::KindMap =
 	{"Combined", KindCombined}
 };
 
-
 BranchPredictor::BranchPredictor(const std::string &branch_predictor_name)
 	:
 	ras_index(0), accesses(0), hits(0)
 {
 	// Initialize
 	name = branch_predictor_name;
-	ras = std::unique_ptr<int[]> (new int[ras_size]);
-
+	ras = misc::new_unique_array<int>(ras_size);
+	
 	/* Bimodal predictor */
 	if (kind == KindBimod || kind == KindCombined)
 	{
