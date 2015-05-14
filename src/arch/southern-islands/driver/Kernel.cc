@@ -98,15 +98,20 @@ void Kernel::LoadMetaDataV3()
 	std::string token;
 	std::vector<std::string> token_list;
 
+	// Stream starts at ARGSTART again so skip first two lines
+	// (ARGSTART and version number)
+	std::getline(metadata_stream, line);
+	std::getline(metadata_stream, line);
+
 	for (;;)
 	{
-		//  Read the next line
+		// Read the next line
 		std::getline(metadata_stream, line);
 		x86::Emu::opencl_debug << misc::fmt("\t%s\n", line.c_str());
 		misc::StringTokenize(line, token_list, ";:");
 
-		//  Stop when ARGEND is found or line is empty
-		if (!token_list.size() || token_list.front() != "ARGEND")
+		// Stop when ARGEND is found or line is empty
+		if (!token_list.size() || token_list.front() == "ARGEND")
 		{
 			token_list.clear();
 			break;
@@ -179,12 +184,13 @@ void Kernel::LoadMetaDataV3()
 			// Token 1 - Name
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
+		
 
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
-			int data_type_int = misc::StringToInt(*token_list.begin());
+			const char *data_type_string = (*token_list.begin()).c_str();
+			int data_type_int = arg_data_type_map.MapString(*token_list.begin(), err);
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
-			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid data "
 						"type: %s\n%s",
@@ -205,16 +211,16 @@ void Kernel::LoadMetaDataV3()
 			Expect(token_list, "1");
 			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 5 - Conastant offset
+			// Token 5 - Constant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int constant_offset = misc::StringToInt(*token_list.begin());
 
 			// Token 6 - Memory scope
 			token_list.erase(token_list.begin());
-			int arg_scope_int = misc::StringToInt(*token_list.begin());
+			const char *arg_scope_string = (*token_list.begin()).c_str();
+			int arg_scope_int = arg_scope_map.MapString(*token_list.begin(), err);
 			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
-			const char *arg_scope_string = arg_scope_map.MapValue(arg_scope, err);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid scope: "
 						"%s\n%s", arg_scope_string,
@@ -232,11 +238,12 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 9 - Access type
 			token_list.erase(token_list.begin());
-			int access_type_int = misc::StringToInt(*token_list.begin());
+			const char *arg_access_type_string = (*token_list.begin()).c_str();
+			int access_type_int = arg_access_type_map.MapString(*token_list.begin(), err);
 			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid access "
-						"type: %s\n%s", token.c_str(),
+						"type: %s\n%s", arg_access_type_string,
 						OpenCLErrSIKernelMetadata));
 
 			// Token 10 - ???
