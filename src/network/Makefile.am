@@ -56,6 +56,11 @@ libnetwork_a_SOURCES = \
 	Node.cc \
 	Node.h \
 	\
+	RoutingTable.h \
+	RoutingTable.cc \
+	\
+	RoutingTableEntry.h \
+	\
 	System.cc \
 	System.h \
 	SystemConfig.cc \

@@ -22,6 +22,8 @@
 
 namespace net
 {
+class Node;
+class Buffer;
 
 class RoutingTableEntry
 {
@@ -34,7 +36,21 @@ class RoutingTableEntry
 	// Output buffer
 	Buffer *output_buffer;
 
-}
+public:
+
+	/// Set the cost
+	void setCost(int cost) { this->cost = cost; }
+
+	/// Get the cost
+	int getCost() const { return this->cost; }
+
+	/// Set next node
+	void setNextNode(Node *node) { this->next_node = next_node; }
+
+	/// Get next node
+	Node *getNextNode() const { return this->next_node; }
+
+};
 
 }
 

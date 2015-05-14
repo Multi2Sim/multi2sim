@@ -17,53 +17,47 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_ROUTINGTABLE_H
-#define NETWORK_ROUTINGTABLE_H
+#include <climits>
 
-#include <vector>
-#include <memory>
+#include <lib/cpp/Error.h>
 
-#include "RoutingTableEntry.h"
+#include "Node.h"
+#include "Network.h"
+#include "RoutingTable.h"
 
 namespace net
 {
-class Network;
-  
-class RoutingTable
+
+void RoutingTable::InitRoutingTable()
 {
-protected:
+	// Check if the routing table is already initiated
+	if (!entries.empty())
+		throw misc::Panic("Routing table already initialized.");
 
-	// Associated network
-	Network *network;
+	// Set dimension
+	dim = network->getNumberNodes();
 
-	// Dimention
-	int dim;
+	// Initiate table with infinite costs
+	for (int i = 0; i < dim; i++)
+	{
+		for (int j = 0; j < dim; j++)
+		{
+			// Node *src_node = network->getNodeByIndex(i);
+			// Node *dst_node = network->getNodeByIndex(j);
+				
+			// Init routing table 
+			auto entry = misc::new_unique<RoutingTableEntry>();
 
-	// Entries
-	std::vector<std::unique_ptr<RoutingTableEntry>> entries;
+			// Set cost to 0 or infinity
+			if (i == j)
+				entry->setCost(0);
+			else
+				entry->setCost(INT_MAX);
+			
+		}
+	}
 
-	// Flag set when a cycle was detected
-	bool has_cycle;
-
-public:
-
-	/// Constructor
-	// RoutingTable();
-
-	/// Set the associated network
-	void setNetwork(Network *network) { this->network = network; }
-
-	/// Initialize the routing table
-	void InitRoutingTable();
-
-	/// Perforam an Floyd-Warshall to find the best routes
-	void FloydWarshall();
-
-	/// Look up the entry from a certain node to a certain node
-	RoutingTableEntry *Lookup(Node *source, Node *destination);
-
-};
 
 }
 
-#endif
+}
