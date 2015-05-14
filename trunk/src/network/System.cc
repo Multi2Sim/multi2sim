@@ -1,4 +1,4 @@
-/*
+/* 
  *  Multi2Sim
  *  Copyright (C) 2014  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
  *
@@ -60,6 +60,10 @@ bool System::net_help = false;
 
 bool System::stand_alone = false;
 
+esim::EventType *System::ev_net_send;
+esim::EventType *System::ev_net_output_buffer;
+esim::EventType *System::ev_net_input_buffer;
+esim::EventType *System::ev_net_receive;
 
 std::unique_ptr<System> System::instance;
 

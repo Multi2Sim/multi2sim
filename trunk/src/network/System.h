@@ -27,6 +27,7 @@
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
+#include <lib/esim/Event.h>
 
 
 namespace net
@@ -102,7 +103,41 @@ class System
 	// General frequency if not specified in the network section
 	static int net_system_frequency;
 
+
+
+
+	//
+	// Event driven simulation
+	//
+
+	// Network frequency domain
+	static esim::FrequencyDomain *frequency_domain;
+
+	// Handle the send event
+	static void evNetSendHandler(esim::EventType *, esim::EventFrame *);
+
+	// Handle the event of message arriving in output buffer
+	static void evNetSendOutputBuffer(esim::EventType *, 
+			esim::EventFrame *);
+
+	// Handle the event of message arriving in input buffer
+	static void evNetSendInputBuffer(esim::EventType *, 
+			esim::EventFrame *);
+
+	// Handle the message receive event
+	static void evNetSendReceive(esim::EventType *, esim::EventFrame *);
+
 public:
+
+	//
+	// Event driven simulation event types
+	//
+
+	static esim::EventType *ev_net_send;
+	static esim::EventType *ev_net_output_buffer;
+	static esim::EventType *ev_net_input_buffer;
+	static esim::EventType *ev_net_receive;
+	
 
 	/// Debugger for network
 	static misc::Debug debug;
