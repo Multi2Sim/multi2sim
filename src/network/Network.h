@@ -152,6 +152,12 @@ public:
 	///	node name
 	virtual Node *getNodeByName(const std::string &name) const;
 
+	/// Return the number of nodes
+	virtual int getNumberNodes() const { return nodes.size(); }
+
+	/// Return the nodes by index
+	virtual Node *getNodeByIndex(int index) { return nodes[index].get(); }
+
 
 
 
