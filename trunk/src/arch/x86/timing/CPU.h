@@ -121,44 +121,44 @@ private:
 	std::vector<std::unique_ptr<Core>> cores;
 
 	// MMU used by this CPU 
-	std::unique_ptr<mem::MMU> mmu;
+	mem::MMU mmu;
 
 	// Some fields 
 	// Counter of uop ID assignment 
-	long long uop_id_counter;
+	long long uop_id_counter = 0;
 
 	// Name of currently simulated stage 
 	std::string stage;
 
 	// Used to prevent fetching of new instructions while timing
 	// simulator pipeline completes in-flight instructions 
-	int flushing;
+	int flushing = 0;
 
 	// From all contexts in the 'alloc' list of 'x86_emu', minimum value
 	// of variable 'ctx->alloc_cycle'. This value is used to decide whether
 	// the scheduler should be called at all to check for any context whose
 	// execution quantum has expired. These variables are updated by calling
 	// 'x86_cpu_update_min_alloc_cycle'
-	long long min_alloc_cycle;
+	long long min_alloc_cycle = 0;
 
 	// List containing uops that need to report an 'end_inst' trace event 
 	std::list<std::unique_ptr<Uop>> uop_trace_list;
 
 	// Count of current OpenCL ND-Ranges executing on this CPU 
-	volatile int ndranges_running;
+	volatile int ndranges_running = 0;
 
 	// Statistics 
-	long long num_fast_forward_inst;  // Fast-forwarded x86 instructions 
-	long long num_fetched_uinst;
+	long long num_fast_forward_inst = 0;  // Fast-forwarded x86 instructions
+	long long num_fetched_uinst = 0;
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
 	long long num_issued_uinst_array[UInstOpcodeCount];
 	long long num_committed_uinst_array[UInstOpcodeCount];
-	long long num_committed_uinst;  // Committed micro-instructions 
-	long long num_committed_inst;  // Committed x86 instructions 
-	long long num_squashed_uinst;
-	long long num_branch_uinst;
-	long long num_mispred_branch_uinst;
-	double time;
+	long long num_committed_uinst = 0;  // Committed micro-instructions
+	long long num_committed_inst = 0;  // Committed x86 instructions
+	long long num_squashed_uinst = 0;
+	long long num_branch_uinst = 0;
+	long long num_mispred_branch_uinst = 0;
+	double time = 0.0;
 
 	// For dumping 
 	long long last_committed;

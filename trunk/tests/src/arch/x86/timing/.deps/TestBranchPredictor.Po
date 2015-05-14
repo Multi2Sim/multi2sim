@@ -173,31 +173,8 @@ src/arch/x86/timing/TestBranchPredictor.o: \
  /usr/include/c++/4.8/bits/shared_ptr.h \
  /usr/include/c++/4.8/bits/shared_ptr_base.h \
  /usr/include/c++/4.8/backward/auto_ptr.h \
- ../src/arch/x86/timing/BranchPredictor.h ../src/arch/x86/timing/Thread.h \
- /usr/include/c++/4.8/list /usr/include/c++/4.8/bits/stl_list.h \
- /usr/include/c++/4.8/bits/list.tcc ../src/memory/Module.h \
- ../src/lib/esim/Engine.h /usr/include/c++/4.8/queue \
- /usr/include/c++/4.8/deque /usr/include/c++/4.8/bits/stl_deque.h \
- /usr/include/c++/4.8/bits/deque.tcc /usr/include/c++/4.8/bits/stl_heap.h \
- /usr/include/c++/4.8/bits/stl_queue.h /usr/include/c++/4.8/map \
- /usr/include/c++/4.8/bits/stl_map.h \
- /usr/include/c++/4.8/bits/stl_multimap.h ../src/lib/cpp/Debug.h \
- ../src/lib/cpp/Error.h ../src/lib/cpp/Misc.h ../src/lib/cpp/String.h \
- ../src/lib/cpp/Timer.h ../src/lib/esim/Event.h \
- ../src/lib/esim/FrequencyDomain.h ../src/lib/esim/Queue.h \
- ../src/memory/Cache.h ../src/lib/cpp/List.h ../src/memory/Directory.h \
- ../src/lib/cpp/Bitmap.h ../src/arch/x86/emu/UInst.h \
- ../src/arch/x86/emu/Context.h ../src/arch/common/CallStack.h \
- ../src/lib/cpp/ELFReader.h /usr/include/elf.h \
- /usr/include/x86_64-linux-gnu/bits/auxv.h ../src/lib/cpp/Error.h \
- ../src/memory/Memory.h ../src/memory/SpecMem.h ../src/memory/Memory.h \
- ../src/arch/common/FileTable.h ../src/arch/x86/emu/Regs.h \
- ../src/arch/x86/asm/Inst.h ../src/arch/x86/asm/Inst.def \
- ../src/arch/x86/emu/Extended.h ../src/arch/x86/emu/XMMValue.h \
- ../src/arch/x86/emu/Signal.h ../src/arch/x86/emu/UInst.h \
- ../src/arch/x86/asm/Inst.def ../src/arch/x86/emu/syscall.dat \
- ../src/arch/x86/timing/Uop.h ../src/arch/x86/timing/BranchPredictor.h \
- ../src/arch/x86/timing/TraceCache.h
+ ../src/arch/x86/timing/BranchPredictor.h ../src/arch/x86/emu/UInst.h \
+ ../src/lib/cpp/Misc.h ../src/lib/cpp/String.h
 
 /usr/include/stdc-predef.h:
 
@@ -647,102 +624,8 @@ src/arch/x86/timing/TestBranchPredictor.o: \
 
 ../src/arch/x86/timing/BranchPredictor.h:
 
-../src/arch/x86/timing/Thread.h:
-
-/usr/include/c++/4.8/list:
-
-/usr/include/c++/4.8/bits/stl_list.h:
-
-/usr/include/c++/4.8/bits/list.tcc:
-
-../src/memory/Module.h:
-
-../src/lib/esim/Engine.h:
-
-/usr/include/c++/4.8/queue:
-
-/usr/include/c++/4.8/deque:
-
-/usr/include/c++/4.8/bits/stl_deque.h:
-
-/usr/include/c++/4.8/bits/deque.tcc:
-
-/usr/include/c++/4.8/bits/stl_heap.h:
-
-/usr/include/c++/4.8/bits/stl_queue.h:
-
-/usr/include/c++/4.8/map:
-
-/usr/include/c++/4.8/bits/stl_map.h:
-
-/usr/include/c++/4.8/bits/stl_multimap.h:
-
-../src/lib/cpp/Debug.h:
-
-../src/lib/cpp/Error.h:
+../src/arch/x86/emu/UInst.h:
 
 ../src/lib/cpp/Misc.h:
 
 ../src/lib/cpp/String.h:
-
-../src/lib/cpp/Timer.h:
-
-../src/lib/esim/Event.h:
-
-../src/lib/esim/FrequencyDomain.h:
-
-../src/lib/esim/Queue.h:
-
-../src/memory/Cache.h:
-
-../src/lib/cpp/List.h:
-
-../src/memory/Directory.h:
-
-../src/lib/cpp/Bitmap.h:
-
-../src/arch/x86/emu/UInst.h:
-
-../src/arch/x86/emu/Context.h:
-
-../src/arch/common/CallStack.h:
-
-../src/lib/cpp/ELFReader.h:
-
-/usr/include/elf.h:
-
-/usr/include/x86_64-linux-gnu/bits/auxv.h:
-
-../src/lib/cpp/Error.h:
-
-../src/memory/Memory.h:
-
-../src/memory/SpecMem.h:
-
-../src/memory/Memory.h:
-
-../src/arch/common/FileTable.h:
-
-../src/arch/x86/emu/Regs.h:
-
-../src/arch/x86/asm/Inst.h:
-
-../src/arch/x86/asm/Inst.def:
-
-../src/arch/x86/emu/Extended.h:
-
-../src/arch/x86/emu/XMMValue.h:
-
-../src/arch/x86/emu/Signal.h:
-
-../src/arch/x86/emu/UInst.h:
-
-../src/arch/x86/asm/Inst.def:
-
-../src/arch/x86/emu/syscall.dat:
-
-../src/arch/x86/timing/Uop.h:
-
-../src/arch/x86/timing/BranchPredictor.h:
-
-../src/arch/x86/timing/TraceCache.h:
