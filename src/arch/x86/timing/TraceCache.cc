@@ -34,12 +34,13 @@ int TraceCache::branch_max;
 int TraceCache::queue_size;
 
 
-TraceCache::TraceCache(const std::string &trace_cache_name)
+TraceCache::TraceCache(const std::string &name)
+	:
+	name(name)
 {
 	// Initialize 
-	name = trace_cache_name;
-	this->entry = std::unique_ptr<TraceCacheEntry[]>(new TraceCacheEntry[num_sets * assoc]);
-	this->temp = std::unique_ptr<TraceCacheEntry[]>(new TraceCacheEntry[1]);;
+	this->entry = misc::new_unique_array<TraceCacheEntry>(num_sets * assoc);
+	this->temp = misc::new_unique<TraceCacheEntry>();
 
 	// Initialize LRU counter 
 	for (int set = 0; set < num_sets; set++)
@@ -49,17 +50,6 @@ TraceCache::TraceCache(const std::string &trace_cache_name)
 			entry[set * assoc + way].counter = way;
 		}
 	}
-
-	// Initialize all the statistic parameter
-	accesses = 0;
-	hits = 0;
-	num_fetched_uinst = 0;
-	num_dispatched_uinst = 0;
-	num_issued_uinst = 0;
-	num_committed_uinst = 0;
-	num_squashed_uinst = 0;
-	trace_length_acc = 0;
-	trace_length_count = 0;
 }
 
 
@@ -76,21 +66,21 @@ void TraceCache::ParseConfiguration(const std::string &section,
 
 	// Integrity checks
 	if ((num_sets & (num_sets - 1)) || !num_sets)
-		throw misc::Panic(misc::fmt("%s: 'Sets' must be a power of 2 greater than 0", section.c_str()));
+		misc::fatal("%s: 'Sets' must be a power of 2 greater than 0", section.c_str());
 	if ((assoc & (assoc - 1)) || !assoc)
-		throw misc::Panic(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
+		misc::fatal("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str());
 	if (!trace_size)
-		throw misc::Panic(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
+		misc::fatal("%s: Invalid value for 'TraceSize'", section.c_str());
 	if (!branch_max)
-		throw misc::Panic(misc::fmt("%s: Invalid value for 'BranchMax'", section.c_str()));
+		misc::fatal("%s: Invalid value for 'BranchMax'", section.c_str());
 	if (branch_max > trace_size)
-		throw misc::Panic(misc::fmt("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str()));
+		misc::fatal("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str());
 	if (branch_max > 31)
-		throw misc::Panic(misc::fmt("%s: Maximum value for 'BranchMax' is 31", section.c_str()));
+		misc::fatal("%s: Maximum value for 'BranchMax' is 31", section.c_str());
 }
 
 
-void TraceCache::DumpConfig(std::ostream &os)
+void TraceCache::DumpConfiguration(std::ostream &os)
 {
 	// Dump network information
 	os << misc::fmt("\n***** TraceCache *****\n");

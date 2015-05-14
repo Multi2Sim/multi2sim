@@ -22,102 +22,160 @@
 
 #include <arch/x86/emu/UInst.h>
 
+#include "BranchPredictor.h"
+
 namespace x86
 {
+
+// Constant value
+const unsigned int uop_magic = 0x10101010;
 
 // Forward declarations
 class UInst;
 class Context;
 class Thread;
 
+// Class Uop
 class Uop
 {
 private:
 
 	// Micro-instruction 
-	UInst *uinst;
-	UInstFlag flags;
+	std::unique_ptr<UInst> uinst;
+	int flags = 0;
 
 	// Name and sequence numbers 
-	long long magic;  // Magic number for debugging 
-	long long id;  // Unique ID 
-	long long id_in_core;  // Unique ID in core 
+	long long magic = uop_magic;  // Magic number for debugging
+	long long id = 0;  // Unique ID
+	long long id_in_core = 0;  // Unique ID in core
 
 	// Software context and hardware thread where uop belongs 
-	Context *ctx;
-	Thread *thread;
+	Context *ctx = nullptr;
+	Thread *thread = nullptr;
 
 	// Fetch info 
-	unsigned int eip;  // Address of x86 macro-instruction 
-	unsigned int neip;  // Address of next non-speculative x86 macro-instruction 
-	unsigned int pred_neip; // Address of next predicted x86 macro-instruction (for branches) 
-	unsigned int target_neip;  // Address of target x86 macro-instruction assuming branch taken (for branches) 
-	int specmode;
-	unsigned int fetch_address;  // Physical address of memory access to fetch this instruction 
-	long long fetch_access;  // Access identifier to fetch this instruction 
-	int trace_cache;  // Flag telling if uop came from trace cache 
+	unsigned int eip = 0;  // Address of x86 macro-instruction
+	unsigned int neip = 0;  // Address of next non-speculative x86 macro-instruction
+	unsigned int predicted_neip = 0; // Address of next predicted x86 macro-instruction (for branches)
+	unsigned int target_neip = 0;  // Address of target x86 macro-instruction assuming branch taken (for branches)
+	bool specmode = false;
+	unsigned int fetch_address = 0;  // Physical address of memory access to fetch this instruction
+	long long fetch_access = 0;  // Access identifier to fetch this instruction
+	bool trace_cache = false;  // Flag telling if uop came from trace cache
 
 	// Fields associated with macroinstruction 
-	char mop_name[40];
-	int mop_index;  // Index of uop within macroinstruction 
-	int mop_count;  // Number of uops within macroinstruction 
-	int mop_size;  // Corresponding macroinstruction size 
-	long long mop_id;  // Sequence number of macroinstruction 
+	int macro_op_index = 0;  // Index of uop within macroinstruction
+	int macro_op_count = 0;  // Number of uops within macroinstruction
+	int macro_op_size = 0;  // Corresponding macroinstruction size
+	long long macro_op_id = 0;  // Sequence number of macroinstruction
 
 	// Logical dependencies 
-	int idep_count;
-	int odep_count;
+	int idep_count = 0;
+	int odep_count = 0;
 
 	// Physical mappings 
-	int ph_int_idep_count, ph_fp_idep_count, ph_xmm_idep_count;
-	int ph_int_odep_count, ph_fp_odep_count, ph_xmm_odep_count;
+	int ph_int_idep_count = 0, ph_fp_idep_count = 0, ph_xmm_idep_count = 0;
+	int ph_int_odep_count = 0, ph_fp_odep_count = 0, ph_xmm_odep_count = 0;
 	int ph_idep[UInstMaxIDeps];
 	int ph_odep[UInstMaxODeps];
 	int ph_oodep[UInstMaxODeps];
 
 	// Queues where instruction is 
-	int in_fetch_queue;
-	int in_uop_queue;
-	int in_iq;
-	int in_lq;
-	int in_sq;
-	int in_preq;
-	int in_event_queue;
-	int in_rob;
-	int in_uop_trace_list;
+	bool in_fetch_queue = false;
+	bool in_uop_queue = false;
+	bool in_iq = false;
+	bool in_lq = false;
+	bool in_sq = false;
+	bool in_preq = false;
+	bool in_event_queue = false;
+	bool in_rob = false;
+	bool in_uop_trace_list = false;
 
 	// Instruction status 
-	int ready;
-	int issued;
-	int completed;
+	bool ready = false;
+	bool issued = false;
+	bool completed = false;
 
 	// For memory uops 
-	unsigned int phy_addr;  // ... corresponding to 'uop->uinst->address' 
+	unsigned int phy_addr = 0;  // ... corresponding to 'uop->uinst->address'
 
 	// Cycles 
-	long long when;  // cycle when ready 
-	long long issue_try_when;  // first cycle when f.u. is tried to be reserved 
-	long long issue_when;  // cycle when issued 
+	long long when = 0;  // cycle when ready
+	long long issue_try_when = 0;  // first cycle when f.u. is tried to be reserved
+	long long issue_when = 0;  // cycle when issued
 
-	// Branch prediction 
-	int pred;  // Global prediction (0=not taken, 1=taken) 
-	int bimod_index, bimod_pred;
-	int twolevel_bht_index, twolevel_pht_row, twolevel_pht_col, twolevel_pred;
-	int choice_index, choice_pred;
+	// Global prediction (0=not taken, 1=taken)
+	BranchPredictorPred pred = BranchPredictorPredNotTaken;
+
+	// Bimodal Branch prediction
+	int bimod_index = 0;
+	BranchPredictorPred bimod_pred = BranchPredictorPredNotTaken;
+
+	// Twolevel Branch prediction
+	int twolevel_bht_index = 0, twolevel_pht_row = 0, twolevel_pht_col = 0;
+	BranchPredictorPred twolevel_pred = BranchPredictorPredNotTaken;
+
+	// Combined Branch prediction
+	int choice_index = 0;
+	BranchPredictorPred choice_pred = BranchPredictorPredNotTaken;
 
 public:
 
 	/// Constructor
 	Uop();
 
-	/// Destructor
-	~Uop();
-
 	void FreeIfNotQueued();
 	void Dump();
 
 	bool Exists();
 	void CountDeps();
+
+	/// Setters
+	void setFlags(UInstFlag flag) { flags = flag; }
+	void setPrediction(BranchPredictorPred prediction)
+	{
+		pred = prediction;
+	}
+	void setNeip(unsigned int addr) { neip = addr; }
+	void setEip(unsigned int addr) { eip = addr; }
+	void setPredictedNeip(unsigned int addr) { predicted_neip = addr; }
+	void setMacroOpSize(int size) { macro_op_size = size; }
+	void setBimodIndex(int index) { bimod_index = index; }
+	void setBimodPrediction(BranchPredictorPred prediction)
+	{
+		bimod_pred = prediction;
+	}
+	void setTwolevelBHTIndex(int index) { twolevel_bht_index = index; }
+	void setTwolevelPHTRow(int row) { twolevel_pht_row = row; }
+	void setTwolevelPHTCol(int col) { twolevel_pht_col = col; }
+	void setTwolevelPrediction(BranchPredictorPred prediction)
+	{
+		twolevel_pred = prediction;
+	}
+	void setChoiceIndex(int index) { choice_index = index; }
+	void setChoicePrediction(BranchPredictorPred prediction)
+	{
+		choice_pred = prediction;
+	}
+	void setSpeculateMode(bool flag) { specmode = flag; }
+
+	/// Getters
+	int getFlags() { return flags; }
+	BranchPredictorPred getPrediction() { return pred; }
+	UInst *getUinst() { return uinst.get(); }
+	unsigned int getNeip() { return neip; }
+	unsigned int getEip() { return eip; }
+	unsigned int getPredictedNeip() { return predicted_neip; }
+	int getMacroOpSize() { return macro_op_size; }
+	int getBimodIndex() { return bimod_index; }
+	BranchPredictorPred getBimodPrediction() { return bimod_pred; }
+	int getTwolevelBHTIndex() { return twolevel_bht_index; }
+	int getTwolevelPHTRow() { return twolevel_pht_row; }
+	int getTwolevelPHTCol() { return twolevel_pht_col; }
+	BranchPredictorPred getTwolevelPrediction() { return twolevel_pred; }
+	int getChoiceIndex() { return choice_index; }
+	BranchPredictorPred getChoicePrediction() { return choice_pred; }
+	bool getSpeculateMode() { return specmode; }
 };
 
 }

@@ -28,9 +28,14 @@ namespace x86
 std::string Timing::config_file;
 
 //
-// Configuration file name
+// report file name
 //
-std::string Timing::debug_file;
+std::string Timing::report_file;
+
+//
+// MMU report file name
+//
+std::string Timing::mmu_report_file;
 
 //
 // Message to display with '--x86-help'
@@ -228,6 +233,10 @@ const std::string Timing::help_message =
 		"      For the two-level adaptive predictor, level 2 history size.\n"
 		"\n";
 
+//
+// Flag to control whether the fast forward of OpenCL is enabled
+//
+bool Timing::opencl_fast_forward = false;
 
 
 Timing::Timing()
@@ -250,7 +259,37 @@ Timing *Timing::getInstance()
 
 void Timing::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
+	// Category
+	command_line->setCategory("x86");
+
+	// Option --x86-config <file>
+	command_line->RegisterString("--x86-config <file>", config_file,
+			"Configuration file for the x86 CPU timing model, including parameters"
+			"describing stage bandwidth, structures size, and other parameters of"
+			"processor cores and threads. Type 'm2s --x86-help' for details on the file"
+			"format.");
+
+	// Option --x86-mmu-report <file>
+	command_line->RegisterString("--x86-mmu-report <file>", mmu_report_file,
+			"File to dump a report of the x86 MMU. Use together with a detailed"
+			"CPU simulation (option '--x86-sim detailed').");
+
+	// Option --x86-report <file>
+	command_line->RegisterString("--x86-report <file>", report_file,
+			"File to dump a report of the x86 CPU pipeline, including statistics such"
+			"as the number of instructions handled in every pipeline stage, read/write"
+			"accesses performed on pipeline queues, etc. This option is only valid for"
+			"detailed x86 simulation (option '--x86-sim detailed').");
+
+	// Option --x86-opencl-fast-forward {True|Faulse}
+	command_line->RegisterBool("--x86-opencl-fast-forward {True|Faulse} (default = Faulse)",
+			opencl_fast_forward,
+			"Fast-forward (emulate) x86 instructions whenever an OpenCL kernel is not"
+			"being executed.  This option is only valid for detailed x86 simulation"
+			"(option '--x86-sim detailed')");
 }
 
 

@@ -57,21 +57,16 @@ TEST(ReadINIFile, TestBranchPredictor)
 		}
 	}
 
-	// Output stream
-	std::ostringstream oss;
-
 	// Assertions
-	branch_predictor.DumpConfig(oss);
-	std::string target = "\n***** BranchPredictor *****\n"
-			"\tBTB.Sets: 128\n"
-			"\tBTB.Assoc: 16\n"
-			"\tBimod.Size: 512\n"
-			"\tChoice.Size: 2048\n"
-			"\tRAS.Size: 64\n"
-			"\tTwoLevel.L1Size: 2\n"
-			"\tTwoLevel.L2Size: 2048\n"
-			"\tTwoLevel.HistorySize: 16\n";
-	EXPECT_STREQ(target.c_str(), oss.str().c_str());
+	EXPECT_EQ(BranchPredictor::KindPerfect, branch_predictor.getKind());
+	EXPECT_EQ(128, branch_predictor.getBTBSets());
+	EXPECT_EQ(16, branch_predictor.getBTBAssociativity());
+	EXPECT_EQ(512, branch_predictor.getBimodSize());
+	EXPECT_EQ(2048, branch_predictor.getChoiceSize());
+	EXPECT_EQ(64, branch_predictor.getRasSize());
+	EXPECT_EQ(2, branch_predictor.getTwolevelL1size());
+	EXPECT_EQ(2048, branch_predictor.getTwolevelL2size());
+	EXPECT_EQ(16, branch_predictor.getTwolevelHistorySize());
 }
 
 }
