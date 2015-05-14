@@ -24,17 +24,28 @@
 
 #include <lib/cpp/IniFile.h>
 
-#include "Thread.h"
+#include <arch/x86/emu/UInst.h>
+
 
 namespace x86
 {
+
+// Forward declaration
+class Uop;
+
+// Global prediction
+enum BranchPredictorPred
+{
+	BranchPredictorPredNotTaken = 0,
+	BranchPredictorPredTaken
+};
 
 // Branch Predictor class
 class BranchPredictor
 {
 public:
 
-	// Enumeration of branch predictor Kind
+	/// Enumeration of branch predictor Kind
 	enum Kind
 	{
 		KindInvalid = 0,
@@ -46,7 +57,7 @@ public:
 		KindCombined
 	};
 
-	// string map of branch predictor kind
+	/// string map of branch predictor kind
 	static misc::StringMap KindMap;
 
 private:
@@ -56,9 +67,9 @@ private:
 
 	// Return address stack
 	std::unique_ptr<int[]> ras;
-	int ras_index;
+	int ras_index = 0;
 
-	// BTB Entry
+	// BTB Entry (Branch Target Buffer)
 	struct BTBEntry
 	{
 		unsigned int source;  // eip
@@ -66,7 +77,7 @@ private:
 		int counter;  // LRU counter
 	};
 
-	// BTB - array of x86_bpred_btb_sets*x86_bpred_btb_assoc entries of
+	// BTB - array of btb_sets*btb_assoc entries of
 	// type BTBEntry.
 	std::unique_ptr<BTBEntry[]> btb;
 
@@ -86,8 +97,8 @@ private:
 	std::unique_ptr<char[]> choice;
 
 	// Stats 
-	long long accesses;
-	long long hits;
+	long long accesses = 0;
+	long long hits = 0;
 
 	// Branch predictor parameter
 	static Kind kind;
@@ -98,20 +109,99 @@ private:
 	static int choice_size;
 	static int twolevel_l1size;
 	static int twolevel_l2size;
-	static int twolevel_hist_size;
+	static int twolevel_history_size;
 	static int twolevel_l2height;
 
 public:
 
 	/// Constructor
-	BranchPredictor(const std::string &branch_predictor_name = "");
+	BranchPredictor(const std::string &name = "");
 
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
 
 	/// Dump configuration
-	void DumpConfig(std::ostream &os = std::cout);
+	void DumpConfiguration(std::ostream &os = std::cout);
+
+	/// Configuration getters
+	Kind getKind() { return kind; }
+	int getBTBSets() { return btb_sets; }
+	int getBTBAssociativity() { return btb_assoc; }
+	int getRasSize() { return ras_size; }
+	int getBimodSize() { return bimod_size; }
+	int getChoiceSize() { return choice_size; }
+	int getTwolevelL1size() { return twolevel_l1size; }
+	int getTwolevelL2size() { return twolevel_l2size; }
+	int getTwolevelHistorySize() { return twolevel_history_size; }
+	int getTwolevelL2hight() { return twolevel_l2height; }
+
+	/// Return prediction for an address (0=not taken, 1=taken)
+	///
+	/// \param uop
+	/// 	Micro-opertion including all the information regarding a micro instruction
+	///
+	/// \return
+	/// 	Global prediction result
+	BranchPredictorPred LookupBranchPrediction(Uop &uop);
+
+	/// Return multiple predictions for an address. This can only be done for two-level
+	/// adaptive predictors, since they use global history. The prediction of the
+	/// primary branch is stored in the least significant bit (bit 0), whereas the prediction
+	/// of the last branch is stored in bit 'count-1'.
+	///
+	/// \param eip
+	/// 	The instruction address
+	///
+	/// \param count
+	/// 	Maximum number of branches in a trace
+	///
+	/// \return
+	/// 	Global prediction result
+	int LookupBranchPredictionMultiple(unsigned int eip, int count);
+
+	/// Update the parameter inside branch predictor
+	///
+	/// \param uop
+	/// 	Micro-opertion including all the information regarding a micro instruction
+	///
+	/// \return
+	/// 	No value is returned
+	void UpdateBranchPredictor(Uop &uop);
+
+	/// Lookup BTB. If it contains the uop address, return target. The BTB also contains
+	/// information about the type of branch, i.e., jump, call, ret, or conditional. If
+	/// instruction is call or ret, access RAS instead of BTB.
+	///
+	/// \param uop
+	/// 	Micro-opertion including all the information regarding a micro instruction
+	///
+	/// \return
+	/// 	Target address
+	unsigned int LookupBTB(Uop &uop);
+
+	/// Update the BTB
+	///
+	/// \param uop
+	/// 	Micro-opertion including all the information regarding a micro instruction
+	///
+	/// \return
+	/// 	No value is returned
+	void UpdateBTB(Uop &uop);
+
+	/// Find address of next branch after eip within current block.
+	/// This is useful for accessing the trace
+	/// cache. At that point, the uop is not ready to call \c LookupBTB(), since
+	/// functional simulation has not happened yet.
+	/// \param eip
+	/// 	The instruction address
+	///
+	/// \param block_size
+	/// 	The block size of instruction cache
+	///
+	/// \return
+	/// 	Next branch address
+	unsigned int GetNextBranch(unsigned int eip, unsigned int block_size);
 };
 
 }

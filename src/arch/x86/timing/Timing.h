@@ -42,14 +42,20 @@ class Timing : public comm::Timing
 	// Configuration file name
 	static std::string config_file;
 
-	// Debug file name
-	static std::string debug_file;
+	// Report file name
+	static std::string report_file;
+
+	// MMU report file name
+	static std::string mmu_report_file;
 
 	// Show CPU configuration file
 	static bool help;
 
 	// Message to display with '--x86-help'
 	static const std::string help_message;
+
+	// Flag to control whether the fast forward of OpenCL is enbaled
+	static bool opencl_fast_forward;
 
 	// Private constructor for singleton
 	Timing();

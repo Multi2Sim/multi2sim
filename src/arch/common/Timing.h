@@ -42,27 +42,9 @@ public:
 	/// function must be implemented by every derived class.
 	virtual bool Run() = 0;
 
-	/// Set the frequency domain identifier where this architecture
-	/// belongs to.
-	void setFrequencyDomain(int config_frequency_domain) { frequency_domain = config_frequency_domain; }
-
-	/// Set the frequency identifier where this architecture
-	/// belongs to.
-	void setFrequency(int config_frequency) { frequency = config_frequency; }
-
 	/// Return the frequency domain identifier where this architecture
 	/// belongs to.
 	int getFrequencyDomain() const { return frequency_domain; }
-
-	/// Return the frequency identifier where this architecture
-	/// belongs to.
-	int getFrequency() const { return frequency; }
-
-	/// Increase the cycle
-	void IncCycle() { cycle++; }
-
-	/// Return the cycle
-	long long getCycle() const { return cycle; }
 
 	/// Dump a default memory configuration for the architecture. This
 	/// function is invoked by the memory system configuration parser when

@@ -82,18 +82,18 @@ private:
 
 	// Temporary trace, progressively filled up in the commit stage,
 	// and dumped into the trace cache when full.
-	std::unique_ptr<TraceCacheEntry[]> temp;
+	std::unique_ptr<TraceCacheEntry> temp;
 
 	// Statistics 
-	long long accesses;
-	long long hits;
-	long long num_fetched_uinst;
-	long long num_dispatched_uinst;
-	long long num_issued_uinst;
-	long long num_committed_uinst;
-	long long num_squashed_uinst;
-	long long trace_length_acc;
-	long long trace_length_count;
+	long long accesses = 0;
+	long long hits = 0;
+	long long num_fetched_uinst = 0;
+	long long num_dispatched_uinst = 0;
+	long long num_issued_uinst = 0;
+	long long num_committed_uinst = 0;
+	long long num_squashed_uinst = 0;
+	long long trace_length_acc = 0;
+	long long trace_length_count = 0;
 
 	// Trace cache parameter
 	static int present;
@@ -106,14 +106,14 @@ private:
 public:
 
 	/// Constructor
-	TraceCache(const std::string &trace_cache_name = "");
+	TraceCache(const std::string &name = "");
 
 	/// Read trace cache configuration from configuration file
 	static void ParseConfiguration(const std::string &section,
 				misc::IniFile &config);
 
 	/// Dump configuration
-	void DumpConfig(std::ostream &os = std::cout);
+	void DumpConfiguration(std::ostream &os = std::cout);
 
 };
 

@@ -42,6 +42,7 @@ class Cpu;
 class BranchPredictor;
 class TraceCache;
 class RegFile;
+class Uop;
 
 /// X86 Thread
 class Thread
@@ -198,7 +199,7 @@ public:
 
 	unsigned int LookupBTB(Uop &uop);
 	void UpdateBTB(Uop &uop);
-	unsigned int GetNextBranch(unsigned int eip, unsigned int bsize);
+	unsigned int GetNextBranch(unsigned int eip, unsigned int block_size);
 
 	///////////////////////////////////////////////////////////////////////
 	//
