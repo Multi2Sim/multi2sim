@@ -53,7 +53,13 @@ hsa_status_t HSA_API hsa_ext_program_create(
 hsa_status_t HSA_API hsa_ext_program_destroy(
     hsa_ext_program_t program)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	unsigned int args[3] = {0};
+	memcpy(args + 1, &program, 8);
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	ioctl(hsa_runtime->fd, ProgramDestroy, args);
 	return HSA_STATUS_SUCCESS;
 }
 

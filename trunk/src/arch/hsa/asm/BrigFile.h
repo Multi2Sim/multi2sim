@@ -73,6 +73,9 @@ public:
 	/// Returns the path to the BRIG file
 	const std::string &getPath() const { return path; }
 
+	/// Return the buffer of the BRIG file
+	const char *getBuffer() const { return buffer.get(); }
+
 	/// Returns the section according to the type value passed in
 	BrigSection *getBrigSection(BrigSectionIndex section_index) const;
 
