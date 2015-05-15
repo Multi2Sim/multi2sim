@@ -105,6 +105,9 @@ public:
 	/// Constructors
 	Network(const std::string &name);
 
+	/// Destructor
+	virtual ~Network() {};
+
 	/// Configuration Parser
 	void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
@@ -122,6 +125,12 @@ public:
 
 	/// Get the string 
 	std::string getName() const { return name; }
+
+	/// Check if a node can be sent throught this network
+	bool CanSend(Node *source_node, Node *destination_node, int size);
+
+	/// Send an event through network
+	void Send(Node *source_node, Node *destination_node, int size);
 
 
 
