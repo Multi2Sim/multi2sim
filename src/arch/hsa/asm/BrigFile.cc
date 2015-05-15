@@ -54,7 +54,7 @@ void BrigFile::LoadFileByPath(const std::string &path)
 	// Verify the file is valid
 	if (!isBrigFile(buffer.get()))
 	{
-		throw misc::Error(misc::fmt("%s is not an valid BRIG file",
+		throw misc::Error(misc::fmt("%s is not a valid BRIG file",
 					path.c_str()));
 	}
 
@@ -68,10 +68,14 @@ void BrigFile::LoadFileFromBuffer(const char *file)
 	// Check if the file is a BRIG file
 	if (!isBrigFile(file))
 	{
-		throw misc::Error("Not an valid BRIG file.");
+		throw misc::Error("Not a valid BRIG file.");
 	}
 
-	// FIXME: copy file content to local buffer
+	// Get the size of the module
+	BrigModuleHeader *header = (BrigModuleHeader *)file;
+	unsigned long long byteCount = header->byteCount;
+	buffer.reset(new char[byteCount]);
+	memcpy(buffer.get(), file, byteCount);
 }
 
 

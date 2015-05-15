@@ -450,8 +450,11 @@ int Driver::CallAgentGetInfo(mem::Memory *memory, unsigned args_ptr)
 
 	case HSA_AGENT_INFO_ISA:
 
-		throw misc::Panic("Unsupported agent_get_info attribute HSA_AGENT_INFO_ISA\n");
+	{
+		void *isa = nullptr;
+		memcpy(value_ptr, &isa, 8);
 		break;
+	}
 
 	case HSA_AGENT_INFO_EXTENSIONS:
 
@@ -1259,6 +1262,12 @@ int Driver::CallProgramFinalize(mem::Memory *memory, unsigned args_ptr)
 				HSA_STATUS_SUCCESS, 0,
 				memory, args_ptr);
 
+	return 0;
+}
+
+
+int Driver::CallProgramDestroy(mem::Memory *memory, unsigned args_ptr)
+{
 	return 0;
 }
 
