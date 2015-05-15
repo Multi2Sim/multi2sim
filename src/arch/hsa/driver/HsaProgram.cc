@@ -38,7 +38,7 @@ HsaProgram::HsaProgram(const HsaProgram &program):
 			it != program.modules.end();
 			it++)
 	{
-		AddModule((*it)->getPath().c_str());
+		AddModule((*it)->getBuffer());
 	}
 }
 
