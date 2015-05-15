@@ -62,6 +62,39 @@ TEST(TestEngine, should_be_able_to_schedule_event)
 	EXPECT_TRUE(handler_called);
 }
 
+class MockupEventFrame : public EventFrame
+{
+public:
+	int counter = 0;
+};
+
+void test_handler_2(EventType *type, EventFrame *frame)
+{
+	MockupEventFrame *data = dynamic_cast<MockupEventFrame *>(frame);
+	data->counter++;
+}
+
+TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
+{
+	// Set frame
+	auto frame = misc::new_shared<MockupEventFrame>();
+
+	// Set up esim engine
+	Engine *engine = Engine::getInstance();
+	FrequencyDomain domain("Test frequency domain", 2e3);
+	EventType type("test event", test_handler_2, &domain);
+	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
+
+	// Schedule next event 
+	engine->Schedule(&type, frame, 0);
+
+	// Process event
+	engine->ProcessEvents();
+
+	// Assertions
+	EXPECT_EQ(1, frame->counter);
+}
+
 }
 
 
