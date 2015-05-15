@@ -20,15 +20,16 @@
 #ifndef NETWORK_SYSTEM_H
 #define NETWORK_SYSTEM_H
 
-#include "Network.h"
 
 #include <cassert>
+#include <cmath>
 
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/esim/Event.h>
 
+#include "Network.h"
 
 namespace net
 {
@@ -102,6 +103,16 @@ class System
 
 	// General frequency if not specified in the network section
 	static int net_system_frequency;
+
+	// Get a exponential random value
+	static double RandomExponential(double lambda)
+	{
+		double x = (double) random() / RAND_MAX;
+		return log(1 - x) / -lambda;
+	}
+
+	// Uniform traffic simulation
+	static void UniformTrafficSimulation(Network *network);
 
 
 

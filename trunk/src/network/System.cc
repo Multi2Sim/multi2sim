@@ -17,11 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "System.h"
-
 #include <lib/cpp/CommandLine.h>
+#include <lib/esim/Engine.h>
+#include <lib/cpp/Misc.h>
 
-
+#include "System.h"
 
 namespace net
 {
@@ -206,10 +206,79 @@ void System::ProcessOptions()
 	// Stand-Alone requires config file
 	if (net_system->stand_alone)
 	{
+		// Check config file
 		if (config_file.empty())
 			throw Error(misc::fmt("Option --net-sim requires "
 					" --net-config option "));
+
+		// Check traffic pattern
+		if (traffic_pattern == TrafficPatternUniform)
+		{
+			System *system = getInstance();
+			UniformTrafficSimulation(
+					system->getNetworkByName(sim_net_name));
+		}
 	}
+}
+
+
+void System::UniformTrafficSimulation(Network *network)
+{
+	while (1)
+	{
+		// Init a list of double for injection time
+		auto inject_time = misc::new_unique_array<double>(
+				network->getNumberNodes());
+		for (int i = 0; i < network->getNumberNodes(); i++)
+		{
+			inject_time[i] = 0.0f;
+		}
+
+		// Get current cycle and check max cycles
+		esim::Engine *engine = esim::Engine::getInstance();
+		long long cycle = engine->getCycle();
+		if (cycle >= max_cycles)
+			break;
+
+		// Inject messages
+		for (int i = 0; i < network->getNumberNodes(); i++)
+		{
+			// Get end node
+			Node *node = network->getNodeByIndex(i);
+			if (node->getType() != "EndNode")
+				continue;
+
+			// Check turn for next injection
+			if (inject_time[i] > cycle)
+				continue;
+
+			// Get a random destination node
+			Node * dst_node = nullptr;
+			while (1)
+			{
+				int num_nodes = network->getNumberNodes();
+				int index = random() % num_nodes;
+				dst_node = network->getNodeByIndex(index);
+				if (dst_node->getType() == "EndNode" &&
+						dst_node != node)
+					break;
+			}
+
+			// Inject
+			while (inject_time[i] < cycle)
+			{
+				inject_time[i] += RandomExponential(
+						injection_rate);
+			}
+
+		}
+	}
+}
+
+
+Network *System::getNetworkByName(const std::string &name)
+{
+	return network_map[name];
 }
 
 }
