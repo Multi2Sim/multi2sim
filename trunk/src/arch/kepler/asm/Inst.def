@@ -46,13 +46,45 @@ DEFINST(ISCADD_B,
                 0x00,
                 0x03)
 
+DEFINST(ISAD_A,
+		"ISAD_A",
+		0x01,
+		0x02,
+		0x03,
+		0x03,
+		0x02,
+		0x01)
+		
+DEFINST(ISAD_B,
+		"ISAD_B",
+		0x02,
+		0x01,
+		0x03,
+		0x03,
+		0x02,
+		0x01)
+		
 DEFINST(IMAD,
 		"%pred IMAD%us%hi%po%sat%x%s %dst %cc_dst, %srcA, %srcB, %srcC;",
 		0x02,
 		0x02,
 		0x02,
 		0x00)
-
+		
+DEFINST(IMADSP_A,
+		"IMADSP_A",
+		0x02,
+		0x01,
+		0x02,
+		0x01)
+	
+DEFINST(IMADSP_B,
+		"IMADSP_B",
+		0x01,
+		0x02,
+		0x02,
+		0x01)
+		
 DEFINST(IADD_A,
 		"%pred IADD%sat%x%s %dst %cc_dst, %srcA, %srcB;",
 		0x02,
