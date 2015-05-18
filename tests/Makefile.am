@@ -62,6 +62,7 @@ src_arch_hsa_asm_test_SOURCES = \
 	
 src_arch_x86_timing_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
+	$(top_builddir)/src/arch/x86/emu/libemu.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_arch_x86_timing_test_SOURCES = \

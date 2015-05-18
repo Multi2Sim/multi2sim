@@ -188,21 +188,6 @@ public:
 
 	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions implemented in ThreadBranchPredictor.cc. These are the functions
-	// related with the Branch prediction.
-	//
-	///////////////////////////////////////////////////////////////////////
-
-	int LookupBranchPred(Uop &uop);
-	int LookupBranchPredMultiple(unsigned int eip, int count);
-	void UpdateBranchPred(Uop &uop);
-
-	unsigned int LookupBTB(Uop &uop);
-	void UpdateBTB(Uop &uop);
-	unsigned int GetNextBranch(unsigned int eip, unsigned int block_size);
-
-	///////////////////////////////////////////////////////////////////////
-	//
 	// Functions implemented in ThreadTraceCache.cc. These are the functions
 	// related with the Trace cache.
 	//

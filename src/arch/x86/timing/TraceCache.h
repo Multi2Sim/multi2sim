@@ -70,7 +70,7 @@ private:
 		unsigned int target;
 
 		// This field has to be the last in the structure.
-		// It is a list composed of 'x86_trace_cache_trace_size' elements.
+		// It is a list composed of 'trace_size' elements.
 		// Each element contains the address of the micro-instructions in the trace.
 		// Only if each single micro-instructions comes from a different macro-
 		// instruction can this array be full.
@@ -114,6 +114,27 @@ public:
 
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
+
+	/// Configuration getters
+	static int getPresent() { return present; }
+	static int getNumSets() { return num_sets; }
+	static int getAssoc() { return assoc; }
+	static int getTraceSize() { return trace_size; }
+	static int getMaxNumBranch() { return branch_max; }
+	static int getQueuesize() { return queue_size; }
+
+	/// Dump the trace cache report
+	void DumpReport(std::ostream &os = std::cout);
+
+	/// Record the Uop in trace cache
+	void RecordUop(Uop &uop);
+
+	/// Lookup in the trace cache
+	int Lookup(unsigned int eip, int pred,
+			int &mop_count, unsigned int mop_array[], unsigned int &neip);
+
+	/// Flush temporary trace of committed instructions back into the trace cache
+	static void Flush();
 
 };
 
