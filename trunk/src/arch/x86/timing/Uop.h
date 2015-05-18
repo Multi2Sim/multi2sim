@@ -20,6 +20,8 @@
 #ifndef X86_ARCH_TIMING_UOP_H
 #define X86_ARCH_TIMING_UOP_H
 
+#include <lib/cpp/Misc.h>
+
 #include <arch/x86/emu/UInst.h>
 
 #include "BranchPredictor.h"
@@ -28,7 +30,7 @@ namespace x86
 {
 
 // Constant value
-const unsigned int uop_magic = 0x10101010;
+const unsigned int UopMagic = 0x10101010;
 
 // Forward declarations
 class UInst;
@@ -40,12 +42,12 @@ class Uop
 {
 private:
 
-	// Micro-instruction 
-	std::unique_ptr<UInst> uinst;
+	// Micro-instruction
+	UInst *uinst = nullptr;
 	int flags = 0;
 
 	// Name and sequence numbers 
-	long long magic = uop_magic;  // Magic number for debugging
+	long long magic = UopMagic;  // Magic number for debugging
 	long long id = 0;  // Unique ID
 	long long id_in_core = 0;  // Unique ID in core
 
@@ -64,10 +66,10 @@ private:
 	bool trace_cache = false;  // Flag telling if uop came from trace cache
 
 	// Fields associated with macroinstruction 
-	int macro_op_index = 0;  // Index of uop within macroinstruction
-	int macro_op_count = 0;  // Number of uops within macroinstruction
-	int macro_op_size = 0;  // Corresponding macroinstruction size
-	long long macro_op_id = 0;  // Sequence number of macroinstruction
+	int mop_index = 0;  // Index of uop within macroinstruction
+	int mop_count = 0;  // Number of uops within macroinstruction
+	int mop_size = 0;  // Corresponding macroinstruction size
+	long long mop_id = 0;  // Sequence number of macroinstruction
 
 	// Logical dependencies 
 	int idep_count = 0;
@@ -121,9 +123,6 @@ private:
 
 public:
 
-	/// Constructor
-	Uop();
-
 	void FreeIfNotQueued();
 	void Dump();
 
@@ -131,51 +130,62 @@ public:
 	void CountDeps();
 
 	/// Setters
-	void setFlags(UInstFlag flag) { flags = flag; }
-	void setPrediction(BranchPredictorPred prediction)
+	void setUInst(UInst *uinst) {this->uinst = uinst; }
+	void setID(int id) { this->id = id; }
+	void setFlags(int flags) { this->flags = flags; }
+	void setPrediction(BranchPredictorPred pred)
 	{
-		pred = prediction;
+		this->pred = pred;
 	}
-	void setNeip(unsigned int addr) { neip = addr; }
-	void setEip(unsigned int addr) { eip = addr; }
-	void setPredictedNeip(unsigned int addr) { predicted_neip = addr; }
-	void setMacroOpSize(int size) { macro_op_size = size; }
-	void setBimodIndex(int index) { bimod_index = index; }
-	void setBimodPrediction(BranchPredictorPred prediction)
+	void setNeip(unsigned int neip) { this->neip = neip; }
+	void setEip(unsigned int eip) { this->eip = eip; }
+	void setPredictedNeip(unsigned int addr) { this->predicted_neip = addr; }
+	void setTargetNeip(unsigned int addr) { this->target_neip = addr; }
+	void setMopSize(int mop_size) { this->mop_size = mop_size; }
+	void setMopCount(int mop_count) { this->mop_count = mop_count; }
+	void setMopIndex(int mop_index) { this->mop_index = mop_index; }
+	void setMopId(long long mop_id) { this->mop_id = mop_id;}
+	void setBimodIndex(int bimod_index) { this->bimod_index = bimod_index; }
+	void setBimodPrediction(BranchPredictorPred pred)
 	{
-		bimod_pred = prediction;
+		this->bimod_pred = pred;
 	}
-	void setTwolevelBHTIndex(int index) { twolevel_bht_index = index; }
-	void setTwolevelPHTRow(int row) { twolevel_pht_row = row; }
-	void setTwolevelPHTCol(int col) { twolevel_pht_col = col; }
-	void setTwolevelPrediction(BranchPredictorPred prediction)
+	void setTwolevelBHTIndex(int index) { this->twolevel_bht_index = index; }
+	void setTwolevelPHTRow(int row) { this->twolevel_pht_row = row; }
+	void setTwolevelPHTCol(int col) { this->twolevel_pht_col = col; }
+	void setTwolevelPrediction(BranchPredictorPred pred)
 	{
-		twolevel_pred = prediction;
+		this->twolevel_pred = pred;
 	}
-	void setChoiceIndex(int index) { choice_index = index; }
-	void setChoicePrediction(BranchPredictorPred prediction)
+	void setChoiceIndex(int choice_index) { this->choice_index = choice_index; }
+	void setChoicePrediction(BranchPredictorPred pred)
 	{
-		choice_pred = prediction;
+		this->choice_pred = pred;
 	}
-	void setSpeculateMode(bool flag) { specmode = flag; }
+	void setSpeculateMode(bool flag) { this->specmode = flag; }
 
 	/// Getters
-	int getFlags() { return flags; }
-	BranchPredictorPred getPrediction() { return pred; }
-	UInst *getUinst() { return uinst.get(); }
-	unsigned int getNeip() { return neip; }
-	unsigned int getEip() { return eip; }
-	unsigned int getPredictedNeip() { return predicted_neip; }
-	int getMacroOpSize() { return macro_op_size; }
-	int getBimodIndex() { return bimod_index; }
-	BranchPredictorPred getBimodPrediction() { return bimod_pred; }
-	int getTwolevelBHTIndex() { return twolevel_bht_index; }
-	int getTwolevelPHTRow() { return twolevel_pht_row; }
-	int getTwolevelPHTCol() { return twolevel_pht_col; }
-	BranchPredictorPred getTwolevelPrediction() { return twolevel_pred; }
-	int getChoiceIndex() { return choice_index; }
-	BranchPredictorPred getChoicePrediction() { return choice_pred; }
-	bool getSpeculateMode() { return specmode; }
+	UInst *getUinst() { return uinst; }
+	int getID() const { return id; }
+	int getFlags() const { return flags; }
+	BranchPredictorPred getPrediction() const { return pred; }
+	unsigned int getNeip() const { return neip; }
+	unsigned int getEip() const { return eip; }
+	unsigned int getPredictedNeip() const { return predicted_neip; }
+	unsigned int getTargetNeip() const { return target_neip; }
+	int getMopSize() const { return mop_size; }
+	int getMopCount() const { return mop_count; }
+	int getMopIndex() const { return mop_index; }
+	long long getMopId() const { return mop_id; }
+	int getBimodIndex() const { return bimod_index; }
+	BranchPredictorPred getBimodPrediction() const { return bimod_pred; }
+	int getTwolevelBHTIndex() const { return twolevel_bht_index; }
+	int getTwolevelPHTRow() const { return twolevel_pht_row; }
+	int getTwolevelPHTCol() const { return twolevel_pht_col; }
+	BranchPredictorPred getTwolevelPrediction() const { return twolevel_pred; }
+	int getChoiceIndex() const { return choice_index; }
+	BranchPredictorPred getChoicePrediction() const { return choice_pred; }
+	bool getSpeculateMode() const { return specmode; }
 };
 
 }

@@ -162,7 +162,7 @@ BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
 	}
 
 	// An internal branch (string operations) is always predicted taken
-	if (uop.getUinst()->getOpcode() == UInstBranch)
+	if (uop.getUinst()->getOpcode() == UInstIbranch)
 	{
 		uop.setPrediction(BranchPredictorPredTaken);
 		return BranchPredictorPredTaken;
@@ -171,7 +171,7 @@ BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
 	// Perfect predictor
 	if (kind == KindPerfect)
 	{
-		if (uop.getNeip() != uop.getEip() + uop.getMacroOpSize())
+		if (uop.getNeip() != uop.getEip() + uop.getMopSize())
 			pred = BranchPredictorPredTaken;
 		else
 			pred = BranchPredictorPredNotTaken;
@@ -283,7 +283,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	assert(!uop.getSpeculateMode());
 	assert(uop.getFlags() & UInstFlagCtrl);
-	taken = uop.getNeip() != uop.getEip() + uop.getMacroOpSize();
+	taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
 
 	// Stats
 	accesses++;
@@ -374,7 +374,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	// updates at recovery, do it only for non-spec instructions.
 	if (hit && uop.getUinst()->getOpcode() == UInstCall && !uop.getSpeculateMode())
 	{
-		ras[ras_index] = uop.getEip() + uop.getMacroOpSize();
+		ras[ras_index] = uop.getEip() + uop.getMopSize();
 		ras_index = (ras_index + 1) % ras_size;
 	}
 

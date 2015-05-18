@@ -92,4 +92,57 @@ void TraceCache::DumpConfiguration(std::ostream &os)
 	os << misc::fmt("\tQueueSize: %d\n", queue_size);
 }
 
+
+void TraceCache::RecordUop(Uop &uop)
+{
+	// Local variable
+	bool taken = false;
+
+	// Only the first micro-instruction of a macro-instruction is inserted.
+	if (uop.getMopIndex())
+		return;
+
+	// If there is not enough space for macro-instruction, commit trace.
+	assert(!uop.getSpeculateMode());
+	assert(uop.getEip());
+	assert(uop.getID() == uop.getMopId());
+	if (temp->uop_count + uop.getMopCount() > trace_size)
+		Flush();
+
+	// If even after flushing the current trace, the number of micro-instructions
+	// does not fit in a trace line, this macro-instruction cannot be stored.
+	if (uop.getMopCount() > trace_size)
+		return;
+
+	// First instruction. Store trace tag.
+	if (!temp->uop_count)
+		temp->tag = uop.getEip();
+
+	// Add eip to list
+	temp->mop_array[temp->mop_count] = uop.getEip();
+	temp->mop_count++;
+	temp->uop_count += uop.getMopCount();
+	temp->target = 0;
+	temp->fall_through = uop.getEip() + uop.getMopSize();
+
+	// Instruction is branch. If maximum number of branches is reached,
+	// commit trace.
+	if (uop.getFlags() & UInstFlagCtrl)
+	{
+		taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
+		temp->branch_mask |= 1 << temp->branch_count;
+		temp->branch_flags |= taken << temp->branch_count;
+		temp->branch_count++;
+		temp->target = uop.getTargetNeip();
+		if (temp->branch_count == branch_max)
+			Flush();
+	}
+}
+
+
+void TraceCache::Flush()
+{
+
+}
+
 }
