@@ -125,16 +125,19 @@ public:
 	void DumpConfiguration(std::ostream &os = std::cout);
 
 	/// Configuration getters
-	Kind getKind() { return kind; }
-	int getBTBSets() { return btb_sets; }
-	int getBTBAssociativity() { return btb_assoc; }
-	int getRasSize() { return ras_size; }
-	int getBimodSize() { return bimod_size; }
-	int getChoiceSize() { return choice_size; }
-	int getTwolevelL1size() { return twolevel_l1size; }
-	int getTwolevelL2size() { return twolevel_l2size; }
-	int getTwolevelHistorySize() { return twolevel_history_size; }
-	int getTwolevelL2hight() { return twolevel_l2height; }
+	static Kind getKind() { return kind; }
+	static int getBTBSets() { return btb_sets; }
+	static int getBTBAssociativity() { return btb_assoc; }
+	static int getRasSize() { return ras_size; }
+	static int getBimodSize() { return bimod_size; }
+	static int getChoiceSize() { return choice_size; }
+	static int getTwolevelL1size() { return twolevel_l1size; }
+	static int getTwolevelL2size() { return twolevel_l2size; }
+	static int getTwolevelHistorySize() { return twolevel_history_size; }
+	static int getTwolevelL2hight() { return twolevel_l2height; }
+
+	/// Getters
+	char getBimodStatus(int index) const { return bimod[index]; }
 
 	/// Return prediction for an address (0=not taken, 1=taken)
 	///

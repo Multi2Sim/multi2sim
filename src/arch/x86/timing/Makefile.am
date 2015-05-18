@@ -83,6 +83,7 @@ libtiming_a_SOURCES = \
 	FunctionUnit.h\
 	\
 	Uop.h\
+	Uop.cc\
 	\
 	RegFile.h\
 	\
