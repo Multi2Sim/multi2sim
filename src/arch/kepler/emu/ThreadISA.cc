@@ -398,6 +398,16 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 	ISAUnsupportedFeature(inst);
 }
 
+void Thread::ExecuteInst_ISAD_A(Inst *inst)
+{
+	ISAUnsupportedFeature(inst);
+}
+
+void Thread::ExecuteInst_ISAD_B(Inst *inst)
+{
+	ISAUnsupportedFeature(inst);
+}
+
 void Thread::ExecuteInst_IMAD(Inst *inst)
 {
 	// Inst bytes format
@@ -480,6 +490,16 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
         		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
         		<<std::endl;
 	}
+}
+
+void Thread::ExecuteInst_IMADSP_A(Inst *inst)
+{
+	ISAUnsupportedFeature(inst);
+}
+
+void Thread::ExecuteInst_IMADSP_B(Inst *inst)
+{
+	ISAUnsupportedFeature(inst);
 }
 
 void Thread::ExecuteInst_IADD_A(Inst *inst)

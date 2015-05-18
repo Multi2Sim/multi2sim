@@ -375,8 +375,8 @@ Asm::Asm()
 	dec_table_c_b_c[AsmOpcode_C_B_C_B].next_table_high = 56;
 
 	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table = dec_table_c_b_c_c;
-	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_low = 56;
-	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_high = 55;
+	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_low = 55;
+	dec_table_c_b_c[AsmOpcode_C_B_C_C].next_table_high = 56;
 
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table = dec_table_c_b_c_c_a;
 	dec_table_c_b_c_c[AsmOpcode_C_B_C_C_A].next_table_low = 54;
