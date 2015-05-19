@@ -51,12 +51,21 @@ void BrigFile::LoadFileByPath(const std::string &path)
 	f.read(buffer.get(), size);
 	f.close();
 
+	std::cout << "File size " << size << std::endl;
+
 	// Verify the file is valid
 	if (!isBrigFile(buffer.get()))
 	{
 		throw misc::Error(misc::fmt("%s is not a valid BRIG file",
 					path.c_str()));
 	}
+
+	for (int i = 0; i < size; i++)
+	{
+		char *ptr = buffer.get();
+		printf("%c", ptr[i]);
+	}
+	std::cout << "\n";
 
 	// Prepare sections
 	PrepareSections();
@@ -76,6 +85,30 @@ void BrigFile::LoadFileFromBuffer(const char *file)
 	unsigned long long byteCount = header->byteCount;
 	buffer.reset(new char[byteCount]);
 	memcpy(buffer.get(), file, byteCount);
+
+	for (unsigned int i = 0; i < byteCount; i++)
+	{
+		const char *ptr = file;
+		printf("%c", ptr[i]);
+	}
+	std::cout << "\n";
+
+	// Prepare sections
+	PrepareSections();
+
+	/*
+	BrigSection *brig_section = getBrigSection(BRIG_SECTION_INDEX_CODE);
+	auto entry = brig_section->getFirstEntry<BrigCodeEntry>();
+	while(entry.get())
+	{
+		entry->Dump(std::cout);
+		entry = entry->NextTopLevelEntry();
+	}
+	*/
+
+	std::cout << "File size " << byteCount << std::endl;
+
+
 }
 
 

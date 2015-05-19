@@ -28,7 +28,7 @@ namespace net
 std::unique_ptr<Buffer> Node::AddInputBuffer(int size)
 {
 	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("in_buf_%d", input_buffers.size());
+	std::string name = misc::fmt("in_buf_%ld", input_buffers.size());
 	buffer->setIndex(input_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
@@ -42,7 +42,7 @@ std::unique_ptr<Buffer> Node::AddInputBuffer(int size)
 std::unique_ptr<Buffer> Node::AddOutputBuffer(int size)
 {
 	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("out_buf_%d", output_buffers.size());
+	std::string name = misc::fmt("out_buf_%ld", output_buffers.size());
 	buffer->setIndex(output_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
