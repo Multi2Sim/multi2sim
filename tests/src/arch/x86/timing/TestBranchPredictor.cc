@@ -74,6 +74,7 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 {
 	// Local variable declaration
+	const int num_branch_uop = 3;
 	Uop *uop;
 	BranchPredictorPred pred;
 	char bimod_status;
@@ -134,17 +135,29 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Weakly Taken -> Strongly Taken -> Weakly Taken -> Weakly Not Taken
 	// 2 -> 3 -> 2 -> 1
 	// Prediction: Taken -> Taken -> Taken
+	BranchPredictorPred pred_result[num_branch_uop] =
+	{
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken
+	};
+	int bimod_status_trace[num_branch_uop] =
+	{
+		3,
+		2,
+		1
+	};
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
 		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
 		pred = mock_uop_list[i]->getPrediction();
 		bimod_status = branch_predictor.getBimodStatus(mock_uop_list[i]->getBimodIndex());
-	}
 
-	// Assertions
-	EXPECT_EQ(BranchPredictorPredTaken, pred);
-	EXPECT_EQ(1, (int)bimod_status);
+		// Assertions
+		EXPECT_EQ(pred_result[i], pred);
+		EXPECT_EQ(bimod_status_trace[i], (int)bimod_status);
+	}
 }
 
 }

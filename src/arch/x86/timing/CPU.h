@@ -130,10 +130,6 @@ private:
 	// Name of currently simulated stage 
 	std::string stage;
 
-	// Used to prevent fetching of new instructions while timing
-	// simulator pipeline completes in-flight instructions 
-	int flushing = 0;
-
 	// From all contexts in the 'alloc' list of 'x86_emu', minimum value
 	// of variable 'ctx->alloc_cycle'. This value is used to decide whether
 	// the scheduler should be called at all to check for any context whose
@@ -143,9 +139,6 @@ private:
 
 	// List containing uops that need to report an 'end_inst' trace event 
 	std::list<std::unique_ptr<Uop>> uop_trace_list;
-
-	// Count of current OpenCL ND-Ranges executing on this CPU 
-	volatile int ndranges_running = 0;
 
 	// Statistics 
 	long long num_fast_forward_inst = 0;  // Fast-forwarded x86 instructions
@@ -202,7 +195,6 @@ public:
 	int Run();
 	void RunStages();
 	void FastForward();
-	void FastForwardOpenCL();
 
 	/// Trace functions
 	void AddToTraceList(Uop &uop);
@@ -212,7 +204,7 @@ public:
 	void UpdateOccupancyStats();
 
 	/// Read branch predictor configuration from configuration file
-	void ParseConfiguration(const std::string &section,
+	static void ParseConfiguration(const std::string &section,
 			misc::IniFile &config);
 };
 

@@ -20,6 +20,8 @@
 #ifndef X86_ARCH_TIMING_TIMING_H
 #define X86_ARCH_TIMING_TIMING_H
 
+#include <lib/cpp/String.h>
+
 #include <arch/common/Timing.h>
 
 #include "CPU.h"
@@ -37,7 +39,7 @@ class Timing : public comm::Timing
 	static std::unique_ptr<Timing> instance;
 
 	// CPU associated with this timing simulator
-	std::unique_ptr<CPU> cpu;
+	static CPU cpu;
 
 	// Configuration file name
 	static std::string config_file;
@@ -48,14 +50,13 @@ class Timing : public comm::Timing
 	// MMU report file name
 	static std::string mmu_report_file;
 
-	// Show CPU configuration file
+	// If true
+	// how a message describing the format for the x86 configuration file
+	// Passed with option --x86-help
 	static bool help;
 
 	// Message to display with '--x86-help'
 	static const std::string help_message;
-
-	// Flag to control whether the fast forward of OpenCL is enbaled
-	static bool opencl_fast_forward;
 
 	// Private constructor for singleton
 	Timing();
@@ -77,7 +78,7 @@ public:
 	static Timing *getInstance();
 
 	/// Create new CPU instance
-	void NewCPU();
+	static void NewCPU();
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful
@@ -106,7 +107,7 @@ public:
 	static void ProcessOptions();
 
 	/// Parse the configuration file
-	void ParseConfiguration(std::string &config_file);
+	static void ParseConfiguration(std::string &config_file);
 };
 
 } //namespace x86

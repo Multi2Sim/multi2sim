@@ -103,7 +103,7 @@ void TraceCache::RecordUop(Uop &uop)
 		return;
 
 	// If there is not enough space for macro-instruction, commit trace.
-	assert(!uop.getSpeculateMode());
+	assert(!uop.getSpeculativeMode());
 	assert(uop.getEip());
 	assert(uop.getID() == uop.getMopId());
 	if (temp->uop_count + uop.getMopCount() > trace_size)

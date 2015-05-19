@@ -281,7 +281,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	// pointer to combined branch prediction table
 	char *choice_ptr;
 
-	assert(!uop.getSpeculateMode());
+	assert(!uop.getSpeculativeMode());
 	assert(uop.getFlags() & UInstFlagCtrl);
 	taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
 
@@ -372,7 +372,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	// If there was a hit, we know whether branch is a call.
 	// In this case, push return address into RAS. To avoid
 	// updates at recovery, do it only for non-spec instructions.
-	if (hit && uop.getUinst()->getOpcode() == UInstCall && !uop.getSpeculateMode())
+	if (hit && uop.getUinst()->getOpcode() == UInstCall && !uop.getSpeculativeMode())
 	{
 		ras[ras_index] = uop.getEip() + uop.getMopSize();
 		ras_index = (ras_index + 1) % ras_size;
@@ -380,7 +380,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 
 	// If there was a hit, we know whether branch is a ret. In this case,
 	// pop target from the RAS, and ignore target obtained from BTB.
-	if (hit && uop.getUinst()->getOpcode() == UInstRet && !uop.getSpeculateMode())
+	if (hit && uop.getUinst()->getOpcode() == UInstRet && !uop.getSpeculativeMode())
 	{
 		ras_index = (ras_index + ras_size - 1) % ras_size;
 		target = ras[ras_index];
