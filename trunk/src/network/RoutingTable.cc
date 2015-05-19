@@ -42,22 +42,24 @@ void RoutingTable::InitRoutingTable()
 	{
 		for (int j = 0; j < dim; j++)
 		{
-			// Node *src_node = network->getNodeByIndex(i);
-			// Node *dst_node = network->getNodeByIndex(j);
-				
-			// Init routing table 
-			auto entry = misc::new_unique<RoutingTableEntry>();
 
-			// Set cost to 0 or infinity
-			if (i == j)
-				entry->setCost(0);
-			else
-				entry->setCost(INT_MAX);
-			
+			entries.emplace_back(std::unique_ptr<RoutingTableEntry>
+			(new RoutingTableEntry(i == j ? 0 : INT_MAX)));
+
 		}
 	}
-
-
 }
 
+RoutingTable::RoutingTableEntry *RoutingTable::Lookup(Node *source,
+		Node *destination)
+{
+	int dimension = network->getNumberNodes();
+	int i = source->getID();
+	int j = destination->getID();
+	assert((dimension > 0) && (i < dimension) && (j < dimension));
+
+    int location = i * dimension + j;
+    return entries[location].get();
 }
+}
+

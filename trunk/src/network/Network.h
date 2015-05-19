@@ -34,7 +34,7 @@ namespace net
 
 class Node;
 class NodeData;
-class Link;
+class Connection;
 
 class Network
 {
@@ -52,7 +52,7 @@ class Network
 	int end_node_count;
 
 	// List of links in the network
-	std::vector<std::unique_ptr<Link>> links;
+	std::vector<std::unique_ptr<Connection>> connections;
 
 	// Last cycle the snapshot is recorded
 	long long last_recorded_snapshot;
@@ -63,9 +63,11 @@ class Network
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &config);
 
-	// Parse the config file to add all the nodes belongs to the network
+	// Parse the config file to add all the links belongs to the network
 	void ParseConfigurationForLinks(misc::IniFile &config);
 
+	// Parse the config file to add all the buses belongs to the network
+	void ParseConfigurationForBuses(misc::IniFile &config);
 
 
 
@@ -177,22 +179,40 @@ public:
 	/// Add link to the network
 	virtual void AddLink(std::unique_ptr<Link> link);
 
-	/// Produce a Link by INI file section
-	virtual std::unique_ptr<Link> ProduceLinkByIniSection(
+	/// Configure Link by INI file section
+	void ProduceLinkByIniSection(
 			const std::string &section, 
 			misc::IniFile &config);
 
-	/// Produce a node by type string
+	/// Produce a link by link data
 	virtual std::unique_ptr<Link> ProduceLink(
 			const std::string &name, 
 			Node *source_node, 
-			Node *destination_node);
+			Node *destination_node,
+			int bandwidth,
+			int input_buffer_size,
+			int output_buffer_size,
+			int virtual_channels);
 
-	/// find and returns node in the network using node name
+	///
+	/// Buses
+	///
+
+	/// Configure Bus by INI file section
+	void ProduceBusByIniSection(const std::string &section,
+			misc::IniFile &config);
+
+	/// Produce a Bus by bus data
+	std::unique_ptr<Bus> ProduceBus(std::string name,
+			int bandwidth,
+			int lanes);
+
+	void AddBus(std::unique_ptr<Bus> bus);
+	/// find and returns Connection in the network using connection name
 	///
 	/// \param name
 	///	node name
-	virtual Link *getLinkByName(const std::string &name) const;
+	virtual Connection *getConnectionByName(const std::string &name) const;
 
 
 

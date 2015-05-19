@@ -30,6 +30,8 @@ class Switch : public Node
 {
 protected:
 
+	int bandwdith;
+
 public:
 
 	/// Return the type of the node

@@ -17,41 +17,52 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cstring>
+#ifndef NETWORK_CONNECTION_H
+#define NETWORK_CONNECTION_H
 
-#include "Node.h"
-#include "Buffer.h"
+#include <lib/cpp/String.h>
 
 namespace net
 {
 
-std::unique_ptr<Buffer> Node::AddInputBuffer(int size)
+class Network;
+
+class Connection
 {
-	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("in_buf_%d", input_buffers.size());
-	buffer->setIndex(input_buffers.size());
-	buffer->setName(name);
-	buffer->setSize(size);
-	buffer->setNode(this);
-	input_buffers.push_back(std::move(buffer));
+protected:
+	// Network associated with the connection
+	Network *network;
 
-	return buffer;
+	// Connection Name
+	std::string name;
 
+	// Connection bandwidth
+	int bandwidth;
+
+	// Connection Latency
+	int fix_latency;
+
+	// Number of cycles that the connection was busy
+	long long busy_cycles;
+
+public:
+
+	/// Set name
+	void setName(const std::string &name) { this->name = name; }
+
+	/// Get the name of the connection
+	std::string getName() const { return name; }
+
+	/// Set bandwidth -- not constant for future use
+	void setBandwidth(int bandwidth) { this->bandwidth = bandwidth;}
+
+	/// Dump connection information
+	virtual void Dump(std::ostream &os) const = 0;
+
+
+};
 }
 
-std::unique_ptr<Buffer> Node::AddOutputBuffer(int size)
-{
-	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("out_buf_%d", output_buffers.size());
-	buffer->setIndex(output_buffers.size());
-	buffer->setName(name);
-	buffer->setSize(size);
-	buffer->setNode(this);
-	output_buffers.push_back(std::move(buffer));
-
-	return buffer;
-
-}
 
 
-}
+#endif
