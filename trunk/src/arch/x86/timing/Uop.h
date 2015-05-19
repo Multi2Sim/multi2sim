@@ -60,7 +60,7 @@ private:
 	unsigned int neip = 0;  // Address of next non-speculative x86 macro-instruction
 	unsigned int predicted_neip = 0; // Address of next predicted x86 macro-instruction (for branches)
 	unsigned int target_neip = 0;  // Address of target x86 macro-instruction assuming branch taken (for branches)
-	bool specmode = false;
+	bool speculative_mode = false;
 	unsigned int fetch_address = 0;  // Physical address of memory access to fetch this instruction
 	long long fetch_access = 0;  // Access identifier to fetch this instruction
 	bool trace_cache = false;  // Flag telling if uop came from trace cache
@@ -162,7 +162,7 @@ public:
 	{
 		this->choice_pred = pred;
 	}
-	void setSpeculateMode(bool flag) { this->specmode = flag; }
+	void setSpeculativeMode(bool speculative_mode) { this->speculative_mode = speculative_mode; }
 
 	/// Getters
 	UInst *getUinst() { return uinst; }
@@ -185,7 +185,7 @@ public:
 	BranchPredictorPred getTwolevelPrediction() const { return twolevel_pred; }
 	int getChoiceIndex() const { return choice_index; }
 	BranchPredictorPred getChoicePrediction() const { return choice_pred; }
-	bool getSpeculateMode() const { return specmode; }
+	bool getSpeculativeMode() const { return speculative_mode; }
 };
 
 }

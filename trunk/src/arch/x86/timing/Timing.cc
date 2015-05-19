@@ -233,10 +233,7 @@ const std::string Timing::help_message =
 		"      For the two-level adaptive predictor, level 2 history size.\n"
 		"\n";
 
-//
-// Flag to control whether the fast forward of OpenCL is enabled
-//
-bool Timing::opencl_fast_forward = false;
+bool Timing::help = false;
 
 
 Timing::Timing()
@@ -284,24 +281,61 @@ void Timing::RegisterOptions()
 			"accesses performed on pipeline queues, etc. This option is only valid for"
 			"detailed x86 simulation (option '--x86-sim detailed').");
 
-	// Option --x86-opencl-fast-forward {True|Faulse}
-	command_line->RegisterBool("--x86-opencl-fast-forward {True|Faulse} (default = Faulse)",
-			opencl_fast_forward,
-			"Fast-forward (emulate) x86 instructions whenever an OpenCL kernel is not"
-			"being executed.  This option is only valid for detailed x86 simulation"
-			"(option '--x86-sim detailed')");
+	// Option --x86-help
+	command_line->RegisterBool("--x86-help", help,
+			"Display a help message describing the format of the x86 CPU context"
+			"configuration file.");
 }
 
 
 void Timing::ProcessOptions()
 {
+	// Configuration
+	if (!config_file.empty())
+		ParseConfiguration(config_file);
 
+	// Print x86 configuration INI format
+	if (help)
+	{
+		if (!help_message.empty())
+		{
+			misc::StringFormatter formatter(help_message);
+			// FIXME
+		}
+	}
 }
 
 
 void Timing::ParseConfiguration(std::string &config_file)
 {
+	// Get INI file format from the original configuration file
+	misc::IniFile ini_file(config_file);
 
+	// Parse configuration by their sections
+	for (int i = 0; i < ini_file.getNumSections(); i++)
+	{
+		std::string section_name = ini_file.getSection(i);
+		if (misc::StringPrefix(section_name, "General"))
+		{
+			CPU::ParseConfiguration(section_name, ini_file);
+		}
+		if (misc::StringPrefix(section_name, "Pipeline"))
+		{
+			CPU::ParseConfiguration(section_name, ini_file);
+		}
+		if (misc::StringPrefix(section_name, "Queues"))
+		{
+			CPU::ParseConfiguration(section_name, ini_file);
+		}
+		if (misc::StringPrefix(section_name, "BranchPredictor"))
+		{
+			BranchPredictor::ParseConfiguration(section_name, ini_file);
+		}
+		if (misc::StringPrefix(section_name, "TraceCache"))
+		{
+			TraceCache::ParseConfiguration(section_name, ini_file);
+		}
+	}
 }
 
 } // namespace x86
