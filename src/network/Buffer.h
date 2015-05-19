@@ -59,10 +59,13 @@ public:
 	void setSize(int size) { this->size = size;}
 
 	/// Set Index
-	void setIndex(int index) {this->index = index;}
+	void setIndex(int index) { this->index = index;}
+
+	/// Get Index
+	int getIndex() const { return index; }
 
 	/// Set Node
-	void setNode(Node* node) {this->node = node;}
+	void setNode(Node* node) { this->node = node; }
 
 };
 

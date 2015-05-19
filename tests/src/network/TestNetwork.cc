@@ -64,9 +64,18 @@ TEST(Network, should_create_according_to_ini_file)
 	EXPECT_TRUE(dynamic_cast<Switch *>(s1) != 0);
 
 	// Assert link n1-s1 is created
-	Connection *n1_s1 = net.getConnectionByName("N1-S1");
+	Connection *n1_s1 = net.getConnectionByName(
+		"link_<N1.out_buf_0>_<S1.in_buf_0>");
+	EXPECT_TRUE(!strcasecmp(dynamic_cast<Link *> 
+		(n1_s1)->getUserAssignedName().c_str(), "N1-S1"));
 	EXPECT_TRUE(n1_s1 != nullptr);
-	EXPECT_TRUE(dynamic_cast<Link *>(s1) != 0);
+	EXPECT_TRUE(dynamic_cast<Link *>(n1_s1) != 0);
+	
+	Connection *s1_n1 = net.getConnectionByName("link_<S1.out_buf_0>_<N1.in_buf_0>");
+	EXPECT_TRUE(!strcasecmp(dynamic_cast<Link *> 
+		(s1_n1)->getUserAssignedName().c_str(), "N1-S1"));
+	EXPECT_TRUE(s1_n1 != nullptr);
+	EXPECT_TRUE(dynamic_cast<Link *>(s1_n1) != 0);
 };
 
 /*

@@ -54,7 +54,8 @@ protected:
 public:
 	// Constructor
 	Bus(int lanes);
-	//
+
+	// Dump information about Bus
 	void Dump(std::ostream &os) const;
 
 
