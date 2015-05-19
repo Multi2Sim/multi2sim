@@ -1216,10 +1216,24 @@ int Driver::CallProgramAddModule(mem::Memory *memory, unsigned args_ptr)
 	debug << misc::fmt("program: 0x%016llx,\n", program);
 	debug << misc::fmt("module: 0x%016llx,\n", module);
 
+	// Get module header
+	BrigModuleHeader header;
+	memory->Read(module, sizeof(BrigModuleHeader), (char *)&header);
+	unsigned long long module_size = header.byteCount;
+
 	// Add module to program
-	char *module_name = memory->getBuffer((unsigned int)module, 5,
-			mem::Memory::AccessRead);
-	((HsaProgram *)program)->AddModule(module_name);
+	auto module_buffer = misc::new_unique_array<char>(module_size);
+	memory->Read((unsigned)module, module_size, module_buffer.get());
+
+	printf("Module buffer: (%p)\n", module_buffer.get());
+	for (unsigned int i = 0; i < 3536; i++)
+	{
+		char *ptr = module_buffer.get();
+		printf("%c", ptr[i]);
+	}
+	std::cout << "\n";
+
+	((HsaProgram *)program)->AddModule(module_buffer.get());
 
 	// Return success
 	setArgumentValue<unsigned int>(

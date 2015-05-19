@@ -46,7 +46,7 @@ void HsaExecutable::LoadCodeObject(HsaCodeObject *code_object)
 		= code_object->getModules();
 	for (auto it = modules->begin(); it != modules->end(); it++)
 	{
-		AddModule((*it)->getPath().c_str());	
+		AddModule((*it)->getBuffer());
 	}
 }
 
@@ -87,27 +87,33 @@ void HsaExecutable::preprocessRegisters(
 	while(entry.get() != next_module_entry.get())
 	{
 		// Skip directives
-		if (entry->isInstruction())
+		if (!entry->isInstruction())
 		{
-			// Traverse each operands of an instruction
-			for (unsigned int j = 0; j < entry->getOperandCount(); j++)
+			entry = entry->Next();
+			continue;
+		}
+
+		// Traverse each operands of an instruction
+		for (unsigned int j = 0; j < entry->getOperandCount(); j++)
+		{
+			auto operand = entry->getOperand(j);
+			if (!operand.get()) break;
+
+			operand->Dump(entry->getOperandType(j), std::cout);
+			if (operand->getKind() != BRIG_KIND_OPERAND_REGISTER)
+				continue;
+
+			BrigRegisterKind kind = operand->getRegKind();
+			unsigned short number = operand->getRegNumber() + 1;
+			if (number > max_reg[kind])
 			{
-				auto operand = entry->getOperand(j);
-				if (!operand.get()) break;
+				max_reg[kind] = number;
 
-				//operand->Dump(entry->getOperandType(j), std::cout);
-				if (operand->getKind() != BRIG_KIND_OPERAND_REGISTER)
-					continue;
-
-				BrigRegisterKind kind = operand->getRegKind();
-				unsigned short number = operand->getRegNumber() + 1;
-				if (number> max_reg[kind])
-				{
-					max_reg[kind] = number;
-
-				}
 			}
 		}
+
+		// Move entry to next
+		entry = entry->Next();
 	}
 
 	// Set last entry in the function
@@ -121,8 +127,10 @@ void HsaExecutable::preprocessRegisters(
 
 std::unique_ptr<BrigCodeEntry> HsaExecutable::loadArguments(
 		BrigFile *file,
-		unsigned short num_arg, std::unique_ptr<BrigCodeEntry> entry,
-		bool isInput, Function* function)
+		unsigned short num_arg,
+		std::unique_ptr<BrigCodeEntry> entry,
+		bool isInput,
+		Function* function)
 {
 	// Load output arguments
 	for (int i = 0; i < num_arg; i++)
@@ -208,9 +216,10 @@ unsigned int HsaExecutable::loadFunctions(BrigFile *file)
 	while (entry.get())
 	{
 		unsigned int kind = entry->getKind();
-		if (kind == BRIG_KIND_DIRECTIVE_FUNCTION ||
+		if ((kind == BRIG_KIND_DIRECTIVE_FUNCTION ||
 				kind == BRIG_KIND_DIRECTIVE_KERNEL ||
 				kind == BRIG_KIND_DIRECTIVE_INDIRECT_FUNCTION)
+				&& entry->isDefinition())
 		{
 			// Parse and create the function, insert the function
 			// in table
