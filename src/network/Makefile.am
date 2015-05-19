@@ -43,6 +43,10 @@ libnetwork_a_SOURCES = \
 	Buffer.h \
 	\
 	Bus.h \
+	Bus.cc \
+	\
+	Connection.h\
+	Connection.cc\
 	\
 	EndNode.h \
 	EndNode.cc \
@@ -58,8 +62,6 @@ libnetwork_a_SOURCES = \
 	\
 	RoutingTable.h \
 	RoutingTable.cc \
-	\
-	RoutingTableEntry.h \
 	\
 	System.cc \
 	System.h \

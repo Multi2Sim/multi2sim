@@ -20,13 +20,43 @@
 #ifndef NETWORK_BUS_H
 #define NETWORK_BUS_H
 
-#include "System.h"
-
+#include "Connection.h"
+#include "Buffer.h"
 namespace net
 {
 
-class Bus
+class Buffer;
+
+class Bus : public Connection
 {
+	class Lane
+	{
+
+	protected:
+		// lane owner
+		Buffer* owner;
+
+		// lane is busy until this cycle
+		long long busy_cycle;
+
+	};
+
+protected:
+	// List of the Lanes in the bus
+	std::vector<std::unique_ptr<Lane>> lanes;
+
+	// List of the source buffers connected to the bus
+	std::vector<std::unique_ptr<Buffer>> source_buffers;
+
+	// List of the destination buffers connected to the bus
+	std::vector<std::unique_ptr<Buffer>> destination_buffers;
+
+public:
+	// Constructor
+	Bus(int lanes);
+	//
+	void Dump(std::ostream &os) const;
+
 
 };
 
