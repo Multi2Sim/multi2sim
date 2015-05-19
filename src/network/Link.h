@@ -46,7 +46,7 @@ protected:
 
 	// Descriptive Name. Name is shared between two links in case of
 	// Bidirectional link.
-	std::string descriptive_name;
+	std::string user_assigned_name;
 
 	// Number of virtual channels on link
 	int virtual_channels;
@@ -78,9 +78,12 @@ public:
 	~Link() {};
 
 	/// Set descriptive Name
-	void setDescriptiveName(const std::string &name) {
-		this->descriptive_name = name;
+	void setUserAssignedName(const std::string &name) {
+		this->user_assigned_name = name;
 	}
+
+	/// Get Descriptive Name
+	std::string getUserAssignedName() const { return user_assigned_name; }
 
 	/// Set virtual channels
 	void setVirtualChannels(const int vc) {this->virtual_channels = vc;}
