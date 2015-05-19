@@ -22,20 +22,16 @@
 
 #include <lib/cpp/String.h>
 
+#include "Connection.h"
 namespace net
 {
 
-class Network;
 class Node;
 class Buffer;
 
-class Link
+class Link : public Connection
 {
 protected: 
-
-	// Network associated with the link
-	Network *network;
-
 	// Link source node
 	Node *source_node;
 
@@ -48,17 +44,12 @@ protected:
 	// Link destination buffer
 	Buffer *destination_buffer;
 
-	// Link bandwidth
-	int bandwidth;
-
-	// Node Name
-	std::string name;
+	// Descriptive Name. Name is shared between two links in case of
+	// Bidirectional link.
+	std::string descriptive_name;
 
 	// Number of virtual channels on link
 	int virtual_channels;
-
-
-
 
 	//
 	// Scheduling and arbitration
@@ -75,29 +66,24 @@ protected:
 	// channel arbitration
 	Buffer *scheduled_buffer;
 
-
-
-
 	//
 	// Statistics
 	//
-
-	// Number of cycles that the link was busy
-	long long busy_cycles;
 
 	// Number of bytes that was transfered through the links
 	long long transferred_bytes;
 
 public:
 
-	/// Virtual destructor
-	virtual ~Link() {};
+	~Link() {};
 
-	/// Set name
-	void setName(const std::string &name) { this->name = name; }
+	/// Set descriptive Name
+	void setDescriptiveName(const std::string &name) {
+		this->descriptive_name = name;
+	}
 
-	/// Get the name of the link
-	std::string getName() const { return name; }
+	/// Set virtual channels
+	void setVirtualChannels(const int vc) {this->virtual_channels = vc;}
 
 	/// Set source node
 	void setSourceNode(Node *node) { this->source_node = node; }
@@ -111,9 +97,6 @@ public:
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }
 
-	/// Dump link information
-	virtual void Dump(std::ostream &os) const;
-
 	/// Operator \c << invoking function Dump() on an output stream.
 	friend std::ostream &operator<<(std::ostream &os,
 			const Link &link)
@@ -121,6 +104,8 @@ public:
 		link.Dump(os);
 		return os;
 	}
+
+	void Dump(std::ostream &os) const;
 
 
 };

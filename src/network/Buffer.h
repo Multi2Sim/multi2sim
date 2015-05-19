@@ -29,11 +29,41 @@ class Node;
 
 class Buffer
 {
+protected:
 	// Node that the buffer belongs to
 	Node *node;
 
 	// Buffer Name
 	std::string name;
+
+	// Buffer index
+	int index;
+
+	// Buffer Size
+	int size;
+
+	// Occupied Buffer entries
+	int count;
+
+public:
+	/// Virtual Distructor
+	virtual ~Buffer() {};
+
+	/// Set name
+	void setName(const std::string &name) { this->name = name; }
+
+	/// Get the name of the link
+	std::string getName() const { return name; }
+
+	/// Set Buffer Size
+	void setSize(int size) { this->size = size;}
+
+	/// Set Index
+	void setIndex(int index) {this->index = index;}
+
+	/// Set Node
+	void setNode(Node* node) {this->node = node;}
+
 };
 
 

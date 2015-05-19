@@ -32,14 +32,6 @@ class Buffer;
 class Bus;
 class Network;
 
-class NodeData
-{
-public:
-
-	// Virtual destructor
-	virtual ~NodeData();
-};
-
 // A node in a interconnect network is where the packet is generated, 
 // forwarded and consumed
 class Node
@@ -55,15 +47,9 @@ protected:
 	// Node index
 	int id;
 
-	// User data. This is information required for memory system.
-	NodeData *user_data;
-
-	// Node bandwidth, required for bus and switch
-	// int bandwidth;
-
 	// Input/Output Buffer List
-	// std::vector<std::unique_ptr<Buffer>> input_buffers;
-	// std::vector<std::unique_ptr<Buffer>> output_buffers;
+	std::vector<std::unique_ptr<Buffer>> input_buffers;
+	std::vector<std::unique_ptr<Buffer>> output_buffers;
 
 	/*
 	// Bus and photonic nodes
@@ -97,6 +83,9 @@ public:
 	/// Get the type of the node
 	virtual std::string getType() const = 0;
 
+	/// Get the id of the node
+	virtual int getID() const {return id;}
+
 	/// Dump the node information. 
 	virtual void Dump(std::ostream &os) const = 0;
 
@@ -108,6 +97,11 @@ public:
 		return os;
 	}
 
+	/// Adding input buffer
+	std::unique_ptr<Buffer> AddInputBuffer(int size);
+
+	/// Adding output buffer
+	std::unique_ptr<Buffer> AddOutputBuffer(int size);
 
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers
