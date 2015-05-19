@@ -238,7 +238,9 @@ public:
 			int bandwidth,
 			int lanes);
 
+	/// Add the Bus to the Connection List of the Network
 	void AddBus(std::unique_ptr<Bus> bus);
+
 	/// find and returns Connection in the network using connection name
 	///
 	/// \param name

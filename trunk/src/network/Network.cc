@@ -25,6 +25,7 @@
 #include "Connection.h"
 #include "Network.h"
 #include "Bus.h"
+#include "Buffer.h"
 
 namespace net
 {
@@ -233,8 +234,9 @@ std::unique_ptr<Bus> Network::ProduceBus(std::string name,
 
 void Network::AddBus(std::unique_ptr<Bus> bus)
 {
-
+	connections.push_back(std::move(bus));
 }
+
 void Network::ParseConfigurationForLinks(misc::IniFile &config)
 {
 	for (int i = 0; i < config.getNumSections(); i++)
@@ -298,7 +300,7 @@ void Network::ProduceLinkByIniSection(
 
 	// Get type string
 	std::string type = config.ReadString(section, "Type", "Unidirectional");
-	if (!((strcasecmp(type.c_str(), "Unidirectional")) ||
+	if (((strcasecmp(type.c_str(), "Unidirectional")) &&
 			(strcasecmp(type.c_str(),"Bidirectional"))))
 	{
 		throw misc::Panic(misc::fmt("Link %s: Type %s not recognized",
@@ -368,7 +370,7 @@ void Network::ProduceLinkByIniSection(
 
 	// if link is identified as bidirectional add another link with reverse
 	// direction.
-	if (strcasecmp(type.c_str(), "Bidirectional"))
+	if (!(strcasecmp(type.c_str(), "Bidirectional")))
 	{
 		link = ProduceLink(name, destination_node, source_node, bandwidth,
 				output_buffer_size, input_buffer_size, virtual_channels);
@@ -388,7 +390,7 @@ std::unique_ptr<Link> Network::ProduceLink(
 			int virtual_channels)
 {
 	std::unique_ptr<Link> link = std::unique_ptr<Link>(new Link());
-	link->setName(name);
+	link->setUserAssignedName(name);
 	link->setSourceNode(source_node);
 	link->setDestinationNode(destination_node);
 	link->setBandwidth(bandwidth);
@@ -397,9 +399,9 @@ std::unique_ptr<Link> Network::ProduceLink(
 	std::string descriptive_name;
 	for (int i= 0; i < virtual_channels; i++)
 	{
-		auto source_buffer = source_node->AddInputBuffer(input_buffer_size);
-		auto destination_buffer = destination_node->AddOutputBuffer(
-				output_buffer_size);
+		auto source_buffer = source_node->AddOutputBuffer(output_buffer_size);
+		auto destination_buffer = destination_node->AddInputBuffer(
+				input_buffer_size);
 
 		if (i == 0)
 			descriptive_name = misc::fmt("link_<%s.%s>_<%s.%s>",
@@ -408,7 +410,7 @@ std::unique_ptr<Link> Network::ProduceLink(
 					destination_node->getName().c_str(),
 					destination_buffer->getName().c_str());
 	}
-	link->setDescriptiveName(descriptive_name);
+	link->setName(descriptive_name);
 
 	return link;
 }

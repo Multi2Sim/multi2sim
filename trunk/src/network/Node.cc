@@ -25,31 +25,34 @@
 namespace net
 {
 
-std::unique_ptr<Buffer> Node::AddInputBuffer(int size)
+Buffer* Node::AddInputBuffer(int size)
 {
-	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("in_buf_%ld", input_buffers.size());
+	auto buffer = misc::new_unique<Buffer> ();
+	std::string name = misc::fmt("in_buf_%d", (unsigned int) input_buffers.size());
 	buffer->setIndex(input_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
 	buffer->setNode(this);
-	input_buffers.push_back(std::move(buffer));
 
-	return buffer;
+	Buffer* return_buffer = buffer.get();
+	input_buffers.emplace_back(std::move(buffer));
 
+	return return_buffer;
 }
 
-std::unique_ptr<Buffer> Node::AddOutputBuffer(int size)
+Buffer* Node::AddOutputBuffer(int size)
 {
-	std::unique_ptr<Buffer> buffer = std::unique_ptr<Buffer>(new Buffer());
-	std::string name = misc::fmt("out_buf_%ld", output_buffers.size());
+	auto buffer = misc::new_unique<Buffer> ();
+	std::string name = misc::fmt("out_buf_%d", (unsigned int) output_buffers.size());
 	buffer->setIndex(output_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
 	buffer->setNode(this);
+
+	Buffer* return_buffer = buffer.get();
 	output_buffers.push_back(std::move(buffer));
 
-	return buffer;
+	return return_buffer;
 
 }
 

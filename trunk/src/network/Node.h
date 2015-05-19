@@ -98,10 +98,10 @@ public:
 	}
 
 	/// Adding input buffer
-	std::unique_ptr<Buffer> AddInputBuffer(int size);
+	Buffer* AddInputBuffer(int size);
 
 	/// Adding output buffer
-	std::unique_ptr<Buffer> AddOutputBuffer(int size);
+	Buffer* AddOutputBuffer(int size);
 
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers
