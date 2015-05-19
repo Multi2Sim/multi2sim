@@ -188,18 +188,6 @@ public:
 
 	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions implemented in ThreadTraceCache.cc. These are the functions
-	// related with the Trace cache.
-	//
-	///////////////////////////////////////////////////////////////////////
-	void DumpTraceCacheReport();
-
-	void RecordUopInTraceCache(Uop &uop);
-	int LookupTraceCache(unsigned int eip, int pred,
-			int &mop_count, unsigned int mop_array[], unsigned int &neip);
-
-	///////////////////////////////////////////////////////////////////////
-	//
 	// Functions implemented in ThreadRegFile.cc. These are the functions
 	// related with the register file.
 	//
