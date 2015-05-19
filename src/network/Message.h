@@ -25,6 +25,8 @@ namespace net
 
 class Message
 {
+private:
+
 	// Source node
 	Node *source_node;
 

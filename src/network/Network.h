@@ -20,14 +20,16 @@
 #ifndef NETWORK_NETWORK_H
 #define NETWORK_NETWORK_H
 
+#include <lib/cpp/IniFile.h>
+#include <lib/cpp/String.h>
+#include <lib/esim/Event.h>
+
 #include "System.h"
 #include "Node.h"
 #include "Link.h"
 #include "Bus.h"
 #include "Buffer.h"
-
-#include <lib/cpp/IniFile.h>
-#include <lib/cpp/String.h>
+#include "RoutingTable.h"
 
 namespace net
 {
@@ -43,7 +45,7 @@ class Network
 	std::string name;
 
 	// Message ID counter
-	long long msg_id_counter;
+	long long msg_id_counter = 0;
 
 	// List of nodes in the Network
 	std::vector<std::unique_ptr<Node>> nodes;
@@ -55,10 +57,13 @@ class Network
 	std::vector<std::unique_ptr<Connection>> connections;
 
 	// Last cycle the snapshot is recorded
-	long long last_recorded_snapshot;
+	long long last_recorded_snapshot = 0;
 
 	// Last offered bandwidth recorded for the snapshot
-	long long last_recorded_offered_bandwidth;
+	long long last_recorded_offered_bandwidth = 0;
+
+	// Routing table
+	std::unique_ptr<RoutingTable> routing_table;
 
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &config);
@@ -71,13 +76,18 @@ class Network
 
 
 
+
 	//
 	// Default Values
 	//
 
-	// Default buffer size
+	// Default input buffer size
 	int default_input_buffer_size;
+
+	// Default output buffer size
 	int default_output_buffer_size;
+
+	// Default bandwidth
 	int default_bandwidth;
 
 	// Defaule packet size
@@ -128,11 +138,32 @@ public:
 	/// Get the string 
 	std::string getName() const { return name; }
 
+	/// Set routing table
+	void setRoutingTable(std::unique_ptr<RoutingTable> routing_table)
+	{
+		this->routing_table = std::move(routing_table);
+	}
+
+	/// Get routing table
+	const RoutingTable *getRoutingTable() const 
+	{
+		return routing_table.get();
+	}
+
 	/// Check if a node can be sent throught this network
 	bool CanSend(Node *source_node, Node *destination_node, int size);
 
 	/// Send an event through network
-	void Send(Node *source_node, Node *destination_node, int size);
+	void Send(Node *source_node, Node *destination_node, int size,
+			esim::EventType *receive,
+			esim::EventFrame *receive_frame);
+
+	/// Request to send a packet
+	void RequestSend(Node *source_node, Node *destination_node, int size, 
+			esim::EventType *receive_event,
+			esim::EventFrame *receive_frame,
+			esim::EventType *retry_event,
+			esim::EventFrame *retry_frame);
 
 
 

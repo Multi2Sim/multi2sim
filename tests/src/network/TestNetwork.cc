@@ -24,6 +24,7 @@
 #include <network/EndNode.h>
 #include <network/Switch.h>
 #include <network/Link.h>
+#include <network/Connection.h>
 
 namespace net
 {
@@ -63,9 +64,27 @@ TEST(Network, should_create_according_to_ini_file)
 	EXPECT_TRUE(dynamic_cast<Switch *>(s1) != 0);
 
 	// Assert link n1-s1 is created
-	Link *n1_s1 = net.getLinkByName("N1-S1");
+	Connection *n1_s1 = net.getConnectionByName("N1-S1");
 	EXPECT_TRUE(n1_s1 != nullptr);
-}
+	EXPECT_TRUE(dynamic_cast<Link *>(s1) != 0);
+};
+
+/*
+TEST(Network, should_throw_error_if_no_route)
+{
+	// Mockup routing table
+	class MockupRoutingTable : public RoutingTable
+	{
+		RoutingTableEntry *Lookup(Node *source, Node *destination) 
+				override
+		{
+			return nullptr;
+		}
+	}
+
+	Network net("mynet");
+};
+*/
 
 }
 
