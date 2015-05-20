@@ -134,6 +134,7 @@ void TraceCache::RecordUop(Uop &uop)
 		temp->branch_flags |= taken << temp->branch_count;
 		temp->branch_count++;
 		temp->target = uop.getTargetNeip();
+		temp->branch = true;
 		if (temp->branch_count == branch_max)
 			Flush();
 	}
@@ -142,7 +143,81 @@ void TraceCache::RecordUop(Uop &uop)
 
 void TraceCache::Flush()
 {
+	// Local variable declaration
+	TraceCacheEntry *entry_ptr;
+	TraceCacheEntry *found_entry = nullptr;
+	int found_way = -1;
 
+	// There must be something to commit
+	if (!temp->uop_count)
+		return;
+
+	// If last instruction was a branch, remove it from the mask and flags fields,
+	// since this prediction does not affect the trace. Instead, the 'target'
+	// field of the trace cache line will be stored.
+	assert(temp->tag);
+	if (temp->branch)
+	{
+		assert(temp->branch_count);
+		temp->branch_count--;
+		temp->branch_mask &= ~(1 << temp->branch_count);
+		temp->branch_flags &= ~(1 << temp->branch_count);
+	}
+
+	// Allocate new line for the trace. If trace is already in the cache,
+	// do nothing. If there is any invalid entry, choose it.
+	int set = temp->tag % num_sets;
+	for (int way = 0; way < assoc; way++)
+	{
+		// Invalid entry found. Since an invalid entry should appear
+		// consecutively and at the end of the set, there is no hope
+		// that the trace will be in a later way. Stop here.
+		TraceCacheEntry *entry_ptr = &entry[set * assoc + way];
+		if (!entry_ptr->tag)
+		{
+			found_entry = entry_ptr;
+			found_way = way;
+			break;
+		}
+
+		// Hit
+		if (entry_ptr->tag == temp->tag && entry_ptr->branch_mask == temp->branch_mask
+				&& entry_ptr->branch_flags == temp->branch_flags)
+		{
+			found_entry = entry_ptr;
+			found_way = way;
+			break;
+		}
+	}
+
+	// If no invalid entry found, look for LRU.
+	if (!found_entry)
+	{
+		for (int way = 0; way < assoc; way++)
+		{
+			entry_ptr = &entry[set * assoc + way];
+			entry_ptr->counter--;
+			if (entry_ptr->counter < 0)
+			{
+				entry_ptr->counter = assoc - 1;
+				found_entry = entry_ptr;
+				found_way = way;
+			}
+		}
+	}
+
+	// Flush temporary trace and reset it. When flushing, all fields are
+	// copied except for LRU counter.
+	assert(found_entry);
+	assert(found_way >= 0);
+	temp->counter = found_entry->counter;
+	TraceCacheEntry *temp_ptr = temp.get();
+	memcpy(found_entry, temp_ptr, sizeof(TraceCacheEntry));
+	memset(temp_ptr, 0, sizeof(TraceCacheEntry));
+
+	// Statistics
+	trace_length_acc += found_entry->uop_count;
+	trace_length_count++;
 }
 
 }
