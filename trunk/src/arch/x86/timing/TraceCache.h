@@ -48,9 +48,6 @@ private:
 		int uop_count;
 		int mop_count;
 
-		//trace->branch_mask |= 1 << trace->branch_count;
-		//trace->branch_flags |= taken << trace->branch_count;
-
 		// Number of branches in the trace 
 		int branch_count;
 
@@ -61,6 +58,9 @@ private:
 		// taken branch. The MSB corresponds to the last branch in the trace.
 		// The LSB corresponds to the first branch in the trace.
 		int branch_flags;
+
+		// Flag that indicate whether this instruction is a branch or not
+		bool branch = false;
 
 		// Address of the instruction following the last instruction in the
 		// trace.
@@ -74,7 +74,7 @@ private:
 		// Each element contains the address of the micro-instructions in the trace.
 		// Only if each single micro-instructions comes from a different macro-
 		// instruction can this array be full.
-		unsigned int mop_array[0];
+		std::vector<unsigned int> mop_array;
 	};
 
 	// Trace cache lines ('sets' * 'assoc' elements) 
@@ -123,6 +123,12 @@ public:
 	static int getMaxNumBranch() { return branch_max; }
 	static int getQueuesize() { return queue_size; }
 
+	/// Statistic setters
+
+
+	/// Statistic getters
+
+
 	/// Dump the trace cache report
 	void DumpReport(std::ostream &os = std::cout);
 
@@ -134,7 +140,7 @@ public:
 			int &mop_count, unsigned int mop_array[], unsigned int &neip);
 
 	/// Flush temporary trace of committed instructions back into the trace cache
-	static void Flush();
+	void Flush();
 
 };
 
