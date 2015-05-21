@@ -697,7 +697,6 @@ void BrigCodeEntry::DumpBody(std::unique_ptr<BrigCodeEntry> start,
 	os << "\n{\n";
 	
 	Asm::getInstance()->IndentMore();
-	//os << misc::fmt("end: %p\n", end.get());
 	std::unique_ptr<BrigCodeEntry> entry = std::move(start);
 	while(true)
 	{

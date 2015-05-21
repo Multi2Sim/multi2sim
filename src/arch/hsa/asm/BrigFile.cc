@@ -60,13 +60,6 @@ void BrigFile::LoadFileByPath(const std::string &path)
 					path.c_str()));
 	}
 
-	for (int i = 0; i < size; i++)
-	{
-		char *ptr = buffer.get();
-		printf("%c", ptr[i]);
-	}
-	std::cout << "\n";
-
 	// Prepare sections
 	PrepareSections();
 }
@@ -86,28 +79,8 @@ void BrigFile::LoadFileFromBuffer(const char *file)
 	buffer.reset(new char[byteCount]);
 	memcpy(buffer.get(), file, byteCount);
 
-	for (unsigned int i = 0; i < byteCount; i++)
-	{
-		const char *ptr = file;
-		printf("%c", ptr[i]);
-	}
-	std::cout << "\n";
-
 	// Prepare sections
 	PrepareSections();
-
-	/*
-	BrigSection *brig_section = getBrigSection(BRIG_SECTION_INDEX_CODE);
-	auto entry = brig_section->getFirstEntry<BrigCodeEntry>();
-	while(entry.get())
-	{
-		entry->Dump(std::cout);
-		entry = entry->NextTopLevelEntry();
-	}
-	*/
-
-	std::cout << "File size " << byteCount << std::endl;
-
 
 }
 

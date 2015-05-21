@@ -84,8 +84,10 @@ void HsaExecutable::preprocessRegisters(
 	unsigned int max_reg[4] = {0, 0, 0, 0};
 
 	// Traverse all instructions
-	while(entry.get() != next_module_entry.get())
+	while(entry.get() && next_module_entry.get() &&
+			entry->getOffset() != next_module_entry->getOffset())
 	{
+		entry->Dump(std::cout);
 		// Skip directives
 		if (!entry->isInstruction())
 		{
