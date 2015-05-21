@@ -22,6 +22,9 @@
 namespace x86
 {
 
+// Singleton instance
+std::unique_ptr<Timing> Timing::instance;
+
 //
 // Configuration file name
 //
@@ -235,6 +238,12 @@ const std::string Timing::help_message =
 
 bool Timing::help = false;
 
+// Debug file
+std::string Timing::trace_cache_debug_file;
+
+// Debuggers
+misc::Debug Timing::trace_cache_debug;
+
 
 Timing::Timing()
 {
@@ -251,6 +260,24 @@ Timing *Timing::getInstance()
 	// Create instance
 	instance.reset(new Timing());
 	return instance.get();
+}
+
+
+bool Timing::Run()
+{
+	return false;
+}
+
+
+void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
+{
+
+}
+
+
+void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
+{
+
 }
 
 
@@ -285,6 +312,10 @@ void Timing::RegisterOptions()
 	command_line->RegisterBool("--x86-help", help,
 			"Display a help message describing the format of the x86 CPU context"
 			"configuration file.");
+
+	// Option --x86-debug-trace-cache <file>
+	command_line->RegisterString("--x86-debug-trace-cache <file>", trace_cache_debug_file,
+			"Debug information for trace cache.");
 }
 
 
@@ -303,6 +334,9 @@ void Timing::ProcessOptions()
 			// FIXME
 		}
 	}
+
+	// Debuggers
+	trace_cache_debug.setPath(trace_cache_debug_file);
 }
 
 

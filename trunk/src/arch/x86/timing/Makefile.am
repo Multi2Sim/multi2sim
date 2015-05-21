@@ -75,6 +75,7 @@ libtiming_a_SOURCES = \
 	Timing.cc\
 	\
 	CPU.h\
+	CPU.cc\
 	\
 	Core.h\
 	\

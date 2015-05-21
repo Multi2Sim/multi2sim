@@ -23,14 +23,21 @@
 #include <lib/cpp/IniFile.h>
 
 #include "Thread.h"
+#include "Timing.h"
 
 namespace x86
 {
+
+// Forward declaration
+class Timing;
 
 // Trace cache class
 class TraceCache
 {
 private:
+
+	// The timing simulator the trace cache belongs to
+	Timing *timing;
 
 	// Name of the trace cache
 	std::string name;
@@ -136,8 +143,8 @@ public:
 	void RecordUop(Uop &uop);
 
 	/// Lookup in the trace cache
-	int Lookup(unsigned int eip, int pred,
-			int &mop_count, unsigned int mop_array[], unsigned int &neip);
+	bool Lookup(unsigned int eip, int pred,
+			TraceCacheEntry &return_entry, unsigned int &neip);
 
 	/// Flush temporary trace of committed instructions back into the trace cache
 	void Flush();

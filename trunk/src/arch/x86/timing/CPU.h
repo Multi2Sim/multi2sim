@@ -52,11 +52,7 @@ public:
 		RecoverKindWriteback,
 		RecoverKindCommit
 	};
-	misc::StringMap RecoverKindMap
-	{
-		{"Writeback", RecoverKindWriteback},
-		{"Commit", RecoverKindCommit}
-	};
+	static misc::StringMap RecoverKindMap;
 
 	// Fetch stage 
 	enum FetchKind
@@ -66,12 +62,7 @@ public:
 		FetchKindTimeslice,
 		FetchKindSwitchonevent
 	};
-	misc::StringMap FetchKindMap
-	{
-		{"Shared", FetchKindShared},
-		{"TimeSlice", FetchKindTimeslice},
-		{"SwitchOnEvent", FetchKindSwitchonevent},
-	};
+	static misc::StringMap FetchKindMap;
 
 	// Dispatch stage 
 	enum DispatchKind
@@ -80,11 +71,7 @@ public:
 		DispatchKindShared,
 		DispatchKindTimeslice,
 	};
-	misc::StringMap DispatchKindMap
-	{
-		{"Shared", DispatchKindShared},
-		{"TimeSlice", DispatchKindTimeslice},
-	};
+	static misc::StringMap DispatchKindMap;
 
 	// Issue stage 
 	enum IssueKind
@@ -93,11 +80,7 @@ public:
 		IssueKindShared,
 		IssueKindTimeslice,
 	};
-	misc::StringMap IssueKindMap
-	{
-		{"Shared", IssueKindShared},
-		{"TimeSlice", IssueKindTimeslice},
-	};
+	static misc::StringMap IssueKindMap;
 
 	// Commit stage 
 	enum CommitKind
@@ -105,11 +88,7 @@ public:
 		CommitKindShared = 0,
 		CommitKindTimeslice
 	};
-	misc::StringMap CommitKindMap
-	{
-		{"Shared", CommitKindShared},
-		{"TimeSlice", CommitKindTimeslice},
-	};
+	static misc::StringMap CommitKindMap;
 
 
 private:
@@ -166,18 +145,34 @@ private:
 
 	// CPU recover parameter
 	static int recover_penalty;
+	static RecoverKind recover_kind;
+
+	// CPU fetch parameter
+	static FetchKind fetch_kind;
 
 	// CPU decode stage parameter
 	static int decode_width;
 
 	// CPU dispatch stage parameter
 	static int dispatch_width;
+	static DispatchKind dispatch_kind;
 
 	// CPU issue stage parameter
 	static int issue_width;
+	static IssueKind issue_kind;
 
 	// CPU commit stage parameter
 	static int commit_width;
+	static CommitKind commit_kind;
+
+	// Other CPU parameter
+	static bool process_prefetch_hints;
+	static bool use_nc_store;
+	static bool prefetch_history_size;
+	static int occupancy_stats;
+
+	// Queue parameter
+
 
 public:
 

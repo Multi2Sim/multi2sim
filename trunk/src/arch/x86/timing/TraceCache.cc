@@ -39,6 +39,7 @@ TraceCache::TraceCache(const std::string &name)
 	name(name)
 {
 	// Initialize 
+	timing = Timing::getInstance();
 	this->entry = misc::new_unique_array<TraceCacheEntry>(num_sets * assoc);
 	this->temp = misc::new_unique<TraceCacheEntry>();
 
@@ -141,6 +142,66 @@ void TraceCache::RecordUop(Uop &uop)
 }
 
 
+bool TraceCache::Lookup(unsigned int eip, int pred,
+		TraceCacheEntry &return_entry, unsigned int &neip)
+{
+	// Local variable declaration
+	TraceCacheEntry *entry_ptr;
+	TraceCacheEntry *found_entry = nullptr;
+	int set, way;
+	bool taken;
+
+	// Debug
+	timing->trace_cache_debug << misc::fmt("** Lookup **\n");
+	timing->trace_cache_debug << misc::fmt("eip = 0x%x, pred = ", eip);
+	timing->trace_cache_debug << misc::fmt("\n");
+
+	// Look for trace cache line
+	set = eip % num_sets;
+	for (way = 0; way < assoc; way++)
+	{
+		entry_ptr = &entry[set * assoc + way];
+		if (entry_ptr->tag == eip && ((pred & entry_ptr->branch_mask) == entry_ptr->branch_flags))
+		{
+			found_entry = entry_ptr;
+			break;
+		}
+	}
+
+	// Statistics
+	accesses++;
+	if (found_entry)
+		hits++;
+
+	// Miss
+	if (!found_entry)
+	{
+		timing->trace_cache_debug << misc::fmt("Miss\n");
+		timing->trace_cache_debug << misc::fmt("\n");
+		return false;
+	}
+
+	// Calculate address of the next instruction to fetch after this trace.
+	// The 'neip' value will be the trace 'target' if the last instruction in
+	// the trace is a branch and 'pred' predicts it taken.
+	taken = found_entry->target && (pred & (1 << found_entry->branch_count));
+	neip = taken ? found_entry->target : found_entry->fall_through;
+
+	// Debug
+	timing->trace_cache_debug << misc::fmt("Hit - Set = %d, Way = %d\n", set, way);
+	timing->trace_cache_debug << misc::fmt("Next trace prediction = %c\n", taken ? 'T' : 'N');
+	timing->trace_cache_debug << misc::fmt("Next fetch address = 0x%x\n", neip);
+	timing->trace_cache_debug << misc::fmt("\n");
+
+
+	// Return entry
+	return_entry = *found_entry;
+
+	// Hit
+	return true;
+}
+
+
 void TraceCache::Flush()
 {
 	// Local variable declaration
@@ -214,6 +275,11 @@ void TraceCache::Flush()
 	TraceCacheEntry *temp_ptr = temp.get();
 	memcpy(found_entry, temp_ptr, sizeof(TraceCacheEntry));
 	memset(temp_ptr, 0, sizeof(TraceCacheEntry));
+
+	// Debug
+	timing->trace_cache_debug << misc::fmt("** Commit trace **\n");
+	timing->trace_cache_debug << misc::fmt("Set = %d, Way = %d\n", set, found_way);
+	timing->trace_cache_debug << misc::fmt("\n");
 
 	// Statistics
 	trace_length_acc += found_entry->uop_count;
