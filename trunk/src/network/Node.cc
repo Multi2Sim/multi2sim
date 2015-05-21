@@ -28,7 +28,8 @@ namespace net
 Buffer* Node::AddInputBuffer(int size)
 {
 	auto buffer = misc::new_unique<Buffer> ();
-	std::string name = misc::fmt("in_buf_%d", (unsigned int) input_buffers.size());
+	std::string name = misc::fmt("in_buf_%d",
+			(unsigned int) input_buffers.size());
 	buffer->setIndex(input_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
@@ -43,7 +44,8 @@ Buffer* Node::AddInputBuffer(int size)
 Buffer* Node::AddOutputBuffer(int size)
 {
 	auto buffer = misc::new_unique<Buffer> ();
-	std::string name = misc::fmt("out_buf_%d", (unsigned int) output_buffers.size());
+	std::string name = misc::fmt("out_buf_%d",
+			(unsigned int) output_buffers.size());
 	buffer->setIndex(output_buffers.size());
 	buffer->setName(name);
 	buffer->setSize(size);
