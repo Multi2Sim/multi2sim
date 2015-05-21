@@ -20,6 +20,12 @@
 #ifndef ARCH_HSA_DRIVER_HSAEXECUTABLESYMBOL_H
 #define ARCH_HSA_DRIVER_HSAEXECUTABLESYMBOL_H
 
+#include <string>
+
+#include <arch/hsa/emu/Function.h>
+
+#include "HsaExecutable.h"
+
 namespace HSA
 {
 
@@ -62,6 +68,15 @@ public:
 	{
 		return directive;
 	}
+
+	/// Get kernel argument segment size
+	unsigned int getKernelArgumentSize() const
+	{
+		std::string name = directive->getName();
+		Function *function = executable->getFunction(name);
+		return function->getArgumentSize();
+	}
+
 };
 
 }  // namespace HSA

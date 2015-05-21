@@ -22,6 +22,8 @@
 
 #include "HsaProgram.h"
 
+#include <arch/hsa/asm/BrigFile.h>
+
 namespace HSA
 {
 class HsaProgram;

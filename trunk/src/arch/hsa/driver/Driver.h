@@ -98,12 +98,10 @@ class Driver: public comm::Driver
 	template <typename T>
 	static T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
 	{
-		// Get the pointer to that argument 
-		T *buffer = (T *)memory->getBuffer(args_ptr + offset, sizeof(T), 
-				mem::Memory::AccessRead);
-
-		// Dereference the pointer and return the value
-		return (*buffer);	
+		// Read from memory
+		T value;
+		memory->Read(args_ptr + offset, sizeof(T), (char *)&value);
+		return value;
 	}
 
 	// Set the the value at a certain memory space
@@ -111,12 +109,7 @@ class Driver: public comm::Driver
 	static void setArgumentValue(T value, int offset, mem::Memory *memory,
 			unsigned args_ptr)
 	{
-		// Get the pointer to the argument
-		T *buffer = (T *)memory->getBuffer(args_ptr + offset, sizeof(T), 
-				mem::Memory::AccessWrite);
-
-		// Set the value of the argument
-		*buffer = value;
+		memory->Write(args_ptr+offset, sizeof(T), (char *)&value);
 	}
 
 public:
