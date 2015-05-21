@@ -33,6 +33,8 @@
 #include <arch/x86/emu/Context.h>
 #include <arch/x86/emu/Emu.h>
 #include <arch/x86/emu/Signal.h>
+#include <arch/x86/timing/Timing.h>
+#include <arch/x86/timing/CPU.h>
 #include <arch/hsa/asm/Asm.h>
 #include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emu/Emu.h>
@@ -124,7 +126,8 @@ void RegisterArchitectures()
 	// x86
 	arch_pool->Register("x86",
 			x86::Asm::getInstance(),
-			x86::Emu::getInstance());
+			x86::Emu::getInstance(),
+			x86::Timing::getInstance());
 	
 	// Southern Islands
 	arch_pool->Register("SouthernIslands");
@@ -547,6 +550,7 @@ int MainProgram(int argc, char **argv)
 	SI::Driver::RegisterOptions();
 	x86::Asm::RegisterOptions();
 	x86::Emu::RegisterOptions();
+	x86::Timing::RegisterOptions();
 	mem::System::RegisterOptions();
 	dram::System::RegisterOptions();
 	net::System::RegisterOptions();
@@ -573,6 +577,7 @@ int MainProgram(int argc, char **argv)
 	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
 	x86::Emu::ProcessOptions();
+	x86::Timing::ProcessOptions();
 	mem::System::ProcessOptions();
 	dram::System::ProcessOptions();
 	net::System::ProcessOptions();
