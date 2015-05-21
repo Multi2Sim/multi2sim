@@ -325,9 +325,9 @@ void Network::ProduceBusPortByIniSection(
 	}
 	else if (strcasecmp(type.c_str(), "Bidirectional"))
 	{
-		buffer = node->AddInputBuffer(buffer_size);
-		bus->addBusSourcePort(buffer);
 		buffer = node->AddOutputBuffer(buffer_size);
+		bus->addBusSourcePort(buffer);
+		buffer = node->AddInputBuffer(buffer_size);
 		bus->addBusDestinationPort(buffer);
 	}
 
