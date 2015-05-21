@@ -31,6 +31,7 @@
 
 #include "HsaProgram.h"
 #include "HsaExecutable.h"
+#include "HsaExecutableSymbol.h"
 #include "Driver.h"
 
 namespace HSA
@@ -903,7 +904,28 @@ int Driver::CallMemoryFree(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallSignalCreate(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// initial_value	| 4		| 8
+	// num_consumers	| 12		| 4
+	// consumers		| 16		| 8
+	// signal		| 24 		| 8
+	hsa_status_t status = HSA_STATUS_SUCCESS;
+	long long initial_value = getArgumentValue<long long>(4, memory,
+			args_ptr);
+	unsigned long long signal = getArgumentValue<unsigned long long>(24,
+			memory, args_ptr);
+
+	// Create signal
+	long long *new_signal = new long long;
+
+	// Assign init value
+	*new_signal = initial_value;
+
+	// Write back
+	memory->Write(signal, 8, (char *)&new_signal);
+	memory->Write(args_ptr, 4, (char *)&status);
+
 	return 0;
 }
 
@@ -1225,14 +1247,6 @@ int Driver::CallProgramAddModule(mem::Memory *memory, unsigned args_ptr)
 	auto module_buffer = misc::new_unique_array<char>(module_size);
 	memory->Read((unsigned)module, module_size, module_buffer.get());
 
-	printf("Module buffer: (%p)\n", module_buffer.get());
-	for (unsigned int i = 0; i < 3536; i++)
-	{
-		char *ptr = module_buffer.get();
-		printf("%c", ptr[i]);
-	}
-	std::cout << "\n";
-
 	((HsaProgram *)program)->AddModule(module_buffer.get());
 
 	// Return success
@@ -1378,12 +1392,9 @@ int Driver::CallExecutableGetSymbol(mem::Memory *memory, unsigned args_ptr)
 	char *symbol_name_str = memory->getBuffer(symbol_name, 1,
 			mem::Memory::AccessRead);
 	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str);
-//	std::cout << misc::fmt("executable symbol address 0x%016llx\n",
-//			(unsigned long long)exe_sym);
 
 	// Write back
-	char *buffer = memory->getBuffer(symbol, 8, mem::Memory::AccessRead);
-	*(unsigned long long *)buffer = (unsigned long long)exe_sym;
+	memory->Write(symbol, 8, (char *)&exe_sym);
 
 	// Return success
 	setArgumentValue<unsigned int>(
@@ -1403,7 +1414,8 @@ int Driver::CallExecutableSymbolGetInfo(mem::Memory *memory, unsigned args_ptr)
 	// value		| 16		| 8
 
 	// Retrieve data
-	unsigned long long executable_symbol = getArgumentValue
+	HsaExecutableSymbol *executable_symbol =
+			(HsaExecutableSymbol *)getArgumentValue
 			<unsigned long long>(4, memory, args_ptr);
 	unsigned int attribute = getArgumentValue<unsigned int>
 			(12, memory, args_ptr);
@@ -1411,7 +1423,7 @@ int Driver::CallExecutableSymbolGetInfo(mem::Memory *memory, unsigned args_ptr)
 			(16, memory, args_ptr);
 
 	// Print debug information
-	debug << misc::fmt("executable_symbol: 0x%016llx, \n", executable_symbol);
+	debug << misc::fmt("executable_symbol: %p, \n", executable_symbol);
 	debug << misc::fmt("attribute: %d, \n", attribute);
 	debug << misc::fmt("value: 0x%016llx, \n", value);
 
@@ -1419,19 +1431,45 @@ int Driver::CallExecutableSymbolGetInfo(mem::Memory *memory, unsigned args_ptr)
 	switch (attribute)
 	{
 	case HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT:
+
 	{
-		char *buffer = memory->getBuffer(value, 8, mem::Memory::AccessRead);
-		*((unsigned long long *)buffer) = executable_symbol;
+		memory->Write(value, 8, (char *)&executable_symbol);
 		break;
 	}
+
+	case HSA_CODE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE:
+
+	{
+		unsigned int arg_size = executable_symbol
+				->getKernelArgumentSize();
+		memory->Write(value, 4, (char *)&arg_size);
+		break;
+	}
+
+	case HSA_CODE_SYMBOL_INFO_KERNEL_GROUP_SEGMENT_SIZE:
+
+	{
+		unsigned int group_size = 0;
+		memory->Write(value, 4, (char *)&group_size);
+		break;
+	}
+
+	case HSA_CODE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE:
+
+	{
+		unsigned int private_size = 0;
+		memory->Write(value, 4, (char *)&private_size);
+		break;
+	}
+
 	default:
-		throw misc::Panic("Unsupported kernel object attribute.\n");
+
+		throw misc::Panic(misc::fmt("Unsupported kernel object "
+				"attribute %d.\n", attribute));
 	}
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0, memory, args_ptr);
 
 	return 0;
 }
@@ -1442,7 +1480,6 @@ int Driver::CallInitFromX86(mem::Memory *memory, unsigned args_ptr)
 	// This function is designed only to be called from the host.
 	// args_ptr is the process id of the context running the host
 	// program.
-
 	x86::Emu *x86_emu = x86::Emu::getInstance();
 	x86::Context *host_context = x86_emu->getContext(args_ptr);
 	Emu::getInstance()->setMemory(host_context->__getMemSharedPtr());

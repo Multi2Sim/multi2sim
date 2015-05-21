@@ -71,15 +71,6 @@ hsa_status_t HSA_API hsa_ext_program_add_module(
 	unsigned int args[5] = {0};
 	memcpy(args + 1, &program, 8);
 	memcpy(args + 3, &module, 8);
-
-	printf("In runtime: (%p)\n", module);
-	for (int i = 0; i < 3536; i++)
-	{
-		char *ptr = (char *)module;
-		printf("%c", ptr[i]);
-	}
-	printf("\n");
-
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;

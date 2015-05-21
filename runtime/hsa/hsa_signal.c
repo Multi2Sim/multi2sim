@@ -32,7 +32,22 @@ hsa_status_t HSA_API
     hsa_signal_create(hsa_signal_value_t initial_value, uint32_t num_consumers,
                       const hsa_agent_t *consumers, hsa_signal_t *signal)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	// Init arguments
+	unsigned int args[8];
+	memcpy(args + 1, &initial_value, 2);
+	memcpy(args + 3, &num_consumers, 1);
+	memcpy(args + 4, &consumers, 2);
+	memcpy(args + 6, &signal, 2);
+
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	else
+	{
+		ioctl(hsa_runtime->fd, SignalCreate, args);
+		return (hsa_status_t)args[0];
+	}
 	return HSA_STATUS_SUCCESS;
 }
 
