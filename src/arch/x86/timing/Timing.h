@@ -21,10 +21,16 @@
 #define X86_ARCH_TIMING_TIMING_H
 
 #include <lib/cpp/String.h>
+#include <lib/cpp/Debug.h>
+#include <lib/cpp/CommandLine.h>
+#include <lib/cpp/Debug.h>
 
+#include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
 
 #include "CPU.h"
+#include "BranchPredictor.h"
+#include "TraceCache.h"
 
 namespace x86
 {
@@ -57,6 +63,9 @@ class Timing : public comm::Timing
 
 	// Message to display with '--x86-help'
 	static const std::string help_message;
+
+	// Debugger files
+	static std::string trace_cache_debug_file;
 
 	// Private constructor for singleton
 	Timing();
@@ -108,6 +117,9 @@ public:
 
 	/// Parse the configuration file
 	static void ParseConfiguration(std::string &config_file);
+
+	/// Debugger for trace cache
+	static misc::Debug trace_cache_debug;
 };
 
 } //namespace x86
