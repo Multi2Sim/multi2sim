@@ -65,8 +65,11 @@ void Network::ParseConfiguration(const std::string &section,
 	// Parse the configure file for links
 	ParseConfigurationForLinks(config);
 
-	// Parse the confuration file for Buses
+	// Parse the configuration file for Buses
 	ParseConfigurationForBuses(config);
+
+	// Parse the configuration file for Bus ports
+	ParseConfigurationForBusPorts(config);
 
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
@@ -223,10 +226,119 @@ void Network::ProduceBusByIniSection(
 	AddBus(std::move(bus));
 }
 
+
+void Network::ParseConfigurationForBusPorts(misc::IniFile &config)
+{
+	for (int i = 0; i < config.getNumSections(); i++)
+	{
+		std::string section = config.getSection(i);
+
+		// Tokenize section name
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 3)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "BusPort"))
+			continue;
+
+		// Create string
+		ProduceBusPortByIniSection(section, config);
+	}
+}
+
+void Network::ProduceBusPortByIniSection(
+			const std::string &section,
+			misc::IniFile &config)
+{
+	// Verify section name
+	std::vector<std::string> tokens;
+	misc::StringTokenize(section, tokens, ".");
+	if (tokens.size() != 3 &&
+			tokens[0] != "Network" &&
+			tokens[1] != getName() &&
+			tokens[2] != "BusPort")
+		throw misc::Error(misc::fmt("Section %s is not a bus",
+					section.c_str()));
+
+	// Get the Type
+	// Get type string
+	std::string type = config.ReadString(section, "Type", "Bidirectional");
+
+	if (((strcasecmp(type.c_str(), "Bidirectional")) &&
+			(strcasecmp(type.c_str(), "Send")) &&
+			(strcasecmp(type.c_str(),"Receive"))))
+	{
+		throw misc::Panic(misc::fmt("Port: Type %s not recognized",
+				type.c_str()));
+	}
+
+	// Get The Bus
+	std::string bus_name = config.ReadString(section, "Bus");
+	if (bus_name == "")
+		throw misc::Panic(misc::fmt("Bus name not set in section %s",
+					section.c_str()));
+
+	Bus* bus = dynamic_cast<Bus *> (getConnectionByName(bus_name));
+	if (!bus)
+		throw misc::Panic(misc::fmt("Bus %s not in network",
+					bus_name.c_str()));
+
+	// Get the Node
+	std::string node_name = config.ReadString(section, "Node");
+	if (node_name == "")
+		throw misc::Panic(misc::fmt("Source not set in section %s",
+					section.c_str()));
+
+	Node *node = getNodeByName(node_name);
+	if (!node)
+		throw misc::Panic(misc::fmt("Source %s not in network",
+					node_name.c_str()));
+
+	// Get the port size
+	int buffer_size = config.ReadInt(section, "BufferSize",
+			default_output_buffer_size);
+
+	// Check the buffer sizes
+	if ((buffer_size < 1))
+	{
+		throw  misc::Panic(misc::fmt("Port %s: buffer size cannot "
+				"be less than 1",name.c_str()));
+	}
+
+	Buffer * buffer;
+	if (strcasecmp(type.c_str(), "Send"))
+	{
+		buffer = node->AddOutputBuffer(buffer_size);
+		bus->addBusSourcePort(buffer);
+
+	}
+	else if (strcasecmp(type.c_str(), "Receive"))
+	{
+		buffer = node->AddInputBuffer(buffer_size);
+		bus->addBusDestinationPort(buffer);
+	}
+	else if (strcasecmp(type.c_str(), "Bidirectional"))
+	{
+		buffer = node->AddInputBuffer(buffer_size);
+		bus->addBusSourcePort(buffer);
+		buffer = node->AddOutputBuffer(buffer_size);
+		bus->addBusDestinationPort(buffer);
+	}
+
+}
+
+
 std::unique_ptr<Bus> Network::ProduceBus(std::string name,
 		int bandwidth, int lanes)
 {
 	std::unique_ptr<Bus> bus = std::unique_ptr<Bus>(new Bus(lanes));
+	bus->setName(name);
 	bus->setBandwidth(bandwidth);
 
 	return bus;
@@ -306,7 +418,6 @@ void Network::ProduceLinkByIniSection(
 		throw misc::Panic(misc::fmt("Link %s: Type %s not recognized",
 				name.c_str(), type.c_str()));
 	}
-
 
 	// Get source node
 	std::string source_name = config.ReadString(section, "Source");

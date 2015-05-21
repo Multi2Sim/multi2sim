@@ -29,6 +29,7 @@ class Buffer;
 
 class Bus : public Connection
 {
+public:
 	class Lane
 	{
 
@@ -39,24 +40,47 @@ class Bus : public Connection
 		// lane is busy until this cycle
 		long long busy_cycle;
 
+		// Lane index
+		int index;
+
+	public:
+		//Set the Lane index in the Bus
+		void setLaneIndex(int index) { this->index = index; }
+
+		// Get the Lane index
+		int getLaneIndex() const { return this->index; }
+
 	};
 
 protected:
+
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
 
 	// List of the source buffers connected to the bus
-	std::vector<std::unique_ptr<Buffer>> source_buffers;
+	std::vector< Buffer* > source_buffers;
 
 	// List of the destination buffers connected to the bus
-	std::vector<std::unique_ptr<Buffer>> destination_buffers;
+	std::vector< Buffer* > destination_buffers;
 
 public:
 	// Constructor
 	Bus(int lanes);
 
+	// Get the number of lanes
+	int getNumberLanes() const { return lanes.size(); }
+
+	// Get Lane
+	Lane* getLaneByIndex(int id) { return lanes.at(id).get(); }
+
 	// Dump information about Bus
 	void Dump(std::ostream &os) const;
+
+	// Adding ports to the bus source list
+	void addBusSourcePort(Buffer * buffer);
+
+	// Adding ports to the bus destination list
+	void addBusDestinationPort(Buffer * buffer);
 
 
 };

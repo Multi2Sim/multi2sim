@@ -74,7 +74,8 @@ class Network
 	// Parse the config file to add all the buses belongs to the network
 	void ParseConfigurationForBuses(misc::IniFile &config);
 
-
+	// Parse the config file to add all the bus ports belongs to a bus
+	void ParseConfigurationForBusPorts(misc::IniFile &config);
 
 
 	//
@@ -198,7 +199,7 @@ public:
 	virtual int getNumberNodes() const { return nodes.size(); }
 
 	/// Return the nodes by index
-	virtual Node *getNodeByIndex(int index) { return nodes[index].get(); }
+	virtual Node *getNodeByIndex(int index) { return nodes.at(index).get(); }
 
 
 
@@ -238,6 +239,10 @@ public:
 			int bandwidth,
 			int lanes);
 
+	/// Produce a Bus Port
+	void ProduceBusPortByIniSection(const std::string &section,
+				misc::IniFile &config);
+
 	/// Add the Bus to the Connection List of the Network
 	void AddBus(std::unique_ptr<Bus> bus);
 
@@ -247,6 +252,9 @@ public:
 	///	node name
 	virtual Connection *getConnectionByName(const std::string &name) const;
 
+
+	/// Return the number of nodes
+	virtual int getNumberConnections() const { return connections.size(); }
 
 
 	/// finds and returns node in the network using user data

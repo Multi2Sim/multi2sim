@@ -59,7 +59,7 @@ RoutingTable::RoutingTableEntry *RoutingTable::Lookup(Node *source,
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
 
     int location = i * dimension + j;
-    return entries[location].get();
+    return entries.at(location).get();
 }
 }
 
