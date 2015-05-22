@@ -35,14 +35,8 @@ protected:
 	// Link source node
 	Node *source_node;
 
-	// Link source buffer
-	Buffer *source_buffer;
-
 	// Link destination node
 	Node *destination_node;
-
-	// Link destination buffer
-	Buffer *destination_buffer;
 
 	// Descriptive Name. Name is shared between two links in case of
 	// Bidirectional link.

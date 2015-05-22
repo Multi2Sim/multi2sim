@@ -20,12 +20,13 @@
 #include <cstring>
 #include <csignal>
 
-#include "Switch.h"
-#include "EndNode.h"
-#include "Connection.h"
-#include "Network.h"
-#include "Bus.h"
 #include "Buffer.h"
+#include "Bus.h"
+#include "Connection.h"
+#include "EndNode.h"
+#include "Network.h"
+#include "RoutingTable.h"
+#include "Switch.h"
 
 namespace net
 {
@@ -57,6 +58,11 @@ void Network::ParseConfiguration(const std::string &section,
 
 	// Packet size and frequency
 	packet_size = config.ReadInt(section, "DefaultPacketSize", 0);
+
+	// FIXME
+	// This has to change. We have a general section for
+	// frequency. Each Network should be able to have a different frequency
+	// or their frequency should be set to the default frequency.
 	net_frequency = config.ReadInt(section, "Frequency", 0);
 
 	// Parse the configure file for nodes
@@ -71,10 +77,30 @@ void Network::ParseConfiguration(const std::string &section,
 	// Parse the configuration file for Bus ports
 	ParseConfigurationForBusPorts(config);
 
+	// Time to create the initial Routing Table
+	addRoutingTable();
+
+	// Parse the routing elements, for manual routing.
+	if(!ParseConfigurationForRoutes(config))
+		this->routing_table->FloydWarshall();
+
+	// Parse the traffic pattern
+	ParseConfigurationForTraffic(config);
+
+	// Parse the commands for manual(input trace) injection and testing.
+	ParseConfigurationForCommands(config);
+
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
 }
 
+void Network::addRoutingTable()
+{
+	auto routing_table = misc::new_unique<RoutingTable> ();
+	routing_table->setNetwork(this);
+	routing_table->InitRoutingTable();
+	this->routing_table = std::move(routing_table);
+}
 
 void Network::ParseConfigurationForNodes(misc::IniFile &config)
 {
@@ -292,43 +318,44 @@ void Network::ProduceBusPortByIniSection(
 	// Get the Node
 	std::string node_name = config.ReadString(section, "Node");
 	if (node_name == "")
-		throw misc::Panic(misc::fmt("Source not set in section %s",
+		throw misc::Panic(misc::fmt("Node not set in section %s",
 					section.c_str()));
 
 	Node *node = getNodeByName(node_name);
 	if (!node)
-		throw misc::Panic(misc::fmt("Source %s not in network",
+		throw misc::Panic(misc::fmt("Node %s not in network",
 					node_name.c_str()));
 
 	// Get the port size
-	int buffer_size = config.ReadInt(section, "BufferSize",
-			default_output_buffer_size);
+	int buffer_size = config.ReadInt(section, "BufferSize", 0);
 
-	// Check the buffer sizes
-	if ((buffer_size < 1))
-	{
-		throw  misc::Panic(misc::fmt("Port %s: buffer size cannot "
-				"be less than 1",name.c_str()));
-	}
 
 	Buffer * buffer;
 	if (strcasecmp(type.c_str(), "Send"))
 	{
+		buffer_size = (buffer_size == 0 ?
+				default_output_buffer_size : buffer_size);
 		buffer = node->AddOutputBuffer(buffer_size);
-		bus->addBusSourcePort(buffer);
-
+		bus->addSourceBuffer(buffer);
 	}
 	else if (strcasecmp(type.c_str(), "Receive"))
 	{
+		buffer_size = (buffer_size == 0 ?
+				default_input_buffer_size : buffer_size);
 		buffer = node->AddInputBuffer(buffer_size);
-		bus->addBusDestinationPort(buffer);
+		bus->addDestinationBuffer(buffer);
 	}
 	else if (strcasecmp(type.c_str(), "Bidirectional"))
 	{
-		buffer = node->AddOutputBuffer(buffer_size);
-		bus->addBusSourcePort(buffer);
-		buffer = node->AddInputBuffer(buffer_size);
-		bus->addBusDestinationPort(buffer);
+		int source_buffer_size = (buffer_size == 0 ?
+				default_output_buffer_size : buffer_size);
+		buffer = node->AddOutputBuffer(source_buffer_size);
+		bus->addSourceBuffer(buffer);
+
+		int destination_buffer_size = (buffer_size == 0 ?
+				default_input_buffer_size : buffer_size);
+		buffer = node->AddInputBuffer(destination_buffer_size);
+		bus->addDestinationBuffer(buffer);
 	}
 
 }
@@ -374,7 +401,21 @@ void Network::ParseConfigurationForLinks(misc::IniFile &config)
 	}
 }
 
+bool Network::ParseConfigurationForRoutes(misc::IniFile &config)
+{
+	return false;
+}
 
+
+void Network::ParseConfigurationForTraffic(misc::IniFile &config)
+{
+
+}
+
+void Network::ParseConfigurationForCommands(misc::IniFile &config)
+{
+
+}
 void Network::AddLink(std::unique_ptr<Link> link)
 {
 	// Verify if the source and the destination is a node in the list
@@ -511,8 +552,10 @@ std::unique_ptr<Link> Network::ProduceLink(
 	for (int i= 0; i < virtual_channels; i++)
 	{
 		auto source_buffer = source_node->AddOutputBuffer(output_buffer_size);
+		link->addSourceBuffer(source_buffer);
 		auto destination_buffer = destination_node->AddInputBuffer(
 				input_buffer_size);
+		link->addDestinationBuffer(destination_buffer);
 
 		if (i == 0)
 			descriptive_name = misc::fmt("link_<%s.%s>_<%s.%s>",
@@ -520,6 +563,7 @@ std::unique_ptr<Link> Network::ProduceLink(
 					source_buffer->getName().c_str(),
 					destination_node->getName().c_str(),
 					destination_buffer->getName().c_str());
+
 	}
 	link->setName(descriptive_name);
 

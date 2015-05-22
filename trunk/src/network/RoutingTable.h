@@ -57,14 +57,17 @@ class RoutingTable
 		/// Get next node
 		Node *getNextNode() const { return this->next_node; }
 
+		/// Set next buffer
+		void setBuffer(Buffer *buffer) { this->output_buffer = buffer; }
+
 	};
 protected:
 
 	// Associated network
 	Network *network;
 
-	// Dimention
-	int dim;
+	// Dimension
+	int dimension;
 
 	// Entries
 	std::vector<std::unique_ptr<RoutingTableEntry>> entries;
@@ -75,10 +78,13 @@ protected:
 public:
 
 	/// Constructor
-	// RoutingTable();
+	RoutingTable() {};
 
 	/// Set the associated network
 	void setNetwork(Network *network) { this->network = network; }
+
+	/// Get Dimension
+	int getDimension() const { return dimension; }
 
 	/// Initialize the routing table
 	void InitRoutingTable();

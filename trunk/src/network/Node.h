@@ -51,26 +51,6 @@ protected:
 	std::vector<std::unique_ptr<Buffer>> input_buffers;
 	std::vector<std::unique_ptr<Buffer>> output_buffers;
 
-	/*
-	// Bus and photonic nodes
-	std::vector<std::unique_ptr<Bus>> bus_lanes;
-
-	// For Bus and Photonic:
-	// List of source and destination buffer since Buses don't have input
-	// and output buffers of their own.
-	std::vector<std::unique_ptr<Buffer>> src_buffers;
-	std::vector<std::unique_ptr<Buffer>> dst_buffers;
-
-	// For Bus and Photonic Scheduling:
-	// index of the last node that has been scheduled to send a packet
-	// or message on the bus.
-	int last_node_index;
-
-	// For Bus and Photonic Scheduling:
-	// index of the last bus (in case there are multiple lanes) that
-	// has been assigned to a node to transmit data on.
-	int last_bus_index;
-	*/
 
 public:
 
@@ -103,6 +83,10 @@ public:
 	/// Adding output buffer
 	Buffer* AddOutputBuffer(int size);
 
+	/// Getting the node's output buffer list
+	std::vector<std::unique_ptr<Buffer>> &getOutputBufferList(){
+		return this->output_buffers;
+	}
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers
 	/// to find the buffer.
