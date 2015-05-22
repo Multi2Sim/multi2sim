@@ -160,6 +160,145 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	}
 }
 
+
+TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
+{
+	// Local variable declaration
+	const int num_branch_uop = 3;
+	const int N = 3;
+	Uop *uop;
+	BranchPredictorPred pred;
+	int bht_status;
+	char pht_status;
+	unsigned int branch_addr;
+	unsigned int branch_inst_size = 4;
+	unsigned int branch_target_distance = 8;
+
+	// Setup configuration file for branch preditor
+	std::string config =
+			"[ BranchPredictor ]\n"
+			"Kind = TwoLevel\n"
+			"TwoLevel.L1Size = 1\n"
+			"TwoLevel.L2Size = 512\n"
+			"TwoLevel.HistorySize = 6";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Parse configuration
+	BranchPredictor::ParseConfiguration("BranchPredictor", ini_file);
+
+	// Create a branch predictor instance
+	BranchPredictor branch_predictor;
+
+	// Setup mock micro-op list
+	std::vector<std::unique_ptr<Uop>> mock_uop_list;
+
+	//Shared by different Uop, but this is incorrect in real scenario
+	UInst uinst(UInstBranch);
+
+	// Create N pattern
+	for (int i = 0; i < N; i++)
+	{
+	// First micro-operation (Taken)
+	branch_addr = 0;
+	uop = new Uop;
+	uop->setUInst(&uinst);
+	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setEip(branch_addr);
+	uop->setNeip(branch_addr + branch_target_distance);
+	uop->setMopSize(branch_inst_size);
+	mock_uop_list.emplace_back(uop);
+
+	// Second micro-operation (Not Taken)
+	branch_addr = 16;
+	uop = new Uop;
+	uop->setUInst(&uinst);
+	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setEip(branch_addr);
+	uop->setNeip(branch_addr + branch_inst_size);
+	uop->setMopSize(branch_inst_size);
+	mock_uop_list.emplace_back(uop);
+
+	// Third micro-operation (Not Taken)
+	branch_addr = 32;
+	uop = new Uop;
+	uop->setUInst(&uinst);
+	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setEip(branch_addr);
+	uop->setNeip(branch_addr + branch_inst_size);
+	uop->setMopSize(branch_inst_size);
+	mock_uop_list.emplace_back(uop);
+	}
+
+
+	// Test branch predictor N = 3
+	// History based on each branch instruction
+	//
+	// Since L1Size = 1, there is only one entry that contains the history
+	// 000000->000001->000010->000100->001001->010010->100100->
+	// 001001->010010->100100
+	//
+	// The prediction for each branch instruction should be
+	// Taken; Taken; Taken; Taken; Taken; Taken; Taken; NotTaken; NotTaken
+	//
+	// For each PHT entry, the status is different
+	// [000000]: Strongly Taken; [000001]: Weakly NotTaken; [000010]: Weakly NotTaken
+	// [000100]: Strongly Taken; [001001]: Weakly NotTaken; [010010]: Weakly NotTaken
+	// [100100]: Strongly Taken; [001001]: NotTaken; [010010]: NotTaken
+	BranchPredictorPred pred_result[num_branch_uop * N] =
+	{
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredTaken,
+		BranchPredictorPredNotTaken,
+		BranchPredictorPredNotTaken
+	};
+	int bht_status_trace[num_branch_uop * N] =
+	{
+		0b000001,
+		0b000010,
+		0b000100,
+		0b001001,
+		0b010010,
+		0b100100,
+		0b001001,
+		0b010010,
+		0b100100
+	};
+	int pht_status_trace[num_branch_uop * N] =
+	{
+		3,
+		1,
+		1,
+		3,
+		1,
+		1,
+		3,
+		0,
+		0
+	};
+	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
+	{
+		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
+		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
+		pred = mock_uop_list[i]->getPrediction();
+		bht_status = branch_predictor.getTwolevelBHTStatus(mock_uop_list[i]->getTwolevelBHTIndex());
+		pht_status = branch_predictor.getTwolevelPHTStatus(mock_uop_list[i]->getTwolevelPHTRow(),
+				mock_uop_list[i]->getTwolevelPHTCol());
+
+		// Assertions
+		EXPECT_EQ(pred_result[i], pred);
+		EXPECT_EQ(bht_status_trace[i], bht_status);
+		EXPECT_EQ(pht_status_trace[i], (int)pht_status);
+	}
+}
+
 }
 
 
