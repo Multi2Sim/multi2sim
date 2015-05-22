@@ -34,17 +34,18 @@ DEFINST(IMUL_B,
 
 DEFINST(ISCADD_A,
 		"%pred ISCADD%s %dst%cc, %srcA, %srcB, %const;",
-		0x02,
 		0x01,
-		0x0c,
+		0x03,
+		0x00,
 		0x03)
 
 DEFINST(ISCADD_B,
                 "%pred ISCADD%s %dst%cc, %srcA, %srcB, %const !!! Check !!!;",
-                0x01,
-                0x03,
-                0x00,
-                0x03)
+                0x02,
+		0x01,
+		0x0c,
+		0x03)
+                
 
 DEFINST(ISAD_A,
 		"ISAD_A",
