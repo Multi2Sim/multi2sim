@@ -32,22 +32,61 @@ hsa_status_t HSA_API hsa_region_get_info(hsa_region_t region,
                                          hsa_region_info_t attribute,
                                          void *value)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
-	return HSA_STATUS_SUCCESS;
+	// Init arguments
+	unsigned int args[6] = {0};
+	memcpy(args + 1, &region, 8);
+	memcpy(args + 3, &attribute, 4);
+	memcpy(args + 4, &value, 4);
+
+	// Check if HSA runtime initialized
+	if(!hsa_runtime)
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+
+	// Call driver function
+	ioctl(hsa_runtime->fd, RegionGetInfo, args);
+
+	// Return
+	return args[0];
 }
 
 
 hsa_status_t HSA_API hsa_agent_iterate_regions(
-    hsa_agent_t agent,
-    hsa_status_t (*callback)(hsa_region_t region, void *data), void *data)
+	hsa_agent_t agent,
+	hsa_status_t (*callback)(hsa_region_t region, void *data),
+	void *data)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	// Init arguments
+	unsigned long long args[3] = {0};
+	args[0] = 1;
+	args[1] = agent.handle;
+	args[2] = 0;
+
+	// Check if HSA runtime initialized
+	if (!hsa_runtime)
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+
+	// Iterate regions
+	while (args[0] != 0)
+	{
+		ioctl(hsa_runtime->fd, NextRegion, args);
+		if (args[0] != 0)
+		{
+			hsa_region_t region;
+			region.handle = args[0];
+			hsa_status_t status = callback(region, data);
+			if (status != HSA_STATUS_SUCCESS)
+				return status;
+			args[2] = args[0];
+		}
+	}
+
+	// Return
 	return HSA_STATUS_SUCCESS;
 }
 
 
 hsa_status_t HSA_API
-    hsa_memory_allocate(hsa_region_t region, size_t size, void **ptr)
+	hsa_memory_allocate(hsa_region_t region, size_t size, void **ptr)
 {
 	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
@@ -77,7 +116,6 @@ hsa_status_t HSA_API hsa_memory_assign_agent(void *ptr, hsa_agent_t agent,
 
 hsa_status_t HSA_API hsa_memory_register(void *ptr, size_t size)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
 }
 
