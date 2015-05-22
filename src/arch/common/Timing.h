@@ -50,12 +50,12 @@ public:
 	/// function is invoked by the memory system configuration parser when
 	/// no specific memory configuration is given by the user for the
 	/// architecture.
-	virtual void WriteMemoryConfiguration(misc::IniFile *ini_file);
+	virtual void WriteMemoryConfiguration(misc::IniFile *ini_file) = 0;
 
 	/// Check architecture-specific requirements for the memory
 	/// memory configuration provided in the INI file. This function is
 	/// invoked by the memory configuration parser.
-	virtual void CheckMemoryConfiguration(misc::IniFile *ini_file);
+	virtual void CheckMemoryConfiguration(misc::IniFile *ini_file) = 0;
 };
 
 }

@@ -66,4 +66,5 @@ src_arch_x86_timing_test_LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_arch_x86_timing_test_SOURCES = \
-	src/arch/x86/timing/TestBranchPredictor.cc
+	src/arch/x86/timing/TestBranchPredictor.cc \
+	src/arch/x86/timing/TestTraceCache.cc

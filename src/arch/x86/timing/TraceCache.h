@@ -123,7 +123,7 @@ public:
 	void DumpConfiguration(std::ostream &os = std::cout);
 
 	/// Configuration getters
-	static int getPresent() { return present; }
+	static bool getPresent() { return present; }
 	static int getNumSets() { return num_sets; }
 	static int getAssoc() { return assoc; }
 	static int getTraceSize() { return trace_size; }
