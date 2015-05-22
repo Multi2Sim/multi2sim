@@ -57,12 +57,6 @@ protected:
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
 
-	// List of the source buffers connected to the bus
-	std::vector< Buffer* > source_buffers;
-
-	// List of the destination buffers connected to the bus
-	std::vector< Buffer* > destination_buffers;
-
 public:
 	// Constructor
 	Bus(int lanes);
@@ -76,11 +70,6 @@ public:
 	// Dump information about Bus
 	void Dump(std::ostream &os) const;
 
-	// Adding ports to the bus source list
-	void addBusSourcePort(Buffer * buffer);
-
-	// Adding ports to the bus destination list
-	void addBusDestinationPort(Buffer * buffer);
 
 
 };
