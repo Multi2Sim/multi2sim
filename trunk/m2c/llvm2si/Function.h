@@ -209,6 +209,10 @@ public:
 
 	int getVRegLid() { return vreg_lid; }
 
+	int getSRegCB0() { return sreg_cb0; }
+
+	int getSRegCB1() { return sreg_cb1; }
+
 	int getSRegWGid() { return sreg_wgid; }
 
 	int getSRegGSize() { return sreg_gsize; }

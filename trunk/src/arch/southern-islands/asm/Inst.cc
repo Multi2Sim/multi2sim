@@ -177,7 +177,8 @@ misc::StringMap inst_special_reg_map =
 	{ "vcc", InstSpecialRegVcc },
 	{ "scc", InstSpecialRegScc },
 	{ "exec", InstSpecialRegExec },
-	{ "tma", InstSpecialRegTma }
+	{ "tma", InstSpecialRegTma },
+	{ "m0", InstSpecialRegM0 }	
 };
 
 
