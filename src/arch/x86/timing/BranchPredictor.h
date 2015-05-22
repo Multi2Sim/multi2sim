@@ -138,6 +138,11 @@ public:
 
 	/// Getters
 	char getBimodStatus(int index) const { return bimod[index]; }
+	int getTwolevelBHTStatus(int index) const { return twolevel_bht[index]; }
+	char getTwolevelPHTStatus(int row, int col) const
+	{
+		return twolevel_pht[row * twolevel_l2size + col];
+	}
 
 	/// Return prediction for an address (0=not taken, 1=taken)
 	///
