@@ -869,7 +869,50 @@ int Driver::CallAgentIterateRegions(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallRegionGetInfo(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// region		| 4		| 8
+	// attribute		| 12 		| 4
+	// data 		| 16 		| 8
+	unsigned long long region = getArgumentValue<unsigned long long>(
+			4, memory, args_ptr);
+	unsigned int attribute = getArgumentValue<unsigned int>(
+			12, memory, args_ptr);
+	unsigned long long data = getArgumentValue<unsigned long long>(
+			16, memory, args_ptr);
+
+	// Only recognize region 1
+	if (region != 1)
+		return 0;
+
+	//
+	switch(attribute)
+	{
+	case HSA_REGION_INFO_SEGMENT:
+
+	{
+		hsa_region_segment_t segment = HSA_REGION_SEGMENT_GLOBAL;
+		memory->Write(data, 4, (char *)&segment);
+		break;
+	}
+
+	case HSA_REGION_INFO_GLOBAL_FLAGS:
+
+	{
+		unsigned int flag = 0;
+		flag |= HSA_REGION_GLOBAL_FLAG_KERNARG;
+		flag |= HSA_REGION_GLOBAL_FLAG_FINE_GRAINED;
+		memory->Write(data, 4, (char *)&flag);
+		break;
+	}
+
+	default:
+
+		throw misc::Panic(misc::fmt("Unsupported region info attribute "
+				"%d", attribute));
+
+	}
+
 	return 0;
 }
 
@@ -1211,8 +1254,7 @@ int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
 
 	// Create new program and write the address to the handle
 	HsaProgram *new_program = new HsaProgram();
-	char *buffer = memory->getBuffer(program, 8, mem::Memory::AccessWrite);
-	*(unsigned long long *)buffer = (unsigned long long)new_program;
+	memory->Write(program, 8, (char *)&new_program);
 
 	// Return success
 	setArgumentValue<unsigned int>(
@@ -1282,8 +1324,7 @@ int Driver::CallProgramFinalize(mem::Memory *memory, unsigned args_ptr)
 	HsaProgram *new_code_object = new HsaProgram(*(HsaProgram *)program);
 
 	// Write back
-	char *buffer = memory->getBuffer(code_object, 8, mem::Memory::AccessWrite);
-	*(unsigned long long *)buffer = (unsigned long long)new_code_object;
+	memory->Write(code_object, 8, (char *)&new_code_object);
 
 	// Return success
 	setArgumentValue<unsigned int>(
@@ -1320,8 +1361,7 @@ int Driver::CallExecutableCreate(mem::Memory *memory, unsigned args_ptr)
 	HsaExecutable *new_executable = new HsaExecutable();
 	
 	// Write back
-	char *buffer = memory->getBuffer(executable, 8, mem::Memory::AccessWrite);
-	*(unsigned long long *)buffer = (unsigned long long)new_executable;
+	memory->Write(executable, 8, (char *)&new_executable);
 
 	// Return success
 	setArgumentValue<unsigned int>(
@@ -1389,9 +1429,8 @@ int Driver::CallExecutableGetSymbol(mem::Memory *memory, unsigned args_ptr)
 
 	// Get the symbol object
 	HsaExecutable *exe = (HsaExecutable *)executable;
-	char *symbol_name_str = memory->getBuffer(symbol_name, 1,
-			mem::Memory::AccessRead);
-	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str);
+	std::string symbol_name_str = memory->ReadString(symbol_name);
+	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str.c_str());
 
 	// Write back
 	memory->Write(symbol, 8, (char *)&exe_sym);
@@ -1517,6 +1556,31 @@ int Driver::CallNextAgent(mem::Memory *memory, unsigned args_ptr)
 		setArgumentValue<unsigned long long>(component->getHandler(), 0,
 				memory, args_ptr);
 	}
+
+	return 0;
+}
+
+
+int Driver::CallNextRegion(mem::Memory *memory, unsigned args_ptr)
+{
+	// This function is designed only to be called from the host.
+	// Returns the next region that has a greater agent_id
+	// Returns 0 if there is no more region
+
+	// Arguments		| Offset	| Size
+	// next_region_id	| 0		| 8
+	// agent_id		| 8		| 16
+	// curr_region_id	| 16		| 24
+
+	// Set the first next agent id to 0
+	unsigned long long curr_region_id = getArgumentValue<unsigned long long>
+			(16, memory, args_ptr);
+
+	// Only return current id
+	if (curr_region_id == 0)
+		setArgumentValue<unsigned long long>(1, 0, memory, args_ptr);
+	else
+		setArgumentValue<unsigned long long>(0, 0, memory, args_ptr);
 
 	return 0;
 }
