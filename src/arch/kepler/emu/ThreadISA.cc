@@ -306,24 +306,15 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 
 void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 {
-	// Inst bytes format
+	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	InstBytesISCADD format = inst_bytes.iscadd;
 
-	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
-	Warp* warp = this->getWarp();
+	// Get Warp
+	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
-	unsigned pred;
-	unsigned pred_id;
 	unsigned active;
-
-    // Operands
-	unsigned dst_id, src_id;
-	int dst;
-	int srcA, srcB;
-	int shamt;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -338,74 +329,451 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	// Active
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
-	// Predicate
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
 		pred = this->ReadPred(pred_id);
 	else
 		pred = ! this->ReadPred(pred_id - 8);
 
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
 	// Execute
 	if (active == 1 && pred == 1)
 	{
-		/* Read */
-		src_id = format.mod0;
-		srcA = this->ReadGPR(src_id);
+		// Read shift bits
+		unsigned shamt = format.shamt;
 
-		if (((format.mod1 >> 6) & 0x3) == 2)	//FIXME
-			srcA = -srcA;
-		src_id = format.srcB;
-		if (format.srcB_mod == 0)
-			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
-		else if (format.srcB_mod == 1)
-			srcB = this->ReadGPR(src_id);
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+		src1 = (src1 << shamt) & 0xffffffff;
+
+		// Read src2 value IMM20 mode
+		src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
+
+		// Determine least significant bit value for the add
+		unsigned lsb = 0;
+
+		if (format.po == 3)
+			lsb = 1; // .PO Plus one(for averaging)
 		else
-			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
+		{
+			if (format.po == 1)
+			{
+				src2 = ~src2; // negate src2
+				lsb = 1;
+			}
+			if (format.po == 2)
+			{
+				src1 = ~src1; // negate src1
+				lsb = 1;
+			}
+		}
 
-		if (((format.mod1 >> 6) & 0x3) == 1)	//FIXME
-			srcB = -srcB;
-		shamt = format.mod1 & 0xf; //45:42
+		// Execute .PO flag
+		dst = src1 + src2 + lsb;
 
-		/* Execute */
-		dst = (srcA << shamt) + srcB;
+		// Update .CC flag
+		unsigned zf, sf, cf, of;
 
-		/* Write */
+		// Update zero flag
+		zf = (dst == 0)? 1 : 0;
+		this->WriteCC_ZF(zf);
+
+		// Update sign flag
+		sf = (dst >> 31) & 0x00000001;
+		this->WriteCC_SF(sf);
+
+		// Update overflow flag (for signed arithmetic)
+		long long of_tmp, src1_tmp, src2_tmp;
+		src1_tmp = (int) src1;
+		src2_tmp = (int) src2;
+		of_tmp = src1_tmp + src2_tmp + lsb;
+		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
+		this->WriteCC_OF(of);
+
+		// Update carry flag (for unsigned arithmetic)
+		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
+		src1_tmp1 = src1;
+		src2_tmp1 = src2;
+		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
+		cf = (cf_tmp >> 32) & 0x00000001;
+		this->WriteCC_CF(cf);
+
+		// Write Result
 		dst_id = format.dst;
 		this->WriteGPR(dst_id, dst);
 	}
 
+
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
-
-	if(getenv("M2S_KPL_ISA_DEBUG"))
-	{
-		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISCADD op0 "<<format.op0;
-		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
-
-				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
-				<<std::endl;
-	}
 }
 
 
 void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 {
-	std:: cerr <<"ISCADD B"<<std::endl;
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesISCADD format = inst_bytes.iscadd;
+
+	// Get Warp
+	Emu* emu = Emu::getInstance();
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read shift bits
+		unsigned shamt = format.shamt;
+
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+		src1 = (src1 << shamt) & 0xffffffff;
+
+		// Read src2 value Check it
+		if (format.op2 == 1) // constant mode
+			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+		else if (format.op2 == 3)
+		{
+			unsigned src2_id;
+			src2_id = format.src2;
+			src2 = this->ReadGPR(src2_id);
+		}
+
+		// Determine least significant bit value for the add
+		unsigned lsb = 0;
+
+		if (format.po == 3)
+			lsb = 1; // .PO Plus one(for averaging)
+		else
+		{
+			if (format.po == 1)
+			{
+				src2 = ~src2; // negate src2
+				lsb = 1;
+			}
+			if (format.po == 2)
+			{
+				src1 = ~src1; // negate src1
+				lsb = 1;
+			}
+		}
+
+		// Execute .PO flag
+		dst = src1 + src2 + lsb;
+
+		// Update .CC flag
+		unsigned zf, sf, cf, of;
+
+		// Update zero flag
+		zf = (dst == 0)? 1 : 0;
+		this->WriteCC_ZF(zf);
+
+		// Update sign flag
+		sf = (dst >> 31) & 0x00000001;
+		this->WriteCC_SF(sf);
+
+		// Update overflow flag (for signed arithmetic)
+		long long of_tmp, src1_tmp, src2_tmp;
+		src1_tmp = (int) src1;
+		src2_tmp = (int) src2;
+		of_tmp = src1_tmp + src2_tmp + lsb;
+		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
+		this->WriteCC_OF(of);
+
+		// Update carry flag (for unsigned arithmetic)
+		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
+		src1_tmp1 = src1;
+		src2_tmp1 = src2;
+		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
+		cf = (cf_tmp >> 32) & 0x00000001;
+		this->WriteCC_CF(cf);
+
+		// Write Result
+		dst_id = format.dst;
+		this->WriteGPR(dst_id, dst);
+	}
+
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
-	ISAUnsupportedFeature(inst);
 }
 
 void Thread::ExecuteInst_ISAD_A(Inst *inst)
 {
-	ISAUnsupportedFeature(inst);
+	// Get Warp
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesISAD format = inst_bytes.isad;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, src3, dst;
+
+	// Temporary register for carry flag
+	unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read src1 src2 src3 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+		src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
+		unsigned src3_id;
+		src3_id = format.src3;
+		src3 = this->ReadGPR(src3_id);
+
+		// signed mode
+		if (format.u_s == 1) // sign mode
+		{
+			int src1_signed, src2_signed; // src3 and dst are always unsigned
+			src1_signed = src1;
+			src2_signed = src2;
+			dst = src3 + ((src1_signed > src2_signed) ? src1_signed -
+					src2_signed : src2_signed - src1_signed);
+
+			src1_tmp1 = (src1_signed > src2_signed) ? src1_signed - src2_signed
+							: src2_signed - src1_signed;
+		}
+		else if (format.u_s == 0) // unsigned mode
+		{
+			dst = src3 + ((src1 > src2) ? src1 - src2 : src2 - src1);
+			src1_tmp1 = (src1 > src2) ? src1 - src2 : src2 - src1;
+		}
+
+		// Update .CC flag
+		unsigned zf, sf, cf;
+
+		// Update zero flag
+		zf = (dst == 0) ? 1 : 0;
+		this->WriteCC_ZF(zf);
+
+		// Update sign flag
+		sf = (dst >> 31) & 0x00000001;
+		this->WriteCC_SF(sf);
+
+		// Update carry flag (for unsigned arithmetic)
+		src2_tmp1 = src3;
+		cf_tmp = src1_tmp1 + src2_tmp1;
+		cf = (cf_tmp >> 32) & 0x00000001;
+		this->WriteCC_CF(cf);
+
+		// no Update for overflow flag (for signed arithmetic)
+		// Write Result
+		dst_id = format.dst;
+		this->WriteGPR(dst_id, dst);
+	}
+
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_ISAD_B(Inst *inst)
 {
-	ISAUnsupportedFeature(inst);
+	// Get Warp
+	Emu* emu = Emu::getInstance();
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesISAD format = inst_bytes.isad;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, src3, dst;
+
+	// Temporary register for carry flag
+	unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
+		// Read src2 value and src3 value
+		if (format.op2 == 1) // src2 is const src3 is register
+		{
+			unsigned src3_id;
+			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			src3_id = format.src3;
+			src3 = this->ReadGPR(src3_id);
+		}
+		else if ((format.op2 == 2)) // src2 is register src3 is const
+		{
+			unsigned src2_id;
+			src2_id = format.src3;
+			src2 = this->ReadGPR(src2_id);
+			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src3);
+		}
+		else if (format.op2 == 3) // both src2 src3 register
+		{
+			unsigned src2_id, src3_id;
+			src2_id = format.src2;
+			src3_id = format.src3;
+			src2 = this->ReadGPR(src2_id);
+			src3 = this->ReadGPR(src3_id);
+		}
+
+		// signed mode
+		if (format.u_s == 1) // sign mode
+		{
+			int src1_signed, src2_signed; // src3 and dst are always unsigned
+			src1_signed = src1;
+			src2_signed = src2;
+			dst = src3 + ((src1_signed > src2_signed) ? src1_signed -
+					src2_signed : src2_signed - src1_signed);
+
+			src1_tmp1 = (src1_signed > src2_signed) ? src1_signed - src2_signed
+							: src2_signed - src1_signed;
+		}
+		else if (format.u_s == 0) // unsigned mode
+		{
+			dst = src3 + ((src1 > src2) ? src1 - src2 : src2 - src1);
+			src1_tmp1 = (src1 > src2) ? src1 - src2 : src2 - src1;
+		}
+
+		// Update .CC flag
+		unsigned zf, sf, cf;
+
+		// Update zero flag
+		zf = (dst == 0) ? 1 : 0;
+		this->WriteCC_ZF(zf);
+
+		// Update sign flag
+		sf = (dst >> 31) & 0x00000001;
+		this->WriteCC_SF(sf);
+
+		// Update carry flag (for unsigned arithmetic)
+		src2_tmp1 = src3;
+		cf_tmp = src1_tmp1 + src2_tmp1;
+		cf = (cf_tmp >> 32) & 0x00000001;
+		this->WriteCC_CF(cf);
+
+		// no Update for overflow flag (for signed arithmetic)
+		// Write Result
+		dst_id = format.dst;
+		this->WriteGPR(dst_id, dst);
+	}
+
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_IMAD(Inst *inst)
@@ -654,7 +1022,6 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 
 void Thread::ExecuteInst_IADD_B(Inst *inst)
 {
-
 	// Get Warp
 	Emu* emu = Emu::getInstance();
 	Warp *warp = this->getWarp();
