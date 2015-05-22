@@ -276,6 +276,7 @@ bool Token::isArgumentAllowed(Argument *arg)
 	case TokenSmrdSdst:
 
 		return t == Argument::TypeScalarRegister ||
+			t == Argument::TypeSpecialRegister ||
 			t == Argument::TypeMemRegister;
 
 	case TokenSrc0:
