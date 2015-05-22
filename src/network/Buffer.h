@@ -45,6 +45,9 @@ protected:
 	// Occupied Buffer entries
 	int count;
 
+	// Connection that the buffer is connected to
+	Connection* connection;
+
 public:
 	/// Virtual Distructor
 	virtual ~Buffer() {};
@@ -66,6 +69,17 @@ public:
 
 	/// Set Node
 	void setNode(Node* node) { this->node = node; }
+
+	/// Get Node
+	Node* getNode() const { return this->getNode(); }
+
+	/// Get buffer's connection
+	Connection* getConnection() const { return this->connection; }
+
+	/// Set Connection
+	void setConnection(Connection * connection) {
+		this->connection = connection;
+	}
 
 };
 

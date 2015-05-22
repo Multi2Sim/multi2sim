@@ -18,8 +18,21 @@
  */
 
 #include "Connection.h"
+#include "Buffer.h"
 
 namespace net
 {
+void Connection::addSourceBuffer(Buffer * buffer)
+{
+	buffer->setConnection(this);
+	this->source_buffers.emplace_back(buffer);
+}
+
+void Connection::addDestinationBuffer(Buffer * buffer)
+{
+	buffer->setConnection(this);
+	this->source_buffers.emplace_back(buffer);
+}
 
 }
+

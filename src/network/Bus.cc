@@ -38,13 +38,4 @@ void Bus::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("\n***** Bus %s *****\n", name.c_str());
 }
 
-void Bus::addBusSourcePort(Buffer * buffer)
-{
-	this->source_buffers.emplace_back(buffer);
-}
-
-void Bus::addBusDestinationPort(Buffer * buffer)
-{
-	this->source_buffers.emplace_back(buffer);
-}
 }

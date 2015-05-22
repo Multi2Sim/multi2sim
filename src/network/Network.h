@@ -77,6 +77,14 @@ class Network
 	// Parse the config file to add all the bus ports belongs to a bus
 	void ParseConfigurationForBusPorts(misc::IniFile &config);
 
+	// Parse the routing elements, for manual routing.
+	bool ParseConfigurationForRoutes(misc::IniFile &config);
+
+	// Parse the traffic pattern
+	void ParseConfigurationForTraffic(misc::IniFile &config);
+
+	// Parse the commands for manual(input trace) injection and testing.
+	void ParseConfigurationForCommands(misc::IniFile &config);
 
 	//
 	// Default Values
@@ -96,9 +104,6 @@ class Network
 
 	// Network frequency
 	int net_frequency;
-
-
-
 
 	//
 	// Statistics
@@ -139,14 +144,11 @@ public:
 	/// Get the string 
 	std::string getName() const { return name; }
 
-	/// Set routing table
-	void setRoutingTable(std::unique_ptr<RoutingTable> routing_table)
-	{
-		this->routing_table = std::move(routing_table);
-	}
+	/// add routing table
+	void addRoutingTable();
 
 	/// Get routing table
-	const RoutingTable *getRoutingTable() const 
+	RoutingTable *getRoutingTable() const
 	{
 		return routing_table.get();
 	}

@@ -27,6 +27,8 @@
 
 namespace net
 {
+class Buffer;
+class Connection;
 
 void RoutingTable::InitRoutingTable()
 {
@@ -35,12 +37,12 @@ void RoutingTable::InitRoutingTable()
 		throw misc::Panic("Routing table already initialized.");
 
 	// Set dimension
-	dim = network->getNumberNodes();
+	dimension = network->getNumberNodes();
 
 	// Initiate table with infinite costs
-	for (int i = 0; i < dim; i++)
+	for (int i = 0; i < dimension; i++)
 	{
-		for (int j = 0; j < dim; j++)
+		for (int j = 0; j < dimension; j++)
 		{
 
 			entries.emplace_back(std::unique_ptr<RoutingTableEntry>
@@ -48,6 +50,39 @@ void RoutingTable::InitRoutingTable()
 
 		}
 	}
+
+	// Set 1-hop connections
+	for (int i = 0; i < dimension; i++)
+	{
+		Network *network = this->network;
+
+		Node *node = network->getNodeByIndex(i);
+
+		for (auto &source_buffer : node->getOutputBufferList())
+		{
+			fprintf(stderr,"source buffer is %s\n",source_buffer->getName().c_str());
+			Connection* connection = source_buffer->getConnection();
+
+			for (auto &dst_buffer : connection->getDestinationBuffers())
+			{
+				Node* dst_node = dst_buffer->getNode();
+
+				if (node != dst_node)
+				{
+					RoutingTableEntry* entry = Lookup(node, dst_node);
+					entry->setCost(1);
+					entry->setNextNode(dst_node);
+					entry->setBuffer(source_buffer.get());
+				}
+
+			}
+		}
+	}
+}
+
+void RoutingTable::FloydWarshall()
+{
+
 }
 
 RoutingTable::RoutingTableEntry *RoutingTable::Lookup(Node *source,
