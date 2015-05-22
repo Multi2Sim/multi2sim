@@ -434,6 +434,10 @@ int ArgSpecialRegister::Encode()
 
 		return 253;
 
+	case SI::InstSpecialRegM0:
+
+		return 124;
+
 	default:
 
 		throw misc::Panic(misc::fmt("Unsupported special register "

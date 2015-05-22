@@ -529,6 +529,14 @@ void Function::EmitHeader()
 		inst->addVectorRegister(vreg_gid + index);
 		assert(inst->hasValidArguments());
 	}
+
+	// Emit instructions to initialize M0
+	//
+	// s_mov_b32 m0, 0x00008000
+	Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
+	inst->addSpecialRegister(SI::InstSpecialRegM0);
+	inst->addLiteral(32768);
+	assert(inst->hasValidArguments());
 }
 
 

@@ -119,7 +119,8 @@ enum InstSpecialReg
 	InstSpecialRegVcc,
 	InstSpecialRegScc,
 	InstSpecialRegExec,
-	InstSpecialRegTma
+	InstSpecialRegTma,
+        InstSpecialRegM0
 };
 
 
