@@ -26,7 +26,6 @@
 
 #include <arch/x86/emu/UInst.h>
 
-
 namespace x86
 {
 

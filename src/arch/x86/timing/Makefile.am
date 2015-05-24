@@ -71,28 +71,31 @@ libtiming_a_SOURCES = \
 	writeback.c \
 	writeback.h \
 	\
-	Timing.h\
-	Timing.cc\
-	\
-	CPU.h\
-	CPU.cc\
-	\
-	Core.h\
-	\
-	Thread.h\
-	\
 	FunctionUnit.h\
 	\
 	Uop.h\
 	Uop.cc\
 	\
 	RegFile.h\
+	RegFile.cc\
 	\
 	TraceCache.h\
 	TraceCache.cc\
 	\
 	BranchPredictor.h\
-	BranchPredictor.cc
+	BranchPredictor.cc\
+	\
+	Thread.h\
+	Thread.cc\
+	\
+	Core.h\
+	Core.cc\
+	\
+	CPU.h\
+	CPU.cc\
+	\
+	Timing.h\
+	Timing.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

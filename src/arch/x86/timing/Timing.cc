@@ -238,14 +238,11 @@ const std::string Timing::help_message =
 
 bool Timing::help = false;
 
-// Debug file
-std::string Timing::trace_cache_debug_file;
-
-// Debuggers
-misc::Debug Timing::trace_cache_debug;
+// Default frequency
+int Timing::frequency = 1000;
 
 
-Timing::Timing()
+Timing::Timing(): comm::Timing()
 {
 
 }
@@ -314,7 +311,7 @@ void Timing::RegisterOptions()
 			"configuration file.");
 
 	// Option --x86-debug-trace-cache <file>
-	command_line->RegisterString("--x86-debug-trace-cache <file>", trace_cache_debug_file,
+	command_line->RegisterString("--x86-debug-trace-cache <file>", TraceCache::trace_cache_debug_file,
 			"Debug information for trace cache.");
 }
 
@@ -331,12 +328,13 @@ void Timing::ProcessOptions()
 		if (!help_message.empty())
 		{
 			misc::StringFormatter formatter(help_message);
-			// FIXME
+			std::cerr << formatter;
+			exit(1);
 		}
 	}
 
 	// Debuggers
-	trace_cache_debug.setPath(trace_cache_debug_file);
+	TraceCache::trace_cache_debug.setPath(TraceCache::trace_cache_debug_file);
 }
 
 
@@ -351,6 +349,11 @@ void Timing::ParseConfiguration(std::string &config_file)
 		std::string section_name = ini_file.getSection(i);
 		if (misc::StringPrefix(section_name, "General"))
 		{
+			frequency = ini_file.ReadInt(section_name, "Frequency", frequency);
+			if (!esim::Engine::isValidFrequency(frequency))
+				throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
+						"must be between 1MHz and 1000GHz.\n",
+						ini_file.getPath().c_str()));
 			CPU::ParseConfiguration(section_name, ini_file);
 		}
 		if (misc::StringPrefix(section_name, "Pipeline"))

@@ -17,15 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string>
-
-#include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
 
-#include <arch/x86/emu/UInst.h>
-
 #include "BranchPredictor.h"
-#include "Thread.h"
 #include "Uop.h"
 
 namespace x86

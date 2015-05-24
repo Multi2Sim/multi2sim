@@ -51,8 +51,8 @@ misc::StringMap CPU::CommitKindMap
 };
 
 // static member
-int CPU::num_cores;
-int CPU::num_threads;
+int CPU::num_cores = 1;
+int CPU::num_threads = 1;
 int CPU::context_quantum;
 int CPU::thread_quantum;
 int CPU::thread_switch_penalty;
@@ -70,6 +70,24 @@ bool CPU::process_prefetch_hints;
 bool CPU::use_nc_store;
 bool CPU::prefetch_history_size;
 int CPU::occupancy_stats;
+
+CPU::CPU()
+{
+	// The prefix for each core
+	std::string core_name = "Core";
+
+	// Initialize
+	emu = Emu::getInstance();
+	mmu.reset(new mem::MMU("x86"));
+
+	// Create cores
+	for (int i = 0; i < num_cores; i++)
+	{
+		core_name += misc::fmt("%d", i);
+		cores.emplace_back(new Core(core_name, this));
+		cores[i]->setID(i);
+	}
+}
 
 
 void CPU::ParseConfiguration(const std::string &section,

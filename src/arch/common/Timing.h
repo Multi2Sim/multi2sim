@@ -21,6 +21,8 @@
 #define ARCH_COMMON_TIMING_H
 
 #include <lib/cpp/IniFile.h>
+#include <lib/esim/FrequencyDomain.h>
+#include <lib/esim/Engine.h>
 
 
 namespace comm
@@ -28,12 +30,9 @@ namespace comm
 
 class Timing
 {
-	// Current cycle
-	long long cycle;
 
-	// Frequency domain info
-	int frequency;
-	int frequency_domain;
+	// Frequency domain pointer
+	esim::FrequencyDomain *frequency_domain;
 
 public:
 
@@ -42,20 +41,26 @@ public:
 	/// function must be implemented by every derived class.
 	virtual bool Run() = 0;
 
-	/// Return the frequency domain identifier where this architecture
-	/// belongs to.
-	int getFrequencyDomain() const { return frequency_domain; }
+	/// Configure the frequency domain
+	void ConfigFrequencyDomain(const std::string &name, int frequency)
+	{
+		esim::Engine *engine = esim::Engine::getInstance();
+		frequency_domain = engine->RegisterFrequencyDomain(name, frequency);
+	}
+
+	/// Return the frequency domain identifier
+	esim::FrequencyDomain *getFrequencyDomain() { return frequency_domain; }
 
 	/// Dump a default memory configuration for the architecture. This
 	/// function is invoked by the memory system configuration parser when
 	/// no specific memory configuration is given by the user for the
 	/// architecture.
-	virtual void WriteMemoryConfiguration(misc::IniFile *ini_file) = 0;
+	virtual void WriteMemoryConfiguration(misc::IniFile *ini_file);
 
 	/// Check architecture-specific requirements for the memory
 	/// memory configuration provided in the INI file. This function is
 	/// invoked by the memory configuration parser.
-	virtual void CheckMemoryConfiguration(misc::IniFile *ini_file) = 0;
+	virtual void CheckMemoryConfiguration(misc::IniFile *ini_file);
 };
 
 }
