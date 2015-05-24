@@ -57,16 +57,17 @@ public:
 
 private:
 
+	// name of this Core
+	std::string name;
+
 	// CPU that it belongs to 
 	CPU *cpu;
 
 	// Array of threads 
 	std::vector<std::unique_ptr<Thread>> threads;
 
-	std::string &name;
-
 	// Unique ID in CPU 
-	int id;
+	int id = 0;
 
 	// Shared structures 
 	std::list<std::unique_ptr<Uop>> event_queue;
@@ -76,74 +77,78 @@ private:
 	//struct prefetch_history_t *prefetch_history;
 
 	// Per core counters 
-	long long uop_id_counter;  // Counter for uop ID assignment 
-	long long dispatch_seq;  // Counter for uop ID assignment 
-	int iq_count;
-	int lsq_count;
-	int reg_file_int_count;
-	int reg_file_fp_count;
-	int reg_file_xmm_count;
+	long long uop_id_counter = 0;  // Counter for uop ID assignment
+	long long dispatch_seq = 0;  // Counter for uop ID assignment
+	int iq_count = 0;
+	int lsq_count = 0;
+	int reg_file_int_count = 0;
+	int reg_file_fp_count = 0;
+	int reg_file_xmm_count = 0;
 
 	// Reorder Buffer 
-	struct list_t *rob;
-	int rob_count;
-	int rob_head;
-	int rob_tail;
+	std::list<std::unique_ptr<Uop>> rob;
+	int rob_count = 0;
 
 	// Stages 
-	int fetch_current;  // Currently fetching thread 
-	long long fetch_switch_when;  // Cycle for last thread switch (for SwitchOnEvent) 
-	int decode_current;
-	int dispatch_current;
-	int issue_current;
-	int commit_current;
+	int fetch_current = 0;  // Currently fetching thread
+	long long fetch_switch_when = 0;  // Cycle for last thread switch (for SwitchOnEvent)
+	int decode_current = 0;
+	int dispatch_current = 0;
+	int issue_current = 0;
+	int commit_current = 0;
 
 	// Stats 
 	long long dispatch_stall[DispatchStallReasonMax];
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
 	long long num_issued_uinst_array[UInstOpcodeCount];
 	long long num_committed_uinst_array[UInstOpcodeCount];
-	long long num_squashed_uinst;
-	long long num_branch_uinst;
-	long long num_mispred_branch_uinst;
+	long long num_squashed_uinst = 0;
+	long long num_branch_uinst = 0;
+	long long num_mispred_branch_uinst = 0;
 
 	// Statistics for shared structures 
-	long long rob_occupancy;
-	long long rob_full;
-	long long rob_reads;
-	long long rob_writes;
+	long long rob_occupancy = 0;
+	long long rob_full = 0;
+	long long rob_reads = 0;
+	long long rob_writes = 0;
 
-	long long iq_occupancy;
-	long long iq_full;
-	long long iq_reads;
-	long long iq_writes;
-	long long iq_wakeup_accesses;
+	long long iq_occupancy = 0;
+	long long iq_full = 0;
+	long long iq_reads = 0;
+	long long iq_writes = 0;
+	long long iq_wakeup_accesses = 0;
 
-	long long lsq_occupancy;
-	long long lsq_full;
-	long long lsq_reads;
-	long long lsq_writes;
-	long long lsq_wakeup_accesses;
+	long long lsq_occupancy = 0;
+	long long lsq_full = 0;
+	long long lsq_reads = 0;
+	long long lsq_writes = 0;
+	long long lsq_wakeup_accesses = 0;
 
-	long long reg_file_int_occupancy;
-	long long reg_file_int_full;
-	long long reg_file_int_reads;
-	long long reg_file_int_writes;
+	long long reg_file_int_occupancy = 0;
+	long long reg_file_int_full = 0;
+	long long reg_file_int_reads = 0;
+	long long reg_file_int_writes = 0;
 
-	long long reg_file_fp_occupancy;
-	long long reg_file_fp_full;
-	long long reg_file_fp_reads;
-	long long reg_file_fp_writes;
+	long long reg_file_fp_occupancy = 0;
+	long long reg_file_fp_full = 0;
+	long long reg_file_fp_reads = 0;
+	long long reg_file_fp_writes = 0;
 
-	long long reg_file_xmm_occupancy;
-	long long reg_file_xmm_full;
-	long long reg_file_xmm_reads;
-	long long reg_file_xmm_writes;
+	long long reg_file_xmm_occupancy = 0;
+	long long reg_file_xmm_full = 0;
+	long long reg_file_xmm_reads = 0;
+	long long reg_file_xmm_writes = 0;
 
 public:
 
 	/// Constructor
-	Core(std::string &name);
+	Core(const std::string &name, CPU *cpu);
+
+	/// Setters
+	void setID(int id) { this->id = id; }
+
+	/// Getters
+	int getID() { return id; }
 
 };
 

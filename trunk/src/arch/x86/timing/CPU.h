@@ -23,7 +23,6 @@
 #include <vector>
 #include <list>
 
-#include <arch/common/Timing.h>
 #include <memory/MMU.h>
 #include <arch/x86/emu/UInst.h>
 #include <arch/x86/emu/Emu.h>
@@ -100,7 +99,7 @@ private:
 	std::vector<std::unique_ptr<Core>> cores;
 
 	// MMU used by this CPU 
-	mem::MMU mmu;
+	std::shared_ptr<mem::MMU> mmu;
 
 	// Some fields 
 	// Counter of uop ID assignment 
@@ -133,8 +132,8 @@ private:
 	double time = 0.0;
 
 	// For dumping 
-	long long last_committed;
-	long long last_dump;
+	long long last_committed = 0;
+	long long last_dump = 0;
 
 	// CPU parameter
 	static int num_cores;
@@ -177,7 +176,14 @@ private:
 public:
 
 	/// Create CPU
-	void Create();
+	CPU();
+
+	/// Static member getters
+	static int getNumCores() { return num_cores; }
+	static int getNumThreads() { return num_threads; }
+	static int getContextQuantum() { return context_quantum; }
+	static int getThreadQuantum() { return thread_quantum; }
+	static int getThreadSwitchPenalty() { return thread_switch_penalty; }
 
 	/// Dump functions
 	void Dump();

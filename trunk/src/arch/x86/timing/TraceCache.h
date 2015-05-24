@@ -22,22 +22,18 @@
 
 #include <lib/cpp/IniFile.h>
 
-#include "Thread.h"
-#include "Timing.h"
+#include "Uop.h"
 
 namespace x86
 {
 
 // Forward declaration
-class Timing;
+class Uop;
 
 // Trace cache class
 class TraceCache
 {
 private:
-
-	// The timing simulator the trace cache belongs to
-	Timing *timing;
 
 	// Name of the trace cache
 	std::string name;
@@ -136,6 +132,7 @@ public:
 	/// Statistic getters
 
 
+	/// Dump functions
 	/// Dump the trace cache report
 	void DumpReport(std::ostream &os = std::cout);
 
@@ -148,6 +145,12 @@ public:
 
 	/// Flush temporary trace of committed instructions back into the trace cache
 	void Flush();
+
+	/// Debugger files
+	static std::string trace_cache_debug_file;
+
+	/// Debugger for trace cache
+	static misc::Debug trace_cache_debug;
 
 };
 

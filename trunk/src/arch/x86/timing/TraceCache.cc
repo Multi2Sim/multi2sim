@@ -33,13 +33,18 @@ int TraceCache::trace_size;
 int TraceCache::branch_max;
 int TraceCache::queue_size;
 
+// Debug file
+std::string TraceCache::trace_cache_debug_file;
+
+// Debuggers
+misc::Debug TraceCache::trace_cache_debug;
+
 
 TraceCache::TraceCache(const std::string &name)
 	:
 	name(name)
 {
 	// Initialize 
-	timing = Timing::getInstance();
 	this->entry = misc::new_unique_array<TraceCacheEntry>(num_sets * assoc);
 	this->temp = misc::new_unique<TraceCacheEntry>();
 
@@ -152,9 +157,9 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	bool taken;
 
 	// Debug
-	timing->trace_cache_debug << misc::fmt("** Lookup **\n");
-	timing->trace_cache_debug << misc::fmt("eip = 0x%x, pred = ", eip);
-	timing->trace_cache_debug << misc::fmt("\n");
+	trace_cache_debug << misc::fmt("** Lookup **\n");
+	trace_cache_debug << misc::fmt("eip = 0x%x, pred = ", eip);
+	trace_cache_debug << misc::fmt("\n");
 
 	// Look for trace cache line
 	set = eip % num_sets;
@@ -176,8 +181,8 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	// Miss
 	if (!found_entry)
 	{
-		timing->trace_cache_debug << misc::fmt("Miss\n");
-		timing->trace_cache_debug << misc::fmt("\n");
+		trace_cache_debug << misc::fmt("Miss\n");
+		trace_cache_debug << misc::fmt("\n");
 		return false;
 	}
 
@@ -188,10 +193,10 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	neip = taken ? found_entry->target : found_entry->fall_through;
 
 	// Debug
-	timing->trace_cache_debug << misc::fmt("Hit - Set = %d, Way = %d\n", set, way);
-	timing->trace_cache_debug << misc::fmt("Next trace prediction = %c\n", taken ? 'T' : 'N');
-	timing->trace_cache_debug << misc::fmt("Next fetch address = 0x%x\n", neip);
-	timing->trace_cache_debug << misc::fmt("\n");
+	trace_cache_debug << misc::fmt("Hit - Set = %d, Way = %d\n", set, way);
+	trace_cache_debug << misc::fmt("Next trace prediction = %c\n", taken ? 'T' : 'N');
+	trace_cache_debug << misc::fmt("Next fetch address = 0x%x\n", neip);
+	trace_cache_debug << misc::fmt("\n");
 
 
 	// Return entry
@@ -277,9 +282,9 @@ void TraceCache::Flush()
 	memset(temp_ptr, 0, sizeof(TraceCacheEntry));
 
 	// Debug
-	timing->trace_cache_debug << misc::fmt("** Commit trace **\n");
-	timing->trace_cache_debug << misc::fmt("Set = %d, Way = %d\n", set, found_way);
-	timing->trace_cache_debug << misc::fmt("\n");
+	trace_cache_debug << misc::fmt("** Commit trace **\n");
+	trace_cache_debug << misc::fmt("Set = %d, Way = %d\n", set, found_way);
+	trace_cache_debug << misc::fmt("\n");
 
 	// Statistics
 	trace_length_acc += found_entry->uop_count;
