@@ -28,9 +28,9 @@
 #include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
 
-#include "CPU.h"
 #include "BranchPredictor.h"
 #include "TraceCache.h"
+#include "CPU.h"
 
 namespace x86
 {
@@ -45,7 +45,7 @@ class Timing : public comm::Timing
 	static std::unique_ptr<Timing> instance;
 
 	// CPU associated with this timing simulator
-	static CPU cpu;
+	std::unique_ptr<CPU> cpu;
 
 	// Configuration file name
 	static std::string config_file;
@@ -64,8 +64,8 @@ class Timing : public comm::Timing
 	// Message to display with '--x86-help'
 	static const std::string help_message;
 
-	// Debugger files
-	static std::string trace_cache_debug_file;
+	// Frequency of memory system in MHz
+	static int frequency;
 
 	// Private constructor for singleton
 	Timing();
@@ -87,7 +87,14 @@ public:
 	static Timing *getInstance();
 
 	/// Create new CPU instance
-	static void NewCPU();
+	void NewCPU()
+	{
+		ConfigFrequencyDomain("x86", frequency);
+
+		// Only instantiate once
+		assert(!cpu.get());
+		cpu.reset(new CPU());
+	}
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful
@@ -118,8 +125,6 @@ public:
 	/// Parse the configuration file
 	static void ParseConfiguration(std::string &config_file);
 
-	/// Debugger for trace cache
-	static misc::Debug trace_cache_debug;
 };
 
 } //namespace x86

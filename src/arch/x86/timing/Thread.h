@@ -31,6 +31,7 @@
 #include "Uop.h"
 #include "BranchPredictor.h"
 #include "TraceCache.h"
+#include "RegFile.h"
 
 namespace x86
 {
@@ -38,7 +39,7 @@ namespace x86
 // Forward declarations
 class Context;
 class Core;
-class Cpu;
+class CPU;
 class BranchPredictor;
 class TraceCache;
 class RegFile;
@@ -49,16 +50,16 @@ class Thread
 {
 private:
 
-	// Core and CPU that it belongs to
-	Core *core;
-	Cpu *cpu;
-
-	// IDs
-	int id_in_core;
-	int id_in_cpu;
-
 	// Name
 	std::string name;
+
+	// CPU and Core that it belongs to
+	CPU *cpu;
+	Core *core;
+
+	// IDs
+	int id_in_core = 0;
+	int id_in_cpu = 0;
 
 	// Context currently running in this thread. This is a context present
 	// in the thread's 'mapped' list. 
@@ -66,22 +67,18 @@ private:
 
 	// Double-linked list of mapped contexts
 	std::list<std::unique_ptr<Context>> mapped_contexts_list;
-	int mapped_list_count;
-	int mapped_list_max;
+	int mapped_list_count = 0;
+	int mapped_list_max = 0;
 
 	// Reorder buffer
-	int rob_count;
-	int rob_left_bound;
-	int rob_right_bound;
-	int rob_head;
-	int rob_tail;
+	int rob_count = 0;
 
 	// Number of uops in private structures
-	int iq_count;
-	int lsq_count;
-	int reg_file_int_count;
-	int reg_file_fp_count;
-	int reg_file_xmm_count;
+	int iq_count = 0;
+	int lsq_count = 0;
+	int reg_file_int_count = 0;
+	int reg_file_fp_count = 0;
+	int reg_file_xmm_count = 0;
 
 	// Private structures
 	std::vector<std::unique_ptr<Uop>> fetch_queue;
@@ -105,110 +102,86 @@ private:
 	std::unique_ptr<RegFile> reg_file; // physical register file
 
 	// Fetch
-	unsigned int fetch_eip, fetch_neip;  // eip and next eip
-	int fetchq_occ;  // Number of bytes occupied in the fetch queue
-	int trace_cache_queue_occ;  // Number of uops occupied in the trace cache queue
-	unsigned int fetch_block;  // Virtual address of last fetched block
-	unsigned int fetch_address;  // Physical address of last instruction fetch
-	long long fetch_access;  // Module access ID of last instruction fetch
-	long long fetch_stall_until;  // Cycle until which fetching is stalled (inclussive)
+	unsigned int fetch_eip = 0, fetch_neip = 0;  // eip and next eip
+	int fetchq_occupied  = 0;  // Number of bytes occupied in the fetch queue
+	int trace_cache_queue_occupied  = 0;  // Number of uops occupied in the trace cache queue
+	unsigned int fetch_block = 0;  // Virtual address of last fetched block
+	unsigned int fetch_address = 0;  // Physical address of last instruction fetch
+	long long fetch_access_id = 0;  // Module access ID of last instruction fetch
+	long long fetch_stall_until = 0;  // Cycle until which fetching is stalled (inclussive)
 
 	// Entries to the memory system
 	std::shared_ptr<mem::Module> data_mod;  // Entry for data
 	std::shared_ptr<mem::Module> inst_mod;  // Entry for instructions
 
 	// Cycle in which last micro-instruction committed
-	long long last_commit_cycle;
+	long long last_commit_cycle = 0;
 
 	// Statistics
-	long long num_fetched_uinst;
+	long long num_fetched_uinst = 0;
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
 	long long num_issued_uinst_array[UInstOpcodeCount];
 	long long num_committed_uinst_array[UInstOpcodeCount];
-	long long num_squashed_uinst;
-	long long num_branch_uinst;
-	long long num_mispred_branch_uinst;
+	long long num_squashed_uinst = 0;
+	long long num_branch_uinst = 0;
+	long long num_mispred_branch_uinst = 0;
 
 	// Statistics for structures
-	long long rob_occupancy;
-	long long rob_full;
-	long long rob_reads;
-	long long rob_writes;
+	long long rob_occupancy = 0;
+	long long rob_full = 0;
+	long long rob_reads = 0;
+	long long rob_writes = 0;
 
-	long long iq_occupancy;
-	long long iq_full;
-	long long iq_reads;
-	long long iq_writes;
-	long long iq_wakeup_accesses;
+	long long iq_occupancy = 0;
+	long long iq_full = 0;
+	long long iq_reads = 0;
+	long long iq_writes = 0;
+	long long iq_wakeup_accesses = 0;
 
-	long long lsq_occupancy;
-	long long lsq_full;
-	long long lsq_reads;
-	long long lsq_writes;
-	long long lsq_wakeup_accesses;
+	long long lsq_occupancy = 0;
+	long long lsq_full = 0;
+	long long lsq_reads = 0;
+	long long lsq_writes = 0;
+	long long lsq_wakeup_accesses = 0;
 
-	long long reg_file_int_occupancy;
-	long long reg_file_int_full;
-	long long reg_file_int_reads;
-	long long reg_file_int_writes;
+	long long reg_file_int_occupancy = 0;
+	long long reg_file_int_full = 0;
+	long long reg_file_int_reads = 0;
+	long long reg_file_int_writes = 0;
 
-	long long reg_file_fp_occupancy;
-	long long reg_file_fp_full;
-	long long reg_file_fp_reads;
-	long long reg_file_fp_writes;
+	long long reg_file_fp_occupancy = 0;
+	long long reg_file_fp_full = 0;
+	long long reg_file_fp_reads = 0;
+	long long reg_file_fp_writes = 0;
 
-	long long reg_file_xmm_occupancy;
-	long long reg_file_xmm_full;
-	long long reg_file_xmm_reads;
-	long long reg_file_xmm_writes;
+	long long reg_file_xmm_occupancy = 0;
+	long long reg_file_xmm_full = 0;
+	long long reg_file_xmm_reads = 0;
+	long long reg_file_xmm_writes = 0;
 
-	long long rat_int_reads;
-	long long rat_int_writes;
-	long long rat_fp_reads;
-	long long rat_fp_writes;
-	long long rat_xmm_reads;
-	long long rat_xmm_writes;
+	long long rat_int_reads = 0;
+	long long rat_int_writes = 0;
+	long long rat_fp_reads = 0;
+	long long rat_fp_writes = 0;
+	long long rat_xmm_reads = 0;
+	long long rat_xmm_writes = 0;
 
-	long long btb_reads;
-	long long btb_writes;
+	long long btb_reads = 0;
+	long long btb_writes = 0;
 
 public:
 
 	/// Constructor
-	Thread();
+	Thread(const std::string &name, CPU *cpu, Core *core);
 
-	/// Destructor
-	~Thread();
+	/// Setters
+	void setIDInCore(int id_in_core) { this->id_in_core = id_in_core; }
 
-	/// Set the name of a thread
-	void SetName(std::string &name);
+	/// Getters
+	int getIDInCore() const { return id_in_core; }
 
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();
-
-	///////////////////////////////////////////////////////////////////////
-	//
-	// Functions implemented in ThreadRegFile.cc. These are the functions
-	// related with the register file.
-	//
-	///////////////////////////////////////////////////////////////////////
-	void DumpRegFile();
-
-	int RequestIntReg();
-	int RequestFPReg();
-	int RequestXMMReg();
-
-	bool CanRenameUop(Uop &uop);
-	void RenameUop(Uop &uop);
-
-	bool IsUopReady(Uop &uop);
-
-	void WriteUop(Uop &uop);
-	void UndoUop(Uop &uop);
-	void CommitUop(Uop &uop);
-
-	void CheckRegFile();
-
 
 };
 
