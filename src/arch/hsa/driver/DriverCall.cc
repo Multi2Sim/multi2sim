@@ -933,7 +933,30 @@ int Driver::CallMemoryDeregister(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallMemoryAllocate(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// hsa_status_t		| 0		| 4
+	// region		| 4		| 8
+	// size			| 12		| 8
+	// ptr			| 20		| 8
+
+	unsigned long long region = getArgumentValue<unsigned long long>
+			(4, memory, args_ptr);
+	unsigned long long size = getArgumentValue<unsigned long long>
+			(12, memory, args_ptr);
+	unsigned long long ptr = getArgumentValue<unsigned long long>
+			(20, memory, args_ptr);
+
+	// Only recognize region 1 currently
+	if (region != 1)
+		return 0;
+
+	// Allocate memory
+	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+	unsigned address = manager->Allocate(size);
+
+	// Write back
+	memory->Write(ptr, 4, (char *)&address);
+
 	return 0;
 }
 
