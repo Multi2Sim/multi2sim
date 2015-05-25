@@ -88,8 +88,20 @@ hsa_status_t HSA_API hsa_agent_iterate_regions(
 hsa_status_t HSA_API
 	hsa_memory_allocate(hsa_region_t region, size_t size, void **ptr)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
-	return HSA_STATUS_SUCCESS;
+	// Init arguments
+	unsigned int args[7] = {0};
+	memcpy(args + 1, &region, 8);
+	memcpy(args + 3, &size, 4);
+	memcpy(args + 5, &ptr, 4);
+
+	// Check if HSA runtime initialized
+	if (!hsa_runtime)
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+
+	// Iterate regions
+	ioctl(hsa_runtime->fd, MemoryAllocate, args);
+
+	return args[0];
 }
 
 
