@@ -27,9 +27,6 @@
 namespace x86
 {
 
-// Forward declaration
-class Uop;
-
 // Trace cache class
 class TraceCache
 {
