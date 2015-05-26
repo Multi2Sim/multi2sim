@@ -26,6 +26,28 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core)
 	:
 	name(name), cpu(cpu), core(core)
 {
+	// Initialize Uop queue
+
+	// Initialize Load/Store queue
+
+	// Initialize Instruction queue
+
+	// Initialize fetch queue
+
+	// Initialize branch predictor
+	std::string branch_predictor_name = this->name + ".Branch Predictor";
+	branch_predictor.reset(new BranchPredictor(branch_predictor_name));
+
+	// Initialize trace cache
+	if (TraceCache::getPresent())
+	{
+		std::string trace_cache_name = this->name + ".Trace Cache";
+		trace_cache.reset(new TraceCache(trace_cache_name));
+	}
+
+	// Initialize register file
+	reg_file.reset(new RegFile(this->core, this));
+	reg_file->InitRegFile();
 
 }
 

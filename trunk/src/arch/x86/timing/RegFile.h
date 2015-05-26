@@ -29,7 +29,8 @@ namespace x86
 {
 
 // Forward declaration
-class Uop;
+class Thread;
+class Core;
 
 // Minimum size of INT FP and XMM register
 const int RegFileMinINTSize = UInstDepIntCount + UInstMaxODeps;
@@ -52,6 +53,10 @@ public:
 
 private:
 
+	// Core and thread it belongs to
+	Core *core;
+	Thread *thread;
+
 	// Structure of physical register
 	struct PhysicalRegister
 	{
@@ -60,25 +65,25 @@ private:
 	};
 
 	// Integer registers 
-	int int_rat[UInstDepIntCount];
-	std::unique_ptr<PhysicalRegister> int_phy_reg;
+	int int_rat[UInstDepIntCount]; // Int register aliasing table
+	std::unique_ptr<PhysicalRegister[]> int_phy_reg;
 	int int_phy_reg_count = 0;
-	std::unique_ptr<int> int_free_phy_reg;
+	std::unique_ptr<int[]> int_free_phy_reg;
 	int int_free_phy_reg_count = 0;
 
 	// FP registers 
 	int fp_top_of_stack = 0;  // Value between 0 and 7
-	int fp_rat[UInstDepFpCount];
-	std::unique_ptr<PhysicalRegister> fp_phy_reg;
+	int fp_rat[UInstDepFpCount]; // Fp register aliasing table
+	std::unique_ptr<PhysicalRegister[]> fp_phy_reg;
 	int fp_phy_reg_count = 0;
-	std::unique_ptr<int> fp_free_phy_reg;
+	std::unique_ptr<int[]> fp_free_phy_reg;
 	int fp_free_phy_reg_count = 0;
 
 	// XMM registers 
-	int xmm_rat[UInstDepXmmCount];
-	std::unique_ptr<PhysicalRegister> xmm_phy_reg;
+	int xmm_rat[UInstDepXmmCount]; // Xmm register aliasing table
+	std::unique_ptr<PhysicalRegister[]> xmm_phy_reg;
 	int xmm_phy_reg_count = 0;
-	std::unique_ptr<int> xmm_free_phy_regg;
+	std::unique_ptr<int[]> xmm_free_phy_reg;
 	int xmm_free_phy_reg_count = 0;
 
 	// Register file parameter
@@ -93,11 +98,14 @@ private:
 public:
 
 	/// Constructor
-	RegFile();
+	RegFile(Core *core, Thread *thread);
 
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(const std::string &section,
 				misc::IniFile &config);
+
+	/// Initialize the register file
+	void InitRegFile();
 
 	/// Dump register file
 	void DumpRegFile();
@@ -108,8 +116,8 @@ public:
 	int RequestXMMReg();
 
 	/// Rename functions
-	bool CanRenameUop(Uop &uop);
-	void RenameUop(Uop &uop);
+	bool CanRename(Uop &uop);
+	void Rename(Uop &uop);
 
 	/// Check if input dependencies are resolved
 	bool IsUopReady(Uop &uop);

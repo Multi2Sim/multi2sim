@@ -23,6 +23,7 @@
 #include <lib/cpp/Misc.h>
 
 #include <arch/x86/emu/UInst.h>
+#include <arch/x86/emu/Context.h>
 
 #include "BranchPredictor.h"
 
@@ -33,8 +34,6 @@ namespace x86
 const unsigned int UopMagic = 0x10101010;
 
 // Forward declarations
-class UInst;
-class Context;
 class Thread;
 
 // Class Uop
@@ -163,6 +162,15 @@ public:
 		this->choice_pred = pred;
 	}
 	void setSpeculativeMode(bool speculative_mode) { this->speculative_mode = speculative_mode; }
+	void setPhyRegIntIdepCount(int ph_int_idep_count) { this->ph_int_idep_count = ph_int_idep_count; }
+	void setPhyRegIntOdepCount(int ph_int_odep_count) { this->ph_int_odep_count = ph_int_odep_count; }
+	void setPhyRegFpIdepCount(int ph_fp_idep_count) { this->ph_fp_idep_count = ph_fp_idep_count; }
+	void setPhyRegFpOdepCount(int ph_fp_odep_count) { this->ph_fp_odep_count = ph_fp_odep_count; }
+	void setPhyRegXmmIdepCount(int ph_xmm_idep_count) { this->ph_xmm_idep_count = ph_xmm_idep_count; }
+	void setPhyRegXmmOdepCount(int ph_xmm_odep_count) { this->ph_xmm_odep_count = ph_xmm_odep_count; }
+	void setPhyRegIdep(int index, int reg_no) { ph_idep[index] = reg_no; }
+	void setPhyRegOdep(int index, int reg_no) { ph_odep[index] = reg_no; }
+	void setPhyRegOOdep(int index, int reg_no) { ph_oodep[index] = reg_no; }
 
 	/// Getters
 	UInst *getUinst() { return uinst; }
@@ -186,6 +194,16 @@ public:
 	int getChoiceIndex() const { return choice_index; }
 	BranchPredictorPred getChoicePrediction() const { return choice_pred; }
 	bool getSpeculativeMode() const { return speculative_mode; }
+	int getPhyRegIntIdepCount() const { return ph_int_idep_count; }
+	int getPhyRegIntOdepCount() const { return ph_int_odep_count; }
+	int getPhyRegFpIdepCount() const { return ph_fp_idep_count; }
+	int getPhyRegFpOdepCount() const { return ph_fp_odep_count; }
+	int getPhyRegXmmIdepCount() const { return ph_xmm_idep_count; }
+	int getPhyRegXmmOdepCount() const { return ph_xmm_odep_count; }
+	int getPhyRegIdep(int index) { return ph_idep[index]; }
+	int getPhyRegOdep(int index) { return ph_odep[index]; }
+	int getPhyRegOOdep(int index) { return ph_oodep[index]; }
+
 };
 
 }
