@@ -106,19 +106,19 @@ private:
 	long long issue_when = 0;  // cycle when issued
 
 	// Global prediction (0=not taken, 1=taken)
-	BranchPredictorPred pred = BranchPredictorPredNotTaken;
+	BranchPredictor::Prediction pred = BranchPredictor::PredictionNotTaken;
 
 	// Bimodal Branch prediction
 	int bimod_index = 0;
-	BranchPredictorPred bimod_pred = BranchPredictorPredNotTaken;
+	BranchPredictor::Prediction bimod_pred = BranchPredictor::PredictionNotTaken;
 
 	// Twolevel Branch prediction
 	int twolevel_bht_index = 0, twolevel_pht_row = 0, twolevel_pht_col = 0;
-	BranchPredictorPred twolevel_pred = BranchPredictorPredNotTaken;
+	BranchPredictor::Prediction twolevel_pred = BranchPredictor::PredictionNotTaken;
 
 	// Combined Branch prediction
 	int choice_index = 0;
-	BranchPredictorPred choice_pred = BranchPredictorPredNotTaken;
+	BranchPredictor::Prediction choice_pred = BranchPredictor::PredictionNotTaken;
 
 public:
 
@@ -132,7 +132,7 @@ public:
 	void setUInst(UInst *uinst) {this->uinst = uinst; }
 	void setID(int id) { this->id = id; }
 	void setFlags(int flags) { this->flags = flags; }
-	void setPrediction(BranchPredictorPred pred)
+	void setPrediction(BranchPredictor::Prediction pred)
 	{
 		this->pred = pred;
 	}
@@ -145,19 +145,19 @@ public:
 	void setMopIndex(int mop_index) { this->mop_index = mop_index; }
 	void setMopId(long long mop_id) { this->mop_id = mop_id;}
 	void setBimodIndex(int bimod_index) { this->bimod_index = bimod_index; }
-	void setBimodPrediction(BranchPredictorPred pred)
+	void setBimodPrediction(BranchPredictor::Prediction pred)
 	{
 		this->bimod_pred = pred;
 	}
 	void setTwolevelBHTIndex(int index) { this->twolevel_bht_index = index; }
 	void setTwolevelPHTRow(int row) { this->twolevel_pht_row = row; }
 	void setTwolevelPHTCol(int col) { this->twolevel_pht_col = col; }
-	void setTwolevelPrediction(BranchPredictorPred pred)
+	void setTwolevelPrediction(BranchPredictor::Prediction pred)
 	{
 		this->twolevel_pred = pred;
 	}
 	void setChoiceIndex(int choice_index) { this->choice_index = choice_index; }
-	void setChoicePrediction(BranchPredictorPred pred)
+	void setChoicePrediction(BranchPredictor::Prediction pred)
 	{
 		this->choice_pred = pred;
 	}
@@ -176,7 +176,7 @@ public:
 	UInst *getUinst() { return uinst; }
 	int getID() const { return id; }
 	int getFlags() const { return flags; }
-	BranchPredictorPred getPrediction() const { return pred; }
+	BranchPredictor::Prediction getPrediction() const { return pred; }
 	unsigned int getNeip() const { return neip; }
 	unsigned int getEip() const { return eip; }
 	unsigned int getPredictedNeip() const { return predicted_neip; }
@@ -186,13 +186,13 @@ public:
 	int getMopIndex() const { return mop_index; }
 	long long getMopId() const { return mop_id; }
 	int getBimodIndex() const { return bimod_index; }
-	BranchPredictorPred getBimodPrediction() const { return bimod_pred; }
+	BranchPredictor::Prediction getBimodPrediction() const { return bimod_pred; }
 	int getTwolevelBHTIndex() const { return twolevel_bht_index; }
 	int getTwolevelPHTRow() const { return twolevel_pht_row; }
 	int getTwolevelPHTCol() const { return twolevel_pht_col; }
-	BranchPredictorPred getTwolevelPrediction() const { return twolevel_pred; }
+	BranchPredictor::Prediction getTwolevelPrediction() const { return twolevel_pred; }
 	int getChoiceIndex() const { return choice_index; }
-	BranchPredictorPred getChoicePrediction() const { return choice_pred; }
+	BranchPredictor::Prediction getChoicePrediction() const { return choice_pred; }
 	bool getSpeculativeMode() const { return speculative_mode; }
 	int getPhyRegIntIdepCount() const { return ph_int_idep_count; }
 	int getPhyRegIntOdepCount() const { return ph_int_odep_count; }

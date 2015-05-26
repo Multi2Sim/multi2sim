@@ -76,8 +76,8 @@ libtiming_a_SOURCES = \
 	Uop.h\
 	Uop.cc\
 	\
-	RegFile.h\
-	RegFile.cc\
+	RegisterFile.h\
+	RegisterFile.cc\
 	\
 	TraceCache.h\
 	TraceCache.cc\

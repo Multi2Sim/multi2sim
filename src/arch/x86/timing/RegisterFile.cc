@@ -17,29 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "RegFile.h"
+#include "RegisterFile.h"
 #include "Core.h"
 #include "Thread.h"
 
 namespace x86
 {
 
-misc::StringMap RegFile::KindMap =
+const int RegisterFile::MinINTSize = UInstDepIntCount + UInstMaxODeps;
+const int RegisterFile::MinFPSize = UInstDepFpCount + UInstMaxODeps;
+const int RegisterFile::MinXMMSize = UInstDepXmmCount + UInstMaxODeps;
+
+misc::StringMap RegisterFile::KindMap =
 {
 	{"Shared", KindShared},
 	{"Private", KindPrivate}
 };
 
-RegFile::Kind RegFile::kind;
-int RegFile::int_size;
-int RegFile::fp_size;
-int RegFile::xmm_size;
-int RegFile::int_local_size;
-int RegFile::fp_local_size;
-int RegFile::xmm_local_size;
+RegisterFile::Kind RegisterFile::kind;
+int RegisterFile::int_size;
+int RegisterFile::fp_size;
+int RegisterFile::xmm_size;
+int RegisterFile::int_local_size;
+int RegisterFile::fp_local_size;
+int RegisterFile::xmm_local_size;
 
 
-RegFile::RegFile(Core *core, Thread *thread)
+RegisterFile::RegisterFile(Core *core, Thread *thread)
 	:
 	core(core), thread(thread)
 {
@@ -79,7 +83,7 @@ RegFile::RegFile(Core *core, Thread *thread)
 }
 
 
-void RegFile::ParseConfiguration(const std::string &section,
+void RegisterFile::ParseConfiguration(const std::string &section,
 				misc::IniFile &config)
 {
 	kind = (Kind)config.ReadEnum(section, "RfKind",
@@ -88,14 +92,14 @@ void RegFile::ParseConfiguration(const std::string &section,
 	fp_size = config.ReadInt(section, "RfFpSize", 40);
 	xmm_size = config.ReadInt(section, "RfXmmSize", 40);
 
-	int threads_num = config.ReadInt("General", "Threads", 1);
+	int num_threads = config.ReadInt("General", "Threads", 1);
 
-	if (int_size < RegFileMinINTSize)
-		misc::fatal("rf_int_size must be at least %d", RegFileMinINTSize);
-	if (fp_size < RegFileMinFPSize)
-		misc::fatal("rf_fp_size must be at least %d", RegFileMinFPSize);
-	if (xmm_size < RegFileMinXMMSize)
-		misc::fatal("rf_xmm_size must be at least %d", RegFileMinXMMSize);
+	if (int_size < MinINTSize)
+		misc::fatal("rf_int_size must be at least %d", MinINTSize);
+	if (fp_size < MinFPSize)
+		misc::fatal("rf_fp_size must be at least %d", MinFPSize);
+	if (xmm_size < MinXMMSize)
+		misc::fatal("rf_xmm_size must be at least %d", MinXMMSize);
 
 	if (kind == KindPrivate)
 	{
@@ -105,14 +109,14 @@ void RegFile::ParseConfiguration(const std::string &section,
 	}
 	else
 	{
-		int_local_size = int_size * threads_num;
-		fp_local_size = fp_size * threads_num;
-		xmm_local_size = xmm_size * threads_num;
+		int_local_size = int_size * num_threads;
+		fp_local_size = fp_size * num_threads;
+		xmm_local_size = xmm_size * num_threads;
 	}
 }
 
 
-void RegFile::InitRegFile()
+void RegisterFile::InitRegisterFile()
 {
 	// Local variable
 	int phy_reg;
@@ -133,7 +137,7 @@ void RegFile::InitRegFile()
 		}
 		else
 		{
-			phy_reg = RequestIntReg();
+			phy_reg = RequestIntRegister();
 			flag_phy_reg = phy_reg;
 		}
 		int_phy_reg[phy_reg].busy++;
@@ -143,7 +147,7 @@ void RegFile::InitRegFile()
 	// Initial mapping for floating-point registers.
 	for (int dep = 0; dep < UInstDepFpCount; dep++)
 	{
-		phy_reg = RequestFPReg();
+		phy_reg = RequestFPRegister();
 		fp_phy_reg[phy_reg].busy++;
 		fp_rat[dep] = phy_reg;
 	}
@@ -151,14 +155,14 @@ void RegFile::InitRegFile()
 	// Initial mapping for xmm registers.
 	for (int dep = 0; dep < UInstDepXmmCount; dep++)
 	{
-		phy_reg = RequestXMMReg();
+		phy_reg = RequestXMMRegister();
 		xmm_phy_reg[phy_reg].busy++;
 		xmm_rat[dep] = phy_reg;
 	}
 }
 
 
-int RegFile::RequestIntReg()
+int RegisterFile::RequestIntRegister()
 {
 	// Local variable
 	int phy_reg;
@@ -175,7 +179,7 @@ int RegFile::RequestIntReg()
 }
 
 
-int RegFile::RequestFPReg()
+int RegisterFile::RequestFPRegister()
 {
 	// Local variable
 	int phy_reg;
@@ -192,7 +196,7 @@ int RegFile::RequestFPReg()
 }
 
 
-int RegFile::RequestXMMReg()
+int RegisterFile::RequestXMMRegister()
 {
 	// Local variable
 	int phy_reg;
@@ -209,7 +213,7 @@ int RegFile::RequestXMMReg()
 }
 
 
-bool RegFile::CanRename(Uop &uop)
+bool RegisterFile::CanRename(Uop &uop)
 {
 	// Detect negative cases. FIXME
 	//assert(uop->thread == self);
@@ -237,7 +241,7 @@ bool RegFile::CanRename(Uop &uop)
 }
 
 
-void RegFile::Rename(Uop &uop)
+void RegisterFile::Rename(Uop &uop)
 {
 	// Local variable
 	int local_reg, stack_reg, phy_reg, ophy_reg;
@@ -305,7 +309,7 @@ void RegFile::Rename(Uop &uop)
 		else if (local_reg >= UInstDepIntFirst && local_reg <= UInstDepIntLast)
 		{
 			// Reclaim a free integer register
-			phy_reg = RequestIntReg();
+			phy_reg = RequestIntRegister();
 			int_phy_reg[phy_reg].busy++;
 			int_phy_reg[phy_reg].pending = 1;
 			ophy_reg = int_rat[local_reg - UInstDepIntFirst];
@@ -326,7 +330,7 @@ void RegFile::Rename(Uop &uop)
 			assert(stack_reg >= UInstDepFpFirst && stack_reg <= UInstDepFpLast);
 
 			// Reclaim a free FP register
-			phy_reg = RequestFPReg();
+			phy_reg = RequestFPRegister();
 			fp_phy_reg[phy_reg].busy++;
 			fp_phy_reg[phy_reg].pending = 1;
 			ophy_reg = fp_rat[stack_reg - UInstDepFpFirst];
@@ -340,7 +344,7 @@ void RegFile::Rename(Uop &uop)
 		else if (local_reg >= UInstDepXmmFirst && local_reg <= UInstDepXmmLast)
 		{
 			// Reclaim a free xmm register
-			phy_reg = RequestXMMReg();
+			phy_reg = RequestXMMRegister();
 			xmm_phy_reg[phy_reg].busy++;
 			xmm_phy_reg[phy_reg].pending = 1;
 			ophy_reg = xmm_rat[local_reg - UInstDepXmmFirst];
@@ -362,7 +366,7 @@ void RegFile::Rename(Uop &uop)
 	// Rename flags
 	if (flag_count > 0) {
 		if (flag_phy_reg < 0)
-			flag_phy_reg = RequestIntReg();
+			flag_phy_reg = RequestIntRegister();
 		for (int dep = 0; dep < UInstMaxODeps; dep++)
 		{
 			local_reg = (int)uop.getUinst()->getODep(dep);

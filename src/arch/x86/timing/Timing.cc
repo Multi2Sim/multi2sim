@@ -311,7 +311,7 @@ void Timing::RegisterOptions()
 			"configuration file.");
 
 	// Option --x86-debug-trace-cache <file>
-	command_line->RegisterString("--x86-debug-trace-cache <file>", TraceCache::trace_cache_debug_file,
+	command_line->RegisterString("--x86-debug-trace-cache <file>", TraceCache::debug_file,
 			"Debug information for trace cache.");
 }
 
@@ -334,7 +334,7 @@ void Timing::ProcessOptions()
 	}
 
 	// Debuggers
-	TraceCache::trace_cache_debug.setPath(TraceCache::trace_cache_debug_file);
+	TraceCache::debug.setPath(TraceCache::debug_file);
 }
 
 

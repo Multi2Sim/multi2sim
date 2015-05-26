@@ -32,7 +32,7 @@ class Timing
 {
 
 	// Frequency domain pointer
-	esim::FrequencyDomain *frequency_domain;
+	esim::FrequencyDomain *frequency_domain = nullptr;
 
 public:
 
@@ -42,7 +42,7 @@ public:
 	virtual bool Run() = 0;
 
 	/// Configure the frequency domain
-	void ConfigFrequencyDomain(const std::string &name, int frequency)
+	void setFrequencyDomain(const std::string &name, int frequency)
 	{
 		esim::Engine *engine = esim::Engine::getInstance();
 		frequency_domain = engine->RegisterFrequencyDomain(name, frequency);

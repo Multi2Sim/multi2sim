@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_ARCH_TIMING_REG_FILE_H
-#define X86_ARCH_TIMING_REG_FILE_H
+#ifndef X86_ARCH_TIMING_REGISTER_FILE_H
+#define X86_ARCH_TIMING_REGISTER_FILE_H
 
 #include <lib/cpp/IniFile.h>
 #include <arch/x86/emu/UInst.h>
@@ -32,17 +32,17 @@ namespace x86
 class Thread;
 class Core;
 
-// Minimum size of INT FP and XMM register
-const int RegFileMinINTSize = UInstDepIntCount + UInstMaxODeps;
-const int RegFileMinFPSize = UInstDepFpCount + UInstMaxODeps;
-const int RegFileMinXMMSize = UInstDepXmmCount + UInstMaxODeps;
-
 // class register file
-class RegFile
+class RegisterFile
 {
 public:
 
-	// enumeration of register file
+	/// Minimum size of INT FP and XMM register
+	static const int MinINTSize;
+	static const int MinFPSize;
+	static const int MinXMMSize;
+
+	/// enumeration of register file kind
 	enum Kind
 	{
 		KindInvalid = 0,
@@ -86,7 +86,7 @@ private:
 	std::unique_ptr<int[]> xmm_free_phy_reg;
 	int xmm_free_phy_reg_count = 0;
 
-	// Register file parameter
+	// Register file parameters
 	static Kind kind;
 	static int int_size;
 	static int fp_size;
@@ -98,22 +98,22 @@ private:
 public:
 
 	/// Constructor
-	RegFile(Core *core, Thread *thread);
+	RegisterFile(Core *core, Thread *thread);
 
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(const std::string &section,
 				misc::IniFile &config);
 
 	/// Initialize the register file
-	void InitRegFile();
+	void InitRegisterFile();
 
 	/// Dump register file
-	void DumpRegFile();
+	void DumpRegisterFile();
 
 	/// Request an integer/FP/XMM physical register, and return its identifier.
-	int RequestIntReg();
-	int RequestFPReg();
-	int RequestXMMReg();
+	int RequestIntRegister();
+	int RequestFPRegister();
+	int RequestXMMRegister();
 
 	/// Rename functions
 	bool CanRename(Uop &uop);
@@ -128,9 +128,9 @@ public:
 	void CommitUop(Uop &uop);
 
 	/// Check register file
-	void CheckRegFile();
+	void CheckRegisterFile();
 };
 
 }
 
-#endif // X86_ARCH_TIMING_REG_FILE_H
+#endif // X86_ARCH_TIMING_REGISTER_FILE_H
