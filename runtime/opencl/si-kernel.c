@@ -273,10 +273,9 @@ int opencl_si_kernel_set_arg(struct opencl_si_kernel_t *kernel, int arg_index,
 		}
 
 		/* ABI call */
-		unsigned args[3] = {arg_index, (unsigned) arg_value, arg_size};
+		unsigned args[] = {kernel->id, arg_index, (unsigned) arg_value, arg_size};
 		ioctl(opencl_si_device->fd, 
-			SIKernelSetArgPointer, kernel->id, 
-			args);
+			SIKernelSetArgPointer, args);
 		break;
 	}
 	default:
