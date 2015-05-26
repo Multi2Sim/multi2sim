@@ -63,6 +63,10 @@ libnetwork_a_SOURCES = \
 	RoutingTable.h \
 	RoutingTable.cc \
 	\
+	TrafficPattern.h \
+	\
+	TrafficGroupPair.h \
+	\
 	System.cc \
 	System.h \
 	SystemConfig.cc \

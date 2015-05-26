@@ -30,6 +30,7 @@
 #include "Bus.h"
 #include "Buffer.h"
 #include "RoutingTable.h"
+#include "TrafficPattern.h"
 
 namespace net
 {
@@ -65,6 +66,10 @@ class Network
 	// Routing table
 	std::unique_ptr<RoutingTable> routing_table;
 
+	// Traffic pattern generated on this network, only used in standalone
+	// network simulation
+	std::unique_ptr<TrafficPattern> traffic_pattern;
+
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &config);
 
@@ -83,8 +88,14 @@ class Network
 	// Parse the traffic pattern
 	void ParseConfigurationForTraffic(misc::IniFile &config);
 
+	// Parse the traffic direction
+	void ParseConfigurationForTrafficDirection(misc::IniFile &config);
+
 	// Parse the commands for manual(input trace) injection and testing.
 	void ParseConfigurationForCommands(misc::IniFile &config);
+
+
+
 
 	//
 	// Default Values
@@ -105,6 +116,9 @@ class Network
 	// Network frequency
 	int net_frequency;
 
+
+
+	
 	//
 	// Statistics
 	//
@@ -264,6 +278,28 @@ public:
 	/// \param user_data
 	///	user_data which is usually provided by memory system
 	// Node *getNodeByUserData(NodeData *user_data);
+
+
+
+
+	//
+	// Standalone simulation
+	//
+
+	// Perform standalone simulation
+	void Simulate();
+
+	// Set traffic pattern
+	void setTrafficPattern(std::unique_ptr<TrafficPattern> traffic_pattern)
+	{
+		this->traffic_pattern = std::move(traffic_pattern);
+	}
+
+	// Get traffic pattern
+	TrafficPattern *getTrafficPattern() const
+	{
+		return traffic_pattern.get();
+	}
 };
 
 
