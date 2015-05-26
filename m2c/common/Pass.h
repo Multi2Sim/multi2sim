@@ -45,6 +45,10 @@ class Pass
 	// comm::PassInfoPool.
 	int id;
 
+	// Variable defining the type of registers the pass is running on
+	// 1 = scalar and 0 = vector
+	bool pass_type = 1;
+
 public:
 
 	/// Constructor of a pass.
@@ -55,6 +59,12 @@ public:
 
 	/// Return the unique identifier for this pass (starting at 1).
 	int getId() const { return id; }
+
+	// Reset the value of pass type
+	void resetPassType() { pass_type = 0; }
+
+	// Get the value of pass type
+	bool getPassType() { return pass_type; }
 /*
 	/// Return true if there is a ModulePassInfo for the given Module
 	/// for this pass.

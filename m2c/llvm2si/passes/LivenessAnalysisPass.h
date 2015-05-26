@@ -29,7 +29,6 @@
 #include <src/lib/cpp/Bitmap.h>
 #include <src/lib/cpp/Misc.h>
 
-
 namespace llvm2si
 {
 
@@ -103,6 +102,7 @@ public:
 
 	misc::Bitmap GetVectorInInfo()
 	{
+		//std::cout << vector_in_info->CountOnes();
 		return *vector_in_info;
 	}
 
@@ -211,6 +211,10 @@ class LivenessAnalysisPass : public comm::Pass
 
 		/// Execute the liveness analysis pass
 		void run();
+
+		void runScalar();
+
+		void runVector();
 
 		/// Dump debug information related to liveness analysis pass
 		void dump();
