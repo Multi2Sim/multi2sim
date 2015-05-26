@@ -94,6 +94,7 @@ void Network::ParseConfiguration(const std::string &section,
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
 }
 
+
 void Network::addRoutingTable()
 {
 	auto routing_table = misc::new_unique<RoutingTable> ();
@@ -101,6 +102,7 @@ void Network::addRoutingTable()
 	routing_table->InitRoutingTable();
 	this->routing_table = std::move(routing_table);
 }
+
 
 void Network::ParseConfigurationForNodes(misc::IniFile &config)
 {
@@ -186,6 +188,7 @@ std::unique_ptr<Node> Network::ProduceNode(
 	return std::unique_ptr<Node>(nullptr);
 }
 
+
 void Network::ParseConfigurationForBuses(misc::IniFile &config)
 {
 	for (int i = 0; i < config.getNumSections(); i++)
@@ -210,6 +213,7 @@ void Network::ParseConfigurationForBuses(misc::IniFile &config)
 		ProduceBusByIniSection(section, config);
 	}
 }
+
 
 void Network::ProduceBusByIniSection(
 			const std::string &section,
@@ -277,6 +281,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile &config)
 		ProduceBusPortByIniSection(section, config);
 	}
 }
+
 
 void Network::ProduceBusPortByIniSection(
 			const std::string &section,
@@ -371,10 +376,12 @@ std::unique_ptr<Bus> Network::ProduceBus(std::string name,
 	return bus;
 }
 
+
 void Network::AddBus(std::unique_ptr<Bus> bus)
 {
 	connections.push_back(std::move(bus));
 }
+
 
 void Network::ParseConfigurationForLinks(misc::IniFile &config)
 {
@@ -401,6 +408,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile &config)
 	}
 }
 
+
 bool Network::ParseConfigurationForRoutes(misc::IniFile &config)
 {
 	return false;
@@ -409,13 +417,98 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile &config)
 
 void Network::ParseConfigurationForTraffic(misc::IniFile &config)
 {
+	for (int i = 0; i < config.getNumSections(); i++)
+	{
+		std::string section = config.getSection(i);
 
+		// Tokenize section name
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 3)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "TrafficPattern"))
+			continue;
+
+		// Initialize traffic pattern
+		traffic_pattern.reset(new TrafficPattern());
+		double injection_rate = config.ReadDouble(section, 
+				"InjectionRate");
+		traffic_pattern->setInjectionRate(injection_rate);
+
+		// Parse configuration for directed groups
+		std::string mode = config.ReadString(section, "Mode");
+		if (!strcasecmp(mode.c_str(), "Directed"))
+			ParseConfigurationForTrafficDirection(config);
+		else 
+			throw misc::Panic(misc::fmt("Traffic mode %s not "
+					"supported.", mode.c_str()));
+	
+		// Return if traffic pattern is setted
+		return;
+	}
 }
+
+
+void Network::ParseConfigurationForTrafficDirection(misc::IniFile &config)
+{
+	for (int i = 0; i < config.getNumSections(); i++)
+	{
+		std::string section = config.getSection(i);
+
+		// Tokenize section name
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 5)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "TrafficPattern"))
+			continue;
+		if (strcasecmp(tokens[3].c_str(), "Direction"))
+			continue;
+		
+		// Add traffic direction to traffic pattern
+		TrafficGroupPair *pair = traffic_pattern->AddPair();
+
+		// Add source nodes
+		std::string sources = config.ReadString(section, "Src");
+		std::vector<std::string> src_names;
+		misc::StringTokenize(sources, src_names, ",");
+		for (unsigned int i = 0; i < src_names.size(); i++)
+		{
+			Node *node = getNodeByName(src_names[i]);
+			pair->AddSourceNode(node);
+		}
+
+		// Add destination nodes
+		std::string destinations = config.ReadString(section, "Dst");
+		std::vector<std::string> dst_names;
+		misc::StringTokenize(destinations, dst_names, ",");
+		for (unsigned int i = 0; i < dst_names.size(); i++)
+		{
+			Node *node = getNodeByName(dst_names[i]);
+			pair->AddDestinationNode(node);
+		}
+	}
+}
+
 
 void Network::ParseConfigurationForCommands(misc::IniFile &config)
 {
 
 }
+
+
 void Network::AddLink(std::unique_ptr<Link> link)
 {
 	// Verify if the source and the destination is a node in the list
@@ -482,7 +575,6 @@ void Network::ProduceLinkByIniSection(
 
 	// Get the link bandwidth
 	int bandwidth = config.ReadInt(section, "Bandwidth", default_bandwidth);
-
 	if (bandwidth < 1)
 	{
 		throw misc::Panic(misc::fmt("Link %s: Bandwidth cannot "

@@ -43,7 +43,7 @@ TEST(Network, INI_FILE_TEST_LINK_1)
 		"Type = EndNode \n"
 		"[ Network.mynet.Node.S1 ]\n"
 		"Type = Switch \n"
-		"[Network.mynet.Link.N1-S1]\n"
+		"[ Network.mynet.Link.N1-S1 ]\n"
 		"Type = Bidirectional\n"
 		"Source = N1\n"
 		"Dest = S1";
@@ -72,6 +72,7 @@ TEST(Network, INI_FILE_TEST_LINK_1)
 	EXPECT_TRUE(n1_s1 != nullptr);
 	EXPECT_TRUE(dynamic_cast<Link *>(n1_s1) != 0);
 
+	// Assert the reverse link is created
 	Connection *s1_n1 = net.getConnectionByName(
 			"link_<S1.out_buf_0>_<N1.in_buf_0>");
 	EXPECT_TRUE(!strcasecmp(dynamic_cast<Link *>
@@ -93,8 +94,8 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 		"Type = EndNode \n"
 		"[ Network.mynet.Node.S1 ]\n"
 		"Type = Switch \n"
-		"[Network.mynet.BUS.B1]\n"
-		"[Network.mynet.BUS.B2]\n"
+		"[ Network.mynet.BUS.B1 ]\n"
+		"[ Network.mynet.BUS.B2 ]\n"
 		"Lanes = 3";
 	misc::IniFile ini;
 	ini.LoadFromString(ini_file);
@@ -134,9 +135,62 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 
 
 	EXPECT_TRUE(net.getNumberConnections() == 2);
+}
 
+TEST(Network, should_parse_traffic_pattern_in_ini_file)
+{
+	// Setup ini file
+	std::string ini_file = 
+		"[ Network.mynet ]\n"
+		"DefaultInputBufferSize = 16 \n"
+		"DefaultOutputBufferSize = 16 \n"
+		"DefaultBandwidth = 1 \n"
+		"\n"
+		"[ Network.mynet.Node.N1 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N2 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N3 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N4 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N5 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.TrafficPattern ]\n"
+		"InjectionRate = 0.1\n"
+		"Mode = Directed\n"
+		"[ Network.mynet.TrafficPattern.Direction.D1 ]\n"
+		"Src = N1,N2\n"
+		"Dst = N3,N4,N5\n"
+		"[ Network.mynet.TrafficPattern.Direction.D2 ]\n"
+		"Src = N4\n"
+		"Dst = N1,N3,N2,N5\n";
+	misc::IniFile ini;
+	ini.LoadFromString(ini_file);
+
+	// Setup network
+	Network net("mynet");
+	net.ParseConfiguration("Network.mynet", ini);
+
+	// Check if traffic pattern is generated
+	TrafficPattern *traffic = net.getTrafficPattern();
+	ASSERT_NE(nullptr, traffic);
+
+	// Check if traffic pattern has two group pairs
+	ASSERT_EQ(2, traffic->getNumberPairs());
+
+	// Check if the pair is correct
+	TrafficGroupPair *pair1 = traffic->getPairByIndex(0);
+	ASSERT_NE(nullptr, pair1);
+	EXPECT_EQ(2, pair1->getNumberSourceNode());
+	EXPECT_EQ(3, pair1->getNumberDestinationNode());
+	TrafficGroupPair *pair2 = traffic->getPairByIndex(1);
+	ASSERT_NE(nullptr, pair2);
+	EXPECT_EQ(1, pair2->getNumberSourceNode());
+	EXPECT_EQ(4, pair2->getNumberDestinationNode());
 
 }
+
 
 }
 
