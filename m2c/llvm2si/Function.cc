@@ -59,10 +59,32 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 	llvm::Type *llvm_type = llvm_arg->getType();
 	if (llvm_type->isPointerTy())
 	{
+		int addr_space = llvm_type->getPointerAddressSpace();
 		llvm_type = llvm_type->getPointerElementType();
-		arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
-				getNumElements(llvm_type), 0, 0, SI::ArgScopeUAV, 0, 0,
-				SI::ArgAccessTypeReadWrite));
+		switch (addr_space)
+		{
+
+		case 1:
+		{
+			arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
+					getNumElements(llvm_type), 0, 0, 
+					SI::ArgScopeUAV, 0, 0, 
+					SI::ArgAccessTypeReadWrite));
+			break;
+		}
+		case 3:
+		{
+			arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
+					getNumElements(llvm_type), 0, 0, 
+					SI::ArgScopeHwLocal, 0, 0, 
+					SI::ArgAccessTypeReadWrite));
+			break;
+		}
+		default:
+			throw Error(misc::fmt("Unsupported address space (%d)",
+				addr_space));
+			break;
+		}
 	}
 	else
 	{
@@ -127,8 +149,29 @@ void FunctionArg::Dump(std::ostream &os)
 
 	case SI::ArgTypePointer:
 	{
-		os << '\t' << *arg << ' ' << index * 16
-				<< " uav" << uav_index + 10 << '\n';
+		SI::ArgScope arg_scope = 
+			(dynamic_cast<SI::ArgPointer *>(arg.get()))->getScope();
+		
+		switch (arg_scope)
+		{
+
+		case SI::ArgScopeUAV:
+		{
+			os << '\t' << *arg << ' ' << index * 16
+					<< " uav" << uav_index + 10 << '\n';
+			break;
+		}
+		case SI::ArgScopeHwLocal:
+		{
+			os << '\t' << *arg << ' ' << index * 16
+					<< " hl" << '\n';
+			break;
+		}
+		default:
+			throw misc::Panic(misc::fmt(
+				"Argument scope not recognized (%d)", arg_scope));
+			break;
+		}
 		break;
 	}
 

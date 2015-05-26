@@ -417,10 +417,6 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
 
-	// Address must be a symbol with UAV
-	assert(ptr_symbol && "symbol not found");
-	assert(ptr_symbol->isAddress() && "no UAV for symbol");
-	
 	// Get size of pointed value
 	llvm::Type *llvm_type_ptr = llvm_arg_ptr->getType();
 	int ptr_size = getPointedLlvmTypeSize(llvm_type_ptr);
@@ -439,6 +435,10 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	// Global address space
 	case 1:
 	{	
+		// Address must be a symbol with UAV
+		assert(ptr_symbol && "symbol not found");
+		assert(ptr_symbol->isAddress() && "no UAV for symbol");
+
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_inst->getName();
 		int ret_vreg = function->AllocVReg();
@@ -799,16 +799,6 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	std::unique_ptr<Argument> arg_addr = function->TranslateValue(llvm_arg_addr, addr_symbol);
 	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
-	// Address must be a symbol with UAV
-	if (!addr_symbol || !addr_symbol->isAddress())
-		throw Error("No UAV for symbol: " + addr_symbol->getName());
-
-	// Get UAV
-	FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
-	if (!uav)
-		throw Error(misc::fmt("Invalid UAV index (%d)",
-				addr_symbol->getUAVIndex()));
-
 	// Get return type
 	llvm::Type *llvm_type = llvm_inst->getType();
 
@@ -818,6 +808,17 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	{
 	// Load from global memory
 	case 1:
+	{
+		// Address must be a symbol with UAV
+		if (!addr_symbol || !addr_symbol->isAddress())
+			throw Error("No UAV for symbol: " + addr_symbol->getName());
+
+		// Get UAV
+		FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
+		if (!uav)
+			throw Error(misc::fmt("Invalid UAV index (%d)",
+					addr_symbol->getUAVIndex()));
+
 		if (llvm_type->isIntegerTy(32) || llvm_type->isFloatTy())
 		{
 			// Allocate vector register and create symbol for return value
@@ -932,8 +933,10 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 			throw misc::Panic("Load Global: Unsupported LLVM type kind");
 		}
 		break;
+	}
 	// Load from LDS
 	case 3:
+	{
 		if (llvm_type->isIntegerTy(32) && llvm_type->isFloatTy())
 		{
 			// Allocate vector register and create symbol for return value
@@ -1013,13 +1016,15 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 			throw misc::Panic("Load Local: Unsupported LLVM type kind");
 		}
 		break;
+	}
+	
 	default:
-
+	{
 		throw Error(misc::fmt("Address space 1 or 3 expected, %d found",
 			addr_space));
 		break;
 	}
-
+	}
 }
 
 
@@ -1035,16 +1040,45 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 	if (!type->isIntegerTy(32))
 		throw misc::Panic("Only supported for 32-bit integers");
 
-	// Get operands (vreg, literal)
+	// Get operands
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
 	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
 	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
+
+	// Only the first operand can be a constant, so swap them if there is
+	// a constant in the second.
+	if ((arg2->getType() != Argument::TypeVectorRegister) &&
+		(arg2->getType() != Argument::TypeScalarRegister))
+		arg1.swap(arg2);
 	
+	// When arg1 is const/scalar and arg2 is scalar
+	if ((arg1->getType() != Argument::TypeVectorRegister) &&
+		(arg2->getType() == Argument::TypeScalarRegister))
+	{
+		// Allocate scalar register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_sreg = function->AllocSReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister, ret_sreg);
+
+		// Emit scalar mul
+		//
+		// s_mul_i32 ret_sreg, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_S_MUL_I32);
+		instruction->addScalarRegister(ret_sreg);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
+		return;
+	}
+
+	// Other cases convert scalar register to vector register
 	// If arg1 is a scalar register convert it to a vector register
 	if (arg1->getType() == Argument::TypeScalarRegister)
 	{	
-		ArgScalarRegister *arg_scalar = 
+		ArgScalarRegister *arg1_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg1.get());
 		
 		// Allocate vector register and create symbol for return value
@@ -1059,16 +1093,16 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addScalarRegister(arg_scalar->getId());
+		instruction->addScalarRegister(arg1_scalar->getId());
 		assert(instruction->hasValidArguments());
 
 		arg1 = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
-	
+
 	// If arg2 is a scalar register convert it to a vector register
 	if (arg2->getType() == Argument::TypeScalarRegister)
 	{	
-		ArgScalarRegister *arg_scalar = 
+		ArgScalarRegister *arg2_scalar = 
 				dynamic_cast<ArgScalarRegister *>(arg2.get());
 		
 		// Allocate vector register and create symbol for return value
@@ -1077,23 +1111,18 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		Symbol *ret_symbol = function->addSymbol(ret_name);
 		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
-
 		// Emit instruction
 		//
-		// v_mov_b32 ret_vreg, arg1
+		// v_mov_b32 ret_vreg, arg2
 		//
 		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addScalarRegister(arg_scalar->getId());
+		instruction->addScalarRegister(arg2_scalar->getId());
 		assert(instruction->hasValidArguments());
 
 		arg2 = misc::new_unique<ArgVectorRegister>(ret_vreg);
 	}
 
-	// Only the first operand can be a constant, so swap them if there is
-	// a constant in the second.
-	if (arg2->getType() != Argument::TypeVectorRegister)
-		arg1.swap(arg2);
 	arg1->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeLiteral,
 			Argument::TypeLiteralReduced,
@@ -1148,8 +1177,35 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 
 		// Get source vector register mapped to LLVM value
 		llvm::Value *src_value = llvm_inst->getIncomingValue(i);
-		Argument *src_arg = function->TranslateValue(src_value).get();
-		ArgVectorRegister *src_arg_vreg = misc::cast<ArgVectorRegister *>(src_arg);
+		std::unique_ptr<Argument> src_arg =
+			function->TranslateValue(src_value);
+		
+		// Sometimes need to move to vector register
+		if (src_arg->getType() == Argument::TypeScalarRegister)
+		{
+			ArgScalarRegister *src_arg_sreg = 
+				dynamic_cast<ArgScalarRegister *>(src_arg.get());
+			
+			// Allocate vector register and create symbol for return value
+			std::string ret_name = src_value->getName();
+			int ret_vreg = function->AllocVReg();
+			Symbol *ret_symbol = function->addSymbol(ret_name);
+			ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+			// Emit instruction
+			//
+			// v_mov_b32 ret_vreg, arg2
+			//
+			Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+			instruction->addVectorRegister(ret_vreg);
+			instruction->addScalarRegister(src_arg_sreg->getId());
+			assert(instruction->hasValidArguments());
+
+			src_arg = misc::new_unique<ArgVectorRegister>(ret_vreg);
+		}
+
+		ArgVectorRegister *src_arg_vreg = 
+			misc::cast<ArgVectorRegister *>(src_arg.get());
 		int src_vreg = src_arg_vreg->getId();
 
 		// Create Phi argument and set vector register
@@ -1246,16 +1302,6 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		llvm_arg_addr, addr_symbol);
 	arg_addr->ValidTypes(Argument::TypeVectorRegister);
 
-	// Address must be a symbol with UAV
-	if (!addr_symbol || !addr_symbol->isAddress())
-		throw Error("No UAV for symbol: " + addr_symbol->getName());
-
-	// Get UAV
-	FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
-	if (!uav)
-		throw Error(misc::fmt("Invalid UAV index (%d)",
-				addr_symbol->getUAVIndex()));
-
 	// Get address space - only 1 (global mem.) supported for now
 	llvm::Type *llvm_type = llvm_arg_addr->getType();
 	int addr_space = llvm_type->getPointerAddressSpace();
@@ -1265,6 +1311,16 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 	// Global memory address
 	case 1:
 	{
+		// Address must be a symbol with UAV
+		if (!addr_symbol || !addr_symbol->isAddress())
+			throw Error("No UAV for symbol: " + addr_symbol->getName());
+
+		// Get UAV
+		FunctionUAV *uav = function->getUAV(addr_symbol->getUAVIndex());
+		if (!uav)
+			throw Error(misc::fmt("Invalid UAV index (%d)",
+					addr_symbol->getUAVIndex()));
+
 		if (llvm_type->isIntegerTy(32) || llvm_type->isFloatTy())
 		{
 			// Emit memory write.
@@ -1466,31 +1522,84 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
 	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
 
-	// Operand 2 cannot be a constant
-	arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
-	arg1->ValidTypes(Argument::TypeVectorRegister,
-			Argument::TypeLiteral,
-			Argument::TypeLiteralReduced,
-			Argument::TypeLiteralFloat,
-			Argument::TypeLiteralFloatReduced);
-	arg2->ValidTypes(Argument::TypeVectorRegister);
+	if ((arg1->getType() != Argument::TypeVectorRegister) &&
+		(arg2->getType() != Argument::TypeVectorRegister))
+	{
+		arg2->ValidTypes(Argument::TypeScalarRegister,
+				Argument::TypeLiteral,
+				Argument::TypeLiteralReduced,
+				Argument::TypeLiteralFloat,
+				Argument::TypeLiteralFloatReduced);
 
-	// Allocate vector register and create symbol for return value
-	std::string ret_name = llvm_inst->getName();
-	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = function->addSymbol(ret_name);
-	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+		arg2->ValidTypes(Argument::TypeScalarRegister,
+				Argument::TypeLiteral,
+				Argument::TypeLiteralReduced,
+				Argument::TypeLiteralFloat,
+				Argument::TypeLiteralFloatReduced);
 
-	// Emit subtraction.
-	//
-	// v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
-	//
-	Instruction *instruction = addInstruction(SI::INST_V_SUB_I32);
-	instruction->addVectorRegister(ret_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
-	instruction->addArgument(std::move(arg1));
-	instruction->addArgument(std::move(arg2));
-	assert(instruction->hasValidArguments());
+		// Allocate scalar register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_sreg = function->AllocSReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister, ret_sreg);
+
+		// // When one of args is a literal constant
+		// if ((arg1->getType() != Argument::TypeScalarRegister) ||
+		// 	(arg2->getType() != Argument::TypeScalarRegister))
+		// {
+			
+		// }
+
+		// // Sanity check
+		llvm::Type *arg1_type = llvm_arg1->getType();
+		llvm::Type *arg2_type = llvm_arg2->getType();
+		assert(arg1_type->getTypeID() == arg2_type->getTypeID());
+
+		// Emit depends on the data type of operands
+		if (arg1_type->isIntegerTy(32))
+		{
+			// Emit subtraction.
+			//
+			// s_sub_i32 ret_sreg, arg_op1, arg_op2
+			//
+			Instruction *instruction = 
+				addInstruction(SI::INST_S_SUB_I32);
+			instruction->addScalarRegister(ret_sreg);
+			instruction->addArgument(std::move(arg1));
+			instruction->addArgument(std::move(arg2));
+			assert(instruction->hasValidArguments());
+		}
+		else
+			throw Error("Not supported data type in EmitSub");
+	} 
+	else 
+	{
+		// Operand 2 cannot be a constant
+		arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
+		arg1->ValidTypes(Argument::TypeVectorRegister,
+				Argument::TypeLiteral,
+				Argument::TypeLiteralReduced,
+				Argument::TypeLiteralFloat,
+				Argument::TypeLiteralFloatReduced);
+		arg2->ValidTypes(Argument::TypeVectorRegister);
+
+		// Allocate vector register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit subtraction.
+		//
+		// v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_SUB_I32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
+	}
 }
 
 
@@ -1788,35 +1897,74 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 		throw misc::Panic(misc::fmt("2 operands supported, %d found",
 			llvm_inst->getNumOperands()));
 
-	// Get operands (vreg, literal)
+	// Get operands
 	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
 	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
 	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
 	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
 
-	// Second operand cannot be a constant
-	arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
-	arg2->ValidTypes(Argument::TypeVectorRegister);
-	arg1->ValidTypes(Argument::TypeVectorRegister,
-			Argument::TypeLiteral,
-			Argument::TypeLiteralReduced,
-			Argument::TypeLiteralFloat,
-			Argument::TypeLiteralFloatReduced);
+	if (arg1->getType() == Argument::TypeScalarRegister)
+	{
+		arg2->ValidTypes(Argument::TypeScalarRegister,
+				Argument::TypeLiteral,
+				Argument::TypeLiteralReduced,
+				Argument::TypeLiteralFloat,
+				Argument::TypeLiteralFloatReduced);
 
-	// Allocate vector register and create symbol for return value
-	int ret_vreg = function->AllocVReg();
-	Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
-	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+		// Allocate scalar register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_sreg = function->AllocSReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister, ret_sreg);
 
-	// Emit AND.
-	//
-	// v_and_b32 ret_vreg, arg_op1, arg_op2
-	//
-	Instruction *instruction = addInstruction(SI::INST_V_AND_B32);
-	instruction->addVectorRegister(ret_vreg);
-	instruction->addArgument(std::move(arg1));
-	instruction->addArgument(std::move(arg2));
-	assert(instruction->hasValidArguments());
+		// Sanity check
+		llvm::Type *arg1_type = llvm_arg1->getType();
+		llvm::Type *arg2_type = llvm_arg2->getType();
+		assert(arg1_type->getTypeID() == arg2_type->getTypeID());
+
+		// Emit depends on the data type of operands
+		if (arg1_type->isIntegerTy(32))
+		{
+			// Emit subtraction.
+			//
+			// s_and_b32 ret_sreg, arg_op1, arg_op2
+			//
+			Instruction *instruction = 
+				addInstruction(SI::INST_S_AND_B32);
+			instruction->addScalarRegister(ret_sreg);
+			instruction->addArgument(std::move(arg1));
+			instruction->addArgument(std::move(arg2));
+			assert(instruction->hasValidArguments());
+		}
+		else
+			throw Error("Not supported data type in EmitAnd");
+	} 
+	else
+	{
+		// Second operand cannot be a constant
+		arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
+		arg2->ValidTypes(Argument::TypeVectorRegister);
+		arg1->ValidTypes(Argument::TypeVectorRegister,
+				Argument::TypeLiteral,
+				Argument::TypeLiteralReduced,
+				Argument::TypeLiteralFloat,
+				Argument::TypeLiteralFloatReduced);
+
+		// Allocate vector register and create symbol for return value
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit AND.
+		//
+		// v_and_b32 ret_vreg, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_AND_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
+	}
 }
 
 void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
@@ -1905,7 +2053,7 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	assert(instruction->hasValidArguments());
 }
 
-void BasicBlock::EmitUrem(llvm::BinaryOperator *llvm_inst)
+void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 {
 	// Only supported for 32-bit integers
 	llvm::Type *llvm_type = llvm_inst->getType();
@@ -1923,14 +2071,69 @@ void BasicBlock::EmitUrem(llvm::BinaryOperator *llvm_inst)
 	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
 	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
 
-	// Only the first operand can be a constant, so swap them if there is
-	// a constant in the second.
-	if (arg2->getType() != Argument::TypeVectorRegister)
-		arg1.swap(arg2);
+	// URem is implemented mostly by vector instructions
+	// If arg1 is a scalar register convert it to a vector register
+	if (arg1->getType() == Argument::TypeScalarRegister)
+	{	
+		ArgScalarRegister *arg1_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg1.get());
+		
+		// Allocate vector register and create symbol for return value
+		std::string ret_name = llvm_arg1->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit instruction
+		//
+		// v_mov_b32 ret_vreg, arg1
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg1_scalar->getId());
+		assert(instruction->hasValidArguments());
+
+		arg1 = misc::new_unique<ArgVectorRegister>(ret_vreg);
+	}
+
+	// If arg2 is a scalar register convert it to a vector register
+	if (arg2->getType() == Argument::TypeScalarRegister)
+	{	
+		ArgScalarRegister *arg2_scalar = 
+				dynamic_cast<ArgScalarRegister *>(arg2.get());
+		
+		// Allocate vector register and create symbol for return value
+		std::string ret_name = llvm_arg2->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit instruction
+		//
+		// v_mov_b32 ret_vreg, arg2
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addScalarRegister(arg2_scalar->getId());
+		assert(instruction->hasValidArguments());
+
+		arg2 = misc::new_unique<ArgVectorRegister>(ret_vreg);
+	}
+
 	arg1->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeLiteral,
 			Argument::TypeLiteralReduced);
-	arg2->ValidTypes(Argument::TypeVectorRegister);
+	arg2->ValidTypes(Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced);
+
+	// If arg1 is a literal constant
+	if (arg1->getType() != Argument::TypeVectorRegister)
+		arg1 = std::move(function->ConstToVReg(this, std::move(arg1)));
+
+	// If arg2 is a literal constant
+	if (arg2->getType() != Argument::TypeVectorRegister)
+		arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
@@ -2336,6 +2539,159 @@ void BasicBlock::EmitUrem(llvm::BinaryOperator *llvm_inst)
 
 }
 
+
+void BasicBlock::EmitUDiv(llvm::BinaryOperator *llvm_inst)
+{
+	// Only supported for 2 operands (op1, op2)
+	if (llvm_inst->getNumOperands() != 2)
+		throw misc::Panic(misc::fmt("2 operands supported, %d found",
+				llvm_inst->getNumOperands()));
+
+	// Only supported for 32-bit integers
+	llvm::Type *type = llvm_inst->getType();
+	if (!type->isIntegerTy())
+		throw misc::Panic("Only supported for int type arguments");
+
+	// Get operands
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
+	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
+
+	// Allocate vector register and create symbol for return value
+	std::string ret_name = llvm_inst->getName();
+	int ret_vreg = function->AllocVReg();
+	Symbol *ret_symbol = function->addSymbol(ret_name);
+	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+	Instruction *instruction;
+	int numerator_to_float_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction->addVectorRegister(numerator_to_float_vreg);
+	instruction->addArgument(std::move(arg1));
+	assert(instruction->hasValidArguments());
+
+	int divisor_to_float_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction->addVectorRegister(divisor_to_float_vreg);
+	instruction->addArgument(std::move(arg2));
+	assert(instruction->hasValidArguments());
+
+	int rcp_divisor_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction->addVectorRegister(rcp_divisor_vreg);
+	instruction->addVectorRegister(divisor_to_float_vreg);
+	assert(instruction->hasValidArguments());
+
+	int numerator_mul_rcp_divisor_vreg = function->AllocVReg();
+	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
+	instruction->addVectorRegister(numerator_to_float_vreg);
+	instruction->addVectorRegister(rcp_divisor_vreg);
+	assert(instruction->hasValidArguments());
+
+	instruction = addInstruction(SI::INST_V_CVT_U32_F32);
+	instruction->addVectorRegister(ret_vreg);
+	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
+	assert(instruction->hasValidArguments());
+
+}
+
+
+void BasicBlock::EmitShl(llvm::BinaryOperator *llvm_inst)
+{
+	// Only supported for 32-bit integers
+	llvm::Type *llvm_type = llvm_inst->getType();
+	if (!llvm_type->isIntegerTy(32))
+		throw misc::Panic("Only supported for 32-bit integers");
+
+	// Only supported for 2 operands (op1, op2)
+	if (llvm_inst->getNumOperands() != 2)
+		throw misc::Panic(misc::fmt("2 operands supported, %d found",
+				llvm_inst->getNumOperands()));
+
+	// Get operands
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
+	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
+
+	arg1->ValidTypes(Argument::TypeScalarRegister,
+			Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+
+	arg2->ValidTypes(Argument::TypeScalarRegister,
+			Argument::TypeVectorRegister,
+			Argument::TypeLiteral,
+			Argument::TypeLiteralReduced,
+			Argument::TypeLiteralFloat,
+			Argument::TypeLiteralFloatReduced);
+
+	switch (arg2->getType())
+	{
+
+	case Argument::TypeScalarRegister:
+	{
+
+		// Allocate scalar register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_sreg = function->AllocSReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister, ret_sreg);
+
+		// Sanity check
+		llvm::Type *arg1_type = llvm_arg1->getType();
+		llvm::Type *arg2_type = llvm_arg2->getType();
+		assert(arg1_type->getTypeID() == arg2_type->getTypeID());
+
+		// Emit depends on the data type of operands
+		if (arg1_type->isIntegerTy(32))
+		{
+			// Emit left shift.
+			//
+			// s_lshl_b32 ret_sreg, arg_op1, arg_op2
+			//
+			Instruction *instruction = 
+				addInstruction(SI::INST_S_LSHL_B32);
+			instruction->addScalarRegister(ret_sreg);
+			instruction->addArgument(std::move(arg1));
+			instruction->addArgument(std::move(arg2));
+			assert(instruction->hasValidArguments());
+		}
+		else
+			throw Error("Not supported data type in EmitShl");
+		break;
+	}
+
+	case Argument::TypeVectorRegister:
+	{
+		// Second operand cannot be a constant
+		arg2 = std::move(function->ConstToVReg(this, std::move(arg2)));
+
+		// Allocate vector register and create symbol for return value
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(llvm_inst->getName());
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit left shift.
+		//
+		// v_lshl_b32 ret_vreg, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_LSHL_B32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
+		break;
+	}
+	default:
+		throw Error("Not supported in EmitShl");
+	}
+}
+
 void BasicBlock::EmitSExt(llvm::SExtInst *llvm_inst)
 {
 	throw misc::Panic("Unimplemented LLVM instruction");
@@ -2711,7 +3067,17 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 
 		case llvm::Instruction::URem:
 
-			EmitUrem(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			EmitURem(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			break;
+
+		case llvm::Instruction::UDiv:
+
+			EmitUDiv(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			break;
+
+		case llvm::Instruction::Shl:
+
+			EmitShl(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::ExtractElement:
