@@ -46,9 +46,7 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	{
 		std::string section_name = ini_file.getSection(i);
 		if (misc::StringPrefix(section_name, "TraceCache"))
-		{
 			TraceCache::ParseConfiguration(section_name, ini_file);
-		}
 	}
 
 	// Assertions

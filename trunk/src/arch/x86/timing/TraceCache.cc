@@ -34,10 +34,10 @@ int TraceCache::branch_max;
 int TraceCache::queue_size;
 
 // Debug file
-std::string TraceCache::trace_cache_debug_file;
+std::string TraceCache::debug_file;
 
 // Debuggers
-misc::Debug TraceCache::trace_cache_debug;
+misc::Debug TraceCache::debug;
 
 
 TraceCache::TraceCache(const std::string &name)
@@ -157,9 +157,9 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	bool taken;
 
 	// Debug
-	trace_cache_debug << misc::fmt("** Lookup **\n");
-	trace_cache_debug << misc::fmt("eip = 0x%x, pred = ", eip);
-	trace_cache_debug << misc::fmt("\n");
+	debug << misc::fmt("** Lookup **\n");
+	debug << misc::fmt("eip = 0x%x, pred = ", eip);
+	debug << misc::fmt("\n");
 
 	// Look for trace cache line
 	set = eip % num_sets;
@@ -181,8 +181,8 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	// Miss
 	if (!found_entry)
 	{
-		trace_cache_debug << misc::fmt("Miss\n");
-		trace_cache_debug << misc::fmt("\n");
+		debug << misc::fmt("Miss\n");
+		debug << misc::fmt("\n");
 		return false;
 	}
 
@@ -193,10 +193,10 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	neip = taken ? found_entry->target : found_entry->fall_through;
 
 	// Debug
-	trace_cache_debug << misc::fmt("Hit - Set = %d, Way = %d\n", set, way);
-	trace_cache_debug << misc::fmt("Next trace prediction = %c\n", taken ? 'T' : 'N');
-	trace_cache_debug << misc::fmt("Next fetch address = 0x%x\n", neip);
-	trace_cache_debug << misc::fmt("\n");
+	debug << misc::fmt("Hit - Set = %d, Way = %d\n", set, way);
+	debug << misc::fmt("Next trace prediction = %c\n", taken ? 'T' : 'N');
+	debug << misc::fmt("Next fetch address = 0x%x\n", neip);
+	debug << misc::fmt("\n");
 
 
 	// Return entry
@@ -282,9 +282,9 @@ void TraceCache::Flush()
 	memset(temp_ptr, 0, sizeof(TraceCacheEntry));
 
 	// Debug
-	trace_cache_debug << misc::fmt("** Commit trace **\n");
-	trace_cache_debug << misc::fmt("Set = %d, Way = %d\n", set, found_way);
-	trace_cache_debug << misc::fmt("\n");
+	debug << misc::fmt("** Commit trace **\n");
+	debug << misc::fmt("Set = %d, Way = %d\n", set, found_way);
+	debug << misc::fmt("\n");
 
 	// Statistics
 	trace_length_acc += found_entry->uop_count;

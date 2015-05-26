@@ -44,7 +44,7 @@ class CPU
 {
 public:
 
-	// Recover_kind 
+	/// Recover kind
 	enum RecoverKind
 	{
 		RecoverKindInvalid = 0,
@@ -53,7 +53,7 @@ public:
 	};
 	static misc::StringMap RecoverKindMap;
 
-	// Fetch stage 
+	/// Fetch stage
 	enum FetchKind
 	{
 		FetchKindInvalid = 0,
@@ -63,7 +63,7 @@ public:
 	};
 	static misc::StringMap FetchKindMap;
 
-	// Dispatch stage 
+	/// Dispatch stage
 	enum DispatchKind
 	{
 		DispatchKindInvalid = 0,
@@ -72,7 +72,7 @@ public:
 	};
 	static misc::StringMap DispatchKindMap;
 
-	// Issue stage 
+	/// Issue stage
 	enum IssueKind
 	{
 		IssueKindInvalid = 0,
@@ -81,7 +81,7 @@ public:
 	};
 	static misc::StringMap IssueKindMap;
 
-	// Commit stage 
+	/// Commit stage
 	enum CommitKind
 	{
 		CommitKindShared = 0,
@@ -135,14 +135,14 @@ private:
 	long long last_committed = 0;
 	long long last_dump = 0;
 
-	// CPU parameter
+	// CPU parameters
 	static int num_cores;
 	static int num_threads;
 	static int context_quantum;
 	static int thread_quantum;
 	static int thread_switch_penalty;
 
-	// CPU recover parameter
+	// CPU recover parameters
 	static int recover_penalty;
 	static RecoverKind recover_kind;
 
@@ -152,19 +152,19 @@ private:
 	// CPU decode stage parameter
 	static int decode_width;
 
-	// CPU dispatch stage parameter
+	// CPU dispatch stage parameters
 	static int dispatch_width;
 	static DispatchKind dispatch_kind;
 
-	// CPU issue stage parameter
+	// CPU issue stage parameters
 	static int issue_width;
 	static IssueKind issue_kind;
 
-	// CPU commit stage parameter
+	// CPU commit stage parameters
 	static int commit_width;
 	static CommitKind commit_kind;
 
-	// Other CPU parameter
+	// Other CPU parameters
 	static bool process_prefetch_hints;
 	static bool use_nc_store;
 	static bool prefetch_history_size;

@@ -22,9 +22,9 @@
 namespace x86
 {
 
-Thread::Thread(const std::string &name, CPU *cpu, Core *core)
+Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core)
 	:
-	name(name), cpu(cpu), core(core)
+	name(name), cpu(cpu), core(core), id_in_core(id_in_core)
 {
 	// Initialize Uop queue
 
@@ -46,8 +46,8 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core)
 	}
 
 	// Initialize register file
-	reg_file.reset(new RegFile(this->core, this));
-	reg_file->InitRegFile();
+	reg_file.reset(new RegisterFile(this->core, this));
+	reg_file->InitRegisterFile();
 
 }
 

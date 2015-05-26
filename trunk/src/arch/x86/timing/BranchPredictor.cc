@@ -139,10 +139,10 @@ void BranchPredictor::DumpConfiguration(std::ostream &os)
 }
 
 
-BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
+BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
 {
 	// Local variable
-	BranchPredictorPred pred;
+	Prediction pred;
 
 	// If branch predictor is accessed, a BTB hit must have occurred before, which
 	// provides information about the branch, i.e., target address and whether it
@@ -151,45 +151,45 @@ BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
 	assert(uop.getFlags() & UInstFlagCtrl);
 	if (uop.getFlags() & UInstFlagUncond)
 	{
-		uop.setPrediction(BranchPredictorPredTaken);
-		return BranchPredictorPredTaken;
+		uop.setPrediction(PredictionTaken);
+		return PredictionTaken;
 	}
 
 	// An internal branch (string operations) is always predicted taken
 	if (uop.getUinst()->getOpcode() == UInstIbranch)
 	{
-		uop.setPrediction(BranchPredictorPredTaken);
-		return BranchPredictorPredTaken;
+		uop.setPrediction(PredictionTaken);
+		return PredictionTaken;
 	}
 
 	// Perfect predictor
 	if (kind == KindPerfect)
 	{
 		if (uop.getNeip() != uop.getEip() + uop.getMopSize())
-			pred = BranchPredictorPredTaken;
+			pred = PredictionTaken;
 		else
-			pred = BranchPredictorPredNotTaken;
+			pred = PredictionNotTaken;
 		uop.setPrediction(pred);
 	}
 
 	// Taken predictor
 	if (kind == KindTaken)
 	{
-		uop.setPrediction(BranchPredictorPredTaken);
+		uop.setPrediction(PredictionTaken);
 	}
 
 	// Not-taken predictor
 	if (kind == KindNottaken)
 	{
-		uop.setPrediction(BranchPredictorPredNotTaken);
+		uop.setPrediction(PredictionNotTaken);
 	}
 
 	// Bimodal predictor
 	if (kind == KindBimod || kind == KindCombined)
 	{
 		int bimod_index = uop.getEip() & (bimod_size - 1);
-		BranchPredictorPred bimod_pred = bimod[bimod_index] > 1 ?
-				BranchPredictorPredTaken : BranchPredictorPredNotTaken;
+		Prediction bimod_pred = bimod[bimod_index] > 1 ?
+				PredictionTaken : PredictionNotTaken;
 		uop.setBimodIndex(bimod_index);
 		uop.setBimodPrediction(bimod_pred);
 		uop.setPrediction(bimod_pred);
@@ -202,8 +202,8 @@ BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
 		int twolevel_pht_row = twolevel_bht[twolevel_bht_index];
 		assert(twolevel_pht_row < twolevel_l2height);
 		int twolevel_pht_col = uop.getEip() & (twolevel_l2size - 1);
-		BranchPredictorPred twolevel_pred = twolevel_pht[twolevel_pht_row * twolevel_l2size + twolevel_pht_col] > 1 ?
-				BranchPredictorPredTaken : BranchPredictorPredNotTaken;
+		Prediction twolevel_pred = twolevel_pht[twolevel_pht_row * twolevel_l2size + twolevel_pht_col] > 1 ?
+				PredictionTaken : PredictionNotTaken;
 		uop.setTwolevelBHTIndex(twolevel_bht_index);
 		uop.setTwolevelPHTRow(twolevel_pht_row);
 		uop.setTwolevelPHTCol(twolevel_pht_col);
@@ -215,15 +215,15 @@ BranchPredictorPred BranchPredictor::LookupBranchPrediction(Uop &uop)
 	if (kind == KindCombined)
 	{
 		int choice_index = uop.getEip() & (choice_size - 1);
-		BranchPredictorPred choice_pred = choice[choice_index] > 1 ?
+		Prediction choice_pred = choice[choice_index] > 1 ?
 				uop.getTwolevelPrediction() : uop.getBimodPrediction();
 		uop.setChoiceIndex(choice_index);
 		uop.setPrediction(choice_pred);
 	}
 
 	// Return prediction
-	assert(uop.getPrediction() == BranchPredictorPredTaken ||
-			uop.getPrediction() == BranchPredictorPredNotTaken);
+	assert(uop.getPrediction() == PredictionTaken ||
+			uop.getPrediction() == PredictionNotTaken);
 	return uop.getPrediction();
 }
 
@@ -242,7 +242,7 @@ int BranchPredictor::LookupBranchPredictionMultiple(unsigned int eip, int count)
 	assert(pht_row < twolevel_l2height);
 	int pht_col = eip & (twolevel_l2size - 1);
 	pred = temp_pred = twolevel_pht[pht_row * twolevel_l2size + pht_col] > 1 ?
-			BranchPredictorPredTaken : BranchPredictorPredNotTaken;
+			PredictionTaken : PredictionNotTaken;
 
 	// Make the rest of predictions
 	for (int i = 1; i < count; i++)
@@ -294,7 +294,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	// Bimodal predictor was used
 	if (kind == KindBimod ||
-			(kind == KindCombined && uop.getChoicePrediction() == BranchPredictorPredNotTaken))
+			(kind == KindCombined && uop.getChoicePrediction() == PredictionNotTaken))
 	{
 		bimod_ptr = &bimod[uop.getBimodIndex()];
 		if (taken)
@@ -305,7 +305,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	// Two-level adaptive predictor was used
 	if (kind == KindTwolevel ||
-			(kind == KindCombined && uop.getChoicePrediction() == BranchPredictorPredTaken))
+			(kind == KindCombined && uop.getChoicePrediction() == PredictionTaken))
 	{
 		// Shift entry in BHT (level 1), and append direction
 		bht_ptr = &twolevel_bht[uop.getTwolevelBHTIndex()];
@@ -325,7 +325,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	if (kind == KindCombined && uop.getBimodPrediction() != uop.getTwolevelPrediction())
 	{
 		choice_ptr = &choice[uop.getChoiceIndex()];
-		if (uop.getBimodPrediction() == BranchPredictorPredTaken)
+		if (uop.getBimodPrediction() == PredictionTaken)
 			*choice_ptr = *choice_ptr - 1 < 0 ? 0 : *choice_ptr - 1;
 		else
 			*choice_ptr = *choice_ptr + 1 > 3 ? 3 : *choice_ptr + 1;
