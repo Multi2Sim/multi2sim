@@ -147,8 +147,16 @@ public:
 	/// Setters
 	void setID(int id) { this->id = id; }
 
+	/// Increment counters
+	void incRegFileIntCount() { reg_file_int_count++; }
+	void incRegFileFpCount() { reg_file_fp_count++; }
+	void incRegFileXmmCount() { reg_file_xmm_count++; }
+
 	/// Getters
 	int getID() { return id; }
+	int getRegFileIntCount() { return reg_file_int_count; }
+	int getRegFileFpCount() { return reg_file_fp_count; }
+	int getRegFileXmmCount() { return reg_file_xmm_count; }
 
 };
 

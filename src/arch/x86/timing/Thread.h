@@ -177,8 +177,28 @@ public:
 	/// Setters
 	void setIDInCore(int id_in_core) { this->id_in_core = id_in_core; }
 
+	/// Increment counters
+	void incRegFileIntCount() { reg_file_int_count++; }
+	void incRegFileFpCount() { reg_file_fp_count++; }
+	void incRegFileXmmCount() { reg_file_xmm_count++; }
+	void incRatIntReads() { rat_int_reads++; }
+	void incRatFpReads() { rat_fp_reads++; }
+	void incRatXmmReads() { rat_xmm_reads++; }
+	void incRatIntWrites() { rat_int_writes++; }
+	void incRatFpWrites() { rat_fp_writes++; }
+	void incRatXmmWrites() { rat_xmm_writes++; }
+
 	/// Getters
 	int getIDInCore() const { return id_in_core; }
+	int getRegFileIntCount() { return reg_file_int_count; }
+	int getRegFileFpCount() { return reg_file_fp_count; }
+	int getRegFileXmmCount() { return reg_file_xmm_count; }
+	int getRatIntReads() { return rat_int_reads; }
+	int getRatFpReads() { return rat_fp_reads; }
+	int getRatXmmReads() { return rat_xmm_reads; }
+	int getRatIntWrites() { return rat_int_writes; }
+	int getRatFpWrites() { return rat_fp_writes; }
+	int getRatXmmWrites() { return rat_xmm_writes; }
 
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();
