@@ -38,6 +38,7 @@
 // TODO: Figure out a way to include all passes once.
 #include "passes/DataDependencyPass.h"
 #include "passes/LivenessAnalysisPass.h"
+#include "passes/ConflictGraph.h"
 
 namespace llvm2si
 {
@@ -101,15 +102,22 @@ void Context::Parse(const std::string &in, const std::string &out)
 		ddp.run();
 
 		// Emit code for function
+		function->EmitPhi();
 		function->EmitHeader();
 		function->EmitArgs();
 		function->EmitBody();
 		function->EmitControlFlow();
-		function->EmitPhi();
 
-		LivenessAnalysisPass lap(function);
+		/* LivenessAnalysisPass lap(function);
+		ConflictGraphPass cgp(function);
+
+		// Run all passes for scalar registers first
 		lap.run();
-		//// lap.dump(std::cout);
+
+		// Run all passes for vector registers
+		lap.resetPassType();
+		lap.run();
+		lap.dump(); */
 
 		// Dump code
 		f << *function;
