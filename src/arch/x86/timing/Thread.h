@@ -31,7 +31,7 @@
 #include "Uop.h"
 #include "BranchPredictor.h"
 #include "TraceCache.h"
-#include "RegFile.h"
+#include "RegisterFile.h"
 
 namespace x86
 {
@@ -42,7 +42,7 @@ class Core;
 class CPU;
 class BranchPredictor;
 class TraceCache;
-class RegFile;
+class RegisterFile;
 class Uop;
 
 /// X86 Thread
@@ -99,7 +99,7 @@ private:
 	// Component pointer
 	std::unique_ptr<BranchPredictor> branch_predictor;
 	std::unique_ptr<TraceCache> trace_cache;
-	std::unique_ptr<RegFile> reg_file; // physical register file
+	std::unique_ptr<RegisterFile> reg_file; // physical register file
 
 	// Fetch
 	unsigned int fetch_eip = 0, fetch_neip = 0;  // eip and next eip
@@ -172,10 +172,10 @@ private:
 public:
 
 	/// Constructor
-	Thread(const std::string &name, CPU *cpu, Core *core);
+	Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core);
 
 	/// Setters
-	void setIDInCore(int id_in_core) { this->id_in_core = id_in_core; }
+
 
 	/// Increment counters
 	void incRegFileIntCount() { reg_file_int_count++; }

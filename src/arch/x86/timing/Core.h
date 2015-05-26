@@ -40,7 +40,7 @@ class Core
 {
 public:
 
-	// Dispatch stall reasons 
+	/// Dispatch stall reasons
 	enum DispatchStallReason
 	{
 		DispatchStallReasonInvalid = 0,
@@ -67,7 +67,7 @@ private:
 	std::vector<std::unique_ptr<Thread>> threads;
 
 	// Unique ID in CPU 
-	int id = 0;
+	int id;
 
 	// Shared structures 
 	std::list<std::unique_ptr<Uop>> event_queue;
@@ -142,10 +142,10 @@ private:
 public:
 
 	/// Constructor
-	Core(const std::string &name, CPU *cpu);
+	Core(const std::string &name, CPU *cpu, int id);
 
 	/// Setters
-	void setID(int id) { this->id = id; }
+
 
 	/// Increment counters
 	void incRegFileIntCount() { reg_file_int_count++; }

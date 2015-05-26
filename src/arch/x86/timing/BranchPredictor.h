@@ -32,17 +32,17 @@ namespace x86
 // Forward declaration
 class Uop;
 
-// Global prediction
-enum BranchPredictorPred
-{
-	BranchPredictorPredNotTaken = 0,
-	BranchPredictorPredTaken
-};
-
 // Branch Predictor class
 class BranchPredictor
 {
 public:
+
+	/// Global prediction enumeration
+	enum Prediction
+	{
+		PredictionNotTaken = 0,
+		PredictionTaken
+	};
 
 	/// Enumeration of branch predictor Kind
 	enum Kind
@@ -99,7 +99,7 @@ private:
 	long long accesses = 0;
 	long long hits = 0;
 
-	// Branch predictor parameter
+	// Branch predictor parameters
 	static Kind kind;
 	static int btb_sets;
 	static int btb_assoc;
@@ -150,7 +150,7 @@ public:
 	///
 	/// \return
 	/// 	Global prediction result
-	BranchPredictorPred LookupBranchPrediction(Uop &uop);
+	Prediction LookupBranchPrediction(Uop &uop);
 
 	/// Return multiple predictions for an address. This can only be done for two-level
 	/// adaptive predictors, since they use global history. The prediction of the

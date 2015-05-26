@@ -95,7 +95,7 @@ private:
 	long long trace_length_acc = 0;
 	long long trace_length_count = 0;
 
-	// Trace cache parameter
+	// Trace cache parameters
 	static int present;
 	static int num_sets;
 	static int assoc;
@@ -136,7 +136,22 @@ public:
 	/// Record the Uop in trace cache
 	void RecordUop(Uop &uop);
 
-	/// Lookup in the trace cache
+	/// Look up cache entry in the trace cache
+	///
+	/// \param eip
+	/// 	The instruction address
+	///
+	/// \param pred
+	/// 	The prediction of this branch instruction
+	///
+	/// \param return_entry
+	/// 	The found cache entry
+	///
+	/// \param neip
+	/// 	The next instruction address
+	///
+	/// \return
+	/// 	Whether or not the entry is found
 	bool Lookup(unsigned int eip, int pred,
 			TraceCacheEntry &return_entry, unsigned int &neip);
 
@@ -144,10 +159,10 @@ public:
 	void Flush();
 
 	/// Debugger files
-	static std::string trace_cache_debug_file;
+	static std::string debug_file;
 
 	/// Debugger for trace cache
-	static misc::Debug trace_cache_debug;
+	static misc::Debug debug;
 
 };
 

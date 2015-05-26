@@ -89,7 +89,7 @@ public:
 	/// Create new CPU instance
 	void NewCPU()
 	{
-		ConfigFrequencyDomain("x86", frequency);
+		setFrequencyDomain("x86", frequency);
 
 		// Only instantiate once
 		assert(!cpu.get());

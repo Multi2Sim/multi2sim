@@ -74,18 +74,18 @@ int CPU::occupancy_stats;
 CPU::CPU()
 {
 	// The prefix for each core
-	std::string core_name = "Core";
+	std::string prefix = "Core";
+	std::string core_name;
 
 	// Initialize
 	emu = Emu::getInstance();
-	mmu.reset(new mem::MMU("x86"));
+	mmu = misc::new_unique<mem::MMU>("x86");
 
 	// Create cores
 	for (int i = 0; i < num_cores; i++)
 	{
-		core_name += misc::fmt("%d", i);
-		cores.emplace_back(new Core(core_name, this));
-		cores[i]->setID(i);
+		core_name = prefix + misc::fmt("%d", i);
+		cores.emplace_back(new Core(core_name, this, i));
 	}
 }
 

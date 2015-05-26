@@ -22,19 +22,19 @@
 namespace x86
 {
 
-Core::Core(const std::string &name, CPU *cpu)
+Core::Core(const std::string &name, CPU *cpu, int id)
 	:
-	name(name), cpu(cpu)
+	name(name), cpu(cpu), id(id)
 {
 	// The prefix for each core
-	std::string thread_name = this->name + "Thread";
+	std::string prefix = name + "Thread";
+	std::string thread_name;
 
 	// Create threads
 	for (int i = 0; i < CPU::getNumThreads(); i++)
 	{
-		thread_name += misc::fmt("%d", i);
-		threads.emplace_back(new Thread(thread_name, this->cpu, this));
-		threads[i]->setIDInCore(i);
+		thread_name = prefix + misc::fmt("%d", i);
+		threads.emplace_back(new Thread(thread_name, this->cpu, this, i));
 	}
 }
 

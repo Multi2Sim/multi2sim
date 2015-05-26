@@ -53,9 +53,7 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 	{
 		std::string section_name = ini_file.getSection(i);
 		if (misc::StringPrefix(section_name, "BranchPredictor"))
-		{
 			BranchPredictor::ParseConfiguration(section_name, ini_file);
-		}
 	}
 
 	// Assertions
@@ -76,7 +74,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Local variable declaration
 	const int num_branch_uop = 3;
 	Uop *uop;
-	BranchPredictorPred pred;
+	BranchPredictor::Prediction pred;
 	char bimod_status;
 	unsigned int branch_addr = 0;
 	unsigned int branch_inst_size = 4;
@@ -135,11 +133,11 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Weakly Taken -> Strongly Taken -> Weakly Taken -> Weakly Not Taken
 	// 2 -> 3 -> 2 -> 1
 	// Prediction: Taken -> Taken -> Taken
-	BranchPredictorPred pred_result[num_branch_uop] =
+	BranchPredictor::Prediction pred_result[num_branch_uop] =
 	{
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken
 	};
 	int bimod_status_trace[num_branch_uop] =
 	{
@@ -167,7 +165,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	const int num_branch_uop = 3;
 	const int N = 3;
 	Uop *uop;
-	BranchPredictorPred pred;
+	BranchPredictor::Prediction pred;
 	int bht_status;
 	char pht_status;
 	unsigned int branch_addr;
@@ -201,35 +199,35 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	// Create N pattern
 	for (int i = 0; i < N; i++)
 	{
-	// First micro-operation (Taken)
-	branch_addr = 0;
-	uop = new Uop;
-	uop->setUInst(&uinst);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
-	uop->setEip(branch_addr);
-	uop->setNeip(branch_addr + branch_target_distance);
-	uop->setMopSize(branch_inst_size);
-	mock_uop_list.emplace_back(uop);
+		// First micro-operation (Taken)
+		branch_addr = 0;
+		uop = new Uop;
+		uop->setUInst(&uinst);
+		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setEip(branch_addr);
+		uop->setNeip(branch_addr + branch_target_distance);
+		uop->setMopSize(branch_inst_size);
+		mock_uop_list.emplace_back(uop);
 
-	// Second micro-operation (Not Taken)
-	branch_addr = 16;
-	uop = new Uop;
-	uop->setUInst(&uinst);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
-	uop->setEip(branch_addr);
-	uop->setNeip(branch_addr + branch_inst_size);
-	uop->setMopSize(branch_inst_size);
-	mock_uop_list.emplace_back(uop);
+		// Second micro-operation (Not Taken)
+		branch_addr = 16;
+		uop = new Uop;
+		uop->setUInst(&uinst);
+		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setEip(branch_addr);
+		uop->setNeip(branch_addr + branch_inst_size);
+		uop->setMopSize(branch_inst_size);
+		mock_uop_list.emplace_back(uop);
 
-	// Third micro-operation (Not Taken)
-	branch_addr = 32;
-	uop = new Uop;
-	uop->setUInst(&uinst);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
-	uop->setEip(branch_addr);
-	uop->setNeip(branch_addr + branch_inst_size);
-	uop->setMopSize(branch_inst_size);
-	mock_uop_list.emplace_back(uop);
+		// Third micro-operation (Not Taken)
+		branch_addr = 32;
+		uop = new Uop;
+		uop->setUInst(&uinst);
+		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setEip(branch_addr);
+		uop->setNeip(branch_addr + branch_inst_size);
+		uop->setMopSize(branch_inst_size);
+		mock_uop_list.emplace_back(uop);
 	}
 
 
@@ -247,17 +245,17 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	// [000000]: Strongly Taken; [000001]: Weakly NotTaken; [000010]: Weakly NotTaken
 	// [000100]: Strongly Taken; [001001]: Weakly NotTaken; [010010]: Weakly NotTaken
 	// [100100]: Strongly Taken; [001001]: NotTaken; [010010]: NotTaken
-	BranchPredictorPred pred_result[num_branch_uop * N] =
+	BranchPredictor::Prediction pred_result[num_branch_uop * N] =
 	{
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredTaken,
-		BranchPredictorPredNotTaken,
-		BranchPredictorPredNotTaken
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionTaken,
+		BranchPredictor::PredictionNotTaken,
+		BranchPredictor::PredictionNotTaken
 	};
 	int bht_status_trace[num_branch_uop * N] =
 	{
