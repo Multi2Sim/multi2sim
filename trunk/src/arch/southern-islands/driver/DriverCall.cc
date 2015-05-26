@@ -127,8 +127,8 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 
 	// Read memory from host to device
 	std::unique_ptr<char> buffer(new char[size]);
-	video_mem.Read(device_ptr, size, buffer.get());
 	memory->Write(host_ptr, size, buffer.get());
+	video_mem.Read(device_ptr, size, buffer.get());
 
 	// Return
 	return 0;
@@ -380,11 +380,6 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 	ArgPointer *arg = dynamic_cast<ArgPointer *>(kernel->getArgByIndex(index));
 	if (!arg || arg->getType() != ArgTypePointer)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
-
-	// Check valid size 
-	if (size != arg->getSize())
-		throw Error(misc::fmt("Argument %d: size %d expected, but "
-				"%d found", index, arg->getSize(), size));
 
 	// Save value 
 	arg->setSetFlag(true);
