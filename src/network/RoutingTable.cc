@@ -85,7 +85,8 @@ void RoutingTable::FloydWarshall()
 
 }
 
-RoutingTable::RoutingTableEntry *RoutingTable::Lookup(Node *source,
+
+RoutingTableEntry *RoutingTable::Lookup(Node *source,
 		Node *destination)
 {
 	int dimension = network->getNumberNodes();
@@ -93,8 +94,9 @@ RoutingTable::RoutingTableEntry *RoutingTable::Lookup(Node *source,
 	int j = destination->getID();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
 
-    int location = i * dimension + j;
-    return entries.at(location).get();
+	int location = i * dimension + j;
+	return entries.at(location).get();
 }
+
 }
 

@@ -78,14 +78,11 @@ void Network::ParseConfiguration(const std::string &section,
 	ParseConfigurationForBusPorts(config);
 
 	// Time to create the initial Routing Table
-	addRoutingTable();
+	AddRoutingTable();
 
 	// Parse the routing elements, for manual routing.
 	if(!ParseConfigurationForRoutes(config))
 		this->routing_table->FloydWarshall();
-
-	// Parse the traffic pattern
-	ParseConfigurationForTraffic(config);
 
 	// Parse the commands for manual(input trace) injection and testing.
 	ParseConfigurationForCommands(config);
@@ -95,7 +92,7 @@ void Network::ParseConfiguration(const std::string &section,
 }
 
 
-void Network::addRoutingTable()
+void Network::AddRoutingTable()
 {
 	auto routing_table = misc::new_unique<RoutingTable> ();
 	routing_table->setNetwork(this);
@@ -415,94 +412,6 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile &config)
 }
 
 
-void Network::ParseConfigurationForTraffic(misc::IniFile &config)
-{
-	for (int i = 0; i < config.getNumSections(); i++)
-	{
-		std::string section = config.getSection(i);
-
-		// Tokenize section name
-		std::vector<std::string> tokens;
-		misc::StringTokenize(section, tokens, ".");
-
-		// Check section name
-		if (tokens.size() != 3)
-			continue;
-		if (strcasecmp(tokens[0].c_str(), "Network"))
-			continue;
-		if (strcasecmp(tokens[1].c_str(), name.c_str()))
-			continue;
-		if (strcasecmp(tokens[2].c_str(), "TrafficPattern"))
-			continue;
-
-		// Initialize traffic pattern
-		traffic_pattern.reset(new TrafficPattern());
-		double injection_rate = config.ReadDouble(section, 
-				"InjectionRate");
-		traffic_pattern->setInjectionRate(injection_rate);
-
-		// Parse configuration for directed groups
-		std::string mode = config.ReadString(section, "Mode");
-		if (!strcasecmp(mode.c_str(), "Directed"))
-			ParseConfigurationForTrafficDirection(config);
-		else 
-			throw misc::Panic(misc::fmt("Traffic mode %s not "
-					"supported.", mode.c_str()));
-	
-		// Return if traffic pattern is setted
-		return;
-	}
-}
-
-
-void Network::ParseConfigurationForTrafficDirection(misc::IniFile &config)
-{
-	for (int i = 0; i < config.getNumSections(); i++)
-	{
-		std::string section = config.getSection(i);
-
-		// Tokenize section name
-		std::vector<std::string> tokens;
-		misc::StringTokenize(section, tokens, ".");
-
-		// Check section name
-		if (tokens.size() != 5)
-			continue;
-		if (strcasecmp(tokens[0].c_str(), "Network"))
-			continue;
-		if (strcasecmp(tokens[1].c_str(), name.c_str()))
-			continue;
-		if (strcasecmp(tokens[2].c_str(), "TrafficPattern"))
-			continue;
-		if (strcasecmp(tokens[3].c_str(), "Direction"))
-			continue;
-		
-		// Add traffic direction to traffic pattern
-		TrafficGroupPair *pair = traffic_pattern->AddPair();
-
-		// Add source nodes
-		std::string sources = config.ReadString(section, "Src");
-		std::vector<std::string> src_names;
-		misc::StringTokenize(sources, src_names, ",");
-		for (unsigned int i = 0; i < src_names.size(); i++)
-		{
-			Node *node = getNodeByName(src_names[i]);
-			pair->AddSourceNode(node);
-		}
-
-		// Add destination nodes
-		std::string destinations = config.ReadString(section, "Dst");
-		std::vector<std::string> dst_names;
-		misc::StringTokenize(destinations, dst_names, ",");
-		for (unsigned int i = 0; i < dst_names.size(); i++)
-		{
-			Node *node = getNodeByName(dst_names[i]);
-			pair->AddDestinationNode(node);
-		}
-	}
-}
-
-
 void Network::ParseConfigurationForCommands(misc::IniFile &config)
 {
 
@@ -711,6 +620,23 @@ void Network::Dump(std::ostream &os = std::cout) const
 	{
 		link->Dump(os);
 	}
+}
+
+
+bool Network::CanSend(Node *source_node, Node *destination_node, int size)
+{
+	// Get output buffer
+	RoutingTableEntry *entry = routing_table->Lookup(source_node, 
+			destination_node);
+	Buffer *output_buffer = entry->getOutputBuffer();
+
+	// Check if route exist
+	if (!output_buffer)
+		return false;
+
+	// All criterion met, return true
+	return true;
+	
 }
 
 }
