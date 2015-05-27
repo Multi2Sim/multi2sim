@@ -598,6 +598,22 @@ Connection *Network::getConnectionByName(const std::string &name) const
 }
 
 
+Node *Network::getNodeByUserData(void *user_data) const
+{
+	// Nothing for null user data
+	if (!user_data)
+		return nullptr;
+	
+	// Search node
+	for (auto &node : nodes)
+		if (node->getUserData() == user_data)
+			return node.get();
+	
+	// Not found
+	return nullptr;
+}
+
+
 void Network::Dump(std::ostream &os = std::cout) const
 {
 	// Dump network information
@@ -637,6 +653,15 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 	// All criterion met, return true
 	return true;
 	
+}
+
+
+EndNode *Network::addEndNode(int input_buffer_size,
+		int output_buffer_size,
+		const std::string &name,
+		void *user_data)
+{
+	throw misc::Panic("Not implemented");
 }
 
 }

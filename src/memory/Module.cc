@@ -24,6 +24,28 @@ namespace mem
 {
 
 
+Module::Module(const std::string &name,
+		Type type,
+		int num_ports,
+		int block_size,
+		int data_latency)
+		:
+		name(name),
+		type(type),
+		block_size(block_size),
+		data_latency(data_latency),
+		num_ports(num_ports)
+{
+	// Create ports
+	ports.reserve(num_ports);
+	for (int i = 0; i < num_ports; i++)
+		ports.emplace_back(misc::new_unique<Port>());
+
+	// Block size
+	assert(!(block_size & (block_size - 1)) && block_size >= 4);
+	log_block_size = misc::LogBase2(block_size);
+}
+
 
 }  // namespace mem
 

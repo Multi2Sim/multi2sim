@@ -23,6 +23,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Queue.h>
 
@@ -99,26 +100,26 @@ private:
 	// Module properties
 	//
 
-	// Module type
-	Type type;
-
 	// Name of the module
 	std::string name;
+
+	// Module type
+	Type type;
 
 	// Block size for caches
 	int block_size;
 
 	// Log base 2 of block size
-	int log_block_size;
+	int log_block_size = 0;
 
 	// Latency for data access in cycles
-	int data_latency;
+	int data_latency = 1;
 
 	// Directory access latency
-	int dir_latency;
+	int directory_latency = 1;
 
 	// Number of entries in the MSHR register
-	int mshr_size;
+	int mshr_size = 1;
 
 	// Cache level, where 1 is closest to processors
 	int level = 0;
@@ -208,10 +209,10 @@ private:
 	net::Network *low_network = nullptr;
 
 	// Node in the high network that the module is associated with
-	net::Node *high_node = nullptr;
+	net::Node *high_network_node = nullptr;
 
 	// Node in the low network that the module is associated with
-	net::Node *low_node = nullptr;
+	net::Node *low_network_node = nullptr;
 
 
 	
@@ -318,11 +319,71 @@ public:
 			Type type,
 			int num_ports,
 			int block_size,
-			int latency);
+			int data_latency);
+	
+	/// Set the directory properties
+	void setDirectoryProperties(int directory_num_sets,
+			int directory_num_ways,
+			int directory_latency)
+	{
+		this->directory_num_sets = directory_num_sets;
+		this->directory_num_ways = directory_num_ways;
+		this->directory_latency = directory_latency;
+		directory_size = directory_num_sets * directory_num_ways;
+	}
+
+	/// Set the MSHR size in number of entries
+	void setMSHRSize(int mshr_size) { this->mshr_size = mshr_size; }
 
 	/// Return whether the module can be accessed. A module can be accessed
 	/// if there are available ports and enough room in the MSHR register.
 	bool canAccess();
+
+	/// Return module name
+	std::string getName() const { return name; }
+
+	/// Return number of ports
+	int getNumPorts() const { return num_ports; }
+
+	/// Return block size
+	int getBlockSize() const { return block_size; }
+
+	/// Return data access latency
+	int getLatency() const { return data_latency; }
+
+	/// Set the high network and high network node that the module is
+	/// connected to.
+	void setHighNetwork(net::Network *high_network,
+			net::Node *high_network_node)
+	{
+		this->high_network = high_network;
+		this->high_network_node = high_network_node;
+	}
+
+	/// Set the low network and low network node that the module is
+	/// connected to.
+	void setLowNetwork(net::Network *low_network,
+			net::Node *low_network_node)
+	{
+		this->low_network = low_network;
+		this->low_network_node = low_network_node;
+	}
+
+	/// Create a cache structure associated with the module.
+	void setCache(unsigned num_sets,
+			unsigned num_ways,
+			unsigned block_size,
+			Cache::ReplacementPolicy replacement_policy,
+			Cache::WritePolicy write_policy)
+	{
+		assert(!cache.get());
+		cache = misc::new_unique<Cache>(name,
+				num_sets,
+				num_ways,
+				block_size,
+				replacement_policy,
+				write_policy);
+	}
 
 	///
 	long long Access(AccessType access_type,

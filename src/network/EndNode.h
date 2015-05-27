@@ -25,22 +25,9 @@
 namespace net
 {
 
-class NodeData
-{
-public:
-
-	// Virtual destructor
-	virtual ~NodeData();
-};
-
 // An end node is where the packet is generated and consumed
 class EndNode : public Node
 {
-protected: 
-
-	// User data. This is information required for memory system.
-	NodeData *user_data;
-
 public:
 
 	/// Return the type of the node

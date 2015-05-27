@@ -40,6 +40,10 @@ protected:
 
 	// Network that it belongs to
 	Network *network;
+	
+	// User data, used by the memory system to attach information about
+	// which module is associated with this network node.
+	void *user_data = nullptr;
 
 	// Node Name
 	std::string name;
@@ -94,6 +98,13 @@ public:
 	/// \param buffer_name
 	///	name of the buffer.
 	//Buffer *getBufferByName(const std::string &buffer_name);
+
+	/// Return the user data attached by the memory system
+	void *getUserData() const { return user_data; }
+
+	/// Assign user data to a network node, usually a module from the
+	/// memory system.
+	void setUserData(void *user_data) { this->user_data = user_data; }
 };
 
 
