@@ -72,7 +72,8 @@ public:
 	~Link() {};
 
 	/// Set descriptive Name
-	void setUserAssignedName(const std::string &name) {
+	void setUserAssignedName(const std::string &name)
+	{
 		this->user_assigned_name = name;
 	}
 
@@ -80,16 +81,19 @@ public:
 	std::string getUserAssignedName() const { return user_assigned_name; }
 
 	/// Set virtual channels
-	void setVirtualChannels(const int vc) {this->virtual_channels = vc;}
+	void setVirtualChannels(const int virtual_channel)
+	{
+		this->virtual_channels = virtual_channel;
+	}
 
 	/// Set source node
-	void setSourceNode(Node *node) { this->source_node = node; }
+	void setSourceNode(Node* node) { this->source_node = node; }
 
 	/// Get source node
 	Node *getSourceNode() const { return source_node; }
 
 	/// Set destination node
-	void setDestinationNode(Node *node) { this->destination_node = node; }
+	void setDestinationNode(Node* node) { this->destination_node = node; }
 
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }
@@ -103,8 +107,6 @@ public:
 	}
 
 	void Dump(std::ostream &os) const;
-
-
 };
 
 

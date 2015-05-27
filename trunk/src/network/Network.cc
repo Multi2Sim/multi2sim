@@ -31,6 +31,7 @@
 namespace net
 {
 
+
 Network::Network(const std::string &name) :
 		name(name)
 {
@@ -94,10 +95,8 @@ void Network::ParseConfiguration(const std::string &section,
 
 void Network::AddRoutingTable()
 {
-	auto routing_table = misc::new_unique<RoutingTable> ();
-	routing_table->setNetwork(this);
+	routing_table = misc::new_unique<RoutingTable> (this);
 	routing_table->InitRoutingTable();
-	this->routing_table = std::move(routing_table);
 }
 
 
@@ -131,7 +130,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile &config)
 
 std::unique_ptr<Node> Network::ProduceNodeByIniSection(
 			const std::string &section, 
-			misc::IniFile &config)
+			misc::IniFile &ini_file)
 {
 	// Verify section name
 	std::vector<std::string> tokens;
@@ -147,7 +146,7 @@ std::unique_ptr<Node> Network::ProduceNodeByIniSection(
 	std::string name = tokens[3];
 
 	// Get type string
-	std::string type = config.ReadString(section, "Type");
+	std::string type = ini_file.ReadString(section, "Type");
 
 	// Get the node
 	return ProduceNode(type, name);
@@ -214,7 +213,7 @@ void Network::ParseConfigurationForBuses(misc::IniFile &config)
 
 void Network::ProduceBusByIniSection(
 			const std::string &section,
-			misc::IniFile &config)
+			misc::IniFile &ini_file)
 {
 	// Verify section name
 	std::vector<std::string> tokens;
@@ -230,7 +229,7 @@ void Network::ProduceBusByIniSection(
 	std::string name = tokens[3];
 
 	// Get the Bus bandwidth
-	int bandwidth = config.ReadInt(section, "Bandwidth", default_bandwidth);
+	int bandwidth = ini_file.ReadInt(section, "Bandwidth", default_bandwidth);
 
 	if (bandwidth < 1)
 	{
@@ -238,7 +237,7 @@ void Network::ProduceBusByIniSection(
 				"be less than 1",name.c_str()));
 	}
 
-	int lanes = config.ReadInt(section,"Lanes", 1);
+	int lanes = ini_file.ReadInt(section,"Lanes", 1);
 
 	if (lanes < 1)
 	{
@@ -254,18 +253,18 @@ void Network::ProduceBusByIniSection(
 }
 
 
-void Network::ParseConfigurationForBusPorts(misc::IniFile &config)
+void Network::ParseConfigurationForBusPorts(misc::IniFile &ini_file)
 {
-	for (int i = 0; i < config.getNumSections(); i++)
+	for (int i = 0; i < ini_file.getNumSections(); i++)
 	{
-		std::string section = config.getSection(i);
+		std::string section = ini_file.getSection(i);
 
 		// Tokenize section name
 		std::vector<std::string> tokens;
 		misc::StringTokenize(section, tokens, ".");
 
 		// Check section name
-		if (tokens.size() != 3)
+		if (tokens.size() != 4)
 			continue;
 		if (strcasecmp(tokens[0].c_str(), "Network"))
 			continue;
@@ -275,19 +274,19 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile &config)
 			continue;
 
 		// Create string
-		ProduceBusPortByIniSection(section, config);
+		ProduceBusPortByIniSection(section, ini_file);
 	}
 }
 
 
 void Network::ProduceBusPortByIniSection(
 			const std::string &section,
-			misc::IniFile &config)
+			misc::IniFile &ini_file)
 {
 	// Verify section name
 	std::vector<std::string> tokens;
 	misc::StringTokenize(section, tokens, ".");
-	if (tokens.size() != 3 &&
+	if (tokens.size() != 4 &&
 			tokens[0] != "Network" &&
 			tokens[1] != getName() &&
 			tokens[2] != "BusPort")
@@ -296,18 +295,18 @@ void Network::ProduceBusPortByIniSection(
 
 	// Get the Type
 	// Get type string
-	std::string type = config.ReadString(section, "Type", "Bidirectional");
+	std::string type = ini_file.ReadString(section, "Type", "Bidirectional");
 
 	if (((strcasecmp(type.c_str(), "Bidirectional")) &&
-			(strcasecmp(type.c_str(), "Send")) &&
-			(strcasecmp(type.c_str(),"Receive"))))
+			(strcasecmp(type.c_str(), "Sender")) &&
+			(strcasecmp(type.c_str(),"Receiver"))))
 	{
 		throw misc::Panic(misc::fmt("Port: Type %s not recognized",
 				type.c_str()));
 	}
 
 	// Get The Bus
-	std::string bus_name = config.ReadString(section, "Bus");
+	std::string bus_name = ini_file.ReadString(section, "Bus");
 	if (bus_name == "")
 		throw misc::Panic(misc::fmt("Bus name not set in section %s",
 					section.c_str()));
@@ -318,7 +317,7 @@ void Network::ProduceBusPortByIniSection(
 					bus_name.c_str()));
 
 	// Get the Node
-	std::string node_name = config.ReadString(section, "Node");
+	std::string node_name = ini_file.ReadString(section, "Node");
 	if (node_name == "")
 		throw misc::Panic(misc::fmt("Node not set in section %s",
 					section.c_str()));
@@ -329,18 +328,18 @@ void Network::ProduceBusPortByIniSection(
 					node_name.c_str()));
 
 	// Get the port size
-	int buffer_size = config.ReadInt(section, "BufferSize", 0);
+	int buffer_size = ini_file.ReadInt(section, "BufferSize", 0);
 
 
 	Buffer * buffer;
-	if (strcasecmp(type.c_str(), "Send"))
+	if (strcasecmp(type.c_str(), "Sender"))
 	{
 		buffer_size = (buffer_size == 0 ?
 				default_output_buffer_size : buffer_size);
 		buffer = node->AddOutputBuffer(buffer_size);
 		bus->addSourceBuffer(buffer);
 	}
-	else if (strcasecmp(type.c_str(), "Receive"))
+	else if (strcasecmp(type.c_str(), "Receiver"))
 	{
 		buffer_size = (buffer_size == 0 ?
 				default_input_buffer_size : buffer_size);
@@ -359,11 +358,10 @@ void Network::ProduceBusPortByIniSection(
 		buffer = node->AddInputBuffer(destination_buffer_size);
 		bus->addDestinationBuffer(buffer);
 	}
-
 }
 
 
-std::unique_ptr<Bus> Network::ProduceBus(std::string name,
+std::unique_ptr<Bus> Network::ProduceBus(const std::string &name,
 		int bandwidth, int lanes)
 {
 	std::unique_ptr<Bus> bus = std::unique_ptr<Bus>(new Bus(lanes));
@@ -373,18 +371,16 @@ std::unique_ptr<Bus> Network::ProduceBus(std::string name,
 	return bus;
 }
 
-
 void Network::AddBus(std::unique_ptr<Bus> bus)
 {
 	connections.push_back(std::move(bus));
 }
 
-
-void Network::ParseConfigurationForLinks(misc::IniFile &config)
+void Network::ParseConfigurationForLinks(misc::IniFile &ini_file)
 {
-	for (int i = 0; i < config.getNumSections(); i++)
+	for (int i = 0; i < ini_file.getNumSections(); i++)
 	{
-		std::string section = config.getSection(i);
+		std::string section = ini_file.getSection(i);
 		
 		// Tokenize section name
 		std::vector<std::string> tokens;
@@ -401,18 +397,18 @@ void Network::ParseConfigurationForLinks(misc::IniFile &config)
 			continue;
 
 		// Create string
-		ProduceLinkByIniSection(section, config);
+		ProduceLinkByIniSection(section, ini_file);
 	}
 }
 
 
-bool Network::ParseConfigurationForRoutes(misc::IniFile &config)
+bool Network::ParseConfigurationForRoutes(misc::IniFile &ini_file)
 {
 	return false;
 }
 
 
-void Network::ParseConfigurationForCommands(misc::IniFile &config)
+void Network::ParseConfigurationForCommands(misc::IniFile &ini_file)
 {
 
 }
@@ -438,7 +434,7 @@ void Network::AddLink(std::unique_ptr<Link> link)
 
 void Network::ProduceLinkByIniSection(
 			const std::string &section, 
-			misc::IniFile &config)
+			misc::IniFile &ini_file)
 {
 	// Verify section name
 	std::vector<std::string> tokens;
@@ -454,7 +450,7 @@ void Network::ProduceLinkByIniSection(
 	std::string name = tokens[3];
 
 	// Get type string
-	std::string type = config.ReadString(section, "Type", "Unidirectional");
+	std::string type = ini_file.ReadString(section, "Type", "Unidirectional");
 	if (((strcasecmp(type.c_str(), "Unidirectional")) &&
 			(strcasecmp(type.c_str(),"Bidirectional"))))
 	{
@@ -463,7 +459,7 @@ void Network::ProduceLinkByIniSection(
 	}
 
 	// Get source node
-	std::string source_name = config.ReadString(section, "Source");
+	std::string source_name = ini_file.ReadString(section, "Source");
 	if (source_name == "")
 		throw misc::Panic(misc::fmt("Source not set in section %s", 
 					section.c_str()));
@@ -473,7 +469,7 @@ void Network::ProduceLinkByIniSection(
 					source_name.c_str()));
 
 	// Get destination node
-	std::string destination_name = config.ReadString(section, "Dest");
+	std::string destination_name = ini_file.ReadString(section, "Dest");
 	if (destination_name == "")
 		throw misc::Panic(misc::fmt("Destination not set in section %s", 
 					section.c_str()));
@@ -483,7 +479,7 @@ void Network::ProduceLinkByIniSection(
 					destination_name.c_str()));
 
 	// Get the link bandwidth
-	int bandwidth = config.ReadInt(section, "Bandwidth", default_bandwidth);
+	int bandwidth = ini_file.ReadInt(section, "Bandwidth", default_bandwidth);
 	if (bandwidth < 1)
 	{
 		throw misc::Panic(misc::fmt("Link %s: Bandwidth cannot "
@@ -491,11 +487,11 @@ void Network::ProduceLinkByIniSection(
 	}
 
 	// Get input buffer size -- allowing manual buffer sizes
-	int input_buffer_size = config.ReadInt(section, "InputBufferSize",
+	int input_buffer_size = ini_file.ReadInt(section, "InputBufferSize",
 			default_input_buffer_size);
 
 	// Get output buffer size
-	int output_buffer_size = config.ReadInt(section, "OutputBufferSize",
+	int output_buffer_size = ini_file.ReadInt(section, "OutputBufferSize",
 			default_output_buffer_size);
 
 	// Check the buffer sizes
@@ -505,7 +501,7 @@ void Network::ProduceLinkByIniSection(
 				"be less than 1",name.c_str()));
 	}
 	// Get the number of virtual channels
-	int virtual_channels = config.ReadInt(section,"VC", 1);
+	int virtual_channels = ini_file.ReadInt(section,"VC", 1);
 
 	if (virtual_channels < 1)
 	{
@@ -642,9 +638,9 @@ void Network::Dump(std::ostream &os = std::cout) const
 bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 {
 	// Get output buffer
-	RoutingTableEntry *entry = routing_table->Lookup(source_node, 
+	RoutingTable::Entry *entry = routing_table->Lookup(source_node, 
 			destination_node);
-	Buffer *output_buffer = entry->getOutputBuffer();
+	Buffer *output_buffer = entry->getBuffer();
 
 	// Check if route exist
 	if (!output_buffer)

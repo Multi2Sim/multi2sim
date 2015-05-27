@@ -88,9 +88,11 @@ public:
 	Buffer* AddOutputBuffer(int size);
 
 	/// Getting the node's output buffer list
-	std::vector<std::unique_ptr<Buffer>> &getOutputBufferList(){
+	std::vector<std::unique_ptr<Buffer>> &getOutputBuffers()
+	{
 		return this->output_buffers;
 	}
+
 	/// Finding a Node's buffer by its name. Function looks up first input
 	/// buffers and if the buffer is not found, it looks up output buffers
 	/// to find the buffer.
