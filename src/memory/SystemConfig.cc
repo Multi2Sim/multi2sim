@@ -20,6 +20,8 @@
 #include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
 #include <lib/esim/Engine.h>
+#include <network/EndNode.h>
+#include <network/Node.h>
 
 #include "Module.h"
 #include "System.h"
@@ -260,7 +262,7 @@ void System::ConfigReadGeneral(misc::IniFile *ini_file)
 	// Frequency
 	frequency = ini_file->ReadInt(section, "Frequency", frequency);
 	if (!esim::Engine::isValidFrequency(frequency))
-		throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
+		throw Error(misc::fmt("%s: The value for 'Frequency' "
 				"must be between 1MHz and 1000GHz.\n%s",
 				ini_file->getPath().c_str(),
 				err_config_note));
@@ -322,10 +324,157 @@ void System::ConfigReadNetworks(misc::IniFile *ini_file)
 }
 
 
+void System::ConfigInsertModuleInInternalNetwork(
+		misc::IniFile *ini_file,
+		Module *module,
+		const std::string &network_name,
+		const std::string &network_node_name,
+		net::Network *&network,
+		net::Node *&network_node)
+{
+	// No network specified
+	network = nullptr;
+	network_node = nullptr;
+	if (network_name.empty())
+		return;
+
+	// Try to insert in private network
+	std::string section = "Network " + network_name;
+	network = (net::Network *) ini_file->ReadPointer(section, "ptr");
+	if (!network)
+	{
+		ConfigInsertModuleInExternalNetwork(ini_file,
+				module,
+				network_name,
+				network_node_name,
+				network,
+				network_node);
+		return;
+	}
+
+	// For private networks, 'network_node_name' should be empty
+	if (!network_node_name.empty())
+		throw Error(misc::fmt("%s: %s: network node name should be "
+				"empty.\n%s",
+				ini_file->getPath().c_str(),
+				module->getName().c_str(),
+				err_config_note));
+
+	// Network should not have this module already
+	if (network->getNodeByUserData(module))
+		throw Error(misc::fmt("%s: network '%s' already contains "
+				"module '%s'.\n%s",
+				ini_file->getPath().c_str(),
+				network->getName().c_str(),
+				module->getName().c_str(),
+				err_config_note));
+
+	// Read buffer sizes from network
+	int default_input_buffer_size = ini_file->ReadInt(section,
+			"DefaultInputBufferSize");
+	int default_output_buffer_size = ini_file->ReadInt(section,
+			"DefaultOutputBufferSize");
+	if (!default_input_buffer_size)
+		throw Error(misc::fmt("%s: network %s: variable "
+				"'DefaultInputBufferSize' missing.\n%s",
+				ini_file->getPath().c_str(),
+				network->getName().c_str(),
+				err_config_note));
+	if (!default_output_buffer_size)
+		throw Error(misc::fmt("%s: network %s: variable "
+				"'DefaultOutputBufferSize' missing.\n%s",
+				ini_file->getPath().c_str(),
+				network->getName().c_str(),
+				err_config_note));
+	if (default_input_buffer_size < module->getBlockSize() + 8)
+		throw Error(misc::fmt("%s: network %s: minimum input buffer "
+				"size is %d for cache '%s'.\n%s",
+				ini_file->getPath().c_str(),
+				network->getName().c_str(),
+				module->getBlockSize() + 8,
+				module->getName().c_str(),
+				err_config_note));
+	if (default_output_buffer_size < module->getBlockSize() + 8)
+		throw Error(misc::fmt("%s: network %s: minimum output buffer "
+				"size is %d for cache '%s'.\n%s",
+				ini_file->getPath().c_str(),
+				network->getName().c_str(),
+				module->getBlockSize() + 8,
+				module->getName().c_str(),
+				err_config_note));
+
+	// Create node
+	network_node = network->addEndNode(default_input_buffer_size,
+			default_output_buffer_size,
+			module->getName(),
+			module);
+}
+
+
+void System::ConfigInsertModuleInExternalNetwork(
+		misc::IniFile *ini_file,
+		Module *module,
+		const std::string &network_name,
+		const std::string &network_node_name,
+		net::Network *&network,
+		net::Node *&network_node)
+{
+	// Get network
+	net::System *network_system = net::System::getInstance();
+	network = network_system->getNetworkByName(network_name);
+	if (!network)
+		throw Error(misc::fmt("%s: %s: invalid network name.\n%s%s",
+				ini_file->getPath().c_str(),
+				network_name.c_str(),
+				err_config_note,
+				err_config_net));
+
+	// Node name must be specified
+	if (network_node_name.empty())
+		throw Error(misc::fmt("%s: %s: network node name required for "
+				"external network.\n%s%s",
+				ini_file->getPath().c_str(),
+				module->getName().c_str(),
+				err_config_note,
+				err_config_net));
+
+	// Get node
+	network_node = network->getNodeByName(network_node_name);
+	if (!network_node)
+		throw Error(misc::fmt("%s: network %s: node %s: invalid node "
+				"name.\n%s%s",
+				ini_file->getPath().c_str(),
+				network_name.c_str(),
+				network_node_name.c_str(),
+				err_config_note,
+				err_config_net));
+
+	// No module must have been assigned previously to this node
+	if (network_node->getUserData())
+		throw Error(misc::fmt("%s: network %s: node '%s' already "
+				"assigned.\n%s",
+				ini_file->getPath().c_str(),
+				network_name.c_str(),
+				network_node_name.c_str(),
+				err_config_note));
+
+	// Network should not have this module already
+	if (network->getNodeByUserData(module))
+		throw Error(misc::fmt("%s: network %s: module '%s' is already "
+				"present.\n%s",
+				ini_file->getPath().c_str(),
+				network_name.c_str(),
+				module->getName().c_str(),
+				err_config_note));
+
+	// Assign module to network node and return
+	network_node->setUserData(module);
+}
+
+
 Module *System::ConfigReadCache(misc::IniFile *ini_file,
 		const std::string &section)
 {
-#if 0
 	// Cache parameters
 	std::string geometry_section = "CacheGeometry " +
 			ini_file->ReadString(section, "Geometry");
@@ -343,26 +492,16 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 	
 	// Geometry values
 	int num_sets = ini_file->ReadInt(geometry_section, "Sets", 16);
-	int assoc = ini_file->ReadInt(geometry_section, "Assoc", 2);
+	int num_ways = ini_file->ReadInt(geometry_section, "Assoc", 2);
 	int block_size = ini_file->ReadInt(geometry_section, "BlockSize", 256);
 	int latency = ini_file->ReadInt(geometry_section, "Latency", 1);
-	int dir_latency = ini_file->ReadInt(geometry_section, "DirectoryLatency", 0);
+	int directory_latency = ini_file->ReadInt(geometry_section, "DirectoryLatency", 0);
 	std::string replacement_policy_str = ini_file->ReadString(geometry_section,
 			"Policy", "LRU");
 	std::string write_policy_str = ini_file->ReadString(geometry_section,
 			"WritePolicy", "WriteBack");
 	int mshr_size = ini_file->ReadInt(geometry_section, "MSHR", 16);
 	int num_ports = ini_file->ReadInt(geometry_section, "Ports", 2);
-	bool enable_prefetcher = ini_file->ReadBool(geometry_section, 
-			"EnablePrefetcher", false);
-	std::string prefetcher_type_str = ini_file->ReadString(geometry_section,
-			"PrefetcherType", "GHB_PC_CS");
-	int prefetcher_ghb_size = ini_file->ReadInt(geometry_section, 
-			"PrefetcherGHBSize", 256);
-	int prefetcher_it_size = ini_file->ReadInt(geometry_section, 
-			"PrefetcherITSize", 64);
-	int prefetcher_lookup_depth = ini_file->ReadInt(geometry_section, 
-			"PrefetcherLookupDepth", 2);
 
 	// Check replacement policy
 	Cache::ReplacementPolicy replacement_policy =
@@ -370,7 +509,7 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 			Cache::ReplacementPolicyMap.MapString
 			(replacement_policy_str);
 	if (!replacement_policy)
-		throw misc::Error(misc::fmt("%s: Cache %s: %s: "
+		throw Error(misc::fmt("%s: Cache %s: %s: "
 				"Invalid block replacement policy.\n%s",
 				ini_file->getPath().c_str(),
 				module_name.c_str(),
@@ -382,7 +521,7 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 			(Cache::WritePolicy)
 			Cache::WritePolicyMap.MapString(write_policy_str);
 	if (!write_policy)
-		throw misc::Error(misc::fmt("%s: Cache %s: %s: "
+		throw Error(misc::fmt("%s: Cache %s: %s: "
 				"Invalid write policy.\n%s",
 				ini_file->getPath().c_str(),
 				module_name.c_str(),
@@ -395,94 +534,99 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 				ini_file->getPath().c_str(),
 				module_name.c_str(),
 				write_policy_str.c_str());
-#endif
-#if 0
-	if (num_sets < 1 || (num_sets & (num_sets - 1)))
-		fatal("%s: cache %s: number of sets must be a power of two "
-			"greater than 1.\n%s", mem_config_file_name, mod_name, 
-			mem_err_config_note);
-	if (assoc < 1 || (assoc & (assoc - 1)))
-		fatal("%s: cache %s: associativity must be power of two "
-			"and > 1.\n%s", mem_config_file_name, mod_name, 
-			mem_err_config_note);
-	if (block_size < 4 || (block_size & (block_size - 1)))
-		fatal("%s: cache %s: block size must be power of two and "
-			"at least 4.\n%s", mem_config_file_name, mod_name, 
-			mem_err_config_note);
-	if (dir_latency < 0)
-		fatal("%s: cache %s: invalid value for variable "
-			"'DirectoryLatency'.\n%s", mem_config_file_name, 
-			mod_name, mem_err_config_note);
-	if (latency < 0)
-		fatal("%s: cache %s: invalid value for variable 'Latency'.\n%s",
-			mem_config_file_name, mod_name, mem_err_config_note);
-	if (mshr_size < 1)
-		fatal("%s: cache %s: invalid value for variable 'MSHR'.\n%s",
-			mem_config_file_name, mod_name, mem_err_config_note);
-	if (num_ports < 1)
-		fatal("%s: cache %s: invalid value for variable 'Ports'.\n%s",
-			mem_config_file_name, mod_name, mem_err_config_note);
-	if (enable_prefetcher)
-	{
-		prefetcher_type = str_map_string_case(&prefetcher_type_map, 
-			prefetcher_type_str);
-		if (prefetcher_ghb_size < 1 || prefetcher_it_size < 1 ||
-		    prefetcher_type == prefetcher_type_invalid || 
-		    prefetcher_lookup_depth < 2 || 
-		    prefetcher_lookup_depth > PREFETCHER_LOOKUP_DEPTH_MAX)
-		{
-			fatal("%s: cache %s: invalid prefetcher "
-				"configuration.\n%s",
-				mem_config_file_name, mod_name, 
-				mem_err_config_note);
-		}
-	}
-
-	/* Create module */
-	mod = mod_create(mod_name, mod_kind_cache, num_ports,
-		block_size, latency);
 	
-	/* Initialize */
-	mod->mshr_size = mshr_size;
-	mod->dir_assoc = assoc;
-	mod->dir_num_sets = num_sets;
-	mod->dir_size = num_sets * assoc;
-	mod->dir_latency = dir_latency;
+	// Other checks
+	if (num_sets < 1 || (num_sets & (num_sets - 1)))
+		throw Error(misc::fmt("%s: cache %s: number of sets must be a "
+				"power of two greater than 1.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (num_ways < 1 || (num_ways & (num_ways - 1)))
+		throw Error(misc::fmt("%s: cache %s: associativity must be a "
+				"power of two and > 1.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (block_size < 4 || (block_size & (block_size - 1)))
+		throw Error(misc::fmt("%s: cache %s: block size must be power "
+				"of two and at least 4.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (directory_latency < 0)
+		throw Error(misc::fmt("%s: cache %s: invalid value for "
+				"variable 'DirectoryLatency'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (latency < 0)
+		throw Error(misc::fmt("%s: cache %s: invalid value for "
+				"variable 'Latency'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (mshr_size < 1)
+		throw Error(misc::fmt("%s: cache %s: invalid value for "
+				"variable 'MSHR'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (num_ports < 1)
+		throw Error(misc::fmt("%s: cache %s: invalid value for "
+				"variable 'Ports'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
 
-	/* High network */
-	net_name = config_read_string(config, section, "HighNetwork", "");
-	net_node_name = config_read_string(config, section, 
-		"HighNetworkNode", "");
-	mem_config_insert_module_in_network(config, mod, net_name, net_node_name,
-		&net, &net_node);
-	mod->high_net = net;
-	mod->high_net_node = net_node;
+	// Create module
+	modules.emplace_back(misc::new_unique<Module>(
+			module_name,
+			Module::TypeCache,
+			num_ports,
+			block_size,
+			latency));
+	
+	// Initialize module
+	Module *module = modules.back().get();
+	module->setDirectoryProperties(num_sets, num_ways, directory_latency);
+	module->setMSHRSize(mshr_size);
 
-	/* Low network */
-	net_name = config_read_string(config, section, "LowNetwork", "");
-	net_node_name = config_read_string(config, section, 
-		"LowNetworkNode", "");
-	mem_config_insert_module_in_network(config, mod, net_name, 
-		net_node_name, &net, &net_node);
-	mod->low_net = net;
-	mod->low_net_node = net_node;
+	// High network
+	std::string network_name = ini_file->ReadString(section, "HighNetwork");
+	std::string network_node_name = ini_file->ReadString(section, "HighNetworkNode");
+	net::Network *network;
+	net::Node *network_node;
+	ConfigInsertModuleInInternalNetwork(
+			ini_file,
+			module,
+			network_name,
+			network_node_name,
+			network,
+			network_node);
+	module->setHighNetwork(network, network_node);
+	
+	// Low network
+	network_name = ini_file->ReadString(section, "LowNetwork");
+	network_node_name = ini_file->ReadString(section, "LowNetworkNode");
+	ConfigInsertModuleInInternalNetwork(
+			ini_file,
+			module,
+			network_name,
+			network_node_name,
+			network,
+			network_node);
+	module->setLowNetwork(network, network_node);
 
-	/* Create cache */
-	mod->cache = cache_create(mod->name, num_sets, block_size, assoc, 
-		policy, writepolicy);
+	// Create cache
+	module->setCache(num_sets,
+			num_ways,
+			block_size,
+			replacement_policy,
+			write_policy);
 
-	/* Fill in prefetcher parameters */
-	if (enable_prefetcher)
-	{
-		mod->cache->prefetcher = prefetcher_create(prefetcher_ghb_size, 
-			prefetcher_it_size, prefetcher_lookup_depth, 
-			prefetcher_type);
-	}
-
-	/* Return */
-	return mod;
-#endif
-	return nullptr;
+	// Done
+	return module;
 }
 
 

@@ -35,7 +35,7 @@ namespace net
 {
 
 class Node;
-class NodeData;
+class EndNode;
 class Connection;
 
 class Network
@@ -268,12 +268,18 @@ public:
 	virtual int getNumberConnections() const { return connections.size(); }
 
 
-	/// finds and returns node in the network using user data
+	/// Finds and returns node in the network given its user data.
 	///
 	/// \param user_data
-	///	user_data which is usually provided by memory system
-	// Node *getNodeByUserData(NodeData *user_data);
+	///	User data attached by the memory system.
+	//
+	Node *getNodeByUserData(void *user_data) const;
 
+	/// Create an end node
+	EndNode *addEndNode(int input_buffer_size,
+			int output_buffer_size,
+			const std::string &name,
+			void *user_data);
 };
 
 

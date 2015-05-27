@@ -29,6 +29,7 @@
 #include <lib/esim/Trace.h>
 #include <lib/cpp/IniFile.h>
 #include <network/Network.h>
+#include <network/Node.h>
 
 #include "Module.h"
 
@@ -39,6 +40,21 @@ namespace mem
 
 // Forward declarations
 class Module;
+
+
+/// Memory exception
+class Error : public misc::Error
+{
+public:
+
+	/// Constructor
+	Error(const std::string &message) : misc::Error(message)
+	{
+		/// Add module prefix
+		AppendPrefix("Memory");
+	}
+};
+
 
 /// Memory system
 class System
@@ -94,6 +110,22 @@ class System
 	void ConfigReadGeneral(misc::IniFile *ini_file);
 
 	void ConfigReadNetworks(misc::IniFile *ini_file);
+
+	void ConfigInsertModuleInInternalNetwork(
+			misc::IniFile *ini_file,
+			Module *module,
+			const std::string &network_name,
+			const std::string &network_node_name,
+			net::Network *&network,
+			net::Node *&node);
+
+	void ConfigInsertModuleInExternalNetwork(
+			misc::IniFile *ini_file,
+			Module *module,
+			const std::string &network_name,
+			const std::string &network_node_name,
+			net::Network *&network,
+			net::Node *&node);
 
 	Module *ConfigReadCache(misc::IniFile *ini_file,
 			const std::string &section);
