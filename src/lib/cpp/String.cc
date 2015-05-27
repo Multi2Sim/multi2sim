@@ -127,6 +127,12 @@ void StringToUpper(std::string &s)
 }
 
 
+int StringCaseCompare(const std::string &s1, const std::string &s2)
+{
+	return strcasecmp(s1.c_str(), s2.c_str());
+}
+
+
 bool StringPrefix(const std::string &s, const std::string &prefix)
 {
 	return s.length() >= prefix.length() &&
