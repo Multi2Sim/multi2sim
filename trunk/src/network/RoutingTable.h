@@ -74,7 +74,7 @@ public:
 protected:
 
 	// Associated network
-	Network *network;
+	Network *network = nullptr;
 
 	// Dimension
 	int dimension;
@@ -116,7 +116,7 @@ public:
 	void DetectCycle();
 
 	/// Dump Routing table information.
-	void Dump();
+	void Dump(std::ostream &os);
 
 };
 

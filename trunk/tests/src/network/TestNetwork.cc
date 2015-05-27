@@ -105,10 +105,14 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 		"Type = Sender\n"
 		"Node = N1\n"
 		"Bus = B1\n"
-		"[ Network.mynet.BusPort.N2-B1 ]\n"
+		"[ Network.mynet.BusPort.S1-B1 ]\n"
 		"Type = Receiver\n"
-		"Node = N2\n"
-		"Bus = B1";
+		"Node = S1\n"
+		"Bus = B1\n"
+		"[ Network.mynet.Link.S1-N2 ]\n"
+		"Type = Bidirectional\n"
+		"Source = S1\n"
+		"Dest = N2";
 		
 	misc::IniFile ini;
 	ini.LoadFromString(ini_file);
@@ -146,7 +150,7 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 		EXPECT_TRUE( lane != nullptr);
 	}
 
-	EXPECT_TRUE(net.getNumberConnections() == 2);
+	EXPECT_TRUE(net.getNumberConnections() == 4);
 }
 
 
