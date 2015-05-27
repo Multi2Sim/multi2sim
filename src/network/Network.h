@@ -30,7 +30,6 @@
 #include "Bus.h"
 #include "Buffer.h"
 #include "RoutingTable.h"
-#include "TrafficPattern.h"
 
 namespace net
 {
@@ -66,10 +65,6 @@ class Network
 	// Routing table
 	std::unique_ptr<RoutingTable> routing_table;
 
-	// Traffic pattern generated on this network, only used in standalone
-	// network simulation
-	std::unique_ptr<TrafficPattern> traffic_pattern;
-
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &config);
 
@@ -84,12 +79,6 @@ class Network
 
 	// Parse the routing elements, for manual routing.
 	bool ParseConfigurationForRoutes(misc::IniFile &config);
-
-	// Parse the traffic pattern
-	void ParseConfigurationForTraffic(misc::IniFile &config);
-
-	// Parse the traffic direction
-	void ParseConfigurationForTrafficDirection(misc::IniFile &config);
 
 	// Parse the commands for manual(input trace) injection and testing.
 	void ParseConfigurationForCommands(misc::IniFile &config);
@@ -159,7 +148,7 @@ public:
 	std::string getName() const { return name; }
 
 	/// add routing table
-	void addRoutingTable();
+	void AddRoutingTable();
 
 	/// Get routing table
 	RoutingTable *getRoutingTable() const
@@ -167,10 +156,16 @@ public:
 		return routing_table.get();
 	}
 
-	/// Check if a node can be sent throught this network
+	/// Inject the routing table in whole
+	void setRoutingTable(std::unique_ptr<RoutingTable> routing_table)
+	{
+		this->routing_table = std::move(routing_table);
+	}
+
+	/// Check if a message can be sent throught this network
 	bool CanSend(Node *source_node, Node *destination_node, int size);
 
-	/// Send an event through network
+	/// Send a message through network
 	void Send(Node *source_node, Node *destination_node, int size,
 			esim::EventType *receive,
 			esim::EventFrame *receive_frame);
@@ -279,27 +274,6 @@ public:
 	///	user_data which is usually provided by memory system
 	// Node *getNodeByUserData(NodeData *user_data);
 
-
-
-
-	//
-	// Standalone simulation
-	//
-
-	// Perform standalone simulation
-	void Simulate();
-
-	// Set traffic pattern
-	void setTrafficPattern(std::unique_ptr<TrafficPattern> traffic_pattern)
-	{
-		this->traffic_pattern = std::move(traffic_pattern);
-	}
-
-	// Get traffic pattern
-	TrafficPattern *getTrafficPattern() const
-	{
-		return traffic_pattern.get();
-	}
 };
 
 

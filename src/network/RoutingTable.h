@@ -23,44 +23,14 @@
 #include <vector>
 #include <memory>
 
+#include "RoutingTableEntry.h"
+
 namespace net
 {
 class Network;
   
 class RoutingTable
 {
-	class RoutingTableEntry
-	{
-	private:
-		// Cost in hops
-		int cost;
-
-		// Next node to destination
-		Node *next_node = nullptr;
-
-		// Output buffer
-		Buffer *output_buffer = nullptr;
-
-	public:
-		/// Constructor
-		RoutingTableEntry(int cost) :cost {cost} {};
-
-		/// Set the cost
-		void setCost(int cost) { this->cost = cost; }
-
-		/// Get the cost
-		int getCost() const { return this->cost; }
-
-		/// Set next node
-		void setNextNode(Node *node) { this->next_node = next_node; }
-
-		/// Get next node
-		Node *getNextNode() const { return this->next_node; }
-
-		/// Set next buffer
-		void setBuffer(Buffer *buffer) { this->output_buffer = buffer; }
-
-	};
 protected:
 
 	// Associated network
@@ -80,6 +50,9 @@ public:
 	/// Constructor
 	RoutingTable() {};
 
+	/// Virtual destructor
+	virtual ~RoutingTable() {};
+
 	/// Set the associated network
 	void setNetwork(Network *network) { this->network = network; }
 
@@ -93,7 +66,7 @@ public:
 	void FloydWarshall();
 
 	/// Look up the entry from a certain node to a certain node
-	RoutingTableEntry *Lookup(Node *source, Node *destination);
+	virtual RoutingTableEntry *Lookup(Node *source, Node *destination);
 
 };
 
