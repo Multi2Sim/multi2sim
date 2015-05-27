@@ -22,16 +22,17 @@
 namespace net
 {
 
+
 Bus::Bus(int lanes)
 {
 	for (int i = 0; i < lanes; i++)
 	{
-		auto lane= misc::new_unique<Lane> ();
+		auto lane = misc::new_unique<Lane>();
 		lane->setLaneIndex(this->getNumberLanes());
 		this->lanes.emplace_back(std::move(lane));
-
 	}
 }
+
 
 void Bus::Dump(std::ostream &os = std::cout) const
 {

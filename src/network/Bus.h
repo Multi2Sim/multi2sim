@@ -32,8 +32,8 @@ class Bus : public Connection
 public:
 	class Lane
 	{
-
 	protected:
+
 		// lane owner
 		Buffer* owner;
 

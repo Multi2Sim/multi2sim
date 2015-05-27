@@ -22,16 +22,19 @@
 
 namespace net
 {
-void Connection::addSourceBuffer(Buffer * buffer)
+
+
+void Connection::addSourceBuffer(Buffer* buffer)
 {
 	buffer->setConnection(this);
 	this->source_buffers.emplace_back(buffer);
 }
 
-void Connection::addDestinationBuffer(Buffer * buffer)
+
+void Connection::addDestinationBuffer(Buffer* buffer)
 {
 	buffer->setConnection(this);
-	this->source_buffers.emplace_back(buffer);
+	this->destination_buffers.emplace_back(buffer);
 }
 
 }
