@@ -27,8 +27,10 @@
 
 namespace net
 {
+
 class Buffer;
 class Connection;
+
 
 void RoutingTable::InitRoutingTable()
 {
@@ -44,10 +46,8 @@ void RoutingTable::InitRoutingTable()
 	{
 		for (int j = 0; j < dimension; j++)
 		{
-
-			entries.emplace_back(std::unique_ptr<RoutingTableEntry>
-			(new RoutingTableEntry(i == j ? 0 : INT_MAX)));
-
+			entries.emplace_back(misc::new_unique<Entry>
+				(i == j ? 0 : INT_MAX));
 		}
 	}
 
@@ -57,36 +57,114 @@ void RoutingTable::InitRoutingTable()
 		Network *network = this->network;
 
 		Node *node = network->getNodeByIndex(i);
-
-		for (auto &source_buffer : node->getOutputBufferList())
+		for (auto &source_buffer : node->getOutputBuffers())
 		{
-			fprintf(stderr,"source buffer is %s\n",source_buffer->getName().c_str());
 			Connection* connection = source_buffer->getConnection();
-
 			for (auto &dst_buffer : connection->getDestinationBuffers())
 			{
 				Node* dst_node = dst_buffer->getNode();
 
 				if (node != dst_node)
 				{
-					RoutingTableEntry* entry = Lookup(node, dst_node);
+					Entry* entry = Lookup(node, dst_node);
 					entry->setCost(1);
 					entry->setNextNode(dst_node);
 					entry->setBuffer(source_buffer.get());
 				}
-
 			}
 		}
 	}
 }
 
+
 void RoutingTable::FloydWarshall()
 {
+	int i,j,k;
+	// The entry->next_node values do not necessarily point
+	// to the immediate next hop after this.
+	for (i = 0; i < dimension; i++)
+	{
+		for (j = 0; j < dimension; j++)
+		{
+			for (k = 0; k < dimension; k++)
+			{
+				Node *node_i = network->getNodeByIndex(i);
+				Node *node_j = network->getNodeByIndex(j);
+				Node *node_k = network->getNodeByIndex(k);
 
+				auto entry_i_k = Lookup(node_i,node_k);
+				auto entry_k_j = Lookup(node_k,node_j);
+				auto entry_i_j = Lookup(node_i,node_j);
+
+				int temp_cost = entry_i_k->getCost() +
+						entry_k_j->getCost();
+				if (entry_i_j->getCost() > temp_cost)
+				{
+					entry_i_j->setCost(temp_cost);
+					entry_i_j->setNextNode(node_k);
+				}
+			}
+		}
+	}
+
+	// Calculating the output buffer for the entry.
+	Node *next_node = nullptr;
+	Entry *entry = nullptr;
+
+	for (i = 0; i < dimension; i++)
+	{
+		for (j = 0; j < dimension; j++)
+		{
+
+			Node *node_i = network->getNodeByIndex(i);
+			Node *node_j = network->getNodeByIndex(j);
+
+			auto entry_i_j = Lookup(node_i, node_j);
+			next_node = entry_i_j->getNextNode();
+
+			if (!next_node)
+			{
+				entry_i_j->setBuffer(nullptr);
+				continue;
+			}
+
+			// Follow the buffers path
+			for (;;)
+			{
+				entry = Lookup(node_i, next_node);
+				if (entry->getCost() <= 1)
+					break;
+				next_node = entry->getNextNode();
+			}
+
+			// Get the output buffer based on the next node
+			for (auto &buffer : node_i->getOutputBuffers())
+			{
+				Connection *connection = buffer->getConnection();
+				for (auto &destination_buffer :
+						connection->getDestinationBuffers())
+				{
+					Node *receive_node = destination_buffer->getNode();
+					if (next_node != receive_node)
+						continue;
+					entry_i_j->setNextNode(receive_node);
+					entry_i_j->setBuffer(buffer.get());
+					goto found;
+				}
+			}
+		}
+	}
+	found:
+	// Look for cycle
+	DetectCycle();
+}
+
+void RoutingTable::DetectCycle()
+{
 }
 
 
-RoutingTableEntry *RoutingTable::Lookup(Node *source,
+RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 		Node *destination)
 {
 	int dimension = network->getNumberNodes();
@@ -98,5 +176,29 @@ RoutingTableEntry *RoutingTable::Lookup(Node *source,
 	return entries.at(location).get();
 }
 
+
+void RoutingTable::Dump()
+{
+	// The dump will be eddited to delicately print the table to a file
+	for (auto i = 0; i < dimension; i++)
+	{
+		for (auto j = 0; j < dimension; j++)
+		{
+			Node *node_i = network->getNodeByIndex(i);
+			Node *node_j = network->getNodeByIndex(j);
+			Entry *entry_i_j = Lookup(node_i,node_j);
+			if (entry_i_j->getBuffer())
+			{
+				fprintf(stderr,"%s --> %s = (%s:%s)\n", 
+					node_i->getName().c_str(),
+					node_j->getName().c_str(),
+					entry_i_j->getNextNode()->
+					getName().c_str(),
+					entry_i_j->getBuffer()->
+					getName().c_str());
+			}
+		}
+	}
 }
 
+}

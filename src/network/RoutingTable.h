@@ -23,14 +23,54 @@
 #include <vector>
 #include <memory>
 
-#include "RoutingTableEntry.h"
-
 namespace net
 {
 class Network;
+class Node;
   
 class RoutingTable
 {
+
+public:
+
+	class Entry
+	{
+
+	private:
+
+		// Cost in hops
+		int cost;
+
+		// Next node to destination
+		Node *next_node = nullptr;
+
+		// Output buffer
+		Buffer *output_buffer = nullptr;
+
+	public:
+
+		/// Constructor.
+		Entry(int cost) :cost {cost} {};
+
+		/// Set the routing cost.
+		void setCost(int cost) { this->cost = cost; }
+
+		/// Get the routing cost.
+		int getCost() const { return this->cost; }
+
+		/// Set entry's next node.
+		void setNextNode(Node *node) { this->next_node =  node; }
+
+		/// Get entry's next node.
+		Node *getNextNode() const { return this->next_node; }
+
+		/// Set entry's next buffer.
+		void setBuffer(Buffer *buffer) { this->output_buffer = buffer; }
+
+		/// Get entry's next buffer.
+		Buffer* getBuffer() const { return this->output_buffer; }
+
+	};
 protected:
 
 	// Associated network
@@ -40,15 +80,19 @@ protected:
 	int dimension;
 
 	// Entries
-	std::vector<std::unique_ptr<RoutingTableEntry>> entries;
+	std::vector<std::unique_ptr<Entry>> entries;
 
 	// Flag set when a cycle was detected
 	bool has_cycle;
 
 public:
 
-	/// Constructor
+	/// Constructors
 	RoutingTable() {};
+	RoutingTable(Network* network)
+	{
+		this->network = network;
+	};
 
 	/// Virtual destructor
 	virtual ~RoutingTable() {};
@@ -66,7 +110,13 @@ public:
 	void FloydWarshall();
 
 	/// Look up the entry from a certain node to a certain node
-	virtual RoutingTableEntry *Lookup(Node *source, Node *destination);
+	virtual Entry *Lookup(Node *source, Node *destination);
+
+	/// Cycle detection mechanism in the routing table.
+	void DetectCycle();
+
+	/// Dump Routing table information.
+	void Dump();
 
 };
 

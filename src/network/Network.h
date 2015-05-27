@@ -66,22 +66,22 @@ class Network
 	std::unique_ptr<RoutingTable> routing_table;
 
 	// Parse the config file to add all the nodes belongs to the network
-	void ParseConfigurationForNodes(misc::IniFile &config);
+	void ParseConfigurationForNodes(misc::IniFile &ini_file);
 
 	// Parse the config file to add all the links belongs to the network
-	void ParseConfigurationForLinks(misc::IniFile &config);
+	void ParseConfigurationForLinks(misc::IniFile &ini_file);
 
 	// Parse the config file to add all the buses belongs to the network
-	void ParseConfigurationForBuses(misc::IniFile &config);
+	void ParseConfigurationForBuses(misc::IniFile &ini_file);
 
 	// Parse the config file to add all the bus ports belongs to a bus
-	void ParseConfigurationForBusPorts(misc::IniFile &config);
+	void ParseConfigurationForBusPorts(misc::IniFile &ini_file);
 
 	// Parse the routing elements, for manual routing.
-	bool ParseConfigurationForRoutes(misc::IniFile &config);
+	bool ParseConfigurationForRoutes(misc::IniFile &ini_file);
 
 	// Parse the commands for manual(input trace) injection and testing.
-	void ParseConfigurationForCommands(misc::IniFile &config);
+	void ParseConfigurationForCommands(misc::IniFile &ini_file);
 
 
 
@@ -126,14 +126,14 @@ public:
 	/// Constructors
 	Network(const std::string &name);
 
-	/// Destructor
+	/// De-constructor.
 	virtual ~Network() {};
 
-	/// Configuration Parser
+	/// Parse the network configuration file.
 	void ParseConfiguration(const std::string &section,
-			misc::IniFile &config);
+			misc::IniFile &ini_file);
 
-	/// Dump the network formation
+	/// Dump the network information.
 	void Dump(std::ostream &os) const;
 
 	/// Operator \c << invoking function Dump() on an output stream.
@@ -144,13 +144,13 @@ public:
 		return os;
 	}
 
-	/// Get the string 
+	/// Get the name of the network.
 	std::string getName() const { return name; }
 
-	/// add routing table
+	/// Add the routing table to the network.
 	void AddRoutingTable();
 
-	/// Get routing table
+	/// Get the routing table of the network.
 	RoutingTable *getRoutingTable() const
 	{
 		return routing_table.get();
@@ -170,8 +170,8 @@ public:
 			esim::EventType *receive,
 			esim::EventFrame *receive_frame);
 
-	/// Request to send a packet
-	void RequestSend(Node *source_node, Node *destination_node, int size, 
+	/// Request to send a packet,
+	void RequestSend(Node *source_node, Node *destination_node, int size,
 			esim::EventType *receive_event,
 			esim::EventFrame *receive_frame,
 			esim::EventType *retry_event,
@@ -179,23 +179,22 @@ public:
 
 
 
-
 	///
 	/// Nodes
 	///
 
-	/// Add node to the network
+	/// Add node to the network.
 	virtual void AddNode(std::unique_ptr<Node> node) 
 	{
 		nodes.push_back(std::move(node));
 	}
 	
-	/// Produce a node by INI file section
+	/// Produce a node by INI file section.
 	virtual std::unique_ptr<Node> ProduceNodeByIniSection(
 			const std::string &section, 
 			misc::IniFile &config);
 
-	/// Produce a node by type string
+	/// Produce a node by type string.
 	virtual std::unique_ptr<Node> ProduceNode(
 			const std::string &type, 
 			const std::string &name);
@@ -206,10 +205,10 @@ public:
 	///	node name
 	virtual Node *getNodeByName(const std::string &name) const;
 
-	/// Return the number of nodes
+	/// Return the number of nodes.
 	virtual int getNumberNodes() const { return nodes.size(); }
 
-	/// Return the nodes by index
+	/// Return a node by its index.
 	virtual Node *getNodeByIndex(int index) { return nodes.at(index).get(); }
 
 
@@ -219,15 +218,15 @@ public:
 	/// Links
 	///
 
-	/// Add link to the network
+	/// Add a link to the network.
 	virtual void AddLink(std::unique_ptr<Link> link);
 
-	/// Configure Link by INI file section
+	/// Configure Link by INI file section.
 	void ProduceLinkByIniSection(
 			const std::string &section, 
 			misc::IniFile &config);
 
-	/// Produce a link by link data
+	/// Produce a link by link data.
 	virtual std::unique_ptr<Link> ProduceLink(
 			const std::string &name, 
 			Node *source_node, 
@@ -241,27 +240,27 @@ public:
 	/// Buses
 	///
 
-	/// Configure Bus by INI file section
+	/// Configure Bus by INI file section.
 	void ProduceBusByIniSection(const std::string &section,
-			misc::IniFile &config);
+			misc::IniFile &ini_file);
 
-	/// Produce a Bus by bus data
-	std::unique_ptr<Bus> ProduceBus(std::string name,
+	/// Produce a Bus by bus data.
+	std::unique_ptr<Bus> ProduceBus(const std::string &name,
 			int bandwidth,
 			int lanes);
 
-	/// Produce a Bus Port
+	/// Produce a bus port.
 	void ProduceBusPortByIniSection(const std::string &section,
-				misc::IniFile &config);
+				misc::IniFile &ini_file);
 
-	/// Add the Bus to the Connection List of the Network
+	/// Add the Bus to the Connection List of the Network.
 	void AddBus(std::unique_ptr<Bus> bus);
 
-	/// find and returns Connection in the network using connection name
+	/// Find and returns connection in the network using connection name.
 	///
 	/// \param name
 	///	node name
-	virtual Connection *getConnectionByName(const std::string &name) const;
+	Connection *getConnectionByName(const std::string &name) const;
 
 
 	/// Return the number of nodes
@@ -272,7 +271,6 @@ public:
 	///
 	/// \param user_data
 	///	User data attached by the memory system.
-	//
 	Node *getNodeByUserData(void *user_data) const;
 
 	/// Create an end node

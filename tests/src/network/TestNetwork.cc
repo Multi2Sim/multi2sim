@@ -19,13 +19,14 @@
 
 #include "gtest/gtest.h"
 
-#include <lib/cpp/IniFile.h>
-#include <network/Network.h>
-#include <network/EndNode.h>
-#include <network/Switch.h>
-#include <network/Link.h>
 #include <network/Bus.h>
 #include <network/Connection.h>
+#include <network/EndNode.h>
+#include <lib/cpp/IniFile.h>
+#include <network/Link.h>
+#include <network/Network.h>
+#include <network/RoutingTable.h>
+#include <network/Switch.h>
 
 namespace net
 {
@@ -93,11 +94,22 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 		"\n"
 		"[ Network.mynet.Node.N1 ]\n"
 		"Type = EndNode \n"
+		"[ Network.mynet.Node.N2 ]\n"
+		"Type = EndNode \n"
 		"[ Network.mynet.Node.S1 ]\n"
 		"Type = Switch \n"
 		"[ Network.mynet.BUS.B1 ]\n"
 		"[ Network.mynet.BUS.B2 ]\n"
-		"Lanes = 3";
+		"Lanes = 3\n"
+		"[ Network.mynet.BusPort.N1-B1 ]\n"
+		"Type = Sender\n"
+		"Node = N1\n"
+		"Bus = B1\n"
+		"[ Network.mynet.BusPort.N2-B1 ]\n"
+		"Type = Receiver\n"
+		"Node = N2\n"
+		"Bus = B1";
+		
 	misc::IniFile ini;
 	ini.LoadFromString(ini_file);
 
@@ -134,7 +146,6 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 		EXPECT_TRUE( lane != nullptr);
 	}
 
-
 	EXPECT_TRUE(net.getNumberConnections() == 2);
 }
 
@@ -144,14 +155,14 @@ TEST(Network, can_send_should_return_false_if_route_does_not_exist)
 	// Mockup routing table
 	class MockupRoutingTable : public RoutingTable
 	{
-		std::unique_ptr<RoutingTableEntry> routing_table;
+		std::unique_ptr<Entry> routing_table;
 	public:
 		MockupRoutingTable()
 		{
-			routing_table = misc::new_unique<RoutingTableEntry>(10);
+			routing_table = misc::new_unique<Entry>(10);
 		}
 
-		RoutingTableEntry *Lookup(Node *source, Node *destination)
+		RoutingTable::Entry *Lookup(Node *source, Node *destination)
 		{
 			return routing_table.get();
 		}

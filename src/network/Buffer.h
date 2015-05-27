@@ -30,8 +30,9 @@ class Node;
 class Buffer
 {
 protected:
+
 	// Node that the buffer belongs to
-	Node *node;
+	Node* node;
 
 	// Buffer Name
 	std::string name;
@@ -49,40 +50,40 @@ protected:
 	Connection* connection;
 
 public:
-	/// Virtual Distructor
-	virtual ~Buffer() {};
 
-	/// Set name
+	/// Distructor
+	~Buffer() {};
+
+	/// Set name.
 	void setName(const std::string &name) { this->name = name; }
 
-	/// Get the name of the link
+	/// Get the name of the link.
 	std::string getName() const { return name; }
 
-	/// Set Buffer Size
-	void setSize(int size) { this->size = size;}
+	/// Set Buffer Size.
+	void setSize(int size) { this->size = size; }
 
-	/// Set Index
-	void setIndex(int index) { this->index = index;}
+	/// Set Index.
+	void setIndex(int index) { this->index = index; }
 
-	/// Get Index
+	/// Get Index.
 	int getIndex() const { return index; }
 
-	/// Set Node
+	/// Set buffer's node.
 	void setNode(Node* node) { this->node = node; }
 
-	/// Get Node
-	Node* getNode() const { return this->getNode(); }
+	/// Get buffer's node.
+	Node* getNode() const { return this->node; }
 
-	/// Get buffer's connection
+	/// Get buffer's connection.
 	Connection* getConnection() const { return this->connection; }
 
-	/// Set Connection
-	void setConnection(Connection * connection) {
+	/// Set buffer's connection.
+	void setConnection(Connection* connection)
+	{
 		this->connection = connection;
 	}
-
 };
-
 
 }  // namespace net
 

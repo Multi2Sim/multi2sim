@@ -31,8 +31,9 @@ class Buffer;
 class Connection
 {
 protected:
+
 	// Network associated with the connection
-	Network *network;
+	Network* network;
 
 	// Connection Name
 	std::string name;
@@ -47,10 +48,10 @@ protected:
 	long long busy_cycles;
 
 	// List of the source buffers connected to the bus
-	std::vector< Buffer* > source_buffers;
+	std::vector<Buffer*> source_buffers;
 
 	// List of the destination buffers connected to the bus
-	std::vector< Buffer* > destination_buffers;
+	std::vector<Buffer*> destination_buffers;
 
 
 public:
@@ -62,24 +63,23 @@ public:
 	std::string getName() const { return name; }
 
 	/// Set bandwidth -- not constant for future use
-	void setBandwidth(int bandwidth) { this->bandwidth = bandwidth;}
+	void setBandwidth(int bandwidth) { this->bandwidth = bandwidth; }
 
 	/// Dump connection information
 	virtual void Dump(std::ostream &os) const = 0;
 
-	std::vector<Buffer *> getDestinationBuffers() {
+	std::vector<Buffer*> getDestinationBuffers()
+	{
 		return destination_buffers;
 	}
 
 	// Adding ports to the bus source list
-	void addSourceBuffer(Buffer * buffer);
+	void addSourceBuffer(Buffer* buffer);
 
 	// Adding ports to the bus destination list
-	void addDestinationBuffer(Buffer * buffer);
+	void addDestinationBuffer(Buffer* buffer);
 
 };
 }
-
-
 
 #endif
