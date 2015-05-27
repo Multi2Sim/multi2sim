@@ -133,6 +133,9 @@ class System
 	Module *ConfigReadMainMemory(misc::IniFile *ini_file,
 			const std::string &section);
 
+	void ConfigInvalidAddressRange(misc::IniFile *ini_file,
+			Module *module);
+
 	void ConfigReadModuleAddressRange(misc::IniFile *ini_file,
 			Module *module,
 			const std::string &section);

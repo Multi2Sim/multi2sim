@@ -119,6 +119,9 @@ const std::string System::help_message =
 	"  DirectoryAssoc = <assoc>\n"
 	"      Directory associativity in number of ways. This variable is only\n"
 	"      allowed for a main memory module.\n"
+	"  DirectoryLatency = <cycles>\n"
+	"      Access latency for directory. This variable is only allowed for a\n"
+	"      main memory module.\n"
 	"  AddressRange = { BOUNDS <low> <high> | ADDR DIV <div> MOD <mod> EQ <eq> }\n"
 	"      Physical address range served by the module. If not specified, the\n"
 	"      entire address space is served by the module. There are two possible\n"
@@ -163,23 +166,6 @@ const std::string System::help_message =
 	"      it is resolved, but releases the cache port.\n"
 	"  DirectoryLatency = <cycles> (Default = 1)\n"
 	"      Latency for a directory access in number of cycles.\n"
-	"  EnablePrefetcher = {t|f} (Default = False)\n"
-	"      Whether the hardware should automatically perform prefetching.\n"
-	"      The prefetcher related options below will be ignored if this is\n"
-	"      not true.\n"
-	"  PrefetcherType = {GHB_PC_CS|GHB_PC_DC} (Default GHB_PC_CS)\n"
-	"      Specify the type of global history buffer based prefetcher to use.\n"
-	"      GHB_PC_CS - Program Counter indexed, Constant Stride.\n"
-	"      GHB_PC_DC - Program Counter indexed, Delta Correlation.\n"
-	"  PrefetcherGHBSize = <size> (Default = 256)\n"
-	"      The hardware prefetcher does global history buffer based prefetching.\n"
-	"      This option specifies the size of the global history buffer.\n"
-	"  PrefetcherITSize = <size> (Default = 64)\n"
-	"      The hardware prefetcher does global history buffer based prefetching.\n"
-	"      This option specifies the size of the index table used.\n"
-	"  PrefetcherLookupDepth = <num> (Default = 2)\n"
-	"      This option specifies the history (pattern) depth upto which the\n"
-	"      prefetcher looks at the history to decide when to prefetch.\n"
 	"\n"
 	"Section [Network <net>] defines an internal default interconnect, formed of\n"
 	"a single switch connecting all modules pointing to the network. For every\n"
@@ -489,6 +475,7 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 	std::string module_name = section;
 	assert(!strncasecmp(section.c_str(), "Module ", 7));
 	module_name.erase(0, 7);
+	misc::StringTrim(module_name);
 	
 	// Geometry values
 	int num_sets = ini_file->ReadInt(geometry_section, "Sets", 16);
@@ -633,7 +620,107 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 Module *System::ConfigReadMainMemory(misc::IniFile *ini_file,
 		const std::string &section)
 {
-	return nullptr;
+	// Module name
+	std::string module_name = section;
+	assert(!strncasecmp(section.c_str(), "Module ", 7));
+	module_name.erase(0, 7);
+	misc::StringTrim(module_name);
+	
+	// Read parameters
+	ini_file->Enforce(section, "Latency");
+	ini_file->Enforce(section, "BlockSize");
+	int block_size = ini_file->ReadInt(section, "BlockSize", 64);
+	int latency = ini_file->ReadInt(section, "Latency", 1);
+	int num_ports = ini_file->ReadInt(section, "Ports", 2);
+	int directory_size = ini_file->ReadInt(section, "DirectorySize", 131072);
+	int directory_num_ways = ini_file->ReadInt(section, "DirectoryAssoc", 16);
+	int directory_latency = ini_file->ReadInt(section, "DirectoryLatency", 1);
+
+	// Check parameters
+	if (block_size < 1 || (block_size & (block_size - 1)))
+		throw Error(misc::fmt("%s: %s: block size must be power of "
+				"two.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (latency < 0)
+		throw Error(misc::fmt("%s: %s: invalid value for variable "
+				"'Latency'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (num_ports < 1)
+		throw Error(misc::fmt("%s: %s: invalid value for variable "
+				"'NumPorts'.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (directory_size < 1 || (directory_size & (directory_size - 1)))
+		throw Error(misc::fmt("%s: %s: directory size must be a power "
+				"of two.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (directory_num_ways < 1 || (directory_num_ways & (directory_num_ways - 1)))
+		throw Error(misc::fmt("%s: %s: directory associativity must be "
+				"a power of two.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+	if (directory_num_ways > directory_size)
+		throw Error(misc::fmt("%s: %s: invalid directory "
+				"associativity.\n%s",
+				ini_file->getPath().c_str(),
+				module_name.c_str(),
+				err_config_note));
+
+	// Create module
+	modules.emplace_back(misc::new_unique<Module>(
+			module_name,
+			Module::TypeMainMemory,
+			num_ports,
+			block_size,
+			latency));
+
+	// Initialize module
+	Module *module = modules.back().get();
+	int directory_num_sets = directory_size / directory_num_ways;
+	module->setDirectoryProperties(directory_num_sets,
+			directory_num_ways,
+			directory_latency);
+
+	// High network
+	std::string network_name = ini_file->ReadString(section, "HighNetwork");
+	std::string network_node_name = ini_file->ReadString(section, "HighNetworkNode");
+	net::Network *network;
+	net::Node *network_node;
+	ConfigInsertModuleInInternalNetwork(
+			ini_file,
+			module,
+			network_name,
+			network_node_name,
+			network,
+			network_node);
+	module->setHighNetwork(network, network_node);
+	
+	// Create cache
+	module->setCache(directory_num_sets,
+			directory_num_ways,
+			block_size,
+			Cache::ReplacementLRU,
+			Cache::WriteBack);
+
+	// Done
+	return module;
+}
+
+
+void System::ConfigInvalidAddressRange(misc::IniFile *ini_file, Module *module)
+{
+	throw Error(misc::fmt("%s: %s: invalid format for 'AddressRange'.\n%s",
+			ini_file->getPath().c_str(),
+			module->getName().c_str(),
+			err_config_note));
 }
 
 
@@ -641,6 +728,126 @@ void System::ConfigReadModuleAddressRange(misc::IniFile *ini_file,
 		Module *module,
 		const std::string &section)
 {
+	// Read address range
+	std::string range = ini_file->ReadString(section, "AddressRange");
+	if (range.empty())
+	{
+		module->setRangeBounds(0, -1);
+		return;
+	}
+
+	// Split in tokens
+	std::vector<std::string> tokens;
+	misc::StringTokenize(range, tokens);
+	if (tokens.empty())
+		ConfigInvalidAddressRange(ini_file, module);
+
+	// First token - ADDR or BOUNDS
+	if (!misc::StringCaseCompare(tokens[0], "BOUNDS"))
+	{
+		// Format is: BOUNDS <low> <high>
+		if (tokens.size() != 3)
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Lower bound
+		misc::StringError error;
+		unsigned low = misc::StringToInt(tokens[1], error);
+		if (error)
+			throw Error(misc::fmt("%s: %s: invalid value '%s' in "
+					"'AddressRange'",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					tokens[1].c_str()));
+		if (low % module->getBlockSize())
+			throw Error(misc::fmt("%s: %s: low address bound must "
+					"be a multiple of block size.\n%s",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					err_config_note));
+
+		// High bound
+		unsigned high = misc::StringToInt(tokens[2], error);
+		if (error)
+			throw Error(misc::fmt("%s: %s: invalid value '%s' in "
+					"'AddressRange'",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					tokens[2].c_str()));
+		if ((high + 1) % module->getBlockSize())
+			throw Error(misc::fmt("%s: %s: high address bound must "
+					"be a multiple of block size minus 1.\n%s", 
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					err_config_note));
+
+		// Set range
+		module->setRangeBounds(low, high);
+	}
+	else if (!misc::StringCaseCompare(tokens[0], "ADDR"))
+	{
+		// Format is: ADDR DIV <div> MOD <mod> EQ <eq> */
+		if (tokens.size() != 7)
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Token 'DIV'
+		if (misc::StringCaseCompare(tokens[1], "DIV"))
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Field <div>
+		misc::StringError error;
+		int div = misc::StringToInt(tokens[2], error);
+		if (error)
+			throw Error(misc::fmt("%s: %s: invalid value '%s' in "
+					"'AddressRange'",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					tokens[2].c_str()));
+		if (div < 1)
+			ConfigInvalidAddressRange(ini_file, module);
+		if (div % module->getBlockSize());
+			throw Error(misc::fmt("%s: %s: value for <div> must be "
+					"a multiple of block size.\n%s",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					err_config_note));
+
+		// Token 'MOD'
+		if (misc::StringCaseCompare(tokens[3], "MOD"))
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Field <mod>
+		int mod = misc::StringToInt(tokens[4], error);
+		if (error)
+			throw Error(misc::fmt("%s: %s: invalid value '%s' in "
+					"'AddressRange'",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					tokens[4].c_str()));
+		if (mod < 1)
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Token 'EQ'
+		if (misc::StringCaseCompare(tokens[5], "EQ"))
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Field <eq>
+		int eq = misc::StringToInt(tokens[6], error);
+		if (error)
+			throw Error(misc::fmt("%s: %s: invalid value '%s' in "
+					"'AddressRange'",
+					ini_file->getPath().c_str(),
+					module->getName().c_str(),
+					tokens[6].c_str()));
+		if (eq >= mod)
+			ConfigInvalidAddressRange(ini_file, module);
+
+		// Set interleaved range
+		module->setRangeInterleaved(mod, div, eq);
+	}
+	else
+	{
+		ConfigInvalidAddressRange(ini_file, module);
+	}
 }
 
 

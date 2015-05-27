@@ -144,14 +144,14 @@ private:
 	// Range attributes
 	union
 	{
-		// If range = RangeBounds
+		// If range_type = RangeBounds
 		struct
 		{
 			unsigned int low;
 			unsigned int high;
 		} bounds;
 
-		// If range = RangeInterleaved
+		// If range_type = RangeInterleaved
 		struct
 		{
 			unsigned int mod;
@@ -384,8 +384,27 @@ public:
 				replacement_policy,
 				write_policy);
 	}
+	
+	/// Set the address range served by the module between \a low and
+	/// \a high physical addresses.
+	void setRangeBounds(unsigned low, unsigned high)
+	{
+		range_type = RangeBounds;
+		range.bounds.low = low;
+		range.bounds.high = high;
+	}
 
-	///
+	/// Make the module serve an interleaved address space. An address will
+	/// be served by the module if module \a mod and divided by \a div is
+	/// equal to \a eq.
+	void setRangeInterleaved(unsigned mod, unsigned div, unsigned eq)
+	{
+		range_type = RangeInterleaved;
+		range.interleaved.mod = mod;
+		range.interleaved.div = div;
+		range.interleaved.eq = eq;
+	}
+
 	long long Access(AccessType access_type,
 			unsigned address,
 			int &witness);

@@ -84,6 +84,11 @@ void StringToLower(std::string &s);
 /// Convert string to upper case
 void StringToUpper(std::string &s);
 
+/// Compare two strings without case sensitivity. The return value is -1 if
+/// string \a s1 is less than \a s2 in lexicographical order, 0 if they are
+/// equal, and 1 if \a s1 is greater than \a s2.
+int StringCaseCompare(const std::string &s1, const std::string &s2);
+
 /// Return \c true if string \a s starts with \a prefix.
 bool StringPrefix(const std::string &s, const std::string &prefix);
 
