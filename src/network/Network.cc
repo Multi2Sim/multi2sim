@@ -157,21 +157,16 @@ std::unique_ptr<Node> Network::ProduceNode(
 			const std::string &type, 
 			const std::string &name)
 {
+	std::unique_ptr<Node> node;
 	if (!strcmp(type.c_str(), "EndNode"))
 	{
 		// Produce end node
-		std::unique_ptr<Node> node = 
-			std::unique_ptr<EndNode>(new EndNode());
-		node->setName(name);
-		return node;
+		node = std::unique_ptr<EndNode>(new EndNode());
 	}
 	else if (!strcmp(type.c_str(), "Switch"))
 	{
 		// Produce switch
-		std::unique_ptr<Node> node = 
-			std::unique_ptr<Switch>(new Switch());
-		node->setName(name);
-		return node;
+		node = std::unique_ptr<Switch>(new Switch());
 	}
 	else
 	{
@@ -179,9 +174,11 @@ std::unique_ptr<Node> Network::ProduceNode(
 		throw misc::Error(misc::fmt("Unsupported node type %s\n", 
 					type.c_str()));
 	};
+	assert(node);
+	node->setName(name);
+	node->setID(getNumberNodes());
 
-	// Should not get here
-	return std::unique_ptr<Node>(nullptr);
+	return node;
 }
 
 
