@@ -47,7 +47,7 @@ void RoutingTable::InitRoutingTable()
 		for (int j = 0; j < dimension; j++)
 		{
 			entries.emplace_back(misc::new_unique<Entry>
-				(i == j ? 0 : INT_MAX));
+			(i == j ? 0 : dimension));
 		}
 	}
 
@@ -63,7 +63,6 @@ void RoutingTable::InitRoutingTable()
 			for (auto &dst_buffer : connection->getDestinationBuffers())
 			{
 				Node* dst_node = dst_buffer->getNode();
-
 				if (node != dst_node)
 				{
 					Entry* entry = Lookup(node, dst_node);
@@ -79,22 +78,21 @@ void RoutingTable::InitRoutingTable()
 
 void RoutingTable::FloydWarshall()
 {
-	int i,j,k;
 	// The entry->next_node values do not necessarily point
 	// to the immediate next hop after this.
-	for (i = 0; i < dimension; i++)
+	for (int i = 0; i < dimension; i++)
 	{
-		for (j = 0; j < dimension; j++)
+		for (int j = 0; j < dimension; j++)
 		{
-			for (k = 0; k < dimension; k++)
+			for (int k = 0; k < dimension; k++)
 			{
 				Node *node_i = network->getNodeByIndex(i);
 				Node *node_j = network->getNodeByIndex(j);
 				Node *node_k = network->getNodeByIndex(k);
 
-				auto entry_i_k = Lookup(node_i,node_k);
-				auto entry_k_j = Lookup(node_k,node_j);
-				auto entry_i_j = Lookup(node_i,node_j);
+				Entry *entry_i_k = Lookup(node_i,node_k);
+				Entry *entry_k_j = Lookup(node_k,node_j);
+				Entry *entry_i_j = Lookup(node_i,node_j);
 
 				int temp_cost = entry_i_k->getCost() +
 						entry_k_j->getCost();
@@ -111,9 +109,9 @@ void RoutingTable::FloydWarshall()
 	Node *next_node = nullptr;
 	Entry *entry = nullptr;
 
-	for (i = 0; i < dimension; i++)
+	for (int i = 0; i < dimension; i++)
 	{
-		for (j = 0; j < dimension; j++)
+		for (int j = 0; j < dimension; j++)
 		{
 
 			Node *node_i = network->getNodeByIndex(i);
@@ -159,6 +157,7 @@ void RoutingTable::FloydWarshall()
 	DetectCycle();
 }
 
+
 void RoutingTable::DetectCycle()
 {
 }
@@ -167,7 +166,7 @@ void RoutingTable::DetectCycle()
 RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 		Node *destination)
 {
-	int dimension = network->getNumberNodes();
+	dimension = network->getNumberNodes();
 	int i = source->getID();
 	int j = destination->getID();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
@@ -177,28 +176,40 @@ RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 }
 
 
-void RoutingTable::Dump()
+void RoutingTable::Dump(std::ostream &os)
 {
-	// The dump will be eddited to delicately print the table to a file
-	for (auto i = 0; i < dimension; i++)
+	os << "\t";
+	for (int i = 0; i < dimension; i++)
 	{
-		for (auto j = 0; j < dimension; j++)
-		{
-			Node *node_i = network->getNodeByIndex(i);
-			Node *node_j = network->getNodeByIndex(j);
-			Entry *entry_i_j = Lookup(node_i,node_j);
-			if (entry_i_j->getBuffer())
-			{
-				fprintf(stderr,"%s --> %s = (%s:%s)\n", 
-					node_i->getName().c_str(),
-					node_j->getName().c_str(),
-					entry_i_j->getNextNode()->
-					getName().c_str(),
-					entry_i_j->getBuffer()->
-					getName().c_str());
-			}
-		}
+		Node *node = network->getNodeByIndex(i);
+		os << "\t" << node->getName().c_str() << " \t\t";
 	}
+	os << "\n";
+
+	for (int i = 0; i < dimension; i++)
+	{
+		Node *node_i = network->getNodeByIndex(i);
+		os << node_i->getName().c_str() << "\t\t";
+		for (int j = 0; j < dimension; j++)
+		{
+			Node *node_j = network->getNodeByIndex(j);
+			Entry *entry = Lookup(node_i,node_j);
+
+			os << entry->getCost() << ":";
+			if (entry->getNextNode())
+				os << entry->getNextNode()->getName().c_str();
+			else
+				os << "-" ;
+			os << ":\t";
+			if (entry->getBuffer())
+				os << entry->getBuffer()->getName().c_str();
+			else
+				os << "-\t";
+			os << "\t";
+		}
+		os << "\n";
+	}
+	os << "\n";
 }
 
 }

@@ -67,6 +67,9 @@ public:
 	/// Get the type of the node
 	virtual std::string getType() const = 0;
 
+	/// Set the id of the node
+	void setID (int id) { this->id = id; }
+
 	/// Get the id of the node
 	virtual int getID() const {return id;}
 
