@@ -54,11 +54,17 @@ libnetwork_a_SOURCES = \
 	Link.h \
 	Link.cc \
 	\
+	Message.h \
+	Message.cc \
+	\
 	Network.cc \
 	Network.h \
 	\
 	Node.cc \
 	Node.h \
+	\
+	Packet.h \
+	Packet.cc \
 	\
 	RoutingTable.h \
 	RoutingTable.cc \

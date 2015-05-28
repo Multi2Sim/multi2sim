@@ -20,12 +20,20 @@
 #ifndef NETWORK_MESSAGE_H
 #define NETWORK_MESSAGE_H
 
+#include <vector>
+#include <memory>
+
+#include "Packet.h"
+
 namespace net 
 {
+class Node;
 
 class Message
 {
 private:
+	// Id of the message
+	long long id;
 
 	// Source node
 	Node *source_node;
@@ -33,18 +41,33 @@ private:
 	// Destination node
 	Node *destination_node;
 
-	// Id of the message
-	int id;
-
 	// Size of the message
 	int size;
 
+	// A list of packet
+	std::vector<std::unique_ptr<Packet>> packets;
+
 public:
+
+	/// Constructor
+	Message(long long id, Node *source_node, Node *destination_node,
+			int size);
+
+	/// Packetize
+	void Packetize(int packet_size);
+
+	/// Send the message by scheduling events
+	void Send();
+
+
 
 	//
 	// Setters and getter
 	//
 	
+	/// Get id of the node
+	long long getId() const { return id; }
+
 	/// Set source node
 	void setSourceNode(Node *source_node) 
 	{ 
@@ -68,8 +91,7 @@ public:
 
 	/// Get message size
 	int getSize() const { return size; }
-
-}
+};
 
 }  // namespace net
 

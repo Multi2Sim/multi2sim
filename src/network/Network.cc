@@ -650,6 +650,24 @@ void Network::Dump(std::ostream &os = std::cout) const
 }
 
 
+Message *Network::ProduceMessage(Node *source_node, Node *destination_node,
+			int size)
+{
+	auto message = misc::new_unique<Message>(msg_id_counter,
+			source_node, destination_node, size);
+	Message *message_ptr = message.get();
+
+	// Increase message id counter
+	msg_id_counter++;
+
+	// Insert the created message into the hashtable
+	this->message_table.emplace(message->getId(), std::move(message));
+
+	// Return the pointer
+	return message_ptr;
+}
+
+
 bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 {
 	// Get output buffer
@@ -679,6 +697,35 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 	// All criterion met, return true
 	return true;
 	
+}
+
+
+void Network::Send(Node *source_node, Node *destination_node, int size,
+			esim::EventType *receive,
+			esim::EventFrame *receive_frame)
+{
+	// Make sure both source node and destination node are end nodes
+	if (source_node->getType() != "EndNode")
+		throw misc::Panic("Source node is not an end node");
+	if (destination_node->getType() != "EndNode")
+			throw misc::Panic("Source node is not an end node");
+
+	// Create message
+	Message *message = ProduceMessage(source_node, destination_node, size);
+
+	// TODO: generate trace here
+
+	// Packetize message
+	if (packet_size == 0)
+		message->Packetize(size);
+	else
+	{
+		message->Packetize(packet_size);
+		// TODO: generate trace here
+	}
+
+	// Send the message out
+	message->Send();
 }
 
 
