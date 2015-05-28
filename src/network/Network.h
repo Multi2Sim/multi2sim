@@ -23,6 +23,7 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/String.h>
 #include <lib/esim/Event.h>
+#include <lib/esim/Engine.h>
 
 #include "System.h"
 #include "Node.h"
@@ -64,6 +65,9 @@ class Network
 
 	// Routing table
 	std::unique_ptr<RoutingTable> routing_table;
+
+	// Event driven simulation engine
+	esim::Engine *esim_engine;
 
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile &ini_file);
@@ -113,18 +117,21 @@ class Network
 	//
 
 	// number of transfer that has occurred in the network
-	long long transfers;
+	long long transfers = 0;
 
 	// accumulation of latency of all messages in the network
-	long long accumulated_latency;
+	long long accumulated_latency = 0;
 
 	// Accumulation of size of all messages in the network
-	long long offered_bandwidth;
+	long long offered_bandwidth = 0;
 
 public:
 
 	/// Constructors
 	Network(const std::string &name);
+
+	/// Constructor, requires dependency on the esim engine
+	Network(const std::string &name, esim::Engine *esim_engine);
 
 	/// De-constructor.
 	virtual ~Network() {};
@@ -156,10 +163,22 @@ public:
 		return routing_table.get();
 	}
 
+	/// Set packet size
+	void setPacketSize(int packet_size) { this->packet_size = packet_size; }
+
+	/// Get packet size
+	int getPacketSize() const { return packet_size; }
+
 	/// Inject the routing table in whole
 	void setRoutingTable(std::unique_ptr<RoutingTable> routing_table)
 	{
 		this->routing_table = std::move(routing_table);
+	}
+
+	/// Inject the esim engine
+	void setEsimEngine(esim::Engine *esim_engine)
+	{
+		this->esim_engine = esim_engine;
 	}
 
 	/// Check if a message can be sent throught this network
@@ -235,6 +254,9 @@ public:
 			int input_buffer_size,
 			int output_buffer_size,
 			int virtual_channels);
+
+
+
 
 	///
 	/// Buses

@@ -224,6 +224,8 @@ TEST(Network, ROUTING_TABLE_1)
 	EXPECT_TRUE(nNext == entry->getNextNode());
 
 }
+
+
 TEST(Network, can_send_should_return_false_if_route_does_not_exist)
 {
 	// Mockup routing table
@@ -251,12 +253,143 @@ TEST(Network, can_send_should_return_false_if_route_does_not_exist)
 	Node *n2 = node.get();
 	network.AddNode(std::move(node));
 	
-	// Inject dependency
+	// Inject routing table
 	auto routing_table = misc::new_unique<MockupRoutingTable>();
 	network.setRoutingTable(std::move(routing_table));
 
 	// Assertion
 	EXPECT_FALSE(network.CanSend(n1, n2, 4));
+}
+
+
+TEST(Network, can_send_should_return_false_if_output_buffer_is_in_write_busy)
+{
+	// Mockup buffer
+	class MockupBuffer : public Buffer
+	{
+	public:
+		MockupBuffer()
+		{
+			this->write_busy = 10;
+		}
+	};
+	
+	// Mockup routing table
+	class MockupRoutingTable : public RoutingTable
+	{
+		std::unique_ptr<RoutingTable::Entry> entry;
+		std::unique_ptr<Buffer> buffer;
+	public:
+		MockupRoutingTable()
+		{
+			entry = misc::new_unique<RoutingTable::Entry>(10);
+			buffer = misc::new_unique<Buffer>();
+			entry->setBuffer(buffer.get());
+		}
+
+		RoutingTable::Entry *Lookup(Node *source, Node *destination)
+		{
+			return entry.get();
+		}
+	};
+
+	// Mockup esim engine
+	class MockupEngine : public esim::Engine
+	{
+	public:
+		MockupEngine() {};
+		long long getCycle() const override
+		{
+			return 0;
+		}
+	};
+
+
+	// Inject dependency
+	auto routing_table = misc::new_unique<MockupRoutingTable>();
+	auto engine = misc::new_unique<MockupEngine>();
+
+	// Setup network
+	Network network("mynet", engine.get());
+	std::unique_ptr<Node> node = network.ProduceNode("EndNode", "N1");
+	Node *n1 = node.get();
+	network.AddNode(std::move(node));
+	node = network.ProduceNode("EndNode", "N2");
+	Node *n2 = node.get();
+	network.AddNode(std::move(node));
+	network.setRoutingTable(std::move(routing_table));
+
+
+	// Assertion
+	EXPECT_FALSE(network.CanSend(n1, n2, 4));
+}
+
+
+TEST(Network, can_send_should_return_false_if_buffer_not_large_enough)
+{
+	// Mockup buffer
+	class MockupBuffer : public Buffer
+	{
+	public:
+		MockupBuffer()
+		{
+			this->size = 100;
+			this->count = 0;
+			this->write_busy = 0;
+		}
+
+
+	};
+
+	// Mockup routing table
+	class MockupRoutingTable : public RoutingTable
+	{
+		std::unique_ptr<RoutingTable::Entry> entry;
+		std::unique_ptr<Buffer> buffer;
+	public:
+		MockupRoutingTable()
+		{
+			entry = misc::new_unique<RoutingTable::Entry>(10);
+			buffer = misc::new_unique<Buffer>();
+			entry->setBuffer(buffer.get());
+		}
+
+		RoutingTable::Entry *Lookup(Node *source, Node *destination)
+		{
+			return entry.get();
+		}
+	};
+
+	// Mockup esim engine
+	class MockupEngine : public esim::Engine
+	{
+	public:
+		MockupEngine() {};
+		long long getCycle() const override
+		{
+			return 2;
+		}
+	};
+
+
+	// Inject dependency
+	auto routing_table = misc::new_unique<MockupRoutingTable>();
+	auto engine = misc::new_unique<MockupEngine>();
+
+	// Setup network
+	Network network("mynet", engine.get());
+	network.setPacketSize(32);
+	std::unique_ptr<Node> node = network.ProduceNode("EndNode", "N1");
+	Node *n1 = node.get();
+	network.AddNode(std::move(node));
+	node = network.ProduceNode("EndNode", "N2");
+	Node *n2 = node.get();
+	network.AddNode(std::move(node));
+	network.setRoutingTable(std::move(routing_table));
+
+
+	// Assertion
+	EXPECT_FALSE(network.CanSend(n1, n2, 90));
 }
 
 }

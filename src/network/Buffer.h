@@ -49,6 +49,12 @@ protected:
 	// Connection that the buffer is connected to
 	Connection* connection;
 
+	// Cycle until a read operation on buffer lasts
+	long long read_busy;
+
+	// Cycle until a write operation on buffer lasts
+	long long write_busy;
+
 public:
 
 	/// Distructor
@@ -63,6 +69,9 @@ public:
 	/// Set Buffer Size.
 	void setSize(int size) { this->size = size; }
 
+	/// Get buffer size
+	int getSize() const { return size; }
+
 	/// Set Index.
 	void setIndex(int index) { this->index = index; }
 
@@ -75,6 +84,9 @@ public:
 	/// Get buffer's node.
 	Node* getNode() const { return this->node; }
 
+	/// Get count
+	int getCount() const { return count; }
+
 	/// Get buffer's connection.
 	Connection* getConnection() const { return this->connection; }
 
@@ -83,6 +95,25 @@ public:
 	{
 		this->connection = connection;
 	}
+
+	/// Get the cycle when write operation will finish
+	long long getWriteBusy() const { return write_busy; }
+
+	/// Set the cycle when write operation will finish
+	void setWriteBusy(long long write_busy) 
+	{ 
+		this->write_busy = write_busy;
+	}
+
+	/// Get the cycle when read operation will finish
+	long long getReadBusy() const { return read_busy; }
+
+	/// Set the cycle when read operation will finish
+	void setReadBusy(long long read_busy)
+	{
+		this->read_busy = read_busy;
+	}
+
 };
 
 }  // namespace net
