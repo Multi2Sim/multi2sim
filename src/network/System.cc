@@ -228,8 +228,8 @@ void System::UniformTrafficSimulation(Network *network)
 	{
 		// Init a list of double for injection time
 		auto inject_time = misc::new_unique_array<double>(
-				network->getNumberNodes());
-		for (int i = 0; i < network->getNumberNodes(); i++)
+				network->getNumNodes());
+		for (int i = 0; i < network->getNumNodes(); i++)
 		{
 			inject_time[i] = 0.0f;
 		}
@@ -241,10 +241,10 @@ void System::UniformTrafficSimulation(Network *network)
 			break;
 
 		// Inject messages
-		for (int i = 0; i < network->getNumberNodes(); i++)
+		for (int i = 0; i < network->getNumNodes(); i++)
 		{
 			// Get end node
-			Node *node = network->getNodeByIndex(i);
+			Node *node = network->getNode(i);
 			if (node->getType() != "EndNode")
 				continue;
 
@@ -256,9 +256,9 @@ void System::UniformTrafficSimulation(Network *network)
 			Node * dst_node = nullptr;
 			while (1)
 			{
-				int num_nodes = network->getNumberNodes();
+				int num_nodes = network->getNumNodes();
 				int index = random() % num_nodes;
-				dst_node = network->getNodeByIndex(index);
+				dst_node = network->getNode(index);
 				if (dst_node->getType() == "EndNode" &&
 						dst_node != node)
 					break;

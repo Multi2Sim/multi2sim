@@ -25,12 +25,12 @@
 
 namespace net
 {
+
 class Network;
 class Node;
   
 class RoutingTable
 {
-
 public:
 
 	class Entry
@@ -45,36 +45,36 @@ public:
 		Node *next_node = nullptr;
 
 		// Output buffer
-		Buffer *output_buffer = nullptr;
+		Buffer *buffer = nullptr;
 
 	public:
 
 		/// Constructor.
-		Entry(int cost) :cost {cost} {};
+		Entry(int cost) : cost(cost) { };
 
 		/// Set the routing cost.
 		void setCost(int cost) { this->cost = cost; }
 
 		/// Get the routing cost.
-		int getCost() const { return this->cost; }
+		int getCost() const { return cost; }
 
 		/// Set entry's next node.
-		void setNextNode(Node *node) { this->next_node =  node; }
+		void setNextNode(Node *next_node) { this->next_node = next_node; }
 
 		/// Get entry's next node.
-		Node *getNextNode() const { return this->next_node; }
+		Node *getNextNode() const { return next_node; }
 
 		/// Set entry's next buffer.
-		void setBuffer(Buffer *buffer) { this->output_buffer = buffer; }
+		void setBuffer(Buffer *buffer) { this->buffer = buffer; }
 
 		/// Get entry's next buffer.
-		Buffer* getBuffer() const { return this->output_buffer; }
-
+		Buffer *getBuffer() const { return buffer; }
 	};
-protected:
+
+private:
 
 	// Associated network
-	Network *network = nullptr;
+	Network *network;
 
 	// Dimension
 	int dimension;
@@ -87,26 +87,18 @@ protected:
 
 public:
 
-	/// Constructors
-	RoutingTable() {};
-	RoutingTable(Network* network)
-	{
-		this->network = network;
-	};
-
-	/// Virtual destructor
-	virtual ~RoutingTable() {};
-
-	/// Set the associated network
-	void setNetwork(Network *network) { this->network = network; }
+	/// Constructor
+	RoutingTable(Network *network) : network(network) { }
 
 	/// Get Dimension
 	int getDimension() const { return dimension; }
 
-	/// Initialize the routing table
-	void InitRoutingTable();
+	/// Initialize the routing table based on the nodes and links present
+	/// in the network. This does not set up the routes, it just initializes
+	/// the table structures.
+	void Initialize();
 
-	/// Perforam an Floyd-Warshall to find the best routes
+	/// Perform a Floyd-Warshall to find the best routes
 	void FloydWarshall();
 
 	/// Look up the entry from a certain node to a certain node
