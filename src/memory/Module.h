@@ -342,6 +342,9 @@ public:
 	/// Return module name
 	std::string getName() const { return name; }
 
+	/// Return the module type
+	Type getType() const { return type; }
+
 	/// Return number of ports
 	int getNumPorts() const { return num_ports; }
 
@@ -403,6 +406,42 @@ public:
 		range.interleaved.mod = mod;
 		range.interleaved.div = div;
 		range.interleaved.eq = eq;
+	}
+
+	/// Return the number of high modules connected to this module (closer
+	/// to the processor).
+	int getNumHighModules() const { return high_modules.size(); }
+
+	/// Return the high module (module closer to the processor) connected to
+	/// this module with the given index.
+	Module *getHighModule(int index) const
+	{
+		assert(index >=0 && index < (int) high_modules.size());
+		return high_modules[index];
+	}
+
+	/// Add a high module (one that is closer to the processor)
+	void addHighModule(Module *high_module)
+	{
+		high_modules.push_back(high_module);
+	}
+
+	/// Return the number of low modules connected to this module (closer to
+	/// main memory).
+	int getNumLowModules() const { return low_modules.size(); }
+
+	/// Return the low module (module closer to main memory) connected to
+	/// this module with the given index.
+	Module *getLowModule(int index) const
+	{
+		assert(index >= 0 && index < (int) low_modules.size());
+		return low_modules[index];
+	}
+
+	/// Add a low module (one that is closer to main memory)
+	void addLowModule(Module *low_module)
+	{
+		low_modules.push_back(low_module);
 	}
 
 	long long Access(AccessType access_type,
