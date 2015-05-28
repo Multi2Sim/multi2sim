@@ -221,8 +221,7 @@ const char *System::err_config_net =
 const char *System::err_levels =
 	"\tThe path from a cache into main memory exceeds 10 levels of cache. "
 	"This might be a symptom of a recursive reference in 'LowModules' "
-	"lists. If you really intend to have a high number of cache levels, "
-	"increase variable MEM_SYSTEM_MAX_LEVELS in '" __FILE__ "'\n";
+	"lists.\n";
 
 const char *System::err_block_size =
 	"\tBlock size in a cache must be greater or equal than its\n" 
@@ -853,18 +852,170 @@ void System::ConfigReadModuleAddressRange(misc::IniFile *ini_file,
 
 void System::ConfigReadModules(misc::IniFile *ini_file)
 {
+	// Create modules
+	debug << "Creating modules:\n";
+	for (auto it = ini_file->sections_begin(),
+			e = ini_file->sections_end();
+			it != e;
+			++it)
+	{
+		// Section for a module
+		std::string section = *it;
+		if (strncasecmp(section.c_str(), "Module ", 7))
+			continue;
+
+		// Module name
+		std::string module_name = section;
+		module_name.erase(0, 7);
+		misc::StringTrim(module_name);
+
+		// Create module based on type
+		std::string module_type = ini_file->ReadString(section, "Type");
+		Module *module;
+		if (!misc::StringCaseCompare(module_type, "Cache"))
+			module = ConfigReadCache(ini_file, section);
+		else if (!misc::StringCaseCompare(module_type, "MainMemory"))
+			module = ConfigReadMainMemory(ini_file, section);
+		else
+			throw Error(misc::fmt("%s: %s: invalid or missing "
+					"value for 'Type'.\n%s",
+					ini_file->getPath().c_str(),
+					module_name.c_str(),
+					err_config_note));
+
+		// Read module address range
+		ConfigReadModuleAddressRange(ini_file, module, section);
+
+		// Debug
+		debug << "\t" << module_name << '\n';
+	}
+
+	// Debug
+	debug << '\n';
+
+	// Add module pointers to configuration file. This needs to be done 
+	// separately, because writes in the INI file will invalidate the
+	// iterators in the sections. Also, check integrity of sections.
+	for (auto &module : modules)
+	{
+		// Section name
+		std::string section = "Module " + module->getName();
+
+		// Verify that section is present
+		if (!ini_file->Exists(section))
+			throw misc::Panic(ini_file->getPath() + ": section '" +
+					section + "' does not exist");
+
+		// Add module pointer
+		ini_file->WritePointer(section, "ptr", module.get());
+	}
 }
 
 
-void System::ConfigCheckRouteToMainMemory(Module *module,
+void System::ConfigCheckRouteToMainMemory(
+		misc::IniFile *ini_file,
+		Module *module,
 		int block_size,
 		int level)
 {
+	// Maximum levels
+	if (level > 10)
+		throw Error(misc::fmt("%s: %s: too many cache levels.\n%s%s",
+				ini_file->getPath().c_str(),
+				module->getName().c_str(),
+				err_levels,
+				err_config_note));
+
+	// Check block size
+	if (module->getBlockSize() < block_size)
+		throw Error(misc::fmt("%s: %s: decreasing block size.\n%s%s",
+				ini_file->getPath().c_str(),
+				module->getName().c_str(),
+				err_block_size,
+				err_config_note));
+	
+	// Change current block size
+	block_size = module->getBlockSize();
+
+	// Dump current module
+	debug << '\t'
+			<< std::string(level * 2, ' ')
+			<< module->getName()
+			<< '\n';
+
+	// Check that cache has a way to main memory
+	if (!module->getNumLowModules() && module->getType() == Module::TypeCache)
+		throw Error(misc::fmt("%s: %s: main memory not accessible from "
+				"cache.\n%s",
+				ini_file->getPath().c_str(),
+				module->getName().c_str(),
+				err_config_note));
+
+	// Dump children
+	for (int i = 0; i < module->getNumLowModules(); i++)
+	{
+		Module *low_module = module->getLowModule(i);
+		ConfigCheckRouteToMainMemory(ini_file,
+				low_module,
+				block_size,
+				level + 1);
+	}
 }
 
 
 void System::ConfigReadLowModules(misc::IniFile *ini_file)
 {
+	// Traverse modules
+	for (auto &module : modules)
+	{
+		// Ignore if not a cache
+		if (module->getType() != Module::TypeCache)
+			continue;
+
+		// Section name
+		std::string section = "Module " + module->getName();
+		assert(ini_file->Exists(section));
+
+		// Low module name list
+		std::string low_module_names = ini_file->ReadString(section,
+				"LowModules");
+		if (low_module_names.empty())
+			throw Error(misc::fmt("%s: %s: missing or invalid "
+					"value for 'LowModules'.\n%s",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					err_config_note));
+
+		// For each element in the list
+		std::vector<std::string> tokens;
+		misc::StringTokenize(low_module_names, tokens, ", ");
+		for (std::string &low_module_name : tokens)
+		{
+			// Check valid module name
+			std::string section = "Module " + low_module_name;
+			if (!ini_file->Exists(section))
+				throw Error(misc::fmt("%s: %s: invalid module "
+						"name in 'LowModules'.\n%s",
+						ini_file->getPath().c_str(),
+						module->getName().c_str(),
+						err_config_note));
+
+			// Get low cache and assign
+			Module *low_module = (Module *) ini_file->ReadPointer(section, "ptr");
+			assert(low_module);
+			module->addLowModule(low_module);
+			low_module->addHighModule(module.get());
+		}
+	}
+
+	// Check paths to main memory
+	debug << "Checking paths between caches and main memories:\n";
+	for (auto &module : modules)
+		ConfigCheckRouteToMainMemory(ini_file,
+				module.get(),
+				module->getBlockSize(),
+				1);
+	debug << '\n';
 }
 
 

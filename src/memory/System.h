@@ -142,7 +142,9 @@ class System
 
 	void ConfigReadModules(misc::IniFile *ini_file);
 
-	void ConfigCheckRouteToMainMemory(Module *module,
+	void ConfigCheckRouteToMainMemory(
+			misc::IniFile *ini_file,
+			Module *module,
 			int block_size,
 			int level);
 
