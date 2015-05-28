@@ -20,6 +20,8 @@
 #include <cstring>
 #include <csignal>
 
+#include <lib/esim/Engine.h>
+
 #include "Buffer.h"
 #include "Bus.h"
 #include "Connection.h"
@@ -35,6 +37,14 @@ namespace net
 Network::Network(const std::string &name) :
 		name(name)
 {
+	esim_engine = esim::Engine::getInstance();
+}
+
+
+Network::Network(const std::string &name, esim::Engine *esim_engine) :
+		name(name)
+{
+	this->esim_engine = esim_engine;
 }
 
 
@@ -497,9 +507,9 @@ void Network::ProduceLinkByIniSection(
 		throw  misc::Panic(misc::fmt("Link %s: buffer size cannot "
 				"be less than 1",name.c_str()));
 	}
+
 	// Get the number of virtual channels
 	int virtual_channels = ini_file.ReadInt(section,"VC", 1);
-
 	if (virtual_channels < 1)
 	{
 		throw misc::Error(misc::fmt("Link %s: Virtual Channel cannot be "
@@ -508,19 +518,21 @@ void Network::ProduceLinkByIniSection(
 
 	// Get the Link
 	std::unique_ptr<Link> link = ProduceLink(name, source_node,
-			destination_node, bandwidth, input_buffer_size, output_buffer_size,
+			destination_node, bandwidth, 
+			input_buffer_size, output_buffer_size,
 			virtual_channels);
 
 	// Add the link to the network
 	AddLink(std::move(link));
 
-	// if link is identified as bidirectional add another link with reverse
+	// If link is identified as bidirectional add another link with reverse
 	// direction.
 	if (!(strcasecmp(type.c_str(), "Bidirectional")))
 	{
-		link = ProduceLink(name, destination_node, source_node, bandwidth,
-				output_buffer_size, input_buffer_size, virtual_channels);
-
+		link = ProduceLink(name, destination_node, source_node, 
+				bandwidth,
+				output_buffer_size, input_buffer_size, 
+				virtual_channels);
 		AddLink(std::move(link));
 	}
 }
@@ -545,7 +557,8 @@ std::unique_ptr<Link> Network::ProduceLink(
 	std::string descriptive_name;
 	for (int i= 0; i < virtual_channels; i++)
 	{
-		auto source_buffer = source_node->AddOutputBuffer(output_buffer_size);
+		auto source_buffer = source_node->AddOutputBuffer(
+				output_buffer_size);
 		link->addSourceBuffer(source_buffer);
 		auto destination_buffer = destination_node->AddInputBuffer(
 				input_buffer_size);
@@ -642,6 +655,21 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 	// Check if route exist
 	if (!output_buffer)
 		return false;
+
+	// Get current cycle
+	long long cycle = esim_engine->getCycle();
+
+	// Check if output buffer is busy
+	if (output_buffer->getWriteBusy() >= cycle)
+		return false;
+
+	// Check if output buffer is large enough
+	int required_size = size;
+	if (packet_size != 0)
+		required_size = ((size - 1) / packet_size + 1) * packet_size;
+	if (output_buffer->getCount() + required_size >
+			output_buffer->getSize())
+			return 0;
 
 	// All criterion met, return true
 	return true;
