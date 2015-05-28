@@ -22,6 +22,7 @@
 #include <lib/esim/Engine.h>
 #include <network/EndNode.h>
 #include <network/Node.h>
+#include <network/Switch.h>
 
 #include "Module.h"
 #include "System.h"
@@ -1110,6 +1111,67 @@ void System::ConfigReadEntries(misc::IniFile *ini_file)
 
 void System::ConfigCreateSwitches(misc::IniFile *ini_file)
 {
+	// For each network, add a switch and create node connections
+	debug << "Creating network switches and links for internal networks:\n";
+	for (auto &network : networks)
+	{
+		// Get switch bandwidth
+		std::string section = "Network " + network->getName();
+		assert(ini_file->Exists(section));
+		int default_bandwidth = ini_file->ReadInt(section, "DefaultBandwidth");
+		if (default_bandwidth < 1)
+			throw Error(misc::fmt("%s: %s: invalid or missing "
+					"value for 'DefaultBandwidth'.\n%s",
+					ini_file->getPath().c_str(),
+					network->getName().c_str(),
+					err_config_note));
+
+		// Get input/output buffer sizes. Checks for these variables
+		// have been done before.
+		int default_input_buffer_size = ini_file->ReadInt(section, "DefaultInputBufferSize");
+		int default_output_buffer_size = ini_file->ReadInt(section, "DefaultOutputBufferSize");
+		assert(default_input_buffer_size > 0);
+		assert(default_output_buffer_size > 0);
+
+		// Create switch
+		net::Node *network_switch = network->addSwitch(
+				default_input_buffer_size,
+				default_output_buffer_size,
+				default_bandwidth,
+				"Switch");
+		debug << '\t' << network->getName() << ".Switch ->";
+
+		// Create connections between switch and every end node */
+		for (int i = 0; i < network->getNumNodes(); i++)
+		{
+			net::Node *network_node = network->getNode(i);
+			if (network_node != network_switch)
+			{
+				std::string link_name =
+						network_switch->getName() +
+						"<->" +
+						network_node->getName();
+				network->addBidirectionalLink(
+						link_name,
+						network_node,
+						network_switch,
+						default_bandwidth,
+						default_output_buffer_size,
+						default_input_buffer_size,
+						1);
+				debug << ' ' << network_node->getName();
+			}
+		}
+
+		// Calculate routes
+		net::RoutingTable *routing_table = network->getRoutingTable();
+		routing_table->Initialize();
+		routing_table->FloydWarshall();
+
+		// Debug
+		debug << '\n';
+	}
+	debug << '\n';
 }
 
 

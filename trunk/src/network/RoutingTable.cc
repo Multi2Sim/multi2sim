@@ -32,14 +32,14 @@ class Buffer;
 class Connection;
 
 
-void RoutingTable::InitRoutingTable()
+void RoutingTable::Initialize()
 {
-	// Check if the routing table is already initiated
+	// Check if the routing table is already initialized
 	if (!entries.empty())
 		throw misc::Panic("Routing table already initialized.");
 
 	// Set dimension
-	dimension = network->getNumberNodes();
+	dimension = network->getNumNodes();
 
 	// Initiate table with infinite costs
 	for (int i = 0; i < dimension; i++)
@@ -54,9 +54,7 @@ void RoutingTable::InitRoutingTable()
 	// Set 1-hop connections
 	for (int i = 0; i < dimension; i++)
 	{
-		Network *network = this->network;
-
-		Node *node = network->getNodeByIndex(i);
+		Node *node = network->getNode(i);
 		for (auto &source_buffer : node->getOutputBuffers())
 		{
 			Connection* connection = source_buffer->getConnection();
@@ -86,9 +84,9 @@ void RoutingTable::FloydWarshall()
 		{
 			for (int j = 0; j < dimension; j++)
 			{
-				Node *node_i = network->getNodeByIndex(i);
-				Node *node_j = network->getNodeByIndex(j);
-				Node *node_k = network->getNodeByIndex(k);
+				Node *node_i = network->getNode(i);
+				Node *node_j = network->getNode(j);
+				Node *node_k = network->getNode(k);
 
 				Entry *entry_i_k = Lookup(node_i,node_k);
 				Entry *entry_k_j = Lookup(node_k,node_j);
@@ -114,8 +112,8 @@ void RoutingTable::FloydWarshall()
 		for (int j = 0; j < dimension; j++)
 		{
 
-			Node *node_i = network->getNodeByIndex(i);
-			Node *node_j = network->getNodeByIndex(j);
+			Node *node_i = network->getNode(i);
+			Node *node_j = network->getNode(j);
 
 			auto entry_i_j = Lookup(node_i, node_j);
 			next_node = entry_i_j->getNextNode();
@@ -169,7 +167,7 @@ void RoutingTable::DetectCycle()
 RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 		Node *destination)
 {
-	dimension = network->getNumberNodes();
+	dimension = network->getNumNodes();
 	int i = source->getID();
 	int j = destination->getID();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
@@ -184,18 +182,18 @@ void RoutingTable::Dump(std::ostream &os)
 	os << "\t";
 	for (int i = 0; i < dimension; i++)
 	{
-		Node *node = network->getNodeByIndex(i);
+		Node *node = network->getNode(i);
 		os << "\t" << node->getName().c_str() << " \t\t";
 	}
 	os << "\n";
 
 	for (int i = 0; i < dimension; i++)
 	{
-		Node *node_i = network->getNodeByIndex(i);
+		Node *node_i = network->getNode(i);
 		os << node_i->getName().c_str() << "\t\t";
 		for (int j = 0; j < dimension; j++)
 		{
-			Node *node_j = network->getNodeByIndex(j);
+			Node *node_j = network->getNode(j);
 			Entry *entry = Lookup(node_i,node_j);
 
 			os << entry->getCost() << ":";
