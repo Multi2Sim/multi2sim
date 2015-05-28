@@ -153,7 +153,77 @@ TEST(Network, INI_FILE_TEST_BUS_1)
 	EXPECT_TRUE(net.getNumberConnections() == 4);
 }
 
+TEST(Network, ROUTING_TABLE_1)
+{
+	// Setup ini file
+	std::string ini_file =
+		"[ Network.mynet ]\n"
+		"DefaultInputBufferSize = 16 \n"
+		"DefaultOutputBufferSize = 16 \n"
+		"DefaultBandwidth = 16 \n"
+		"\n"
+		"[ Network.mynet.Node.N1 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N2 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N3 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.N4 ]\n"
+		"Type = EndNode \n"
+		"[ Network.mynet.Node.S1 ]\n"
+		"Type = Switch\n"
+		"[ Network.mynet.Node.S2 ]\n"
+		"Type = Switch\n"
+		"[ Network.mynet.Node.S3 ]\n"
+		"Type = Switch\n"
+		"[ Network.mynet.Link.N1-S1 ]\n"
+		"Type = Bidirectional\n"
+		"Source = N1\n"
+		"Dest = S1\n"
+		"[ Network.mynet.Link.N2-S1 ]\n"
+		"Type = Bidirectional\n"
+		"Source = N2\n"
+		"Dest = S1\n"
+		"[ Network.mynet.Link.N3-S2 ]\n"
+		"Type = Bidirectional\n"
+		"Source = N3\n"
+		"Dest = S2\n"
+		"[ Network.mynet.Link.N4-S2 ]\n"
+		"Type = Bidirectional\n"
+		"Source = N4\n"
+		"Dest = S2\n"
+		"[ Network.mynet.Link.S1-S3 ]\n"
+		"Type = Bidirectional\n"
+		"Source = S1\n"
+		"Dest = S3\n"
+		"[ Network.mynet.Link.S2-S3 ]\n"
+		"Type = Bidirectional\n"
+		"Source = S2\n"
+		"Dest = S3";
 
+	misc::IniFile ini;
+	ini.LoadFromString(ini_file);
+
+	// Setup network
+	Network net("mynet");
+	net.ParseConfiguration("Network.mynet", ini);
+
+	Node *nA = net.getNodeByName("N1");
+	Node *nB = net.getNodeByName("N2");
+	RoutingTable *routing_table = net.getRoutingTable();
+
+	RoutingTable::Entry *entry = routing_table->Lookup(nA,nB);
+	Node *nNext = net.getNodeByName("S1");
+
+	EXPECT_TRUE(entry->getCost() == 2);
+	EXPECT_TRUE(nNext == entry->getNextNode());
+
+	nB = net.getNodeByName("N3");
+	entry = routing_table->Lookup(nA,nB);
+	EXPECT_TRUE(entry->getCost() == 4);
+	EXPECT_TRUE(nNext == entry->getNextNode());
+
+}
 TEST(Network, can_send_should_return_false_if_route_does_not_exist)
 {
 	// Mockup routing table
