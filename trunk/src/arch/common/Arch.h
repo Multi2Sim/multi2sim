@@ -91,6 +91,9 @@ public:
 	///	Timing simulator for the architecture
 	Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing);
 
+	/// Return the name of the architecture
+	const std::string &getName() const { return name; }
+
 	/// Return the associated disassembler
 	Asm *getAsm() const { return as; }
 
@@ -139,6 +142,16 @@ public:
 			Asm *as = nullptr,
 			Emu *emu = nullptr,
 			Timing *timing = nullptr);
+
+	/// Return an architecture given its name, or null if no architecture
+	/// is found with that name. The string comparison is done without
+	/// case sensitivity.
+	Arch *getByName(const std::string &name);
+
+	/// Get a list of all possible names for architectures. This function is
+	/// useful to print an error message with the valid values for
+	/// architectures when processing user input.
+	std::string getArchNames();
 
 	/// Run one iteration of the main loop for each architecture, using
 	/// emulation or timing simulation, depending on the user configuration.

@@ -34,6 +34,7 @@ namespace comm
 
 std::unique_ptr<ArchPool> ArchPool::instance;
 
+
 ArchPool *ArchPool::getInstance()
 {
 	// Return existing instance
@@ -44,7 +45,8 @@ ArchPool *ArchPool::getInstance()
 	instance = misc::new_unique<ArchPool>();
 	return instance.get();
 }
-	
+
+
 void ArchPool::Register(const std::string &name,
 		Asm *as,
 		Emu *emu,
@@ -57,6 +59,32 @@ void ArchPool::Register(const std::string &name,
 	if (timing)
 		timing_arch_list.push_back(arch_list.back().get());
 }
+
+
+Arch *ArchPool::getByName(const std::string &name)
+{
+	// Search architecture
+	for (auto &arch : arch_list)
+		if (!strcasecmp(arch->getName().c_str(), name.c_str()))
+			return arch.get();
+	
+	// Not found
+	return nullptr;
+}
+
+
+std::string ArchPool::getArchNames()
+{
+	std::string comma;
+	std::string names = "{";
+	for (auto &arch : arch_list)
+	{
+		names += arch->getName() + comma;
+		comma = "|";
+	}
+	return names;
+}
+
 
 void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 {
