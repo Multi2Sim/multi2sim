@@ -61,6 +61,12 @@ public:
 	/// memory configuration provided in the INI file. This function is
 	/// invoked by the memory configuration parser.
 	virtual void CheckMemoryConfiguration(misc::IniFile *ini_file);
+
+	/// Parse an [Entry] section in the memory configuration file for this
+	/// architecture. These sections specify the entry points from the
+	/// architecture into the memory hierarchy.
+	virtual void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
+			const std::string &section);
 };
 
 }

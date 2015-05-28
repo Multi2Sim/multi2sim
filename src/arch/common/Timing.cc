@@ -38,5 +38,13 @@ void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 			"checker");
 }
 
+
+void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
+			const std::string &section)
+{
+	throw misc::Panic("Architeture does not have a parser for the "
+			"[Entry] section of the memory configuration file");
+}
+
 }
 

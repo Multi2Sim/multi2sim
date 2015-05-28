@@ -1021,6 +1021,90 @@ void System::ConfigReadLowModules(misc::IniFile *ini_file)
 
 void System::ConfigReadEntries(misc::IniFile *ini_file)
 {
+	// Get architecture pool
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+
+	// Read all [Entry <name>] sections
+	debug << "Processing entries to the memory system:\n\n";
+	for (auto it = ini_file->sections_begin(),
+			e = ini_file->sections_end();
+			it != e;
+			++it)
+	{
+		// Discard if not an entry section
+		std::string section = *it;
+		if (strncasecmp(section.c_str(), "Entry ", 6))
+			continue;
+
+		// Name for the entry
+		std::string entry_name = section;
+		entry_name.erase(0, 6);
+		misc::StringTrim(entry_name);
+		if (entry_name.empty())
+			throw Error(misc::fmt("%s: section [%s]: invalid entry "
+					"name.\n%s",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					err_config_note));
+
+		// Check if variable 'Type' is used in the section. This
+		// variable was used in previous versions, now it is replaced
+		// with 'Arch'.
+		if (ini_file->Exists(section, "Type"))
+			throw Error(misc::fmt("%s: section [%s]: Variable "
+					"'Type' is obsolete, use 'Arch' "
+					"instead.\n%s",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					err_config_note));
+
+		// Read architecture in variable 'Arch'
+		std::string arch_name = ini_file->ReadString(section, "Arch");
+		misc::StringTrim(arch_name);
+		if (arch_name.empty())
+			throw Error(misc::fmt("%s: section [%s]: Variable "
+					"'Arch' is missing.\n%s",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					err_config_note));
+
+		// Get architecture
+		comm::Arch *arch = arch_pool->getByName(arch_name);
+		if (!arch)
+		{
+			std::string names = arch_pool->getArchNames();
+			throw Error(misc::fmt("%s: section [%s]: '%s' is an "
+					"invalid value for 'Arch'.\n"
+					"\tPossible values are %s.\n%s",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					arch_name.c_str(),
+					names.c_str(),
+					err_config_note));
+		}
+
+		// An architecture with an entry in the memory configuration
+		// file must undergo a detailed simulation.
+		if (arch->getSimKind() == comm::Arch::SimFunctional)
+			throw Error(misc::fmt("%s: section [%s]: %s "
+					"architecture not under detailed simulation.\n"
+					"\tA CPU/GPU architecture uses functional "
+					"simulation by default. Please activate detailed "
+					"simulation for the architecture.\n",
+					ini_file->getPath().c_str(),
+					section.c_str(),
+					arch->getName().c_str()));
+
+		// Call function to process entry. Each architecture implements
+		// its own ways to process entries to the memory hierarchy.
+		comm::Timing *timing = arch->getTiming();
+		timing->ParseMemoryConfigurationEntry(ini_file, section);
+	}
+
+	// After processing all [Entry <name>] sections, check that all
+	// architectures satisfy their entries to the memory hierarchy.
+	for (auto &arch : *arch_pool)
+		arch->getTiming()->CheckMemoryConfiguration(ini_file);
 }
 
 
