@@ -17,34 +17,16 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_PACKET_H
-#define NETWORK_PACKET_H
+#include "Packet.h"
 
 namespace net
 {
-class Message;
 
-class Packet
+Packet::Packet(Message *message, int size) :
+		message(message),
+		size(size)
 {
-	// Message that this packet is part of
-	Message *message;
-
-	// Size of the packet
-	int size;
-
-	// The index of the packet in a message
-	int session_id;
-
-public:
-
-	/// Constructor
-	Packet(Message *message, int size);
-
-	/// Set session id
-	void setSessionId(int session_id) { this->session_id = session_id; }
-
-};
+	session_id = 0;
+}
 
 }  // namespace net
-
-#endif
