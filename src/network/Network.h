@@ -30,6 +30,7 @@
 #include "Link.h"
 #include "Bus.h"
 #include "Buffer.h"
+#include "Message.h"
 #include "RoutingTable.h"
 
 namespace net
@@ -48,6 +49,9 @@ class Network
 
 	// Message ID counter
 	long long msg_id_counter = 0;
+
+	// A hashtable of messages in flight
+	std::unordered_map<long long, std::unique_ptr<Message>> message_table;
 
 	// List of nodes in the network
 	std::vector<std::unique_ptr<Node>> nodes;
@@ -157,6 +161,11 @@ public:
 
 	/// Get packet size
 	int getPacketSize() const { return packet_size; }
+
+	/// Produce an message, keeps the ownership of the message by the
+	/// network
+	Message *ProduceMessage(Node *source_node, Node *destination_node,
+			int size);
 
 	/// Check if a message can be sent throught this network
 	bool CanSend(Node *source_node, Node *destination_node, int size);

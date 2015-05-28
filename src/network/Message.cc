@@ -17,34 +17,40 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NETWORK_PACKET_H
-#define NETWORK_PACKET_H
+#include <lib/cpp/Misc.h>
+#include <lib/cpp/Error.h>
+#include <lib/cpp/String.h>
+
+#include "Packet.h"
+#include "Message.h"
 
 namespace net
 {
-class Message;
 
-class Packet
+Message::Message(long long id, Node *source_node, Node *destination_node, int size) :
+		id(id),
+		source_node(source_node),
+		destination_node(destination_node),
+		size(size)
 {
-	// Message that this packet is part of
-	Message *message;
+}
 
-	// Size of the packet
-	int size;
 
-	// The index of the packet in a message
-	int session_id;
+void Message::Packetize(int packet_size)
+{
+	int packet_count = (size - 1) / packet_size + 1;
 
-public:
+	for (int i = 0; i < packet_count; i++)
+	{
+		auto packet = misc::new_unique<Packet>(this, packet_size);
+		this->packets.push_back(std::move(packet));
+	}
+}
 
-	/// Constructor
-	Packet(Message *message, int size);
-
-	/// Set session id
-	void setSessionId(int session_id) { this->session_id = session_id; }
-
-};
+void Message::Send()
+{
+	throw misc::Panic(misc::fmt("Function %s not implemented.",
+			__FUNCTION__));
+}
 
 }  // namespace net
-
-#endif
