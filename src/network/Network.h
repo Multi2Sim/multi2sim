@@ -35,9 +35,10 @@
 namespace net
 {
 
-class Node;
-class EndNode;
 class Connection;
+class EndNode;
+class Node;
+class Switch;
 
 class Network
 {
@@ -48,7 +49,7 @@ class Network
 	// Message ID counter
 	long long msg_id_counter = 0;
 
-	// List of nodes in the Network
+	// List of nodes in the network
 	std::vector<std::unique_ptr<Node>> nodes;
 
 	// Total number of end nodes in the network
@@ -64,7 +65,7 @@ class Network
 	long long last_recorded_offered_bandwidth = 0;
 
 	// Routing table
-	std::unique_ptr<RoutingTable> routing_table;
+	RoutingTable routing_table;
 
 	// Event driven simulation engine
 	esim::Engine *esim_engine;
@@ -130,12 +131,6 @@ public:
 	/// Constructors
 	Network(const std::string &name);
 
-	/// Constructor, requires dependency on the esim engine
-	Network(const std::string &name, esim::Engine *esim_engine);
-
-	/// De-constructor.
-	virtual ~Network() {};
-
 	/// Parse the network configuration file.
 	void ParseConfiguration(const std::string &section,
 			misc::IniFile &ini_file);
@@ -154,32 +149,14 @@ public:
 	/// Get the name of the network.
 	std::string getName() const { return name; }
 
-	/// Add the routing table to the network.
-	void AddRoutingTable();
-
-	/// Get the routing table of the network.
-	RoutingTable *getRoutingTable() const
-	{
-		return routing_table.get();
-	}
+	/// Return the routing table of the network.
+	RoutingTable *getRoutingTable() { return &routing_table; }
 
 	/// Set packet size
 	void setPacketSize(int packet_size) { this->packet_size = packet_size; }
 
 	/// Get packet size
 	int getPacketSize() const { return packet_size; }
-
-	/// Inject the routing table in whole
-	void setRoutingTable(std::unique_ptr<RoutingTable> routing_table)
-	{
-		this->routing_table = std::move(routing_table);
-	}
-
-	/// Inject the esim engine
-	void setEsimEngine(esim::Engine *esim_engine)
-	{
-		this->esim_engine = esim_engine;
-	}
 
 	/// Check if a message can be sent throught this network
 	bool CanSend(Node *source_node, Node *destination_node, int size);
@@ -225,10 +202,14 @@ public:
 	virtual Node *getNodeByName(const std::string &name) const;
 
 	/// Return the number of nodes.
-	virtual int getNumberNodes() const { return nodes.size(); }
+	int getNumNodes() const { return nodes.size(); }
 
 	/// Return a node by its index.
-	virtual Node *getNodeByIndex(int index) { return nodes.at(index).get(); }
+	Node *getNode(int index)
+	{
+		assert(index >= 0 && index < (int) nodes.size());
+		return nodes[index].get();
+	}
 
 
 
@@ -237,8 +218,24 @@ public:
 	/// Links
 	///
 
-	/// Add a link to the network.
-	virtual void AddLink(std::unique_ptr<Link> link);
+	/// Add a link to the network
+	void addLink(const std::string &name,
+			Node *source_node,
+			Node *dest_node,
+			int bandwidth,
+			int source_buffer_size,
+			int dest_buffer_size,
+			int num_virtual_channels);
+
+	/// Add a bidirectional link to the network
+	void addBidirectionalLink(
+			const std::string &name,
+			Node *source_node,
+			Node *dest_node,
+			int bandwidth,
+			int source_buffer_size,
+			int dest_buffer_size,
+			int num_virtual_channels);
 
 	/// Configure Link by INI file section.
 	void ProduceLinkByIniSection(
@@ -284,10 +281,8 @@ public:
 	///	node name
 	Connection *getConnectionByName(const std::string &name) const;
 
-
 	/// Return the number of nodes
 	virtual int getNumberConnections() const { return connections.size(); }
-
 
 	/// Finds and returns node in the network given its user data.
 	///
@@ -295,11 +290,17 @@ public:
 	///	User data attached by the memory system.
 	Node *getNodeByUserData(void *user_data) const;
 
-	/// Create an end node
+	/// Create an end node in the network
 	EndNode *addEndNode(int input_buffer_size,
 			int output_buffer_size,
 			const std::string &name,
 			void *user_data);
+
+	/// Create a switch in the network
+	Switch *addSwitch(int input_buffer_size,
+			int output_buffer_size,
+			int bandwidth,
+			const std::string &name);
 };
 
 

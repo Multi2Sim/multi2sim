@@ -35,16 +35,11 @@ namespace net
 
 
 Network::Network(const std::string &name) :
-		name(name)
+		name(name),
+		routing_table(this)
 {
+	// Get event-driven simulator engine, for convenience
 	esim_engine = esim::Engine::getInstance();
-}
-
-
-Network::Network(const std::string &name, esim::Engine *esim_engine) :
-		name(name)
-{
-	this->esim_engine = esim_engine;
 }
 
 
@@ -88,25 +83,18 @@ void Network::ParseConfiguration(const std::string &section,
 	// Parse the configuration file for Bus ports
 	ParseConfigurationForBusPorts(config);
 
-	// Time to create the initial Routing Table
-	AddRoutingTable();
+	// Time to create the initial routing table
+	routing_table.Initialize();
 
 	// Parse the routing elements, for manual routing.
-	if(!ParseConfigurationForRoutes(config))
-		this->routing_table->FloydWarshall();
+	if (!ParseConfigurationForRoutes(config))
+		routing_table.FloydWarshall();
 
 	// Parse the commands for manual(input trace) injection and testing.
 	ParseConfigurationForCommands(config);
 
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
-}
-
-
-void Network::AddRoutingTable()
-{
-	routing_table = misc::new_unique<RoutingTable> (this);
-	routing_table->InitRoutingTable();
 }
 
 
@@ -186,7 +174,7 @@ std::unique_ptr<Node> Network::ProduceNode(
 	};
 	assert(node);
 	node->setName(name);
-	node->setID(getNumberNodes());
+	node->setID(getNumNodes());
 
 	return node;
 }
@@ -421,21 +409,42 @@ void Network::ParseConfigurationForCommands(misc::IniFile &ini_file)
 }
 
 
-void Network::AddLink(std::unique_ptr<Link> link)
+void Network::addLink(
+		const std::string &name,
+		Node *source_node,
+		Node *dest_node,
+		int bandwidth,
+		int source_buffer_size,
+		int dest_buffer_size,
+		int num_virtual_channels)
 {
-	// Verify if the source and the destination is a node in the list
-	std::string src_name = link->getSourceNode()->getName();
-	std::string dst_name = link->getDestinationNode()->getName();
-	if (!getNodeByName(src_name))
-		throw misc::Error(misc::fmt("Source node %s not in network", 
-					src_name.c_str()));
-	if (!getNodeByName(dst_name))
-		throw misc::Error(misc::fmt("Destination node %s not in network",
-					dst_name.c_str()));
-
-	// Insert the link
-	connections.push_back(std::move(link));
-			
+	throw misc::Panic("Not implemented");
+}
+	
+	
+void Network::addBidirectionalLink(
+		const std::string &name,
+		Node *source_node,
+		Node *dest_node,
+		int bandwidth,
+		int source_buffer_size,
+		int dest_buffer_size,
+		int num_virtual_channels)
+{
+	addLink(name,
+			source_node,
+			dest_node,
+			bandwidth,
+			source_buffer_size,
+			dest_buffer_size,
+			num_virtual_channels);
+	addLink(name,
+			dest_node,
+			source_node,
+			bandwidth,
+			source_buffer_size,
+			dest_buffer_size,
+			num_virtual_channels);
 }
 
 
@@ -504,7 +513,7 @@ void Network::ProduceLinkByIniSection(
 	// Check the buffer sizes
 	if ((input_buffer_size < 1) || (output_buffer_size < 1))
 	{
-		throw  misc::Panic(misc::fmt("Link %s: buffer size cannot "
+		throw misc::Panic(misc::fmt("Link %s: buffer size cannot "
 				"be less than 1",name.c_str()));
 	}
 
@@ -516,25 +525,25 @@ void Network::ProduceLinkByIniSection(
 				"less than 1",name.c_str()));
 	}
 
-	// Get the Link
-	std::unique_ptr<Link> link = ProduceLink(name, source_node,
-			destination_node, bandwidth, 
-			input_buffer_size, output_buffer_size,
+	// Add link
+	addLink(name,
+			source_node,
+			destination_node,
+			bandwidth, 
+			input_buffer_size,
+			output_buffer_size,
 			virtual_channels);
-
-	// Add the link to the network
-	AddLink(std::move(link));
 
 	// If link is identified as bidirectional add another link with reverse
 	// direction.
-	if (!(strcasecmp(type.c_str(), "Bidirectional")))
-	{
-		link = ProduceLink(name, destination_node, source_node, 
-				bandwidth,
-				output_buffer_size, input_buffer_size, 
+	if (!misc::StringCaseCompare(type, "Bidirectional"))
+		addLink(name,
+				destination_node,
+				source_node,
+				bandwidth, 
+				input_buffer_size,
+				output_buffer_size,
 				virtual_channels);
-		AddLink(std::move(link));
-	}
 }
 
 
@@ -633,22 +642,18 @@ void Network::Dump(std::ostream &os = std::cout) const
 
 	// Print node information
 	for (auto &node : nodes)
-	{
 		node->Dump(os);
-	}
 
 	// Print links
 	for (auto &link : connections)
-	{
 		link->Dump(os);
-	}
 }
 
 
 bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 {
 	// Get output buffer
-	RoutingTable::Entry *entry = routing_table->Lookup(source_node, 
+	RoutingTable::Entry *entry = routing_table.Lookup(source_node, 
 			destination_node);
 	Buffer *output_buffer = entry->getBuffer();
 
@@ -681,6 +686,15 @@ EndNode *Network::addEndNode(int input_buffer_size,
 		int output_buffer_size,
 		const std::string &name,
 		void *user_data)
+{
+	throw misc::Panic("Not implemented");
+}
+
+
+Switch *Network::addSwitch(int input_buffer_size,
+		int output_buffer_size,
+		int bandwidth,
+		const std::string &name)
 {
 	throw misc::Panic("Not implemented");
 }
