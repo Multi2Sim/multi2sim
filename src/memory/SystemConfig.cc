@@ -1103,9 +1103,16 @@ void System::ConfigReadEntries(misc::IniFile *ini_file)
 	}
 
 	// After processing all [Entry <name>] sections, check that all
-	// architectures satisfy their entries to the memory hierarchy.
-	for (auto &arch : *arch_pool)
+	// architectures satisfy their entries to the memory hierarchy. Do it
+	// for those architectures with active timing simulation.
+	for (auto it = arch_pool->timing_begin(),
+			e = arch_pool->timing_end();
+			it != e;
+			++it)
+	{
+		comm::Arch *arch = *it;
 		arch->getTiming()->CheckMemoryConfiguration(ini_file);
+	}
 }
 
 
