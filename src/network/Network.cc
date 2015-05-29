@@ -366,10 +366,12 @@ std::unique_ptr<Bus> Network::ProduceBus(const std::string &name,
 	return bus;
 }
 
+
 void Network::AddBus(std::unique_ptr<Bus> bus)
 {
 	connections.push_back(std::move(bus));
 }
+
 
 void Network::ParseConfigurationForLinks(misc::IniFile &ini_file)
 {

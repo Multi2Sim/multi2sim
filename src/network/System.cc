@@ -261,7 +261,7 @@ void System::UniformTrafficSimulation(Network *network)
 				dst_node = network->getNode(index);
 				if (dst_node->getType() == "EndNode" &&
 						dst_node != node)
-					break;
+					continue;
 			}
 
 			// Inject
@@ -269,6 +269,11 @@ void System::UniformTrafficSimulation(Network *network)
 			{
 				inject_time[i] += RandomExponential(
 						injection_rate);
+				if (network->CanSend(node, dst_node,
+					System::msg_size))
+				network->Send(node, dst_node,
+						System::msg_size,
+						nullptr, nullptr);
 			}
 
 		}
