@@ -142,6 +142,7 @@ public:
 	{
 		return twolevel_pht[row * twolevel_l2size + col];
 	}
+	int getChoiceStatus(int index) const { return choice[index]; }
 
 	/// Return prediction for an address (0=not taken, 1=taken)
 	///
