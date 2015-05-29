@@ -62,8 +62,6 @@ public:
 /// Event-driven simulator engine
 class Engine
 {
-protected:
-
 	// Unique instance of this class
 	static std::unique_ptr<Engine> instance;
 
@@ -202,7 +200,7 @@ public:
 	long long getTime() const { return current_time; }
 
 	/// Return the current cycle in the fastest registered frequency domain
-	virtual long long getCycle() const
+	long long getCycle() const
 	{
 		assert(shortest_cycle_time);
 		return current_time / shortest_cycle_time + 1;
