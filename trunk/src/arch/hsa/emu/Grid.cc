@@ -127,7 +127,7 @@ bool Grid::Execute()
 	// Send completion signal when finished execution
 	if (!active)
 	{
-		packet->setCompletionSignal(1);
+		packet->setCompletionSignal(0);
 	}
 
 	return active;

@@ -997,7 +997,7 @@ void WorkItem::ExecuteInst_SHL()
 
 	case BRIG_TYPE_U64:
 
-		Inst_SHL_Aux<unsigned int>();
+		Inst_SHL_Aux<unsigned long long>();
 		break;
 
 	default:
@@ -1047,7 +1047,7 @@ void WorkItem::ExecuteInst_SHR()
 
 	case BRIG_TYPE_U64:
 
-		Inst_SHR_Aux<unsigned int>();
+		Inst_SHR_Aux<unsigned long long>();
 		break;
 
 	default:

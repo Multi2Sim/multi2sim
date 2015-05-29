@@ -118,7 +118,10 @@ uint64_t HSA_API hsa_queue_load_write_index_relaxed(const hsa_queue_t *queue)
 void HSA_API hsa_queue_store_write_index_relaxed(const hsa_queue_t *queue,
                                                  uint64_t value)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	unsigned long long args[2] = {0};
+	memcpy(args, &queue, 4);
+	memcpy(args + 1, &value, 8);
+	ioctl(hsa_runtime->fd, QueueStoreWriteIndexRelaxed, args);
 	return;
 }
 

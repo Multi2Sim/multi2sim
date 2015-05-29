@@ -173,7 +173,6 @@ void BrigCodeEntry::DumpDirIndirectFunction(std::ostream &os = std::cout) const
 	DumpArguments(getFirstInArg(), getInArgCount(), os);
 
 	// Dump body
-	// Dump body
 	if (isDefinition())
 	{
 		DumpBody(getFirstCodeBlockEntry(), getNextModuleEntry(), os);

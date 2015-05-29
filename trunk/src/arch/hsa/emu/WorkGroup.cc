@@ -44,7 +44,6 @@ WorkGroup::WorkGroup(Grid *grid,
 
 WorkGroup::~WorkGroup()
 {
-	std::cout << "Work group removed\n";
 }
 
 

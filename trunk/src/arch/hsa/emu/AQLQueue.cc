@@ -49,7 +49,8 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	// Set default type and feature
 	fields->queue_type = type;
 	fields->queue_features = 1;
-	fields->doorbell_signal = 0;
+	fields->doorbell_signal = (unsigned long long)Emu::getInstance()->
+			CreateSignal(0);
 	fields->service_queue = 0;
 	fields->id = process_queue_id++;
 
@@ -86,6 +87,7 @@ void AQLQueue::Associate(Component *component)
 }
 
 
+/*
 void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 {
 	// 1. Allocating an AQL packet slot
@@ -105,12 +107,13 @@ void AQLQueue::Enqueue(AQLDispatchPacket *packet)
 	fields->doorbell_signal = packet_id;
 
 }
+*/
 
 
-AQLDispatchPacket *AQLQueue::getPacket(unsigned long long linear_index)
+AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)
 {
 	// Convert the linear index to real recursive index
-	unsigned long long recursive_index = toRecursiveIndex(linear_index);
+	unsigned long long address = IndexToAddress(index);
 
 	// Get the memory object
 	Emu *emu = Emu::getInstance();
@@ -119,7 +122,7 @@ AQLDispatchPacket *AQLQueue::getPacket(unsigned long long linear_index)
 	// Returns the buffer in real memory space
 	//std::cout << misc::fmt("Getting packet at 0x%llx\n", recursive_index);
 	AQLDispatchPacket *packet = (AQLDispatchPacket *)memory->getBuffer(
-			recursive_index,
+			address,
 			sizeof(AQLDispatchPacket),
 			mem::Memory::AccessRead);
 
@@ -141,7 +144,7 @@ AQLDispatchPacket *AQLQueue::ReadPacket()
 	packet->setFormat(AQLFormatInvalid);
 
 	// Increase read index
-	fields->read_index += 64;
+	fields->read_index += 1;
 
 	// Return the packet
 	return packet;
