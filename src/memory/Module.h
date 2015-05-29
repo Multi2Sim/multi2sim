@@ -127,10 +127,10 @@ private:
 	// Smallest block size among higher modules (modules closer to the
 	// processor). If there is no higher module, the sub-block size is
 	// equal to the block size.
-	int sub_block_size;
+	int sub_block_size = 0;
 
 	// Number of sub-blocks, calculated as block_size / sub_block_size.
-	int num_sub_blocks;
+	int num_sub_blocks = 0;
 
 
 
@@ -321,7 +321,8 @@ public:
 			int block_size,
 			int data_latency);
 	
-	/// Set the directory properties
+	/// Set the directory properties. This does not instantiate the
+	/// directory, it just saves its properties internally.
 	void setDirectoryProperties(int directory_num_sets,
 			int directory_num_ways,
 			int directory_latency)
@@ -331,6 +332,42 @@ public:
 		this->directory_latency = directory_latency;
 		directory_size = directory_num_sets * directory_num_ways;
 	}
+
+	/// Initialize the associated directory.
+	void InitializeDirectory(
+			int num_sets,
+			int num_ways,
+			int num_sub_blocks,
+			int num_nodes)
+	{
+		assert(!directory.get());
+		directory = misc::new_unique<Directory>(
+				name,
+				num_sets,
+				num_ways,
+				num_sub_blocks,
+				num_nodes);
+	}
+
+	/// Return the directory associated with the module. If no directory
+	/// was initialized, nullptr is returned. A directory should be
+	/// initialized with a call to InitializeDirectory().
+	Directory *getDirectory() { return directory.get(); }
+
+	/// Return the number of sets of the directory associated with the
+	/// module, as set by setDirectoryProperties().
+	int getDirectoryNumSets() { return directory_num_sets; }
+
+	/// Return the associativity of the directory associated with the
+	/// module, as set by setDirectoryProperties().
+	int getDirectoryNumWays() { return directory_num_ways; }
+
+	/// Return the directory latency, as set by setDirectoryProperties().
+	int getDirectoryLatency() { return directory_latency; }
+
+	/// Return the size of the directory (sets * ways), as set by
+	/// setDirectoryProperties().
+	int getDirectorySize() { return directory_size; }
 
 	/// Set the MSHR size in number of entries
 	void setMSHRSize(int mshr_size) { this->mshr_size = mshr_size; }
@@ -350,6 +387,25 @@ public:
 
 	/// Return block size
 	int getBlockSize() const { return block_size; }
+
+	/// Return the size of the smallest block in the higher modules (those
+	/// closer to the processor).
+	int getSubBlockSize() const { return sub_block_size; }
+
+	/// Return the number of sub-blocks per block. The size of a sub-block is
+	/// the smallest from the block sizes of the higher modules (those closer
+	/// to the processor).
+	int getNumSubBlocks() const { return num_sub_blocks; }
+
+	/// Update the size of the smallest block among the modules connected
+	/// to this module and closer to the processor. This setter automatically
+	/// updates the number of sub-blocks in each block.
+	void setSubBlockSize(int sub_block_size)
+	{
+		assert(sub_block_size > 0);
+		this->sub_block_size = sub_block_size;
+		num_sub_blocks = block_size / sub_block_size;
+	}
 
 	/// Return data access latency
 	int getLatency() const { return data_latency; }

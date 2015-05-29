@@ -78,7 +78,7 @@ private:
 	// Directory dimensions
 	int num_sets;
 	int num_ways;
-	int num_subblocks;
+	int num_sub_blocks;
 	int num_nodes;
 
 	// Bitmap of sharers for the entire directory
@@ -100,7 +100,7 @@ public:
 	/// \param num_ways
 	///	Number of ways per set
 	///
-	/// \param num_subblocks
+	/// \param num_sub_blocks
 	///	Number of sub-blocks per way
 	///
 	/// \param num_nodes
@@ -108,40 +108,52 @@ public:
 	Directory(const std::string &name,
 			int num_sets,
 			int num_ways,
-			int num_subblocks,
+			int num_sub_blocks,
 			int num_nodes);
+	
+	/// Return the number of sets
+	int getNumSets() { return num_sets; }
+
+	/// Return the number of ways
+	int getNumWays() { return num_ways; }
+
+	/// Return number of sub-blocks
+	int getNumSubBlocks() { return num_sub_blocks; }
+
+	/// Return the number of nodes that can be sharers of each sub-block
+	int getNumNodes() { return num_nodes; }
 
 	/// Return a directory entry
-	Entry *getEntry(int set_id, int way_id, int subblock_id)
+	Entry *getEntry(int set_id, int way_id, int sub_block_id)
 	{
 		assert(misc::inRange(set_id, 0, num_sets - 1));
 		assert(misc::inRange(way_id, 0, num_ways - 1));
-		assert(misc::inRange(subblock_id, 0, num_subblocks - 1));
-		return &entries.get()[set_id * num_ways * num_subblocks +
-				way_id * num_subblocks +
-				subblock_id];
+		assert(misc::inRange(sub_block_id, 0, num_sub_blocks - 1));
+		return &entries.get()[set_id * num_ways * num_sub_blocks +
+				way_id * num_sub_blocks +
+				sub_block_id];
 	}
 
 	/// Set new owner for the directory entry
-	void setOwner(int set_id, int way_id, int subblock_id, int owner);
+	void setOwner(int set_id, int way_id, int sub_block_id, int owner);
 
 	/// Activate one sharer for a directory entry
-	void setSharer(int set_id, int way_id, int subblock_id, int node);
+	void setSharer(int set_id, int way_id, int sub_block_id, int node);
 
 	/// Disable one sharer for a directory entry
-	void clearSharer(int set_id, int way_id, int subblock_id, int node);
+	void clearSharer(int set_id, int way_id, int sub_block_id, int node);
 
 	/// Clear all sharers of a directory entry
-	void clearAllSharers(int set_id, int way_id, int subblock_id);
+	void clearAllSharers(int set_id, int way_id, int sub_block_id);
 
 	/// Return whether a sharer is present in a directory entry
-	bool isSharer(int set_id, int way_id, int subblock_id, int node_id);
+	bool isSharer(int set_id, int way_id, int sub_block_id, int node_id);
 
 	/// Return whether part of a block is shared or owned
 	bool isBlockSharedOrOwned(int set_id, int way_id);
 
 	/// Dump array of sharers of a sub-block into an output stream
-	void DumpSharers(int set_id, int way_id, int subblock_id,
+	void DumpSharers(int set_id, int way_id, int sub_block_id,
 			std::ostream &os = std::cout);
 };
 
