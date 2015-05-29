@@ -444,6 +444,21 @@ public:
 		low_modules.push_back(low_module);
 	}
 
+	/// Get the low network (the one closer to main memory)
+	net::Network *getLowNetwork() const { return low_network; }
+
+	/// Get the node representing this module in the network that is closer
+	/// to main memory.
+	net::Node *getLowNetworkNode() const { return low_network_node; }
+
+	/// Get the network that is closer to the processor.
+	net::Network *getHighNetwork() const { return high_network; }
+
+	/// Get the node representing this module in the network that is closer
+	/// to the processor.
+	net::Node *getHighNetworkNode() const { return high_network_node; }
+
+	/// Access the module
 	long long Access(AccessType access_type,
 			unsigned address,
 			int &witness);
