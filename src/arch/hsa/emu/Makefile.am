@@ -25,6 +25,9 @@ libemu_a_SOURCES = \
 		SegmentManager.h \
 		SegmentManager.cc \
 		\
+		Signal.h \
+		Signal.cc \
+		\
 		StackFrame.h \
 		StackFrame.cc \
 		\

@@ -20,6 +20,9 @@
 #ifndef ARCH_HSA_EMU_EMU_H
 #define ARCH_HSA_EMU_EMU_H
 
+#include <memory>
+#include <list>
+
 #include <arch/common/Arch.h>
 #include <arch/common/Emu.h>
 #include <lib/cpp/CommandLine.h>
@@ -30,6 +33,7 @@
 
 #include "AQLQueue.h"
 #include "Component.h"
+#include "Signal.h"
 
 namespace HSA
 {
@@ -89,6 +93,9 @@ class Emu : public comm::Emu
 
 	// Global memory manager
 	std::unique_ptr<mem::Manager> manager;
+
+	// The emulator keeps the ownership of all signals
+	std::list<std::unique_ptr<Signal>> signals;
 
 public:
 
@@ -171,6 +178,9 @@ public:
 		memory = mem;
 		manager.reset(new mem::Manager(memory.get()));
 	}
+
+	/// Create a singal
+	Signal *CreateSignal(unsigned long long init_value);
 
 };
 

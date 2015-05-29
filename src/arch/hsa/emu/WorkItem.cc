@@ -512,7 +512,7 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() >= 0) {
 			Emu::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
 			Emu::isa_debug << "Executing: ";
@@ -537,7 +537,7 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() >= 0) {
 			if (Emu::isa_debug)
 				stack_top->Dump(Emu::isa_debug);
 			Emu::isa_debug << "\n";

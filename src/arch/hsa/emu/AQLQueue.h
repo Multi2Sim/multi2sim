@@ -61,18 +61,12 @@ class AQLQueue
 	Component *associated_component = nullptr;
 
 	// Convert the linear write/ read index to real position
-
-	unsigned long long toRecursiveIndex(unsigned long long index)
+	unsigned long long IndexToAddress(unsigned long long index)
 	{
-		unsigned long long recurve_index = index
-				% (fields->size * sizeof(AQLPacket))
-				+ fields->base_address;
-		//std::cout << misc::fmt("Mapping linear index %lld to "
-		//		"recursive index %lld\n",
-		//		index, recurve_index);
-		return recurve_index;
+		unsigned long long address = fields->base_address +
+				(index % fields->size) * sizeof(AQLPacket);
+		return address;
 	}
-
 
 	/// Return the packet starts at a certain linear index
 	AQLDispatchPacket *getPacket(unsigned long long linear_index);
@@ -86,7 +80,7 @@ public:
 	~AQLQueue();
 
 	/// Enqueue a packet
-	void Enqueue(AQLDispatchPacket *packet);
+	// void Enqueue(AQLDispatchPacket *packet);
 
 	/// Associate the queue with HSA component. Raise error if the queue
 	/// has already been associated with another device
@@ -168,7 +162,7 @@ public:
 	unsigned long long getReadIndex() const { return fields->read_index; }
 
 	/// Set read index
-	//void setReadIndex(unsigned long long read_index) { this->read_index = read_index; }
+	// void setReadIndex(unsigned long long read_index) { this->read_index = read_index; }
 
 	/// Get service queue
 	unsigned long long getServiceQueue() const

@@ -34,10 +34,10 @@ hsa_status_t HSA_API
 {
 	// Init arguments
 	unsigned int args[8];
-	memcpy(args + 1, &initial_value, 2);
-	memcpy(args + 3, &num_consumers, 1);
-	memcpy(args + 4, &consumers, 2);
-	memcpy(args + 6, &signal, 2);
+	memcpy(args + 1, &initial_value, 8);
+	memcpy(args + 3, &num_consumers, 4);
+	memcpy(args + 4, &consumers, 8);
+	memcpy(args + 6, &signal, 8);
 
 	if (!hsa_runtime)
 	{
@@ -68,15 +68,27 @@ hsa_signal_value_t HSA_API hsa_signal_load_acquire(hsa_signal_t signal)
 
 hsa_signal_value_t HSA_API hsa_signal_load_relaxed(hsa_signal_t signal)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
-	return HSA_STATUS_SUCCESS;
+	unsigned long long args[2] = {0};
+	memcpy(args + 1, &signal, 8);
+
+	// Call driver function
+	ioctl(hsa_runtime->fd, SignalLoadRelaxed, args);
+
+	// Return value
+	return args[0];
 }
 
 
 void HSA_API
     hsa_signal_store_relaxed(hsa_signal_t signal, hsa_signal_value_t value)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	unsigned int args[4] = {0};
+	memcpy(args, &signal, 8);
+	memcpy(args + 2, &value, 8);
+
+	// Call driver function
+	ioctl(hsa_runtime->fd, SignalStoreRelaxed, args);
+
 	return;
 }
 
@@ -324,7 +336,35 @@ hsa_signal_value_t HSA_API
                             uint64_t timeout_hint,
                             hsa_wait_state_t wait_state_hint)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	unsigned long long signal_value;
+	while (1)
+	{
+		// Get signal value
+		signal_value = hsa_signal_load_relaxed(signal);
+		printf("Signal value %lld\n", signal_value);
+
+		// Check if condition satisfies
+		if (condition == HSA_SIGNAL_CONDITION_EQ)
+		{
+			if (signal_value == compare_value)
+				break;
+		}
+		else if (condition == HSA_SIGNAL_CONDITION_NE)
+		{
+			if (signal_value != compare_value)
+				break;
+		}
+		else if (condition == HSA_SIGNAL_CONDITION_LT)
+		{
+			if (signal_value < compare_value)
+				break;
+		}
+		else if (condition == HSA_SIGNAL_CONDITION_GTE)
+		{
+			if (signal_value >= compare_value)
+				break;
+		}
+	}
 	return 0;
 }
 

@@ -18,7 +18,7 @@
  */
 
 #include "AQLPacket.h"
-
+#include "Signal.h"
 
 namespace HSA
 {
@@ -69,6 +69,12 @@ void AQLDispatchPacket::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("\tcompletion signal: 0x%0llx\n",
 			getCompletionSignal());
 	os << "\t***** ****** *****\n";
+}
+
+void AQLDispatchPacket::setCompletionSignal(unsigned long long signal_value)
+{
+	Signal *signal = (Signal *)(*(unsigned long long *)(bytes + 56));
+	signal->setValue(signal_value);
 }
 
 }  // namespace HSA

@@ -83,11 +83,23 @@ void HsaExecutable::preprocessRegisters(
 	// Record the maximum register used
 	unsigned int max_reg[4] = {0, 0, 0, 0};
 
+	// Set a last entry offset to keeps where the function ends
+	unsigned int last_entry_offset = 0;
+
 	// Traverse all instructions
-	while(entry.get() && next_module_entry.get() &&
-			entry->getOffset() != next_module_entry->getOffset())
+	while(true)
 	{
-		entry->Dump(std::cout);
+		// Terminate if end reached
+		if (entry.get() == nullptr)
+			break;
+		else if (next_module_entry.get() &&
+				next_module_entry->getOffset() ==
+						entry->getOffset())
+			break;
+
+		// Set last entry offset
+		last_entry_offset = entry->getOffset();
+
 		// Skip directives
 		if (!entry->isInstruction())
 		{
@@ -101,7 +113,7 @@ void HsaExecutable::preprocessRegisters(
 			auto operand = entry->getOperand(j);
 			if (!operand.get()) break;
 
-			operand->Dump(entry->getOperandType(j), std::cout);
+			// operand->Dump(entry->getOperandType(j), std::cout);
 			if (operand->getKind() != BRIG_KIND_OPERAND_REGISTER)
 				continue;
 
@@ -119,8 +131,8 @@ void HsaExecutable::preprocessRegisters(
 	}
 
 	// Set last entry in the function
-	unsigned int offset = entry->getOffset();
-	function->setLastEntry(std::move(binary->getCodeEntryByOffset(offset)));
+	function->setLastEntry(std::move(binary->getCodeEntryByOffset(
+			last_entry_offset)));
 
 	// Allocate registers
 	function->AllocateRegister(max_reg);
