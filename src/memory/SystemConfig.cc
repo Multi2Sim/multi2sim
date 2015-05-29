@@ -1182,8 +1182,87 @@ void System::ConfigCreateSwitches(misc::IniFile *ini_file)
 }
 
 
-void System::ConfigCheckRoutes()
+void System::ConfigCheckRoutes(misc::IniFile *ini_file)
 {
+	// For each module, check accessibility to low/high modules
+	debug << "Checking accessibility to low and high modules:\n";
+	for (auto &module : modules)
+	{
+		// Debug
+		debug << "\t" << module->getName() << '\n';
+
+		// List of low modules
+		debug << "\t\tLow modules:";
+		for (int i = 0; i < module->getNumLowModules(); i++)
+		{
+			// Get low module
+			Module *low_module = module->getLowModule(i);
+			debug << " " << low_module->getName();
+
+			// Check that nodes are in the same network
+			if (module->getLowNetwork() != low_module->getHighNetwork())
+				throw Error(misc::fmt("%s: %s: low node '%s' "
+						"is not in the same network.\n%s",
+						ini_file->getPath().c_str(),
+						module->getName().c_str(),
+						low_module->getName().c_str(),
+						err_config_note));
+
+			// Check that there is a route
+			net::Network *network = module->getLowNetwork();
+			net::RoutingTable *routing_table = network->getRoutingTable();
+			net::RoutingTable::Entry *entry = routing_table->Lookup(
+					module->getLowNetworkNode(),
+					low_module->getHighNetworkNode());
+			if (!entry->getBuffer())
+				throw Error(misc::fmt("%s: %s: network does not "
+						"connect '%s' with '%s'.\n%s",
+						ini_file->getPath().c_str(),
+						network->getName().c_str(),
+						module->getName().c_str(),
+						low_module->getName().c_str(),
+						err_connect));
+		}
+
+		// List of high modules
+		debug << "\n\t\tHigh modules:";
+		for (int i = 0; i < module->getNumHighModules(); i++)
+		{
+			// Get high module
+			Module *high_module = module->getHighModule(i);
+			debug << " " << high_module->getName();
+
+			// Check that noes are in the same network
+			if (module->getHighNetwork() != high_module->getLowNetwork())
+				throw Error(misc::fmt("%s: %s: high node '%s' "
+						"is not in the same network.\n%s",
+						ini_file->getPath().c_str(),
+						module->getName().c_str(),
+						high_module->getName().c_str(),
+						err_config_note));
+
+			// Check that there is a route
+			net::Network *network = module->getHighNetwork();
+			net::RoutingTable *routing_table = network->getRoutingTable();
+			net::RoutingTable::Entry *entry = routing_table->Lookup(
+					module->getHighNetworkNode(),
+					high_module->getLowNetworkNode());
+			if (!entry->getBuffer())
+				throw Error(misc::fmt("%s: %s: network does not "
+						"connect '%s' with '%s'.\n%s",
+						ini_file->getPath().c_str(),
+						network->getName().c_str(),
+						module->getName().c_str(),
+						high_module->getName().c_str(),
+						err_connect));
+		}
+
+		// Debug
+		debug << '\n';
+	}
+
+	// Debug
+	debug << '\n';
 }
 
 
@@ -1266,7 +1345,7 @@ void System::ConfigRead()
 	ini_file.Check();
 
 	// Check routes to low and high modules
-	ConfigCheckRoutes();
+	ConfigCheckRoutes(&ini_file);
 
 	// Check for disjoint memory hierarchies for different architectures.
 	// FIXME We don't know if device is fused until runtime, so we can't

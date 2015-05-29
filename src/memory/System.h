@@ -154,7 +154,7 @@ class System
 	
 	void ConfigCreateSwitches(misc::IniFile *ini_file);
 	
-	void ConfigCheckRoutes();
+	void ConfigCheckRoutes(misc::IniFile *ini_file);
 
 	void ConfigCalculateSubBlockSizes();
 
