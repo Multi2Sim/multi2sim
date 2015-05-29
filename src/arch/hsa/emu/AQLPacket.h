@@ -232,7 +232,7 @@ public:
 	unsigned long long getCompletionSignal() const { return getByOffset<unsigned long long>(56); }
 
 	/// Set the address to kernel argument
-	void setCompletionSignal(unsigned long long signal){ setByOffset<unsigned long long>(56, signal); }
+	void setCompletionSignal(unsigned long long signal_value);
 
 	/// Dump the AQL dispatch packet
 	void Dump(std::ostream &os) const;

@@ -663,12 +663,12 @@ int Driver::CallQueueLoadWriteIndexRelaxed(mem::Memory *memory, unsigned args_pt
 	// Dump debug information
 	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
 
-	// Retrieve the read index
-	unsigned long long *write_index = (unsigned long long *)memory->
-			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessRead);
+	// Retrieve the write index
+	unsigned long long write_index;
+	memory->Read(queue_ptr + 40, 8, (char *)&write_index);
 
 	// Write read index back to argument
-	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
+	this->setArgumentValue<unsigned long long>(write_index, 0, memory,
 			args_ptr);
 
 	return 0;
@@ -677,7 +677,23 @@ int Driver::CallQueueLoadWriteIndexRelaxed(mem::Memory *memory, unsigned args_pt
 
 int Driver::CallQueueStoreWriteIndexRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// queue		| 0		| 8
+	// value		| 8		| 8
+
+	// Get arguments
+	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
+			(0, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Dump debug information
+	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	debug << misc::fmt("\tvalue: %lld, \n", value);
+
+	// Set write index address
+	memory->Write(queue_ptr + 40, 8, (char *)&value);
+
 	return 0;
 }
 
@@ -983,10 +999,7 @@ int Driver::CallSignalCreate(mem::Memory *memory, unsigned args_ptr)
 			memory, args_ptr);
 
 	// Create signal
-	long long *new_signal = new long long;
-
-	// Assign init value
-	*new_signal = initial_value;
+	Signal *new_signal = Emu::getInstance()->CreateSignal(initial_value);
 
 	// Write back
 	memory->Write(signal, 8, (char *)&new_signal);
@@ -1005,7 +1018,17 @@ int Driver::CallSignalDestory(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallSignalLoadRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// value		| 0		| 8
+	// signal		| 8		| 8
+	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Set signal value
+	unsigned long long value = signal->getValue();
+
+	// Return
+	setArgumentValue(value, 0, memory, args_ptr);
 	return 0;
 }
 
@@ -1019,7 +1042,18 @@ int Driver::CallSignalLoadAcquire(mem::Memory *memory, unsigned args_ptr)
 
 int Driver::CallSignalStoreRelaxed(mem::Memory *memory, unsigned args_ptr)
 {
-	__UNIMPLEMENTED__
+	// Arguments		| Offset	| Size
+	// signal		| 0		| 8
+	// value		| 8		| 8
+	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
+			(0, memory, args_ptr);
+	unsigned long long value = getArgumentValue<unsigned long long>
+			(8, memory, args_ptr);
+
+	// Set signal value
+	signal->setValue(value);
+
+	// Return
 	return 0;
 }
 

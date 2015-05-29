@@ -119,6 +119,8 @@ public:
 	void setLastEntry(std::unique_ptr<BrigCodeEntry> last_entry)
 	{
 		this->last_entry = std::move(last_entry);
+		std::cout << "Last entry: ";
+		this->last_entry->Dump(std::cout);
 	}
 
 	/// Return pointer to the last entry
