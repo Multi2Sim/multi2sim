@@ -218,6 +218,7 @@ BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
 		Prediction choice_pred = choice[choice_index] > 1 ?
 				uop.getTwolevelPrediction() : uop.getBimodPrediction();
 		uop.setChoiceIndex(choice_index);
+		uop.setChoicePrediction(choice_pred);
 		uop.setPrediction(choice_pred);
 	}
 
