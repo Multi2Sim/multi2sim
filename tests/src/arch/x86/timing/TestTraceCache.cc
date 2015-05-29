@@ -42,12 +42,7 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	ini_file.LoadFromString(config);
 
 	// Find target section
-	for (int i = 0; i < ini_file.getNumSections(); i++)
-	{
-		std::string section_name = ini_file.getSection(i);
-		if (misc::StringPrefix(section_name, "TraceCache"))
-			TraceCache::ParseConfiguration(section_name, ini_file);
-	}
+	TraceCache::ParseConfiguration("TraceCache", ini_file);
 
 	// Assertions
 	EXPECT_EQ(true, TraceCache::getPresent());

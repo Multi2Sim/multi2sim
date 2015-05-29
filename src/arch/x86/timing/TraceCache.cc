@@ -128,7 +128,7 @@ void TraceCache::RecordUop(Uop &uop)
 	temp->mop_array[temp->mop_count] = uop.getEip();
 	temp->mop_count++;
 	temp->uop_count += uop.getMopCount();
-	temp->target = 0;
+	temp->is_last_instruction_branch = false;
 	temp->fall_through = uop.getEip() + uop.getMopSize();
 
 	// Instruction is branch. If maximum number of branches is reached,
@@ -140,7 +140,7 @@ void TraceCache::RecordUop(Uop &uop)
 		temp->branch_flags |= taken << temp->branch_count;
 		temp->branch_count++;
 		temp->target = uop.getTargetNeip();
-		temp->branch = true;
+		temp->is_last_instruction_branch = true;
 		if (temp->branch_count == branch_max)
 			Flush();
 	}
@@ -222,7 +222,7 @@ void TraceCache::Flush()
 	// since this prediction does not affect the trace. Instead, the 'target'
 	// field of the trace cache line will be stored.
 	assert(temp->tag);
-	if (temp->branch)
+	if (temp->is_last_instruction_branch)
 	{
 		assert(temp->branch_count);
 		temp->branch_count--;
