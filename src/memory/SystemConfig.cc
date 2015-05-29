@@ -1268,6 +1268,46 @@ void System::ConfigCheckRoutes(misc::IniFile *ini_file)
 
 void System::ConfigCalculateSubBlockSizes()
 {
+	debug << "Creating directories:\n";
+	for (auto &module : modules)
+	{
+		// Calculate sub-block size
+		int sub_block_size = module->getBlockSize();
+		for (int i = 0; i < module->getNumHighModules(); i++)
+		{
+			Module *high_module = module->getHighModule(i);
+			sub_block_size = std::min(sub_block_size,
+					high_module->getBlockSize());
+		}
+		module->setSubBlockSize(sub_block_size);
+
+		// Get number of nodes for directory
+		net::Network *high_network = module->getHighNetwork();
+		int num_nodes = high_network && high_network->getNumNodes() ?
+				high_network->getNumNodes() : 1;
+
+		// Create directory
+		module->InitializeDirectory(
+				module->getDirectoryNumSets(),
+				module->getDirectoryNumWays(),
+				module->getNumSubBlocks(),
+				num_nodes);
+		Directory *directory = module->getDirectory();
+		debug << misc::fmt("\t%s - %dx%dx%d (%dx%dx%d effective) - "
+				"%d entries, %d sub-blocks\n",
+				module->getName().c_str(),
+				directory->getNumSets(),
+				directory->getNumWays(),
+				num_nodes,
+				directory->getNumSets(),
+				directory->getNumWays(),
+				module->getNumHighModules(),
+				module->getDirectorySize(),
+				module->getNumSubBlocks());
+	}
+
+	// Debug
+	debug << '\n';
 }
 
 

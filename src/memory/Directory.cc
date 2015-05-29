@@ -32,26 +32,26 @@ const int Directory::NoOwner;
 Directory::Directory(const std::string &name,
 		int num_sets,
 		int num_ways,
-		int num_subblocks,
+		int num_sub_blocks,
 		int num_nodes)
 		:
 		name(name),
 		num_sets(num_sets),
 		num_ways(num_ways),
-		num_subblocks(num_subblocks),
+		num_sub_blocks(num_sub_blocks),
 		num_nodes(num_nodes),
-		sharers(num_sets * num_ways * num_subblocks * num_nodes)
+		sharers(num_sets * num_ways * num_sub_blocks * num_nodes)
 {
 	// Initialize entries
-	entries.reset(new Entry[num_sets * num_ways * num_subblocks]);
+	entries.reset(new Entry[num_sets * num_ways * num_sub_blocks]);
 }
 	
 
-void Directory::setOwner(int set_id, int way_id, int subblock_id, int owner)
+void Directory::setOwner(int set_id, int way_id, int sub_block_id, int owner)
 {
 	// Set owner
 	assert(owner == NoOwner || misc::inRange(owner, 0, num_nodes - 1));
-	Entry *entry = getEntry(set_id, way_id, subblock_id);
+	Entry *entry = getEntry(set_id, way_id, sub_block_id);
 	entry->setOwner(owner);
 
 	// Trace
@@ -60,23 +60,23 @@ void Directory::setOwner(int set_id, int way_id, int subblock_id, int owner)
 			name.c_str(),
 			set_id,
 			way_id,
-			subblock_id,
+			sub_block_id,
 			owner);
 }
 	
 
-void Directory::setSharer(int set_id, int way_id, int subblock_id, int node_id)
+void Directory::setSharer(int set_id, int way_id, int sub_block_id, int node_id)
 {
 	// Sanity
 	assert(misc::inRange(set_id, 0, num_sets - 1));
 	assert(misc::inRange(way_id, 0, num_ways - 1));
-	assert(misc::inRange(subblock_id, 0, num_subblocks - 1));
+	assert(misc::inRange(sub_block_id, 0, num_sub_blocks - 1));
 	assert(misc::inRange(node_id, 0, num_nodes - 1));
 
 	// Get position in bitmap
-	int bit_id = set_id * num_ways * num_subblocks * num_nodes +
-			way_id * num_subblocks * num_nodes +
-			subblock_id * num_nodes +
+	int bit_id = set_id * num_ways * num_sub_blocks * num_nodes +
+			way_id * num_sub_blocks * num_nodes +
+			sub_block_id * num_nodes +
 			node_id;
 	
 	// Check if already set
@@ -84,7 +84,7 @@ void Directory::setSharer(int set_id, int way_id, int subblock_id, int node_id)
 		return;
 	
 	// Set sharer
-	Entry *entry = getEntry(set_id, way_id, subblock_id);
+	Entry *entry = getEntry(set_id, way_id, sub_block_id);
 	assert(entry->getNumSharers() < num_nodes);
 	entry->incNumSharers();
 	sharers.Set(bit_id);
@@ -95,23 +95,23 @@ void Directory::setSharer(int set_id, int way_id, int subblock_id, int node_id)
 			name.c_str(),
 			set_id,
 			way_id,
-			subblock_id,
+			sub_block_id,
 			node_id);
 }
 
 
-void Directory::clearSharer(int set_id, int way_id, int subblock_id, int node_id)
+void Directory::clearSharer(int set_id, int way_id, int sub_block_id, int node_id)
 {
 	// Sanity
 	assert(misc::inRange(set_id, 0, num_sets - 1));
 	assert(misc::inRange(way_id, 0, num_ways - 1));
-	assert(misc::inRange(subblock_id, 0, num_subblocks - 1));
+	assert(misc::inRange(sub_block_id, 0, num_sub_blocks - 1));
 	assert(misc::inRange(node_id, 0, num_nodes - 1));
 
 	// Get position in bitmap
-	int bit_id = set_id * num_ways * num_subblocks * num_nodes +
-			way_id * num_subblocks * num_nodes +
-			subblock_id * num_nodes +
+	int bit_id = set_id * num_ways * num_sub_blocks * num_nodes +
+			way_id * num_sub_blocks * num_nodes +
+			sub_block_id * num_nodes +
 			node_id;
 	
 	// Check if already clear
@@ -119,7 +119,7 @@ void Directory::clearSharer(int set_id, int way_id, int subblock_id, int node_id
 		return;
 	
 	// Clear sharer
-	Entry *entry = getEntry(set_id, way_id, subblock_id);
+	Entry *entry = getEntry(set_id, way_id, sub_block_id);
 	assert(entry->getNumSharers() > 0);
 	entry->decNumSharers();
 	sharers.Set(bit_id, false);
@@ -130,22 +130,22 @@ void Directory::clearSharer(int set_id, int way_id, int subblock_id, int node_id
 			name.c_str(),
 			set_id,
 			way_id,
-			subblock_id,
+			sub_block_id,
 			node_id);
 }
 
 
-void Directory::clearAllSharers(int set_id, int way_id, int subblock_id)
+void Directory::clearAllSharers(int set_id, int way_id, int sub_block_id)
 {
 	// Skip if no sharer is present
-	Entry *entry = getEntry(set_id, way_id, subblock_id);
+	Entry *entry = getEntry(set_id, way_id, sub_block_id);
 	if (entry->getNumSharers() == 0)
 		return;
 	
 	// Get position in bitmap
-	int bit_id = set_id * num_ways * num_subblocks * num_nodes +
-			way_id * num_subblocks * num_nodes +
-			subblock_id * num_nodes;
+	int bit_id = set_id * num_ways * num_sub_blocks * num_nodes +
+			way_id * num_sub_blocks * num_nodes +
+			sub_block_id * num_nodes;
 	
 	// Clear all sharers
 	entry->setNumSharers(0);
@@ -158,22 +158,22 @@ void Directory::clearAllSharers(int set_id, int way_id, int subblock_id)
 			name.c_str(),
 			set_id,
 			way_id,
-			subblock_id);
+			sub_block_id);
 }
 
 
-bool Directory::isSharer(int set_id, int way_id, int subblock_id, int node_id)
+bool Directory::isSharer(int set_id, int way_id, int sub_block_id, int node_id)
 {
 	// Sanity
 	assert(misc::inRange(set_id, 0, num_sets - 1));
 	assert(misc::inRange(way_id, 0, num_ways - 1));
-	assert(misc::inRange(subblock_id, 0, num_subblocks - 1));
+	assert(misc::inRange(sub_block_id, 0, num_sub_blocks - 1));
 	assert(misc::inRange(node_id, 0, num_nodes - 1));
 
 	// Get position in bitmap
-	int bit_id = set_id * num_ways * num_subblocks * num_nodes +
-			way_id * num_subblocks * num_nodes +
-			subblock_id * num_nodes +
+	int bit_id = set_id * num_ways * num_sub_blocks * num_nodes +
+			way_id * num_sub_blocks * num_nodes +
+			sub_block_id * num_nodes +
 			node_id;
 	
 	// Return whether sharer is present
@@ -184,9 +184,9 @@ bool Directory::isSharer(int set_id, int way_id, int subblock_id, int node_id)
 bool Directory::isBlockSharedOrOwned(int set_id, int way_id)
 {
 	// Look for an owner or sharer
-	for (int subblock_id = 0; subblock_id < num_subblocks; subblock_id++)
+	for (int sub_block_id = 0; sub_block_id < num_sub_blocks; sub_block_id++)
 	{
-		Entry *entry = getEntry(set_id, way_id, subblock_id);
+		Entry *entry = getEntry(set_id, way_id, sub_block_id);
 		if (entry->getNumSharers() > 0 || entry->getOwner() != NoOwner)
 			return true;
 	}
@@ -196,13 +196,13 @@ bool Directory::isBlockSharedOrOwned(int set_id, int way_id)
 }
 
 
-void Directory::DumpSharers(int set_id, int way_id, int subblock_id,
+void Directory::DumpSharers(int set_id, int way_id, int sub_block_id,
 		std::ostream &os)
 {
-	Entry *entry = getEntry(set_id, way_id, subblock_id);
+	Entry *entry = getEntry(set_id, way_id, sub_block_id);
 	os << misc::fmt("  %d sharers: { ", entry->getNumSharers());
 	for (int i = 0; i < num_nodes; i++)
-		if (isSharer(set_id, way_id, subblock_id, i))
+		if (isSharer(set_id, way_id, sub_block_id, i))
 			os << misc::fmt("%d ", i);
 	os << "}\n";
 }
