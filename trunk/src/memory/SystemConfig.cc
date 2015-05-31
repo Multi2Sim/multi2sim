@@ -1331,7 +1331,7 @@ void System::ConfigReadCommands(misc::IniFile *ini_file)
 }
 
 
-void System::ConfigRead()
+void System::ReadConfiguration()
 {
 	// Load memory system configuration file. If no file name has been given
 	// by the user, create a default configuration for each architecture.
@@ -1356,36 +1356,43 @@ void System::ConfigRead()
 		ini_file.Load(config_file);
 	}
 
+	// Read from INI file
+	ReadConfiguration(&ini_file);
+}
+
+
+void System::ReadConfiguration(misc::IniFile *ini_file)
+{
 	// Read general variables
-	ConfigReadGeneral(&ini_file);
+	ConfigReadGeneral(ini_file);
 
 	// Read networks
-	ConfigReadNetworks(&ini_file);
+	ConfigReadNetworks(ini_file);
 
 	// Read modules
-	ConfigReadModules(&ini_file);
+	ConfigReadModules(ini_file);
 
 	// Read low level caches
-	ConfigReadLowModules(&ini_file);
+	ConfigReadLowModules(ini_file);
 
 	// Read entries from requesting devices (CPUs/GPUs) to memory system
 	// entries. This is presented in [Entry <name>] sections in the
 	// configuration file.
-	ConfigReadEntries(&ini_file);
+	ConfigReadEntries(ini_file);
 
 	// Create switches in internal networks
-	ConfigCreateSwitches(&ini_file);
+	ConfigCreateSwitches(ini_file);
 
 	// Read commands from the configuration file. Commands are used to
 	// artificially alter the initial state of the memory hierarchy for
 	// debugging purposes.
-	ConfigReadCommands(&ini_file);
+	ConfigReadCommands(ini_file);
 
 	// Check that all enforced sections and variables were specified.
-	ini_file.Check();
+	ini_file->Check();
 
 	// Check routes to low and high modules
-	ConfigCheckRoutes(&ini_file);
+	ConfigCheckRoutes(ini_file);
 
 	// Check for disjoint memory hierarchies for different architectures.
 	// FIXME We don't know if device is fused until runtime, so we can't

@@ -58,11 +58,6 @@ System *System::getInstance()
 
 System::System()
 {
-	// Read memory configuration from '--mem-config', or create default
-	// configuration for all architectures with a timing simulation.
-	ConfigRead();
-
-
 	//
 	// NMOESI events
 	//
