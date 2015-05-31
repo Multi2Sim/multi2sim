@@ -46,5 +46,17 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			"[Entry] section of the memory configuration file");
 }
 
+
+int Timing::getNumEntryModules()
+{
+	throw misc::Panic("Not implemented");
+}
+
+
+mem::Module *Timing::getEntryModule(int index)
+{
+	throw misc::Panic("Not implemented");
+}
+
 }
 
