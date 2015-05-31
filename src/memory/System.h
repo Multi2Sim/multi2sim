@@ -103,9 +103,10 @@ class System
 	// Frequency of memory system in MHz
 	static int frequency;
 
-	// Parse memory hierarchy configuration file, or generate default if
-	// user didn't pass '--mem-config' command-line option.
-	void ConfigRead();
+
+	//
+	// Configuration
+	//
 
 	void ConfigReadGeneral(misc::IniFile *ini_file);
 
@@ -197,7 +198,28 @@ class System
 
 public:
 
-	// NMOESI event types
+	/// Memory system trace
+	static esim::Trace trace;
+
+	/// Memory system debugger
+	static misc::Debug debug;
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+	
+	/// Obtain singleton instance.
+	static System *getInstance();
+	
+
+
+
+	//
+	// Event-driven simulation
+	//
+
 	static esim::EventType *ev_load;
 	static esim::EventType *ev_load_lock;
 	static esim::EventType *ev_load_action;
@@ -294,20 +316,23 @@ public:
 	static esim::EventType *ev_local_find_and_lock_action;
 	static esim::EventType *ev_local_find_and_lock_finish;
 
-	/// Memory system trace
-	static esim::Trace trace;
 
-	/// Memory system debugger
-	static misc::Debug debug;
 
-	/// Register command-line options
-	static void RegisterOptions();
 
-	/// Process command-line options
-	static void ProcessOptions();
-	
-	/// Obtain singleton instance.
-	static System *getInstance();
+	//
+	// Configuration
+	//
+
+	// Initialize the memory system by parsing the memory configuration
+	// file passed with '--mem-config' by the user. If this option was not
+	// given, generate a default memory configuration for each architecture
+	// with timing simulation.
+	void ReadConfiguration();
+
+	// Initialize the memory system from an existing memory configuration
+	// INI file. This function is internally invoked by ReadConfiguration()
+	// or externally invoked for unit testing purposes.
+	void ReadConfiguration(misc::IniFile *ini_file);
 };
 
 }  // namespace mem

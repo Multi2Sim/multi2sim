@@ -596,7 +596,8 @@ int MainProgram(int argc, char **argv)
 	// Initialize memory system
 	// FIXME - Should be done only if there is at least one timing
 	// simulation active.
-	mem::System::getInstance();
+	mem::System *memory_system = mem::System::getInstance();
+	memory_system->ReadConfiguration();
 
 	// Load programs
 	LoadPrograms();
