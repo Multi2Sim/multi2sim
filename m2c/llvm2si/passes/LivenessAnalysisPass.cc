@@ -103,7 +103,7 @@ void LivenessAnalysisPass::runScalar()
 								// get the register range
 								int low = s_register->getLow();
 								int high = s_register->getHigh();
-								while (low < high)
+								while (low <= high)
 								{
 									s_use.Set(low, false);
 									s_def.Set(low, true);
@@ -134,7 +134,7 @@ void LivenessAnalysisPass::runScalar()
 								// get the register range
 								int low = s_register->getLow();
 								int high = s_register->getHigh();
-								while (low < high)
+								while (low <= high)
 								{
 									s_use.Set(low, true);
 									s_def.Set(low, false);
@@ -319,7 +319,7 @@ void LivenessAnalysisPass::runVector()
 										// get the register range
 										int low = v_register->getLow();
 										int high = v_register->getHigh();
-										while (low < high)
+										while (low <= high)
 										{
 											v_use.Set(low, false);
 											v_def.Set(low, true);
@@ -350,7 +350,7 @@ void LivenessAnalysisPass::runVector()
 										// get the register range
 										int low = v_register->getLow();
 										int high = v_register->getHigh();
-										while (low < high)
+										while (low <= high)
 										{
 											v_use.Set(low, true);
 											v_def.Set(low, false);

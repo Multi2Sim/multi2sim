@@ -222,6 +222,6 @@ class LivenessAnalysisPass : public comm::Pass
 		~LivenessAnalysisPass() {}
 };
 
-}
+} // namespace llvm2si
 
 #endif
