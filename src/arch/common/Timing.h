@@ -24,6 +24,13 @@
 #include <lib/esim/FrequencyDomain.h>
 #include <lib/esim/Engine.h>
 
+namespace mem
+{
+
+class Module;
+
+}
+
 
 namespace comm
 {
@@ -67,6 +74,16 @@ public:
 	/// architecture into the memory hierarchy.
 	virtual void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section);
+	
+
+	/// Return the number of entry modules from this architecture into the
+	/// memory hierarchy.
+	virtual int getNumEntryModules();
+
+	/// Return the entry module from the architecture into the memory
+	/// hierarchy given its index. The index must be a value between 0 and
+	/// getNumEntryModules() - 1.
+	virtual mem::Module *getEntryModule(int index);
 };
 
 }
