@@ -1313,11 +1313,53 @@ void System::ConfigCalculateSubBlockSizes()
 
 void System::ConfigSetModuleLevel(Module *module, int level)
 {
+	// If level is already set, do nothing
+	if (module->getLevel() >= level)
+		return;
+
+	// Set level of module and lower modules
+	module->setLevel(level);
+	for (int i = 0; i < module->getNumLowModules(); i++)
+	{
+		Module *low_module = module->getLowModule(i);
+		ConfigSetModuleLevel(low_module, level + 1);
+	}
 }
 
 
 void System::ConfigCalculateModuleLevels()
 {
+	// Start recursive level assignment with L1 modules (entries to memory)
+	// for all architectures.
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+	for (auto it = arch_pool->timing_begin(),
+			e = arch_pool->timing_end();
+			it != e;
+			++it)
+	{
+		// Get timing simulator
+		comm::Arch *arch = *it;
+		comm::Timing *timing = arch->getTiming();
+
+		// Traverse entries to memory hierarchy
+		for (int i = 0; i < timing->getNumEntryModules(); i++)
+		{
+			Module *module = timing->getEntryModule(i);
+			ConfigSetModuleLevel(module, 1);
+		}
+	}
+
+	// Debug
+	debug << "Calculating module levels:\n";
+	for (auto &module : modules)
+	{
+		debug << "\t" << module->getName() << " -> ";
+		if (module->getLevel())
+			debug << "level " << module->getLevel() << '\n';
+		else
+			debug << "not accessible\n";
+	}
+	debug << '\n';
 }
 
 

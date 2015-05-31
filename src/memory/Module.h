@@ -407,6 +407,18 @@ public:
 		num_sub_blocks = block_size / sub_block_size;
 	}
 
+	/// Return the module level, where level 1 is the closes to the
+	/// processor.
+	int getLevel() const { return level; }
+
+	/// Set the level of the module. This function is invoked during
+	/// the memory configuration parsing process.
+	void setLevel(int level)
+	{
+		assert(level >= 1);
+		this->level = level;
+	}
+
 	/// Return data access latency
 	int getLatency() const { return data_latency; }
 
