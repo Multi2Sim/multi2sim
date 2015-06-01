@@ -41,11 +41,12 @@ class CPU;
 // Class Timing
 class Timing : public comm::Timing
 {
+	//
+	// Static fields
+	//
+
 	// Unique instance of the singleton
 	static std::unique_ptr<Timing> instance;
-
-	// CPU associated with this timing simulator
-	std::unique_ptr<CPU> cpu;
 
 	// Simulation kind
 	static comm::Arch::SimKind sim_kind;
@@ -69,6 +70,18 @@ class Timing : public comm::Timing
 
 	// Frequency of memory system in MHz
 	static int frequency;
+
+	
+	
+	//
+	// Member fields
+	//
+
+	// CPU associated with this timing simulator
+	std::unique_ptr<CPU> cpu;
+
+	// List of entry modules to the memory hierarchy
+	std::vector<mem::Module *> entry_modules;
 
 	// Private constructor for singleton
 	Timing() : comm::Timing("x86") { }
@@ -115,14 +128,27 @@ public:
 	/// invoked by the memory configuration parser.
 	void CheckMemoryConfiguration(misc::IniFile *ini_file) override;
 
+	/// Parse an [Entry] section in the memory configuration file for this
+	/// architecture. These sections specify the entry points from the
+	/// architecture into the memory hierarchy.
+	void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
+			const std::string &section) override;
+	
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
-	int getNumEntryModules() override;
+	int getNumEntryModules() override
+	{
+		return entry_modules.size();
+	}
 
 	/// Return the entry module from the architecture into the memory
 	/// hierarchy given its index. The index must be a value between 0 and
 	/// getNumEntryModules() - 1.
-	mem::Module *getEntryModule(int index) override;
+	mem::Module *getEntryModule(int index) override
+	{
+		assert(index >= 0 && index < (int) entry_modules.size());
+		return entry_modules[index];
+	}
 	
 	
 	

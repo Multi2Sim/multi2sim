@@ -80,7 +80,6 @@ public:
 	virtual void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section);
 	
-
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
 	virtual int getNumEntryModules();

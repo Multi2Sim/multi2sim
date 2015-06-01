@@ -25,8 +25,8 @@
 
 #include <arch/x86/emu/UInst.h>
 
-#include "CPU.h"
 #include "Thread.h"
+
 
 namespace x86
 {
@@ -144,8 +144,15 @@ public:
 	/// Constructor
 	Core(const std::string &name, CPU *cpu, int id);
 
-	/// Setters
+	/// Return the number of threads
+	int getNumThreads() const { return threads.size(); }
 
+	/// Return the thread with the given index
+	Thread *getThread(int index) const
+	{
+		assert(index >= 0 && index < (int) threads.size());
+		return threads[index].get();
+	}
 
 	/// Increment counters
 	void incRegFileIntCount() { reg_file_int_count++; }
