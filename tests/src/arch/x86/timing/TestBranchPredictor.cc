@@ -140,12 +140,21 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 		2,
 		1
 	};
+	int bimod_index[num_branch_uop] =
+	{
+		0,
+		0,
+		0
+	};
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		// Look up predictor and verify prediction
 		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
 		pred = mock_uop_list[i]->getPrediction();
 		EXPECT_EQ(pred_result[i], pred);
+
+		// Verify the bimodal index
+		EXPECT_EQ(bimod_index[i], mock_uop_list[i]->getBimodIndex());
 
 		// Update predictor and verify the bimodal status
 		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
@@ -277,12 +286,42 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		0,
 		0
 	};
+	int bht_index = 0;
+	int pht_row[num_branch_uop * N] =
+	{
+		0b000000,
+		0b000001,
+		0b000010,
+		0b000100,
+		0b001001,
+		0b010010,
+		0b100100,
+		0b001001,
+		0b010010
+	};
+	int pht_col[num_branch_uop * N] =
+	{
+		0,
+		16,
+		32,
+		0,
+		16,
+		32,
+		0,
+		16,
+		32
+	};
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		// Look up predictor and verify prediction
 		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
 		pred = mock_uop_list[i]->getPrediction();
 		EXPECT_EQ(pred_result[i], pred);
+
+		// Verify the BHT index and PHT row colomn
+		EXPECT_EQ(bht_index, mock_uop_list[i]->getTwolevelBHTIndex());
+		EXPECT_EQ(pht_row[i], mock_uop_list[i]->getTwolevelPHTRow());
+		EXPECT_EQ(pht_col[i], mock_uop_list[i]->getTwolevelPHTCol());
 
 		// Update predictor and verify the two-level branch predictor status
 		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));

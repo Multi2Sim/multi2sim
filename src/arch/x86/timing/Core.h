@@ -152,6 +152,11 @@ public:
 	void incRegFileFpCount() { reg_file_fp_count++; }
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
 
+	/// Decrement counters
+	void decRegFileIntCount() { reg_file_int_count--; }
+	void decRegFileFpCount() { reg_file_fp_count--; }
+	void decRegFileXmmCount() { reg_file_xmm_count--; }
+
 	/// Getters
 	int getID() { return id; }
 	int getRegFileIntCount() { return reg_file_int_count; }
