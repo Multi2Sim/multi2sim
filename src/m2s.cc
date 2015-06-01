@@ -118,43 +118,6 @@ long long m2s_loop_iterations = 0;
 //
 
 
-void RegisterArchitectures()
-{
-	// Get architecture pool
-	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-
-	// x86
-	arch_pool->Register("x86",
-			x86::Asm::getInstance(),
-			x86::Emu::getInstance(),
-			x86::Timing::getInstance());
-	
-	// Southern Islands
-	arch_pool->Register("SouthernIslands");
-
-	// HSA
-	arch_pool->Register("HSA",
-			HSA::Asm::getInstance(),
-			HSA::Emu::getInstance());
-
-	// Kepler
-	arch_pool->Register("Kepler",
-			Kepler::Asm::getInstance(),
-			Kepler::Emu::getInstance());
-
-	// MIPS
-	arch_pool->Register("MIPS",
-			MIPS::Asm::getInstance(),
-			MIPS::Emu::getInstance());
-
-	//ARM
-	arch_pool->Register("ARM",
-			ARM::Asm::getInstance(),
-			ARM::Emu::getInstance());
-
-}
-
-
 void RegisterRuntimes()
 {
 	// Get runtime pool
@@ -213,6 +176,7 @@ void LoadProgram(const std::vector<std::string> &args,
 	switch (elf_file.getMachine())
 	{
 	case EM_386:
+
 		emu = x86::Emu::getInstance();
 		break;
 
@@ -589,15 +553,18 @@ int MainProgram(int argc, char **argv)
 	// emulator, timing simulator, runtime, or driver should only be
 	// initialized once we find that it is actually needed, leveraging
 	// calls to getInstance() of singletons.
-	RegisterArchitectures();
 	RegisterRuntimes();
 	RegisterDrivers();
 
-	// Initialize memory system
-	// FIXME - Should be done only if there is at least one timing
-	// simulation active.
-	mem::System *memory_system = mem::System::getInstance();
-	memory_system->ReadConfiguration();
+	// Initialize memory system, only if there is at least one timing
+	// simulation active. Check this in the architecture pool after all
+	// '--xxx-sim' command-line options have been processed.
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+	if (arch_pool->getNumTiming())
+	{
+		mem::System *memory_system = mem::System::getInstance();
+		memory_system->ReadConfiguration();
+	}
 
 	// Load programs
 	LoadPrograms();

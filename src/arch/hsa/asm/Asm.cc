@@ -75,11 +75,6 @@ Asm *Asm::getInstance()
 }
 
 
-Asm::Asm()
-{
-	indent = 0;
-}
-
 void Asm::DisassembleBinary(const std::string &path) const
 {
 	BrigFile brig_file;

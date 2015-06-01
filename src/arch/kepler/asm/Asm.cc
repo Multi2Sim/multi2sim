@@ -201,7 +201,7 @@ Asm *Asm::getInstance()
 }
 
 
-Asm::Asm()
+Asm::Asm() : comm::Asm("Kepler")
 {
 	// Initiate values for the 'next_table', 'next_table_low' and
 	// 'next_table_high' fields of the tables

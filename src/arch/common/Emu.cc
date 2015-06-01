@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Arch.h"
 #include "Emu.h"
 
 #include <lib/cpp/String.h>
@@ -25,13 +26,16 @@
 namespace comm
 {
 
-Emu::Emu(const std::string &name)
-		:
+Emu::Emu(const std::string &name) :
 		name(name),
 		timer(name)
 {
 	// Obtain event-driven simulator engine
 	esim = esim::Engine::getInstance();
+
+	// Register emulator in architecture pool
+	ArchPool *arch_pool = ArchPool::getInstance();
+	arch_pool->RegisterEmulator(name, this);
 }
 
 	

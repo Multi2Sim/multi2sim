@@ -47,17 +47,22 @@ ArchPool *ArchPool::getInstance()
 }
 
 
-void ArchPool::Register(const std::string &name,
-		Asm *as,
-		Emu *emu,
-		Timing *timing)
+Arch *ArchPool::Register(const std::string &name)
 {
+	// Check if architecture already exists, and return it if so.
+	auto it = arch_map.find(name);
+	if (it != arch_map.end())
+		return it->second;
+	
 	// Create new architecture in place
-	arch_list.emplace_back(misc::new_unique<Arch>(name, as, emu, timing));
+	arch_list.emplace_back(misc::new_unique<Arch>(name));
+	Arch *arch = arch_list.back().get();
 
-	// Add to list of timing simulators, if applicable
-	if (timing)
-		timing_arch_list.push_back(arch_list.back().get());
+	// Add to map
+	arch_map[name] = arch;
+
+	// Return created architecture
+	return arch;
 }
 
 
@@ -97,6 +102,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 	{
 		switch (arch->getSimKind())
 		{
+
 		case Arch::SimFunctional:
 		{
 			// Get the emulator. If none is available, skip this
@@ -176,16 +182,6 @@ const misc::StringMap Arch::SimKindMap =
 	{ "functional", SimFunctional },
 	{ "detailed", SimDetailed }
 };
-
-
-Arch::Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing) :
-		name(name),
-		as(as),
-		emu(emu),
-		timing(timing)
-{
-}
-
 
 
 }  // namespace comm

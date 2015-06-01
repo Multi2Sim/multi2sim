@@ -31,7 +31,7 @@ namespace Fermi
 
 std::unique_ptr<Asm> Asm::instance;
 
-Asm::Asm()
+Asm::Asm() : comm::Asm("Fermi")
 {
 	unsigned cat, op_in_cat;
 	InstInfo *info;
