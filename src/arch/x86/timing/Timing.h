@@ -47,6 +47,9 @@ class Timing : public comm::Timing
 	// CPU associated with this timing simulator
 	std::unique_ptr<CPU> cpu;
 
+	// Simulation kind
+	static comm::Arch::SimKind sim_kind;
+
 	// Configuration file name
 	static std::string config_file;
 
@@ -125,7 +128,7 @@ public:
 	
 	
 	//
-	// Debuggers and configuration
+	// Configuration
 	//
 
 	/// Register command-line options
@@ -137,6 +140,8 @@ public:
 	/// Parse the configuration file
 	static void ParseConfiguration(std::string &config_file);
 
+	/// Return the simulation level set by command-line options '--x86-sim'
+	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 };
 
 } //namespace x86

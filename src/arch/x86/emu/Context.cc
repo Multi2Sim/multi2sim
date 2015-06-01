@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <arch/common/Arch.h>
+#include <arch/x86/timing/Timing.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.h>
 
@@ -347,7 +348,7 @@ Context::Context()
 		context_list_present[i] = false;
 
 	// Micro-instructions
-	uinst_active = Emu::getSimKind() == comm::Arch::SimDetailed;
+	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
 	uinst_effaddr_emitted = false;
 
 	// Debug
