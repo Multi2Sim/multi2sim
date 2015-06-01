@@ -1645,17 +1645,11 @@ void Context::ExecuteInst_popf()
 
 void Context::ExecuteInst_prefetcht0_m8()
 {
-	unsigned int eff_addr;
-
-	// Prefetching makes sense only in a detailed simulation
-	if (Emu::getSimKind() != comm::Arch::SimDetailed)
-		return;
-
 	// Not if prefetch is disabled
 	if (!Emu::getProcessPrefetchHints())
 		return;
 
-	eff_addr = getEffectiveAddress();
+	unsigned eff_addr = getEffectiveAddress();
 	newUInst(UInstEffaddr, UInstDepEaseg, UInstDepEabas, UInstDepEaidx, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstPrefetch, eff_addr, 1, UInstDepAux, 0, 0, 0, 0, 0, 0);
 }

@@ -17,7 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/common/Arch.h>
+
 #include "Timing.h"
+
 
 namespace x86
 {
@@ -25,24 +28,24 @@ namespace x86
 // Singleton instance
 std::unique_ptr<Timing> Timing::instance;
 
+
+
 //
-// Configuration file name
+// Configuration options
 //
+
 std::string Timing::config_file;
 
-//
-// report file name
-//
+// Simulation kind
+comm::Arch::SimKind Timing::sim_kind = comm::Arch::SimFunctional;
+
+// Report file name
 std::string Timing::report_file;
 
-//
 // MMU report file name
-//
 std::string Timing::mmu_report_file;
 
-//
 // Message to display with '--x86-help'
-//
 const std::string Timing::help_message =
 		"The x86 CPU configuration file is a plain text INI file, defining\n"
 		"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
@@ -293,6 +296,12 @@ void Timing::RegisterOptions()
 
 	// Category
 	command_line->setCategory("x86");
+	
+	// Option --x86-sim <kind>
+	command_line->RegisterEnum("--x86-sim {functional|detailed} "
+			"(default = functional)",
+			(int &) sim_kind, comm::Arch::SimKindMap,
+			"Level of accuracy of x86 simulation.");
 
 	// Option --x86-config <file>
 	command_line->RegisterString("--x86-config <file>", config_file,
@@ -326,6 +335,10 @@ void Timing::RegisterOptions()
 
 void Timing::ProcessOptions()
 {
+	// Instantiate timing simulator if '--x86-sim detailed' is present
+	if (sim_kind == comm::Arch::SimDetailed)
+		getInstance();
+
 	// Configuration
 	if (!config_file.empty())
 		ParseConfiguration(config_file);
