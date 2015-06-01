@@ -37,11 +37,16 @@ namespace comm
 
 class Timing
 {
+	// Name of timing simulator
+	std::string name;
 
 	// Frequency domain pointer
 	esim::FrequencyDomain *frequency_domain = nullptr;
 
 public:
+
+	/// Constructor
+	Timing(const std::string &name);
 
 	/// Run one cycle for the timing simulator. This function returns \a
 	/// true if a valid simulation was performed by the architecture. The

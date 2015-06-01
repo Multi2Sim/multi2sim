@@ -242,12 +242,6 @@ bool Timing::help = false;
 int Timing::frequency = 1000;
 
 
-Timing::Timing(): comm::Timing()
-{
-
-}
-
-
 Timing *Timing::getInstance()
 {
 	// Instance already exists
@@ -275,6 +269,20 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
 
+}
+
+
+int Timing::getNumEntryModules()
+{
+	// FIXME
+	return 0;
+}
+
+
+mem::Module *Timing::getEntryModule(int index)
+{
+	// FIXME
+	return nullptr;
 }
 
 

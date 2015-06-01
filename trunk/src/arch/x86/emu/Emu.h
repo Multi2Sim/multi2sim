@@ -94,32 +94,32 @@ class Emu : public comm::Emu
 	std::list<Context *> context_list[Context::ListCount];
 
 	// See setScheduleSignal()
-	bool schedule_signal;
+	bool schedule_signal = false;
 
 	// Private constructor for singleton
-	Emu();
+	Emu() : comm::Emu("x86") { }
 	
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
 	// accessed thread-safely locking the mutex.
-	bool process_events_force;
+	bool process_events_force = false;
 	
 	// Process ID to be assigned next. Process IDs are assigned in
 	// increasing order, using function Emu::getPid()
-	int pid;
+	int pid = 100;
 	
 	// Index of virtual memory space assigned to new contexts. A new ID
 	// can be retrieved in increasing order by using function
 	// Emu::getAddressSpaceIndex()
-	int address_space_index;
+	int address_space_index = 0;
 	
 	// Emulator mutex, used to access shared variables between main program
 	// and child host threads.
-	pthread_mutex_t mutex;
+	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 	// Counter of times that a context has been suspended in a futex. Used
 	// for FIFO wakeups.
-	long long futex_sleep_count;
+	long long futex_sleep_count = 0;
 
 
 public:

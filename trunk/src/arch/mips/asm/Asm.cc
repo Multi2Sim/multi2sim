@@ -99,7 +99,7 @@ void Asm::ProcessOptions()
 }
 
 
-Asm::Asm()
+Asm::Asm() : comm::Asm("MIPS")
 {
 	// Allocate storage for the instruction tables
 	dec_table                   = new InstInfo[64]();

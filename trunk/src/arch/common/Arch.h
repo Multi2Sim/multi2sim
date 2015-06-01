@@ -21,6 +21,7 @@
 #define ARCH_COMMON_ARCH_H
 
 #include <list>
+#include <map>
 #include <memory>
 
 #include <lib/cpp/String.h>
@@ -81,15 +82,7 @@ public:
 	/// \param name
 	///	Name of the architecture
 	///
-	/// \param as
-	///	Disassembler instance for the architecture
-	///
-	/// \param emu
-	///	Emulator instance for the architecture
-	///
-	/// \param timing
-	///	Timing simulator for the architecture
-	Arch(const std::string &name, Asm *as, Emu *emu, Timing *timing);
+	Arch(const std::string &name) : name(name) { }
 
 	/// Return the name of the architecture
 	const std::string &getName() const { return name; }
@@ -102,6 +95,30 @@ public:
 
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
+
+	/// Associate a disassembler. This function should only be invoked
+	/// internally by ArchPool::RegisterDisassembler()
+	void setAsm(Asm *as)
+	{
+		assert(!this->as);
+		this->as = as;
+	}
+
+	/// Associate an emulator. This function should only be invoked
+	/// internally by ArchPool::RegisterEmulator()
+	void setEmu(Emu *emu)
+	{
+		assert(!this->emu);
+		this->emu = emu;
+	}
+
+	/// Associate a timing simulator. This function should only be invoked
+	/// internally by ArchPool::RegisterTiming()
+	void setTiming(Timing *timing)
+	{
+		assert(!this->timing);
+		this->timing = timing;
+	}
 
 	/// Return the type of simulation for the architecture
 	SimKind getSimKind() const { return sim_kind; }
@@ -128,20 +145,48 @@ class ArchPool
 	// List of architectures
 	std::list<std::unique_ptr<Arch>> arch_list;
 
+	// Map of architectures, indexed by name
+	std::map<std::string, Arch *> arch_map;
+
 	// List of architectures with timing simulation
 	std::list<Arch *> timing_arch_list;
+
+	// Register a new architecture with the given name, and return the new
+	// architecture object created. If an architecture with that name
+	// already existed, the existing object is returned.
+	Arch *Register(const std::string &name);
 
 public:
 
 	/// Return a unique instance of the singleton
 	static ArchPool *getInstance();
 
-	/// Register a new architecture. See constructor of class Arch for the
-	/// meaning of the arguments.
-	void Register(const std::string &name,
-			Asm *as = nullptr,
-			Emu *emu = nullptr,
-			Timing *timing = nullptr);
+	/// Register a disassembler for the architecture with the given name.
+	/// For a given architecture, this function should be invoked at most
+	/// once.
+	void RegisterDisassembler(const std::string &name, Asm *as)
+	{
+		Arch *arch = Register(name);
+		arch->setAsm(as);
+	}
+
+	/// Register an emulator for the architecture with the given name. For
+	/// a given architecture, this function should be invoked at most once.
+	void RegisterEmulator(const std::string &name, Emu *emu)
+	{
+		Arch *arch = Register(name);
+		arch->setEmu(emu);
+	}
+
+	/// Register a timing simulator for the architecture with the given
+	/// name. For a given architecture, this function should be invoked at
+	/// most once.
+	void RegisterTiming(const std::string &name, Timing *timing)
+	{
+		Arch *arch = Register(name);
+		arch->setTiming(timing);
+		timing_arch_list.push_back(arch);
+	}
 
 	/// Return an architecture given its name, or null if no architecture
 	/// is found with that name. The string comparison is done without
@@ -195,6 +240,9 @@ public:
 	{
 		return timing_arch_list.end();
 	}
+
+	/// Return the number of architectures with timing simulation
+	int getNumTiming() const { return timing_arch_list.size(); }
 };
 
 
