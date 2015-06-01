@@ -347,7 +347,7 @@ void Timing::ParseConfiguration(std::string &config_file)
 	for (int i = 0; i < ini_file.getNumSections(); i++)
 	{
 		std::string section_name = ini_file.getSection(i);
-		if (misc::StringPrefix(section_name, "General"))
+		if (section_name.compare("General") == 0)
 		{
 			frequency = ini_file.ReadInt(section_name, "Frequency", frequency);
 			if (!esim::Engine::isValidFrequency(frequency))
@@ -356,19 +356,20 @@ void Timing::ParseConfiguration(std::string &config_file)
 						ini_file.getPath().c_str()));
 			CPU::ParseConfiguration(section_name, ini_file);
 		}
-		if (misc::StringPrefix(section_name, "Pipeline"))
+		if (section_name.compare("Pipeline") == 0)
 		{
 			CPU::ParseConfiguration(section_name, ini_file);
 		}
-		if (misc::StringPrefix(section_name, "Queues"))
+		if (section_name.compare("Queues") == 0)
 		{
 			CPU::ParseConfiguration(section_name, ini_file);
+			RegisterFile::ParseConfiguration(section_name, ini_file);
 		}
-		if (misc::StringPrefix(section_name, "BranchPredictor"))
+		if (section_name.compare("BranchPredictor") == 0)
 		{
 			BranchPredictor::ParseConfiguration(section_name, ini_file);
 		}
-		if (misc::StringPrefix(section_name, "TraceCache"))
+		if (section_name.compare("TraceCache") == 0)
 		{
 			TraceCache::ParseConfiguration(section_name, ini_file);
 		}

@@ -188,6 +188,17 @@ public:
 	void incRatFpWrites() { rat_fp_writes++; }
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
+	/// Decrement counters
+	void decRegFileIntCount() { reg_file_int_count--; }
+	void decRegFileFpCount() { reg_file_fp_count--; }
+	void decRegFileXmmCount() { reg_file_xmm_count--; }
+	void decRatIntReads() { rat_int_reads--; }
+	void decRatFpReads() { rat_fp_reads--; }
+	void decRatXmmReads() { rat_xmm_reads--; }
+	void decRatIntWrites() { rat_int_writes--; }
+	void decRatFpWrites() { rat_fp_writes--; }
+	void decRatXmmWrites() { rat_xmm_writes--; }
+
 	/// Getters
 	int getIDInCore() const { return id_in_core; }
 	int getRegFileIntCount() { return reg_file_int_count; }
