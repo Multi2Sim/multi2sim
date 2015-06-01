@@ -282,8 +282,10 @@ void System::ConfigReadNetworks(misc::IniFile *ini_file)
 			continue;
 		name.erase(0, 8);
 
+		// Check that network name is not duplicated
+
 		// Create network
-		networks.emplace_back(misc::new_unique<net::Network>(name));
+		addNetwork(name);
 		debug << "\tNetwork '" << name << "' created\n";
 	}
 	debug << '\n';
@@ -567,15 +569,13 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 				err_config_note));
 
 	// Create module
-	modules.emplace_back(misc::new_unique<Module>(
-			module_name,
+	Module *module = addModule(module_name,
 			Module::TypeCache,
 			num_ports,
 			block_size,
-			latency));
+			latency);
 	
 	// Initialize module
-	Module *module = modules.back().get();
 	module->setDirectoryProperties(num_sets, num_ways, directory_latency);
 	module->setMSHRSize(mshr_size);
 
@@ -675,15 +675,13 @@ Module *System::ConfigReadMainMemory(misc::IniFile *ini_file,
 				err_config_note));
 
 	// Create module
-	modules.emplace_back(misc::new_unique<Module>(
-			module_name,
+	Module *module = addModule(module_name,
 			Module::TypeMainMemory,
 			num_ports,
 			block_size,
-			latency));
+			latency);
 
 	// Initialize module
-	Module *module = modules.back().get();
 	int directory_num_sets = directory_size / directory_num_ways;
 	module->setDirectoryProperties(directory_num_sets,
 			directory_num_ways,

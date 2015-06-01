@@ -18,6 +18,7 @@
  */
 
 #include <arch/common/Arch.h>
+#include <memory/System.h>
 
 #include "Timing.h"
 
@@ -332,22 +333,161 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 }
 
 
+void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
+		const std::string &section)
+{
+	// Allow these sections in case we quit before reading them.
+	ini_file->Allow(section, "DataModule");
+	ini_file->Allow(section, "InstModule");
+	ini_file->Allow(section, "Module");
+
+	// Check right presence of sections
+	bool unified_present = ini_file->Exists(section, "Module");
+	bool data_inst_present = ini_file->Exists(section, "DataModule") &&
+			ini_file->Exists(section, "InstModule");
+	if (!(unified_present ^ data_inst_present))
+		throw Error(misc::fmt("%s: section [%s]: invalid combination of "
+				"modules. An x86 entry to the memory hierarchy "
+				"needs to specify either a unified entry for "
+				"data and instructions (variable 'Module'), or "
+				"two separate entries for data and instructions "
+				"(variables 'DataModule' and 'InstModule'), "
+				"but not both.\n",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+
+	// Read core
+	int core_index = ini_file->ReadInt(section, "Core", -1);
+	if (core_index < 0)
+		throw Error(misc::fmt("%s: section [%s]: invalid or missing "
+				"value for 'Core'",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+
+	// Read thread
+	int thread_index = ini_file->ReadInt(section, "Thread", -1);
+	if (thread_index < 0)
+		throw Error(misc::fmt("%s: section [%s]: invalid or missing "
+				"value for 'Thread'",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+
+	// Check bounds
+	if (core_index >= CPU::getNumCores() ||
+			thread_index >= CPU::getNumThreads())
+	{
+		misc::Warning("%s: section [%s] ignored, referring to x86 Core "
+				"%d, Thread %d.\n"
+				"\tThis section refers to a core or thread "
+				"that does not currently exists. Please review "
+				"your x86 configuration file if this behavior "
+				"is not desired.",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				core_index,
+				thread_index);
+		return;
+	}
+
+	// Check that entry has not been assigned before
+	Thread *thread = cpu->getThread(core_index, thread_index);
+	if (thread->getDataModule() || thread->getInstModule())
+	{
+		assert(thread->getDataModule() && thread->getInstModule());
+		throw Error(misc::fmt("%s: section [%s]: entry from Core %d, "
+				"Thread %d already assigned.\n"
+				"\tA different [Entry <name>] section in the "
+				"memory configuration file has already "
+				"assigned an entry for this particular core and "
+				"thread. Please review your configuration file "
+				"to avoid duplicates.",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				core_index,
+				thread_index));
+	}
+
+	// Read modules
+	std::string data_module_name;
+	std::string inst_module_name;
+	if (data_inst_present)
+	{
+		data_module_name = ini_file->ReadString(section, "DataModule");
+		inst_module_name = ini_file->ReadString(section, "InstModule");
+		assert(!data_module_name.empty());
+		assert(!inst_module_name.empty());
+	}
+	else
+	{
+		data_module_name = inst_module_name = ini_file->ReadString(
+				section, "Module");
+		assert(!data_module_name.empty());
+	}
+
+	// Assign data module
+	mem::System *memory_system = mem::System::getInstance();
+	mem::Module *data_module = memory_system->getModule(data_module_name);
+	thread->setDataModule(data_module);
+	if (!data_module)
+		throw Error(misc::fmt("%s: section [%s]: '%s' is not a valid "
+				"module name.\n"
+				"\tThe given module name must match a module "
+				"declared in a section [Module <name>] in the "
+				"memory configuration file.\n",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				data_module_name.c_str()));
+
+	// Assign instruction module
+	mem::Module *inst_module = memory_system->getModule(inst_module_name);
+	thread->setInstModule(inst_module);
+	if (!inst_module)
+		throw Error(misc::fmt("%s: section [%s]: '%s' is not a valid "
+				"module name.\n"
+				"\tThe given module name must match a module "
+				"declared in a section [Module <name>] in the "
+				"memory configuration file.\n",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				inst_module_name.c_str()));
+	
+	// Add modules to entry list
+	entry_modules.push_back(data_module);
+	if (data_module != inst_module)
+		entry_modules.push_back(inst_module);
+
+	// Debug
+	mem::System::debug <<
+			"\tx86 Core " << core_index << ", "
+			"Thread " << thread_index << '\n' <<
+			"\t\tEntry for instructions -> " <<
+			inst_module->getName() << '\n' <<
+			"\t\tEntry for data -> " << 
+			data_module->getName() << '\n' <<
+			'\n';
+}
+
+
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
-}
-
-
-int Timing::getNumEntryModules()
-{
-	// FIXME
-	return 0;
-}
-
-
-mem::Module *Timing::getEntryModule(int index)
-{
-	// FIXME
-	return nullptr;
+	// Check that all cores/threads have an entry to the memory hierarchy.
+	for (int i = 0; i < cpu->getNumCores(); i++)
+	{
+		Core *core = cpu->getCore(i);
+		for (int j = 0; j < core->getNumThreads(); j++)
+		{
+			Thread *thread = core->getThread(j);
+			if (!thread->getDataModule() || !thread->getInstModule())
+				throw Error(misc::fmt("%s: x86 Core %d, Thread %d "
+						"lacks a data/instruction entry to memory.\n"
+						"\tPlease add a new [Entry <name>] section "
+						"in your memory configuration file to "
+						"associate this hardware thread with a "
+						"memory module.",
+						ini_file->getPath().c_str(),
+						i, j));
+		}
+	}
 }
 
 
