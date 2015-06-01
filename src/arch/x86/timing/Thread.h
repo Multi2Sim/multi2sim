@@ -111,8 +111,8 @@ private:
 	long long fetch_stall_until = 0;  // Cycle until which fetching is stalled (inclussive)
 
 	// Entries to the memory system
-	std::shared_ptr<mem::Module> data_mod;  // Entry for data
-	std::shared_ptr<mem::Module> inst_mod;  // Entry for instructions
+	mem::Module *data_module = nullptr;  // Entry for data
+	mem::Module *inst_module = nullptr;  // Entry for instructions
 
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
@@ -174,9 +174,6 @@ public:
 	/// Constructor
 	Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core);
 
-	/// Setters
-
-
 	/// Increment counters
 	void incRegFileIntCount() { reg_file_int_count++; }
 	void incRegFileFpCount() { reg_file_fp_count++; }
@@ -210,6 +207,28 @@ public:
 	int getRatIntWrites() { return rat_int_writes; }
 	int getRatFpWrites() { return rat_fp_writes; }
 	int getRatXmmWrites() { return rat_xmm_writes; }
+
+	/// Return the entry module to the memory hierarchy for data
+	mem::Module *getDataModule() const { return data_module; }
+
+	/// Assign the entry module to the memory hierarchy for data. This
+	/// function should be invoked only once.
+	void setDataModule(mem::Module *data_module)
+	{
+		assert(!this->data_module);
+		this->data_module = data_module;
+	}
+
+	/// Return the entry module to the memory hierarchy for instructions
+	mem::Module *getInstModule() const { return inst_module; }
+
+	/// Assign the entry module to the memory hierarchy for instructions.
+	/// This function should be invoked only once.
+	void setInstModule(mem::Module *inst_module)
+	{
+		assert(!this->inst_module);
+		this->inst_module = inst_module;
+	}
 
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();

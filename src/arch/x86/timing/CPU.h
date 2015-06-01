@@ -28,6 +28,7 @@
 #include <arch/x86/emu/Emu.h>
 
 #include "Core.h"
+#include "Thread.h"
 #include "Uop.h"
 
 namespace x86
@@ -184,6 +185,20 @@ public:
 	static int getContextQuantum() { return context_quantum; }
 	static int getThreadQuantum() { return thread_quantum; }
 	static int getThreadSwitchPenalty() { return thread_switch_penalty; }
+
+	/// Return the core with the given index
+	Core *getCore(int index) const
+	{
+		assert(index >= 0 && index < (int) cores.size());
+		return cores[index].get();
+	}
+
+	/// Given a core and thread index, return the associated thread object
+	Thread *getThread(int core_index, int thread_index) const
+	{
+		Core *core = getCore(core_index);
+		return core->getThread(thread_index);
+	}
 
 	/// Dump functions
 	void Dump();

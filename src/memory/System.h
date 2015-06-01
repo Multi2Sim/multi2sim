@@ -21,6 +21,7 @@
 #define MEMORY_SYSTEM_H
 
 #include <list>
+#include <map>
 #include <memory>
 
 #include <lib/cpp/Debug.h>
@@ -102,6 +103,40 @@ class System
 
 	// Frequency of memory system in MHz
 	static int frequency;
+	
+	// Construct a module and add it to the list and map of modules. The
+	// arguments for this function match the arguments for the constructor
+	// of the module. No module with the same name must exist.
+	Module *addModule(const std::string &name,
+			Module::Type type,
+			int num_ports,
+			int block_size,
+			int data_latency)
+	{
+		assert(module_map.find(name) == module_map.end());
+		modules.emplace_back(misc::new_unique<Module>(
+				name,
+				type,
+				num_ports,
+				block_size,
+				data_latency));
+		Module *module = modules.back().get();
+		module_map[name] = module;
+		return module;
+	}
+
+	// Construct a network and add it to the list and map of networks. No
+	// pair of networks should have the same name.
+	net::Network *addNetwork(const std::string &name)
+	{
+		assert(network_map.find(name) == network_map.end());
+		networks.emplace_back(misc::new_unique<net::Network>(name));
+		net::Network *network = networks.back().get();
+		network_map[name] = network;
+		return network;
+	}
+
+
 
 
 	//
@@ -193,10 +228,38 @@ class System
 	// List of networks
 	std::list<std::unique_ptr<net::Network>> networks;
 
+	// Map of networks, indexed by their name
+	std::map<std::string, net::Network *> network_map;
+
 	// List of modules
 	std::list<std::unique_ptr<Module>> modules;
 
+	// Map of modules, indexed by their name
+	std::map<std::string, Module *> module_map;
+
 public:
+
+	/// Return a module given its name, or nullptr if no module with that
+	/// name exists.
+	Module *getModule(const std::string &name) const
+	{
+		auto it = module_map.find(name);
+		return it == module_map.end() ? nullptr : it->second;
+	}
+
+	/// Return a network given its name, or nullptr if no network with that
+	/// name exists.
+	net::Network *getNetwork(const std::string &name) const
+	{
+		auto it = network_map.find(name);
+		return it == network_map.end() ? nullptr : it->second;
+	}
+
+
+
+	//
+	// Static fields
+	//
 
 	/// Memory system trace
 	static esim::Trace trace;
