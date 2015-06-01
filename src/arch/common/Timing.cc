@@ -19,11 +19,21 @@
 
 #include <lib/cpp/Error.h>
 
+#include "Arch.h"
 #include "Timing.h"
 
 
 namespace comm
 {
+
+Timing::Timing(const std::string &name) :
+		name(name)
+{
+	// Register timing simulator in architecture pool
+	ArchPool *arch_pool = ArchPool::getInstance();
+	arch_pool->RegisterTiming(name, this);
+}
+
 	
 void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 {

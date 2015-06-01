@@ -27,8 +27,13 @@ namespace comm
 
 class Asm
 {
+	// Name of disassembler
+	std::string name;
 
 public:
+
+	/// Constructor
+	Asm(const std::string &name);
 
 	/// Check whether a token is found in the begninning of a format string.
 	///

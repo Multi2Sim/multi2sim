@@ -64,7 +64,7 @@ void Asm::ProcessOptions()
 }
 
 
-Asm::Asm()
+Asm::Asm() : comm::Asm("ARM")
 {
 	// Form the Instruction table and read Information from table
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \

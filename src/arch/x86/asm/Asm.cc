@@ -142,7 +142,7 @@ void Asm::FreeInstDecodeInfo(InstDecodeInfo *elem)
 }
 
 
-Asm::Asm()
+Asm::Asm() : comm::Asm("x86")
 {
 	// Initialize instruction information list
 	memset(inst_info, 0, sizeof inst_info);

@@ -68,7 +68,7 @@ class Timing : public comm::Timing
 	static int frequency;
 
 	// Private constructor for singleton
-	Timing();
+	Timing() : comm::Timing("x86") { }
 
 public:
 
@@ -99,19 +99,31 @@ public:
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful
 	/// timing simulation, and \c false if all timing simulation finished execution.
-	bool Run();
+	bool Run() override;
 
 	/// Dump a default memory configuration for the architecture. This
 	/// function is invoked by the memory system configuration parser when
 	/// no specific memory configuration is given by the user for the
 	/// architecture.
-	void WriteMemoryConfiguration(misc::IniFile *ini_file);
+	void WriteMemoryConfiguration(misc::IniFile *ini_file) override;
 
 	/// Check architecture-specific requirements for the memory
 	/// memory configuration provided in the INI file. This function is
 	/// invoked by the memory configuration parser.
-	void CheckMemoryConfiguration(misc::IniFile *ini_file);
+	void CheckMemoryConfiguration(misc::IniFile *ini_file) override;
 
+	/// Return the number of entry modules from this architecture into the
+	/// memory hierarchy.
+	int getNumEntryModules() override;
+
+	/// Return the entry module from the architecture into the memory
+	/// hierarchy given its index. The index must be a value between 0 and
+	/// getNumEntryModules() - 1.
+	mem::Module *getEntryModule(int index) override;
+	
+	
+	
+	
 	//
 	// Debuggers and configuration
 	//

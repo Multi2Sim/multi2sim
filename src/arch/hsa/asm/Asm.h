@@ -38,13 +38,13 @@ protected:
 	static std::unique_ptr<Asm> instance;
 
 	// Indent of current line
-	int indent;
+	int indent = 0;
 
 	// Set if indentation is enabled
 	bool doIndent = true;
 
 	// Private constructor for singleton
-	Asm();
+	Asm() : comm::Asm("HSA") { }
 
 public:
 

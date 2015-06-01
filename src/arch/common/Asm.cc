@@ -22,11 +22,20 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
+#include "Arch.h"
 #include "Asm.h"
 
 
 namespace comm
 {
+
+Asm::Asm(const std::string &name) :
+		name(name)
+{
+	// Register disassembler in architecture pool
+	ArchPool *arch_pool = ArchPool::getInstance();
+	arch_pool->RegisterDisassembler(name, this);
+}
 
 
 bool Asm::isToken(const std::string &fmt, const std::string &token,

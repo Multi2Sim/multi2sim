@@ -171,16 +171,6 @@ void Emu::ProcessOptions()
 }
 
 
-Emu::Emu() : comm::Emu("x86")
-{
-	// Initialize
-	pid = 100;
-	process_events_force = false;
-	schedule_signal = false;
-	futex_sleep_count = 0;
-	address_space_index = 0;
-}
-
 void Emu::AddContextToList(Context::ListType type, Context *context)
 {
 	// Nothing if already present
