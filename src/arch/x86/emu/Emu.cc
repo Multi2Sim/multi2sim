@@ -45,9 +45,6 @@ std::string Emu::syscall_debug_file;
 // Maximum number of instructions
 long long Emu::max_instructions;
 
-// Simulation kind
-comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
-
 bool Emu::process_prefetch_hints = false;
 
 
@@ -147,12 +144,6 @@ void Emu::RegisterOptions()
 			"This option determines whether or not to process "
 			"prefetch x86 instructions, and trigger prefetching "
 			"requests during a timing simulation.");
-
-	// Option --x86-sim <kind>
-	command_line->RegisterEnum("--x86-sim {functional|detailed} "
-			"(default = functional)",
-			(int &) sim_kind, comm::Arch::SimKindMap,
-			"Level of accuracy of x86 simulation.");
 }
 
 

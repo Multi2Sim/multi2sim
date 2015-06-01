@@ -72,9 +72,6 @@ class Emu : public comm::Emu
 	// Maximum number of instructions
 	static long long max_instructions;
 
-	// Simulation kind
-	static comm::Arch::SimKind sim_kind;
-
 	// Process prefetch instructions
 	static bool process_prefetch_hints;
 
@@ -252,9 +249,6 @@ public:
 	
 	/// Debugger for system calls
 	static misc::Debug syscall_debug;
-
-	/// Return the simulation kind
-	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 
 	/// Return whether prefetch hints should be processed
 	static bool getProcessPrefetchHints() { return process_prefetch_hints; }
