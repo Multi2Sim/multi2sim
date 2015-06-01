@@ -130,7 +130,7 @@ public:
 	void Save(const std::string &path) const;
 
 	/// Dump the content of the INI file into an output stream
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Alternative syntax to dump file into output stream
 	friend std::ostream &operator<<(std::ostream &os,
