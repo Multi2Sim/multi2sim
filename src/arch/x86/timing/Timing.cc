@@ -265,13 +265,75 @@ bool Timing::Run()
 
 void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 {
+	// Cache geometry for L1
+	std::string section = "CacheGeometry x86-geo-l1";
+	ini_file->WriteInt(section, "Sets", 16);
+	ini_file->WriteInt(section, "Assoc", 2);
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 1);
+	ini_file->WriteString(section, "Policy", "LRU");
 
+	// Cache geometry for L2
+	section = "CacheGeometry x86-geo-l2";
+	ini_file->WriteInt(section, "Sets", 64);
+	ini_file->WriteInt(section, "Assoc", 4);
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 10);
+	ini_file->WriteString(section, "Policy", "LRU");
+
+	// L1 caches and entries
+	for (int i = 0; i < CPU::getNumCores(); i++)
+	{
+		// L1 cache
+		std::string module_name = misc::fmt("x86-l1-%d", i);
+		section = "Module " + module_name;
+		ini_file->WriteString(section, "Type", "Cache");
+		ini_file->WriteString(section, "Geometry", "x86-geo-l1");
+		ini_file->WriteString(section, "LowNetwork", "x86-net-l1-l2");
+		ini_file->WriteString(section, "LowModules", "x86-l2");
+
+		// Entry
+		for (int j = 0; j < CPU::getNumThreads(); j++)
+		{
+			section = misc::fmt("Entry x86-core-%d-thread-%d", i, j);
+			ini_file->WriteString(section, "Arch", "x86");
+			ini_file->WriteInt(section, "Core", i);
+			ini_file->WriteInt(section, "Thread", j);
+			ini_file->WriteString(section, "Module", module_name);
+		}
+	}
+
+	// L2 cache
+	section = "Module x86-l2";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "x86-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "x86-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "x86-net-l2-mm");
+	ini_file->WriteString(section, "LowModules", "x86-mm");
+
+	// Main memory
+	section = "Module x86-mm";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "x86-net-l2-mm");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+
+	// Network connecting L1 caches and L2
+	section = "Network x86-net-l1-l2";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 144);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 144);
+	ini_file->WriteInt(section, "DefaultBandwidth", 72);
+
+	// Network connecting L2 cache and global memory
+	section = "Network x86-net-l2-mm";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
 }
 
 
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
-
 }
 
 
