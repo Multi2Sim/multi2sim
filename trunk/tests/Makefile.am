@@ -16,7 +16,9 @@ TESTS += \
 	\
 	src_arch_hsa_asm_test \
 	\
-	src_arch_x86_timing_test
+	src_arch_x86_timing_test \
+	\
+	src_memory_test
 
 check_PROGRAMS = \
 	src_lib_esim_test \
@@ -25,7 +27,9 @@ check_PROGRAMS = \
 	\
 	src_arch_hsa_asm_test \
 	\
-	src_arch_x86_timing_test
+	src_arch_x86_timing_test \
+	\
+	src_memory_test
 
 
 
@@ -69,3 +73,15 @@ src_arch_x86_timing_test_LDADD = \
 src_arch_x86_timing_test_SOURCES = \
 	src/arch/x86/timing/TestBranchPredictor.cc \
 	src/arch/x86/timing/TestTraceCache.cc
+	
+	
+src_memory_test_LDADD = \
+	$(top_builddir)/src/memory/libmemory.a \
+	$(top_builddir)/src/network/libnetwork.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/arch/common/libcommon.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a \
+	$(am__append_2) -lz
+
+src_memory_test_SOURCES = \
+	src/memory/TestSystemConfig.cc

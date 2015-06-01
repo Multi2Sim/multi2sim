@@ -59,7 +59,7 @@ private:
 		// The LSB corresponds to the first branch in the trace.
 		int branch_flags;
 
-		// Flag that indicate whether the last instruction is a branch or not
+		// Flag that indicates whether the last instruction is a branch or not
 		bool is_last_instruction_branch = false;
 
 		// Address of the instruction following the last instruction in the
