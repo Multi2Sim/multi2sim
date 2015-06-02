@@ -91,62 +91,62 @@ CPU::CPU()
 }
 
 
-void CPU::ParseConfiguration(misc::IniFile &ini_file)
+void CPU::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Local variable
 	std::string section;
 
 	// Section '[ General ]'
 	section = "General";
-	num_cores = ini_file.ReadInt(section, "Cores", num_cores);
-	num_threads = ini_file.ReadInt(section, "Threads", num_threads);
-	context_quantum = ini_file.ReadInt(section, "ContextQuantum", 100000);
-	thread_quantum = ini_file.ReadInt(section, "ThreadQuantum", 1000);
-	thread_switch_penalty = ini_file.ReadInt(section, "ThreadSwitchPenalty", 0);
-	recover_kind = (RecoverKind)ini_file.ReadEnum(section, "RecoverKind",
+	num_cores = ini_file->ReadInt(section, "Cores", num_cores);
+	num_threads = ini_file->ReadInt(section, "Threads", num_threads);
+	context_quantum = ini_file->ReadInt(section, "ContextQuantum", 100000);
+	thread_quantum = ini_file->ReadInt(section, "ThreadQuantum", 1000);
+	thread_switch_penalty = ini_file->ReadInt(section, "ThreadSwitchPenalty", 0);
+	recover_kind = (RecoverKind)ini_file->ReadEnum(section, "RecoverKind",
 			RecoverKindMap, RecoverKindWriteback);
-	recover_penalty = ini_file.ReadInt(section, "RecoverPenalty", 0);
-	process_prefetch_hints = ini_file.ReadBool(section, "ProcessPrefetchHints", true);
-	use_nc_store = ini_file.ReadBool(section,"UseNCStore", false);
+	recover_penalty = ini_file->ReadInt(section, "RecoverPenalty", 0);
+	process_prefetch_hints = ini_file->ReadBool(section, "ProcessPrefetchHints", true);
+	use_nc_store = ini_file->ReadBool(section,"UseNCStore", false);
 	if (use_nc_store && (num_cores * num_threads > 1))
 	{
-		misc::fatal("When UseNCStore = True, Cores and Threads must be 1.");
+		throw Error("When UseNCStore = True, Cores and Threads must be 1.");
 	}
-	prefetch_history_size = ini_file.ReadInt(section, "PrefetchHistorySize", 10);
+	prefetch_history_size = ini_file->ReadInt(section, "PrefetchHistorySize", 10);
 
 	// Section '[ Pipeline ]'
 	section = "Pipeline";
-	fetch_kind = (FetchKind)ini_file.ReadEnum(section, "FetchKind",
+	fetch_kind = (FetchKind) ini_file->ReadEnum(section, "FetchKind",
 			FetchKindMap, FetchKindTimeslice);
-	decode_width = ini_file.ReadInt(section, "DecodeWidth", 4);
-	dispatch_kind = (DispatchKind)ini_file.ReadEnum(section, "DispatchKind",
+	decode_width = ini_file->ReadInt(section, "DecodeWidth", 4);
+	dispatch_kind = (DispatchKind) ini_file->ReadEnum(section, "DispatchKind",
 			DispatchKindMap, DispatchKindTimeslice);
-	dispatch_width = ini_file.ReadInt(section, "DispatchWidth", 4);
-	issue_kind = (IssueKind)ini_file.ReadEnum(section, "IssueKind",
+	dispatch_width = ini_file->ReadInt(section, "DispatchWidth", 4);
+	issue_kind = (IssueKind) ini_file->ReadEnum(section, "IssueKind",
 			IssueKindMap, IssueKindTimeslice);
-	issue_width = ini_file.ReadInt(section, "IssueWidth", 4);
-	commit_kind = (CommitKind)ini_file.ReadEnum(section, "CommitKind",
+	issue_width = ini_file->ReadInt(section, "IssueWidth", 4);
+	commit_kind = (CommitKind) ini_file->ReadEnum(section, "CommitKind",
 			CommitKindMap, CommitKindShared);
-	commit_width = ini_file.ReadInt(section, "CommitWidth", 4);
-	occupancy_stats = ini_file.ReadBool(section, "OccupancyStats", false);
+	commit_width = ini_file->ReadInt(section, "CommitWidth", 4);
+	occupancy_stats = ini_file->ReadBool(section, "OccupancyStats", false);
 
 	// Section '[ Queues ]'
 	section = "Queues";
-	/*x86_fetch_queue_size = ini_file.ReadInt(section, "FetchQueueSize", 64);
+	/*x86_fetch_queue_size = ini_file->ReadInt(section, "FetchQueueSize", 64);
 
-	x86_uop_queue_size = ini_file.ReadInt(section, "UopQueueSize", 32);
+	x86_uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
 
-	x86_rob_kind = ini_file.ReadEnum(section, "RobKind",
+	x86_rob_kind = ini_file->ReadEnum(section, "RobKind",
 			x86_rob_kind_private, x86_rob_kind_map, 2);
-	x86_rob_size = ini_file.ReadInt(section, "RobSize", 64);
+	x86_rob_size = ini_file->ReadInt(section, "RobSize", 64);
 
-	x86_iq_kind = ini_file.ReadEnum(section, "IqKind",
+	x86_iq_kind = ini_file->ReadEnum(section, "IqKind",
 			x86_iq_kind_private, x86_iq_kind_map, 2);
-	x86_iq_size = ini_file.ReadInt(section, "IqSize", 40);
+	x86_iq_size = ini_file->ReadInt(section, "IqSize", 40);
 
-	x86_lsq_kind = ini_file.ReadEnum(section, "LsqKind",
+	x86_lsq_kind = ini_file->ReadEnum(section, "LsqKind",
 			x86_lsq_kind_private, x86_lsq_kind_map, 2);
-	x86_lsq_size = ini_file.ReadInt(section, "LsqSize", 20);*/
+	x86_lsq_size = ini_file->ReadInt(section, "LsqSize", 20);*/
 }
 
 }

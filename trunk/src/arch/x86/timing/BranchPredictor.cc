@@ -86,43 +86,43 @@ BranchPredictor::BranchPredictor(const std::string &name)
 }
 
 
-void BranchPredictor::ParseConfiguration(misc::IniFile &ini_file)
+void BranchPredictor::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// section
 	std::string section = "BranchPredictor";
 
 	// Load branch predictor type
-	kind = (Kind)ini_file.ReadEnum(section, "Kind",
+	kind = (Kind) ini_file->ReadEnum(section, "Kind",
 			KindMap, KindTwolevel);
 
 	// Load branch predictor parameter
-	btb_sets = ini_file.ReadInt(section, "BTB.Sets", 256);
-	btb_assoc = ini_file.ReadInt(section, "BTB.Assoc", 4);
-	bimod_size = ini_file.ReadInt(section, "Bimod.Size", 1024);
-	choice_size = ini_file.ReadInt(section, "Choice.Size", 1024);
-	ras_size = ini_file.ReadInt(section, "RAS.Size", 32);
-	twolevel_l1size = ini_file.ReadInt(section, "TwoLevel.L1Size", 1);
-	twolevel_l2size = ini_file.ReadInt(section, "TwoLevel.L2Size", 1024);
-	twolevel_history_size = ini_file.ReadInt(section, "TwoLevel.HistorySize", 8);
+	btb_sets = ini_file->ReadInt(section, "BTB.Sets", 256);
+	btb_assoc = ini_file->ReadInt(section, "BTB.Assoc", 4);
+	bimod_size = ini_file->ReadInt(section, "Bimod.Size", 1024);
+	choice_size = ini_file->ReadInt(section, "Choice.Size", 1024);
+	ras_size = ini_file->ReadInt(section, "RAS.Size", 32);
+	twolevel_l1size = ini_file->ReadInt(section, "TwoLevel.L1Size", 1);
+	twolevel_l2size = ini_file->ReadInt(section, "TwoLevel.L2Size", 1024);
+	twolevel_history_size = ini_file->ReadInt(section, "TwoLevel.HistorySize", 8);
 
 	// Two-level branch predictor parameter
 	twolevel_l2height = 1 << twolevel_history_size;
 
 	// Integrity
 	if (bimod_size & (bimod_size - 1))
-		misc::fatal("number of entries in bimodal precitor must be a power of 2");
+		throw Error("number of entries in bimodal precitor must be a power of 2");
 	if (choice_size & (choice_size - 1))
-		misc::fatal("number of entries in choice predictor must be power of 2");
+		throw Error("number of entries in choice predictor must be power of 2");
 	if (btb_sets & (btb_sets - 1))
-		misc::fatal("number of BTB sets must be a power of 2");
+		throw Error("number of BTB sets must be a power of 2");
 	if (btb_assoc & (btb_assoc - 1))
-		misc::fatal("BTB associativity must be a power of 2");
+		throw Error("BTB associativity must be a power of 2");
 	if (twolevel_history_size < 1 || twolevel_history_size > 30)
-		misc::fatal("predictor history size must be >=1 and <=30");
+		throw Error("predictor history size must be >=1 and <=30");
 	if (twolevel_l1size & (twolevel_l1size - 1))
-		misc::fatal("two-level predictor sizes must be power of 2");
+		throw Error("two-level predictor sizes must be power of 2");
 	if (twolevel_l2size & (twolevel_l2size - 1))
-		misc::fatal("two-level predictor sizes must be power of 2");
+		throw Error("two-level predictor sizes must be power of 2");
 }
 
 

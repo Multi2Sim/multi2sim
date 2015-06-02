@@ -161,7 +161,7 @@ public:
 	static void ProcessOptions();
 
 	/// Parse the configuration file
-	static void ParseConfiguration(misc::IniFile &ini_file);
+	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Return the simulation level set by command-line options '--x86-sim'
 	static comm::Arch::SimKind getSimKind() { return sim_kind; }

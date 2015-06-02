@@ -42,7 +42,7 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	ini_file.LoadFromString(config);
 
 	// Find target section
-	TraceCache::ParseConfiguration(ini_file);
+	TraceCache::ParseConfiguration(&ini_file);
 
 	// Assertions
 	EXPECT_EQ(true, TraceCache::getPresent());
