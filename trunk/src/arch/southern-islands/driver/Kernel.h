@@ -38,7 +38,7 @@ struct EmuBufferDesc;
 class Kernel
 {
 	// Kernel identifier
-	int id;
+	int id = 0;
 
 	// Kernel name
 	std::string name;
@@ -58,11 +58,11 @@ class Kernel
 	std::unique_ptr<SI::Binary> bin_file;
 
 	// Memory requirements
-	int mem_size_local;
-	int mem_size_private;
+	int mem_size_local = 0;
+	int mem_size_private = 0;
 
 	// Kernel function metadata
-	int func_uniqueid;  // Id of kernel function
+	int func_uniqueid = 0;  // Id of kernel function
 
 	void Expect(std::vector<std::string> &token_list, std::string head_token);
 
