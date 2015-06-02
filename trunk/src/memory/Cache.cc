@@ -73,8 +73,8 @@ Cache::Cache(const std::string &name,
 	block_mask = block_size - 1;
 
 	// Allocate blocks and sets
-	blocks.reset(new Block[num_blocks]);
-	sets.reset(new Set[num_sets]);
+	blocks = misc::new_unique_array<Block>(num_blocks);
+	sets = misc::new_unique_array<Set>(num_sets);
 	
 	// Initialize sets and blocks
 	for (unsigned set_id = 0; set_id < num_sets; set_id++)
