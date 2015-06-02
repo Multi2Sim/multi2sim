@@ -40,28 +40,31 @@ Node::Node(Network *network,
 {
 }
 
-Buffer* Node::AddInputBuffer(int size, Connection *connection)
+
+Buffer *Node::AddInputBuffer(int size, Connection *connection)
 {
 	std::string name = misc::fmt("in_buf_%d",
 				(unsigned int) input_buffers.size());
-	auto buffer = misc::new_unique<Buffer>(name, size,
-			input_buffers.size(), this, connection);
-	Buffer* return_buffer = buffer.get();
-	input_buffers.emplace_back(std::move(buffer));
-	return return_buffer;
+	input_buffers.emplace_back(misc::new_unique<Buffer>(
+			name,
+			size,
+			input_buffers.size(),
+			this,
+			connection));
+	return input_buffers.back().get();
 }
 
-Buffer* Node::AddOutputBuffer(int size, Connection *connection)
-{
 
+Buffer *Node::AddOutputBuffer(int size, Connection *connection)
+{
 	std::string name = misc::fmt("out_buf_%d",
 			(unsigned int) output_buffers.size());
-	auto buffer = misc::new_unique<Buffer>(name, size,
-			output_buffers.size(), this, connection);
-	Buffer* return_buffer = output_buffers.back().get();
-	output_buffers.push_back(std::move(buffer));
-	return return_buffer;
-
+	output_buffers.emplace_back(misc::new_unique<Buffer>(name,
+			size,
+			output_buffers.size(),
+			this,
+			connection));
+	return output_buffers.back().get();
 }
 
 

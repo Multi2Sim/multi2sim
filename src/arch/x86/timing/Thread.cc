@@ -22,9 +22,11 @@
 namespace x86
 {
 
-Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core)
-	:
-	name(name), cpu(cpu), core(core), id_in_core(id_in_core)
+Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
+		name(name),
+		cpu(cpu),
+		core(core),
+		id_in_core(id_in_core)
 {
 	// Initialize Uop queue
 
@@ -35,20 +37,17 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core)
 	// Initialize fetch queue
 
 	// Initialize branch predictor
-	std::string branch_predictor_name = this->name + ".Branch Predictor";
-	branch_predictor.reset(new BranchPredictor(branch_predictor_name));
+	branch_predictor = misc::new_unique<BranchPredictor>(name +
+			".BranchPredictor");
 
 	// Initialize trace cache
 	if (TraceCache::getPresent())
-	{
-		std::string trace_cache_name = this->name + ".Trace Cache";
-		trace_cache.reset(new TraceCache(trace_cache_name));
-	}
+		trace_cache = misc::new_unique<TraceCache>(name +
+				".TraceCache");
 
 	// Initialize register file
-	reg_file.reset(new RegisterFile(this->core, this));
+	reg_file = misc::new_unique<RegisterFile>(core, this);
 	reg_file->InitRegisterFile();
-
 }
 
 }
