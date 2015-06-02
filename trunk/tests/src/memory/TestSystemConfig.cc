@@ -45,11 +45,9 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	System *memory_system = System::getInstance();
 
 	// Expected string
-	std::string error_str = misc::fmt("%s: The value for 'Frequency' "
+	std::string expected_str = misc::fmt(".*%s: The value for 'Frequency' "
 			"must be between 1MHz and 1000GHz.\n.*",
 			ini_file.getPath().c_str());
-	Error expected_error(error_str);
-	std::string expected_str = expected_error.getMessage();
 
 	// Test body
 	std::string actual_str;
@@ -59,7 +57,42 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	}
 	catch (misc::Error &actual_error)
 	{
-		actual_str = expected_error.getMessage();
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_type)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Anything";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt(".*%s: .*: invalid or missing "
+			"value for 'Type'.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
 	}
 	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
 }

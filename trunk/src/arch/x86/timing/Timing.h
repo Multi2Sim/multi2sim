@@ -84,7 +84,11 @@ class Timing : public comm::Timing
 	std::vector<mem::Module *> entry_modules;
 
 	// Private constructor for singleton
-	Timing() : comm::Timing("x86") { }
+	Timing() : comm::Timing("x86")
+	{
+		setFrequencyDomain("x86", frequency);
+		cpu.reset(new CPU());
+	}
 
 public:
 
@@ -102,15 +106,8 @@ public:
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
 
-	/// Create new CPU instance
-	void NewCPU()
-	{
-		setFrequencyDomain("x86", frequency);
-
-		// Only instantiate once
-		assert(!cpu.get());
-		cpu.reset(new CPU());
-	}
+	/// get CPU instance
+	CPU *getCPU() { return cpu.get(); }
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful
