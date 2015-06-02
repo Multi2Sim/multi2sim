@@ -108,16 +108,22 @@ void Context::Parse(const std::string &in, const std::string &out)
 		function->EmitBody();
 		function->EmitControlFlow();
 
-		/* LivenessAnalysisPass lap(function);
+	/*	LivenessAnalysisPass lap(function);
 		ConflictGraphPass cgp(function);
 
 		// Run all passes for scalar registers first
 		lap.run();
+		cgp.run();
 
 		// Run all passes for vector registers
 		lap.resetPassType();
+		cgp.resetPassType();
+
 		lap.run();
-		lap.dump(); */
+		cgp.run();
+
+		lap.dump();
+		cgp.dump(); */
 
 		// Dump code
 		f << *function;
