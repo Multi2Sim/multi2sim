@@ -83,16 +83,16 @@ RegisterFile::RegisterFile(Core *core, Thread *thread)
 }
 
 
-void RegisterFile::ParseConfiguration(const std::string &section,
-				misc::IniFile &config)
+void RegisterFile::ParseConfiguration(misc::IniFile &ini_file)
 {
-	kind = (Kind)config.ReadEnum(section, "RfKind",
+	std::string section = "Queues";
+	kind = (Kind)ini_file.ReadEnum(section, "RfKind",
 			KindMap, KindPrivate);
-	int_size = config.ReadInt(section, "RfIntSize", 80);
-	fp_size = config.ReadInt(section, "RfFpSize", 40);
-	xmm_size = config.ReadInt(section, "RfXmmSize", 40);
+	int_size = ini_file.ReadInt(section, "RfIntSize", 80);
+	fp_size = ini_file.ReadInt(section, "RfFpSize", 40);
+	xmm_size = ini_file.ReadInt(section, "RfXmmSize", 40);
 
-	int num_threads = config.ReadInt("General", "Threads", 1);
+	int num_threads = ini_file.ReadInt("General", "Threads", 1);
 
 	if (int_size < MinINTSize)
 		misc::fatal("rf_int_size must be at least %d", MinINTSize);

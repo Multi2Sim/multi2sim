@@ -44,32 +44,24 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	// Set up memory system instance
 	System *memory_system = System::getInstance();
 
-	// Set up a string stream
-	std::ostringstream expected_os;
-
 	// Expected string
-	const char *err_config_note =
-		"\tPlease run 'm2s --mem-help' or consult the Multi2Sim Guide for "
-		"a description of the memory system configuration file format.\n";
-	mem::Error expected_error = misc::fmt("%s: The value for 'Frequency' "
-			"must be between 1MHz and 1000GHz.\n%s",
-			ini_file.getPath().c_str(),
-			err_config_note);
-	expected_error.Dump(expected_os);
-	std::string expected_str = expected_os.str();
+	std::string error_str = misc::fmt("%s: The value for 'Frequency' "
+			"must be between 1MHz and 1000GHz.\n.*",
+			ini_file.getPath().c_str());
+	Error expected_error(error_str);
+	std::string expected_str = expected_error.getMessage();
 
 	// Test body
-	std::ostringstream actual_os;
+	std::string actual_str;
 	try
 	{
 		memory_system->ReadConfiguration(&ini_file);
 	}
 	catch (misc::Error &actual_error)
 	{
-		actual_error.Dump(actual_os);
-		std::string actual_str = actual_os.str();
-		EXPECT_STREQ(expected_str.c_str(), actual_str.c_str());
+		actual_str = expected_error.getMessage();
 	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
 }
 
 }

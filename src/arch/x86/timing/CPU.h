@@ -220,8 +220,7 @@ public:
 	void UpdateOccupancyStats();
 
 	/// Read branch predictor configuration from configuration file
-	static void ParseConfiguration(const std::string &section,
-			misc::IniFile &config);
+	static void ParseConfiguration(misc::IniFile &ini_file);
 };
 
 }

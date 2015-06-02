@@ -59,16 +59,18 @@ TraceCache::TraceCache(const std::string &name)
 }
 
 
-void TraceCache::ParseConfiguration(const std::string &section,
-				misc::IniFile &config)
+void TraceCache::ParseConfiguration(misc::IniFile &ini_file)
 {
+	// Section
+	std::string section = "TraceCache";
+
 	// Read variables
-	present = config.ReadBool(section, "Present", 0);
-	num_sets = config.ReadInt(section, "Sets", 64);
-	assoc = config.ReadInt(section, "Assoc", 4);
-	trace_size = config.ReadInt(section, "TraceSize", 16);
-	branch_max = config.ReadInt(section, "BranchMax", 3);
-	queue_size = config.ReadInt(section, "QueueSize", 32);
+	present = ini_file.ReadBool(section, "Present", 0);
+	num_sets = ini_file.ReadInt(section, "Sets", 64);
+	assoc = ini_file.ReadInt(section, "Assoc", 4);
+	trace_size = ini_file.ReadInt(section, "TraceSize", 16);
+	branch_max = ini_file.ReadInt(section, "BranchMax", 3);
+	queue_size = ini_file.ReadInt(section, "QueueSize", 32);
 
 	// Integrity checks
 	if ((num_sets & (num_sets - 1)) || !num_sets)

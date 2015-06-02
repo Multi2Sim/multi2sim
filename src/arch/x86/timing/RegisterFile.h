@@ -101,8 +101,7 @@ public:
 	RegisterFile(Core *core, Thread *thread);
 
 	/// Read register file configuration from configuration file
-	static void ParseConfiguration(const std::string &section,
-				misc::IniFile &config);
+	static void ParseConfiguration(misc::IniFile &ini_file);
 
 	/// Initialize the register file
 	void InitRegisterFile();

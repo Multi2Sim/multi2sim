@@ -86,22 +86,24 @@ BranchPredictor::BranchPredictor(const std::string &name)
 }
 
 
-void BranchPredictor::ParseConfiguration(const std::string &section,
-		misc::IniFile &config)
+void BranchPredictor::ParseConfiguration(misc::IniFile &ini_file)
 {
+	// section
+	std::string section = "BranchPredictor";
+
 	// Load branch predictor type
-	kind = (Kind)config.ReadEnum(section, "Kind",
+	kind = (Kind)ini_file.ReadEnum(section, "Kind",
 			KindMap, KindTwolevel);
 
 	// Load branch predictor parameter
-	btb_sets = config.ReadInt(section, "BTB.Sets", 256);
-	btb_assoc = config.ReadInt(section, "BTB.Assoc", 4);
-	bimod_size = config.ReadInt(section, "Bimod.Size", 1024);
-	choice_size = config.ReadInt(section, "Choice.Size", 1024);
-	ras_size = config.ReadInt(section, "RAS.Size", 32);
-	twolevel_l1size = config.ReadInt(section, "TwoLevel.L1Size", 1);
-	twolevel_l2size = config.ReadInt(section, "TwoLevel.L2Size", 1024);
-	twolevel_history_size = config.ReadInt(section, "TwoLevel.HistorySize", 8);
+	btb_sets = ini_file.ReadInt(section, "BTB.Sets", 256);
+	btb_assoc = ini_file.ReadInt(section, "BTB.Assoc", 4);
+	bimod_size = ini_file.ReadInt(section, "Bimod.Size", 1024);
+	choice_size = ini_file.ReadInt(section, "Choice.Size", 1024);
+	ras_size = ini_file.ReadInt(section, "RAS.Size", 32);
+	twolevel_l1size = ini_file.ReadInt(section, "TwoLevel.L1Size", 1);
+	twolevel_l2size = ini_file.ReadInt(section, "TwoLevel.L2Size", 1024);
+	twolevel_history_size = ini_file.ReadInt(section, "TwoLevel.HistorySize", 8);
 
 	// Two-level branch predictor parameter
 	twolevel_l2height = 1 << twolevel_history_size;

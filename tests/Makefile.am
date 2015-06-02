@@ -54,6 +54,7 @@ src_network_test_SOURCES = \
 
 src_arch_hsa_asm_test_LDADD = \
 	$(top_builddir)/src/arch/hsa/asm/libasm.a \
+	$(top_builddir)/src/arch/common/libcommon.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_arch_hsa_asm_test_SOURCES = \
