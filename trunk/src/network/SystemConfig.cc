@@ -21,11 +21,12 @@
 
 #include <lib/cpp/Misc.h>
 
+#include "Network.h"
+
 namespace net
 {
 
 int System::net_system_frequency = 1000;
-
 
 void System::ParseConfiguration(const std::string &path)
 {
@@ -53,10 +54,11 @@ void System::ParseConfiguration(const std::string &path)
 
 		std::string network_name = tokens[1];
 
-		Network * net = new Network(network_name);
-		net->ParseConfiguration(section, ini_file);
-		networks.emplace_back(net);
-		network_map.emplace(network_name,net);
+		auto network = misc::new_unique<Network>(network_name);
+		Network *network_ptr = network.get();
+		network->ParseConfiguration(&ini_file, section);
+		networks.emplace_back(std::move(network));
+		network_map.emplace(network_name, network_ptr);
 	}
 
 }

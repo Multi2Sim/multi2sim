@@ -31,6 +31,13 @@ namespace net
 class Buffer;
 class Connection;
 
+RoutingTable::RoutingTable(Network *network) :
+		network(network)
+{
+	this->dimension = network->getNumEndNodes();
+	Initialize();
+}
+
 
 void RoutingTable::Initialize()
 {
@@ -47,11 +54,12 @@ void RoutingTable::Initialize()
 		for (int j = 0; j < dimension; j++)
 		{
 			entries.emplace_back(misc::new_unique<Entry>
-			(i == j ? 0 : dimension));
+			(i == j ? 0 : dimension, nullptr, nullptr));
 		}
 	}
 
 	// Set 1-hop connections
+	/*
 	for (int i = 0; i < dimension; i++)
 	{
 		Node *node = network->getNode(i);
@@ -71,11 +79,13 @@ void RoutingTable::Initialize()
 			}
 		}
 	}
+	*/
 }
 
 
 void RoutingTable::FloydWarshall()
 {
+	/*
 	// The entry->next_node values do not necessarily point
 	// to the immediate next hop after this.
 	for (int k = 0; k < dimension; k++)
@@ -156,6 +166,7 @@ void RoutingTable::FloydWarshall()
 	}
 	// Look for cycle
 	DetectCycle();
+	*/
 }
 
 
@@ -168,8 +179,8 @@ RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 		Node *destination)
 {
 	dimension = network->getNumNodes();
-	int i = source->getID();
-	int j = destination->getID();
+	int i = source->getId();
+	int j = destination->getId();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
 
 	int location = i * dimension + j;

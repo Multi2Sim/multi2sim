@@ -17,18 +17,19 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Network.h"
 #include "Bus.h"
 
 namespace net
 {
 
 
-Bus::Bus(int lanes)
+Bus::Bus(const std::string &name, Network *network, int bandwidth, int lanes) :
+		Connection(name, network, bandwidth)
 {
 	for (int i = 0; i < lanes; i++)
 	{
-		auto lane = misc::new_unique<Lane>();
-		lane->setLaneIndex(this->getNumberLanes());
+		auto lane = misc::new_unique<Lane>(getNumberLanes());
 		this->lanes.emplace_back(std::move(lane));
 	}
 }

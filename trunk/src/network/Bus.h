@@ -22,30 +22,32 @@
 
 #include "Connection.h"
 #include "Buffer.h"
+
 namespace net
 {
-
 class Buffer;
 
 class Bus : public Connection
 {
 public:
+
 	class Lane
 	{
 	protected:
 
 		// lane owner
-		Buffer* owner;
+		Buffer* owner = nullptr;
 
 		// lane is busy until this cycle
-		long long busy_cycle;
+		long long busy_cycle = -1;
 
 		// Lane index
 		int index;
 
 	public:
-		//Set the Lane index in the Bus
-		void setLaneIndex(int index) { this->index = index; }
+
+		// Constructor
+		Lane(int index) : index(index) {}
 
 		// Get the Lane index
 		int getLaneIndex() const { return this->index; }
@@ -59,7 +61,8 @@ protected:
 
 public:
 	// Constructor
-	Bus(int lanes);
+	Bus(const std::string &name, Network *network,
+			int bandwidth, int num_lanes);
 
 	// Get the number of lanes
 	int getNumberLanes() const { return lanes.size(); }
@@ -69,8 +72,6 @@ public:
 
 	// Dump information about Bus
 	void Dump(std::ostream &os) const;
-
-
 
 };
 

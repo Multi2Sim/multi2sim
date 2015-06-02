@@ -48,7 +48,7 @@ class Network
 	std::string name;
 
 	// Message ID counter
-	long long msg_id_counter = 0;
+	long long message_id_counter = 0;
 
 	// A hashtable of messages in flight
 	std::unordered_map<long long, std::unique_ptr<Message>> message_table;
@@ -57,7 +57,7 @@ class Network
 	std::vector<std::unique_ptr<Node>> nodes;
 
 	// Total number of end nodes in the network
-	int end_node_count;
+	int num_end_node = 0;
 
 	// List of links in the network
 	std::vector<std::unique_ptr<Connection>> connections;
@@ -75,22 +75,22 @@ class Network
 	esim::Engine *esim_engine;
 
 	// Parse the config file to add all the nodes belongs to the network
-	void ParseConfigurationForNodes(misc::IniFile &ini_file);
+	void ParseConfigurationForNodes(misc::IniFile *ini_file);
 
 	// Parse the config file to add all the links belongs to the network
-	void ParseConfigurationForLinks(misc::IniFile &ini_file);
+	void ParseConfigurationForLinks(misc::IniFile *ini_file);
 
 	// Parse the config file to add all the buses belongs to the network
-	void ParseConfigurationForBuses(misc::IniFile &ini_file);
+	void ParseConfigurationForBuses(misc::IniFile *ini_file);
 
 	// Parse the config file to add all the bus ports belongs to a bus
-	void ParseConfigurationForBusPorts(misc::IniFile &ini_file);
+	void ParseConfigurationForBusPorts(misc::IniFile *ini_file);
 
 	// Parse the routing elements, for manual routing.
-	bool ParseConfigurationForRoutes(misc::IniFile &ini_file);
+	bool ParseConfigurationForRoutes(misc::IniFile *ini_file);
 
 	// Parse the commands for manual(input trace) injection and testing.
-	void ParseConfigurationForCommands(misc::IniFile &ini_file);
+	void ParseConfigurationForCommands(misc::IniFile *ini_file);
 
 
 
@@ -100,19 +100,19 @@ class Network
 	//
 
 	// Default input buffer size
-	int default_input_buffer_size;
+	int default_input_buffer_size = 4;
 
 	// Default output buffer size
-	int default_output_buffer_size;
+	int default_output_buffer_size = 4;
 
 	// Default bandwidth
-	int default_bandwidth;
+	int default_bandwidth = 4;
 
 	// Defaule packet size
-	int packet_size;
+	int packet_size = 1;
 
 	// Network frequency
-	int net_frequency;
+	int net_frequency = 1e3;
 
 
 
@@ -136,8 +136,8 @@ public:
 	Network(const std::string &name);
 
 	/// Parse the network configuration file.
-	void ParseConfiguration(const std::string &section,
-			misc::IniFile &ini_file);
+	void ParseConfiguration(misc::IniFile *ini_file,
+			const std::string &section);
 
 	/// Dump the network information.
 	void Dump(std::ostream &os) const;
@@ -175,7 +175,7 @@ public:
 			esim::EventType *receive,
 			esim::EventFrame *receive_frame);
 
-	/// Request to send a packet,
+	/// Request to send a message,
 	void RequestSend(Node *source_node, Node *destination_node, int size,
 			esim::EventType *receive_event,
 			esim::EventFrame *receive_frame,
@@ -184,34 +184,34 @@ public:
 
 
 
-	///
-	/// Nodes
-	///
 
-	/// Add node to the network.
-	virtual void AddNode(std::unique_ptr<Node> node) 
-	{
-		nodes.push_back(std::move(node));
-	}
-	
-	/// Produce a node by INI file section.
-	virtual std::unique_ptr<Node> ProduceNodeByIniSection(
-			const std::string &section, 
-			misc::IniFile &config);
+	//
+	// Nodes
+	//
 
-	/// Produce a node by type string.
-	virtual std::unique_ptr<Node> ProduceNode(
-			const std::string &type, 
+	/// Create an end node in the network
+	EndNode *addEndNode(
+			int input_buffer_size, int output_buffer_size,
+			const std::string &name,
+			void *user_data);
+
+	/// Create a switch in the network
+	Switch *addSwitch(int input_buffer_size,
+			int output_buffer_size,
+			int bandwidth,
 			const std::string &name);
 
 	/// find and returns node in the network using node name
 	///
 	/// \param name
 	///	node name
-	virtual Node *getNodeByName(const std::string &name) const;
+	Node *getNodeByName(const std::string &name) const;
 
 	/// Return the number of nodes.
 	int getNumNodes() const { return nodes.size(); }
+
+	/// Return the number of end nodes
+	int getNumEndNodes() const { return num_end_node; }
 
 	/// Return a node by its index.
 	Node *getNode(int index)
@@ -223,12 +223,12 @@ public:
 
 
 
-	///
-	/// Links
-	///
+	//
+	// Links
+	//
 
 	/// Add a link to the network
-	void addLink(const std::string &name,
+	Link *addLink(const std::string name,
 			Node *source_node,
 			Node *dest_node,
 			int bandwidth,
@@ -237,8 +237,7 @@ public:
 			int num_virtual_channels);
 
 	/// Add a bidirectional link to the network
-	void addBidirectionalLink(
-			const std::string &name,
+	void addBidirectionalLink(const std::string name,
 			Node *source_node,
 			Node *dest_node,
 			int bandwidth,
@@ -246,43 +245,19 @@ public:
 			int dest_buffer_size,
 			int num_virtual_channels);
 
-	/// Configure Link by INI file section.
-	void ProduceLinkByIniSection(
-			const std::string &section, 
-			misc::IniFile &config);
-
-	/// Produce a link by link data.
-	virtual std::unique_ptr<Link> ProduceLink(
-			const std::string &name, 
-			Node *source_node, 
-			Node *destination_node,
-			int bandwidth,
-			int input_buffer_size,
-			int output_buffer_size,
-			int virtual_channels);
 
 
 
-
-	///
-	/// Buses
-	///
-
-	/// Configure Bus by INI file section.
-	void ProduceBusByIniSection(const std::string &section,
-			misc::IniFile &ini_file);
-
-	/// Produce a Bus by bus data.
-	std::unique_ptr<Bus> ProduceBus(const std::string &name,
-			int bandwidth,
-			int lanes);
+	//
+	// Buses
+	//
 
 	/// Produce a bus port.
 	void ProduceBusPortByIniSection(const std::string &section,
 				misc::IniFile &ini_file);
 
 	/// Add the Bus to the Connection List of the Network.
-	void AddBus(std::unique_ptr<Bus> bus);
+	void addBus(std::unique_ptr<Bus> bus);
 
 	/// Find and returns connection in the network using connection name.
 	///
@@ -299,17 +274,7 @@ public:
 	///	User data attached by the memory system.
 	Node *getNodeByUserData(void *user_data) const;
 
-	/// Create an end node in the network
-	EndNode *addEndNode(int input_buffer_size,
-			int output_buffer_size,
-			const std::string &name,
-			void *user_data);
 
-	/// Create a switch in the network
-	Switch *addSwitch(int input_buffer_size,
-			int output_buffer_size,
-			int bandwidth,
-			const std::string &name);
 };
 
 
