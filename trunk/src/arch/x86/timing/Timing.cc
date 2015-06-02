@@ -537,13 +537,17 @@ void Timing::RegisterOptions()
 
 void Timing::ProcessOptions()
 {
+	// Configuration
+	misc::IniFile ini_file;
+	if (!config_file.empty())
+	{
+		ini_file.Load(config_file);
+	}
+		ParseConfiguration(ini_file);
+
 	// Instantiate timing simulator if '--x86-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
 		getInstance();
-
-	// Configuration
-	if (!config_file.empty())
-		ParseConfiguration(config_file);
 
 	// Print x86 configuration INI format
 	if (help)
@@ -561,42 +565,29 @@ void Timing::ProcessOptions()
 }
 
 
-void Timing::ParseConfiguration(std::string &config_file)
+void Timing::ParseConfiguration(misc::IniFile &ini_file)
 {
-	// Get INI file format from the original configuration file
-	misc::IniFile ini_file(config_file);
-
 	// Parse configuration by their sections
-	for (int i = 0; i < ini_file.getNumSections(); i++)
-	{
-		std::string section_name = ini_file.getSection(i);
-		if (section_name.compare("General") == 0)
-		{
-			frequency = ini_file.ReadInt(section_name, "Frequency", frequency);
-			if (!esim::Engine::isValidFrequency(frequency))
-				throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
-						"must be between 1MHz and 1000GHz.\n",
-						ini_file.getPath().c_str()));
-			CPU::ParseConfiguration(section_name, ini_file);
-		}
-		if (section_name.compare("Pipeline") == 0)
-		{
-			CPU::ParseConfiguration(section_name, ini_file);
-		}
-		if (section_name.compare("Queues") == 0)
-		{
-			CPU::ParseConfiguration(section_name, ini_file);
-			RegisterFile::ParseConfiguration(section_name, ini_file);
-		}
-		if (section_name.compare("BranchPredictor") == 0)
-		{
-			BranchPredictor::ParseConfiguration(section_name, ini_file);
-		}
-		if (section_name.compare("TraceCache") == 0)
-		{
-			TraceCache::ParseConfiguration(section_name, ini_file);
-		}
-	}
+	std::string section = "General";
+	frequency = ini_file.ReadInt(section, "Frequency", frequency);
+	if (!esim::Engine::isValidFrequency(frequency))
+		throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
+				"must be between 1MHz and 1000GHz.\n",
+				ini_file.getPath().c_str()));
+
+	// Parse CPU configuration by their sections
+	CPU::ParseConfiguration(ini_file);
+
+	// Parse Register File configuration by their sections
+	RegisterFile::ParseConfiguration(ini_file);
+
+	// Parse Branch Predictor configuration by their sections
+	BranchPredictor::ParseConfiguration(ini_file);
+
+	// Parse Trace Cacher configuration by their sections
+	TraceCache::ParseConfiguration(ini_file);
+
+
 }
 
 } // namespace x86

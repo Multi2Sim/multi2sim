@@ -117,8 +117,7 @@ public:
 	BranchPredictor(const std::string &name = "");
 
 	/// Read branch predictor configuration from configuration file
-	static void ParseConfiguration(const std::string &section,
-			misc::IniFile &config);
+	static void ParseConfiguration(misc::IniFile &ini_file);
 
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
