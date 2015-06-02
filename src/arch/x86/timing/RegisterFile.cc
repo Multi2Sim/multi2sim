@@ -83,23 +83,23 @@ RegisterFile::RegisterFile(Core *core, Thread *thread)
 }
 
 
-void RegisterFile::ParseConfiguration(misc::IniFile &ini_file)
+void RegisterFile::ParseConfiguration(misc::IniFile *ini_file)
 {
 	std::string section = "Queues";
-	kind = (Kind)ini_file.ReadEnum(section, "RfKind",
+	kind = (Kind) ini_file->ReadEnum(section, "RfKind",
 			KindMap, KindPrivate);
-	int_size = ini_file.ReadInt(section, "RfIntSize", 80);
-	fp_size = ini_file.ReadInt(section, "RfFpSize", 40);
-	xmm_size = ini_file.ReadInt(section, "RfXmmSize", 40);
+	int_size = ini_file->ReadInt(section, "RfIntSize", 80);
+	fp_size = ini_file->ReadInt(section, "RfFpSize", 40);
+	xmm_size = ini_file->ReadInt(section, "RfXmmSize", 40);
 
-	int num_threads = ini_file.ReadInt("General", "Threads", 1);
+	int num_threads = ini_file->ReadInt("General", "Threads", 1);
 
 	if (int_size < MinINTSize)
-		misc::fatal("rf_int_size must be at least %d", MinINTSize);
+		throw Error(misc::fmt("rf_int_size must be at least %d", MinINTSize));
 	if (fp_size < MinFPSize)
-		misc::fatal("rf_fp_size must be at least %d", MinFPSize);
+		throw Error(misc::fmt("rf_fp_size must be at least %d", MinFPSize));
 	if (xmm_size < MinXMMSize)
-		misc::fatal("rf_xmm_size must be at least %d", MinXMMSize);
+		throw Error(misc::fmt("rf_xmm_size must be at least %d", MinXMMSize));
 
 	if (kind == KindPrivate)
 	{
