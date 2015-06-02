@@ -392,7 +392,8 @@ void System::ConfigInsertModuleInInternalNetwork(
 				err_config_note));
 
 	// Create node
-	network_node = network->addEndNode(default_input_buffer_size,
+	network_node = network->addEndNode(
+			default_input_buffer_size,
 			default_output_buffer_size,
 			module->getName(),
 			module);
@@ -802,7 +803,7 @@ void System::ConfigReadModuleAddressRange(misc::IniFile *ini_file,
 					tokens[2].c_str()));
 		if (div < 1)
 			ConfigInvalidAddressRange(ini_file, module);
-		if (div % module->getBlockSize());
+		if (div % module->getBlockSize())
 			throw Error(misc::fmt("%s: %s: value for <div> must be "
 					"a multiple of block size.\n%s",
 					ini_file->getPath().c_str(),

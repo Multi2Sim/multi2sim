@@ -21,6 +21,9 @@
 #include <lib/esim/Engine.h>
 #include <lib/cpp/Misc.h>
 
+#include "Network.h"
+#include "Node.h"
+#include "EndNode.h"
 #include "System.h"
 
 namespace net
@@ -50,7 +53,7 @@ std::string System::visual_file;
 
 long long System::max_cycles = 1000000;
 
-int System::msg_size = 1;
+int System::message_size = 1;
 
 int System::injection_rate = 0.001;
 
@@ -115,7 +118,7 @@ void System::RegisterOptions()
 
 	// Message size for network stand-alone simulator
 	command_line->RegisterInt32("--net-msg-size <number> (default = 1 Byte)",
-			msg_size,
+			message_size,
 			"For network simulation, packet size in bytes. An entire"
 			" packet is assumed to fit in a node's buffer, but its "
 			"transfer latency through a link will depend on the "
@@ -245,7 +248,7 @@ void System::UniformTrafficSimulation(Network *network)
 		{
 			// Get end node
 			Node *node = network->getNode(i);
-			if (node->getType() != "EndNode")
+			if (dynamic_cast<EndNode *>(node) == nullptr)
 				continue;
 
 			// Check turn for next injection
@@ -259,8 +262,8 @@ void System::UniformTrafficSimulation(Network *network)
 				int num_nodes = network->getNumNodes();
 				int index = random() % num_nodes;
 				dst_node = network->getNode(index);
-				if (dst_node->getType() == "EndNode" &&
-						dst_node != node)
+				if (dynamic_cast<EndNode *>(node) != nullptr
+						&& dst_node != node)
 					continue;
 			}
 
@@ -270,9 +273,9 @@ void System::UniformTrafficSimulation(Network *network)
 				inject_time[i] += RandomExponential(
 						injection_rate);
 				if (network->CanSend(node, dst_node,
-					System::msg_size))
+					System::message_size))
 				network->Send(node, dst_node,
-						System::msg_size,
+						System::message_size,
 						nullptr, nullptr);
 			}
 

@@ -22,6 +22,20 @@
 namespace net
 {
 
+Link::Link(Network *network,
+		const std::string &name,
+		Node *src_node,
+		Node *dst_node,
+		int bandwidth,
+		int source_buffer_size,
+		int destination_buffer_size,
+		int num_virtual_channels) :
+		Connection(name, network, bandwidth),
+		source_node(src_node),
+		destination_node(dst_node),
+		num_virtual_channels(num_virtual_channels)
+{}
+
 void Link::Dump(std::ostream &os = std::cout) const
 {
 	os << misc::fmt("\n***** Link %s *****\n", name.c_str());

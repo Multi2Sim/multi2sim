@@ -46,6 +46,11 @@ class WorkGroup
 	unsigned int group_id_y;
 	unsigned int group_id_z;
 
+	// Current work group size
+	unsigned int current_group_size_x = 0;
+	unsigned int current_group_size_y = 0;
+	unsigned int current_group_size_z = 0;
+
 	// Number of workitems in the workgroup
 	unsigned int num_work_items;
 
@@ -120,6 +125,11 @@ public:
 
 	/// Return the group segment memory manager
 	SegmentManager *getGroupSegment() const { return group_segment.get(); }
+
+	/// Get current workgroup size along a certain dimension
+	/// Due to the fact that HSA allows partial work group, this function 
+	/// is different from getWorkGroupSize();
+	unsigned int getCurrentWorkGroupSize(unsigned int dim);
 
 };
 

@@ -31,59 +31,60 @@ class Buffer;
 
 class Link : public Connection
 {
-protected: 
+
 	// Link source node
 	Node *source_node;
 
 	// Link destination node
 	Node *destination_node;
 
-	// Descriptive Name. Name is shared between two links in case of
-	// Bidirectional link.
-	std::string user_assigned_name;
-
 	// Number of virtual channels on link
-	int virtual_channels;
+	int num_virtual_channels;
+
+
+
 
 	//
 	// Scheduling and arbitration
 	//
 
 	// Link busy cycle for event scheduling
-	long long busy;
+	long long busy = -1;
 
 	// Last cycle a buffer was assigned to a link in virtual channel
 	// arbitration
-	long long scheduled_when;
+	long long scheduled_when = -1;
 
 	// Last buffer that was has the ownership of physical link in virtual
 	// channel arbitration
-	Buffer *scheduled_buffer;
+	Buffer *scheduled_buffer = nullptr;
+
+
+
 
 	//
 	// Statistics
 	//
 
 	// Number of bytes that was transfered through the links
-	long long transferred_bytes;
+	long long transferred_bytes = 0;
 
 public:
 
-	~Link() {};
-
-	/// Set descriptive Name
-	void setUserAssignedName(const std::string &name)
-	{
-		this->user_assigned_name = name;
-	}
-
-	/// Get Descriptive Name
-	std::string getUserAssignedName() const { return user_assigned_name; }
+	/// Constructor
+	Link(Network *network,
+			const std::string &name,
+			Node *src_node,
+			Node *dst_node,
+			int bandwidth,
+			int source_buffer_size,
+			int destination_buffer_size,
+			int num_virtual_channel);
 
 	/// Set virtual channels
-	void setVirtualChannels(const int virtual_channel)
+	void setNumVirtualChannels(const int num_virtual_channel)
 	{
-		this->virtual_channels = virtual_channel;
+		this->num_virtual_channels = num_virtual_channel;
 	}
 
 	/// Set source node
@@ -106,6 +107,7 @@ public:
 		return os;
 	}
 
+	/// Dump the node information.
 	void Dump(std::ostream &os) const;
 };
 

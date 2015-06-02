@@ -31,9 +31,10 @@ namespace net
 class Buffer;
 class Bus;
 class Network;
+class Connection;
 
-// A node in a interconnect network is where the packet is generated, 
-// forwarded and consumed
+/// A node in a interconnect network is where the packet is generated,
+/// forwarded and consumed
 class Node
 {
 protected:
@@ -41,37 +42,43 @@ protected:
 	// Network that it belongs to
 	Network *network;
 	
-	// User data, used by the memory system to attach information about
-	// which module is associated with this network node.
-	void *user_data = nullptr;
-
 	// Node Name
 	std::string name;
 
 	// Node index
 	int id;
 
-	// Input/Output Buffer List
-	std::vector<std::unique_ptr<Buffer>> input_buffers;
-	std::vector<std::unique_ptr<Buffer>> output_buffers;
+	// Input buffer size
+	int input_buffer_size;
 
+	// Output buffer size
+	int output_buffer_size;
+
+	// User data, used by the memory system to attach information about
+	// which module is associated with this network node.
+	void *user_data = nullptr;
+
+	// Input buffer list
+	std::vector<std::unique_ptr<Buffer>> input_buffers;
+
+	// Output buffer list
+	std::vector<std::unique_ptr<Buffer>> output_buffers;
 
 public:
 
+	/// Constructor
+	Node(Network *network,
+			int index,
+			int input_buffer_size,
+			int output_buffer_size,
+			const std::string &name,
+			void *user_data);
+
 	/// Get name
-	virtual std::string getName() const { return name; }
-
-	/// Set name
-	void setName(const std::string &name) { this->name = name; }
-
-	/// Get the type of the node
-	virtual std::string getType() const = 0;
-
-	/// Set the id of the node
-	void setID (int id) { this->id = id; }
+	std::string getName() const { return name; }
 
 	/// Get the id of the node
-	virtual int getID() const {return id;}
+	int getId() const { return id; }
 
 	/// Dump the node information. 
 	virtual void Dump(std::ostream &os) const = 0;
@@ -84,25 +91,11 @@ public:
 		return os;
 	}
 
-	/// Adding input buffer
-	Buffer* AddInputBuffer(int size);
+	/// Add an input buffer of the given size
+	Buffer *AddInputBuffer(int size, Connection *connection);
 
-	/// Adding output buffer
-	Buffer* AddOutputBuffer(int size);
-
-	/// Getting the node's output buffer list
-	std::vector<std::unique_ptr<Buffer>> &getOutputBuffers()
-	{
-		return this->output_buffers;
-	}
-
-	/// Finding a Node's buffer by its name. Function looks up first input
-	/// buffers and if the buffer is not found, it looks up output buffers
-	/// to find the buffer.
-	///
-	/// \param buffer_name
-	///	name of the buffer.
-	//Buffer *getBufferByName(const std::string &buffer_name);
+	/// Add an output buffer of the given size
+	Buffer *AddOutputBuffer(int size, Connection *connection);
 
 	/// Return the user data attached by the memory system
 	void *getUserData() const { return user_data; }

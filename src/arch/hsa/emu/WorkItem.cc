@@ -250,11 +250,11 @@ void WorkItem::ExecuteDirective()
 		stack_top->StartArgumentScope(size);
 
 		// Log into debug isa
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			Emu::isa_debug << misc::fmt("Argument scope created "
 					"(size %d)\n", size);
 		}
-
 		break;
 	}
 
@@ -432,7 +432,8 @@ void WorkItem::DeclearVariable()
 		unsigned long long dim = dir->getDim();
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, segment);
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			Emu::isa_debug << misc::fmt("Declaring variable %s with "
 					"size %d[%lld]\n", name.c_str(), size, dim);
 		}
@@ -474,7 +475,8 @@ void WorkItem::DeclearVariable()
 
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dir->getDim(), arg_segment);
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			Emu::isa_debug << misc::fmt("Declaring variable %s width"
 					" size %d\n", name.c_str(), size);
 		}
@@ -486,7 +488,8 @@ void WorkItem::DeclearVariable()
 		throw misc::Panic("Unsupported segment.");
 		break;
 	}
-	if (getAbsoluteFlattenedId() == 0) {
+	if (getAbsoluteFlattenedId() == 0) 
+	{
 		Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
 				AsmService::TypeToString(dir->getType()).c_str(),
 				name.c_str(), size);
@@ -512,7 +515,8 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		if (getAbsoluteFlattenedId() >= 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			Emu::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
 			Emu::isa_debug << "Executing: ";
@@ -537,7 +541,8 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (getAbsoluteFlattenedId() >= 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			if (Emu::isa_debug)
 				stack_top->Dump(Emu::isa_debug);
 			Emu::isa_debug << "\n";

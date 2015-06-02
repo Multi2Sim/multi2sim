@@ -33,7 +33,7 @@ class Connection
 protected:
 
 	// Network associated with the connection
-	Network* network;
+	Network *network;
 
 	// Connection Name
 	std::string name;
@@ -42,42 +42,33 @@ protected:
 	int bandwidth;
 
 	// Connection Latency
-	int fix_latency;
+	int latency = 0;
 
 	// Number of cycles that the connection was busy
-	long long busy_cycles;
+	long long busy_cycles = -1;
 
 	// List of the source buffers connected to the bus
-	std::vector<Buffer*> source_buffers;
+	std::vector<Buffer *> source_buffers;
 
 	// List of the destination buffers connected to the bus
-	std::vector<Buffer*> destination_buffers;
-
+	std::vector<Buffer *> destination_buffers;
 
 public:
 
-	/// Set name
-	void setName(const std::string &name) { this->name = name; }
+	/// Constructor
+	Connection(const std::string &name, Network *network, int bandwidth);
 
 	/// Get the name of the connection
 	std::string getName() const { return name; }
 
-	/// Set bandwidth -- not constant for future use
-	void setBandwidth(int bandwidth) { this->bandwidth = bandwidth; }
-
 	/// Dump connection information
 	virtual void Dump(std::ostream &os) const = 0;
 
-	std::vector<Buffer*> getDestinationBuffers()
-	{
-		return destination_buffers;
-	}
-
 	// Adding ports to the bus source list
-	void addSourceBuffer(Buffer* buffer);
+	void AddSourceBuffer(Buffer *buffer);
 
 	// Adding ports to the bus destination list
-	void addDestinationBuffer(Buffer* buffer);
+	void AddDestinationBuffer(Buffer *buffer);
 
 };
 }

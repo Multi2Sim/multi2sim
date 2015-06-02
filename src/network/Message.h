@@ -58,36 +58,15 @@ public:
 
 	/// Send the message by scheduling events
 	void Send();
-
-
-
-	//
-	// Setters and getter
-	//
 	
 	/// Get id of the node
 	long long getId() const { return id; }
 
-	/// Set source node
-	void setSourceNode(Node *source_node) 
-	{ 
-		this->source_node = source_node; 
-	}
-
 	/// Get source node
 	Node *getSourceNode() const { return source_node; }
 
-	/// Set destination node
-	void setDestinationNode(Node *destination_node) 
-	{ 
-		this->destination_node = destination_node; 
-	}
-
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }
-
-	/// Set message size
-	void setSize(int size) { this->size = size; }
 
 	/// Get message size
 	int getSize() const { return size; }

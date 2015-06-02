@@ -129,6 +129,17 @@ void WorkGroup::addWorkItem(std::unique_ptr<WorkItem> work_item)
 		wavefront = it->second.get();
 	}
 
+	// Current workgroup size
+	unsigned int local_id_x = work_item->getLocalIdX();
+	unsigned int local_id_y = work_item->getLocalIdY();
+	unsigned int local_id_z = work_item->getLocalIdZ();
+	if (local_id_x > current_group_size_x)
+		current_group_size_x = local_id_x;
+	if (local_id_y > current_group_size_y)
+		current_group_size_y = local_id_y;
+	if (local_id_z > current_group_size_z)
+		current_group_size_z = local_id_z;
+
 	// Insert the work item into the wave front
 	wavefront->addWorkItem(std::move(work_item));
 
@@ -143,6 +154,21 @@ unsigned int WorkGroup::getGroupFlattenedId()
 			group_id_y * grid->getGroupSizeX() +
 			group_id_z * grid->getGroupSizeX() *
 			grid->getGroupSizeZ();
+}
+
+
+unsigned int WorkGroup::getCurrentWorkGroupSize(unsigned int dim)
+{
+	switch (dim)
+	{
+	case 0:
+		return current_group_size_x;
+	case 1:
+		return current_group_size_y;
+	case 2:
+		return current_group_size_z;
+	}
+	return 0;
 }
 
 }

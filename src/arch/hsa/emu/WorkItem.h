@@ -137,6 +137,7 @@ private:
  	template<typename T> void Inst_MOV_Aux();
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_chop_Aux();
+	template<typename SrcType, typename DstType> void Inst_CVT_sext_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_zext_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_u2f_Aux();
  	template<typename T> void Inst_LD_Aux();
@@ -223,6 +224,7 @@ private:
  	//
  	// Memory related fields and function
  	//
+
  	// Return buffer in host memory
  	char *getVariableBuffer(unsigned char segment,
  			const std::string &name);
@@ -294,6 +296,11 @@ private:
 
  	/// Return absolute flattened id
  	unsigned int getAbsoluteFlattenedId() const;
+
+	/// Return abs id
+	unsigned int getAbsoluteIdX() const { return abs_id_x; }
+	unsigned int getAbsoluteIdY() const { return abs_id_y; }
+	unsigned int getAbsoluteIdZ() const { return abs_id_z; }
 
 	/// Return the status of the work item
 	WorkItemStatus getStatue() const { return status; }

@@ -24,15 +24,14 @@
 
 namespace net
 {
-
+class Connection;
 class Node;
 
 class Buffer
 {
-protected:
 
 	// Node that the buffer belongs to
-	Node* node;
+	Node *node;
 
 	// Buffer Name
 	std::string name;
@@ -40,61 +39,45 @@ protected:
 	// Buffer index
 	int index;
 
-	// Buffer Size
+	// Buffer size
 	int size;
 
-	// Occupied Buffer entries
-	int count;
+	// Occupied buffer entries
+	int count = 0;
 
 	// Connection that the buffer is connected to
-	Connection* connection;
+	Connection *connection;
 
 	// Cycle until a read operation on buffer lasts
-	long long read_busy;
+	long long read_busy = -1;
 
 	// Cycle until a write operation on buffer lasts
-	long long write_busy;
+	long long write_busy = -1;
 
 public:
 
-	/// Distructor
-	~Buffer() {};
-
-	/// Set name.
-	void setName(const std::string &name) { this->name = name; }
+	/// Constructor
+	Buffer(const std::string &name,
+			int size, int index,
+			Node *node, Connection *connection);
 
 	/// Get the name of the link.
 	std::string getName() const { return name; }
 
-	/// Set Buffer Size.
-	void setSize(int size) { this->size = size; }
-
 	/// Get buffer size
 	int getSize() const { return size; }
 
-	/// Set Index.
-	void setIndex(int index) { this->index = index; }
-
-	/// Get Index.
+	/// Get index.
 	int getIndex() const { return index; }
 
-	/// Set buffer's node.
-	void setNode(Node* node) { this->node = node; }
-
 	/// Get buffer's node.
-	Node* getNode() const { return this->node; }
+	Node *getNode() const { return this->node; }
 
 	/// Get count
 	int getCount() const { return count; }
 
 	/// Get buffer's connection.
-	Connection* getConnection() const { return this->connection; }
-
-	/// Set buffer's connection.
-	void setConnection(Connection* connection)
-	{
-		this->connection = connection;
-	}
+	Connection *getConnection() const { return this->connection; }
 
 	/// Get the cycle when write operation will finish
 	long long getWriteBusy() const { return write_busy; }
