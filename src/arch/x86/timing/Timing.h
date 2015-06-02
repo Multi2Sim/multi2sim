@@ -77,8 +77,8 @@ class Timing : public comm::Timing
 	// Member fields
 	//
 
-	// CPU associated with this timing simulator
-	std::unique_ptr<CPU> cpu;
+	// CPU instance of this timing simulator
+	CPU cpu;
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
@@ -87,7 +87,6 @@ class Timing : public comm::Timing
 	Timing() : comm::Timing("x86")
 	{
 		setFrequencyDomain("x86", frequency);
-		cpu.reset(new CPU());
 	}
 
 public:
@@ -106,8 +105,8 @@ public:
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
 
-	/// get CPU instance
-	CPU *getCPU() { return cpu.get(); }
+	/// get CPU instance pointer
+	CPU *getCPU() { return &cpu; }
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful

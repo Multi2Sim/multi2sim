@@ -390,7 +390,7 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 	}
 
 	// Check that entry has not been assigned before
-	Thread *thread = cpu->getThread(core_index, thread_index);
+	Thread *thread = cpu.getThread(core_index, thread_index);
 	if (thread->getDataModule() || thread->getInstModule())
 	{
 		assert(thread->getDataModule() && thread->getInstModule());
@@ -471,9 +471,9 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
 	// Check that all cores/threads have an entry to the memory hierarchy.
-	for (int i = 0; i < cpu->getNumCores(); i++)
+	for (int i = 0; i < cpu.getNumCores(); i++)
 	{
-		Core *core = cpu->getCore(i);
+		Core *core = cpu.getCore(i);
 		for (int j = 0; j < core->getNumThreads(); j++)
 		{
 			Thread *thread = core->getThread(j);
