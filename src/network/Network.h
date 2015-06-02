@@ -57,7 +57,7 @@ class Network
 	std::vector<std::unique_ptr<Node>> nodes;
 
 	// Total number of end nodes in the network
-	int num_end_node = 0;
+	int num_end_nodes = 0;
 
 	// List of links in the network
 	std::vector<std::unique_ptr<Connection>> connections;
@@ -140,7 +140,7 @@ public:
 			const std::string &section);
 
 	/// Dump the network information.
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Operator \c << invoking function Dump() on an output stream.
 	friend std::ostream &operator<<(std::ostream &os,
@@ -211,7 +211,7 @@ public:
 	int getNumNodes() const { return nodes.size(); }
 
 	/// Return the number of end nodes
-	int getNumEndNodes() const { return num_end_node; }
+	int getNumEndNodes() const { return num_end_nodes; }
 
 	/// Return a node by its index.
 	Node *getNode(int index)

@@ -81,7 +81,7 @@ public:
 	int getId() const { return id; }
 
 	/// Dump the node information. 
-	virtual void Dump(std::ostream &os) const = 0;
+	virtual void Dump(std::ostream &os = std::cout) const = 0;
 
 	/// Operator \c << invoking function Dump() on an output stream.
 	friend std::ostream &operator<<(std::ostream &os,

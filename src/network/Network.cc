@@ -346,7 +346,7 @@ Node *Network::getNodeByUserData(void *user_data) const
 }
 
 
-void Network::Dump(std::ostream &os = std::cout) const
+void Network::Dump(std::ostream &os) const
 {
 	// Dump network information
 	os << misc::fmt("\n***** Network %s *****\n", name.c_str());
@@ -446,17 +446,21 @@ void Network::Send(Node *source_node, Node *destination_node, int size,
 }
 
 
-EndNode *Network::addEndNode(int input_buffer_size, int output_buffer_size,
+EndNode *Network::addEndNode(int input_buffer_size,
+		int output_buffer_size,
 		const std::string &name,
 		void *user_data)
 {
-	auto end_node = misc::new_unique<EndNode>(this, nodes.size(),
-			input_buffer_size, output_buffer_size,
-			name, user_data);
-	EndNode *end_node_ptr = end_node.get();
-	nodes.push_back(std::move(end_node));
-	num_end_node++;
-	return end_node_ptr;
+	// Create end node
+	nodes.emplace_back(misc::new_unique<EndNode>(this,
+			nodes.size(),
+			input_buffer_size,
+			output_buffer_size,
+			name,
+			user_data));
+	EndNode *node = misc::cast<EndNode *>(nodes.back().get());
+	num_end_nodes++;
+	return node;
 }
 
 
@@ -465,12 +469,16 @@ Switch *Network::addSwitch(int input_buffer_size,
 		int bandwidth,
 		const std::string &name)
 {
-	auto switch_node = misc::new_unique<Switch>(this, nodes.size(),
-			input_buffer_size, output_buffer_size, bandwidth,
-			name, nullptr);
-	Switch *switch_node_ptr = switch_node.get();
-	nodes.push_back(std::move(switch_node));
-	return switch_node_ptr;
+	// Create switch
+	nodes.emplace_back(misc::new_unique<Switch>(this,
+			nodes.size(),
+			input_buffer_size,
+			output_buffer_size,
+			bandwidth,
+			name,
+			nullptr));
+	Switch *node = misc::cast<Switch *>(nodes.back().get());
+	return node;
 }
 
 
@@ -483,21 +491,23 @@ Link *Network::addLink(
 		int dest_buffer_size,
 		int num_virtual_channels)
 {
-	auto link = misc::new_unique<Link>(this, name,
-			source_node, dest_node,
-			bandwidth, source_buffer_size, dest_buffer_size,
-			num_virtual_channels);
-	Link *link_ptr = link.get();
+	// Create link
+	connections.emplace_back(misc::new_unique<Link>(this,
+			name,
+			source_node,
+			dest_node,
+			bandwidth,
+			source_buffer_size,
+			dest_buffer_size,
+			num_virtual_channels));
+	Link *link = misc::cast<Link *>(connections.back().get());
 
 	// Create buffers
-	source_node->AddInputBuffer(source_buffer_size, link.get());
-	dest_node->AddOutputBuffer(dest_buffer_size, link.get());
-
-	// Add the link to network
-	connections.push_back(std::move(link));
+	source_node->AddInputBuffer(source_buffer_size, link);
+	dest_node->AddOutputBuffer(dest_buffer_size, link);
 
 	// Return
-	return link_ptr;
+	return link;
 }
 
 }

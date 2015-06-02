@@ -101,7 +101,7 @@ public:
 	void DetectCycle();
 
 	/// Dump Routing table information.
-	void Dump(std::ostream &os);
+	void Dump(std::ostream &os = std::cout);
 
 	/// Check if the routing table has cycle
 	bool hasCycle() const { return has_cycle; }

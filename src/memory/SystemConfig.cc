@@ -211,34 +211,34 @@ const std::string System::help_message =
 	"\n";
 
 const char *System::err_config_note =
-	"\tPlease run 'm2s --mem-help' or consult the Multi2Sim Guide for "
-	"a description of the memory system configuration file format.\n";
+	"Please run 'm2s --mem-help' or consult the Multi2Sim Guide for "
+	"a description of the memory system configuration file format.";
 
 const char *System::err_config_net =
-	"\tNetwork identifiers need to be declared either in the cache " 
+	"Network identifiers need to be declared either in the cache " 
 	"configuration file, or in the network configuration file (option " 
-	"'--net-config').\n";
+	"'--net-config').";
 
 const char *System::err_levels =
-	"\tThe path from a cache into main memory exceeds 10 levels of cache. "
+	"The path from a cache into main memory exceeds 10 levels of cache. "
 	"This might be a symptom of a recursive reference in 'LowModules' "
-	"lists.\n";
+	"lists.";
 
 const char *System::err_block_size =
-	"\tBlock size in a cache must be greater or equal than its\n" 
-	"\tlower-level cache for correct behavior of directories and\n" 
-	"\tcoherence protocols.\n";
+	"Block size in a cache must be greater or equal than its "
+	"lower-level cache for correct behavior of directories and "
+	"coherence protocols.";
 
 const char *System::err_connect =
-	"\tAn external network is used that does not provide connectivity\n"
-	"\tbetween a memory module and an associated low/high module. Please\n"
-	"\tadd the necessary links in the network configuration file.\n";
+	"An external network is used that does not provide connectivity "
+	"between a memory module and an associated low/high module. Please "
+	"add the necessary links in the network configuration file.";
 
 const char *System::err_mem_disjoint =
-	"\tIn current versions of Multi2Sim, it is not allowed having a\n" 
-	"\tmemory module shared for different architectures. Please make sure\n"
-	"\tthat the sets of modules accessible by different architectures\n"
-	"\tare disjoint.\n";
+	"In current versions of Multi2Sim, it is not allowed having a "
+	"memory module shared for different architectures. Please make sure "
+	"that the sets of modules accessible by different architectures "
+	"are disjoint.";
 
 void System::ConfigReadGeneral(misc::IniFile *ini_file)
 {
@@ -1215,7 +1215,7 @@ void System::ConfigCheckRoutes(misc::IniFile *ini_file)
 					low_module->getHighNetworkNode());
 			if (!entry->getBuffer())
 				throw Error(misc::fmt("%s: %s: network does not "
-						"connect '%s' with '%s'.\n%s",
+						"connect '%s' with '%s'. %s",
 						ini_file->getPath().c_str(),
 						network->getName().c_str(),
 						module->getName().c_str(),
@@ -1248,7 +1248,7 @@ void System::ConfigCheckRoutes(misc::IniFile *ini_file)
 					high_module->getLowNetworkNode());
 			if (!entry->getBuffer())
 				throw Error(misc::fmt("%s: %s: network does not "
-						"connect '%s' with '%s'.\n%s",
+						"connect '%s' with '%s'. %s",
 						ini_file->getPath().c_str(),
 						network->getName().c_str(),
 						module->getName().c_str(),
