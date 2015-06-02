@@ -37,6 +37,7 @@ Core::Core(const std::string &name, CPU *cpu, int id)
 	{
 		thread_name = prefix + misc::fmt("%d", i);
 		threads.emplace_back(new Thread(thread_name, this->cpu, this, i));
+		thread_name = "";
 	}
 }
 

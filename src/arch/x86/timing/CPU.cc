@@ -86,6 +86,7 @@ CPU::CPU()
 	{
 		core_name = prefix + misc::fmt("%d", i);
 		cores.emplace_back(new Core(core_name, this, i));
+		core_name = "";
 	}
 }
 

@@ -543,7 +543,7 @@ void Timing::ProcessOptions()
 	{
 		ini_file.Load(config_file);
 	}
-		ParseConfiguration(ini_file);
+	ParseConfiguration(ini_file);
 
 	// Instantiate timing simulator if '--x86-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
