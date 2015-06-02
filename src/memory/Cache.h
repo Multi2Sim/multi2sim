@@ -158,16 +158,16 @@ private:
 	WritePolicy write_policy;
 
 	// Array of sets
-	std::unique_ptr<Set> sets;
+	std::unique_ptr<Set[]> sets;
 
 	// Array of blocks
-	std::unique_ptr<Block> blocks;
+	std::unique_ptr<Block[]> blocks;
 
 	/// Return a pointer to a cache set
 	Set *getSet(unsigned set_id)
 	{
 		assert(misc::inRange(set_id, 0, num_sets - 1));
-		return &sets.get()[set_id];
+		return &sets[set_id];
 	}
 
 public:
@@ -185,7 +185,7 @@ public:
 	{
 		assert(misc::inRange(set_id, 0, num_sets - 1));
 		assert(misc::inRange(way_id, 0, num_ways - 1));
-		return &blocks.get()[set_id * num_ways + way_id];
+		return &blocks[set_id * num_ways + way_id];
 	}
 
 	/// Decode a physical address.
