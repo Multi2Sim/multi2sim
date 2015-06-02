@@ -97,11 +97,22 @@ private:
 
 public:
 
+	/// Exception for X86 register file
+	class Error : public misc::Error
+	{
+	public:
+
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("X86 register file");
+		}
+	};
+
 	/// Constructor
 	RegisterFile(Core *core, Thread *thread);
 
 	/// Read register file configuration from configuration file
-	static void ParseConfiguration(misc::IniFile &ini_file);
+	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Initialize the register file
 	void InitRegisterFile();

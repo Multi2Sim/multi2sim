@@ -540,10 +540,8 @@ void Timing::ProcessOptions()
 	// Configuration
 	misc::IniFile ini_file;
 	if (!config_file.empty())
-	{
 		ini_file.Load(config_file);
-	}
-	ParseConfiguration(ini_file);
+	ParseConfiguration(&ini_file);
 
 	// Instantiate timing simulator if '--x86-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
@@ -565,15 +563,15 @@ void Timing::ProcessOptions()
 }
 
 
-void Timing::ParseConfiguration(misc::IniFile &ini_file)
+void Timing::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Parse configuration by their sections
 	std::string section = "General";
-	frequency = ini_file.ReadInt(section, "Frequency", frequency);
+	frequency = ini_file->ReadInt(section, "Frequency", frequency);
 	if (!esim::Engine::isValidFrequency(frequency))
-		throw misc::Error(misc::fmt("%s: The value for 'Frequency' "
+		throw Error(misc::fmt("%s: The value for 'Frequency' "
 				"must be between 1MHz and 1000GHz.\n",
-				ini_file.getPath().c_str()));
+				ini_file->getPath().c_str()));
 
 	// Parse CPU configuration by their sections
 	CPU::ParseConfiguration(ini_file);

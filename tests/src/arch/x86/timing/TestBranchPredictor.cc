@@ -49,7 +49,7 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 	ini_file.LoadFromString(config);
 
 	// Find target section
-	BranchPredictor::ParseConfiguration(ini_file);
+	BranchPredictor::ParseConfiguration(&ini_file);
 
 	// Assertions
 	EXPECT_EQ(BranchPredictor::KindPerfect, BranchPredictor::getKind());
@@ -119,7 +119,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	uop->setMopSize(branch_inst_size);
 
 	// Parse configuration
-	BranchPredictor::ParseConfiguration(ini_file);
+	BranchPredictor::ParseConfiguration(&ini_file);
 
 	// Create a branch predictor instance
 	BranchPredictor branch_predictor;
@@ -190,7 +190,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	ini_file.LoadFromString(config);
 
 	// Parse configuration
-	BranchPredictor::ParseConfiguration(ini_file);
+	BranchPredictor::ParseConfiguration(&ini_file);
 
 	// Create a branch predictor instance
 	BranchPredictor branch_predictor;
@@ -366,7 +366,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	ini_file.LoadFromString(config);
 
 	// Parse configuration
-	BranchPredictor::ParseConfiguration(ini_file);
+	BranchPredictor::ParseConfiguration(&ini_file);
 
 	// Create a branch predictor instance
 	BranchPredictor branch_predictor;

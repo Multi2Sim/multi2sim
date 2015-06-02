@@ -22,6 +22,7 @@
 
 #include <string>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 
 #include <arch/x86/emu/UInst.h>
@@ -113,11 +114,22 @@ private:
 
 public:
 
+	/// Exception for X86 branch predictor
+	class Error : public misc::Error
+	{
+	public:
+
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("X86 branch predictor");
+		}
+	};
+
 	/// Constructor
 	BranchPredictor(const std::string &name = "");
 
 	/// Read branch predictor configuration from configuration file
-	static void ParseConfiguration(misc::IniFile &ini_file);
+	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);

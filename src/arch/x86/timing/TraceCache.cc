@@ -59,32 +59,32 @@ TraceCache::TraceCache(const std::string &name)
 }
 
 
-void TraceCache::ParseConfiguration(misc::IniFile &ini_file)
+void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Section
 	std::string section = "TraceCache";
 
 	// Read variables
-	present = ini_file.ReadBool(section, "Present", 0);
-	num_sets = ini_file.ReadInt(section, "Sets", 64);
-	assoc = ini_file.ReadInt(section, "Assoc", 4);
-	trace_size = ini_file.ReadInt(section, "TraceSize", 16);
-	branch_max = ini_file.ReadInt(section, "BranchMax", 3);
-	queue_size = ini_file.ReadInt(section, "QueueSize", 32);
+	present = ini_file->ReadBool(section, "Present", 0);
+	num_sets = ini_file->ReadInt(section, "Sets", 64);
+	assoc = ini_file->ReadInt(section, "Assoc", 4);
+	trace_size = ini_file->ReadInt(section, "TraceSize", 16);
+	branch_max = ini_file->ReadInt(section, "BranchMax", 3);
+	queue_size = ini_file->ReadInt(section, "QueueSize", 32);
 
 	// Integrity checks
 	if ((num_sets & (num_sets - 1)) || !num_sets)
-		misc::fatal("%s: 'Sets' must be a power of 2 greater than 0", section.c_str());
+		throw Error(misc::fmt("%s: 'Sets' must be a power of 2 greater than 0", section.c_str()));
 	if ((assoc & (assoc - 1)) || !assoc)
-		misc::fatal("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str());
+		throw Error(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
 	if (!trace_size)
-		misc::fatal("%s: Invalid value for 'TraceSize'", section.c_str());
+		throw Error(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
 	if (!branch_max)
-		misc::fatal("%s: Invalid value for 'BranchMax'", section.c_str());
+		throw Error(misc::fmt("%s: Invalid value for 'BranchMax'", section.c_str()));
 	if (branch_max > trace_size)
-		misc::fatal("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str());
+		throw Error(misc::fmt("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str()));
 	if (branch_max > 31)
-		misc::fatal("%s: Maximum value for 'BranchMax' is 31", section.c_str());
+		throw Error(misc::fmt("%s: Maximum value for 'BranchMax' is 31", section.c_str()));
 }
 
 
