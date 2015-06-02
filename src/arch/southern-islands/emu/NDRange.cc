@@ -38,7 +38,7 @@ NDRange::NDRange(Emu *emu)
 	this->stage = NDRangeStageCompute;
 	this->id = emu->getNewNDRangeID();
 	this->address_space_index = emu->getNewNDRangeID();
-	this->inst_mem.reset(new mem::Memory());
+	//this->inst_mem.reset(new mem::Memory());
 
 	this->last_work_group_sent = false;
 }
@@ -105,13 +105,17 @@ void NDRange::SetupFSMem(const char *buf, unsigned size, unsigned pc)
 
 void NDRange::SetupInstMem(const char *buf, unsigned size, unsigned pc)
 {
+
 	// Copy instructions from buffer to instruction memory
+	inst_mem->Map(pc, size,
+		mem::Memory::AccessRead | mem::Memory::AccessWrite);
+	//this->inst_mem->setSafe(false);
 	inst_mem->Write(pc, size, buf);
 	inst_size = size;
 	inst_addr = pc;
 
 	// Save a copy of buffer in NDRange
-	inst_buffer = std::move(std::unique_ptr<char>(new char(size)));
+	inst_buffer = std::move(std::unique_ptr<char>(new char[size]));
 	inst_mem->Read(pc, size, inst_buffer.get());
 }
 
@@ -130,7 +134,7 @@ void NDRange::InitFromKernel(Kernel *kernel)
 	user_element_count = si_enc->num_user_elements;
 	for (unsigned i = 0; i < user_element_count; ++i)
 		user_elements[i] = si_enc->user_elements[i];
-
+	
 	// Set up instruction memory 
 	// Initialize wavefront instruction buffer and PC 
 	const char *text_buffer = si_enc->text_section->getBuffer();

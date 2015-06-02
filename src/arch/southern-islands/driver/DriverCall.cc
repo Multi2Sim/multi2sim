@@ -67,6 +67,7 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 
 	// Virtual address of memory object 
 	unsigned device_ptr = si_emu->getVideoMemTop();
+
 	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 		size, device_ptr);
 
@@ -486,7 +487,7 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 
 	// Create ND-Range
 	NDRange *ndrange = AddNDRange();
-	debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
+	//debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
 
 	// Initialize address space ID.  Our current SVM implementation sets
 	// the ndrange ASID to the CPU context's ASID 
@@ -503,6 +504,7 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 	
 	// Return ID of new nd-range 
 	return ndrange->getId();
+	//return 0;
 }
 
 
