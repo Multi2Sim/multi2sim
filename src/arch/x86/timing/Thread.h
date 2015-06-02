@@ -93,7 +93,7 @@ private:
 	// Store queue
 	std::list<std::unique_ptr<Uop>> sq;
 
-	// Prefetch queue?
+	// Prefetch queue
 	std::list<std::unique_ptr<Uop>> preq;
 
 	// Component pointer
