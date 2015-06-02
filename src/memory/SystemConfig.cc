@@ -1087,8 +1087,8 @@ void System::ConfigReadEntries(misc::IniFile *ini_file)
 		// file must undergo a detailed simulation.
 		if (arch->getSimKind() == comm::Arch::SimFunctional)
 			throw Error(misc::fmt("%s: section [%s]: %s "
-					"architecture not under detailed simulation.\n"
-					"\tA CPU/GPU architecture uses functional "
+					"architecture not under detailed simulation. "
+					"A CPU/GPU architecture uses functional "
 					"simulation by default. Please activate detailed "
 					"simulation for the architecture.\n",
 					ini_file->getPath().c_str(),

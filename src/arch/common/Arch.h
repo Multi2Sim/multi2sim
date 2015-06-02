@@ -113,11 +113,14 @@ public:
 	}
 
 	/// Associate a timing simulator. This function should only be invoked
-	/// internally by ArchPool::RegisterTiming()
+	/// internally by ArchPool::RegisterTiming(). After this, the simulation
+	/// kind is set to \a SimDetailed, as returned by a call to
+	/// getSimKind().
 	void setTiming(Timing *timing)
 	{
 		assert(!this->timing);
 		this->timing = timing;
+		sim_kind = SimDetailed;
 	}
 
 	/// Return the type of simulation for the architecture
