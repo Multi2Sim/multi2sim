@@ -29,11 +29,13 @@
 #include <m2c/llvm2si/Function.h>
 #include <src/lib/cpp/Bitmap.h>
 #include <src/lib/cpp/Misc.h>
+#include <iostream>
 
 #include "LivenessAnalysisPass.h"
 
 namespace llvm2si
 {
+// Class that defines the attributes of a node
 class GraphNode
 {
 	// id of the node/symbolic register
@@ -46,11 +48,9 @@ class GraphNode
 	unsigned int degree = 0;
 
 	// List of adjacent nodes
-	// std::vector<graphNode *> adj_node_list;
 	std::vector<int> adj_node_list;
 
 	// List of neighboring nodes that are removed. Used during graph coloring
-	// std::vector<graphNode *> rem_node_list;
 	std::vector<int> rem_node_list;
 
 	public:
@@ -86,38 +86,85 @@ class GraphNode
 		}
 
 		// Dump the adjacent/removed node list
-		void DumpAdjList();
+		void DumpAdjList(std::ofstream *f);
 	};
 
-	class ConflictGraphPass : public comm::Pass
+// Class that defines the information collected at Function level
+/*class FunctionConflictGraphPassInfo : public comm::FunctionPassInfo
+{
+public:
+	// friend class ConflictGraphPass;
+	std::list <GraphNode *> *vector_adj_graph;
+	std::list <GraphNode *> *scalar_adj_graph;
+
+	std::vector<std::vector<bool> > *vector_adj_matrix;
+	std::vector<std::vector<bool> > *scalar_adj_matrix;
+
+	void SetVectorGraph(std::list <GraphNode *> *v_adj_graph)
 	{
-		llvm2si::Function *cgp_function;
+		vector_adj_graph->resize(v_adj_graph->size());
+		*vector_adj_graph = *v_adj_graph;
+	}
 
-	public:
+	std::list <GraphNode *>* GetVectorGraph()
+	{
+		return vector_adj_graph;
+	}
 
+	void SetVectorAdjMatrix(std::vector<std::vector<bool> > *v_adj_matrix)
+	{
+		vector_adj_matrix->resize(v_adj_matrix->size());
+		*vector_adj_matrix = *v_adj_matrix;
+	}
+
+	std::vector<std::vector<bool> > GetVectorAdjGraph()
+	{
+		return *vector_adj_matrix;
+	}
+}; */
+
+class ConflictGraphPass : public comm::Pass
+{
+	llvm2si::Function *cgp_function;
+	std::list <GraphNode *> v_adj_graph;
+	std::vector<std::vector<bool> > v_adj_matrix;
+
+	std::list <GraphNode *> s_adj_graph;
+	std::vector<std::vector<bool> > s_adj_matrix;
+
+public:
 		/// constructor
 		ConflictGraphPass(llvm2si::Function *function) :
 			cgp_function(function)
 		{
-			std::cout << "I am at the CG constructor\n";
+			// std::cout << "I am at the CG constructor\n";
 		}
 
 		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
 		template<typename ConcreteType> ConcreteType* getInfo(BasicBlock *basic_block)
 		{
-				std::cout << " CG id : " << getId() << "\n";
+				// std::cout << " CG id : " << getId() << "\n";
 				return basic_block->getPassInfoPool()->get<ConcreteType>(getId()-1);
 		}
 
+		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
+		template<typename ConcreteType> ConcreteType* getInfo(Function *func)
+		{
+			// std::cout << " CG id : " << getId() << "\n";
+			return func->getPassInfoPool()->get<ConcreteType>(getId());
+		}
 		/// run the pass and create the conflict graph
 		void run();
 
+		void runScalar();
+
+		void runVector();
+
 		/// dump the graph info
-		void dump(std::ostream &os);
+		void dump();
 
 		~ConflictGraphPass() {}
-
 	};
 
 #endif
-}
+} // namespace llvm2si
