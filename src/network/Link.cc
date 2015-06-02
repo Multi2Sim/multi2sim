@@ -36,7 +36,7 @@ Link::Link(Network *network,
 		num_virtual_channels(num_virtual_channels)
 {}
 
-void Link::Dump(std::ostream &os = std::cout) const
+void Link::Dump(std::ostream &os) const
 {
 	os << misc::fmt("\n***** Link %s *****\n", name.c_str());
 }

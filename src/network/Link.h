@@ -108,7 +108,7 @@ public:
 	}
 
 	/// Dump the node information.
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 };
 
 
