@@ -43,7 +43,7 @@ class FunctionPassInfo
 public:
 
 	/// Pure virtual destructor makes this class abstract.
-	virtual ~FunctionPassInfo() = 0;
+	virtual ~FunctionPassInfo() { };
 
 };
 

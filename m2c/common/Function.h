@@ -36,6 +36,12 @@ class Function
 
 public:
 
+	/// Getter for PassInfoPool
+	PassInfoPool<FunctionPassInfo> *getPassInfoPool()
+	{
+		return &pass_info_pool;
+	}
+
 	/// Virtual destructor
 	virtual ~Function() { }
 
