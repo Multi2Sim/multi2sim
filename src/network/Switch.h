@@ -28,14 +28,24 @@ namespace net
 // A switch is a node that passes packets to next link
 class Switch : public Node
 {
-protected:
-
-	int bandwdith;
+	// Bandwidth of the switch
+	int bandwidth;
 
 public:
 
-	/// Return the type of the node
-	std::string getType() const { return "Switch"; }
+	/// Constructor
+	Switch(Network *network,
+			int index,
+			int input_buffer_size,
+			int output_buffer_size,
+			int bandwidth,
+			const std::string &name,
+			void *user_data) :
+			Node(network, index,
+					input_buffer_size, output_buffer_size,
+					name, user_data),
+			bandwidth(bandwidth)
+	{};
 
 	/// Dump node information
 	void Dump(std::ostream &os) const;

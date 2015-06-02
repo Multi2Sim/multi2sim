@@ -29,13 +29,22 @@
 #include <lib/cpp/IniFile.h>
 #include <lib/esim/Event.h>
 
-#include "Network.h"
-
 namespace net
 {
-
 class Network;
 
+/// Class representing a runtime error in network system
+class Error : public misc::Error
+{
+public:
+
+	/// Constructor
+	Error(const std::string &message) : misc::Error(message)
+	{
+		// Set module prefix
+		AppendPrefix("Network");
+	}
+};
 
 class System
 {
@@ -77,9 +86,6 @@ class System
 	// Stand-alone message injection rate
 	static int injection_rate;
 
-	// Message Size in stand alone network
-	static int msg_size;
-
 	// Network snapshot sampling period
 	static int snapshot_period;
 
@@ -104,7 +110,7 @@ class System
 	// General frequency if not specified in the network section
 	static int net_system_frequency;
 
-	// Get a exponential random value
+	// Get a exponential random valueclass Network;
 	static double RandomExponential(double lambda)
 	{
 		double x = (double) random() / RAND_MAX;
@@ -140,6 +146,9 @@ class System
 
 public:
 
+	// Message Size in stand alone network
+	static int message_size;
+
 	//
 	// Event driven simulation event types
 	//
@@ -159,24 +168,7 @@ public:
 	/// Constructor
 	System() { assert(instance == nullptr); }
 
-	/// Get the list of networks
-	std::vector<std::unique_ptr<Network>> &getNetworks()
-	{
-		return networks;
-	}
 
-	/// Class representing a runtime error in a memory object
-	class Error : public misc::Error
-	{
-	public:
-
-		/// Constructor
-		Error(const std::string &message) : misc::Error(message)
-		{
-			// Set module prefix
-			AppendPrefix("Network");
-		}
-	};
 
 	/// Find and returns a network in the network system given its name.
 	///

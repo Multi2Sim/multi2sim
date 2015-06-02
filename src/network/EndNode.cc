@@ -22,11 +22,23 @@
 namespace net
 {
 
-	void EndNode::Dump(std::ostream &os) const
-	{
-		os << misc::fmt("\n***** %s: %s *****\n",
-				getType().c_str(),
-				getName().c_str());
-	}
+EndNode::EndNode(Network *network,
+		int index,
+		int input_buffer_size,
+		int output_buffer_size,
+		const std::string &name,
+		void *user_data) :
+		Node(network, index,
+				input_buffer_size, output_buffer_size,
+				name, user_data)
+{}
+
+
+void EndNode::Dump(std::ostream &os) const
+{
+	os << misc::fmt("\n***** %s: %s *****\n",
+			"EndNode",
+			getName().c_str());
+}
 
 }

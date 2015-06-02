@@ -41,6 +41,7 @@ libnetwork_a_SOURCES = \
 	\
 	\
 	Buffer.h \
+	Buffer.cc \
 	\
 	Bus.h \
 	Bus.cc \

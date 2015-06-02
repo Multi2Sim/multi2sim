@@ -30,8 +30,13 @@ class EndNode : public Node
 {
 public:
 
-	/// Return the type of the node
-	std::string getType() const { return "EndNode"; }
+	/// Constructor
+	EndNode(Network *network,
+			int index,
+			int input_buffer_size,
+			int output_buffer_size,
+			const std::string &name,
+			void *user_data);
 
 	/// Dump node information
 	void Dump(std::ostream &os) const;

@@ -36,8 +36,6 @@ public:
 	class Entry
 	{
 
-	private:
-
 		// Cost in hops
 		int cost;
 
@@ -50,22 +48,17 @@ public:
 	public:
 
 		/// Constructor.
-		Entry(int cost) : cost(cost) { };
-
-		/// Set the routing cost.
-		void setCost(int cost) { this->cost = cost; }
+		Entry(int cost, Node *next_node, Buffer *buffer) :
+			cost(cost),
+			next_node(next_node),
+			buffer(buffer)
+		{};
 
 		/// Get the routing cost.
 		int getCost() const { return cost; }
 
-		/// Set entry's next node.
-		void setNextNode(Node *next_node) { this->next_node = next_node; }
-
 		/// Get entry's next node.
 		Node *getNextNode() const { return next_node; }
-
-		/// Set entry's next buffer.
-		void setBuffer(Buffer *buffer) { this->buffer = buffer; }
 
 		/// Get entry's next buffer.
 		Buffer *getBuffer() const { return buffer; }
@@ -77,18 +70,18 @@ private:
 	Network *network;
 
 	// Dimension
-	int dimension;
+	int dimension = 0;
 
 	// Entries
 	std::vector<std::unique_ptr<Entry>> entries;
 
 	// Flag set when a cycle was detected
-	bool has_cycle;
+	bool has_cycle = false;
 
 public:
 
 	/// Constructor
-	RoutingTable(Network *network) : network(network) { }
+	RoutingTable(Network *network);
 
 	/// Get Dimension
 	int getDimension() const { return dimension; }
@@ -109,6 +102,9 @@ public:
 
 	/// Dump Routing table information.
 	void Dump(std::ostream &os);
+
+	/// Check if the routing table has cycle
+	bool hasCycle() const { return has_cycle; }
 
 };
 

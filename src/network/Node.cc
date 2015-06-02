@@ -25,33 +25,41 @@
 namespace net
 {
 
-Buffer* Node::AddInputBuffer(int size)
+Node::Node(Network *network,
+		int index,
+		int input_buffer_size,
+		int output_buffer_size,
+		const std::string &name,
+		void *user_data) :
+		network(network),
+		name(name),
+		id(index),
+		input_buffer_size(input_buffer_size),
+		output_buffer_size(output_buffer_size),
+		user_data(user_data)
 {
-	auto buffer = misc::new_unique<Buffer>();
-	std::string name = misc::fmt("in_buf_%d",
-			(unsigned int) input_buffers.size());
-	buffer->setIndex(input_buffers.size());
-	buffer->setName(name);
-	buffer->setSize(size);
-	buffer->setNode(this);
-	input_buffers.emplace_back(std::move(buffer));
+}
 
-	Buffer* return_buffer = input_buffers.back().get();
+Buffer* Node::AddInputBuffer(int size, Connection *connection)
+{
+	std::string name = misc::fmt("in_buf_%d",
+				(unsigned int) input_buffers.size());
+	auto buffer = misc::new_unique<Buffer>(name, size,
+			input_buffers.size(), this, connection);
+	Buffer* return_buffer = buffer.get();
+	input_buffers.emplace_back(std::move(buffer));
 	return return_buffer;
 }
 
-Buffer* Node::AddOutputBuffer(int size)
+Buffer* Node::AddOutputBuffer(int size, Connection *connection)
 {
-	auto buffer = misc::new_unique<Buffer>();
+
 	std::string name = misc::fmt("out_buf_%d",
 			(unsigned int) output_buffers.size());
-	buffer->setIndex(output_buffers.size());
-	buffer->setName(name);
-	buffer->setSize(size);
-	buffer->setNode(this);
-	output_buffers.push_back(std::move(buffer));
-
+	auto buffer = misc::new_unique<Buffer>(name, size,
+			output_buffers.size(), this, connection);
 	Buffer* return_buffer = output_buffers.back().get();
+	output_buffers.push_back(std::move(buffer));
 	return return_buffer;
 
 }

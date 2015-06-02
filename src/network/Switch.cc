@@ -25,7 +25,7 @@ namespace net
 	void Switch::Dump(std::ostream &os) const
 	{
 		os << misc::fmt("\n***** %s: %s *****\n", 
-				getType().c_str(),
+				"Switch",
 				getName().c_str());
 	}
 

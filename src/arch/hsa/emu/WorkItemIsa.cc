@@ -1877,6 +1877,13 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_zext_Aux()
 }
 
 
+template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_sext_Aux()
+{
+	SrcType src = getOperandValue<SrcType>(1);
+	storeOperandValue<DstType>(0, src);
+}
+
+
 template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_u2f_Aux()
 {
 	SrcType src = getOperandValue<SrcType>(1);
@@ -1916,6 +1923,10 @@ void WorkItem::ExecuteInst_CVT()
 	else if(src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_F32)
 	{
 		Inst_CVT_u2f_Aux<unsigned long long, float>();
+	}
+	else if (src_type == BRIG_TYPE_S32 && dst_type == BRIG_TYPE_S64)
+	{
+		Inst_CVT_sext_Aux<int, long long>();
 	}
 	else
 	{
@@ -1961,7 +1972,6 @@ void WorkItem::Inst_LD_Aux()
 					->getRegisterName();
 		unsigned address = stack_top->getRegisterValue<unsigned>(
 				register_name);
-
 		unsigned long long offset = address_operand->getOffset();
 		address += offset;
 
@@ -2427,7 +2437,10 @@ void WorkItem::ExecuteInst_ALLOCA()
 
 void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	unsigned int dim = getOperandValue<unsigned int>(1);
+	unsigned int size = getWorkGroup()->getCurrentWorkGroupSize(dim);
+	storeOperandValue<unsigned int>(0, size);
+	MovePcForwardByOne();
 }
 
 
@@ -2495,7 +2508,29 @@ void WorkItem::ExecuteInst_PACKETID()
 
 void WorkItem::ExecuteInst_WORKGROUPID()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	unsigned int dim = getOperandValue<unsigned int>(1);
+	switch(dim)
+	{
+	case 0:
+		storeOperandValue<unsigned int>(0, 
+				getWorkGroup()->getGroupIdX());
+		break;
+	case 1:
+		storeOperandValue<unsigned int>(0, 
+				getWorkGroup()->getGroupIdY());
+		break;
+	case 2:
+		storeOperandValue<unsigned int>(0, 
+				getWorkGroup()->getGroupIdZ());
+		break;
+	default:
+		throw misc::Error("Trying to getting work item absolute id "
+				"other than x, y and z axis.");
+	}
+
+	// Move pc to next instruction
+	MovePcForwardByOne();
+
 }
 
 
@@ -2543,7 +2578,26 @@ void WorkItem::ExecuteInst_WORKITEMFLATID()
 
 void WorkItem::ExecuteInst_WORKITEMID()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	unsigned int dim = getOperandValue<unsigned int>(1);
+	switch(dim)
+	{
+	case 0:
+		storeOperandValue<unsigned int>(0, getLocalIdX());
+		break;
+	case 1:
+		storeOperandValue<unsigned int>(0, getLocalIdY());
+		break;
+	case 2:
+		storeOperandValue<unsigned int>(0, getLocalIdZ());
+		break;
+	default:
+		throw misc::Error("Trying to getting work item id "
+				"other than x, y and z axis.");
+	}
+
+	// Move pc to next instruction
+	MovePcForwardByOne();
+
 }
 
 
