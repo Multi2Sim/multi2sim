@@ -70,16 +70,16 @@ class NDRange
 
 	struct TableEntry
 	{
-		bool valid;
-		TableEntryKind kind;
-		unsigned size;
+		bool valid = false;
+		TableEntryKind kind = TableEntryKindInvalid;
+		unsigned size = 0;
 	};
 
 	// Southern Islands emulator
-	Emu *emu;
+	Emu *emu = nullptr;
 
 	// Unique ND-range ID
-	int id;
+	int id = 0;
 
 	// Stage that the ND-range operates on
 	NDRangeStage stage;
@@ -106,66 +106,66 @@ class NDRange
 
 	// 1D work size counters. Each counter is equal to the multiplication
 	// of each component in the corresponding 3D counter.
-	unsigned global_size;
-	unsigned local_size;
-	unsigned group_count;
+	unsigned global_size = 0;
+	unsigned local_size = 0;
+	unsigned group_count = 0;
 
 	// ABI data copied from the kernel
-	unsigned user_element_count;
+	unsigned user_element_count = 0;
 	BinaryUserElement user_elements[BinaryMaxUserElements];
 
 	// Instruction memory containing Southern Islands ISA
 	std::unique_ptr<mem::Memory> inst_mem;
 	std::unique_ptr<char> inst_buffer;
-	unsigned inst_addr;
-	unsigned inst_size;
+	unsigned inst_addr = 0;
+	unsigned inst_size = 0;
 
 	// Fetch shader memory containing Fetch shader instructions
-	int fs_buffer_initialized;
-	unsigned fs_buffer_ptr; // Relative offset
-	unsigned fs_buffer_size;
+	int fs_buffer_initialized = 0;
+	unsigned fs_buffer_ptr = 0; // Relative offset
+	unsigned fs_buffer_size = 0;
 
 	// Local memory top to assign to local arguments.
 	// Initially it is equal to the size of local variables in 
 	// kernel function.
-	int local_mem_top;
+	int local_mem_top = 0;
 
 	// Each ND-Range has its own address space
-	int address_space_index;
+	int address_space_index = 0;
 
 	// If true, it indicates that a flush of the caches is being performed,
 	// evicting data modified by this kernel
-	bool flushing;
+	bool flushing = false;
 
 	// Number of register used by each work-item. This fields determines
 	// how many work-groups can be allocated per compute unit, among
 	// others.
-	unsigned num_vgpr_used;
-	unsigned num_sgpr_used;
-	unsigned wg_id_sgpr;
+	unsigned num_vgpr_used = 0;
+	unsigned num_sgpr_used = 0;
+	unsigned wg_id_sgpr = 0;
 
 	// Addresses and entries of tables that reside in global memory
-	unsigned const_buf_table;
+	unsigned const_buf_table = 0;
 	TableEntry const_buf_table_entries[EmuMaxNumConstBufs];
 
 	// Addresses and entries of tables that reside in global memory
-	unsigned resource_table;
+	unsigned resource_table = 0;
 	TableEntry resource_table_entries[EmuMaxNumResources];
 
 	// Addresses and entries of tables that reside in global memory
-	unsigned uav_table;
+	unsigned uav_table = 0;
 	TableEntry uav_table_entries[EmuMaxNumUAVs];
 
 	// Addresses and entries of tables that reside in global memory
-	unsigned vertex_buffer_table;
+	unsigned vertex_buffer_table = 0;
 	TableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
 
 	// Addresses of fetch shader in instruction buffer
-	unsigned fetch_shader_addr;
+	unsigned fetch_shader_addr = 0;
 
 	// Addresses of the constant buffers
-	unsigned cb0;
-	unsigned cb1;
+	unsigned cb0 = 0;
+	unsigned cb1 = 0;
 
 	// List of kernel arguments with their values
 	std::vector<std::unique_ptr<Arg>> args;

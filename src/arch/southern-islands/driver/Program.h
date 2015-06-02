@@ -32,9 +32,9 @@ namespace SI
 class ConstantBuffer
 {
 	// Constant buffer ID (2-24)
-	int id;
+	int id = 0;
 
-	unsigned size;
+	unsigned size = 0;
 	std::unique_ptr<char> data;
 
 public:
@@ -44,7 +44,7 @@ public:
 /// Program Class
 class Program
 {
-	int id;
+	int id = 0;
 
 	// ELF binary
 	std::unique_ptr<ELFReader::File> elf_file;
