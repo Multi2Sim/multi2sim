@@ -92,10 +92,10 @@ public:
 	}
 
 	/// Add an input buffer of the given size
-	Buffer *AddInputBuffer(int size, Connection *connection);
+	Buffer *addInputBuffer(int size, Connection *connection);
 
 	/// Add an output buffer of the given size
-	Buffer *AddOutputBuffer(int size, Connection *connection);
+	Buffer *addOutputBuffer(int size, Connection *connection);
 
 	/// Return the user data attached by the memory system
 	void *getUserData() const { return user_data; }
@@ -103,6 +103,25 @@ public:
 	/// Assign user data to a network node, usually a module from the
 	/// memory system.
 	void setUserData(void *user_data) { this->user_data = user_data; }
+
+	/// Return the number of output buffers
+	int getNumOutputBuffer() { return output_buffers.size(); }
+
+	/// Rreturn output buffer by index
+	Buffer *getOutputBuffer(int index) 
+	{ 
+		return output_buffers[index].get(); 
+	}
+
+	/// Return the number of input buffers
+	int getNumInputBuffer() { return input_buffers.size(); }
+
+	/// Rreturn input buffer by index
+	Buffer *getInputBuffer(int index) 
+	{ 
+		return input_buffers[index].get(); 
+	}
+
 };
 
 

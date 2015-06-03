@@ -34,7 +34,7 @@ class Connection;
 RoutingTable::RoutingTable(Network *network) :
 		network(network)
 {
-	this->dimension = network->getNumEndNodes();
+	this->dimension = network->getNumNodes();
 	Initialize();
 }
 
@@ -53,33 +53,38 @@ void RoutingTable::Initialize()
 	{
 		for (int j = 0; j < dimension; j++)
 		{
-			entries.emplace_back(misc::new_unique<Entry>
-			(i == j ? 0 : dimension, nullptr, nullptr));
+			entries.emplace_back(misc::new_unique<Entry>(
+					i == j ? 0 : dimension, 
+					nullptr, nullptr));
 		}
 	}
 
 	// Set 1-hop connections
-	/*
 	for (int i = 0; i < dimension; i++)
 	{
 		Node *node = network->getNode(i);
-		for (auto &source_buffer : node->getOutputBuffers())
+		for (int j = 0; j < node->getNumOutputBuffer(); j++)
 		{
+			Buffer *source_buffer = node->getOutputBuffer(j);
 			Connection* connection = source_buffer->getConnection();
-			for (auto &dst_buffer : connection->getDestinationBuffers())
+			for (int k = 0; k < 
+					connection->getNumDestinationBuffers();
+					k++)
 			{
+				Buffer *dst_buffer = connection->
+					getDestinationBuffer(k);
 				Node* dst_node = dst_buffer->getNode();
 				if (node != dst_node)
 				{
+					std::cout << "Setting 1 hop node\n";
 					Entry* entry = Lookup(node, dst_node);
 					entry->setCost(1);
 					entry->setNextNode(dst_node);
-					entry->setBuffer(source_buffer.get());
+					entry->setBuffer(source_buffer);
 				}
 			}
 		}
 	}
-	*/
 }
 
 
@@ -176,9 +181,8 @@ void RoutingTable::DetectCycle()
 
 
 RoutingTable::Entry *RoutingTable::Lookup(Node *source,
-		Node *destination)
+		Node *destination) const
 {
-	dimension = network->getNumNodes();
 	int i = source->getId();
 	int j = destination->getId();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
@@ -188,7 +192,7 @@ RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 }
 
 
-void RoutingTable::Dump(std::ostream &os)
+void RoutingTable::Dump(std::ostream &os) const
 {
 	os << "\t";
 	for (int i = 0; i < dimension; i++)

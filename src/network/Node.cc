@@ -41,7 +41,7 @@ Node::Node(Network *network,
 }
 
 
-Buffer *Node::AddInputBuffer(int size, Connection *connection)
+Buffer *Node::addInputBuffer(int size, Connection *connection)
 {
 	std::string name = misc::fmt("in_buf_%d",
 				(unsigned int) input_buffers.size());
@@ -55,11 +55,12 @@ Buffer *Node::AddInputBuffer(int size, Connection *connection)
 }
 
 
-Buffer *Node::AddOutputBuffer(int size, Connection *connection)
+Buffer *Node::addOutputBuffer(int size, Connection *connection)
 {
 	std::string name = misc::fmt("out_buf_%d",
 			(unsigned int) output_buffers.size());
-	output_buffers.emplace_back(misc::new_unique<Buffer>(name,
+	output_buffers.emplace_back(misc::new_unique<Buffer>(
+			name,
 			size,
 			output_buffers.size(),
 			this,

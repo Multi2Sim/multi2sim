@@ -71,9 +71,6 @@ class Network
 	// Routing table
 	RoutingTable routing_table;
 
-	// Event driven simulation engine
-	esim::Engine *esim_engine;
-
 	// Parse the config file to add all the nodes belongs to the network
 	void ParseConfigurationForNodes(misc::IniFile *ini_file);
 
@@ -220,6 +217,12 @@ public:
 		return nodes[index].get();
 	}
 
+	/// Finds and returns node in the network given its user data.
+	///
+	/// \param user_data
+	///	User data attached by the memory system.
+	Node *getNodeByUserData(void *user_data) const;
+
 
 
 
@@ -252,10 +255,6 @@ public:
 	// Buses
 	//
 
-	/// Produce a bus port.
-	void ProduceBusPortByIniSection(const std::string &section,
-				misc::IniFile &ini_file);
-
 	/// Add the Bus to the Connection List of the Network.
 	void addBus(std::unique_ptr<Bus> bus);
 
@@ -268,13 +267,7 @@ public:
 	/// Return the number of nodes
 	virtual int getNumberConnections() const { return connections.size(); }
 
-	/// Finds and returns node in the network given its user data.
-	///
-	/// \param user_data
-	///	User data attached by the memory system.
-	Node *getNodeByUserData(void *user_data) const;
-
-
+	
 };
 
 
