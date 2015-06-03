@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cassert>
+
 #include <arch/southern-islands/asm/Arg.h>
 #include <arch/southern-islands/emu/Emu.h>
 #include <arch/x86/emu/Emu.h>
@@ -61,8 +63,8 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 
 	// Map new pages 
 	SI::Emu *si_emu = SI::Emu::getInstance();	
-	mem::Memory &video_mem = si_emu->getVideoMem();
-	video_mem.Map(si_emu->getVideoMemTop(), size,
+	mem::Memory *video_mem = si_emu->getVideoMem();
+	video_mem->Map(si_emu->getVideoMemTop(), size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
 
 	// Virtual address of memory object 
@@ -108,7 +110,7 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 {
 	SI::Emu *si_emu = SI::Emu::getInstance();
-	mem::Memory &video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMem();
 
 	// Arguments 
 	unsigned device_ptr;
@@ -127,9 +129,9 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 		throw Error("Device not allocated");
 
 	// Read memory from host to device
-	std::unique_ptr<char> buffer(new char[size]);
+	auto buffer = misc::new_unique_array<char>(size);
 	memory->Write(host_ptr, size, buffer.get());
-	video_mem.Read(device_ptr, size, buffer.get());
+	video_mem->Read(device_ptr, size, buffer.get());
 
 	// Return
 	return 0;
@@ -163,11 +165,13 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
 {
 	// Create program
-	int program_count = getProgramCount();
-	AddProgram(program_count);
+	int program_id = getProgramCount();
+	AddProgram(program_id);
 
 	// Return
-	return getProgramById(program_count)->getId();
+	Program *program = getProgramById(program_id);
+	assert(program);
+	return program->getId();
 }
 
 /// ABI Call 'ProgramSetBinary'
@@ -208,7 +212,7 @@ int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 		throw Error(misc::fmt("Invalid program ID (%d)", program_id));
 
 	// Set the binary
-	std::unique_ptr<char> buffer(new char[bin_size]);
+	auto buffer = misc::new_unique_array<char>(bin_size);
 	memory->Read(bin_ptr, bin_size, buffer.get());
 	program->setBinary(buffer.get(), bin_size);
 
@@ -318,8 +322,8 @@ int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 				"%d found", index, arg->getSize(), size));
 
 	// Save value 
-	std::unique_ptr<void> value_ptr(operator new(size));
-	memory->Read(host_ptr, size, (char *) value_ptr.get());
+	auto value_ptr = misc::new_unique_array<char>(size);
+	memory->Read(host_ptr, size, value_ptr.get());
 	arg->setValue(value_ptr.get());
 
 	// No return value 

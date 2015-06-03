@@ -370,16 +370,15 @@ bool Context::SyscallReadCanWakeup()
 	{
 		unsigned pbuf = regs.getEcx();
 		int count = regs.getEdx();
-		char *buf = new char[count];
+		auto buf = misc::new_unique_array<char>(count);
 
-		count = read(desc->getHostIndex(), buf, count);
+		count = read(desc->getHostIndex(), buf.get(), count);
 		if (count < 0)
 			misc::panic("%s: unexpected error in host 'read'",
 					__FUNCTION__);
 
 		regs.setEax(count);
-		memory->Write(pbuf, count, buf);
-		delete buf;
+		memory->Write(pbuf, count, buf.get());
 
 		emu->syscall_debug << misc::fmt("syscall 'read' - "
 				"continue (pid %d)\n", pid);
@@ -413,7 +412,7 @@ int Context::ExecuteSyscall_read()
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Poll the file descriptor to check if read is blocking
-	char *buf = new char[count]();
+	auto buf = misc::new_unique_array<char>(count);
 	struct pollfd fds;
 	fds.fd = host_fd;
 	fds.events = POLLIN;
@@ -425,23 +424,19 @@ int Context::ExecuteSyscall_read()
 	if (fds.revents || (desc->getFlags() & O_NONBLOCK))
 	{
 		// Host system call
-		err = read(host_fd, buf, count);
+		err = read(host_fd, buf.get(), count);
 		if (err == -1)
-		{
-			delete buf;
 			return -errno;
-		}
 
 		// Write in guest memory
 		if (err > 0)
 		{
-			memory->Write(buf_ptr, err, buf);
-			emu->syscall_debug << misc::StringBinaryBuffer(buf,
+			memory->Write(buf_ptr, err, buf.get());
+			emu->syscall_debug << misc::StringBinaryBuffer(buf.get(),
 					count, 40);
 		}
 
 		// Return number of read bytes
-		delete buf;
 		return err;
 	}
 
@@ -454,7 +449,6 @@ int Context::ExecuteSyscall_read()
 
 	// Free allocated buffer. Return value doesn't matter,
 	// it will be overwritten when context wakes up from blocking call.
-	delete buf;
 	return 0;
 }
 
@@ -505,17 +499,15 @@ bool Context::SyscallWriteCanWakeup()
 	{
 		unsigned pbuf = regs.getEcx();
 		int count = regs.getEdx();
-		char *buf = new char[count];
+		auto buf = misc::new_unique_array<char>(count);
 		
-		memory->Read(pbuf, count, buf);
-		count = write(desc->getHostIndex(), buf, count);
+		memory->Read(pbuf, count, buf.get());
+		count = write(desc->getHostIndex(), buf.get(), count);
 		if (count < 0)
 			misc::panic("%s: unexpected error in host 'write'",
 					__FUNCTION__);
 
 		regs.setEax(count);
-		delete buf;
-
 		emu->syscall_debug << misc::fmt("syscall write - "
 				"continue (pid %d)\n", pid);
 		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getEax());
@@ -548,10 +540,10 @@ int Context::ExecuteSyscall_write()
 	emu->syscall_debug << misc::fmt("  host_fd=%d\n", host_fd);
 
 	// Read buffer from memory
-	char *buf = new char[count];
-	memory->Read(buf_ptr, count, buf);
+	auto buf = misc::new_unique_array<char>(count);
+	memory->Read(buf_ptr, count, buf.get());
 	emu->syscall_debug << "  buf=\""
-			<< misc::StringBinaryBuffer(buf, count, 40)
+			<< misc::StringBinaryBuffer(buf.get(), count, 40)
 			<< "\"\n";
 
 	// Poll the file descriptor to check if write is blocking
@@ -564,12 +556,11 @@ int Context::ExecuteSyscall_write()
 	if (fds.revents)
 	{
 		// Host write
-		int err = write(host_fd, buf, count);
+		int err = write(host_fd, buf.get(), count);
 		if (err == -1)
 			err = -errno;
 
 		// Return written bytes
-		delete buf;
 		return err;
 	}
 
@@ -582,7 +573,6 @@ int Context::ExecuteSyscall_write()
 
 	// Return value doesn't matter here. It will be overwritten when the
 	// context wakes up after blocking call.
-	delete buf;
 	return 0;
 }
 

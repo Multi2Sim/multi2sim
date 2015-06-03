@@ -26,6 +26,7 @@
 #include <unordered_map>
 
 #include <lib/cpp/Error.h>
+#include <lib/cpp/Misc.h>
 
 
 namespace mem
@@ -80,7 +81,7 @@ public:
 		unsigned perm;
 
 		// The page data
-		std::unique_ptr<char> data;
+		std::unique_ptr<char[]> data;
 	
 	public:
 
@@ -109,7 +110,7 @@ public:
 		void AllocateData()
 		{
 			if (data == nullptr)
-				data.reset(new char[PageSize]());
+				data = misc::new_unique_array<char>(PageSize);
 		}
 
 		/// Set the page permissions, given as a bitmap of flags of

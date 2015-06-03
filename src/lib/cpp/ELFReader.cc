@@ -236,7 +236,9 @@ void File::ReadSections()
 
 	// Read section headers
 	for (int i = 0; i < info->e_shnum; i++)
-		sections.emplace_back(new Section(this, i,
+		sections.emplace_back(misc::new_unique<Section>(
+				this,
+				i,
 				info->e_shoff + i * info->e_shentsize));
 
 	// Check string table index
@@ -270,11 +272,10 @@ void File::ReadProgramHeaders()
 	
 	// Read program headers
 	for (int i = 0; i < info->e_phnum; i++)
-	{
-		auto ph = std::unique_ptr<ProgramHeader>(new ProgramHeader(this,
-				i, info->e_phoff + i * info->e_phentsize));
-		program_headers.push_back(move(ph));
-	}
+		program_headers.emplace_back(misc::new_unique<ProgramHeader>(
+				this,
+				i,
+				info->e_phoff + i * info->e_phentsize));
 }
 
 
@@ -292,7 +293,8 @@ void File::ReadSymbols()
 		for (int i = 0; i < num_symbols; i++)
 		{
 			// Create symbol in symbol list
-			symbols.emplace_back(new Symbol(this,
+			symbols.emplace_back(misc::new_unique<Symbol>(
+					this,
 					section.get(),
 					i * sizeof(Elf32_Sym)));
 
@@ -326,7 +328,7 @@ File::File(const std::string &path, bool read_content) :
 		throw Error(path, "Invalid ELF file");
 
 	// Load entire file into buffer and close
-	buffer.reset(new char[size]);
+	buffer = misc::new_unique_array<char>(size);
 	f.read(buffer.get(), size);
 	f.close();
 
@@ -352,9 +354,13 @@ File::File(const char *buffer, unsigned size, bool read_content)
 	// Initialize
 	path = "<anonymous>";
 
+	// Check that size is at least equal to header size
+	if (size < sizeof(Elf32_Ehdr))
+		throw Error(path, "Invalid ELF file");
+
 	// Copy buffer
 	this->size = size;
-	this->buffer.reset(new char[size]);
+	this->buffer = misc::new_unique_array<char>(size);
 	memcpy(this->buffer.get(), buffer, size);
 
 	// Make string stream point to buffer

@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
+
 #include "Driver.h"
 
 
@@ -66,7 +68,7 @@ Driver *Driver::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Driver());
+	instance = misc::new_unique<Driver>();
 	return instance.get();
 }
 	
@@ -129,28 +131,28 @@ void Driver::ProcessOptions()
 Program *Driver::AddProgram(int program_id)
 {
 	// Create new program and insert it to program list
-	programs.emplace_back(new Program(program_id));
+	programs.emplace_back(misc::new_unique<Program>(program_id));
 
 	// Return
-	return programs.end()->get();
+	return programs.back().get();
 }
 
 Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *program)
 {
 	// Create new kernel and insert it to program list
-	kernels.emplace_back(new Kernel(kernel_id, func, program));
+	kernels.emplace_back(misc::new_unique<Kernel>(kernel_id, func, program));
 
 	// Return
-	return kernels.end()->get();
+	return kernels.back().get();
 }
 
 NDRange *Driver::AddNDRange()
 {
 	// Create new ndrange and insert it to ndrange list
-	ndranges.emplace_back(new NDRange(SI::Emu::getInstance()));
+	ndranges.emplace_back(misc::new_unique<NDRange>(SI::Emu::getInstance()));
 
 	// Return
-	return ndranges.end()->get();
+	return ndranges.back().get();
 }
 
 }  // namepsace SI

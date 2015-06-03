@@ -57,12 +57,6 @@ class Driver : public comm::Driver
 	// Primary list of NDRanges
 	std::vector<std::unique_ptr<NDRange>> ndranges;
 
-	// Singletons have private constructors
-	Driver() : comm::Driver("Southern Islands",
-			"/dev/southern-islands")
-	{
-	}
-
 	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
 	//
@@ -127,10 +121,16 @@ public:
 			AppendPrefix("Southern Islands driver");
 		}
 	};
-
+	
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
 	
+	/// Constructor
+	Driver() : comm::Driver("Southern Islands",
+			"/dev/southern-islands")
+	{
+	}
+
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
 	int Call(int code, mem::Memory *memory, unsigned args_ptr);
@@ -151,13 +151,21 @@ public:
 	int getProgramCount() const { return programs.size(); }
 
 	/// Get program by its ID
-	Program *getProgramById(unsigned id) { return programs[id].get(); }
+	Program *getProgramById(unsigned id)
+	{
+		assert(id < programs.size());
+		return programs[id].get();
+	}
 
 	/// Get count of kernels in list
 	int getKernelCount() const { return kernels.size(); }
 
 	/// Get kernel by its Id
-	Kernel *getKernelById(unsigned id) { return kernels[id].get(); }
+	Kernel *getKernelById(unsigned id)
+	{
+		assert(id < kernels.size());
+		return kernels[id].get();
+	}
 
 };
 
