@@ -244,7 +244,7 @@ class Emu
 
 	// Local to the GPU
 	std::unique_ptr<mem::Memory> video_mem;
-	unsigned video_mem_top;
+	unsigned video_mem_top = 0;
 
 	// Shared with the CPU
 	std::unique_ptr<mem::Memory> shared_mem;
@@ -331,7 +331,7 @@ public:
 	unsigned getVideoMemTop() const { return video_mem_top; }
 
 	/// Get video_mem
-	mem::Memory &getVideoMem() { return *(video_mem.get()); }
+	mem::Memory *getVideoMem() { return video_mem.get(); }
 
 	/// Setters
 	///

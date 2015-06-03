@@ -82,7 +82,7 @@ class NDRange
 	int id = 0;
 
 	// Stage that the ND-range operates on
-	NDRangeStage stage;
+	NDRangeStage stage = NDRangeStageCompute;
 
 	// Initialization data to be load to GPRs, LDS... Set by SPI module
 	// Pixel Shader
@@ -94,10 +94,10 @@ class NDRange
 	std::list<long> completed_work_groups;
 
 	// Used by the driver
-	bool last_work_group_sent;
+	bool last_work_group_sent = 0;
 
 	// Number of work dimensions
-	unsigned work_dim;
+	unsigned work_dim = 0;
 
 	// 3D work size counters
 	unsigned global_size3[3];  // Total number of work_items

@@ -401,7 +401,7 @@ class File
 	std::string path;
 
 	// Content of the ELF file
-	std::unique_ptr<char> buffer;
+	std::unique_ptr<char[]> buffer;
 
 	// Total size of the ELF file
 	unsigned size;
