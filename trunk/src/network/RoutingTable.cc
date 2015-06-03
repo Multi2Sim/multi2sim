@@ -90,7 +90,6 @@ void RoutingTable::Initialize()
 
 void RoutingTable::FloydWarshall()
 {
-	/*
 	// The entry->next_node values do not necessarily point
 	// to the immediate next hop after this.
 	for (int k = 0; k < dimension; k++)
@@ -121,7 +120,6 @@ void RoutingTable::FloydWarshall()
 	// Calculating the output buffer for the entry.
 	Node *next_node = nullptr;
 	Entry *entry = nullptr;
-
 	for (int i = 0; i < dimension; i++)
 	{
 		for (int j = 0; j < dimension; j++)
@@ -149,18 +147,25 @@ void RoutingTable::FloydWarshall()
 			}
 
 			// Get the output buffer based on the next node
-			for (auto &buffer : node_i->getOutputBuffers())
+			for (int k = 0; k < node_i->getNumOutputBuffer(); k++)
 			{
+				Buffer *buffer = node_i->getOutputBuffer(k);
 				bool found = false;
 				Connection *connection = buffer->getConnection();
-				for (auto &destination_buffer :
-						connection->getDestinationBuffers())
+				for (int m = 0; m < connection->
+						getNumDestinationBuffers(); 
+						m++)
 				{
-					Node *receive_node = destination_buffer->getNode();
+					Buffer *destination_buffer = 
+						connection->
+						getDestinationBuffer(m);
+					Node *receive_node = 
+							destination_buffer->
+							getNode();
 					if (next_node != receive_node)
 						continue;
 					entry_i_j->setNextNode(receive_node);
-					entry_i_j->setBuffer(buffer.get());
+					entry_i_j->setBuffer(buffer);
 					found = true;
 					break;
 				}
@@ -169,9 +174,9 @@ void RoutingTable::FloydWarshall()
 			}
 		}
 	}
+
 	// Look for cycle
 	DetectCycle();
-	*/
 }
 
 
