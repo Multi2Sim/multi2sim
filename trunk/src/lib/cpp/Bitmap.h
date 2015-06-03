@@ -33,7 +33,7 @@ class Bitmap
 	size_t size;
 	size_t size_in_blocks;
 	size_t mask;
-	std::unique_ptr<size_t> data;
+	std::unique_ptr<size_t[]> data;
 
 	void getBlockBit(size_t at, size_t &block, size_t &bit) const;
 	

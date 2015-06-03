@@ -81,8 +81,7 @@ Memory::Page *Memory::newPage(unsigned address, unsigned perm)
 {
 	// Allocate new page
 	unsigned tag = address & ~(PageSize - 1);
-	auto ret = pages.emplace(tag, std::unique_ptr<Page>(
-			new Page(tag, perm)));
+	auto ret = pages.emplace(tag, misc::new_unique<Page>(tag, perm));
 
 	// Check tag page was inserted successfully
 	bool success = ret.second;

@@ -191,10 +191,13 @@ void Context::LoadELFSections(ELFReader::File *binary)
 			// Otherwise, copy section contents from ELF file.
 			if (section->getType() == 8)
 			{
-				char *zero_buffer = new char[section->getSize()]();
-				memory->Init(section->getAddr(), section->getSize(),
-						zero_buffer);
-				delete zero_buffer;
+				if (section->getSize())
+				{
+					auto zero_buffer = misc::new_unique_array<char>(section->getSize());
+					memory->Init(section->getAddr(),
+							section->getSize(),
+							zero_buffer.get());
+				}
 			}
 			else
 			{

@@ -20,6 +20,7 @@
 #include <cassert>
 
 #include "Bitmap.h"
+#include "Misc.h"
 
 
 namespace misc
@@ -42,7 +43,7 @@ Bitmap::Bitmap(size_t size)
 	this->size = size;
 	size_in_blocks = (size + bits_per_block - 1) / bits_per_block;
 	mask = (1 << (size % bits_per_block)) - 1;
-	data.reset(new size_t[size_in_blocks]());
+	data = misc::new_unique_array<size_t>(size_in_blocks);
 }
 
 
@@ -51,7 +52,7 @@ Bitmap::Bitmap(const Bitmap &b)
 	size = b.size;
 	size_in_blocks = b.size_in_blocks;
 	mask = b.mask;
-	data.reset(new size_t[size_in_blocks]());
+	data = misc::new_unique_array<size_t>(size_in_blocks);
 	for (size_t i = 0; i < size_in_blocks; i++)
 		data.get()[i] = b.data.get()[i];
 }
@@ -64,7 +65,7 @@ Bitmap &Bitmap::operator=(const Bitmap& b)
 	{
 		size = b.size;
 		size_in_blocks = b.size_in_blocks;
-		data.reset(new size_t[size_in_blocks]());
+		data = misc::new_unique_array<size_t>(size_in_blocks);
 	}
 
 	// Copy content
