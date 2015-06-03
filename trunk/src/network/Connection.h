@@ -64,12 +64,29 @@ public:
 	/// Dump connection information
 	virtual void Dump(std::ostream &os) const = 0;
 
-	// Adding ports to the bus source list
-	void AddSourceBuffer(Buffer *buffer);
+	/// Adding ports to the bus source list
+	void addSourceBuffer(Buffer *buffer);
 
-	// Adding ports to the bus destination list
-	void AddDestinationBuffer(Buffer *buffer);
+	/// Adding ports to the bus destination list
+	void addDestinationBuffer(Buffer *buffer);
 
+	/// Return number of source buffers
+	int getNumSourceBuffers() const { return source_buffers.size(); }
+
+	/// Return the source buffer by index
+	Buffer *getSourceBuffer(int index) { return source_buffers[index]; }
+
+	/// Return number of destination buffers
+	int getNumDestinationBuffers() const 
+	{ 
+		return destination_buffers.size(); 
+	}
+
+	/// Return the destination buffer by index
+	Buffer *getDestinationBuffer(int index) 
+	{ 
+		return destination_buffers[index]; 
+	}
 };
 }
 

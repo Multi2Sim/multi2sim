@@ -38,8 +38,6 @@ Network::Network(const std::string &name) :
 		name(name),
 		routing_table(this)
 {
-	// Get event-driven simulator engine, for convenience
-	esim_engine = esim::Engine::getInstance();
 }
 
 
@@ -95,6 +93,7 @@ void Network::ParseConfiguration(misc::IniFile *config,
 
 	// Debug information
 	System::debug << misc::fmt("Network found: %s\n",name.c_str());
+	Dump(std::cout);
 }
 
 
@@ -239,7 +238,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 			// Get destination node
 			std::string dst_name = ini_file->ReadString(section,
 					"Dest");
-			Node *destination = getNodeByName(src_name);
+			Node *destination = getNodeByName(dst_name);
 
 			// Get number of virtual channels
 			int num_virtual_channel = ini_file->ReadInt(section,
@@ -364,6 +363,9 @@ void Network::Dump(std::ostream &os) const
 	// Print links
 	for (auto &link : connections)
 		link->Dump(os);
+
+	// Print routing table
+	this->routing_table.Dump(os);	
 }
 
 
@@ -397,7 +399,7 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 		return false;
 
 	// Get current cycle
-	long long cycle = esim_engine->getCycle();
+	long long cycle = esim::Engine::getInstance()->getCycle();
 
 	// Check if output buffer is busy
 	if (output_buffer->getWriteBusy() >= cycle)
@@ -503,8 +505,8 @@ Link *Network::addLink(
 	Link *link = misc::cast<Link *>(connections.back().get());
 
 	// Create buffers
-	source_node->AddInputBuffer(source_buffer_size, link);
-	dest_node->AddOutputBuffer(dest_buffer_size, link);
+	// source_node->addInputBuffer(source_buffer_size, link);
+	// dest_node->addOutputBuffer(dest_buffer_size, link);
 
 	// Return
 	return link;
