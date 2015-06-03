@@ -57,11 +57,23 @@ public:
 		/// Get the routing cost.
 		int getCost() const { return cost; }
 
+		/// Set the routing cost
+		void setCost(int cost) { this->cost = cost; }
+
 		/// Get entry's next node.
 		Node *getNextNode() const { return next_node; }
 
+		/// Set next node
+		void setNextNode(Node *next_node) 
+		{ 
+			this->next_node = next_node; 
+		}
+
 		/// Get entry's next buffer.
 		Buffer *getBuffer() const { return buffer; }
+
+		/// Set the buffer to next node
+		void setBuffer(Buffer *buffer) { this->buffer = buffer; }
 	};
 
 private:
@@ -95,13 +107,13 @@ public:
 	void FloydWarshall();
 
 	/// Look up the entry from a certain node to a certain node
-	virtual Entry *Lookup(Node *source, Node *destination);
+	Entry *Lookup(Node *source, Node *destination) const;
 
 	/// Cycle detection mechanism in the routing table.
 	void DetectCycle();
 
 	/// Dump Routing table information.
-	void Dump(std::ostream &os = std::cout);
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Check if the routing table has cycle
 	bool hasCycle() const { return has_cycle; }

@@ -32,13 +32,13 @@ Connection::Connection(const std::string &name, Network *network, int bandwidth)
 }
 
 
-void Connection::AddSourceBuffer(Buffer* buffer)
+void Connection::addSourceBuffer(Buffer* buffer)
 {
 	this->source_buffers.emplace_back(buffer);
 }
 
 
-void Connection::AddDestinationBuffer(Buffer* buffer)
+void Connection::addDestinationBuffer(Buffer* buffer)
 {
 	this->destination_buffers.emplace_back(buffer);
 }
