@@ -126,41 +126,40 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 		
 		case Arch::SimDetailed:
 		{
-			throw misc::Panic("Timing simulation not supported");
-#if 0
 			// Get the timing simulator. If none is available, skip
 			// this architecture.
 			Timing *timing = arch->getTiming();
-			if (!timing)
-				continue;
+			assert(timing);
+
+			// Get the architecture's frequency domain
+			esim::FrequencyDomain *frequency_domain = timing->getFrequencyDomain();
+			assert(frequency_domain);
 
 			// Check whether the architecture should actually run an
 			// iteration. If it is working at a slower frequency than
 			// the main simulation loop, we must skip this call.
-			int frequency_domain = timing->getFrequencyDomain();
-			unsigned long long cycle = esim_domain_cycle(frequency_domain);
-			if (cycle == arch->last_timing_cycle)
+			long long cycle = frequency_domain->getCycle();
+			if (cycle == timing->getLastSimulationCycle())
 				continue;
 
 			// Run
-			bool active = timing->Run(timing);
+			bool active = timing->Run();
 			arch->setActive(active);
 
 			// ... but only update the last timing simulation cycle
 			// if there was an effective execution of the iteration
-			// loop. Otherwise, there is a deadlock: 'esim_time'
-			// will not advance (no call to 'esim_process_events')
+			// loop. Otherwise, there is a deadlock: ESim time
+			// will not advance (no call to esim::ProcessEvents)
 			// because no architecture ran, and no architecture will
-			// run because 'esim_time' did not advance.
+			// run because ESim time did not advance.
 			if (active)
 			{
-				arch->last_timing_cycle = cycle;
+				timing->SaveLastSimulationCycle();
 				num_timing_active++;
 			}
 
 			// Done
 			break;
-#endif
 		}
 
 		default:
