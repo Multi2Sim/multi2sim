@@ -1165,7 +1165,7 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 	// Load from LDS
 	case 3:
 	{
-		if (llvm_type->isIntegerTy(32) && llvm_type->isFloatTy())
+		if (llvm_type->isIntegerTy(32) || llvm_type->isFloatTy())
 		{
 			// Allocate vector register and create symbol for return value
 			std::string ret_name = llvm_inst->getName();
@@ -1368,81 +1368,54 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		llvm::BasicBlock *llvm_basic_block = llvm_inst->getIncomingBlock(i);
 		std::string label = llvm_basic_block->getName();
 
-		// Make sure incoming block has emitted
-		// auto tree = getFunction()->getTree();
-		// auto leaf_node = tree->getLeafNode(label);
-		// if(!leaf_node->getBasicBlock())
-		// {
-		// 	auto basic_block = getFunction()->newBasicBlock(leaf_node);
-		// 	basic_block->Emit(leaf_node->getLLVMBasicBlock());
-		// }
-
-		// Get source vector register mapped to LLVM value
+		// Get source symbol
 		llvm::Value *src_value = llvm_inst->getIncomingValue(i);
-		std::unique_ptr<Argument> src_arg =
-			function->TranslateValue(src_value);
+		std::string symbol = src_value->getName();
 		
-		auto arg_type = src_arg->getType();
-		switch (arg_type)
-		{
+		// At basic block level, there is no value set for ArgPhi for
+		// non literals. As the whole symbol table is not complete
+		// when emitting basic blocks, it often leads to symbol table
+		// look up error. The symbol will be looked up and mapped to 
+		// resigters later at function level. 
 
-		case Argument::TypeVectorRegister:
+		// Emit Literal constant as normal
+		llvm::Constant *llvm_const = dynamic_cast<llvm::Constant *>(src_value);
+		if (llvm_const)
 		{
-			ArgVectorRegister *src_arg_vreg = 
-				misc::cast<ArgVectorRegister *>(src_arg.get());
-			int src_vreg = src_arg_vreg->getId();
+			llvm::Type *llvm_type = llvm_const->getType();
+			std::unique_ptr<Argument> src_arg =
+				function->TranslateValue(src_value);
 
-			// Create Phi argument and set vector register
-			ArgPhi *arg = new si2bin::ArgPhi(label);
-			arg->setVectorRegister(src_vreg);
-			arg_list.emplace_back(arg);
-			break;
+			if (llvm_type->isIntegerTy())
+			{
+				ArgLiteral *src_arg_literal = 
+					misc::cast<ArgLiteral *>(src_arg.get());
+				int src_literal = src_arg_literal->getValue();
+
+				// Create Phi argument and set literal
+				ArgPhi *arg = new si2bin::ArgPhi(label);
+				arg->setLiteral(src_literal);
+				arg_list.emplace_back(arg);
+			}
+			else if (llvm_type->isFloatTy())
+			{
+				ArgLiteralFloat *src_arg_literal_float = 
+					misc::cast<ArgLiteralFloat *>(src_arg.get());
+				float src_literal_float = 
+					src_arg_literal_float->getValue();
+
+				// Create Phi argument and set scalar register
+				ArgPhi *arg = new si2bin::ArgPhi(label);
+				arg->setLiteralFloat(src_literal_float);
+				arg_list.emplace_back(arg);
+			}
+			else
+				throw Error("EmitPhi: Constant type not supported");
 		}
-
-		case Argument::TypeScalarRegister:
+		else // Emit ArgPhi without setting actual register
 		{
-			ArgScalarRegister *src_arg_sreg = 
-				misc::cast<ArgScalarRegister *>(src_arg.get());
-			int src_sreg = src_arg_sreg->getId();
-
-			// Create Phi argument and set scalar register
-			ArgPhi *arg = new si2bin::ArgPhi(label);
-			arg->setScalarRegister(src_sreg);
+			ArgPhi *arg = new si2bin::ArgPhi(label, symbol);
 			arg_list.emplace_back(arg);
-			break;
-		}
-
-		case Argument::TypeLiteral:
-		case Argument::TypeLiteralReduced:
-		{
-			ArgLiteral *src_arg_literal = 
-				misc::cast<ArgLiteral *>(src_arg.get());
-			int src_literal = src_arg_literal->getValue();
-
-			// Create Phi argument and set literal
-			ArgPhi *arg = new si2bin::ArgPhi(label);
-			arg->setLiteral(src_literal);
-			arg_list.emplace_back(arg);
-			break;
-		}
-
-		case Argument::TypeLiteralFloat:
-		case Argument::TypeLiteralFloatReduced:
-		{
-			ArgLiteralFloat *src_arg_literal_float = 
-				misc::cast<ArgLiteralFloat *>(src_arg.get());
-			float src_literal_float = src_arg_literal_float->getValue();
-
-			// Create Phi argument and set scalar register
-			ArgPhi *arg = new si2bin::ArgPhi(label);
-			arg->setLiteralFloat(src_literal_float);
-			arg_list.emplace_back(arg);
-			break;
-		}
-
-		default:
-			throw Error(misc::fmt("EmitPhi: Unsupported argument type: %d",
-				arg_type));
 		}
 	}
 
