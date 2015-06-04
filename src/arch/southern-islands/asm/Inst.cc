@@ -31,6 +31,14 @@
 namespace SI
 {
 
+/// Constants for special registers
+const unsigned Inst::RegisterM0;
+const unsigned Inst::RegisterVcc;
+const unsigned Inst::RegisterVccz;
+const unsigned Inst::RegisterExec;
+const unsigned Inst::RegisterExecz;
+const unsigned Inst::RegisterScc;
+
 misc::StringMap inst_format_map =
 {
 	{ "<invalid>", InstFormatInvalid },

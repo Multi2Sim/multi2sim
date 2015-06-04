@@ -33,8 +33,6 @@ class Wavefront;
 class WorkGroup;
 class NDRange;
 
-// typedef void (*WorkItemISAFuncPtr)(Inst *inst);
-
 /// Abstract polymorphic class used to attach additional information to the
 /// work-item. The timing simulator can created objects derived from this class
 /// and link them with the work-item.
@@ -66,36 +64,52 @@ public:
 	};
 
 private:
+
 	static const int MaxLDSAccessesPerInst = 2;
 	
-	// IDs
-	int id;  // global ID
-	int id_in_wavefront;
-	int id_in_work_group;  // local ID
+	//global ID
+	int id = 0;
 
-	// 3-dimensional IDs
-	int id_3d[3];  // global 3D IDs
-	int id_in_work_group_3d[3];  // local 3D IDs
+	// wavefront ID
+	int id_in_wavefront = 0;
 
-	// Wavefront, work-group, and NDRange where it belongs
-	Wavefront *wavefront;
-	WorkGroup *work_group;
-	NDRange *ndrange;
+	//local ID
+	int id_in_work_group = 0;
 
-	// Global and local memory
-	mem::Memory *global_mem;
-	mem::Memory *lds;
+	// global 3D IDs
+	int id_3d[3];
+	// local 3D IDs
+	int id_in_work_group_3d[3];
+
+	// Wavefront
+	Wavefront *wavefront = nullptr;
+	
+	// work-group
+	WorkGroup *work_group = nullptr;
+	
+	// NDRange
+	NDRange *ndrange = nullptr;
+
+	// Global memory
+	mem::Memory *global_mem = nullptr;
+	
+	// Local memory
+	mem::Memory *lds = nullptr;
 
 	// Vector registers
 	InstReg vreg[256];
 
-	// Last global memory access
+	// Last global memory address
 	unsigned global_mem_access_addr;
+	
+	// Last global memory access size
 	unsigned global_mem_access_size;
 
 	// Last LDS accesses by last instruction
 	int lds_access_count;  // Number of LDS access by last instruction
 	MemoryAccess lds_access[MaxLDSAccessesPerInst];
+
+	//TODO fix this naming implementation
 
 	// Emulation of ISA. This code expands to one function per ISA
 	// instruction. For example: ISA_s_mov_b32_Impl(Inst *inst)
@@ -130,8 +144,13 @@ public:
 	/// \param id Global 1D identifier of the work-item
 	WorkItem(Wavefront *wavefront, int id);
 
-	/// Getters
-	///
+
+
+
+	//
+	// Getters
+	//
+
 	/// Get wavefront it belongs to
 	Wavefront *getWavefront() const { return wavefront; }
 
@@ -139,7 +158,8 @@ public:
 	unsigned getId() const { return id; }
 
 	/// Get id_3d
-	unsigned getId3D(unsigned dim) const {
+	unsigned getId3D(unsigned dim) const 
+	{
 		assert(dim >= 0 && dim <= 2);
 		return id_3d[dim];
 	}
@@ -152,17 +172,24 @@ public:
 
 	/// Get id_in_work_group_3d
 	/// \param dim Local id dimention
-	unsigned getLocalId3D(unsigned dim) const { 
+	unsigned getLocalId3D(unsigned dim) const 
+	{ 
 		assert(dim >= 0 && dim <= 2);
 		return id_in_work_group_3d[dim]; 
 	}
 
-	/// Setters
-	///
+
+
+
+	//
+	// Setters
+	//
+
 	/// Set workitem 3D global identifier
 	/// \param dim Goblal dimention of identifier
 	/// \param id 3D Identifier
-	void setGlobalId3D(unsigned dim, unsigned id) {
+	void setGlobalId3D(unsigned dim, unsigned id) 
+	{
 		assert(dim >= 0 && dim <= 2);
 		id_3d[dim] = id;		
 	}
@@ -174,7 +201,8 @@ public:
 	/// Set workitem 3D local identifier
 	/// \param dim Local id dimention
 	/// \param id 3D Identifier
-	void setLocalId3D(unsigned dim, unsigned id) {
+	void setLocalId3D(unsigned dim, unsigned id) 
+	{
 		assert(dim >= 0 && dim <= 2);
 		id_in_work_group_3d[dim] = id;		
 	}
@@ -243,6 +271,6 @@ public:
 
 };
 
-}  /* namespace SI */
+}  // namespace SI
 
 #endif

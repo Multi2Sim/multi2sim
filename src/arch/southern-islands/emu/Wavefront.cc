@@ -44,18 +44,18 @@ unsigned Wavefront::getSregUint(int sreg) const
 	assert(sreg != 254);
 	assert(sreg < 256);
 
-	if (sreg == SI_VCCZ)
+	if (sreg == Inst::RegisterVccz)
 	{
-		if (this->sreg[SI_VCC].as_uint == 0 && 
-			this->sreg[SI_VCC+1].as_uint == 0)
+		if (this->sreg[Inst::RegisterVcc].as_uint == 0 && 
+			this->sreg[Inst::RegisterVcc+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
 	}
-	if (sreg == SI_EXECZ)
+	if (sreg == Inst::RegisterExecz)
 	{
-		if (this->sreg[SI_EXEC].as_uint == 0 && 
-			this->sreg[SI_EXEC+1].as_uint == 0)
+		if (this->sreg[Inst::RegisterExec].as_uint == 0 && 
+			this->sreg[Inst::RegisterExec+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
@@ -85,17 +85,17 @@ void Wavefront::setSregUint(int sreg, unsigned int value)
 	this->sreg[sreg].as_uint = value;
 
 	// Update VCCZ and EXECZ if necessary.
-	if (sreg == SI_VCC || sreg == SI_VCC + 1)
+	if (sreg == Inst::RegisterVcc || sreg == Inst::RegisterVcc + 1)
 	{
-		this->sreg[SI_VCCZ].as_uint = 
-			!this->sreg[SI_VCC].as_uint &
-			!this->sreg[SI_VCC + 1].as_uint;
+		this->sreg[Inst::RegisterVccz].as_uint = 
+			!this->sreg[Inst::RegisterVcc].as_uint &
+			!this->sreg[Inst::RegisterVcc + 1].as_uint;
 	}
-	if (sreg == SI_EXEC || sreg == SI_EXEC + 1)
+	if (sreg == Inst::RegisterExec || sreg == Inst::RegisterExec + 1)
 	{
-		this->sreg[SI_EXECZ].as_uint = 
-			!this->sreg[SI_EXEC].as_uint &
-			!this->sreg[SI_EXEC + 1].as_uint;
+		this->sreg[Inst::RegisterExecz].as_uint = 
+			!this->sreg[Inst::RegisterExec].as_uint &
+			!this->sreg[Inst::RegisterExec + 1].as_uint;
 	}
 
 	// Statistics
@@ -181,10 +181,7 @@ void Wavefront::Execute()
 	// inst_count++;
 
 	// Dump instruction string when debugging
-	if (Emu::debug)
-		inst->Dump(Emu::debug);
 
-	// Execute the current instruction
 	switch (format)
 	{
 
@@ -199,10 +196,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -217,11 +211,8 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
-
+		Emu::debug << "\n";
+		
 		break;
 	}
 
@@ -243,10 +234,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -261,10 +249,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -279,10 +264,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -298,10 +280,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -314,19 +293,16 @@ void Wavefront::Execute()
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end;
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
-			{
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 				work_item->Execute(opcode, inst.get());
-			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -340,22 +316,24 @@ void Wavefront::Execute()
 		// Special case: V_READFIRSTLANE_B32
 		if (bytes->vop1.op == 2)
 		{
-			/* Instruction ignores execution mask and is only 
-			 * executed on one work item. Execute on the first 
-			 * active work item from the least significant bit 
-			 * in EXEC. (if exec is 0, execute work item 0) */
+			// Instruction ignores execution mask and is only 
+			// executed on one work item. Execute on the first 
+			// active work item from the least significant bit 
+			// in EXEC. (if exec is 0, execute work item 0)
 			work_item = (work_items_begin[0]).get();
-			if (work_item->ReadSReg(SI_EXEC) == 0 && 
-				work_item->ReadSReg(SI_EXEC + 1) == 0)
+			if (work_item->ReadSReg(Inst::RegisterExec) == 0 && 
+				work_item->ReadSReg(Inst::RegisterExec + 1) == 0)
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 			else 
 			{
-				for(auto i = work_items_begin; i != work_items_end; ++i)
+				for (auto it = work_items_begin, e = work_items_end; 
+						it != e; ++it)
 				{
-					work_item = (*i).get();
-					if(getWorkItemActive(work_item->getIdInWavefront()))
+					work_item = (*it).get();
+					if (isWorkItemActive(work_item->getIdInWavefront()))
+					if (isWorkItemActive(work_item->getIdInWavefront()))
 					{
 						work_item->Execute(opcode, inst.get());
 					}
@@ -365,20 +343,19 @@ void Wavefront::Execute()
 		else
 		{
 			// Execute the instruction
-			for(auto i = work_items_begin; i != work_items_end; ++i)
+			for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 			{
-				work_item = (*i).get();
-				if(getWorkItemActive(work_item->getIdInWavefront()))
+				work_item = (*it).get();
+				if (isWorkItemActive(work_item->getIdInWavefront()))
+				if (isWorkItemActive(work_item->getIdInWavefront()))
 				{
 					work_item->Execute(opcode, inst.get());
 				}
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -390,19 +367,18 @@ void Wavefront::Execute()
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -414,19 +390,18 @@ void Wavefront::Execute()
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -438,19 +413,18 @@ void Wavefront::Execute()
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -462,19 +436,18 @@ void Wavefront::Execute()
 		vector_alu_inst_count++;
 
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
  	
 		break;
 	}
@@ -504,19 +477,18 @@ void Wavefront::Execute()
 		}
 
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -543,19 +515,18 @@ void Wavefront::Execute()
 		}
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -588,19 +559,18 @@ void Wavefront::Execute()
 		}
 	
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 	}
@@ -615,19 +585,18 @@ void Wavefront::Execute()
 		// FIXME
 			
 		// Execute the instruction
-		for(auto i = work_items_begin; i != work_items_end; ++i)
+		for (auto it = work_items_begin, e = work_items_end; 
+				it != e; ++it)
 		{
-			work_item = (*i).get();
-			if(getWorkItemActive(work_item->getIdInWavefront()))
+			work_item = (*it).get();
+			if (isWorkItemActive(work_item->getIdInWavefront()))
+			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, inst.get());
 			}
 		}
 
-		if (Emu::debug)
-		{
-			Emu::debug << misc::fmt("\n");
-		}
+		Emu::debug << "\n";
 
 		break;
 
@@ -657,25 +626,26 @@ void Wavefront::Execute()
 	}
 }
 	
-bool Wavefront::getWorkItemActive(int id_in_wavefront)
+bool Wavefront::isWorkItemActive(int id_in_wavefront)
 {
 	int mask = 1;
-	if(id_in_wavefront < 32)
+	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (sreg[SI_EXEC].as_uint & mask) >> 
+		return (sreg[Inst::RegisterExec].as_uint & mask) >> 
 			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (sreg[SI_EXEC + 1].as_uint & mask) >> 
+		return (sreg[Inst::RegisterExec + 1].as_uint & mask) >> 
 			(id_in_wavefront - 32);
 	}	
 }
 
 void Wavefront::setSReg(int sreg, unsigned value)
 {
+	assert(sreg > 0 && sreg < 104);
 	this->sreg[sreg].as_uint = value;
 }
 
@@ -761,20 +731,6 @@ void Wavefront::setSRegWithUAVTable(int first_reg, int num_regs)
 	assert(sizeof(mem_ptr) == 8);
 
 	mem_ptr.addr = (unsigned int)ndrange->getUAVTableAddr();
-
-	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
-}
-
-void Wavefront::setSRegWithVertexBufferTable(int first_reg, int num_regs)
-{
-	NDRange *ndrange = work_group->getNDRange();
-	EmuMemPtr mem_ptr;
-
-	assert(num_regs == 2);
-	assert(sizeof(mem_ptr) == 8);
-
-	mem_ptr.addr = (unsigned int)ndrange->getVertexBufferTableAddr();
 
 	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
 	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
