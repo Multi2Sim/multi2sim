@@ -984,8 +984,13 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	// Program-wide constant buffers start at number 2.
 	for (unsigned i = 2; i < Emu::MaxNumConstBufs; i++)
 	{
-		ConstantBuffer *constant_buffer =
-			getProgram()->getConstantBufferByIndex(i);
+		// Assert that program is valid
+		Program *program = getProgram();
+		assert(program);
+
+		// Retrieve constant buffer
+		ConstantBuffer *constant_buffer = 
+				program->getConstantBufferByIndex(i);
 
 		if (!constant_buffer)
 			break;
