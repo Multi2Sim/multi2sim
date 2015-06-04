@@ -635,6 +635,26 @@ void Function::EmitBody()
 		BasicBlock *basic_block = newBasicBlock(leaf_node);
 		basic_block->Emit(leaf_node->getLLVMBasicBlock());
 	}
+
+	// Special pass for Phi
+	// for (auto node : node_list)
+	// {
+	// 	// Skip abstract nodes
+	// 	comm::LeafNode *leaf_node = dynamic_cast
+	// 			<comm::LeafNode *>(node);
+	// 	if (!leaf_node)
+	// 		continue;
+
+	// 	// Skip nodes with no LLVM code to translate
+	// 	if (!leaf_node->getLLVMBasicBlock())
+	// 		continue;
+
+	// 	// Phi should have enough information about symbols/registers
+	// 	auto basic_block = leaf_node->getBasicBlock();
+	// 	assert(basic_block);
+	// 	basic_block->PhiPass(leaf_node->getLLVMBasicBlock());
+	// }
+
 }
 
 
@@ -659,19 +679,73 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		comm::BasicBlock *comm_basic_block = node->getBasicBlock();
 		BasicBlock *basic_block = misc::cast<BasicBlock *>(comm_basic_block);
 
-		// Get the source vector register
-		int src_vreg = arg_phi->getId();
-
 		// Get reverse iterator to last non-control flow instruction
 		auto it = basic_block->getFirstControlFlowInstruction();
 
-		// Emit move instruction
-		// s_mov_b32 <dest_value>, <src_value>
-		Instruction *instruction = basic_block->addInstruction(it,
-				SI::INST_V_MOV_B32);
-		instruction->addVectorRegister(dst_vreg);
-		instruction->addVectorRegister(src_vreg);
-		assert(instruction->hasValidArguments());
+		// Get the source vector register
+		auto src_type = arg_phi->getValueType();
+		switch (src_type)
+		{
+
+		case Argument::TypeVectorRegister:
+		{
+			int src_vreg = arg_phi->getId();
+
+			// Emit move instruction
+			// v_mov_b32 <dest_value>, <src_value>
+			Instruction *instruction = basic_block->addInstruction(it,
+					SI::INST_V_MOV_B32);
+			instruction->addVectorRegister(dst_vreg);
+			instruction->addVectorRegister(src_vreg);
+			assert(instruction->hasValidArguments());
+			break;
+		}
+
+		case Argument::TypeScalarRegister:
+		{
+			int src_sreg = arg_phi->getId();
+
+			// Emit move instruction
+			// v_mov_b32 <dest_value>, <src_value>
+			Instruction *instruction = basic_block->addInstruction(it,
+					SI::INST_V_MOV_B32);
+			instruction->addVectorRegister(dst_vreg);
+			instruction->addScalarRegister(src_sreg);
+			assert(instruction->hasValidArguments());
+			break;
+		}
+
+		case Argument::TypeLiteral:
+		{
+			int src_literal = arg_phi->getLiteral()->getValue();
+
+			// Emit move instruction
+			// v_mov_b32 <dest_value>, <src_value>
+			Instruction *instruction = basic_block->addInstruction(it,
+					SI::INST_V_MOV_B32);
+			instruction->addVectorRegister(dst_vreg);
+			instruction->addLiteral(src_literal);
+			assert(instruction->hasValidArguments());
+			break;
+		}
+
+		case Argument::TypeLiteralFloat:
+		{
+			int src_literal_float = arg_phi->getLiteralFloat()->getValue();
+
+			// Emit move instruction
+			// v_mov_b32 <dest_value>, <src_value>
+			Instruction *instruction = basic_block->addInstruction(it,
+					SI::INST_V_MOV_B32);
+			instruction->addVectorRegister(dst_vreg);
+			instruction->addLiteralFloat(src_literal_float);
+			assert(instruction->hasValidArguments());
+			break;
+		}
+
+		default:
+			throw Error("Unsupported type in Phi");
+		}
 	}
 }
 
@@ -1382,6 +1456,14 @@ std::unique_ptr<Argument> Function::TranslateConstant(llvm::Constant *llvm_const
 				<llvm::ConstantInt *>(llvm_const);
 		int value = llvm_int_const->getZExtValue();
 		return misc::new_unique<ArgLiteral>(value);
+	}
+	else if (llvm_type->isFloatTy())
+	{
+		// Create argument
+		llvm::ConstantFP *llvm_float_const = misc::cast
+				<llvm::ConstantFP *>(llvm_const);
+		int value = llvm_float_const->getValueAPF().bitcastToAPInt().getZExtValue();
+		return misc::new_unique<ArgLiteral>(value);		
 	}
 	else
 	{

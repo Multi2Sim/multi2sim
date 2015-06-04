@@ -102,11 +102,11 @@ void Context::Parse(const std::string &in, const std::string &out)
 		ddp.run();
 
 		// Emit code for function
-		function->EmitPhi();
 		function->EmitHeader();
 		function->EmitArgs();
 		function->EmitBody();
 		function->EmitControlFlow();
+		function->EmitPhi();
 
 	/*	LivenessAnalysisPass lap(function);
 		ConflictGraphPass cgp(function);

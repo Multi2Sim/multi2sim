@@ -702,7 +702,7 @@ public:
 	/// Set value to be an ArgScalarRegister pointer
 	void setScalarRegister(int id)
 	{
-		value = misc::new_unique<ArgVectorRegister>(id);
+		value.reset(new ArgScalarRegister(id));
 	}
 
 	/// Set value to be an ArgVectorRegister pointer
@@ -722,6 +722,30 @@ public:
 	{
 		this->value.reset(new ArgLiteralFloat(value));
 	}
+
+        /// Reserve value to be an ArgScalarRegister pointer
+        void reserveScalarRegister()
+        {
+                value.reset(new ArgScalarRegister(-1));
+        }
+
+        /// Reserve value to be an ArgVectorRegister pointer
+        void reserveVectorRegister()
+        {
+                value.reset(new ArgVectorRegister(-1));
+        }
+
+        /// Reserve value to be a literal (interger)
+        void reserveLiteral()
+        {
+                this->value.reset(new ArgLiteral(-1));
+        }
+
+        /// Reserve value to be a literal (float)
+        void reserveLiteralFloat()
+        {
+                this->value.reset(new ArgLiteralFloat(-1.0f));
+        }
 
 	/// Dump ArgPhi
 	void Dump(std::ostream &os) const;
