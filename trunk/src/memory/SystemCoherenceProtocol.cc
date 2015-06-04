@@ -23,101 +23,101 @@
 namespace mem
 {
 	
-esim::EventType *System::ev_load;
-esim::EventType *System::ev_load_lock;
-esim::EventType *System::ev_load_action;
-esim::EventType *System::ev_load_miss;
-esim::EventType *System::ev_load_unlock;
-esim::EventType *System::ev_load_finish;
+esim::EventType *System::event_type_load;
+esim::EventType *System::event_type_load_lock;
+esim::EventType *System::event_type_load_action;
+esim::EventType *System::event_type_load_miss;
+esim::EventType *System::event_type_load_unlock;
+esim::EventType *System::event_type_load_finish;
 
-esim::EventType *System::ev_store;
-esim::EventType *System::ev_store_lock;
-esim::EventType *System::ev_store_action;
-esim::EventType *System::ev_store_unlock;
-esim::EventType *System::ev_store_finish;
+esim::EventType *System::event_type_store;
+esim::EventType *System::event_type_store_lock;
+esim::EventType *System::event_type_store_action;
+esim::EventType *System::event_type_store_unlock;
+esim::EventType *System::event_type_store_finish;
 
-esim::EventType *System::ev_nc_store;
-esim::EventType *System::ev_nc_store_lock;
-esim::EventType *System::ev_nc_store_writeback;
-esim::EventType *System::ev_nc_store_action;
-esim::EventType *System::ev_nc_store_miss;
-esim::EventType *System::ev_nc_store_unlock;
-esim::EventType *System::ev_nc_store_finish;
+esim::EventType *System::event_type_nc_store;
+esim::EventType *System::event_type_nc_store_lock;
+esim::EventType *System::event_type_nc_store_writeback;
+esim::EventType *System::event_type_nc_store_action;
+esim::EventType *System::event_type_nc_store_miss;
+esim::EventType *System::event_type_nc_store_unlock;
+esim::EventType *System::event_type_nc_store_finish;
 
-esim::EventType *System::ev_prefetch;
-esim::EventType *System::ev_prefetch_lock;
-esim::EventType *System::ev_prefetch_action;
-esim::EventType *System::ev_prefetch_miss;
-esim::EventType *System::ev_prefetch_unlock;
-esim::EventType *System::ev_prefetch_finish;
+esim::EventType *System::event_type_prefetch;
+esim::EventType *System::event_type_prefetch_lock;
+esim::EventType *System::event_type_prefetch_action;
+esim::EventType *System::event_type_prefetch_miss;
+esim::EventType *System::event_type_prefetch_unlock;
+esim::EventType *System::event_type_prefetch_finish;
 
-esim::EventType *System::ev_find_and_lock;
-esim::EventType *System::ev_find_and_lock_port;
-esim::EventType *System::ev_find_and_lock_action;
-esim::EventType *System::ev_find_and_lock_finish;
+esim::EventType *System::event_type_find_and_lock;
+esim::EventType *System::event_type_find_and_lock_port;
+esim::EventType *System::event_type_find_and_lock_action;
+esim::EventType *System::event_type_find_and_lock_finish;
 
-esim::EventType *System::ev_evict;
-esim::EventType *System::ev_evict_invalid;
-esim::EventType *System::ev_evict_action;
-esim::EventType *System::ev_evict_receive;
-esim::EventType *System::ev_evict_process;
-esim::EventType *System::ev_evict_process_noncoherent;
-esim::EventType *System::ev_evict_reply;
-esim::EventType *System::ev_evict_reply_receive;
-esim::EventType *System::ev_evict_finish;
+esim::EventType *System::event_type_evict;
+esim::EventType *System::event_type_evict_invalid;
+esim::EventType *System::event_type_evict_action;
+esim::EventType *System::event_type_evict_receive;
+esim::EventType *System::event_type_evict_process;
+esim::EventType *System::event_type_evict_process_noncoherent;
+esim::EventType *System::event_type_evict_reply;
+esim::EventType *System::event_type_evict_reply_receive;
+esim::EventType *System::event_type_evict_finish;
 
-esim::EventType *System::ev_write_request;
-esim::EventType *System::ev_write_request_receive;
-esim::EventType *System::ev_write_request_action;
-esim::EventType *System::ev_write_request_exclusive;
-esim::EventType *System::ev_write_request_updown;
-esim::EventType *System::ev_write_request_updown_finish;
-esim::EventType *System::ev_write_request_downup;
-esim::EventType *System::ev_write_request_downup_finish;
-esim::EventType *System::ev_write_request_reply;
-esim::EventType *System::ev_write_request_finish;
+esim::EventType *System::event_type_write_request;
+esim::EventType *System::event_type_write_request_receive;
+esim::EventType *System::event_type_write_request_action;
+esim::EventType *System::event_type_write_request_exclusive;
+esim::EventType *System::event_type_write_request_updown;
+esim::EventType *System::event_type_write_request_updown_finish;
+esim::EventType *System::event_type_write_request_downup;
+esim::EventType *System::event_type_write_request_downup_finish;
+esim::EventType *System::event_type_write_request_reply;
+esim::EventType *System::event_type_write_request_finish;
 
-esim::EventType *System::ev_read_request;
-esim::EventType *System::ev_read_request_receive;
-esim::EventType *System::ev_read_request_action;
-esim::EventType *System::ev_read_request_updown;
-esim::EventType *System::ev_read_request_updown_miss;
-esim::EventType *System::ev_read_request_updown_finish;
-esim::EventType *System::ev_read_request_downup;
-esim::EventType *System::ev_read_request_downup_wait_for_reqs;
-esim::EventType *System::ev_read_request_downup_finish;
-esim::EventType *System::ev_read_request_reply;
-esim::EventType *System::ev_read_request_finish;
+esim::EventType *System::event_type_read_request;
+esim::EventType *System::event_type_read_request_receive;
+esim::EventType *System::event_type_read_request_action;
+esim::EventType *System::event_type_read_request_updown;
+esim::EventType *System::event_type_read_request_updown_miss;
+esim::EventType *System::event_type_read_request_updown_finish;
+esim::EventType *System::event_type_read_request_downup;
+esim::EventType *System::event_type_read_request_downup_wait_for_reqs;
+esim::EventType *System::event_type_read_request_downup_finish;
+esim::EventType *System::event_type_read_request_reply;
+esim::EventType *System::event_type_read_request_finish;
 
-esim::EventType *System::ev_invalidate;
-esim::EventType *System::ev_invalidate_finish;
+esim::EventType *System::event_type_invalidate;
+esim::EventType *System::event_type_invalidate_finish;
 
-esim::EventType *System::ev_peer_send;
-esim::EventType *System::ev_peer_receive;
-esim::EventType *System::ev_peer_reply;
-esim::EventType *System::ev_peer_finish;
+esim::EventType *System::event_type_peer_send;
+esim::EventType *System::event_type_peer_receive;
+esim::EventType *System::event_type_peer_reply;
+esim::EventType *System::event_type_peer_finish;
 
-esim::EventType *System::ev_message;
-esim::EventType *System::ev_message_receive;
-esim::EventType *System::ev_message_action;
-esim::EventType *System::ev_message_reply;
-esim::EventType *System::ev_message_finish;
+esim::EventType *System::event_type_message;
+esim::EventType *System::event_type_message_receive;
+esim::EventType *System::event_type_message_action;
+esim::EventType *System::event_type_message_reply;
+esim::EventType *System::event_type_message_finish;
 
-esim::EventType *System::ev_flush;
-esim::EventType *System::ev_flush_finish;
+esim::EventType *System::event_type_flush;
+esim::EventType *System::event_type_flush_finish;
 	
-esim::EventType *System::ev_local_load;
-esim::EventType *System::ev_local_load_lock;
-esim::EventType *System::ev_local_load_finish;
+esim::EventType *System::event_type_local_load;
+esim::EventType *System::event_type_local_load_lock;
+esim::EventType *System::event_type_local_load_finish;
 
-esim::EventType *System::ev_local_store;
-esim::EventType *System::ev_local_store_lock;
-esim::EventType *System::ev_local_store_finish;
+esim::EventType *System::event_type_local_store;
+esim::EventType *System::event_type_local_store_lock;
+esim::EventType *System::event_type_local_store_finish;
 
-esim::EventType *System::ev_local_find_and_lock;
-esim::EventType *System::ev_local_find_and_lock_port;
-esim::EventType *System::ev_local_find_and_lock_action;
-esim::EventType *System::ev_local_find_and_lock_finish;
+esim::EventType *System::event_type_local_find_and_lock;
+esim::EventType *System::event_type_local_find_and_lock_port;
+esim::EventType *System::event_type_local_find_and_lock_action;
+esim::EventType *System::event_type_local_find_and_lock_finish;
 
 
 void System::evLoadHandler(esim::EventType *type, esim::EventFrame *frame)

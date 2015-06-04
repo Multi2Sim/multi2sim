@@ -18,6 +18,7 @@
  */
 
 #include "Module.h"
+#include "System.h"
 
 
 namespace mem
@@ -36,14 +37,87 @@ Module::Module(const std::string &name,
 		data_latency(data_latency),
 		num_ports(num_ports)
 {
-	// Create ports
+	// Create 'num_ports' in vector of ports
 	ports.reserve(num_ports);
-	for (int i = 0; i < num_ports; i++)
-		ports.emplace_back(misc::new_unique<Port>());
 
 	// Block size
 	assert(!(block_size & (block_size - 1)) && block_size >= 4);
 	log_block_size = misc::LogBase2(block_size);
+}
+
+
+long long Module::Access(AccessType access_type,
+		unsigned address,
+		int *witness)
+{
+	// Create a new event frame
+	auto frame = misc::new_shared<Frame>(this, address);
+	frame->witness = witness;
+
+	// Select initial event type
+	esim::EventType *event_type;
+	switch (type)
+	{
+
+	case TypeCache:
+	case TypeMainMemory:
+
+		switch (access_type)
+		{
+
+		case AccessLoad:
+
+			event_type = System::event_type_load;
+			break;
+
+		case AccessStore:
+
+			event_type = System::event_type_store;
+			break;
+
+		case AccessNCStore:
+
+			event_type = System::event_type_nc_store;
+			break;
+
+		default:
+
+			throw misc::Panic("Invalid access type");
+		}
+		break;
+
+	case TypeLocalMemory:
+
+		switch (access_type)
+		{
+
+		case AccessLoad:
+
+			event_type = System::event_type_local_load;
+			break;
+
+		case AccessStore:
+
+			event_type = System::event_type_local_store;
+			break;
+
+		default:
+
+			throw misc::Panic("Invalid access type");
+		}
+		break;
+
+	default:
+
+		throw misc::Panic("Invalid module type");
+	}
+
+	// Schedule event
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	esim_engine->Call(event_type, frame);
+
+	// Return frame ID
+	return frame->getId();
 }
 
 

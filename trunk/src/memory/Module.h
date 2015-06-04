@@ -29,6 +29,7 @@
 
 #include "Cache.h"
 #include "Directory.h"
+#include "Frame.h"
 
 
 // Forward declarations
@@ -68,17 +69,12 @@ public:
 		AccessInvalid = 0,
 		AccessLoad,
 		AccessStore,
-		AccessNCStore,
-		AccessPrefetch
+		AccessNCStore
 	};
 
 private:
 
-	class Frame : public esim::EventFrame
-	{
-	};
-	
-	/// Port in a memory module
+	// Port in a memory module
 	class Port
 	{
 		// Port lock status
@@ -167,7 +163,7 @@ private:
 	//
 
 	// Array of ports
-	std::vector<std::unique_ptr<Port>> ports;
+	std::vector<Port> ports;
 
 	// Number of ports
 	int num_ports = 0;
@@ -281,9 +277,6 @@ private:
 	long long nc_write_hits = 0;
 	long long nc_write_misses = 0;
 	long long coalesced_nc_writes = 0;
-	long long prefetches = 0;
-	long long prefetch_aborts = 0;
-	long long useless_prefetches = 0;
 	long long retry_reads = 0;
 	long long retry_read_hits = 0;
 	long long retry_read_misses = 0;
@@ -293,7 +286,6 @@ private:
 	long long retry_nc_writes = 0;
 	long long retry_nc_write_hits = 0;
 	long long retry_nc_write_misses = 0;
-	long long retry_prefetches = 0;
 
 	// Statistics for down-up accesses
 	long long read_probes = 0;
@@ -525,11 +517,23 @@ public:
 	/// Get the node representing this module in the network that is closer
 	/// to the processor.
 	net::Node *getHighNetworkNode() const { return high_network_node; }
-
-	/// Access the module
+	
+	/// Access the module.
+	///
+	/// \param access_type
+	///	Type of access: load, store, nc-store
+	///
+	/// \param address
+	///	Physical address.
+	///
+	/// \param witness
+	///	Pointer to an integer variable that will be incremented once
+	///	the access has completed. This argument is optional, and can
+	///	be set to \c nullptr.
+	///
 	long long Access(AccessType access_type,
 			unsigned address,
-			int &witness);
+			int *witness = nullptr);
 };
 
 
