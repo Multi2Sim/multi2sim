@@ -87,7 +87,7 @@ void DataForPixelShader::setVGPRs(int x, int y, float i, float j)
 
 void SPI::InitDataToNDRange(NDRange *ndrange)
 {
-	assert(ndrange->getStage() == NDRangeStagePixelShader);
+	assert(ndrange->getStage() == NDRange::StagePixelShader);
 
 	unsigned id = ndrange->getId();
 
