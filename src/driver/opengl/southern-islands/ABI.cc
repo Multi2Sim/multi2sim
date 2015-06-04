@@ -81,8 +81,8 @@ int OpenGLABIMemAllocImpl(x86::Context *ctx)
 	// }
 
 	// Map new pages 
-	mem::Memory &video_mem = si_emu->getVideoMem();
-	video_mem.Map(si_emu->getVideoMemTop(), size,
+	mem::Memory *video_mem = si_emu->getVideoMem();
+	video_mem->Map(si_emu->getVideoMemTop(), size,
 			Memory::AccessRead |
 			Memory::AccessWrite);
 
@@ -131,7 +131,7 @@ int OpenGLABIMemReadImpl(x86::Context *ctx)
 
 	x86::Regs &regs   = ctx->getRegs();
 	mem::Memory &mem  = ctx->getMem();
-	mem::Memory &video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMem();
 
 	if (driver->isFused())
 	{
@@ -153,7 +153,7 @@ int OpenGLABIMemReadImpl(x86::Context *ctx)
 
 	// Read memory from device to host 
 	char *buf = (char *)malloc(size);
-	video_mem.Read(device_ptr, size, buf);
+	video_mem->Read(device_ptr, size, buf);
 	mem.Write(host_ptr, size, buf);
 	free(buf);
 
@@ -169,7 +169,7 @@ int OpenGLABIMemWriteImpl(x86::Context *ctx)
 
 	x86::Regs &regs   = ctx->getRegs();
 	mem::Memory &mem  = ctx->getMem();
-	mem::Memory &video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMem();
 
 	if (driver->isFused())
 	{
@@ -192,7 +192,7 @@ int OpenGLABIMemWriteImpl(x86::Context *ctx)
 	// Read memory from host to device 
 	char *buf = (char *)malloc(size);
 	mem.Read(device_ptr, size, buf);
-	video_mem.Write(host_ptr, size, buf);
+	video_mem->Write(host_ptr, size, buf);
 	free(buf);
 
 	// Return
@@ -229,7 +229,7 @@ int OpenGLABIMemCopyImpl(x86::Context *ctx)
 	// SI::Gpu *si_gpu = driver->si_gpu;
 
 	x86::Regs &regs   = ctx->getRegs();
-	mem::Memory &video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMem();
 
 	if (driver->isFused())
 	{
@@ -252,8 +252,8 @@ int OpenGLABIMemCopyImpl(x86::Context *ctx)
 
 	// Write memory from host to device 
 	char *buf = (char *)malloc(size);
-	video_mem.Read(src_ptr, size, buf);
-	video_mem.Write(dest_ptr, size, buf);
+	video_mem->Read(src_ptr, size, buf);
+	video_mem->Write(dest_ptr, size, buf);
 	free(buf);
 
 	// Return
