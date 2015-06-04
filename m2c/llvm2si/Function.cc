@@ -682,7 +682,39 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		// Get reverse iterator to last non-control flow instruction
 		auto it = basic_block->getFirstControlFlowInstruction();
 
-		// Get the source vector register
+		// The values for non-literals are not set at basic block level
+		// as the symbol table was not complete. Now we should have complete
+		// symbol table to map registers.
+		if (!arg_phi->getValueType())
+		{
+			auto name = arg_phi->getSymbol();
+			
+			// Look up symbol
+			auto symbol = symbol_table.Lookup(name);
+			if (!symbol)
+				throw Error("Symbol not found: " + name);
+
+			switch (symbol->getType())
+			{
+
+			case Symbol::TypeVectorRegister:
+
+				arg_phi->setVectorRegister(symbol->getId());
+				break;
+
+			case Symbol::TypeScalarRegister:
+
+				arg_phi->setScalarRegister(symbol->getId());
+				break;
+
+			default:
+
+				throw misc::Panic(misc::fmt("Invalid symbol type (%d)",
+						symbol->getType()));
+			}
+		}
+
+		// Get the source
 		auto src_type = arg_phi->getValueType();
 		switch (src_type)
 		{
@@ -716,6 +748,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		}
 
 		case Argument::TypeLiteral:
+		case Argument::TypeLiteralReduced:
 		{
 			int src_literal = arg_phi->getLiteral()->getValue();
 
@@ -730,6 +763,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 		}
 
 		case Argument::TypeLiteralFloat:
+		case Argument::TypeLiteralFloatReduced:
 		{
 			int src_literal_float = arg_phi->getLiteralFloat()->getValue();
 
@@ -1462,8 +1496,8 @@ std::unique_ptr<Argument> Function::TranslateConstant(llvm::Constant *llvm_const
 		// Create argument
 		llvm::ConstantFP *llvm_float_const = misc::cast
 				<llvm::ConstantFP *>(llvm_const);
-		int value = llvm_float_const->getValueAPF().bitcastToAPInt().getZExtValue();
-		return misc::new_unique<ArgLiteral>(value);		
+		float value = llvm_float_const->getValueAPF().convertToFloat();
+		return misc::new_unique<ArgLiteralFloat>(value);		
 	}
 	else
 	{

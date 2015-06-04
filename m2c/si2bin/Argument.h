@@ -647,6 +647,9 @@ class ArgPhi : public Argument
 	// Label associated with the Phi argument
 	ArgLabel label;
 
+	// Symbol associated with the Phi argument
+	std::string symbol;
+
 	// Value associated with the Phi argument. The possible child classes
 	// for the argument are:
 	// - ArgVectorRegister
@@ -658,9 +661,16 @@ class ArgPhi : public Argument
 public:
 
 	/// Constructor: create a Phi argument whose label is of ArgLabel class
-	ArgPhi(const std::string &label_name) :
+	ArgPhi(const std::string &label_name):
 			Argument(TypePhi),
 			label(label_name)
+	{
+	}
+
+	ArgPhi(const std::string &label_name, const std::string &symbol_name):
+			Argument(TypePhi),
+			label(label_name),
+			symbol(symbol_name)
 	{
 	}
 
@@ -723,35 +733,14 @@ public:
 		this->value.reset(new ArgLiteralFloat(value));
 	}
 
-        /// Reserve value to be an ArgScalarRegister pointer
-        void reserveScalarRegister()
-        {
-                value.reset(new ArgScalarRegister(-1));
-        }
-
-        /// Reserve value to be an ArgVectorRegister pointer
-        void reserveVectorRegister()
-        {
-                value.reset(new ArgVectorRegister(-1));
-        }
-
-        /// Reserve value to be a literal (interger)
-        void reserveLiteral()
-        {
-                this->value.reset(new ArgLiteral(-1));
-        }
-
-        /// Reserve value to be a literal (float)
-        void reserveLiteralFloat()
-        {
-                this->value.reset(new ArgLiteralFloat(-1.0f));
-        }
-
 	/// Dump ArgPhi
 	void Dump(std::ostream &os) const;
 
 	/// Return label
 	ArgLabel *getLabel() { return &label; }
+
+	/// Return name of symbol
+	const std::string &getSymbol() const { return symbol; }
 
 	/// Return register number if value is ArgVectorRegister or
 	/// ArgScalarRegister
