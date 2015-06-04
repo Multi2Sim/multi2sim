@@ -28,14 +28,6 @@
 namespace SI
 {
 
-// Macros for special registers
-#define SI_M0 124
-#define SI_VCC 106
-#define SI_VCCZ 251
-#define SI_EXEC 126
-#define SI_EXECZ 252
-#define SI_SCC 253
-
 class WorkGroup;
 class WorkItem;
 
@@ -162,7 +154,7 @@ public:
 
 	/// Return true if work-item is active. The work-item identifier is
 	/// given relative to the first work-item in the wavefront
-	bool getWorkItemActive(int id_in_wavefront);
+	bool isWorkItemActive(int id_in_wavefront);
 
 	/// Setters
 	///
@@ -206,12 +198,14 @@ public:
 	void setSregUint(int id, unsigned int value);
 
 	/// Set work_items_begin iterator
-	void setWorkItemsBegin(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_begin) {
+	void setWorkItemsBegin(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_begin)
+	{
 		this->work_items_begin = work_items_begin;
 	}
 
 	/// Set work_items_end iterator
-	void setWorkItemsEnd(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_end) {
+	void setWorkItemsEnd(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_end)
+	{
 		this->work_items_end = work_items_end;
 	}
 
@@ -252,22 +246,13 @@ public:
 	/// \param num_regs Number of scalar registers to be used, must be 2
 	void setSRegWithUAVTable(int first_reg, int num_regs);
 
-	/// Put a pointer to the Vertex Buffer table into 2 consecutive sregs
-	/// \param first_reg Id of the first scalar register
-	/// \param num_regs Number of scalar registers to be used, must be 2
-	void setSRegWithVertexBufferTable(int first_reg, int num_regs);
-
-	/// Put a pointer to the Fetch Shader into 2 consecutive sregs
-	/// \param first_reg Id of the first scalar register
-	/// \param num_regs Number of scalar registers to be used, must be 2
-	void setSRegWithFetchShader(int first_reg, int num_regs);
-
 	/// Dump wavefront in a human-readable format into output stream \a os
 	void Dump(std::ostream &os) const;
 
 	/// Dump wavefront into output stream
 	friend std::ostream &operator<<(std::ostream &os,
-			const Wavefront &wavefront) {
+			const Wavefront &wavefront)
+	{
 		os << wavefront;
 		return os;
 	}
@@ -285,13 +270,15 @@ public:
 	///			e = wavefront->WorkItemsEnd(); i != e; ++i)
 	///		i->Dump(std::cout);
 	/// \endcode
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin() {
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin()
+	{
 		return work_items_begin;
 	}
 
 	/// Return a past-the-end iterator for the list of work-items in the
 	/// wavefront.
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd() {
+	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd()
+	{
 		return work_items_end;
 	}
 };
@@ -300,4 +287,3 @@ public:
 }  // namespace SI
 
 #endif
-

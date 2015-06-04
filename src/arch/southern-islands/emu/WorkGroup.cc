@@ -147,15 +147,15 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				// Initialize the execution mask
 				if (work_item->getIdInWavefront() < 32)
 				{
-					unsigned exec_mask = wavefront->getSregUint(SI_EXEC);
+					unsigned exec_mask = wavefront->getSregUint(Inst::RegisterExec);
 					exec_mask |= 1 << work_item->getIdInWavefront();
-					wavefront->setSregUint(SI_EXEC, exec_mask);
+					wavefront->setSregUint(Inst::RegisterExec, exec_mask);
 				}
 				else if (work_item->getIdInWavefront() < 64)
 				{
-					unsigned exec_mask = wavefront->getSregUint(SI_EXEC + 1);
+					unsigned exec_mask = wavefront->getSregUint(Inst::RegisterExec + 1);
 					exec_mask |= 1 << work_item->getIdInWavefront();
-					wavefront->setSregUint(SI_EXEC, exec_mask);
+					wavefront->setSregUint(Inst::RegisterExec, exec_mask);
 				}
 				else 
 				{
@@ -290,10 +290,6 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			// FIXME: PTR_VERTEX_BUFFER_TABLE doesn't match binary
 			else if (user_element->dataClass == 21)
 			{
-				// Store VB table in sregs
-				wavefront->setSRegWithVertexBufferTable(
-					user_element->startUserReg,
-					user_element->userRegCount);
 			}
 			// FIXME: SUB_PTR_FETCH_SHADER doesn't match binary
 			else if (user_element->dataClass == 16)

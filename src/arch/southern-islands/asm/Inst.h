@@ -513,6 +513,14 @@ public:
 	/// Constructor
 	Inst(Asm *as);
 
+	/// Constants for special registers
+	static const unsigned RegisterM0 = 124;
+	static const unsigned RegisterVcc = 106;
+	static const unsigned RegisterVccz = 251;
+	static const unsigned RegisterExec = 126;
+	static const unsigned RegisterExecz = 252;
+	static const unsigned RegisterScc = 253;
+	
 	/// Decode instruction from buffer
 	void Decode(const char *buffer, unsigned int offset);
 
