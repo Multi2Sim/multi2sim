@@ -35,10 +35,10 @@ namespace SI
 NDRange::NDRange(Emu *emu)
 {
 	this->emu = emu;
-	this->stage = NDRangeStageCompute;
+	this->stage = StageCompute;
 	this->id = emu->getNewNDRangeID();
 	this->address_space_index = emu->getNewNDRangeID();
-	//this->inst_mem.reset(new mem::Memory());
+	this->inst_mem = misc::new_unique<mem::Memory>();
 
 	this->last_work_group_sent = false;
 }
@@ -98,24 +98,18 @@ void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 
 }
 
-void NDRange::SetupFSMem(const char *buf, unsigned size, unsigned pc)
-{
-	inst_mem->Write(pc, size, buf);
-}
-
 void NDRange::SetupInstMem(const char *buf, unsigned size, unsigned pc)
 {
 
 	// Copy instructions from buffer to instruction memory
 	inst_mem->Map(pc, size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
-	//this->inst_mem->setSafe(false);
 	inst_mem->Write(pc, size, buf);
 	inst_size = size;
 	inst_addr = pc;
 
 	// Save a copy of buffer in NDRange
-	inst_buffer = std::move(std::unique_ptr<char>(new char[size]));
+	inst_buffer = misc::new_unique_array<char>(size);
 	inst_mem->Read(pc, size, inst_buffer.get());
 }
 
@@ -291,11 +285,6 @@ void NDRange::WaitingToRunning()
 	for (auto i = waiting_work_groups.begin(), e = waiting_work_groups.end(); 
 		i != e; ++i)
 		running_work_groups.push_back(std::move(*i));
-}
-
-void NDRange::ReceiveInitData(std::unique_ptr<DataForPixelShader> data)
-{
-	init_data_pixel_shader = std::move(data);
 }
 
 void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)

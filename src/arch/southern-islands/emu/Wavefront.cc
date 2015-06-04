@@ -778,19 +778,5 @@ void Wavefront::setSRegWithVertexBufferTable(int first_reg, int num_regs)
 	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
 }
 
-void Wavefront::setSRegWithFetchShader(int first_reg, int num_regs)
-{
-	NDRange *ndrange = work_group->getNDRange();
-	EmuMemPtr mem_ptr;
-
-	assert(num_regs == 2);
-	assert(sizeof(mem_ptr) == 8);
-
-	mem_ptr.addr = (unsigned int)ndrange->getFetchShaderAddr();
-
-	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);	
-}
-
 
 }  // namespace SI 

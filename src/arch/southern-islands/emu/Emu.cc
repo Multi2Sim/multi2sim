@@ -115,7 +115,7 @@ void Emu::Run()
 
 #ifdef HAVE_OPENGL
 		// Notify corresponding driver
-		if ((*ndr_i)->getStage() == NDRangeStageCompute)
+		if ((*ndr_i)->getStage() == NDRange::StageCompute)
 		{
 			// Let OpenCL driver know that all work-groups from this nd-range
 			// have been run
