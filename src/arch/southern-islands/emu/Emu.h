@@ -235,16 +235,32 @@ private:
 	std::list<WorkGroup *> waiting_work_groups;
 	std::list<WorkGroup *> running_work_groups;
 
-	// Statistics
-	int ndrange_count = 0;              // Number of OpenCL kernels executed
-	long long work_group_count = 0; // Number of OpenCL work groups executed
-	long long scalar_alu_inst_count = 0; // Scalar ALU instructions executed
-	long long scalar_mem_inst_count = 0; // Scalar mem instructions executed
-	long long branch_inst_count = 0;     // Branch instructions executed
-	long long vector_alu_inst_count = 0; // Vector ALU instructions executed
-	long long lds_inst_count = 0;        // LDS instructions executed
-	long long vector_mem_inst_count = 0; // Vector mem instructions executed
-	long long export_inst_count = 0;     // Export instructions executed
+	// Number of OpenCL kernels executed
+	int ndrange_count = 0;              
+	
+	// Number of OpenCL work groups executed
+	long long work_group_count = 0; 
+	
+	// Scalar ALU instructions executed
+	long long scalar_alu_inst_count = 0; 
+	
+	// Scalar mem instructions executed
+	long long scalar_mem_inst_count = 0; 
+	
+	// Branch instructions executed
+	long long branch_inst_count = 0;     
+	
+	// Vector ALU instructions executed
+	long long vector_alu_inst_count = 0; 
+	
+	// LDS instructions executed
+	long long lds_inst_count = 0;        
+	
+	// Vector mem instructions executed
+	long long vector_mem_inst_count = 0; 
+	
+	// Export instructions executed
+	long long export_inst_count = 0;     
 
 	// Unique instance of Southern Islands Emulator
 	static std::unique_ptr<Emu> instance;
