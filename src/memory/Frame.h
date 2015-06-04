@@ -39,13 +39,13 @@ class Frame : public esim::EventFrame
 	// Counter for identifiers
 	static long long id_counter;
 
-	// Unique identifier
+	// Unique identifier, initialized in constructor.
 	long long id;
 
-	// Current module
+	// Current module, initialized in constructor.
 	Module *module;
 
-	// Physical address
+	// Physical address, initialized in constructor.
 	unsigned address;
 
 	// Block coordinates
@@ -62,10 +62,24 @@ class Frame : public esim::EventFrame
 	esim::EventType *wakeup_event_type = nullptr;
 
 public:
+	
+	//
+	// Public fields
+	//
+
+	/// Pointer to integer variable to be incremented when the access is
+	/// over.
+	int *witness = nullptr;
+
+
+
+	//
+	// Functions
+	//
 
 	/// Constructor
-	Frame(long long id, Module *module, unsigned address) :
-			id(id),
+	Frame(Module *module, unsigned address) :
+			id(++id_counter),
 			module(module),
 			address(address)
 	{
@@ -80,11 +94,16 @@ public:
 	///
 	/// \param event_type
 	///	Event to schedule upon wakeup
-	void AddWaitingFrame(std::shared_ptr<Frame> frame,
+	///
+	void addWaitingFrame(std::shared_ptr<Frame> frame,
 			esim::EventType *event_type);
 
 	/// Wake up all dependent frames in the list of waiting frames.
 	void WakeupWaitingFrames();
+
+	/// Return a unique identifier for this event frame, assigned
+	/// internally when created.
+	long long getId() const { return id; }
 };
 
 
