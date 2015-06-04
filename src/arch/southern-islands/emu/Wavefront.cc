@@ -162,10 +162,11 @@ void Wavefront::Execute()
 	assert(!finished);
 	
 	// Grab the instruction at PC and update the pointer 
-	unsigned inst_addr = ndrange->getInstAddr();
-	unsigned inst_size = ndrange->getInstSize();
-	char *inst_buffer = ndrange->getInstBuffer();
-	ndrange->getInstMem()->Read(inst_addr, inst_size, inst_buffer);
+	unsigned inst_addr = ndrange->getInstructionAddress();
+	unsigned inst_size = ndrange->getInstructionSize();
+	char *inst_buffer = ndrange->getInstructionBuffer();
+	ndrange->getInstructionMemory()->Read(
+			inst_addr, inst_size, inst_buffer);
 	inst->Decode(inst_buffer, pc);
 
 	this->inst_size = inst->getSize();
