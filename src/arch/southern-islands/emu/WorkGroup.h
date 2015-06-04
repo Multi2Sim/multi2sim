@@ -34,7 +34,6 @@ class Wavefront;
 class WorkItem;
 class NDRange;
 
-const unsigned wavefront_size = 64;
 
 /// This is a polymorphic class used to attach additional information
 /// to a work-group. It is used by the timing simulator to associate timing
@@ -53,18 +52,28 @@ public:
 /// forming wavefronts). Work-groups can run in any order.
 class WorkGroup
 {
-	// Identifiers
+	// Work-group identifier
 	int id;
+
+	// 3-dimensional work-group identifiers
 	int id_3d[3];
 
-	// Status
+	// Number of wavefronts suspended at a barrier
 	unsigned wavefronts_at_barrier;
+
+	// Number of wavefronts that have completed emulation
 	unsigned wavefronts_completed_emu;
+
+	// Number of wavefronts that have completed timing simulation
 	unsigned wavefronts_completed_timing;
+
+	// Bool indicating whether the work-group has finished emulation
 	bool finished_emu;
+
+	// Bool indicating whether the work-group has finished timing simulation
 	bool finished_timing;
 
-	// ND-Range that it belongs to
+	// ND-Range that the work-group belongs to
 	NDRange *ndrange;
 
 	// Counter of workitems in the work-group
@@ -82,22 +91,34 @@ class WorkGroup
 	// Additional work-group data
 	std::unique_ptr<WorkGroupData> data;
 
-	// Statistics
+	// Number of scalar registers being read from
 	long long sreg_read_count;
+	
+	// Number of scalar registers being written to
 	long long sreg_write_count;
+	
+	// Number of vector registers being read from
 	long long vreg_read_count;
+	
+	// Number of vectorr registers being written to
 	long long vreg_write_count;
+
+	// Size of wavefront
+	static const unsigned WavefrontSize = 64;
 
 public:
 
 	/// Constructor
 	///
-	/// \param ndrange Instance of class NDRange that it belongs to.
-	/// \param id Work-group global 1D identifier
+	/// \param ndrange
+	///	Instance of class NDRange that it belongs to.
+	///
+	/// \param id 
+	///	Work-group global 1D identifier
 	WorkGroup(NDRange *ndrange, unsigned id);
 
 	/// Dump work-group in human readable format into output stream
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Equivalent to WorkGroup::Dump()
 	friend std::ostream &operator<<(std::ostream &os,
@@ -106,14 +127,16 @@ public:
 		return os;
 	}
 
-
+	///
 	/// Getters
 	///
+
 	/// Get workgroup ID
 	int getId() const { return id; }
 
 	/// Get workgroup ID in 3D
-	int getId3D(unsigned dim) {
+	int getId3D(unsigned dim)
+	{
 		assert(dim >= 0 && dim <= 2);
 		return id_3d[dim];		
 	}
@@ -151,8 +174,10 @@ public:
 		return work_items[id_in_work_group].get();
 	}
 
+	///
 	/// Setters
 	///
+	
 	/// Increase wavefronts_at_barrier counter
 	void incWavefrontsAtBarrier() { wavefronts_at_barrier++; }
 
@@ -220,6 +245,7 @@ public:
 		return wavefronts.end();
 	}
 };
+
 
 }  // namespace
 

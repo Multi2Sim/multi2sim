@@ -28,6 +28,10 @@ using namespace misc;
 namespace SI
 {
 
+// Private constant declaring wavefront size
+const unsigned WorkGroup::WavefrontSize;
+
+
 WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 {
 	// Initialize
@@ -55,19 +59,20 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 
 	// Number of wavefronts in work-group 
 	unsigned wavefronts_per_group = (work_items_per_group + 
-		(wavefront_size - 1)) / wavefront_size;
+		(WorkGroup::WavefrontSize - 1)) / WorkGroup::WavefrontSize;
 	assert(wavefronts_per_group > 0);
 
 	// Allocate wavefronts and work-items
 	for (unsigned i = 0; i < wavefronts_per_group; ++i)
 	{
-		this->wavefronts.push_back(std::unique_ptr<Wavefront>(new 
-			Wavefront(this, id * wavefronts_per_group + i)));
-		for (unsigned j = 0; j < wavefront_size; ++j)
+		this->wavefronts.emplace_back(misc::new_unique<Wavefront>(
+				this, id * wavefronts_per_group + i));
+		for (unsigned j = 0; j < WorkGroup::WavefrontSize; ++j)
 		{
 			unsigned work_item_id = i * wavefronts_per_group + j;
-			this->work_items.push_back(std::unique_ptr<WorkItem>(new 
-				WorkItem(wavefronts[i].get(), work_item_id)));
+			this->work_items.emplace_back(
+					misc::new_unique<WorkItem>(
+					wavefronts[i].get(), work_item_id));
 		}
 	}
 
@@ -91,7 +96,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	switch(ndrange->getStage())
 	{
 
-	case NDRangeStagePixelShader:
+	case NDRange::StagePixelShader:
 		// FIXME:Initialize LDS(Parameter Cache) 
 		break;
 
@@ -177,7 +182,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 		{
 
 		// Save work-group IDs in scalar registers 
-		case NDRangeStageCompute:
+		case NDRange::StageCompute:
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 
 				wavefront->getWorkgroup()->getId3D(0));
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 1, 
@@ -189,7 +194,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 
 		// Currently hard coded as LDS is exclusive to each primitive.
 		// Primitives should share LDS module and use different offset
-		case NDRangeStagePixelShader:
+		case NDRange::StagePixelShader:
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 0x0); 
 			break;
 
@@ -214,7 +219,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			{
 
 			// OpenCL convention 
-			case NDRangeStageCompute:
+			case NDRange::StageCompute:
 				// V0 
 				work_item->WriteVReg(0, work_item->getLocalId3D(0));
 				// V1 
@@ -224,13 +229,13 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				break;					
 
 			// Vertex shader initialization convention 
-			case NDRangeStageVertexShader:
+			case NDRange::StageVertexShader:
 				// VSes load VGPR0 with the thread's vertex index 
 				work_item->WriteVReg(0, work_item->getId());
 				break;
 
 			// Pixel shader initialization convention 
-			case NDRangeStagePixelShader:
+			case NDRange::StagePixelShader:
 				// FIXME
 				break;
 
@@ -293,10 +298,6 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			// FIXME: SUB_PTR_FETCH_SHADER doesn't match binary
 			else if (user_element->dataClass == 16)
 			{
-				// Store Fetch Shader pointer in sregs
-				wavefront->setSRegWithFetchShader(
-					user_element->startUserReg,
-					user_element->userRegCount);
 			}
 			else if (user_element->dataClass == BinaryUserDataSampler)
 			{

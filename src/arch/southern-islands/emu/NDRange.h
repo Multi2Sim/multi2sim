@@ -46,20 +46,28 @@ namespace SI
 namespace SI
 {
 
-/// Stage is used to determine V/SGPRs initialization convention when creating
-/// wavefronts/workitems.
-enum NDRangeStage
-{	
-	NDRangeStageInvalid = 0,
-	NDRangeStageCompute,
-	NDRangeStageVertexShader,
-	NDRangeStageGeometryShader,
-	NDRangeStagePixelShader
-};
 
-/// ?
+
+/// This class represents an OpenCL NDRange. The NDRange is an index space
+/// which can be one, two, or three dimensions.
 class NDRange
 {
+
+public:
+	
+	/// Stage is used to determine V/SGPRs initialization convention when 
+	/// creating wavefronts/workitems.
+	enum Stage
+	{	
+		StageInvalid = 0,
+		StageCompute,
+		StageVertexShader,
+		StageGeometryShader,
+		StagePixelShader
+	};
+
+private:
+
 	enum TableEntryKind
 	{
 		TableEntryKindInvalid = 0,
@@ -82,11 +90,7 @@ class NDRange
 	int id = 0;
 
 	// Stage that the ND-range operates on
-	NDRangeStage stage = NDRangeStageCompute;
-
-	// Initialization data to be load to GPRs, LDS... Set by SPI module
-	// Pixel Shader
-	std::unique_ptr<DataForPixelShader> init_data_pixel_shader;
+	Stage stage = StageCompute;
 
 	// Work-group lists, IDs only
 	std::list<long> waiting_work_groups;
@@ -116,7 +120,7 @@ class NDRange
 
 	// Instruction memory containing Southern Islands ISA
 	std::unique_ptr<mem::Memory> inst_mem;
-	std::unique_ptr<char> inst_buffer;
+	std::unique_ptr<char[]> inst_buffer;
 	unsigned inst_addr = 0;
 	unsigned inst_size = 0;
 
@@ -160,9 +164,6 @@ class NDRange
 	unsigned vertex_buffer_table = 0;
 	TableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
 
-	// Addresses of fetch shader in instruction buffer
-	unsigned fetch_shader_addr = 0;
-
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
 	unsigned cb1 = 0;
@@ -186,8 +187,10 @@ public:
 		return os;
 	}
 
+	///
 	/// Getters
 	///
+
 	/// Get work dim
 	unsigned getWorkDim() const { return work_dim; }
 
@@ -195,13 +198,15 @@ public:
 	unsigned *getWorkDimPtr() { return &work_dim; }
 
 	/// Get size of global size
-	unsigned getGlobalSize(unsigned dim) const { 
+	unsigned getGlobalSize(unsigned dim) const
+	{ 
 		assert(dim >= 0 && dim <= 2);
 		return global_size3[dim];
 	}
 
 	/// Get global memory size pointer
-	unsigned *getGlobalSizePtr(unsigned dim) {
+	unsigned *getGlobalSizePtr(unsigned dim)
+	{
 		assert(dim >= 0 && dim <= 2);
 		return &global_size3[dim];
 	}
@@ -213,31 +218,35 @@ public:
 	int *getLocalMemTopPtr() { return &local_mem_top; }
 
 	/// Get size of local size
-	unsigned getLocalSize(unsigned dim) const { 
+	unsigned getLocalSize(unsigned dim) const
+	{ 
 		assert(dim >= 0 && dim <= 2);
 		return local_size3[dim];
 	}
 
 	/// Get global memory size pointer
-	unsigned *getLocalSizePtr(unsigned dim) {
+	unsigned *getLocalSizePtr(unsigned dim)
+	{
 		assert(dim >= 0 && dim <= 2);
 		return &local_size3[dim];
 	}
 
 	/// Get size of group count
-	unsigned getGroupCount(unsigned dim) const {
+	unsigned getGroupCount(unsigned dim) const
+	{
 		assert(dim >= 0 && dim <= 2);
 		return group_count3[dim];
 	}
 
 	/// Get group count pointer
-	unsigned *getGroupCountPtr(unsigned dim) {
+	unsigned *getGroupCountPtr(unsigned dim)
+	{
 		assert(dim >= 0 && dim <= 2);
 		return &group_count3[dim];
 	}
 
 	/// Get stage of NDRange
-	NDRangeStage getStage()	const { return stage; }
+	Stage getStage()	const { return stage; }
 
 	/// Get count of waiting_work_groups
 	unsigned getWaitingWorkgroupsCount() const { return waiting_work_groups.size(); }
@@ -270,7 +279,8 @@ public:
 	unsigned getInstSize() const { return inst_size; }
 
 	/// Get user element object
-	BinaryUserElement *getUserElement(int idx) {
+	BinaryUserElement *getUserElement(int idx)
+	{
 		assert(idx >= 0 && idx <= BinaryMaxUserElements);
 		return &user_elements[idx];
 	}
@@ -282,13 +292,15 @@ public:
 	Emu *getEmu() const { return emu; }
 
 	/// Get constant buffer entry from constant buffer table at index
-	TableEntry *getConstBuffer(unsigned idx) {
+	TableEntry *getConstBuffer(unsigned idx)
+	{
 		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
 		return &const_buf_table_entries[idx];
 	}
 
 	/// Get constant buffer address in global memory
-	unsigned getConstBufferAddr(unsigned idx) const {
+	unsigned getConstBufferAddr(unsigned idx) const
+	{
 		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
 		if (idx == 0)
 			return cb0;
@@ -297,7 +309,8 @@ public:
 	}
 
 	/// Get uav entry from uav table at index
-	TableEntry *getUAV(unsigned idx) {
+	TableEntry *getUAV(unsigned idx)
+	{
 		assert(idx >= 0 && idx <= EmuMaxNumUAVs);
 		return &uav_table_entries[idx];
 	}
@@ -314,24 +327,25 @@ public:
 	// Get Vertex buffer table address in global memory
 	unsigned getVertexBufferTableAddr() const { return vertex_buffer_table; }
 
-	/// Get Fetch shader starting address in instruction memory
-	unsigned getFetchShaderAddr() const { return fetch_shader_addr; }
-
 	/// Get count of running_work_groups
 	bool isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
-	std::list<long>::iterator RunningWorkGroupBegin() { 
+	std::list<long>::iterator RunningWorkGroupBegin()
+	{ 
 		return running_work_groups.begin();
 	}
 
 	// Return an iterator to the past-to-end iterator in the running_work_group list.
-	std::list<long>::iterator RunningWorkGroupEnd() { 
+	std::list<long>::iterator RunningWorkGroupEnd()
+	{ 
 		return running_work_groups.end();
 	}
 
-	/// Setters
 	///
+	///Setters
+	///
+
 	/// Set address_space_index
 	void setAddressSpaceIndex(int value) { address_space_index = value; }
 
@@ -379,14 +393,7 @@ public:
 			int work_dim);
 
 	/// Set up stage of NDRange
-	void SetupStage(NDRangeStage stage) { this->stage = stage; }
-
-	/// Set up content of fetch shader instruction
-	///
-	/// \param buf Buffer containing instructions from fetch shader generator
-	/// \param size Number of bytes in the instruction buffer
-	/// \param pc Initial value of the program counter
-	void SetupFSMem(const char *buf, unsigned size, unsigned pc);
+	void SetupStage(Stage stage) { this->stage = stage; }
 
 	/// Set up content of instruction memory
 	///
