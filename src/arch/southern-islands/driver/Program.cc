@@ -34,7 +34,7 @@ ConstantBuffer::ConstantBuffer(int id, unsigned size, const char *data)
 {
 	this->id = id;
 	this->size = size;
-	this->data = std::unique_ptr<char> (new char[size]);
+	this->data = misc::new_unique_array<char>(size);
 	// FIXME
 	// std::copy(data, this->data.get(), size);
 }

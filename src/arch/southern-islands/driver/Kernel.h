@@ -44,36 +44,42 @@ class Kernel
 	std::string name;
 
 	// Program it belongs to
-	Program *program;
+	Program *program = nullptr;
 
 	// Excerpts of program binary
-	ELFReader::Symbol *metadata_symbol;
-	ELFReader::Symbol *header_symbol;
-	ELFReader::Symbol *kernel_symbol;
+	ELFReader::Symbol *metadata_symbol = nullptr;
+	ELFReader::Symbol *header_symbol = nullptr;
+	ELFReader::Symbol *kernel_symbol = nullptr;
 
 	// List of kernel arguments
-	std::vector<std::unique_ptr<SI::Arg>> args;
+	std::vector<std::unique_ptr<Arg>> arguments;
 
 	// AMD kernel binary (internal ELF)
-	std::unique_ptr<SI::Binary> bin_file;
+	std::unique_ptr<Binary> binary_file;
 
 	// Memory requirements
-	int mem_size_local = 0;
-	int mem_size_private = 0;
+	int local_memory_size = 0;
+	int private_memory_size = 0;
 
 	// Kernel function metadata
 	int func_uniqueid = 0;  // Id of kernel function
 
+	// Check for head token 
 	void Expect(std::vector<std::string> &token_list, std::string head_token);
 
+	// Check for int 
 	void ExpectInt(std::vector<std::string> &token_list);
 
+	// Check size of token_list
 	void ExpectCount(std::vector<std::string> &token_list, unsigned count);
 
+	// Load metadata
 	void LoadMetaDataV3();
-
+	
+	// Check metadata version
 	void LoadMetaData();
 
+	// Create buffer description
 	void CreateBufferDesc(unsigned base_addr, 
 			unsigned size, 
 			int num_elems,
@@ -83,28 +89,30 @@ class Kernel
 public:
 	Kernel(int id, const std::string &name, Program *program);
 
-	/// Getters
-	///
+	//
+	// Getters
+	//
+
 	/// Get kernel binary
-	SI::Binary *getKernelBinary() const { return bin_file.get(); }
+	Binary *getKernelBinaryFile() const { return binary_file.get(); }
 
 	/// Get associated program
 	Program *getProgram() const { return program; }
 
 	/// Get reference of arguments list
-	std::vector<std::unique_ptr<SI::Arg>> &getArgs() { return args; }
+	std::vector<std::unique_ptr<Arg>> &getArgs() { return arguments; }
 
 	/// Get pointer of an argument by index in arguments list
-	SI::Arg *getArgByIndex(unsigned idx) { return args[idx].get(); }
+	Arg *getArgByIndex(unsigned idx) { return arguments[idx].get(); }
 
 	/// Get count of arguments
-	unsigned getArgsCount() const { return args.size(); }
+	unsigned getNumArguments() const { return arguments.size(); }
 
 	/// Get mem_size_local
-	int getMemSizeLocal() const { return mem_size_local; }
+	int getLocalMemorySize() const { return local_memory_size; }
 
 	/// Get mem_size_private
-	int getMemSizePrivate() const { return mem_size_private; }
+	int getPrivateMemorySize() const { return private_memory_size; }
 
 	/// Get kernel id
 	int getId() const { return id; }
@@ -112,18 +120,20 @@ public:
 	/// Get kernel name
 	std::string getName() const { return name; }
 
-	///
+	/// Setup NDRange constant buffers
 	void SetupNDRangeConstantBuffers(NDRange *ndrange);
 
-	///
+	/// Setup NDRange arguments
 	void SetupNDRangeArgs(NDRange *ndrange);
 
-	///
+	/// Setup NDRange state
 	void DebugNDRangeState(NDRange *ndrange);
 
-	/// FIXME
-	static void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
+	/// Create NDRange tables
 	void CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
+	
+	/// FIXME not implemented yet
+	static void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
 	void CreateNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
 

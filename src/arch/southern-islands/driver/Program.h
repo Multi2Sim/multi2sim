@@ -34,10 +34,15 @@ class ConstantBuffer
 	// Constant buffer ID (2-24)
 	int id = 0;
 
+	// size of buffer
 	unsigned size = 0;
-	std::unique_ptr<char> data;
+
+	// buffer data
+	std::unique_ptr<char[]> data;
 
 public:
+
+	/// set all fields in buffer
 	ConstantBuffer(int id, unsigned size, const char *data);
 };
 
@@ -56,6 +61,8 @@ class Program
 	void InitializeConstantBuffers();
 
 public:
+
+	/// Constructor
 	Program(int id);
 
 	/// Load ELF binary into program object
@@ -82,6 +89,7 @@ public:
 	/// Get pointer to contant buffer by index
 	ConstantBuffer *getConstantBufferByIndex(int index) const 
 	{
+		assert(index >= 0 && index < (int) constant_buffers.size());
 		return constant_buffers[index].get();
 	}
 };
