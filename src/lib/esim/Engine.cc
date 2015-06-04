@@ -52,8 +52,7 @@ const char *engine_err_max_inflight_events =
 	"avoid this warning. ";
 
 
-Engine::Engine()
-		:
+Engine::Engine() :
 		timer("esim::Timer")
 {
 	// Initialize timer

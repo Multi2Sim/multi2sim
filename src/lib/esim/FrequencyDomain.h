@@ -26,6 +26,10 @@
 namespace esim
 {
 
+// Forward declaration
+class Engine;
+
+
 /// Class representing a frequency domain. The user should not instantiate this
 /// class directly. Instead, frequency domains should be instantiated using
 /// calls to Engine::RegisterFrequencyDomain().
@@ -40,16 +44,13 @@ class FrequencyDomain
 	// Cycle time in picoseconds
 	long long cycle_time;
 
+	// Simulation engine, saved for efficiency
+	Engine *engine;
+
 public:
 
 	/// Constructor
-	FrequencyDomain(const std::string &name, int frequency)
-			:
-			name(name),
-			frequency(frequency),
-			cycle_time(1000000ll / frequency)
-	{
-	}
+	FrequencyDomain(const std::string &name, int frequency);
 
 	/// Return the frequency domain name
 	const std::string &getName() const { return name; }

@@ -24,9 +24,18 @@
 namespace esim
 {
 
+FrequencyDomain::FrequencyDomain(const std::string &name, int frequency) :
+		name(name),
+		frequency(frequency),
+		cycle_time(1000000ll / frequency)
+{
+	// Save simulator engine
+	engine = Engine::getInstance();
+}
+	
+	
 long long FrequencyDomain::getCycle() const
 {
-	Engine *engine = Engine::getInstance();
 	return engine->getTime() / cycle_time + 1;
 }
 

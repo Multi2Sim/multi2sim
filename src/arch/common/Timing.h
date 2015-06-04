@@ -43,6 +43,11 @@ class Timing
 	// Frequency domain pointer
 	esim::FrequencyDomain *frequency_domain = nullptr;
 
+	// Last cycle when an iteration of a timing simulation was run. This
+	// variable is used by ArchPool::Run() to determine whether the current
+	// cycle should run or skip an iteration of this architecture.
+	long long last_simulation_cycle = 0;
+	
 public:
 
 	/// Constructor
@@ -62,6 +67,10 @@ public:
 
 	/// Return the frequency domain identifier
 	esim::FrequencyDomain *getFrequencyDomain() { return frequency_domain; }
+
+	/// Return the current cycle in the frequency domain of this timing
+	/// simulator.
+	long long getCycle() const { return frequency_domain->getCycle(); }
 
 	/// Dump a default memory configuration for the architecture. This
 	/// function is invoked by the memory system configuration parser when
@@ -88,6 +97,17 @@ public:
 	/// hierarchy given its index. The index must be a value between 0 and
 	/// getNumEntryModules() - 1.
 	virtual mem::Module *getEntryModule(int index);
+
+	/// Return the cycle when a timing simulation last happened for this
+	/// architecture, as set by setLastSimulationCycle().
+	long long getLastSimulationCycle() const { return last_simulation_cycle; }
+
+	/// Record the current cycle as the last simulation cycle for the
+	/// current timing simulator.
+	void SaveLastSimulationCycle()
+	{
+		last_simulation_cycle = frequency_domain->getCycle();
+	}
 };
 
 }
