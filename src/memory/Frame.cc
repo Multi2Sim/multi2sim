@@ -31,7 +31,7 @@ namespace mem
 long long Frame::id_counter = 0;
 
 
-void Frame::AddWaitingFrame(std::shared_ptr<Frame> frame,
+void Frame::addWaitingFrame(std::shared_ptr<Frame> frame,
 		esim::EventType *event_type)
 {
 	assert(frame.get() != this);
