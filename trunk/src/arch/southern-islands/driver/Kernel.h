@@ -96,7 +96,9 @@ public:
 	/// Get kernel binary
 	Binary *getKernelBinaryFile() const { return binary_file.get(); }
 
-	/// Get associated program
+	/// Get associated program. 
+	///
+	/// \return Returns a pointer to a program or a nullptr if uninitialized
 	Program *getProgram() const { return program; }
 
 	/// Get reference of arguments list
