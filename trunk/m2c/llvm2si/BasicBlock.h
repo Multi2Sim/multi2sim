@@ -71,9 +71,17 @@ class BasicBlock : public comm::BasicBlock
 	// Return corresponding SI buffer vector format
 	static enum SI::InstBufDataFormat getBufDataFormatVector(llvm::Type *llvm_type);
 
+	// Convert scalar to vector
+	void ArgScalarToVector(std::unique_ptr<si2bin::Argument> &arg,
+		llvm::Value *llvm_arg);
+
+	// Convert literal to vector
+	void ArgLiteralToVector(std::unique_ptr<si2bin::Argument> &arg);
+
 	// Emit instructions
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitCall(llvm::CallInst *llvm_inst);
+	void EmitUitofp(llvm::CastInst *llvm_inst);	
 	void EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst);
 	void EmitICmp(llvm::ICmpInst *llvm_inst);
 	void EmitLoad(llvm::LoadInst *llvm_inst);
@@ -91,7 +99,9 @@ class BasicBlock : public comm::BasicBlock
 	void EmitXor(llvm::BinaryOperator *llvm_inst);
 	void EmitURem(llvm::BinaryOperator *llvm_inst);
 	void EmitUDiv(llvm::BinaryOperator *llvm_inst);
+	void EmitSDiv(llvm::BinaryOperator *llvm_inst);	
 	void EmitShl(llvm::BinaryOperator *llvm_inst);
+	void EmitLShr(llvm::BinaryOperator *llvm_inst);
 	void EmitSExt(llvm::SExtInst *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
