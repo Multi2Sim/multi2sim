@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/asm/Asm.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Misc.h>
 
@@ -144,7 +145,7 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emu *emu = ndrange->getEmu();
 	WorkItem *work_item = NULL;
-	std::unique_ptr<Inst> inst(new Inst(emu->getAsm()));
+	std::unique_ptr<Inst> inst(new Inst(Asm::getInstance()));
 
 	// Reset instruction flags
 	vector_mem_write = 0;
@@ -688,15 +689,15 @@ void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs,
 
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
-	assert(cb < (int)EmuMaxNumConstBufs);
+	assert(cb < (int)Emu::MaxNumConstBufs);
 	assert(ndrange->getConstBuffer(cb)->valid);
 
 	buf_desc_addr = ndrange->getConstBufferTableAddr() +
-		cb*EmuConstBufTableEntrySize;
+		cb*Emu::ConstBufTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emu->getGlobalMem()->Read(buf_desc_addr, sizeof(buf_desc),
+	emu->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
 		(char *)&buf_desc);
 
 	// Store the descriptor in 4 scalar registers 
@@ -731,15 +732,15 @@ void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
 
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
-	assert(uav < (int)EmuMaxNumUAVs);
+	assert(uav < (int)Emu::MaxNumUAVs);
 	assert(ndrange->getUAV(uav)->valid);
 
 	buf_desc_addr = ndrange->getUAVTableAddr() +
-		uav*EmuUAVTableEntrySize;
+		uav*Emu::UAVTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emu->getGlobalMem()->Read(buf_desc_addr, sizeof(buf_desc),
+	emu->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
 		(char *)&buf_desc);
 
 	// Store the descriptor in 4 scalar registers 

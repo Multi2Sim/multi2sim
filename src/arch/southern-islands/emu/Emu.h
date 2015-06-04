@@ -33,7 +33,6 @@
 namespace Driver
 {
 	class OpenCLSIDriver;
-	class OpenGLSIDriver;
 }
 
 namespace SI
@@ -44,69 +43,6 @@ class Asm;
 class NDRange;
 class ShaderExport;
 class WorkGroup;
-
-/// UAV Table
-const unsigned EmuMaxNumUAVs = 16;
-const unsigned EmuUAVTableEntrySize = 32;
-const unsigned EmuUAVTableSize = EmuMaxNumUAVs * EmuUAVTableEntrySize;
-
-/// Vertex buffer table
-const unsigned EmuMaxNumVertexBuffers = 16;
-const unsigned EmuVertexBufferTableEntrySize = 32;
-const unsigned EmuVertexBufferTableSize = EmuMaxNumVertexBuffers *
-		EmuVertexBufferTableEntrySize;
-
-// Constant buffer table
-const unsigned EmuMaxNumConstBufs = 16;
-const unsigned EmuConstBufTableEntrySize = 16;
-const unsigned EmuConstBufTableSize = EmuMaxNumConstBufs * EmuConstBufTableEntrySize;
-
-// Resource table
-const unsigned EmuMaxNumResources = 16;
-const unsigned EmuResourceTableEntrySize = 32;
-const unsigned EmuResourceTableSize = EmuMaxNumResources * EmuResourceTableEntrySize;
-
-const unsigned EmuTotalTableSize = EmuUAVTableSize + EmuConstBufTableSize +
-		EmuResourceTableSize + EmuVertexBufferTableSize;
-
-// Constant buffers
-const unsigned EmuConstBuf0Size = 160;  // Defined in Metadata.pdf
-const unsigned EmuConstBuf1Size = 1024; // FIXME
-
-const unsigned EmuTotalConstBufSize = EmuConstBuf0Size + EmuConstBuf1Size;
-
-/// Buffer descriptor data format
-enum EmuBufDescDataFmt
-{
-	EmuBufDescDataFmtInvalid = 0,
-	EmuBufDescDataFmt8,
-	EmuBufDescDataFmt16,
-	EmuBufDescDataFmt8_8,
-	EmuBufDescDataFmt32,
-	EmuBufDescDataFmt16_16,
-	EmuBufDescDataFmt10_11_11,
-	EmuBufDescDataFmt10_10_10_2,
-	EmuBufDescDataFmt2_10_10_10,
-	EmuBufDescDataFmt8_8_8_8,
-	EmuBufDescDataFmt32_32,
-	EmuBufDescDataFmt16_16_16_16,
-	EmuBufDescDataFmt32_32_32,
-	EmuBufDescDataFmt32_32_32_32
-};
-
-/// Buffer descriptor number format
-enum EmuBufDescNumFmt
-{
-	EmuBufDescNumFmtInvalid = -1,  // Not part of SI spec
-	EmuBufDescNumFmtUnorm = 0,
-	EmuBufDescNumFmtSnorm,
-	EmuBufDescNumFmtUscaled,
-	EmuBufDescNumFmtSscaled,
-	EmuBufDescNumFmtUint,
-	EmuBufDescNumFmtSint,
-	EmuBufDescNumFmtSnormOgl,
-	EmuBufDescNumFmtFloat
-};
 
 /// Table 8.5 in SI documentation
 struct EmuBufferDesc
@@ -208,69 +144,107 @@ struct EmuMemPtr
 }__attribute__((packed));
 
 
-/// Configuration of the Southern Islands emulator
-class EmuConfig
-{
-	long long max_cycles;
-	long long max_inst;
-	int max_kernels;
-
-	std::string opengl_binary_name;
-
-	int wavefront_size;
-public:
-
-	long long getMaxCycles() { return max_cycles; }
-	long long getMaxInst() { return max_inst; }
-	int getMaxKernels() { return max_kernels; }
-
-	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
-	int getWavefrontSize() { return wavefront_size; }
-};
-
-
 /// Southern Islands emulator.
 class Emu
 {
+
+public:
+
+	/// Buffer descriptor data format
+	enum BufDescDataFmt
+	{
+		BufDescDataFmtInvalid = 0,
+		BufDescDataFmt8,
+		BufDescDataFmt16,
+		BufDescDataFmt8_8,
+		BufDescDataFmt32,
+		BufDescDataFmt16_16,
+		BufDescDataFmt10_11_11,
+		BufDescDataFmt10_10_10_2,
+		BufDescDataFmt2_10_10_10,
+		BufDescDataFmt8_8_8_8,
+		BufDescDataFmt32_32,
+		BufDescDataFmt16_16_16_16,
+		BufDescDataFmt32_32_32,
+		BufDescDataFmt32_32_32_32
+	};
+	
+	/// Buffer descriptor number format
+	enum BufDescNumFmt
+	{
+		BufDescNumFmtInvalid = -1,  // Not part of SI spec
+		BufDescNumFmtUnorm = 0,
+		BufDescNumFmtSnorm,
+		BufDescNumFmtUscaled,
+		BufDescNumFmtSscaled,
+		BufDescNumFmtUint,
+		BufDescNumFmtSint,
+		BufDescNumFmtSnormOgl,
+		BufDescNumFmtFloat
+	};
+
+private:
+
+	//
+	// Configuration Options
+	//
+
+	// Max number of cycles
+	static long long max_cycles;
+
+	// Max number of instructions
+	static long long max_inst;
+
+	// Maximum number of kernels
+	static int max_kernels;
+
+	// OpenGL binary name
+	static std::string opengl_binary_name;
+
+	// Size of wavefront
+	static int wavefront_size;
+
+	//
+	// Start of private members
+	//
+
 	// Associated disassembler
-	std::unique_ptr<Asm> as;
+	Asm *as = nullptr;
 
 	// Associated drivers
-	::Driver::OpenCLSIDriver *opencl_driver;
-
-#ifdef HAVE_OPENGL
-	::Driver::OpenGLSIDriver *opengl_driver;
-#endif
+	::Driver::OpenCLSIDriver *opencl_driver = nullptr;
 
 	// Local to the GPU
-	std::unique_ptr<mem::Memory> video_mem;
-	unsigned video_mem_top = 0;
+	std::unique_ptr<mem::Memory> video_memory;
+
+	// Pointer to the top of video memory
+	unsigned video_memory_top = 0;
 
 	// Shared with the CPU
-	std::unique_ptr<mem::Memory> shared_mem;
+	std::unique_ptr<mem::Memory> shared_memory;
 	
 	// Will point to video_mem or shared_mem
-	mem::Memory *global_mem;
+	mem::Memory *global_memory = nullptr;
 
-	int address_space_index;
+	int address_space_index = 0;
 
 	// Current ND-Range
-	NDRange *ndrange;
+	NDRange *ndrange = nullptr;
 
 	// Work-group lists
 	std::list<WorkGroup *> waiting_work_groups;
 	std::list<WorkGroup *> running_work_groups;
 
 	// Statistics
-	int ndrange_count;               // Number of OpenCL kernels executed
-	long long work_group_count;      // Number of OpenCL work groups executed
-	long long scalar_alu_inst_count; // Scalar ALU instructions executed
-	long long scalar_mem_inst_count; // Scalar mem instructions executed
-	long long branch_inst_count;     // Branch instructions executed
-	long long vector_alu_inst_count; // Vector ALU instructions executed
-	long long lds_inst_count;        // LDS instructions executed
-	long long vector_mem_inst_count; // Vector mem instructions executed
-	long long export_inst_count;     // Export instructions executed
+	int ndrange_count = 0;              // Number of OpenCL kernels executed
+	long long work_group_count = 0; // Number of OpenCL work groups executed
+	long long scalar_alu_inst_count = 0; // Scalar ALU instructions executed
+	long long scalar_mem_inst_count = 0; // Scalar mem instructions executed
+	long long branch_inst_count = 0;     // Branch instructions executed
+	long long vector_alu_inst_count = 0; // Vector ALU instructions executed
+	long long lds_inst_count = 0;        // LDS instructions executed
+	long long vector_mem_inst_count = 0; // Vector mem instructions executed
+	long long export_inst_count = 0;     // Export instructions executed
 
 	// Unique instance of Southern Islands Emulator
 	static std::unique_ptr<Emu> instance;
@@ -280,6 +254,33 @@ class Emu
 	Emu();
 
 public:
+	/// UAV Table
+	static const unsigned MaxNumUAVs = 16;
+	static const unsigned UAVTableEntrySize;
+	static const unsigned UAVTableSize;
+
+	/// Vertex buffer table
+	static const unsigned MaxNumVertexBuffers = 16;
+	static const unsigned VertexBufferTableEntrySize;
+	static const unsigned VertexBufferTableSize;
+
+	/// Constant buffer table
+	static const unsigned MaxNumConstBufs = 16;
+	static const unsigned ConstBufTableEntrySize;
+	static const unsigned ConstBufTableSize;
+
+	/// Resource table
+	static const unsigned MaxNumResources = 16;
+	static const unsigned ResourceTableEntrySize;
+	static const unsigned ResourceTableSize;
+
+	static const unsigned TotalTableSize;
+
+	/// Constant buffers
+	static const unsigned ConstBuf0Size;  // Defined in Metadata.pdf
+	static const unsigned ConstBuf1Size; // FIXME
+
+	static const unsigned TotalConstBufSize;
 
 	/// Exception for Southern Islands emulator
 	class Error : public misc::Error
@@ -295,8 +296,20 @@ public:
 	/// Debugger for ISA traces
 	static misc::Debug debug;
 
-	/// Emulator configuration;
-	static EmuConfig config;
+	/// Return the maximum number of emulation cycles as set by the 
+	/// --si-max-cycles command-line option
+	long long getMaxCycles() { return max_cycles; }
+	
+	/// Return the maximum number of instructions as set by the 
+	/// --si-max-inst command-line option
+	long long getMaxInst() { return max_inst; }
+
+	/// Return the maximum number of kernels as set by the 
+	/// --si-max-kernels command-line option
+	int getMaxKernels() { return max_kernels; }
+
+	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
+	int getWavefrontSize() { return wavefront_size; }
 
 	/// Get the only instance of the Southern Islands emulator. If the
 	/// instance does not exist yet, it will be created, and will remain
@@ -304,7 +317,7 @@ public:
 	static Emu *getInstance();
 
 	/// Dump emulator state
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump emulator state (equivalent to Dump())
 	friend std::ostream &operator<<(std::ostream &os, const Emu &emu)
@@ -313,8 +326,10 @@ public:
 		return os;
 	}
 
+	///
 	/// Getters
 	///
+
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return ndrange_count++; }
 
@@ -322,39 +337,27 @@ public:
 	unsigned getNewAddressSpaceIdx() { return address_space_index++; }
 
 	/// Get global memory
-	mem::Memory *getGlobalMem() { return global_mem; }
+	mem::Memory *getGlobalMemory() { return global_memory; }
 
-	/// Get disassembler
-	SI::Asm *getAsm() { return as.get(); }
+	/// Get video_memory_top
+	unsigned getVideoMemoryTop() const { return video_memory_top; }
 
-	/// Get video_mem_top
-	unsigned getVideoMemTop() const { return video_mem_top; }
+	/// Get video_memory
+	mem::Memory *getVideoMemory() { return video_memory.get(); }
 
-	/// Get video_mem
-	mem::Memory *getVideoMem() { return video_mem.get(); }
-
+	///
 	/// Setters
 	///
-	/// Set global_mem
-	void setGlobalMem(mem::Memory *memory) { global_mem = memory; }
+
+	/// Set global_memory
+	void setGlobalMemory(mem::Memory *memory) { global_memory = memory; }
 	
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
 	/// Set OpenCL driver
-	void setDriverCL(::Driver::OpenCLSIDriver *opencl_driver)
-	{
-		if (opencl_driver)
-			this->opencl_driver = opencl_driver;
-	}
-
-#ifdef HAVE_OPENGL
-	/// Set OpenGL driver
-	void setDriverGL(::Driver::OpenGLSIDriver *opengl_driver)
-	{
-		this->opengl_driver = opengl_driver;
-	}
-#endif
+	void setOpenCLSIDriver(::Driver::OpenCLSIDriver *opencl_driver)
+			{ this->opencl_driver = opencl_driver; }
 
 	/// Increment work_group_count
 	void incWorkGroupCount() { work_group_count++; }
@@ -387,7 +390,7 @@ public:
 	void Run();
 
 	/// Increase video memory top
-	void incVideoMemTop(unsigned inc) { video_mem_top += inc; }
+	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }
 };
 
 

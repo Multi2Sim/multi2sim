@@ -591,8 +591,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	assert(sizeof(struct EmuBufferDesc) == 16);
 	memset(buffer_desc, 0, sizeof(EmuBufferDesc));
 
-	num_format = EmuBufDescNumFmtInvalid;
-	data_format = EmuBufDescDataFmtInvalid;
+	num_format = Emu::BufDescNumFmtInvalid;
+	data_format = Emu::BufDescDataFmtInvalid;
 
 	switch (data_type)
 	{
@@ -600,19 +600,19 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt8:
 	case ArgDataTypeUInt8:
 
-		num_format = EmuBufDescNumFmtSint;
+		num_format = Emu::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = EmuBufDescDataFmt8;
+			data_format = Emu::BufDescDataFmt8;
 			break;
 
 		case 2:
-			data_format = EmuBufDescDataFmt8_8;
+			data_format = Emu::BufDescDataFmt8_8;
 			break;
 
 		case 4:
-			data_format = EmuBufDescDataFmt8_8_8_8;
+			data_format = Emu::BufDescDataFmt8_8_8_8;
 			break;
 
 		default:
@@ -626,20 +626,20 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt16:
 	case ArgDataTypeUInt16:
 
-		num_format = EmuBufDescNumFmtSint;
+		num_format = Emu::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 
 		case 1:
-			data_format = EmuBufDescDataFmt16;
+			data_format = Emu::BufDescDataFmt16;
 			break;
 
 		case 2:
-			data_format = EmuBufDescDataFmt16_16;
+			data_format = Emu::BufDescDataFmt16_16;
 			break;
 
 		case 4:
-			data_format = EmuBufDescDataFmt16_16_16_16;
+			data_format = Emu::BufDescDataFmt16_16_16_16;
 			break;
 
 		default:
@@ -653,24 +653,24 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt32:
 	case ArgDataTypeUInt32:
 
-		num_format = EmuBufDescNumFmtSint;
+		num_format = Emu::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 
 		case 1:
-			data_format = EmuBufDescDataFmt32;
+			data_format = Emu::BufDescDataFmt32;
 			break;
 
 		case 2:
-			data_format = EmuBufDescDataFmt32_32;
+			data_format = Emu::BufDescDataFmt32_32;
 			break;
 
 		case 3:
-			data_format = EmuBufDescDataFmt32_32_32;
+			data_format = Emu::BufDescDataFmt32_32_32;
 			break;
 
 		case 4:
-			data_format = EmuBufDescDataFmt32_32_32_32;
+			data_format = Emu::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -683,23 +683,23 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 	case ArgDataTypeFloat:
 
-		num_format = EmuBufDescNumFmtFloat;
+		num_format = Emu::BufDescNumFmtFloat;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = EmuBufDescDataFmt32;
+			data_format = Emu::BufDescDataFmt32;
 			break;
 
 		case 2:
-			data_format = EmuBufDescDataFmt32_32;
+			data_format = Emu::BufDescDataFmt32_32;
 			break;
 
 		case 3:
-			data_format = EmuBufDescDataFmt32_32_32;
+			data_format = Emu::BufDescDataFmt32_32_32;
 			break;
 
 		case 4:
-			data_format = EmuBufDescDataFmt32_32_32_32;
+			data_format = Emu::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -712,15 +712,15 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 	case ArgDataTypeDouble:
 
-		num_format = EmuBufDescNumFmtFloat;
+		num_format = Emu::BufDescNumFmtFloat;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = EmuBufDescDataFmt32_32;
+			data_format = Emu::BufDescDataFmt32_32;
 			break;
 
 		case 2:
-			data_format = EmuBufDescDataFmt32_32_32_32;
+			data_format = Emu::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -732,8 +732,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		break;
 	case ArgDataTypeStruct:
 
-		num_format = EmuBufDescNumFmtUint;
-		data_format = EmuBufDescDataFmt8;
+		num_format = Emu::BufDescNumFmtUint;
+		data_format = Emu::BufDescDataFmt8;
 		elem_size = 1;
 		break;
 
@@ -742,8 +742,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		throw Driver::Error(misc::fmt("Invalid data type for buffer "
 				"(%d)", data_type));
 	}
-	assert(num_format != EmuBufDescNumFmtInvalid);
-	assert(data_format != EmuBufDescDataFmtInvalid);
+	assert(num_format != Emu::BufDescNumFmtInvalid);
+	assert(data_format != Emu::BufDescDataFmtInvalid);
 
 	buffer_desc->base_addr = base_addr;
 	buffer_desc->num_format = num_format;
@@ -794,8 +794,8 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 {
 	Emu *emu = SI::Emu::getInstance();
 
-	unsigned size_of_tables = EmuConstBufTableSize +
-		EmuResourceTableSize + EmuUAVTableSize;
+	unsigned size_of_tables = Emu::ConstBufTableSize +
+		Emu::ResourceTableSize + Emu::UAVTableSize;
 
 	// if (gpu_mmu)
 	// {
@@ -813,15 +813,15 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
-		emu->getVideoMemTop());
+		emu->getVideoMemoryTop());
 
 	// Setup internal tables
-	ndrange->setConstBufferTable(emu->getVideoMemTop());
-	emu->incVideoMemTop(EmuConstBufTableSize);
-	ndrange->setResourceTable(emu->getVideoMemTop());
-	emu->incVideoMemTop(EmuResourceTableSize);
-	ndrange->setUAVTable(emu->getVideoMemTop());
-	emu->incVideoMemTop(EmuUAVTableSize);
+	ndrange->setConstBufferTable(emu->getVideoMemoryTop());
+	emu->incVideoMemoryTop(Emu::ConstBufTableSize);
+	ndrange->setResourceTable(emu->getVideoMemoryTop());
+	emu->incVideoMemoryTop(Emu::ResourceTableSize);
+	ndrange->setUAVTable(emu->getVideoMemoryTop());
+	emu->incVideoMemoryTop(Emu::UAVTableSize);
 
 	// Return
 	return;
@@ -982,7 +982,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	// Add program-wide constant buffers to the ND-range.
 	// Program-wide constant buffers start at number 2.
-	for (unsigned i = 2; i < EmuMaxNumConstBufs; i++)
+	for (unsigned i = 2; i < Emu::MaxNumConstBufs; i++)
 	{
 		ConstantBuffer *constant_buffer =
 			getProgram()->getConstantBufferByIndex(i);
@@ -1024,13 +1024,13 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	float f;
 
 	/* Constant buffer 0 */
-	CreateBufferDesc(ndrange->getConstBufferAddr(0), EmuConstBuf0Size,
+	CreateBufferDesc(ndrange->getConstBufferAddr(0), Emu::ConstBuf0Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
 
 	/* Constant buffer 1 */
-	CreateBufferDesc(ndrange->getConstBufferAddr(1), EmuConstBuf1Size,
+	CreateBufferDesc(ndrange->getConstBufferAddr(1), Emu::ConstBuf1Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 1);

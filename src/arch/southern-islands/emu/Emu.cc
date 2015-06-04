@@ -34,14 +34,44 @@
 namespace SI
 {
 
+// UAV Table
+const unsigned Emu::MaxNumUAVs;
+const unsigned Emu::UAVTableEntrySize = 32;
+const unsigned Emu::UAVTableSize = MaxNumUAVs * UAVTableEntrySize;
+
+/// Vertex buffer table
+const unsigned Emu::MaxNumVertexBuffers;
+const unsigned Emu::VertexBufferTableEntrySize = 32;
+const unsigned Emu::VertexBufferTableSize = 
+	Emu::MaxNumVertexBuffers * Emu::VertexBufferTableEntrySize;
+
+/// Constant buffer table
+const unsigned Emu::MaxNumConstBufs;
+const unsigned Emu::ConstBufTableEntrySize = 16;
+const unsigned Emu::ConstBufTableSize = Emu::MaxNumConstBufs * 
+		Emu::ConstBufTableEntrySize;
+
+/// Resource table
+const unsigned Emu::MaxNumResources;
+const unsigned Emu::ResourceTableEntrySize = 32;
+const unsigned Emu::ResourceTableSize = Emu::MaxNumResources * 
+		Emu::ResourceTableEntrySize;
+
+const unsigned Emu::TotalTableSize = Emu::UAVTableSize + 
+		Emu::ConstBufTableSize + Emu::ResourceTableSize + 
+		Emu::VertexBufferTableSize;
+
+/// Constant buffers
+const unsigned Emu::ConstBuf0Size = 160;  // Defined in Metadata.pdf
+const unsigned Emu::ConstBuf1Size = 1024; // FIXME
+	
+const unsigned Emu::TotalConstBufSize = Emu::ConstBuf0Size + Emu::ConstBuf1Size;
+
 // Singleton
 std::unique_ptr<Emu> Emu::instance;
 
 // Debugger
 misc::Debug Emu::debug;
-
-// Configuration
-EmuConfig Emu::config;
 
 Emu *Emu::getInstance()
 {
@@ -57,14 +87,14 @@ Emu *Emu::getInstance()
 Emu::Emu()
 {
 	// Disassemler
-	this->as.reset(new Asm());
+	as = Asm::getInstance();
 	
 	// GPU memories
-	this->video_mem.reset(new mem::Memory());
-	this->video_mem->setSafe(true);
+	this->video_memory.reset(new mem::Memory());
+	this->video_memory->setSafe(true);
 
-	this->shared_mem.reset(new mem::Memory());
-	this->global_mem = video_mem.get();
+	this->shared_memory.reset(new mem::Memory());
+	this->global_memory = video_memory.get();
 }
 
 void Emu::Dump(std::ostream &os) const
@@ -121,8 +151,6 @@ void Emu::Run()
 			// have been run
 //			opencl_driver->RequestWork((*ndr_i).get());
 		}
-		else
-			opengl_driver->RequestWork((*ndr_i).get());
 #else
 		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
