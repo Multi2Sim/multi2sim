@@ -168,7 +168,7 @@ void Kernel::LoadMetaDataV3()
 				constant_offset);
 
 			// Add argument and clear token list
-			args.push_back(std::move(arg));
+			arguments.push_back(std::move(arg));
 			token_list.clear();
 			continue;
 		}
@@ -266,7 +266,7 @@ void Kernel::LoadMetaDataV3()
 				constant_offset);
 
 			// Add argument and clear token list
-			args.push_back(std::move(arg));
+			arguments.push_back(std::move(arg));
 			token_list.clear();
 			continue;
 		}
@@ -327,7 +327,7 @@ void Kernel::LoadMetaDataV3()
 				constant_offset);
 
 			// Add argument and clear token list
-			args.push_back(std::move(arg));
+			arguments.push_back(std::move(arg));
 			token_list.clear();
 			continue;
 		}
@@ -362,7 +362,7 @@ void Kernel::LoadMetaDataV3()
 				value));
 
 			// Add argument and clear token list
-			args.push_back(std::move(arg));
+			arguments.push_back(std::move(arg));
 			token_list.clear();
 		}
 
@@ -402,7 +402,7 @@ void Kernel::LoadMetaDataV3()
 				// Token 2 - Size of local memory
 				token_list.erase(token_list.begin());
 				ExpectInt(token_list);
-				this->mem_size_local = misc::StringToInt(*token_list.begin());
+				this->local_memory_size = misc::StringToInt(*token_list.begin());
 			}
 			else if (token_list.front() == "datareqd")
 			{
@@ -784,7 +784,7 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 	std::string symbol_name = "kernel<" + name + ">.InternalELF";
 	const char *kernel_buf = kernel_symbol->getBuffer();
 	unsigned kernel_buf_size = (unsigned)kernel_symbol->getSize();
-	bin_file.reset(new Binary(kernel_buf, kernel_buf_size, symbol_name));
+	binary_file.reset(new Binary(kernel_buf, kernel_buf_size, symbol_name));
 
 	// Load metadata
 	LoadMetaData();
@@ -835,8 +835,8 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	// Initial top of local memory is determined by the static local memory
 	// specified in the kernel binary. Number of vector and scalar
 	// registers used by the kernel recorded as well.
-	const BinaryDictEntry *enc_dict = getKernelBinary()->GetSIDictEntry();
-	ndrange->setLocalMemTop(getMemSizeLocal());
+	const BinaryDictEntry *enc_dict = getKernelBinaryFile()->GetSIDictEntry();
+	ndrange->setLocalMemTop(getLocalMemorySize());
 	ndrange->setNumSgprUsed(enc_dict->num_sgpr);
 	ndrange->setNumVgprUsed(enc_dict->num_vgpr);
 
