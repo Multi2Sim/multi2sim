@@ -28,22 +28,21 @@ namespace net
 
 int System::net_system_frequency = 1000;
 
-void System::ParseConfiguration(const std::string &path)
+void System::ParseConfiguration(misc::IniFile *ini_file)
 {
-	misc::IniFile ini_file(path);
 	System::debug << misc::fmt("Loading Network Configuration file \"%s\"\n",
-			path.c_str());
+			ini_file->getPath().c_str());
 
 	std::string section = "General";
 
 	// Default Frequency
-	ini_file.ReadInt(section, "Frequency", net_system_frequency);
+	ini_file->ReadInt(section, "Frequency", net_system_frequency);
 
 	// First configuration look-up is for networks
-	for (int i = 0; i < ini_file.getNumSections(); i++)
+	for (int i = 0; i < ini_file->getNumSections(); i++)
 	{
 		// Get section
-		section = ini_file.getSection(i);
+		section = ini_file->getSection(i);
 
 		std::vector<std::string> tokens;
 		misc::StringTokenize(section, tokens, ".");
@@ -56,7 +55,7 @@ void System::ParseConfiguration(const std::string &path)
 
 		auto network = misc::new_unique<Network>(network_name);
 		Network *network_ptr = network.get();
-		network->ParseConfiguration(&ini_file, section);
+		network->ParseConfiguration(ini_file, section);
 		networks.emplace_back(std::move(network));
 		network_map.emplace(network_name, network_ptr);
 	}

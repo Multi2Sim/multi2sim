@@ -36,7 +36,6 @@
 #include <sys/times.h>
 
 #include <lib/cpp/Misc.h>
-#include <lib/esim/esim.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
 
@@ -6184,8 +6183,6 @@ static misc::StringMap x86_sys_clock_gettime_clk_id_map =
 
 int Context::ExecuteSyscall_clock_gettime()
 {
-	long long now;
-
 	struct {
 		unsigned int sec;
 		unsigned int nsec;
@@ -6198,6 +6195,9 @@ int Context::ExecuteSyscall_clock_gettime()
 	emu->syscall_debug << misc::fmt("  clk_id=0x%x (%s), ts_ptr=0x%x\n",
 		clk_id, clk_id_str, ts_ptr);
 
+	// Event-driven simulator engine
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+
 	// Initialize 
 	sim_ts.sec = 0;
 	sim_ts.nsec = 0;
@@ -6205,52 +6205,54 @@ int Context::ExecuteSyscall_clock_gettime()
 	// Clock type 
 	switch (clk_id)
 	{
-	case 0:  /* CLOCK_REALTIME */
-
-		/* For CLOCK_REALTIME, return the host real time. This is the same
-		 * value that the guest application would see if it ran natively. */
-		now = esim_real_time();
+	case 0:  // CLOCK_REALTIME
+	{
+		// For CLOCK_REALTIME, return the host real time. This is the same
+		// value that the guest application would see if it ran natively.
+		long long now = esim_engine->getRealTime();
 		sim_ts.sec = now / 1000000;
 		sim_ts.nsec = (now % 1000000) * 1000;
 		break;
+	}
 
-	case 2:  /* CLOCK_PROCESS_CPUTIME_ID */
-	case 3:  /* CLOCK_THREAD_CPUTIME_ID */
-	case 5:  /* CLOCK_REALTIME_COARSE */
-	case 6:  /* CLOCK_MONOTONIC_COARSE */
+	case 2:  // CLOCK_PROCESS_CPUTIME_ID
+	case 3:  // CLOCK_THREAD_CPUTIME_ID
+	case 5:  // CLOCK_REALTIME_COARSE
+	case 6:  // CLOCK_MONOTONIC_COARSE
 
 		// These clocks are not implemented in detail. To let applications
 		// run without errors, we just provide a warning for now.
 		misc::Warning("%s: not implemented for 'clk_id' = %d",
 			__FUNCTION__, clk_id);
 
-	case 1:  /* CLOCK_MONOTONIC */
-	case 4:  /* CLOCK_MONOTONIC_RAW */
-
-		/* For these two clocks, we want to return simulated time. This
-		 * time is tricky to calculate when there could be iterations of the
-		 * main simulation loop when no timing simulation happened, but
-		 * which still need to be considered to avoid the application
-		 * having the illusion of time not going by at all. This is the
-		 * strategy assumed to calculate simulated time:
-		 *   - A first component is based on the value of 'esim_time',
-		 *     considering all simulation cycles when there was an
-		 *     active timing simulation of any architecture.
-		 *   - A second component will add a time increment for each
-		 *     simulation main loop iteration where the global time
-		 *     'esim_time' was not incremented. These iterations are
-		 *     recorded in variable 'esim_no_forward_cycles'. A default
-		 *     value of 1ns per each iteration is considered here.
-		 */
-		now = esim_time / 1000;  /* Obtain nsec */
-		now += esim_no_forward_cycles;  /* One more nsec per iteration */
+	case 1:  // CLOCK_MONOTONIC
+	case 4:  // CLOCK_MONOTONIC_RAW
+	{
+		// For these two clocks, we want to return simulated time. This
+		// time is tricky to calculate when there could be iterations of the
+		// main simulation loop when no timing simulation happened, but
+		// which still need to be considered to avoid the application
+		// having the illusion of time not going by at all. This is the
+		// strategy assumed to calculate simulated time:
+		//   - A first component is based on the value of 'esim_time',
+		//     considering all simulation cycles when there was an
+		//     active timing simulation of any architecture.
+		//   - A second component will add a time increment for each
+		//     simulation main loop iteration where the global time
+		//     'esim_time' was not incremented. These iterations are
+		//     recorded in variable 'esim_no_forward_cycles'. A default
+		//     value of 1ns per each iteration is considered here.
+		//
+		long long now = esim_engine->getTime() / 1000;  // Obtain nsec
 		sim_ts.sec = now / 1000000000ll;
 		sim_ts.nsec = now % 1000000000ll;
 		break;
+	}
 
 	default:
-		misc::fatal("%s: invalid value for 'clk_id' (%d)",
-			__FUNCTION__, clk_id);
+
+		throw Error(misc::fmt("%s: invalid value for 'clk_id' (%d)",
+				__FUNCTION__, clk_id));
 	}
 
 	// Debug 

@@ -188,8 +188,8 @@ public:
 	/// Process command-line options
 	static void ProcessOptions();
 
-	/// Parse a configuration file
-	void ParseConfiguration(const std::string &path);
+	/// Parse a configuration INI file
+	void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Returns whether or not Network is running as a stand alone simulator.
 	bool isStandAlone() { return stand_alone; }

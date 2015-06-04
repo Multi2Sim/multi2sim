@@ -2,14 +2,6 @@ lib_LIBRARIES = libesim.a
 
 libesim_a_SOURCES = \
 	\
-	esim.c \
-	esim.h \
-	\
-	trace.c \
-	trace.h \
-	\
-	\
-	\
 	Action.cc \
 	Action.h \
 	\

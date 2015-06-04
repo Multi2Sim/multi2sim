@@ -2,20 +2,12 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	asm.c \
-	asm.h \
-	\
-	inst.c \
-	inst.h \
-	\
 	Asm.cc \
 	Asm.h \
 	\
 	Inst.cc \
 	Inst.def \
-	Inst.h \
-	\
-	asm.dat
+	Inst.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

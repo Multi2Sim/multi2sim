@@ -56,8 +56,6 @@
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
 
-#include "Wrapper.h"
-
 
 //
 // Configuration options
