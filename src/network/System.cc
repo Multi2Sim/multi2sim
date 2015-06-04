@@ -204,7 +204,10 @@ void System::ProcessOptions()
 
 	// Configuration
 	if (!config_file.empty())
-		net_system->ParseConfiguration(config_file);
+	{
+		misc::IniFile ini_file(config_file);
+		net_system->ParseConfiguration(&ini_file);
+	}
 
 	// Stand-Alone requires config file
 	if (net_system->stand_alone)

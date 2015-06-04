@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <arch/common/Arch.h>
+#include <arch/x86/timing/CPU.h>
 #include <arch/x86/timing/Timing.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.h>
@@ -265,11 +266,13 @@ std::string Context::OpenProcCPUInfo()
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
 		throw misc::Panic("Cannot create temporary file");
 
-	for (int i = 0; i < x86_cpu_num_cores; i++)
+	int num_cores = CPU::getNumCores();
+	int num_threads = CPU::getNumThreads();
+	for (int i = 0; i < num_cores; i++)
 	{
-		for (int j = 0; j < x86_cpu_num_threads; j++)
+		for (int j = 0; j < num_threads; j++)
 		{
-			node = i * x86_cpu_num_threads + j;
+			node = i * num_threads + j;
 			fprintf(f, "processor : %d\n", node);
 			fprintf(f, "vendor_id : Multi2Sim\n");
 			fprintf(f, "cpu family : 6\n");
@@ -280,9 +283,9 @@ std::string Context::OpenProcCPUInfo()
 			fprintf(f, "cpu MHz : 800.000\n");
 			fprintf(f, "cache size : 3072 KB\n");
 			fprintf(f, "physical id : 0\n");
-			fprintf(f, "siblings : %d\n", x86_cpu_num_cores * x86_cpu_num_threads);
+			fprintf(f, "siblings : %d\n", num_cores * num_threads);
 			fprintf(f, "core id : %d\n", i);
-			fprintf(f, "cpu cores : %d\n", x86_cpu_num_cores);
+			fprintf(f, "cpu cores : %d\n", num_cores);
 			fprintf(f, "apicid : %d\n", node);
 			fprintf(f, "initial apicid : %d\n", node);
 			fprintf(f, "fpu : yes\n");
