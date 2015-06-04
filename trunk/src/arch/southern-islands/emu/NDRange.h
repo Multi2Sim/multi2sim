@@ -98,7 +98,7 @@ private:
 	std::list<long> completed_work_groups;
 
 	// Used by the driver
-	bool last_work_group_sent = 0;
+	bool last_work_group_sent = false;
 
 	// Number of work dimensions
 	unsigned work_dim = 0;
@@ -150,19 +150,19 @@ private:
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned const_buf_table = 0;
-	TableEntry const_buf_table_entries[EmuMaxNumConstBufs];
+	TableEntry const_buf_table_entries[Emu::MaxNumConstBufs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned resource_table = 0;
-	TableEntry resource_table_entries[EmuMaxNumResources];
+	TableEntry resource_table_entries[Emu::MaxNumResources];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned uav_table = 0;
-	TableEntry uav_table_entries[EmuMaxNumUAVs];
+	TableEntry uav_table_entries[Emu::MaxNumUAVs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned vertex_buffer_table = 0;
-	TableEntry vertex_buffer_table_entries[EmuMaxNumVertexBuffers];
+	TableEntry vertex_buffer_table_entries[Emu::MaxNumVertexBuffers];
 
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
@@ -294,14 +294,14 @@ public:
 	/// Get constant buffer entry from constant buffer table at index
 	TableEntry *getConstBuffer(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
+		assert(idx >= 0 && idx <= Emu::MaxNumConstBufs);
 		return &const_buf_table_entries[idx];
 	}
 
 	/// Get constant buffer address in global memory
 	unsigned getConstBufferAddr(unsigned idx) const
 	{
-		assert(idx >= 0 && idx <= EmuMaxNumConstBufs);
+		assert(idx >= 0 && idx <= Emu::MaxNumConstBufs);
 		if (idx == 0)
 			return cb0;
 		else
@@ -311,7 +311,7 @@ public:
 	/// Get uav entry from uav table at index
 	TableEntry *getUAV(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= EmuMaxNumUAVs);
+		assert(idx >= 0 && idx <= Emu::MaxNumUAVs);
 		return &uav_table_entries[idx];
 	}
 
@@ -402,12 +402,13 @@ public:
 	///        binary by the caller.
 	/// \param size Number of bytes in the instruction buffer
 	/// \param pc Initial value of the program counter
-	void SetupInstMem(const char *buf, unsigned size, unsigned pc);
+	void SetupInstructionMemory(const char *buf, unsigned size, 
+			unsigned pc);
 
 	/// Initialize from kernel information
 	///
 	/// \param kernel Kernel containing Southern Islands encoding dictionary
-	void InitFromKernel(Kernel *kernel);
+	void InitializeFromKernel(Kernel *kernel);
 
 	/// Write to constant buffer(as a part of global memory)
 	///

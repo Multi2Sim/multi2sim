@@ -63,12 +63,12 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 
 	// Map new pages 
 	SI::Emu *si_emu = SI::Emu::getInstance();	
-	mem::Memory *video_mem = si_emu->getVideoMem();
-	video_mem->Map(si_emu->getVideoMemTop(), size,
+	mem::Memory *video_mem = si_emu->getVideoMemory();
+	video_mem->Map(si_emu->getVideoMemoryTop(), size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
 
 	// Virtual address of memory object 
-	unsigned device_ptr = si_emu->getVideoMemTop();
+	unsigned device_ptr = si_emu->getVideoMemoryTop();
 
 	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 		size, device_ptr);
@@ -77,7 +77,7 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 	// incrementing a pointer to the top of the global memory space. 
 	// Since memory deallocation is not implemented, "holes" in the 
 	// memory space are not considered. 
-	si_emu->incVideoMemTop(size);
+	si_emu->incVideoMemoryTop(size);
 
 	// Return device pointer 
 	return device_ptr;
@@ -110,7 +110,7 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 {
 	SI::Emu *si_emu = SI::Emu::getInstance();
-	mem::Memory *video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	// Arguments 
 	unsigned device_ptr;
@@ -125,7 +125,7 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 			device_ptr, host_ptr, size);
 
 	/* Check memory range */
-	if (device_ptr + size > si_emu->getVideoMemTop())
+	if (device_ptr + size > si_emu->getVideoMemoryTop())
 		throw Error("Device not allocated");
 
 	// Read memory from host to device
@@ -500,7 +500,7 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 		ndrange->getAddressSpaceIndex());
 
 	// Initialize from kernel binary encoding dictionary
-	ndrange->InitFromKernel(kernel);
+	ndrange->InitializeFromKernel(kernel);
 
 	// FIXME
 	// if (si_gpu)
