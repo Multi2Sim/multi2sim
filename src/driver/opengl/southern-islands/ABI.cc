@@ -72,22 +72,22 @@ int OpenGLABIMemAllocImpl(x86::Context *ctx)
 	// if (si_gpu)
 	// {
 	// 	// Allocate starting from nearest page boundary 
-	// 	if (si_emu->getVideoMemTop() & si_gpu->mmu->page_mask)
+	// 	if (si_emu->getVideoMemoryTop() & si_gpu->mmu->page_mask)
 	// 	{
-	// 		si_emu->incVideoMemTop(si_gpu->mmu->page_size -
+	// 		si_emu->incVideoMemoryTop(si_gpu->mmu->page_size -
 	// 			(si_emu->video_mem_top & 
 	// 			 si_gpu->mmu->page_mask));
 	// 	}
 	// }
 
 	// Map new pages 
-	mem::Memory *video_mem = si_emu->getVideoMem();
-	video_mem->Map(si_emu->getVideoMemTop(), size,
+	mem::Memory *video_mem = si_emu->getVideoMemory();
+	video_mem->Map(si_emu->getVideoMemoryTop(), size,
 			Memory::AccessRead |
 			Memory::AccessWrite);
 
 	// Virtual address of memory object 
-	unsigned device_ptr = si_emu->getVideoMemTop();
+	unsigned device_ptr = si_emu->getVideoMemoryTop();
 	x86::Emu::opencl_debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
 		size, device_ptr);
 
@@ -95,7 +95,7 @@ int OpenGLABIMemAllocImpl(x86::Context *ctx)
 	// incrementing a pointer to the top of the global memory space. 
 	// Since memory deallocation is not implemented, "holes" in the 
 	// memory space are not considered. 
-	si_emu->incVideoMemTop(size);
+	si_emu->incVideoMemoryTop(size);
 
 	// Return device pointer 
 	return device_ptr;
@@ -131,7 +131,7 @@ int OpenGLABIMemReadImpl(x86::Context *ctx)
 
 	x86::Regs &regs   = ctx->getRegs();
 	mem::Memory &mem  = ctx->getMem();
-	mem::Memory *video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	if (driver->isFused())
 	{
@@ -147,7 +147,7 @@ int OpenGLABIMemReadImpl(x86::Context *ctx)
 			host_ptr, device_ptr, size);
 
 	/* Check memory range */
-	if (device_ptr + size > si_emu->getVideoMemTop())
+	if (device_ptr + size > si_emu->getVideoMemoryTop())
 		fatal("%s: accessing device memory not allocated",
 				__FUNCTION__);
 
@@ -169,7 +169,7 @@ int OpenGLABIMemWriteImpl(x86::Context *ctx)
 
 	x86::Regs &regs   = ctx->getRegs();
 	mem::Memory &mem  = ctx->getMem();
-	mem::Memory *video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	if (driver->isFused())
 	{
@@ -185,7 +185,7 @@ int OpenGLABIMemWriteImpl(x86::Context *ctx)
 			device_ptr, host_ptr, size);
 
 	/* Check memory range */
-	if (device_ptr + size > si_emu->getVideoMemTop())
+	if (device_ptr + size > si_emu->getVideoMemoryTop())
 		fatal("%s: accessing device memory not allocated",
 				__FUNCTION__);
 
@@ -229,7 +229,7 @@ int OpenGLABIMemCopyImpl(x86::Context *ctx)
 	// SI::Gpu *si_gpu = driver->si_gpu;
 
 	x86::Regs &regs   = ctx->getRegs();
-	mem::Memory *video_mem = si_emu->getVideoMem();
+	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	if (driver->isFused())
 	{
@@ -245,8 +245,8 @@ int OpenGLABIMemCopyImpl(x86::Context *ctx)
 			dest_ptr, src_ptr, size);
 
 	/* Check memory range */
-	if (src_ptr + size > si_emu->getVideoMemTop() ||
-			dest_ptr + size > si_emu->getVideoMemTop())
+	if (src_ptr + size > si_emu->getVideoMemoryTop() ||
+			dest_ptr + size > si_emu->getVideoMemoryTop())
 		fatal("%s: accessing device memory not allocated",
 				__FUNCTION__);
 
