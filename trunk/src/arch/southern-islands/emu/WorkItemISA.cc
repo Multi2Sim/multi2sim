@@ -490,7 +490,7 @@ void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, carry.as_uint);
+	WriteSReg(Inst::RegisterScc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -532,7 +532,7 @@ void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, ovf.as_uint);
+	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -573,7 +573,7 @@ void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, diff.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, ovf.as_uint);
+	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -620,7 +620,7 @@ void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, min.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, s0_min.as_uint);
+	WriteSReg(Inst::RegisterScc, s0_min.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -668,7 +668,7 @@ void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, max.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, s0_max.as_uint);
+	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -715,7 +715,7 @@ void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, max.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, s0_max.as_uint);
+	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -745,7 +745,7 @@ void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
 		s1.as_uint = INST.lit_cnst;
 	else
 		s1.as_uint = ReadSReg(INST.ssrc1);
-	scc.as_uint = ReadSReg(SI_SCC);
+	scc.as_uint = ReadSReg(Inst::RegisterScc);
 
 	// Calculate the result
 	result.as_uint = scc.as_uint ? s0.as_uint : s1.as_uint;
@@ -791,7 +791,7 @@ void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -835,7 +835,7 @@ void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -876,7 +876,7 @@ void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -920,7 +920,7 @@ void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -965,7 +965,7 @@ void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1010,7 +1010,7 @@ void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1055,7 +1055,7 @@ void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1105,7 +1105,7 @@ void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1154,7 +1154,7 @@ void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1203,7 +1203,7 @@ void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1289,7 +1289,7 @@ void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 
 	// Print isa debug information.
@@ -1370,7 +1370,7 @@ void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, ovf.as_uint);
+	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1409,7 +1409,7 @@ void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, product.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, ovf.as_uint);
+	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1495,7 +1495,7 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, s0.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1562,8 +1562,8 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 	InstReg nonzero;
 
 	// Load operands from registers.
-	exec_lo.as_uint = ReadSReg(SI_EXEC);
-	exec_hi.as_uint = ReadSReg(SI_EXEC + 1);
+	exec_lo.as_uint = ReadSReg(Inst::RegisterExec);
+	exec_hi.as_uint = ReadSReg(Inst::RegisterExec + 1);
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
 	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
 
@@ -1579,11 +1579,11 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, exec_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_EXEC, exec_new_lo.as_uint);
+	WriteSReg(Inst::RegisterExec, exec_new_lo.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_EXEC + 1, exec_new_hi.as_uint);
+	WriteSReg(Inst::RegisterExec + 1, exec_new_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, nonzero.as_uint);
+	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1625,7 +1625,7 @@ void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1661,7 +1661,7 @@ void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1696,7 +1696,7 @@ void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1730,7 +1730,7 @@ void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1764,7 +1764,7 @@ void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1798,7 +1798,7 @@ void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1832,7 +1832,7 @@ void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1866,7 +1866,7 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(SI_SCC, result.as_uint);
+	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -1910,7 +1910,7 @@ void WorkItem::ISA_S_CBRANCH_SCC0_Impl(Inst *inst)
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(SI_SCC))
+	if (!ReadSReg(Inst::RegisterScc))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1934,11 +1934,11 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 
 	InstReg scc;
 
-	scc.as_uint = ReadSReg(SI_SCC);
+	scc.as_uint = ReadSReg(Inst::RegisterScc);
 
 	if (scc.as_uint)
 	{
-		assert(ReadSReg(SI_SCC) == 1);
+		assert(ReadSReg(Inst::RegisterScc) == 1);
 
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1975,7 +1975,7 @@ void WorkItem::ISA_S_CBRANCH_VCCZ_Impl(Inst *inst)
 	short simm16;
 	int se_simm16;
 
-	if (ReadSReg(SI_VCCZ))
+	if (ReadSReg(Inst::RegisterVccz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1996,7 +1996,7 @@ void WorkItem::ISA_S_CBRANCH_VCCNZ_Impl(Inst *inst)
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(SI_VCCZ))
+	if (!ReadSReg(Inst::RegisterVccz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -2020,8 +2020,8 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 	InstReg exec;
 	InstReg execz;
 
-	exec.as_uint = ReadSReg(SI_EXEC);
-	execz.as_uint = ReadSReg(SI_EXECZ);
+	exec.as_uint = ReadSReg(Inst::RegisterExec);
+	execz.as_uint = ReadSReg(Inst::RegisterExecz);
 
 	if (execz.as_uint)
 	{
@@ -2063,7 +2063,7 @@ void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Inst *inst)
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(SI_EXECZ))
+	if (!ReadSReg(Inst::RegisterExecz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -2161,7 +2161,7 @@ void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
 	InstReg value;
 
 	// Load operand from register.
-	assert(INST.src0 >= 256 || INST.src0 == SI_M0);
+	assert(INST.src0 >= 256 || INST.src0 == Inst::RegisterM0);
 	value.as_uint = ReadReg(INST.src0);
 
 	// Write the results.
@@ -2686,7 +2686,7 @@ void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
 		s0.as_uint = INST.lit_cnst;
 	else
 		s0.as_uint = ReadReg(INST.src0);
-	m0.as_uint = ReadReg(SI_M0);
+	m0.as_uint = ReadReg(Inst::RegisterM0);
 
 	// Write the results.
 	WriteVReg(INST.vdst+m0.as_uint, s0.as_uint);
@@ -2711,7 +2711,7 @@ void WorkItem::ISA_V_MOVRELS_B32_Impl(Inst *inst)
 	assert(INST.src0 != 0xFF);
 
 	// Load operand from register or as a literal constant.
-	m0.as_uint = ReadReg(SI_M0);
+	m0.as_uint = ReadReg(Inst::RegisterM0);
 	if (INST.src0 == 0xFF)
 		s0.as_uint = INST.lit_cnst;
 	else
@@ -2751,7 +2751,7 @@ void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
 	else
 		s0.as_uint = ReadReg(INST.src0);
 	s1.as_uint = ReadVReg(INST.vsrc1);
-	vcci = ReadBitmaskSReg(SI_VCC);
+	vcci = ReadBitmaskSReg(Inst::RegisterVcc);
 
 	// Calculate the result.
 	result.as_uint = (vcci) ? s1.as_uint : s0.as_uint;
@@ -3513,7 +3513,7 @@ void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, sum.as_uint);
-	WriteBitmaskSReg(SI_VCC, carry.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3547,7 +3547,7 @@ void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, dif.as_uint);
-	WriteBitmaskSReg(SI_VCC, carry.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3581,7 +3581,7 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, dif.as_uint);
-	WriteBitmaskSReg(SI_VCC, carry.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3662,7 +3662,7 @@ void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
 	result.as_uint = (s0.as_float < s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3692,7 +3692,7 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 	result.as_uint = (s0.as_float > s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3730,7 +3730,7 @@ void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
 	result.as_uint = !(s0.as_float > s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3760,7 +3760,7 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 	result.as_uint = !(s0.as_float == s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3847,7 +3847,7 @@ void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int < s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3877,7 +3877,7 @@ void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int == s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3907,7 +3907,7 @@ void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int <= s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3937,7 +3937,7 @@ void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int > s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3967,7 +3967,7 @@ void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int != s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -3997,7 +3997,7 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int >= s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -4035,7 +4035,7 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint < s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -4072,7 +4072,7 @@ void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint <= s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -4102,7 +4102,7 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint > s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(SI_VCC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -5509,7 +5509,7 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Write EXEC
-	WriteBitmaskSReg(SI_EXEC, result.as_uint);
+	WriteBitmaskSReg(Inst::RegisterExec, result.as_uint);
 
 	// Print isa debug information.
 	if (Emu::debug)
@@ -6242,7 +6242,7 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	m0_vintrp.as_uint = ReadReg(SI_M0);
+	m0_vintrp.as_uint = ReadReg(Inst::RegisterM0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
@@ -6298,7 +6298,7 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	m0_vintrp.as_uint = ReadReg(SI_M0);
+	m0_vintrp.as_uint = ReadReg(Inst::RegisterM0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
@@ -6368,12 +6368,12 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	data1.as_uint = ReadVReg(INST.data1);
 
 	if (addr0.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
-		ReadSReg(SI_M0)))
+		ReadSReg(Inst::RegisterM0)))
 	{
 		throw Emu::Error("Invalid local memory address");
 	}
 	if (addr1.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
-		ReadSReg(SI_M0)))
+		ReadSReg(Inst::RegisterM0)))
 	{
 		throw Emu::Error("Invalid local memory address");
 	}
@@ -6444,7 +6444,7 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	data0.as_uint = ReadVReg(INST.data0);
 
 	if (addr.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(), 
-		ReadSReg(SI_M0)))
+		ReadSReg(Inst::RegisterM0)))
 	{
 		throw Emu::Error("Invalid local memory address");
 	}
