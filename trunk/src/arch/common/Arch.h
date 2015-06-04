@@ -72,7 +72,7 @@ private:
 
 	// True if last iteration had an active simulation
 	bool active = false;
-	
+
 public:
 
 	/// Constructor of a new architecture. New architectures should be

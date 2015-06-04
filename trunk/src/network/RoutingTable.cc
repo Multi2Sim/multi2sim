@@ -76,7 +76,6 @@ void RoutingTable::Initialize()
 				Node* dst_node = dst_buffer->getNode();
 				if (node != dst_node)
 				{
-					std::cout << "Setting 1 hop node\n";
 					Entry* entry = Lookup(node, dst_node);
 					entry->setCost(1);
 					entry->setNextNode(dst_node);
