@@ -2,99 +2,30 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	bpred.c \
-	bpred.h \
+	FunctionUnit.h \
 	\
-	commit.c \
-	commit.h \
+	Uop.h \
+	Uop.cc \
 	\
-	core.c \
-	core.h \
+	RegisterFile.h \
+	RegisterFile.cc \
 	\
-	cpu.c \
-	cpu.h \
+	TraceCache.h \
+	TraceCache.cc \
 	\
-	decode.c \
-	decode.h \
+	BranchPredictor.h \
+	BranchPredictor.cc \
 	\
-	dispatch.c \
-	dispatch.h \
+	Thread.h \
+	Thread.cc \
 	\
-	event-queue.c \
-	event-queue.h \
+	Core.h \
+	Core.cc \
 	\
-	fetch.c \
-	fetch.h \
+	CPU.h \
+	CPU.cc \
 	\
-	fetch-queue.c \
-	fetch-queue.h \
-	\
-	fu.c \
-	fu.h \
-	\
-	inst-queue.c \
-	inst-queue.h \
-	\
-	issue.c \
-	issue.h \
-	\
-	load-store-queue.c \
-	load-store-queue.h \
-	\
-	mem-config.c \
-	mem-config.h \
-	\
-	recover.c \
-	recover.h \
-	\
-	reg-file.c \
-	reg-file.h \
-	\
-	rob.c \
-	rob.h \
-	\
-	sched.c \
-	sched.h \
-	\
-	thread.c \
-	thread.h \
-	\
-	trace-cache.c \
-	trace-cache.h \
-	\
-	uop.c \
-	uop.h \
-	\
-	uop-queue.c \
-	uop-queue.h \
-	\
-	writeback.c \
-	writeback.h \
-	\
-	FunctionUnit.h\
-	\
-	Uop.h\
-	Uop.cc\
-	\
-	RegisterFile.h\
-	RegisterFile.cc\
-	\
-	TraceCache.h\
-	TraceCache.cc\
-	\
-	BranchPredictor.h\
-	BranchPredictor.cc\
-	\
-	Thread.h\
-	Thread.cc\
-	\
-	Core.h\
-	Core.cc\
-	\
-	CPU.h\
-	CPU.cc\
-	\
-	Timing.h\
+	Timing.h \
 	Timing.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
