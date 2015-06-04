@@ -119,10 +119,10 @@ private:
 	BinaryUserElement user_elements[BinaryMaxUserElements];
 
 	// Instruction memory containing Southern Islands ISA
-	std::unique_ptr<mem::Memory> inst_mem;
-	std::unique_ptr<char[]> inst_buffer;
-	unsigned inst_addr = 0;
-	unsigned inst_size = 0;
+	std::unique_ptr<mem::Memory> instruction_memory;
+	std::unique_ptr<char[]> instruction_buffer;
+	unsigned instruction_address = 0;
+	unsigned instruction_size = 0;
 
 	// Fetch shader memory containing Fetch shader instructions
 	int fs_buffer_initialized = 0;
@@ -267,16 +267,16 @@ public:
 	unsigned getUserElementCount() const { return user_element_count; }
 
 	/// Get instruction memory
-	mem::Memory *getInstMem() { return inst_mem.get(); }
+	mem::Memory *getInstructionMemory() { return instruction_memory.get(); }
 
 	/// Get buffer containing instructions
-	char *getInstBuffer() const { return inst_buffer.get(); }
+	char *getInstructionBuffer() const { return instruction_buffer.get(); }
 
 	/// Get instruction address in instruction memory
-	unsigned getInstAddr() const { return inst_addr; }
+	unsigned getInstructionAddress() const { return instruction_address; }
 
 	/// Get size of instructions
-	unsigned getInstSize() const { return inst_size; }
+	unsigned getInstructionSize() const { return instruction_size; }
 
 	/// Get user element object
 	BinaryUserElement *getUserElement(int idx)

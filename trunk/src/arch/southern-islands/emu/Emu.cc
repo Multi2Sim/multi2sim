@@ -90,11 +90,11 @@ Emu::Emu()
 	as = Asm::getInstance();
 	
 	// GPU memories
-	this->video_memory.reset(new mem::Memory());
-	this->video_memory->setSafe(true);
+	video_memory = misc::new_unique<mem::Memory>();
+	video_memory->setSafe(true);
 
-	this->shared_memory.reset(new mem::Memory());
-	this->global_memory = video_memory.get();
+	shared_memory = misc::new_unique<mem::Memory>();
+	global_memory = video_memory.get();
 }
 
 void Emu::Dump(std::ostream &os) const

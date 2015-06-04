@@ -36,7 +36,7 @@ NDRange::NDRange(Emu *emu) : emu(emu)
 {
 	id = emu->getNewNDRangeID();
 	address_space_index = emu->getNewNDRangeID();
-	inst_mem = misc::new_unique<mem::Memory>();
+	instruction_memory = misc::new_unique<mem::Memory>();
 }
 
 void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
@@ -97,15 +97,15 @@ void NDRange::SetupInstructionMemory(const char *buf, unsigned size, unsigned pc
 {
 
 	// Copy instructions from buffer to instruction memory
-	inst_mem->Map(pc, size,
+	instruction_memory->Map(pc, size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
-	inst_mem->Write(pc, size, buf);
-	inst_size = size;
-	inst_addr = pc;
+	instruction_memory->Write(pc, size, buf);
+	instruction_size = size;
+	instruction_address = pc;
 
 	// Save a copy of buffer in NDRange
-	inst_buffer = misc::new_unique_array<char>(size);
-	inst_mem->Read(pc, size, inst_buffer.get());
+	instruction_buffer = misc::new_unique_array<char>(size);
+	instruction_memory->Read(pc, size, instruction_buffer.get());
 }
 
 void NDRange::InitializeFromKernel(Kernel *kernel)
