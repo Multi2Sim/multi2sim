@@ -41,47 +41,102 @@ class Uop
 {
 private:
 
+	// Friend class
+	friend class Core;
+	friend class Thread;
+
 	// Micro-instruction
 	UInst *uinst = nullptr;
 	int flags = 0;
 
-	// Name and sequence numbers 
-	long long magic = UopMagic;  // Magic number for debugging
-	long long id = 0;  // Unique ID
-	long long id_in_core = 0;  // Unique ID in core
 
+	//
+	// Name and sequence numbers 
+	//
+
+	// Magic number for debugging
+	long long magic = UopMagic;
+
+	// Unique ID
+	long long id = 0;
+
+	// Unique ID in core
+	long long id_in_core = 0;
+
+
+	//
 	// Software context and hardware thread where uop belongs 
+	//
 	Context *ctx = nullptr;
 	Thread *thread = nullptr;
 
-	// Fetch info 
-	unsigned int eip = 0;  // Address of x86 macro-instruction
-	unsigned int neip = 0;  // Address of next non-speculative x86 macro-instruction
-	unsigned int predicted_neip = 0; // Address of next predicted x86 macro-instruction (for branches)
-	unsigned int target_neip = 0;  // Address of target x86 macro-instruction assuming branch taken (for branches)
+
+	//
+	// Fetch info
+	//
+
+	// Address of x86 macro-instruction
+	unsigned int eip = 0;
+
+	// Address of next non-speculative x86 macro-instruction
+	unsigned int neip = 0;
+
+	// Address of next predicted x86 macro-instruction (for branches)
+	unsigned int predicted_neip = 0;
+
+	// Address of target x86 macro-instruction assuming branch taken (for branches)
+	unsigned int target_neip = 0;
+
+	// Flag telling if micro-operation is in speculative mode
 	bool speculative_mode = false;
-	unsigned int fetch_address = 0;  // Physical address of memory access to fetch this instruction
-	long long fetch_access = 0;  // Access identifier to fetch this instruction
-	bool trace_cache = false;  // Flag telling if uop came from trace cache
 
+	// Physical address of memory access to fetch this instruction
+	unsigned int fetch_address = 0;
+
+	// Access identifier to fetch this instruction
+	long long fetch_access = 0;
+
+	// Flag telling if uop came from trace cache
+	bool trace_cache = false;
+
+
+	//
 	// Fields associated with macroinstruction 
-	int mop_index = 0;  // Index of uop within macroinstruction
-	int mop_count = 0;  // Number of uops within macroinstruction
-	int mop_size = 0;  // Corresponding macroinstruction size
-	long long mop_id = 0;  // Sequence number of macroinstruction
+	//
 
-	// Logical dependencies 
+	// Index of uop within macroinstruction
+	int mop_index = 0;
+
+	// Number of uops within macroinstruction
+	int mop_count = 0;
+
+	// Corresponding macroinstruction size
+	int mop_size = 0;
+
+	// Sequence number of macroinstruction
+	long long mop_id = 0;
+
+
+	//
+	// Logical dependencies
+	//
 	int idep_count = 0;
 	int odep_count = 0;
 
-	// Physical mappings 
+
+	//
+	// Physical mappings
+	//
 	int ph_int_idep_count = 0, ph_fp_idep_count = 0, ph_xmm_idep_count = 0;
 	int ph_int_odep_count = 0, ph_fp_odep_count = 0, ph_xmm_odep_count = 0;
 	int ph_idep[UInstMaxIDeps];
 	int ph_odep[UInstMaxODeps];
 	int ph_oodep[UInstMaxODeps];
 
-	// Queues where instruction is 
+
+	//
+	// Queues where instruction is
+	//
 	bool in_fetch_queue = false;
 	bool in_uop_queue = false;
 	bool in_iq = false;
@@ -89,21 +144,28 @@ private:
 	bool in_sq = false;
 	bool in_preq = false;
 	bool in_event_queue = false;
-	bool in_rob = false;
+	bool in_reorder_buffer = false;
 	bool in_uop_trace_list = false;
 
-	// Instruction status 
+	//
+	// Instruction status
+	//
 	bool ready = false;
 	bool issued = false;
 	bool completed = false;
 
+
 	// For memory uops 
 	unsigned int phy_addr = 0;  // ... corresponding to 'uop->uinst->address'
 
+
+	//
 	// Cycles 
+	//
 	long long when = 0;  // cycle when ready
 	long long issue_try_when = 0;  // first cycle when f.u. is tried to be reserved
 	long long issue_when = 0;  // cycle when issued
+
 
 	// Global prediction (0=not taken, 1=taken)
 	BranchPredictor::Prediction pred = BranchPredictor::PredictionNotTaken;
@@ -125,13 +187,16 @@ public:
 	void FreeIfNotQueued();
 	void Dump();
 
-	bool Exists();
+	bool Exists() { return magic == UopMagic; }
 	void CountDeps();
 
-	/// Setters
+	//
+	// Setters
+	//
 	void setUInst(UInst *uinst) {this->uinst = uinst; }
 	void setID(int id) { this->id = id; }
 	void setFlags(int flags) { this->flags = flags; }
+	void setThread(Thread *thread) { this->thread = thread; }
 	void setPrediction(BranchPredictor::Prediction pred)
 	{
 		this->pred = pred;
@@ -172,10 +237,14 @@ public:
 	void setPhyRegOdep(int index, int reg_no) { ph_odep[index] = reg_no; }
 	void setPhyRegOOdep(int index, int reg_no) { ph_oodep[index] = reg_no; }
 
-	/// Getters
+
+	//
+	// Getters
+	//
 	UInst *getUinst() { return uinst; }
 	int getID() const { return id; }
 	int getFlags() const { return flags; }
+	Thread *getThread() { return thread; }
 	BranchPredictor::Prediction getPrediction() const { return pred; }
 	unsigned int getNeip() const { return neip; }
 	unsigned int getEip() const { return eip; }
