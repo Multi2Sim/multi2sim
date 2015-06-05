@@ -26,6 +26,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Queue.h>
+#include <network/Node.h>
 
 #include "Cache.h"
 #include "Directory.h"
@@ -447,6 +448,11 @@ public:
 				replacement_policy,
 				write_policy);
 	}
+
+	/// Get the cache structure associated with the module, as previously
+	/// created by a call to setCache(). If setCache() wasn't invoked
+	/// before, return nullptr.
+	Cache *getCache() const { return cache.get(); }
 	
 	/// Set the address range served by the module between \a low and
 	/// \a high physical addresses.
@@ -517,6 +523,48 @@ public:
 	/// Get the node representing this module in the network that is closer
 	/// to the processor.
 	net::Node *getHighNetworkNode() const { return high_network_node; }
+
+	/// Given a module connected to the high network of the current module,
+	/// and closer to the processor, return the index in the sharers bitmap
+	/// that it occupies in the current module. The sharer module's low
+	/// network must be the same as the current module's high network.
+	int getSharerIndex(Module *module) const
+	{
+		assert(high_network == module->low_network);
+		return module->low_network_node->getIndex();
+	}
+
+	/// Set the given module as the owner for the given set, way, and
+	/// sub-block of the current module's directory. A directory must have
+	/// been created for this module. Argument \a module can be nullptr,
+	/// indicating that the owner should be set to no-owner.
+	///
+	/// The given module's low network must be the same as the current
+	/// module's high network.
+	///
+	void setOwner(int set_id, int way_id, int sub_block_id, Module *module)
+	{
+		assert(directory.get());
+		int index = module ? getSharerIndex(module) : Directory::NoOwner;
+		directory->setOwner(set_id, way_id, sub_block_id, index);
+	}
+
+	/// Add the given module as a sharer for the given set, way, and
+	/// sub-block of the current module's directory. A directory must
+	/// have been created for this module.
+	///
+	/// The given module's low network must be the same as the current
+	/// module's high network.
+	///
+	/// Argument \a module cannot be \c nullptr.
+	///
+	void setSharer(int set_id, int way_id, int sub_block_id, Module *module)
+	{
+		assert(directory.get());
+		assert(module);
+		int index = getSharerIndex(module);
+		directory->setSharer(set_id, way_id, sub_block_id, index);
+	}
 	
 	/// Access the module.
 	///

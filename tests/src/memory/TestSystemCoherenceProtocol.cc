@@ -24,6 +24,7 @@
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
 #include <memory/System.h>
+#include <network/System.h>
 
 namespace mem
 {
@@ -365,7 +366,6 @@ const std::string net_config =
 
 TEST(TestSystemCoherenceProtocol, config_0_evict_0)
 {
-	try {
 	// Load configuration files
 	misc::IniFile ini_file_mem;
 	misc::IniFile ini_file_x86;
@@ -376,16 +376,64 @@ TEST(TestSystemCoherenceProtocol, config_0_evict_0)
 
 	// Set up x86 timing simulator
 	x86::Timing::ParseConfiguration(&ini_file_x86);
+	x86::Timing::getInstance();
 
-	// Set up memory system instance
+	// Set up network system
+	net::System *network_system = net::System::getInstance();
+	network_system->ParseConfiguration(&ini_file_net);
+
+	// Set up memory system
 	System *memory_system = System::getInstance();
 	memory_system->ReadConfiguration(&ini_file_mem);
 
-	} catch (misc::Error &e)
-	{
-		std::cerr << e.getMessage();
-		EXPECT_EQ(1, 0);
-	}
+	// Get modules
+	Module *module_l1_0 = memory_system->getModule("mod-l1-0");
+	Module *module_l1_1 = memory_system->getModule("mod-l1-1");
+	Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+	Module *module_mm = memory_system->getModule("mod-mm");
+	ASSERT_NE(module_l1_0, nullptr);
+	ASSERT_NE(module_l1_1, nullptr);
+	ASSERT_NE(module_l2_0, nullptr);
+	ASSERT_NE(module_mm, nullptr);
+
+	// Set block states
+	module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockModified, 0x0);
+	module_l1_1->getCache()->getBlock(1, 0)->setStateTag(Cache::BlockModified, 0x40);
+	module_l2_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
+	module_mm->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
+	module_l2_0->setOwner(0, 0, 0, module_l1_0);
+	module_l2_0->setOwner(0, 0, 1, module_l1_1);
+	module_l2_0->setSharer(0, 0, 0, module_l1_0);
+	module_l2_0->setSharer(0, 0, 1, module_l1_1);
+	module_mm->setOwner(0, 0, 0, module_l2_0);
+	module_mm->setSharer(0, 0, 0, module_l2_0);
+
+/*
+Command[10] = Access mod-l1-0 1 LOAD 0x400
+Command[11] = Access mod-l1-0 1 LOAD 0x800
+Command[12] = CheckBlock mod-l1-0 0 1 0x400 E
+Command[13] = CheckBlock mod-l1-0 0 0 0x800 E
+Command[14] = CheckBlock mod-l1-1 1 0 0x40 M
+Command[15] = CheckBlock mod-l2-0 0 0 0x0 M
+Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
+Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
+Command[18] = CheckSharers mod-l2-0 0 0 0 None
+Command[19] = CheckSharers mod-l2-0 0 0 1 mod-l1-1
+Command[20] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
+Command[21] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
+Command[22] = CheckOwner mod-l2-0 0 0 0 None
+Command[23] = CheckOwner mod-l2-0 0 0 1 mod-l1-1
+Command[24] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
+Command[25] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
+Command[26] = CheckLink mod-l1-0 Low Out 88
+Command[27] = CheckLink mod-l1-0 Low In 152
+Command[28] = CheckLink mod-l1-1 Low Out 0
+Command[29] = CheckLink mod-l1-1 Low In 0
+Command[30] = CheckLink mod-l2-0 High Out 152
+Command[31] = CheckLink mod-l2-0 High In 88
+Command[32] = CheckLink mod-l2-0 Low Out 16
+Command[33] = CheckLink mod-l2-0 Low In 272
+*/
 }
 
 }

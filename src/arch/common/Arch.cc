@@ -87,6 +87,7 @@ std::string ArchPool::getArchNames()
 		names += arch->getName() + comma;
 		comma = "|";
 	}
+	names += "}";
 	return names;
 }
 
