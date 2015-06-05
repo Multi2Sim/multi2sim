@@ -76,7 +76,9 @@ private:
 	//struct x86_fu_t *fu;
 	//struct prefetch_history_t *prefetch_history;
 
-	// Per core counters 
+	//
+	// Counters per core
+	//
 	long long uop_id_counter = 0;  // Counter for uop ID assignment
 	long long dispatch_seq = 0;  // Counter for uop ID assignment
 	int iq_count = 0;
@@ -85,11 +87,28 @@ private:
 	int reg_file_fp_count = 0;
 	int reg_file_xmm_count = 0;
 
+	//
 	// Reorder Buffer 
-	std::list<std::unique_ptr<Uop>> rob;
-	int rob_count = 0;
+	//
 
-	// Stages 
+	// Actual reorder buffer in core
+	std::vector<std::unique_ptr<Uop>> reorder_buffer;
+
+	// Micro-operation number in the reorder buffer
+	int uop_count_in_rob = 0;
+
+	// Total reorder buffer size
+	int reorder_buffer_total_size = 0;
+
+	// Reorder buffer head index
+	int reorder_buffer_head;
+
+	// Reorder buffer tail index
+	int reorder_buffer_tail;
+
+	//
+	// Stages
+	//
 	int fetch_current = 0;  // Currently fetching thread
 	long long fetch_switch_when = 0;  // Cycle for last thread switch (for SwitchOnEvent)
 	int decode_current = 0;
@@ -97,7 +116,9 @@ private:
 	int issue_current = 0;
 	int commit_current = 0;
 
-	// Stats 
+	//
+	// Stats
+	//
 	long long dispatch_stall[DispatchStallReasonMax];
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
 	long long num_issued_uinst_array[UInstOpcodeCount];
@@ -106,7 +127,9 @@ private:
 	long long num_branch_uinst = 0;
 	long long num_mispred_branch_uinst = 0;
 
+	//
 	// Statistics for shared structures 
+	//
 	long long rob_occupancy = 0;
 	long long rob_full = 0;
 	long long rob_reads = 0;
@@ -154,21 +177,61 @@ public:
 		return threads[index].get();
 	}
 
-	/// Increment counters
+	//
+	// Increment counters
+	//
 	void incRegFileIntCount() { reg_file_int_count++; }
 	void incRegFileFpCount() { reg_file_fp_count++; }
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
 
-	/// Decrement counters
+	//
+	// Decrement counters
+	//
 	void decRegFileIntCount() { reg_file_int_count--; }
 	void decRegFileFpCount() { reg_file_fp_count--; }
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
 
-	/// Getters
+	//
+	// Getters
+	//
 	int getID() { return id; }
 	int getRegFileIntCount() { return reg_file_int_count; }
 	int getRegFileFpCount() { return reg_file_fp_count; }
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
+
+	//
+	// Reorder Buffer Functions
+	//
+
+	/// Initialze the reorder buffer
+	void InitializeReorderBuffer();
+
+	/// Trim the reorder buffer by excluding the entry containing only nullptr
+	void TrimReorderBuffer();
+
+	/// Check whether or not the ROB can be enqueued
+	bool CanEnqueueInReorderBuffer(Uop *uop);
+
+	/// Enqueue Uop to reorder buffer
+	void EnqueueInReorderBuffer(Uop *uop);
+
+	/// Check whether or not Uop can be dequeued from ROB
+	bool CanDequeueFromReorderBuffer(int thread_id_in_core);
+
+	/// Get head Uop of the ROB
+	Uop *getReorderBufferHead(int thread_id_in_core);
+
+	/// Remove the head Uop of the ROB
+	void RemoveReorderBufferHead(int thread_id_in_core);
+
+	/// get tail Uop of the ROB
+	Uop *getReorderBufferTail(int thread_id_in_core);
+
+	/// Remove tail Uop of the ROB
+	void RemoveReorderBufferTail(int thread_id_in_core);
+
+	/// Get ROB entry based on the index
+	Uop *getReorderBufferEntry(int index, int thread_id_in_core);
 
 };
 

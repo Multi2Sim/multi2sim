@@ -50,6 +50,9 @@ class Thread
 {
 private:
 
+	// Friend class Core
+	friend class Core;
+
 	// Name
 	std::string name;
 
@@ -70,8 +73,14 @@ private:
 	int mapped_list_count = 0;
 	int mapped_list_max = 0;
 
-	// Reorder buffer
-	int rob_count = 0;
+	//
+	// Reorder buffer parameters
+	//
+	int uop_count_in_rob = 0;
+	int reorder_buffer_left_bound;
+	int reorder_buffer_right_bound;
+	int reorder_buffer_head;
+	int reorder_buffer_tail;
 
 	// Number of uops in private structures
 	int iq_count = 0;
@@ -117,7 +126,9 @@ private:
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
 
+	//
 	// Statistics
+	//
 	long long num_fetched_uinst = 0;
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
 	long long num_issued_uinst_array[UInstOpcodeCount];
@@ -126,7 +137,9 @@ private:
 	long long num_branch_uinst = 0;
 	long long num_mispred_branch_uinst = 0;
 
+	//
 	// Statistics for structures
+	//
 	long long rob_occupancy = 0;
 	long long rob_full = 0;
 	long long rob_reads = 0;
@@ -174,7 +187,9 @@ public:
 	/// Constructor
 	Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core);
 
-	/// Increment counters
+	//
+	// Increment counters
+	//
 	void incRegFileIntCount() { reg_file_int_count++; }
 	void incRegFileFpCount() { reg_file_fp_count++; }
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
@@ -185,7 +200,10 @@ public:
 	void incRatFpWrites() { rat_fp_writes++; }
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
-	/// Decrement counters
+
+	//
+	// Decrement counters
+	//
 	void decRegFileIntCount() { reg_file_int_count--; }
 	void decRegFileFpCount() { reg_file_fp_count--; }
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
@@ -196,9 +214,12 @@ public:
 	void decRatFpWrites() { rat_fp_writes--; }
 	void decRatXmmWrites() { rat_xmm_writes--; }
 
-	/// Getters
+
+	//
+	// Getters
+	//
 	int getIDInCore() const { return id_in_core; }
-	int getRegFileIntCount() { return reg_file_int_count; }
+	int getRegFileIntCount() const { return reg_file_int_count; }
 	int getRegFileFpCount() { return reg_file_fp_count; }
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
 	int getRatIntReads() { return rat_int_reads; }
@@ -207,6 +228,7 @@ public:
 	int getRatIntWrites() { return rat_int_writes; }
 	int getRatFpWrites() { return rat_fp_writes; }
 	int getRatXmmWrites() { return rat_xmm_writes; }
+
 
 	/// Return the entry module to the memory hierarchy for data
 	mem::Module *getDataModule() const { return data_module; }
