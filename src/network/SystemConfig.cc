@@ -33,10 +33,14 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 	// Debug
 	System::debug << ini_file->getPath() << ": Loading network "
 			"Configuration file\n";
-
 	// Default Frequency
 	std::string section = "General";
 	ini_file->ReadInt(section, "Frequency", net_system_frequency);
+	
+	// Register frequency domain
+	esim::Engine *esim = esim::Engine::getInstance();
+	frequency_domain = esim->RegisterFrequencyDomain("network", 
+			net_system_frequency);
 
 	// First configuration look-up is for networks
 	for (int i = 0; i < ini_file->getNumSections(); i++)
@@ -64,6 +68,8 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 		networks.emplace_back(misc::new_unique<Network>(name));
 		Network *network = networks.back().get();
 		network_map[name] = network;
+
+		// Setup network by configuration
 		network->ParseConfiguration(ini_file, section);
 	}
 }

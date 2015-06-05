@@ -20,7 +20,6 @@
 #ifndef NETWORK_SYSTEM_H
 #define NETWORK_SYSTEM_H
 
-
 #include <cassert>
 #include <cmath>
 
@@ -101,6 +100,9 @@ class System
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
 
+	// Private construtor
+	System();
+
 	// Hash table of networks indexed by their names
 	std::unordered_map<std::string, Network *> network_map;
 
@@ -130,24 +132,19 @@ class System
 	// Network frequency domain
 	static esim::FrequencyDomain *frequency_domain;
 
-	// Handle the send event
+	// Network event handlers
 	static void evNetSendHandler(esim::EventType *, esim::EventFrame *);
-
-	// Handle the event of message arriving in output buffer
-	static void evNetSendOutputBuffer(esim::EventType *, 
-			esim::EventFrame *);
-
-	// Handle the event of message arriving in input buffer
-	static void evNetSendInputBuffer(esim::EventType *, 
-			esim::EventFrame *);
-
-	// Handle the message receive event
-	static void evNetSendReceive(esim::EventType *, esim::EventFrame *);
+	static void evNetOutputBufferHandler(esim::EventType *, esim::EventFrame *);
+	static void evNetInputBufferHandler(esim::EventType *, esim::EventFrame *);
+	static void evNetReceiveHandler(esim::EventType *, esim::EventFrame *);
 
 public:
 
-	// Message Size in stand alone network
+	/// Message Size in stand alone network
 	static int message_size;
+
+
+
 
 	//
 	// Event driven simulation event types
@@ -165,8 +162,6 @@ public:
 	/// Get instance of singleton
 	static System *getInstance();
 
-	/// Constructor
-	System() { assert(instance == nullptr); }
 
 
 

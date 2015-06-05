@@ -71,6 +71,22 @@ esim::EventType *System::ev_net_receive;
 std::unique_ptr<System> System::instance;
 
 
+System::System()
+{
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Register events
+	ev_net_send = esim->RegisterEventType("ev_net_send", evNetSendHandler, 
+			frequency_domain);
+	ev_net_output_buffer = esim->RegisterEventType("ev_net_output_buffer", 
+			evNetOutputBufferHandler, frequency_domain);
+	ev_net_input_buffer = esim->RegisterEventType("ev_net_input_buffer",
+			evNetInputBufferHandler, frequency_domain);
+	ev_net_receive = esim->RegisterEventType("ev_net_receive", 
+			evNetReceiveHandler, frequency_domain);
+}
+
+
 System *System::getInstance()
 {
 	// Instance already exists
