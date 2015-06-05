@@ -249,30 +249,40 @@ void ConflictGraphPass::runScalar()
 			// All 'defined' LiveRanges interfere with members of the LiveNow
 			for(unsigned int i = 0; i <  s_dest_args.size(); i++)
 			{
-				int row = s_dest_args[i]; //->getId();
-				for(unsigned int j = 0; j < s_src_args.size(); j++)
+				unsigned int row = s_dest_args[i]; //->getId();
+				for(unsigned int j = 0; j < LiveNow.getSize(); j++)
 				{
-					int col = s_src_args[j]; //->getId();
+					// int col = LiveNow[j]; //->getId();
 					// Build a lower triangular matrix
 					// Diagonal must be zero
-					if(LiveNow[col] == true)
+					if(LiveNow[j] == true)
 					{
-						if(row == col)
-							s_adj_matrix[row][col] = false;
-						else if(row > col)
-							s_adj_matrix[row][col] = true;
+						if(row == j)
+							s_adj_matrix[row][j] = false;
+						else if(row > j)
+							s_adj_matrix[row][j] = true;
 						else
-							s_adj_matrix[col][row] = true;
+							s_adj_matrix[j][row] = true;
 					}
 					// If the src arg is not in LiveNow, means this is the last use of that argument
 					// set the LiveNow of this arg to true as its liveness has just started
-					else
-						LiveNow.Set(col, true);
+				//	else
+				//		LiveNow.Set(col, true);
 				}
 				// Remove the destination arg from live now as it's no longer going to be live
-				LiveNow.Reset(row);
+			//	LiveNow.Reset(row);
 			}
-		}
+
+			for (unsigned int i = 0; i < s_dest_args.size(); i++)
+			{
+				LiveNow.Reset(s_dest_args[i]);
+			}
+
+			for (unsigned int i = 0; i < s_src_args.size(); i++)
+			{
+				LiveNow.Set(s_src_args[i], true);
+			}
+		} // instruction traversing
 	}
 
 	// phase 2: Add edges to conflict graph
@@ -472,31 +482,32 @@ void ConflictGraphPass::runVector()
 				}
 			}
 
-			// Add conflict between nodes in the matrix
 			for(unsigned int i = 0; i <  v_dest_args.size(); i++)
 			{
-				int row = v_dest_args[i]; //->getId();
-				for(unsigned int j = 0; j < v_src_args.size(); j++)
-				{
-					int col = v_src_args[j]; //->getId();
-					// Build a lower triangular matrix
+				unsigned int row = v_dest_args[i];
+				for(unsigned int j = 0; j < LiveNow.getSize(); j++)
+				{	// Build a lower triangular matrix
 					// Diagonal must be zero
-					if(LiveNow[col] == true)
+					if(LiveNow[j] == true)
 					{
-						if(row == col)
-							v_adj_matrix[row][col] = false;
-						else if(row > col)
-							v_adj_matrix[row][col] = true;
+						if(row == j)
+							v_adj_matrix[row][j] = false;
+						else if(row > j)
+							v_adj_matrix[row][j] = true;
 						else
-							v_adj_matrix[col][row] = true;
+							v_adj_matrix[j][row] = true;
 					}
-					// If the src arg is not in LiveNow, means this is the last use of that argument
-					// set the LiveNow of this arg to true as its liveness has just started
-					else
-						LiveNow.Set(col, true);
 				}
-				// Remove the destination arg from live now as it's no longer going to be live
-				LiveNow.Reset(row);
+			}
+
+			for (unsigned int i = 0; i < v_dest_args.size(); i++)
+			{
+				LiveNow.Reset(v_dest_args[i]);
+			}
+
+			for (unsigned int i = 0; i < v_src_args.size(); i++)
+			{
+				LiveNow.Set(v_src_args[i], true);
 			}
 		}
 	}
