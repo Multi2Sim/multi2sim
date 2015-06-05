@@ -73,6 +73,7 @@ libnetwork_a_SOURCES = \
 	System.cc \
 	System.h \
 	SystemConfig.cc \
+	SystemEvents.cc \
 	\
 	Switch.h \
 	Switch.cc

@@ -22,6 +22,8 @@
 namespace net
 {
 
+esim::FrequencyDomain *System::frequency_domain;
+
 esim::EventType *System::ev_net_send;
 esim::EventType *System::ev_net_output_buffer;
 esim::EventType *System::ev_net_input_buffer;
@@ -43,7 +45,7 @@ void System::evNetInputBufferHandler(esim::EventType *type, esim::EventFrame *fr
 }
 
 
-void System::evNetReceive(esim::EventType *type, esim::EventFrame *frame)
+void System::evNetReceiveHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 }
 
