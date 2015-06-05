@@ -87,9 +87,6 @@ public:
 		// Way identifier
 		unsigned way_id = 0;
 
-		// If true, the block has been prefreched
-		bool prefetched = false;
-
 		// Block state
 		BlockState state = BlockInvalid;
 
@@ -115,8 +112,12 @@ public:
 		/// Get the block state
 		BlockState getState() const { return state; }
 
-		/// Returns whether the block was prefetched
-		bool isPrefetched() const { return prefetched; }
+		/// Set new state and tag
+		void setStateTag(BlockState state, unsigned tag)
+		{
+			this->state = state;
+			this->tag = tag;
+		}
 	};
 
 private:

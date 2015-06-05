@@ -187,8 +187,8 @@ void RoutingTable::DetectCycle()
 RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 		Node *destination) const
 {
-	int i = source->getId();
-	int j = destination->getId();
+	int i = source->getIndex();
+	int j = destination->getIndex();
 	assert((dimension > 0) && (i < dimension) && (j < dimension));
 
 	int location = i * dimension + j;
