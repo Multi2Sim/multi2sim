@@ -46,7 +46,7 @@ protected:
 	std::string name;
 
 	// Node index
-	int id;
+	int index;
 
 	// Input buffer size
 	int input_buffer_size;
@@ -77,8 +77,8 @@ public:
 	/// Get name
 	std::string getName() const { return name; }
 
-	/// Get the id of the node
-	int getId() const { return id; }
+	/// Get the index of the node
+	int getIndex() const { return index; }
 
 	/// Dump the node information. 
 	virtual void Dump(std::ostream &os = std::cout) const = 0;

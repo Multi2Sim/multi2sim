@@ -33,7 +33,7 @@ Node::Node(Network *network,
 		void *user_data) :
 		network(network),
 		name(name),
-		id(index),
+		index(index),
 		input_buffer_size(input_buffer_size),
 		output_buffer_size(output_buffer_size),
 		user_data(user_data)

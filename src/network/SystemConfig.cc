@@ -30,12 +30,12 @@ int System::net_system_frequency = 1000;
 
 void System::ParseConfiguration(misc::IniFile *ini_file)
 {
-	System::debug << misc::fmt("Loading Network Configuration file \"%s\"\n",
-			ini_file->getPath().c_str());
-
-	std::string section = "General";
+	// Debug
+	System::debug << ini_file->getPath() << ": Loading network "
+			"Configuration file\n";
 
 	// Default Frequency
+	std::string section = "General";
 	ini_file->ReadInt(section, "Frequency", net_system_frequency);
 
 	// First configuration look-up is for networks
@@ -44,22 +44,30 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 		// Get section
 		section = ini_file->getSection(i);
 
+		// Split section name in tokens
 		std::vector<std::string> tokens;
 		misc::StringTokenize(section, tokens, ".");
 
-		if (tokens.size() != 2 ||
-				strcasecmp(tokens[0].c_str(), "Network"))
+		// Skip if it is not a network section
+		if (tokens.size() != 2 || misc::StringCaseCompare(tokens[0],
+				"Network"))
 			continue;
 
-		std::string network_name = tokens[1];
+		// Check that there is not network with that name
+		std::string name = tokens[1];
+		if (network_map.find(name) != network_map.end())
+			throw Error(misc::fmt("%s: %s: Duplicated network",
+					ini_file->getPath().c_str(),
+					name.c_str()));
 
-		auto network = misc::new_unique<Network>(network_name);
-		Network *network_ptr = network.get();
+		// Create network
+		networks.emplace_back(misc::new_unique<Network>(name));
+		Network *network = networks.back().get();
+		network_map[name] = network;
 		network->ParseConfiguration(ini_file, section);
-		networks.emplace_back(std::move(network));
-		network_map.emplace(network_name, network_ptr);
 	}
+}
+
 
 }
 
-}
