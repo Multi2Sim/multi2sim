@@ -52,7 +52,7 @@ public:
 		RecoverKindWriteback,
 		RecoverKindCommit
 	};
-	static misc::StringMap RecoverKindMap;
+	static misc::StringMap recover_kind_map;
 
 	/// Fetch stage
 	enum FetchKind
@@ -62,7 +62,7 @@ public:
 		FetchKindTimeslice,
 		FetchKindSwitchonevent
 	};
-	static misc::StringMap FetchKindMap;
+	static misc::StringMap fetch_kind_map;
 
 	/// Dispatch stage
 	enum DispatchKind
@@ -71,7 +71,7 @@ public:
 		DispatchKindShared,
 		DispatchKindTimeslice,
 	};
-	static misc::StringMap DispatchKindMap;
+	static misc::StringMap dispatch_kind_map;
 
 	/// Issue stage
 	enum IssueKind
@@ -80,15 +80,25 @@ public:
 		IssueKindShared,
 		IssueKindTimeslice,
 	};
-	static misc::StringMap IssueKindMap;
+	static misc::StringMap issue_kind_map;
 
 	/// Commit stage
 	enum CommitKind
 	{
-		CommitKindShared = 0,
+		CommitKindInvalid = 0,
+		CommitKindShared,
 		CommitKindTimeslice
 	};
-	static misc::StringMap CommitKindMap;
+	static misc::StringMap commit_kind_map;
+
+	/// Reorder buffer parameters
+	enum ReorderBufferKind
+	{
+		ReorderBufferKindInvalid = 0,
+		ReorderBufferKindPrivate,
+		ReorderBufferKindShared
+	};
+	static misc::StringMap reorder_buffer_kind_map;
 
 
 private:
@@ -119,7 +129,9 @@ private:
 	// List containing uops that need to report an 'end_inst' trace event 
 	std::list<std::unique_ptr<Uop>> uop_trace_list;
 
+	//
 	// Statistics 
+	//
 	long long num_fast_forward_inst = 0;  // Fast-forwarded x86 instructions
 	long long num_fetched_uinst = 0;
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
@@ -132,59 +144,84 @@ private:
 	long long num_mispred_branch_uinst = 0;
 	double time = 0.0;
 
+	//
 	// For dumping 
+	//
 	long long last_committed = 0;
 	long long last_dump = 0;
 
+	//
 	// CPU parameters
+	//
 	static int num_cores;
 	static int num_threads;
 	static int context_quantum;
 	static int thread_quantum;
 	static int thread_switch_penalty;
 
+	//
 	// CPU recover parameters
+	//
 	static int recover_penalty;
 	static RecoverKind recover_kind;
 
+	//
 	// CPU fetch parameter
+	//
 	static FetchKind fetch_kind;
 
+	//
 	// CPU decode stage parameter
+	//
 	static int decode_width;
 
+	//
 	// CPU dispatch stage parameters
+	//
 	static int dispatch_width;
 	static DispatchKind dispatch_kind;
 
+	//
 	// CPU issue stage parameters
+	//
 	static int issue_width;
 	static IssueKind issue_kind;
 
+	//
 	// CPU commit stage parameters
+	//
 	static int commit_width;
 	static CommitKind commit_kind;
 
+	//
 	// Other CPU parameters
+	//
 	static bool process_prefetch_hints;
 	static bool use_nc_store;
 	static bool prefetch_history_size;
 	static int occupancy_stats;
 
-	// Queue parameter
-
+	//
+	// ROB parameter
+	//
+	static int reorder_buffer_size;
+	static ReorderBufferKind reorder_buffer_kind;
 
 public:
 
-	/// Create CPU
+	/// CPU constructor
 	CPU();
 
-	/// Static member getters
+	//
+	// Static member getters
+	//
 	static int getNumCores() { return num_cores; }
 	static int getNumThreads() { return num_threads; }
 	static int getContextQuantum() { return context_quantum; }
 	static int getThreadQuantum() { return thread_quantum; }
 	static int getThreadSwitchPenalty() { return thread_switch_penalty; }
+	static int getReorderBufferSize() { return reorder_buffer_size; }
+	static ReorderBufferKind getReorderBufferKind() { return reorder_buffer_kind; }
 
 	/// Return the core with the given index
 	Core *getCore(int index) const

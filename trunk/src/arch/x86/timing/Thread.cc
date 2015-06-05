@@ -36,6 +36,9 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 
 	// Initialize fetch queue
 
+	// Initialize reorder buffer
+
+
 	// Initialize branch predictor
 	branch_predictor = misc::new_unique<BranchPredictor>(name +
 			".BranchPredictor");
