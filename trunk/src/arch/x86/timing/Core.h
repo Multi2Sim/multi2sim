@@ -26,13 +26,13 @@
 #include <arch/x86/emu/UInst.h>
 
 #include "Thread.h"
+#include "FunctionUnit.h"
 
 
 namespace x86
 {
 
 // Forward declaration
-class Uop;
 class CPU;
 
 // Class Core
@@ -72,8 +72,8 @@ private:
 	// Shared structures 
 	std::list<std::unique_ptr<Uop>> event_queue;
 
-	// FIXME
-	//struct x86_fu_t *fu;
+	// Function unit
+	std::unique_ptr<FunctionUnit> function_unit;
 	//struct prefetch_history_t *prefetch_history;
 
 
@@ -132,23 +132,55 @@ private:
 	//
 	// Stages
 	//
-	int fetch_current = 0;  // Currently fetching thread
-	long long fetch_switch_when = 0;  // Cycle for last thread switch (for SwitchOnEvent)
-	int decode_current = 0;
-	int dispatch_current = 0;
-	int issue_current = 0;
-	int commit_current = 0;
+
+	// Currently fetching thread
+	int current_fetch_thread = 0;
+
+	// Cycle for last thread switch (for SwitchOnEvent)
+	long long fetch_switch_when = 0;
+
+	// Currently decoding thread
+	int current_decode_thread = 0;
+
+	// Currently dispatching thread
+	int current_dispatch_thread = 0;
+
+	// Currently issuing thread
+	int current_issue_thread = 0;
+
+	// Currently committing thread
+	int current_commit_thread = 0;
+
+
+
 
 	//
-	// Stats
+	// Statistics
 	//
-	long long dispatch_stall[DispatchStallReasonMax];
+
+	// Number of stalled micro-instruction when dispatch divded by reason
+	long long num_dispatch_stall[DispatchStallReasonMax];
+
+	// Number of dispatched micro-instructions for every opcode
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
+
+	// Number of issued micro-instructions for every opcode
 	long long num_issued_uinst_array[UInstOpcodeCount];
+
+	// Number of committed micro-instructions for every opcode
 	long long num_committed_uinst_array[UInstOpcodeCount];
+
+	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
+
+	// Number of branch micro-instructions
 	long long num_branch_uinst = 0;
+
+	// Number of mis-predicted branch micro-instructions
 	long long num_mispred_branch_uinst = 0;
+
+
+
 
 	//
 	// Statistics for shared structures 
@@ -206,8 +238,14 @@ public:
 	//
 	// Increment counters
 	//
+
+	// Increment the INT register file count
 	void incRegFileIntCount() { reg_file_int_count++; }
+
+	// Increment the FP register file count
 	void incRegFileFpCount() { reg_file_fp_count++; }
+
+	// Increment the XMM register file count
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
 
 
@@ -216,8 +254,14 @@ public:
 	//
 	// Decrement counters
 	//
+
+	// Decrement the INT register file count
 	void decRegFileIntCount() { reg_file_int_count--; }
+
+	// Decrement the FP register file count
 	void decRegFileFpCount() { reg_file_fp_count--; }
+
+	// Decrement the XMM register file count
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
 
 
@@ -226,9 +270,17 @@ public:
 	//
 	// Getters
 	//
+
+	// get core ID
 	int getID() { return id; }
+
+	// Get the INT register file count
 	int getRegFileIntCount() { return reg_file_int_count; }
+
+	// Get the FP register file count
 	int getRegFileFpCount() { return reg_file_fp_count; }
+
+	// Get the XMM register file count
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
 
 

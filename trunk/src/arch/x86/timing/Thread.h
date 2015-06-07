@@ -37,13 +37,8 @@ namespace x86
 {
 
 // Forward declarations
-class Context;
 class Core;
 class CPU;
-class BranchPredictor;
-class TraceCache;
-class RegisterFile;
-class Uop;
 
 /// X86 Thread
 class Thread
@@ -90,8 +85,14 @@ private:
 	//
 	// Double-linked list of mapped contexts
 	//
+
+	// Mapped context list
 	std::list<std::unique_ptr<Context>> mapped_contexts_list;
+
+	// Count of context in the list
 	int mapped_list_count = 0;
+
+	// The maximum number of context in the list
 	int mapped_list_max = 0;
 
 
@@ -121,10 +122,20 @@ private:
 	//
 	// Number of uops in private structures
 	//
-	int iq_count = 0;
-	int lsq_count = 0;
+
+	// Uop count in instruction queue
+	int instruction_queue_count = 0;
+
+	// Uop count in load/store queue
+	int load_store_queue_count = 0;
+
+	// INT register file count
 	int reg_file_int_count = 0;
+
+	// FP register file count
 	int reg_file_fp_count = 0;
+
+	// XMM register file count
 	int reg_file_xmm_count = 0;
 
 
@@ -158,9 +169,15 @@ private:
 	//
 	// Component pointer
 	//
+
+	// Branch predictor
 	std::unique_ptr<BranchPredictor> branch_predictor;
+
+	// Trace cache
 	std::unique_ptr<TraceCache> trace_cache;
-	std::unique_ptr<RegisterFile> reg_file; // physical register file
+
+	// Physical register file
+	std::unique_ptr<RegisterFile> reg_file;
 
 
 
@@ -195,8 +212,12 @@ private:
 	//
 	// Entries to the memory system
 	//
-	mem::Module *data_module = nullptr;  // Entry for data
-	mem::Module *inst_module = nullptr;  // Entry for instructions
+
+	// Data memory module entry
+	mem::Module *data_module = nullptr;
+
+	// Instructions memory module entry
+	mem::Module *inst_module = nullptr;
 
 
 
@@ -210,12 +231,26 @@ private:
 	//
 	// Statistics
 	//
+
+	// Number of fectched micro-instructions
 	long long num_fetched_uinst = 0;
+
+	// Number of dispatched micro-instructions for every opcode
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
+
+	// Number of issued micro-instructions for every opcode
 	long long num_issued_uinst_array[UInstOpcodeCount];
+
+	// Number of committed micro-instructions for every opcode
 	long long num_committed_uinst_array[UInstOpcodeCount];
+
+	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
+
+	// Number of branch micro-instructions
 	long long num_branch_uinst = 0;
+
+	// Number of mis-predicted branch micro-instructions
 	long long num_mispred_branch_uinst = 0;
 
 
@@ -277,15 +312,35 @@ public:
 	//
 	// Increment counters
 	//
+
+	// Increment the Uop count in reorder buffer
 	void incUopCountInRob() { uop_count_in_rob++; }
+
+	// Increment the INT register file count
 	void incRegFileIntCount() { reg_file_int_count++; }
+
+	// Increment the FP register file count
 	void incRegFileFpCount() { reg_file_fp_count++; }
+
+	// Increment the XMM register file count
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
+
+	// Increment the read count of Register Aliasing Table for INT registers
 	void incRatIntReads() { rat_int_reads++; }
+
+	// Increment the read count of Register Aliasing Table for FP registers
 	void incRatFpReads() { rat_fp_reads++; }
+
+	// Increment the read count of Register Aliasing Table for XMM registers
 	void incRatXmmReads() { rat_xmm_reads++; }
+
+	// Increment the write count of Register Aliasing Table for INT registers
 	void incRatIntWrites() { rat_int_writes++; }
+
+	// Increment the write count of Register Aliasing Table for FP registers
 	void incRatFpWrites() { rat_fp_writes++; }
+
+	// Increment the write count of Register Aliasing Table for XMM registers
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
 	// Increment reorder buffer head index
@@ -307,17 +362,38 @@ public:
 
 
 
+	//
 	// Decrement counters
 	//
+
+	// Decrement the Uop count in reorder buffer
 	void decUopCountInRob() { uop_count_in_rob--; }
+
+	// Decrement the INT register file count
 	void decRegFileIntCount() { reg_file_int_count--; }
+
+	// Decrement the FP register file count
 	void decRegFileFpCount() { reg_file_fp_count--; }
+
+	// Decrement the XMM registers count
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
+
+	// Decrement the read count of Register Aliasing Table for INT registers
 	void decRatIntReads() { rat_int_reads--; }
+
+	// Decrement the read count of Register Aliasing Table for FP registers
 	void decRatFpReads() { rat_fp_reads--; }
+
+	// Decrement the read count of Register Aliasing Table for XMM registers
 	void decRatXmmReads() { rat_xmm_reads--; }
+
+	// Increment the write count of Register Aliasing Table for INT registers
 	void decRatIntWrites() { rat_int_writes--; }
+
+	// Increment the write count of Register Aliasing Table for INT registers
 	void decRatFpWrites() { rat_fp_writes--; }
+
+	// Increment the write count of Register Aliasing Table for INT registers
 	void decRatXmmWrites() { rat_xmm_writes--; }
 
 
@@ -339,17 +415,40 @@ public:
 	//
 	// Getters
 	//
+
+	// Get thread ID in core
 	int getIDInCore() const { return id_in_core; }
+
+	// Get the Uop count in reorder buffer
 	int getUopCountInRob() const { return uop_count_in_rob; }
+
+	// Get the INT register file count
 	int getRegFileIntCount() const { return reg_file_int_count; }
+
+	// Get the FP register file count
 	int getRegFileFpCount() { return reg_file_fp_count; }
+
+	// Get the XMM registers count
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
+
+	// Get the read count of Register Aliasing Table for INT registers
 	int getRatIntReads() { return rat_int_reads; }
+
+	// Get the read count of Register Aliasing Table for INT registers
 	int getRatFpReads() { return rat_fp_reads; }
+
+	// Get the read count of Register Aliasing Table for INT registers
 	int getRatXmmReads() { return rat_xmm_reads; }
+
+	// Get the write count of Register Aliasing Table for INT registers
 	int getRatIntWrites() { return rat_int_writes; }
+
+	// Get the write count of Register Aliasing Table for INT registers
 	int getRatFpWrites() { return rat_fp_writes; }
+
+	// Get the write count of Register Aliasing Table for INT registers
 	int getRatXmmWrites() { return rat_xmm_writes; }
+
 	// Get reorder buffer head index
 	int getReorderBufferHead() { return reorder_buffer_head; }
 
