@@ -50,81 +50,162 @@ class Thread
 {
 private:
 
-	// Friend class Core
-	friend class Core;
-
 	// Name
 	std::string name;
 
+
+
+	//
 	// CPU and Core that it belongs to
+	//
+
+	// cpu the thread belongs to
 	CPU *cpu;
+
+	// core the thread belongs to
 	Core *core;
 
+
+
+	//
 	// IDs
+	//
+
+	// thread ID in the core
 	int id_in_core = 0;
+
+	// global thread ID in the cpu
 	int id_in_cpu = 0;
+
+
+
 
 	// Context currently running in this thread. This is a context present
 	// in the thread's 'mapped' list. 
 	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
 
+
+
+
+	//
 	// Double-linked list of mapped contexts
+	//
 	std::list<std::unique_ptr<Context>> mapped_contexts_list;
 	int mapped_list_count = 0;
 	int mapped_list_max = 0;
 
+
+
+
 	//
 	// Reorder buffer parameters
 	//
-	int uop_count_in_rob = 0;
-	int reorder_buffer_left_bound;
-	int reorder_buffer_right_bound;
-	int reorder_buffer_head;
-	int reorder_buffer_tail;
 
+	// Micro-operation number in the reorder buffer
+	int uop_count_in_rob = 0;
+
+	// Left bound of the reorder buffer
+	int reorder_buffer_left_bound = 0;
+
+	// Right bound of the reorder buffer
+	int reorder_buffer_right_bound = 0;
+
+	// reorder buffer head index
+	int reorder_buffer_head = 0;
+
+	// reorder buffer tail index
+	int reorder_buffer_tail = 0;
+
+
+
+	//
 	// Number of uops in private structures
+	//
 	int iq_count = 0;
 	int lsq_count = 0;
 	int reg_file_int_count = 0;
 	int reg_file_fp_count = 0;
 	int reg_file_xmm_count = 0;
 
-	// Private structures
+
+
+
+	//
+	// Queues
+	//
+
+	// Fetch queue
 	std::vector<std::unique_ptr<Uop>> fetch_queue;
+
+	// Uop queue
 	std::vector<std::unique_ptr<Uop>> uop_queue;
 
 	// Instruction queue
-	std::list<std::unique_ptr<Uop>> iq;
+	std::list<std::unique_ptr<Uop>> instruction_queue;
 
 	// Load queue
-	std::list<std::unique_ptr<Uop>> lq;
+	std::list<std::unique_ptr<Uop>> load_queue;
 
 	// Store queue
-	std::list<std::unique_ptr<Uop>> sq;
+	std::list<std::unique_ptr<Uop>> store_queue;
 
 	// Prefetch queue
-	std::list<std::unique_ptr<Uop>> preq;
+	std::list<std::unique_ptr<Uop>> prefetch_queue;
 
+
+
+
+	//
 	// Component pointer
+	//
 	std::unique_ptr<BranchPredictor> branch_predictor;
 	std::unique_ptr<TraceCache> trace_cache;
 	std::unique_ptr<RegisterFile> reg_file; // physical register file
 
-	// Fetch
-	unsigned int fetch_eip = 0, fetch_neip = 0;  // eip and next eip
-	int fetchq_occupied  = 0;  // Number of bytes occupied in the fetch queue
-	int trace_cache_queue_occupied  = 0;  // Number of uops occupied in the trace cache queue
-	unsigned int fetch_block = 0;  // Virtual address of last fetched block
-	unsigned int fetch_address = 0;  // Physical address of last instruction fetch
-	long long fetch_access_id = 0;  // Module access ID of last instruction fetch
-	long long fetch_stall_until = 0;  // Cycle until which fetching is stalled (inclussive)
 
+
+	//
+	// Fetch
+	//
+
+	// eip and next eip
+	unsigned int fetch_eip = 0, fetch_neip = 0;
+
+	// Number of bytes occupied in the fetch queue
+	int fetchq_occupied  = 0;
+
+	// Number of uops occupied in the trace cache queue
+	int trace_cache_queue_occupied  = 0;
+
+	// Virtual address of last fetched block
+	unsigned int fetch_block = 0;
+
+	// Physical address of last instruction fetch
+	unsigned int fetch_address = 0;
+
+	// Module access ID of last instruction fetch
+	long long fetch_access_id = 0;
+
+	// Cycle until which fetching is stalled (inclusive)
+	long long fetch_stall_until = 0;
+
+
+
+
+	//
 	// Entries to the memory system
+	//
 	mem::Module *data_module = nullptr;  // Entry for data
 	mem::Module *inst_module = nullptr;  // Entry for instructions
 
+
+
+
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
+
+
+
 
 	//
 	// Statistics
@@ -136,6 +217,9 @@ private:
 	long long num_squashed_uinst = 0;
 	long long num_branch_uinst = 0;
 	long long num_mispred_branch_uinst = 0;
+
+
+
 
 	//
 	// Statistics for structures
@@ -187,9 +271,13 @@ public:
 	/// Constructor
 	Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core);
 
+
+
+
 	//
 	// Increment counters
 	//
+	void incUopCountInRob() { uop_count_in_rob++; }
 	void incRegFileIntCount() { reg_file_int_count++; }
 	void incRegFileFpCount() { reg_file_fp_count++; }
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
@@ -200,10 +288,28 @@ public:
 	void incRatFpWrites() { rat_fp_writes++; }
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
+	// Increment reorder buffer head index
+	void incReorderBufferHead()
+	{
+		reorder_buffer_head == reorder_buffer_right_bound ?
+				reorder_buffer_head = reorder_buffer_left_bound :
+				reorder_buffer_head++;
+	}
 
-	//
+	// Increment reorder buffer tail index
+	void incReorderBufferTail()
+	{
+		reorder_buffer_tail == reorder_buffer_right_bound ?
+				reorder_buffer_tail = reorder_buffer_left_bound :
+				reorder_buffer_tail++;
+	}
+
+
+
+
 	// Decrement counters
 	//
+	void decUopCountInRob() { uop_count_in_rob--; }
 	void decRegFileIntCount() { reg_file_int_count--; }
 	void decRegFileFpCount() { reg_file_fp_count--; }
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
@@ -215,10 +321,26 @@ public:
 	void decRatXmmWrites() { rat_xmm_writes--; }
 
 
+
+
+	//
+	// Setters
+	//
+
+	// Set Tail of reorder buffer
+	void setReorderBufferTail(int reorder_buffer_tail)
+	{
+		this->reorder_buffer_tail = reorder_buffer_tail;
+	}
+
+
+
+
 	//
 	// Getters
 	//
 	int getIDInCore() const { return id_in_core; }
+	int getUopCountInRob() const { return uop_count_in_rob; }
 	int getRegFileIntCount() const { return reg_file_int_count; }
 	int getRegFileFpCount() { return reg_file_fp_count; }
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
@@ -228,6 +350,19 @@ public:
 	int getRatIntWrites() { return rat_int_writes; }
 	int getRatFpWrites() { return rat_fp_writes; }
 	int getRatXmmWrites() { return rat_xmm_writes; }
+	// Get reorder buffer head index
+	int getReorderBufferHead() { return reorder_buffer_head; }
+
+	// Get reorder buffer tail index
+	int getReorderBufferTail() { return reorder_buffer_tail; }
+
+	// Get reorder buffer left bound
+	int getReorderBufferLeftBound() { return reorder_buffer_left_bound; }
+
+	// Get reorder buffer right bound
+	int getReorderBufferRightBound() { return reorder_buffer_right_bound; }
+
+
 
 
 	/// Return the entry module to the memory hierarchy for data

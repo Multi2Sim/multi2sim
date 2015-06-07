@@ -22,33 +22,41 @@
 namespace x86
 {
 
+//
 // String maps
+//
+
 misc::StringMap CPU::recover_kind_map
 {
 	{"Writeback", RecoverKindWriteback},
 	{"Commit", RecoverKindCommit}
 };
+
 misc::StringMap CPU::fetch_kind_map
 {
 	{"Shared", FetchKindShared},
 	{"TimeSlice", FetchKindTimeslice},
 	{"SwitchOnEvent", FetchKindSwitchonevent},
 };
+
 misc::StringMap CPU::dispatch_kind_map
 {
 	{"Shared", DispatchKindShared},
 	{"TimeSlice", DispatchKindTimeslice},
 };
+
 misc::StringMap CPU::issue_kind_map
 {
 	{"Shared", IssueKindShared},
 	{"TimeSlice", IssueKindTimeslice},
 };
+
 misc::StringMap CPU::commit_kind_map
 {
 	{"Shared", CommitKindShared},
 	{"TimeSlice", CommitKindTimeslice},
 };
+
 misc::StringMap CPU::reorder_buffer_kind_map
 {
 	{"Private", ReorderBufferKindPrivate},
@@ -92,8 +100,7 @@ CPU::CPU()
 	for (int i = 0; i < num_cores; i++)
 	{
 		core_name = prefix + misc::fmt("%d", i);
-		cores.emplace_back(new Core(core_name, this, i));
-		core_name = "";
+		cores.emplace_back(misc::new_unique<Core>(core_name, this, i));
 	}
 }
 

@@ -76,16 +76,36 @@ private:
 	//struct x86_fu_t *fu;
 	//struct prefetch_history_t *prefetch_history;
 
+
+
+
 	//
 	// Counters per core
 	//
-	long long uop_id_counter = 0;  // Counter for uop ID assignment
-	long long dispatch_seq = 0;  // Counter for uop ID assignment
-	int iq_count = 0;
-	int lsq_count = 0;
+
+	// Counter for uop ID assignment
+	long long uop_id_counter = 0;
+
+	// Counter for uop ID assignment
+	long long dispatch_seq = 0;
+
+	// Uop count in instruction queue
+	int instruction_queue_count = 0;
+
+	// Uop count in load/store queue
+	int load_store_queue_count = 0;
+
+	// INT register file count
 	int reg_file_int_count = 0;
+
+	// FP register file count
 	int reg_file_fp_count = 0;
+
+	// XMM register file count
 	int reg_file_xmm_count = 0;
+
+
+
 
 	//
 	// Reorder Buffer 
@@ -101,10 +121,13 @@ private:
 	int reorder_buffer_total_size = 0;
 
 	// Reorder buffer head index
-	int reorder_buffer_head;
+	int reorder_buffer_head = 0;
 
 	// Reorder buffer tail index
-	int reorder_buffer_tail;
+	int reorder_buffer_tail = 0;
+
+
+
 
 	//
 	// Stages
@@ -177,12 +200,18 @@ public:
 		return threads[index].get();
 	}
 
+
+
+
 	//
 	// Increment counters
 	//
 	void incRegFileIntCount() { reg_file_int_count++; }
 	void incRegFileFpCount() { reg_file_fp_count++; }
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
+
+
+
 
 	//
 	// Decrement counters
@@ -191,6 +220,9 @@ public:
 	void decRegFileFpCount() { reg_file_fp_count--; }
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
 
+
+
+
 	//
 	// Getters
 	//
@@ -198,6 +230,9 @@ public:
 	int getRegFileIntCount() { return reg_file_int_count; }
 	int getRegFileFpCount() { return reg_file_fp_count; }
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
+
+
+
 
 	//
 	// Reorder Buffer Functions
@@ -216,23 +251,22 @@ public:
 	void EnqueueInReorderBuffer(Uop *uop);
 
 	/// Check whether or not Uop can be dequeued from ROB
-	bool CanDequeueFromReorderBuffer(int thread_id_in_core);
+	bool CanDequeueFromReorderBuffer(int thread_id);
 
 	/// Get head Uop of the ROB
-	Uop *getReorderBufferHead(int thread_id_in_core);
+	Uop *getReorderBufferHead(int thread_id);
 
 	/// Remove the head Uop of the ROB
-	void RemoveReorderBufferHead(int thread_id_in_core);
+	void RemoveReorderBufferHead(int thread_id);
 
 	/// get tail Uop of the ROB
-	Uop *getReorderBufferTail(int thread_id_in_core);
+	Uop *getReorderBufferTail(int thread_id);
 
 	/// Remove tail Uop of the ROB
-	void RemoveReorderBufferTail(int thread_id_in_core);
+	void RemoveReorderBufferTail(int thread_id);
 
 	/// Get ROB entry based on the index
-	Uop *getReorderBufferEntry(int index, int thread_id_in_core);
-
+	Uop *getReorderBufferEntry(int index, int thread_id);
 };
 
 }
