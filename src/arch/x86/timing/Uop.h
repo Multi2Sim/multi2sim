@@ -41,21 +41,18 @@ class Uop
 {
 private:
 
-	// Friend class
-	friend class Core;
-	friend class Thread;
-
 	// Micro-instruction
 	UInst *uinst = nullptr;
+
+	// Uop flags
 	int flags = 0;
 
 
-	//
-	// Name and sequence numbers 
-	//
 
-	// Magic number for debugging
-	long long magic = UopMagic;
+
+	//
+	// IDs
+	//
 
 	// Unique ID
 	long long id = 0;
@@ -64,11 +61,19 @@ private:
 	long long id_in_core = 0;
 
 
+
+
 	//
 	// Software context and hardware thread where uop belongs 
 	//
+
+	// Context the Uop belongs to
 	Context *ctx = nullptr;
+
+	// Thread the Uop belongs to
 	Thread *thread = nullptr;
+
+
 
 
 	//
@@ -100,6 +105,8 @@ private:
 	bool trace_cache = false;
 
 
+
+
 	//
 	// Fields associated with macroinstruction 
 	//
@@ -117,11 +124,15 @@ private:
 	long long mop_id = 0;
 
 
+
+
 	//
 	// Logical dependencies
 	//
 	int idep_count = 0;
 	int odep_count = 0;
+
+
 
 
 	//
@@ -134,18 +145,23 @@ private:
 	int ph_oodep[UInstMaxODeps];
 
 
+
+
 	//
 	// Queues where instruction is
 	//
 	bool in_fetch_queue = false;
 	bool in_uop_queue = false;
-	bool in_iq = false;
-	bool in_lq = false;
-	bool in_sq = false;
-	bool in_preq = false;
+	bool in_instruction_queue = false;
+	bool in_load_queue = false;
+	bool in_store_queue = false;
+	bool in_prefetch_queue = false;
 	bool in_event_queue = false;
 	bool in_reorder_buffer = false;
 	bool in_uop_trace_list = false;
+
+
+
 
 	//
 	// Instruction status
@@ -155,16 +171,28 @@ private:
 	bool completed = false;
 
 
+
+
 	// For memory uops 
 	unsigned int phy_addr = 0;  // ... corresponding to 'uop->uinst->address'
+
+
 
 
 	//
 	// Cycles 
 	//
-	long long when = 0;  // cycle when ready
-	long long issue_try_when = 0;  // first cycle when f.u. is tried to be reserved
-	long long issue_when = 0;  // cycle when issued
+
+	// cycle when ready
+	long long when = 0;
+
+	// first cycle when f.u. is tried to be reserved
+	long long issue_try_when = 0;
+
+	// cycle when issued
+	long long issue_when = 0;
+
+
 
 
 	// Global prediction (0=not taken, 1=taken)
@@ -187,8 +215,9 @@ public:
 	void FreeIfNotQueued();
 	void Dump();
 
-	bool Exists() { return magic == UopMagic; }
 	void CountDeps();
+
+
 
 	//
 	// Setters
@@ -237,10 +266,16 @@ public:
 	void setPhyRegOdep(int index, int reg_no) { ph_odep[index] = reg_no; }
 	void setPhyRegOOdep(int index, int reg_no) { ph_oodep[index] = reg_no; }
 
+	// Set flag of indicating whether uop is in reorder buffer
+	void setInReorderBuffer(bool in_reorder_buffer) { this->in_reorder_buffer = in_reorder_buffer; }
+
+
+
 
 	//
 	// Getters
 	//
+	Thread *getThread() const { return thread; }
 	UInst *getUinst() { return uinst; }
 	int getID() const { return id; }
 	int getFlags() const { return flags; }
@@ -272,6 +307,9 @@ public:
 	int getPhyRegIdep(int index) { return ph_idep[index]; }
 	int getPhyRegOdep(int index) { return ph_odep[index]; }
 	int getPhyRegOOdep(int index) { return ph_oodep[index]; }
+
+	// Get flag of indicating whether uop is in reorder buffer
+	bool getInReorderBuffer() { return in_reorder_buffer; }
 
 };
 
