@@ -102,6 +102,7 @@ class BasicBlock : public comm::BasicBlock
 	void EmitSDiv(llvm::BinaryOperator *llvm_inst);	
 	void EmitShl(llvm::BinaryOperator *llvm_inst);
 	void EmitLShr(llvm::BinaryOperator *llvm_inst);
+	void EmitAShr(llvm::BinaryOperator *llvm_inst);
 	void EmitSExt(llvm::SExtInst *llvm_inst);
 	void EmitExtractElement(llvm::ExtractElementInst *llvm_inst);
 	void EmitInsertElement(llvm::InsertElementInst *llvm_inst);
