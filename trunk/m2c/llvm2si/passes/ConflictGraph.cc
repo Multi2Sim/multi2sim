@@ -56,9 +56,8 @@ void GraphNode::RemoveNeighbor(GraphNode *adj_node)
 void GraphNode::DumpAdjList(std::ofstream *fp)
 {
 	for (auto it = adj_node_list.begin(); it != adj_node_list.end(); it++)
-	{
 		*fp << *it << "  ";
-	}
+
 	*fp << "\n\n";
 }
 
@@ -85,9 +84,7 @@ void ConflictGraphPass::runScalar()
 
 	// Resize the matrix in other dimension
 	for (int i = 0; i < num_sregs; i++)
-	{
 		s_adj_matrix[i].resize(num_sregs);
-	}
 
 	// Create a queue of basic blocks
 	std::vector<llvm2si::BasicBlock *> basic_block_queue;
@@ -120,7 +117,7 @@ void ConflictGraphPass::runScalar()
 								found = true;
 						}
 						if(found == false)
-							s_adj_graph.push_back(new GraphNode(s_register->getId()));
+							s_adj_graph.push_back(new GraphNode(s_register->getId(), 1));
 						break;
 					}
 					case si2bin::Argument::TypeScalarRegisterSeries:
@@ -129,19 +126,16 @@ void ConflictGraphPass::runScalar()
 						int low = s_register->getLow();
 						int high = s_register->getHigh();
 						// Make sure that the node created for every variable is unique.
-						// If node already exists, then found = true
-						while (low <= high)
+						// Create a big node for the series and set size as the offset between
+						// high and low
+						bool found = false;
+						for(auto &it: s_adj_graph)
 						{
-							bool found = false;
-							for(auto &it: s_adj_graph)
-							{
-								if(it->GetId() == low)
-									found = true;
-							}
-							if(found == false)
-								s_adj_graph.push_back(new GraphNode(low));
-							low ++;
+							if(it->GetId() == low)
+								found = true;
 						}
+						if(found == false)
+							s_adj_graph.push_back(new GraphNode(low, high - low + 1));
 						break;
 					}
 					default:
@@ -274,14 +268,10 @@ void ConflictGraphPass::runScalar()
 			}
 
 			for (unsigned int i = 0; i < s_dest_args.size(); i++)
-			{
 				LiveNow.Reset(s_dest_args[i]);
-			}
 
 			for (unsigned int i = 0; i < s_src_args.size(); i++)
-			{
 				LiveNow.Set(s_src_args[i], true);
-			}
 		} // instruction traversing
 	}
 
@@ -299,9 +289,7 @@ void ConflictGraphPass::runScalar()
 						for(auto &it2: s_adj_graph)
 						{
 							if(it2->GetId() == j)
-							{
 								it1->AddNeighbor(it2);
-							}
 						}
 					}
 				}
@@ -322,9 +310,7 @@ void ConflictGraphPass::runVector()
 	v_adj_matrix.resize(num_vregs);
 
 	for (int i = 0; i < num_vregs; i++)
-	{
 		v_adj_matrix[i].resize(num_vregs);
-	}
 
 	// Create a queue of basic blocks
 	std::vector<llvm2si::BasicBlock *> basic_block_queue;
@@ -358,7 +344,7 @@ void ConflictGraphPass::runVector()
 								found = true;
 						}
 						if(found == false)
-							v_adj_graph.push_back(new GraphNode(v_register->getId()));
+							v_adj_graph.push_back(new GraphNode(v_register->getId(), 1));
 						break;
 					}
 					case si2bin::Argument::TypeVectorRegisterSeries:
@@ -368,8 +354,8 @@ void ConflictGraphPass::runVector()
 						int high = v_register->getHigh();
 						// Make sure that the node created for every variable is unique.
 						// If node already exists, then found = true
-						while (low <= high)
-						{
+						//	while (low <= high)
+						//{
 							bool found = false;
 							for(auto &it: v_adj_graph)
 							{
@@ -377,9 +363,9 @@ void ConflictGraphPass::runVector()
 									found = true;
 							}
 							if(found == false)
-								v_adj_graph.push_back(new GraphNode(low));
-							low++;
-						}
+								v_adj_graph.push_back(new GraphNode(low, high - low + 1));
+						//	low++;
+					//	}
 						break;
 					}
 					default:
@@ -501,14 +487,11 @@ void ConflictGraphPass::runVector()
 			}
 
 			for (unsigned int i = 0; i < v_dest_args.size(); i++)
-			{
 				LiveNow.Reset(v_dest_args[i]);
-			}
 
 			for (unsigned int i = 0; i < v_src_args.size(); i++)
-			{
 				LiveNow.Set(v_src_args[i], true);
-			}
+
 		}
 	}
 
@@ -526,9 +509,7 @@ void ConflictGraphPass::runVector()
 						for(auto &it2: v_adj_graph)
 						{
 							if(it2->GetId() == j)
-							{
 								it1->AddNeighbor(it2);
-							}
 						}
 					}
 				}
@@ -548,6 +529,7 @@ void ConflictGraphPass::dump()
 	for (auto &it: s_adj_graph)
 	{
 		file << "Id: s" << it->GetId() << ",\t";
+		file << "Size: " << it->GetNodeSize() << "\t";
 		file << "Degree: " << it->GetDegree() << "\n";
 		file << "Adjacent Nodes: s";
 		it->DumpAdjList(&file);
@@ -562,7 +544,6 @@ void ConflictGraphPass::dump()
 		it->DumpAdjList(&file);
 	}
 }
-
 } //namespace llvm2si
 
 
