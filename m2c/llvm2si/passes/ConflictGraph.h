@@ -39,6 +39,7 @@ namespace llvm2si
 class GraphNode
 {
 	// id of the node/symbolic register
+	// if it is a large node, then stores the id of lowest register
 	int id;
 
 	// Defines the physical register the variable is assigned to
@@ -46,6 +47,9 @@ class GraphNode
 
 	// Number of neighbors
 	unsigned int degree = 0;
+
+	// Size of the node
+	int size = 0;
 
 	// List of adjacent nodes
 	std::vector<int> adj_node_list;
@@ -55,8 +59,8 @@ class GraphNode
 
 	public:
 		// Constructor
-		GraphNode (int id):
-			id(id)
+		GraphNode (int id, int size):
+			id(id), size(size)
 		{
 		}
 
@@ -83,6 +87,12 @@ class GraphNode
 		int GetId()
 		{
 			return this->id;
+		}
+
+		// Return the size of the node
+		int GetNodeSize()
+		{
+			return this->size;
 		}
 
 		// Dump the adjacent/removed node list
