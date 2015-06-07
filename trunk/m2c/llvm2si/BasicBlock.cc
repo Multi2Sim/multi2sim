@@ -1372,13 +1372,13 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 		llvm::Value *src_value = llvm_inst->getIncomingValue(i);
 		std::string symbol = src_value->getName();
 		
-		// At basic block level, there is no value set for ArgPhi for
+		// At basic block level, there is no value set for ArgPhi of 
 		// non literals. As the whole symbol table is not complete
 		// when emitting basic blocks, it often leads to symbol table
 		// look up error. The symbol will be looked up and mapped to 
 		// resigters later at function level. 
 
-		// Emit Literal constant as normal
+		// Emit constant literal
 		llvm::Constant *llvm_const = dynamic_cast<llvm::Constant *>(src_value);
 		if (llvm_const)
 		{
@@ -1644,7 +1644,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 			// Emit LDS store instruction.
 			//
 			// ds_store arg_addr_vreg, arg_data_vreg
-			Instruction *instruction = addInstruction(SI::INST_DS_READ_B32);
+			Instruction *instruction = addInstruction(SI::INST_DS_WRITE_B32);
 			instruction->addArgument(std::move(arg_addr));
 			instruction->addArgument(std::move(arg_data));
 			assert(instruction->hasValidArguments());
@@ -1760,8 +1760,9 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 	}
 	else
 	{
-		ArgScalarToVector(arg1, llvm_arg1);
+		// Arg1 can be vector/scalar/literals, Arg2 has to be vector
 		ArgScalarToVector(arg2, llvm_arg2);
+		ArgLiteralToVector(arg2);
 
 		// Allocate scalar register and create symbol for return value
 		std::string ret_name = llvm_inst->getName();
@@ -2942,6 +2943,10 @@ void BasicBlock::EmitShl(llvm::BinaryOperator *llvm_inst)
 	}
 	else
 	{
+		// Arg1 can be vector/scalar/literals, Arg2 has to be vector
+		ArgScalarToVector(arg2, llvm_arg2);
+		ArgLiteralToVector(arg2);
+
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_inst->getName();
 		int ret_vreg = function->AllocVReg();
@@ -3013,13 +3018,17 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 	}
 	else
 	{
+		// Arg1 can be vector/scalar/literals, Arg2 has to be vector
+		ArgScalarToVector(arg2, llvm_arg2);
+		ArgLiteralToVector(arg2);
+
 		// Allocate vector register and create symbol for return value
 		std::string ret_name = llvm_inst->getName();
 		int ret_vreg = function->AllocVReg();
 		Symbol *ret_symbol = function->addSymbol(ret_name);
 		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
-		// Emit left shift.
+		// Emit logical right shift.
 		//
 		// v_lshr_b32 ret_vreg, arg_op1, arg_op2
 		//
@@ -3030,6 +3039,82 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 		assert(instruction->hasValidArguments());
 	}
 }
+
+
+void BasicBlock::EmitAShr(llvm::BinaryOperator *llvm_inst)
+{
+	// Only supported for 32-bit integers
+	llvm::Type *llvm_type = llvm_inst->getType();
+	if (!llvm_type->isIntegerTy(32))
+		throw misc::Panic("Only supported for 32-bit integers");
+
+	// Only supported for 2 operands (op1, op2)
+	if (llvm_inst->getNumOperands() != 2)
+		throw misc::Panic(misc::fmt("2 operands supported, %d found",
+				llvm_inst->getNumOperands()));
+
+	// Get operands
+	llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+	llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+	std::unique_ptr<Argument> arg1 = function->TranslateValue(llvm_arg1);
+	std::unique_ptr<Argument> arg2 = function->TranslateValue(llvm_arg2);
+
+	// Emit scalar instruction when:
+	//	1. arg1 and arg2 are both scalar
+	//	2. one is scalar and the other is literal
+	bool emit_scalar_arg1 = arg1->hasValidType(Argument::TypeScalarRegister,
+		Argument::TypeLiteral,
+		Argument::TypeLiteralReduced);
+	bool emit_scalar_arg2 = arg2->hasValidType(Argument::TypeScalarRegister,
+		Argument::TypeLiteral,
+		Argument::TypeLiteralReduced);
+	bool emit_scalar_args_diff_type = arg1->getType() != arg2->getType();
+	bool emit_scalar = emit_scalar_arg1 && 
+		emit_scalar_arg2 && emit_scalar_args_diff_type;
+
+	// Emit instruction
+	if (emit_scalar)
+	{		
+		// Allocate scalar register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_sreg = function->AllocSReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeScalarRegister, ret_sreg);
+
+		// Emit arithmetic right shift.
+		//
+		// s_ashr_i32 ret_sreg, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_S_ASHR_I32);
+		instruction->addVectorRegister(ret_sreg);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());		
+	}
+	else
+	{
+		// Arg1 can be vector/scalar/literals, Arg2 has to be vector
+		ArgScalarToVector(arg2, llvm_arg2);
+		ArgLiteralToVector(arg2);
+
+		// Allocate vector register and create symbol for return value
+		std::string ret_name = llvm_inst->getName();
+		int ret_vreg = function->AllocVReg();
+		Symbol *ret_symbol = function->addSymbol(ret_name);
+		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Emit arithmetic right shift.
+		//
+		// v_ashr_i32 ret_vreg, arg_op1, arg_op2
+		//
+		Instruction *instruction = addInstruction(SI::INST_V_ASHRREV_I32);
+		instruction->addVectorRegister(ret_vreg);
+		instruction->addArgument(std::move(arg1));
+		instruction->addArgument(std::move(arg2));
+		assert(instruction->hasValidArguments());
+	}
+}
+
 
 void BasicBlock::EmitSExt(llvm::SExtInst *llvm_inst)
 {
@@ -3431,6 +3516,11 @@ void BasicBlock::Emit(llvm::BasicBlock *llvm_basic_block)
 		case llvm::Instruction::LShr:
 
 			EmitLShr(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
+			break;
+
+		case llvm::Instruction::AShr:
+
+			EmitAShr(misc::cast<llvm::BinaryOperator *>(&llvm_inst));
 			break;
 
 		case llvm::Instruction::ExtractElement:
