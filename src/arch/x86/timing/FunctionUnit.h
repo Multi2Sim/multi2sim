@@ -27,48 +27,41 @@
 namespace x86
 {
 
-// Global varable
-const int max_function_unit_reservation = 10;
-
 class FunctionUnit
 {
 public:
-	enum Class
+	/// Global varable
+	static const int MaxFunctionUnitReservation = 10;
+
+	/// Function unit type
+	enum Type
 	{
-		ClassNone = 0,
-		ClassIntAdd,
-		ClassIntMult,
-		ClassIntDiv,
-		ClassEffaddr,
-		ClassLogic,
-		ClassFloatSimple,
-		ClassFloatAdd,
-		ClassFloatComp,
-		ClassFloatMult,
-		ClassFloatDiv,
-		ClassFloatComplex,
-		ClassXmmIntAdd,
-		ClassXmmIntMult,
-		ClassXmmIntDiv,
-		ClassXmmLogic,
-		ClassXmmFloatAdd,
-		ClassXmmFloatCompare,
-		ClassXmmFloatMult,
-		ClassXmmFloatDiv,
-		ClassXmmFloatConv,
-		ClassXmmFloatComplex,
-		ClassCount
+		TypeNone = 0,
+		TypeIntAdd,
+		TypeIntMult,
+		TypeIntDiv,
+		TypeEffaddr,
+		TypeLogic,
+		TypeFloatSimple,
+		TypeFloatAdd,
+		TypeFloatComp,
+		TypeFloatMult,
+		TypeFloatDiv,
+		TypeFloatComplex,
+		TypeXmmIntAdd,
+		TypeXmmIntMult,
+		TypeXmmIntDiv,
+		TypeXmmLogic,
+		TypeXmmFloatAdd,
+		TypeXmmFloatCompare,
+		TypeXmmFloatMult,
+		TypeXmmFloatDiv,
+		TypeXmmFloatConv,
+		TypeXmmFloatComplex,
+		TypeCount
 	};
 
-private:
-
-	// Function unit parameter
-	long long cycle_when_free[ClassCount][max_function_unit_reservation];
-	long long accesses[ClassCount];
-	long long denied[ClassCount];
-	long long waiting_time[ClassCount];
-
-	// Structure of function unit reservation pool
+	/// Structure of function unit reservation pool
 	struct ReservationPool
 	{
 		int count;
@@ -76,15 +69,44 @@ private:
 		int issue_laterncy;
 	};
 
+private:
+
+	//
+	// Function unit parameter
+	//
+
+	// Cycle count when function unit is free
+	long long cycle_when_free[TypeCount][MaxFunctionUnitReservation];
+
+	// Access count of function unit
+	long long accesses[TypeCount];
+
+	// Denied count of function unit
+	long long denied[TypeCount];
+
+	// Waiting time of function unit
+	long long waiting_time[TypeCount];
+
+
+
+
+	//
 	// static member
-	static std::string name[ClassCount];
-	static ReservationPool reservation_pool[ClassCount];
-	static Class class_table[UInstOpcodeCount];
+	//
+
+	// The name of the function unit
+	static std::string name[TypeCount];
+
+	// Reservation pool
+	static ReservationPool reservation_pool[TypeCount];
+
+	// Function Unit type table
+	static Type type_table[UInstOpcodeCount];
 
 public:
+
 	/// Read function unit configuration from configuration file
-	static void ParseConfiguration(const std::string &section,
-			misc::IniFile &config);
+	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Dump configuration
 	void DumpConfig(std::ostream &os = std::cout);
