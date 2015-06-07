@@ -18,6 +18,7 @@
  */
 
 #include "Thread.h"
+#include "CPU.h"
 
 namespace x86
 {
@@ -37,7 +38,10 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 	// Initialize fetch queue
 
 	// Initialize reorder buffer
-
+	reorder_buffer_left_bound = this->id_in_core * CPU::getReorderBufferSize();
+	reorder_buffer_right_bound = (this->id_in_core + 1) * CPU::getReorderBufferSize() - 1;
+	reorder_buffer_head = reorder_buffer_left_bound;
+	reorder_buffer_tail = reorder_buffer_left_bound;
 
 	// Initialize branch predictor
 	branch_predictor = misc::new_unique<BranchPredictor>(name +
