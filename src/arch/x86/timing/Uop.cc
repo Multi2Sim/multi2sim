@@ -22,6 +22,18 @@
 namespace x86
 {
 
+Uop::Uop()
+{
 
+}
+
+Uop::Uop(int id, int id_in_core, Thread *thread)
+	:
+	id(id),
+	id_in_core(id_in_core),
+	thread(thread)
+{
+
+}
 
 }
