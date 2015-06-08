@@ -20,15 +20,23 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/String.h>
+#include <lib/esim/Engine.h>
 
+#include "System.h"
 #include "Packet.h"
+#include "NetworkEventFrame.h"
 #include "Message.h"
 
 namespace net
 {
 
-Message::Message(long long id, Node *source_node, Node *destination_node, int size) :
+Message::Message(long long id, 
+		Network *network,
+		Node *source_node, 
+		Node *destination_node, 
+		int size) :
 		id(id),
+		network(network),
 		source_node(source_node),
 		destination_node(destination_node),
 		size(size)
@@ -39,7 +47,6 @@ Message::Message(long long id, Node *source_node, Node *destination_node, int si
 void Message::Packetize(int packet_size)
 {
 	int packet_count = (size - 1) / packet_size + 1;
-
 	for (int i = 0; i < packet_count; i++)
 	{
 		auto packet = misc::new_unique<Packet>(this, packet_size);
@@ -47,10 +54,23 @@ void Message::Packetize(int packet_size)
 	}
 }
 
+
 void Message::Send()
 {
-	throw misc::Panic(misc::fmt("Function %s not implemented.",
-			__FUNCTION__));
+	esim::Engine *esim = esim::Engine::getInstance();
+	for (auto it = packets.begin(); it != packets.end(); it++)
+	{
+		Packet *packet = it->get();
+
+		// Create event frame
+		auto frame = misc::new_shared<NetworkEventFrame>(packet);
+
+		// Schedule event
+		// FIXME: I know this is not correct. But what is the correct
+		// function to use? Call? This function is not in an
+		// eventhandler. Next? I need to pass the frame to the handler.
+		esim->Schedule(System::ev_net_send, frame, 0, 0);
+	}
 }
 
 }  // namespace net

@@ -23,6 +23,8 @@
 namespace net
 {
 class Message;
+class Node;
+class Buffer;
 
 class Packet
 {
@@ -35,6 +37,16 @@ class Packet
 	// The index of the packet in a message
 	int session_id;
 
+	// In transit until cycle
+	long long busy;
+
+	// Current position in the network, which node it is at
+	Node *node;
+
+	// Current position in the network, which buffer it is at
+	Buffer *buffer;
+
+
 public:
 
 	/// Constructor
@@ -42,6 +54,21 @@ public:
 
 	/// Set session id
 	void setSessionId(int session_id) { this->session_id = session_id; }
+
+	/// Get message
+	Message *getMessage() const { return message; }
+
+	/// Get size
+	int getSize() const { return size; }
+
+	/// Update the node that the packet is at
+	void setNode(Node *node) { this->node = node; }
+
+	/// Update the buffer that the packet is at
+	void setBuffer(Buffer *buffer) { this->buffer = buffer; }
+
+	/// Update the cycle until which the packet is in transit
+	void setBusy(long long busy) { this->busy = busy; }
 
 };
 

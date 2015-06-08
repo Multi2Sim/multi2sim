@@ -26,6 +26,7 @@ namespace net
 {
 class Connection;
 class Node;
+class Packet;
 
 class Buffer
 {
@@ -95,6 +96,11 @@ public:
 	void setReadBusy(long long read_busy)
 	{
 		this->read_busy = read_busy;
+	}
+
+	/// Insert a packet to the buffer
+	void InsertPacket(Packet *packet)
+	{
 	}
 
 };
