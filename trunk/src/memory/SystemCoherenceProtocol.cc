@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Frame.h"
 #include "System.h"
 
 
@@ -120,11 +121,86 @@ esim::EventType *System::event_type_local_find_and_lock_action;
 esim::EventType *System::event_type_local_find_and_lock_finish;
 
 
-void System::evLoadHandler(esim::EventType *type, esim::EventFrame *esim_frame)
+void System::evLoadHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	// FIXME
-	Frame *frame = misc::cast<Frame *>(esim_frame);
-	(*frame->witness)++;
+	// Get engine, frame, and module
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Module *module = frame->getModule();
+
+	// Event "load"
+	if (event_type == event_type_load)
+	{
+		debug << misc::fmt("%lld %lld 0x%x %s load\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"load\" "
+				"state=\"%s:load\" "
+				"addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Record access
+		module->StartAccess(frame, Module::AccessLoad);
+
+		// Coalesce access
+		/*
+		FIXME
+		master_stack = mod_can_coalesce(mod, mod_access_load, stack->addr, stack);
+		if (master_stack)
+		{
+			mod->coalesced_reads++;
+			mod_coalesce(mod, master_stack, stack);
+			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_LOAD_FINISH);
+			return;
+		}
+		*/
+
+		// Next event
+		esim_engine->Next(event_type_load_lock);
+		return;
+	}
+
+	// Event "load_lock"
+	if (event_type == event_type_load_lock)
+	{
+		return;
+	}
+
+
+	// Event "load_action"
+	if (event_type == event_type_load_action)
+	{
+		return;
+	}
+
+
+	// Event "load_miss"
+	if (event_type == event_type_load_miss)
+	{
+		return;
+	}
+
+
+	// Event "load_unlock"
+	if (event_type == event_type_load_unlock)
+	{
+		return;
+	}
+
+
+	// Event "load_finish"
+	if (event_type == event_type_load_finish)
+	{
+		return;
+	}
+
 }
 
 
