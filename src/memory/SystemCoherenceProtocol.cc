@@ -120,8 +120,11 @@ esim::EventType *System::event_type_local_find_and_lock_action;
 esim::EventType *System::event_type_local_find_and_lock_finish;
 
 
-void System::evLoadHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::evLoadHandler(esim::EventType *type, esim::EventFrame *esim_frame)
 {
+	// FIXME
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	(*frame->witness)++;
 }
 
 
