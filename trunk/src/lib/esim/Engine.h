@@ -220,13 +220,20 @@ public:
 	///	Name of the frequency domain
 	///
 	/// \param frequency
-	///	Frequency in MHz.
+	///	Optional frequency in MHz. If this value is not given, a default
+	///	frequency of 1GHz is assumed.
 	///
 	/// \return
 	///	This function returns an object of type FrequencyDomain, which
 	///	can be used later in calls to RegisterEventType().
 	FrequencyDomain *RegisterFrequencyDomain(const std::string &name,
-			int frequency);
+			int frequency = 1000);
+
+	/// Update internal information tracking the fastest frequency domain.
+	/// This function is internally invoked by FrequencyDomain::setFrequency
+	/// when the frequency of an existing frequency domain is modified. It
+	/// should not be invoked externally.
+	void UpdateFastestFrequency();
 
 	/// Return whether a frequency is in the valid range between 1MHz and
 	/// 1000GHz.

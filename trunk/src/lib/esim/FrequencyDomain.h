@@ -58,6 +58,12 @@ public:
 	/// Return the frequency in MHz of this domain
 	int getFrequency() const { return frequency; }
 
+	/// Update the frequency (and as a result, also the cycle time) of this
+	/// domain. This function will cause the event-driven simulation engine
+	/// to automatically update the fastest frequency domain information
+	/// internally.
+	void setFrequency(int frequency);
+
 	/// Return the cycle time in picoseconds
 	long long getCycleTime() const { return cycle_time; }
 

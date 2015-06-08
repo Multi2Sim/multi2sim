@@ -254,9 +254,13 @@ void System::ConfigReadGeneral(misc::IniFile *ini_file)
 				err_config_note));
 	debug << "Memory system frequency set to " << frequency << "MHz\n";
 	
-	// Create frequency domain
-	esim::Engine *engine = esim::Engine::getInstance();
-	frequency_domain = engine->RegisterFrequencyDomain("Memory", frequency);
+	// Update frequency of existing frequency domain. The reason why we
+	// don't create the frequency domain here is because it needs to be
+	// available when registering the events in the constructor of class
+	// System, but back then we haven't parsed the memory configuration file
+	// yet.
+	assert(frequency_domain);
+	frequency_domain->setFrequency(frequency);
 
 	// Peer transfers
 	// FIXME Disabling this option for now.  Potentially removing it

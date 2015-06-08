@@ -40,5 +40,17 @@ long long FrequencyDomain::getCycle() const
 }
 
 
+void FrequencyDomain::setFrequency(int frequency)
+{
+	// Update fields
+	this->frequency = frequency;
+	cycle_time = 1000000ll / frequency;
+
+	// Update fastest frequency information in engine
+	Engine *engine = Engine::getInstance();
+	engine->UpdateFastestFrequency();
+}
+
+
 }  // namespace esim
 

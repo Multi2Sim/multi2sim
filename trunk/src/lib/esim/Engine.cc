@@ -267,6 +267,22 @@ FrequencyDomain *Engine::RegisterFrequencyDomain(const std::string &name,
 }
 
 
+void Engine::UpdateFastestFrequency()
+{
+	assert(frequency_domains.size());
+	fastest_frequency = 0;
+	shortest_cycle_time = 0;
+	for (auto &frequency_domain : frequency_domains)
+	{
+		if (frequency_domain.getFrequency() > fastest_frequency)
+		{
+			fastest_frequency = frequency_domain.getFrequency();
+			shortest_cycle_time = frequency_domain.getCycleTime();
+		}
+	}
+}
+
+
 EventType *Engine::RegisterEventType(const std::string &name,
 		EventHandler handler,
 		FrequencyDomain *frequency_domain)
