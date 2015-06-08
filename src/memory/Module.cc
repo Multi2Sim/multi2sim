@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Frame.h"
 #include "Module.h"
 #include "System.h"
 
@@ -118,6 +119,26 @@ long long Module::Access(AccessType access_type,
 
 	// Return frame ID
 	return frame->getId();
+}
+
+
+void Module::StartAccess(Frame *frame, AccessType access_type)
+{
+	// Record access type
+	frame->access_type = access_type;
+
+	// Insert in access list
+	frame->access_list_iterator = access_list.insert(access_list.end(),
+			frame);
+
+	// Insert in write access list
+	if (access_type == AccessStore)
+		frame->write_access_list_iterator = write_access_list.insert(
+				write_access_list.end(),
+				frame);
+
+	// Insert in access hash table
+	access_map[frame->getId()] = frame;
 }
 
 
