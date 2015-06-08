@@ -97,4 +97,460 @@ TEST(TestSystemConfiguration, section_module_type)
 	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
 }
 
+
+TEST(TestSystemConfiguration, section_module_cache_replacement_policy)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Policy = anything";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: Cache test: anything: "
+			"Invalid block replacement policy.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_write_policy)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"WritePolicy = anything";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: Cache test: anything: "
+			"Invalid write policy.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_num_sets_1)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Sets = 0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: number of sets must be a "
+				"power of two greater than 1.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_num_sets_2)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Sets = 13";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: number of sets must be a "
+				"power of two greater than 1.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_num_ways_1)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Assoc = 0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: associativity must be a "
+				"power of two and > 1.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_num_ways_2)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Assoc = 13";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: associativity must be a "
+				"power of two and > 1.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_block_size_1)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"BlockSize = 3";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: block size must be power "
+				"of two and at least 4.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_block_size_2)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"BlockSize = 13";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: block size must be power "
+				"of two and at least 4.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_directory_latency)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"DirectoryLatency = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: invalid value for "
+				"variable 'DirectoryLatency'.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_cache_latency)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Latency = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: invalid value for "
+				"variable 'Latency'.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_mshr_size)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"MSHR = 0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: invalid value for "
+				"variable 'MSHR'.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_module_num_ports)
+{
+	// Setup configuration file
+	std::string config =
+		"[ General ]\n"
+		"Frequency = 1000\n"
+		"[ Module test ]\n"
+		"Type = Cache\n"
+		"Geometry = cacheTest\n"
+		"[ CacheGeometry cacheTest ]\n"
+		"Ports = 0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up memory system instance
+	System *memory_system = System::getInstance();
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: cache test: invalid value for "
+				"variable 'Ports'.\n.*",
+			ini_file.getPath().c_str());
+
+	// Test body
+	std::string actual_str;
+	try
+	{
+		memory_system->ReadConfiguration(&ini_file);
+	}
+	catch (misc::Error &actual_error)
+	{
+		actual_str = actual_error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << actual_str.c_str(); exit(1);}, expected_str.c_str());
+}
+
 }
