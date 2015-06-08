@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_ARCH_TIMING_FUNCTION_UNIT_H
-#define X86_ARCH_TIMING_FUNCTION_UNIT_H
+#ifndef ARCH_X86_TIMING_FUNCTION_UNIT_H
+#define ARCH_X86_TIMING_FUNCTION_UNIT_H
 
 #include <lib/cpp/IniFile.h>
 
@@ -114,4 +114,4 @@ public:
 
 }
 
-#endif // X86_ARCH_TIMING_FUNCTION_UNIT_H
+#endif // ARCH_X86_TIMING_FUNCTION_UNIT_H
