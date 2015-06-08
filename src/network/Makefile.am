@@ -61,7 +61,7 @@ libnetwork_a_SOURCES = \
 	Network.cc \
 	Network.h \
 	\
-	NetworkEventFrame.h
+	NetworkEventFrame.h \
 	\
 	Node.cc \
 	Node.h \
