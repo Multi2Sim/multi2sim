@@ -408,6 +408,16 @@ TEST(TestSystemCoherenceProtocol, config_0_evict_0)
 	module_mm->setOwner(0, 0, 0, module_l2_0);
 	module_mm->setSharer(0, 0, 0, module_l2_0);
 
+	// Accesses
+	int witness = -2;
+	module_l1_0->Access(Module::AccessLoad, 0x400, &witness);
+	module_l1_0->Access(Module::AccessLoad, 0x800, &witness);
+
+	// Simulation loop
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	while (witness < 0)
+		esim_engine->ProcessEvents();
+
 /*
 Command[10] = Access mod-l1-0 1 LOAD 0x400
 Command[11] = Access mod-l1-0 1 LOAD 0x800

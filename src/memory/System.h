@@ -64,7 +64,7 @@ class System
 	static std::unique_ptr<System> instance;
 
 	// Frequency domain for memory system
-	esim::FrequencyDomain *frequency_domain;
+	esim::FrequencyDomain *frequency_domain = nullptr;
 
 	// Private constructor
 	System();
@@ -254,6 +254,7 @@ public:
 		auto it = network_map.find(name);
 		return it == network_map.end() ? nullptr : it->second;
 	}
+
 
 
 
