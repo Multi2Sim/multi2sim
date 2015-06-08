@@ -576,26 +576,26 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			Argument::TypeScalarRegister);
 
 	// If arg_ptr is a scalar register convert it to a vector register
-	if (arg_ptr->getType() == Argument::TypeScalarRegister)
-	{	
-		ArgScalarRegister *arg_scalar = 
-				dynamic_cast<ArgScalarRegister *>(arg_ptr.get());
+	// if (arg_ptr->getType() == Argument::TypeScalarRegister)
+	// {	
+	// 	ArgScalarRegister *arg_scalar = 
+	// 			dynamic_cast<ArgScalarRegister *>(arg_ptr.get());
 		
-		// Allocate vector register and create symbol for return value
-		std::string ret_name = llvm_arg_ptr->getName();
-		int ret_vreg = function->AllocVReg();
-		ptr_symbol->setType(Symbol::TypeVectorRegister);
-		ptr_symbol->setRegister(ret_vreg);
+	// 	// Allocate vector register and create symbol for return value
+	// 	std::string ret_name = llvm_arg_ptr->getName();
+	// 	int ret_vreg = function->AllocVReg();
+	// 	ptr_symbol->setType(Symbol::TypeVectorRegister);
+	// 	ptr_symbol->setRegister(ret_vreg);
 
-		// Emit instruction
-		// v_mov_b32 ret_vreg, arg1
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
-		instruction->addVectorRegister(ret_vreg);
-		instruction->addScalarRegister(arg_scalar->getId());
-		assert(instruction->hasValidArguments());
+	// 	// Emit instruction
+	// 	// v_mov_b32 ret_vreg, arg1
+	// 	Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+	// 	instruction->addVectorRegister(ret_vreg);
+	// 	instruction->addScalarRegister(arg_scalar->getId());
+	// 	assert(instruction->hasValidArguments());
 
-		arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
-	}
+	// 	arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
+	// }
 
 	// Get size of pointed value
 	llvm::Type *llvm_type_ptr = llvm_arg_ptr->getType();
@@ -667,8 +667,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addSpecialRegister(SI::InstSpecialRegVcc);
-		instruction->addArgument(std::move(arg_offset));
 		instruction->addArgument(std::move(arg_ptr));
+		instruction->addArgument(std::move(arg_offset));
 		assert(instruction->hasValidArguments());
 		break;
 	}
@@ -725,8 +725,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addSpecialRegister(SI::InstSpecialRegVcc);
-			instruction->addArgument(std::move(arg_offset));
 			instruction->addArgument(std::move(arg_ptr));
+			instruction->addArgument(std::move(arg_offset));
 			assert(instruction->hasValidArguments());
 		}
 		else if (llvm_type->isVectorTy())
@@ -794,8 +794,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 				Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
 				instruction->addVectorRegister(ret_vreg);
 				instruction->addSpecialRegister(SI::InstSpecialRegVcc);
-				instruction->addArgument(std::move(arg_offset));
 				instruction->addArgument(std::move(arg_ptr));
+				instruction->addArgument(std::move(arg_offset));
 				assert(instruction->hasValidArguments());
 
 				for (int inst_count = 0; inst_count < num_insts; ++inst_count)
@@ -3012,8 +3012,8 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 		//
 		Instruction *instruction = addInstruction(SI::INST_S_LSHR_B32);
 		instruction->addVectorRegister(ret_sreg);
-		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
+		instruction->addArgument(std::move(arg1));
 		assert(instruction->hasValidArguments());		
 	}
 	else
@@ -3034,8 +3034,8 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 		//
 		Instruction *instruction = addInstruction(SI::INST_V_LSHRREV_B32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
+		instruction->addArgument(std::move(arg1));
 		assert(instruction->hasValidArguments());
 	}
 }
@@ -3087,8 +3087,8 @@ void BasicBlock::EmitAShr(llvm::BinaryOperator *llvm_inst)
 		//
 		Instruction *instruction = addInstruction(SI::INST_S_ASHR_I32);
 		instruction->addVectorRegister(ret_sreg);
-		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
+		instruction->addArgument(std::move(arg1));
 		assert(instruction->hasValidArguments());		
 	}
 	else
@@ -3109,8 +3109,8 @@ void BasicBlock::EmitAShr(llvm::BinaryOperator *llvm_inst)
 		//
 		Instruction *instruction = addInstruction(SI::INST_V_ASHRREV_I32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
+		instruction->addArgument(std::move(arg1));
 		assert(instruction->hasValidArguments());
 	}
 }
