@@ -278,7 +278,7 @@ void System::UniformTrafficSimulation(Network *network)
 				dst_node = network->getNode(index);
 				if (dynamic_cast<EndNode *>(node) != nullptr
 						&& dst_node != node)
-					continue;
+					break;
 			}
 
 			// Inject
@@ -288,10 +288,12 @@ void System::UniformTrafficSimulation(Network *network)
 						injection_rate);
 				if (network->CanSend(node, dst_node,
 					System::message_size))
-				network->Send(node, dst_node,
-						System::message_size,
-						nullptr, nullptr);
+					network->Send(node, dst_node,
+							System::message_size);
 			}
+
+			// Next cycle
+			engine->ProcessEvents();
 
 		}
 	}

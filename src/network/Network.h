@@ -35,7 +35,6 @@
 
 namespace net
 {
-
 class Connection;
 class EndNode;
 class Node;
@@ -168,14 +167,10 @@ public:
 	bool CanSend(Node *source_node, Node *destination_node, int size);
 
 	/// Send a message through network
-	void Send(Node *source_node, Node *destination_node, int size,
-			esim::EventType *receive,
-			esim::EventFrame *receive_frame);
+	void Send(Node *source_node, Node *destination_node, int size);
 
 	/// Request to send a message,
 	void RequestSend(Node *source_node, Node *destination_node, int size,
-			esim::EventType *receive_event,
-			esim::EventFrame *receive_frame,
 			esim::EventType *retry_event,
 			esim::EventFrame *retry_frame);
 

@@ -28,6 +28,7 @@ namespace net
 
 class Network;
 class Node;
+class Buffer;
   
 class RoutingTable
 {

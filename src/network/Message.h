@@ -28,12 +28,16 @@
 namespace net 
 {
 class Node;
+class Network;
 
 class Message
 {
-private:
+
 	// Id of the message
 	long long id;
+
+	// Network that this message belongs to 
+	Network *network;
 
 	// Source node
 	Node *source_node;
@@ -50,7 +54,8 @@ private:
 public:
 
 	/// Constructor
-	Message(long long id, Node *source_node, Node *destination_node,
+	Message(long long id, Network *network, 
+			Node *source_node, Node *destination_node,
 			int size);
 
 	/// Packetize
@@ -61,6 +66,9 @@ public:
 	
 	/// Get id of the node
 	long long getId() const { return id; }
+
+	/// Get the network
+	Network *getNetwork() const { return network; }
 
 	/// Get source node
 	Node *getSourceNode() const { return source_node; }
