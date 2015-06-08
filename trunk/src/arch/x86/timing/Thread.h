@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef X86_ARCH_TIMING_THREAD_H
-#define X86_ARCH_TIMING_THREAD_H
+#ifndef ARCH_X86_TIMING_THREAD_H
+#define ARCH_X86_TIMING_THREAD_H
 
 #include <vector>
 #include <list>
@@ -493,4 +493,4 @@ public:
 
 }
 
-#endif // X86_ARCH_TIMING_THREAD_H
+#endif // ARCH_X86_TIMING_THREAD_H
