@@ -25,6 +25,8 @@
 
 #include <lib/esim/Event.h>
 
+#include "Module.h"
+
 
 namespace mem
 {
@@ -71,6 +73,17 @@ public:
 	/// over.
 	int *witness = nullptr;
 
+	/// Iterator to the current position of this frame in
+	/// Module::access_list.
+	std::list<Frame *>::iterator access_list_iterator;
+	
+	/// Iterator to the current position of this frame in
+	/// Module::write_access_list.
+	std::list<Frame *>::iterator write_access_list_iterator;
+
+	/// Type of memory access
+	Module::AccessType access_type = Module::AccessInvalid;
+
 
 
 	//
@@ -104,6 +117,12 @@ public:
 	/// Return a unique identifier for this event frame, assigned
 	/// internally when created.
 	long long getId() const { return id; }
+
+	/// Return the module associated with this event frame.
+	Module *getModule() const { return module; }
+
+	/// Return the memory address associated with this event frame.
+	unsigned getAddress() const { return address; }
 };
 
 

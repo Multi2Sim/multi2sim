@@ -20,6 +20,7 @@
 #ifndef MEMORY_MODULE_H
 #define MEMORY_MODULE_H
 
+#include <list>
 #include <memory>
 #include <unordered_map>
 
@@ -30,7 +31,6 @@
 
 #include "Cache.h"
 #include "Directory.h"
-#include "Frame.h"
 
 
 // Forward declarations
@@ -40,6 +40,9 @@ namespace net { class Node; }
 
 namespace mem
 {
+
+// Forward declarations
+class Frame;
 
 
 /// Memory module, representing a cache or a main memory module.
@@ -218,17 +221,17 @@ private:
 	//
 
 	// List of all in-flight accesses
-	misc::List<Frame> access_list;
+	std::list<Frame *> access_list;
 
 	// List of all in-flight write accesses
-	misc::List<Frame> write_access_list;
+	std::list<Frame *> write_access_list;
 	
 	// Number of in-flight coalesced accesses. This is a number
 	// between 0 and access_list.getSize() at all times.
 	int access_list_coalesced_count = 0;
 
-	// Hash table of accesses, indexed by an access ID
-	std::unordered_map<long long, std::shared_ptr<Frame>> access_map;
+	// Hash table of accesses, indexed by an frame ID
+	std::unordered_map<long long, Frame *> access_map;
 
 
 
@@ -582,6 +585,11 @@ public:
 	long long Access(AccessType access_type,
 			unsigned address,
 			int *witness = nullptr);
+	
+	/// Add the given frame to the list of in-flight accesses, and record
+	/// its access type. This function is invoked internally by the event
+	/// handlers of certain NMOESI events.
+	void StartAccess(Frame *frame, AccessType access_type);
 };
 
 
