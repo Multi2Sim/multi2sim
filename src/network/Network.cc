@@ -90,10 +90,6 @@ void Network::ParseConfiguration(misc::IniFile *config,
 
 	// Parse the commands for manual(input trace) injection and testing.
 	ParseConfigurationForCommands(config);
-
-	// Debug information
-	System::debug << misc::fmt("Network found: %s\n",name.c_str());
-	Dump(std::cout);
 }
 
 
@@ -372,15 +368,16 @@ void Network::Dump(std::ostream &os) const
 Message *Network::ProduceMessage(Node *source_node, Node *destination_node,
 			int size)
 {
-	auto message = misc::new_unique<Message>(message_id_counter,
-			source_node, destination_node, size);
-	Message *message_ptr = message.get();
+	// Insert the created message into the hashtable
+	message_table.emplace(message_id_counter, misc::new_unique<Message>(
+				message_id_counter, this, source_node, 
+				destination_node, size));
+
+	// Get the pointer to the newly created messag
+	Message *message_ptr = message_table[message_id_counter].get();
 
 	// Increase message id counter
 	message_id_counter++;
-
-	// Insert the created message into the hashtable
-	this->message_table.emplace(message->getId(), std::move(message));
 
 	// Return the pointer
 	return message_ptr;
@@ -396,7 +393,11 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 
 	// Check if route exist
 	if (!output_buffer)
+	{
+		std::cout << "Route not exist\n";
+		routing_table.Dump(std::cout);
 		return false;
+	}
 
 	// Get current cycle
 	long long cycle = esim::Engine::getInstance()->getCycle();
@@ -411,7 +412,7 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 		required_size = ((size - 1) / packet_size + 1) * packet_size;
 	if (output_buffer->getCount() + required_size >
 			output_buffer->getSize())
-			return 0;
+			return false;
 
 	// All criterion met, return true
 	return true;
@@ -419,15 +420,13 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 }
 
 
-void Network::Send(Node *source_node, Node *destination_node, int size,
-			esim::EventType *receive,
-			esim::EventFrame *receive_frame)
+void Network::Send(Node *source_node, Node *destination_node, int size)
 {
 	// Make sure both source node and destination node are end nodes
-	if (dynamic_cast<EndNode *>(source_node) != nullptr)
+	if (dynamic_cast<EndNode *>(source_node) == nullptr)
 		throw misc::Panic("Source node is not an end node");
-	if (dynamic_cast<EndNode *>(destination_node) != nullptr)
-			throw misc::Panic("Source node is not an end node");
+	if (dynamic_cast<EndNode *>(destination_node) == nullptr)
+		throw misc::Panic("Source node is not an end node");
 
 	// Create message
 	Message *message = ProduceMessage(source_node, destination_node, size);
