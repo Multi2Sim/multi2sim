@@ -108,9 +108,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	int i;
 	InstReg value[2];
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		// Read value from global memory
 		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
@@ -122,7 +121,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	if (Emu::debug)
 	{
 		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
-		for (i = 0; i < 2; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i * 4, value[i].as_uint, 
@@ -152,9 +151,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	int i;
 	InstReg value[4];
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		// Read value from global memory
 		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
@@ -166,7 +164,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	if (Emu::debug)
 	{
 		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
@@ -195,9 +193,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	int i;
 	InstReg value[8];
-	for (i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		// Read value from global memory
 		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
@@ -209,7 +206,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	if (Emu::debug)
 	{
 		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
-		for (i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
@@ -238,9 +235,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	int i;
 	InstReg value[16];
-	for (i = 0; i < 16; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		// Read value from global memory
 		global_mem->Read(addr + i * 4, 4, (char *)&value[i]);
@@ -252,7 +248,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	if (Emu::debug)
 	{
 		Emu::debug << misc::fmt("wf%d: ", wavefront->getId());
-		for (i = 0; i < 16; i++)
+		for (int i = 0; i < 16; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
@@ -286,9 +282,8 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	int i;
 	InstReg value[2];
-	for (i = 0; i < 2; i++)
+	for (int i = 0; i < 2; i++)
 	{
 		// Read value from global memory		
 		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
@@ -301,7 +296,7 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 	{
 		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
-		for (i = 0; i < 2; i++)
+		for (int i = 0; i < 2; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
@@ -333,9 +328,8 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	int i;
 	InstReg value[4];
-	for (i = 0; i < 4; i++)
+	for (int i = 0; i < 4; i++)
 	{
 		// Read value from global memory		
 		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
@@ -348,7 +342,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 	{
 		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
-		for (i = 0; i < 4; i++)
+		for (int i = 0; i < 4; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
@@ -381,9 +375,8 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	int i;
 	InstReg value[8];
-	for (i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		// Read value from global memory		
 		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
@@ -396,7 +389,7 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 	{
 		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
-		for (i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
@@ -429,9 +422,8 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	int i;
 	InstReg value[16];
-	for (i = 0; i < 16; i++)
+	for (int i = 0; i < 16; i++)
 	{
 		// Read value from global memory		
 		global_mem->Read(m_addr + i * 4, 4, (char *)&value[i]);
@@ -444,7 +436,7 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 	{
 		Emu::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
-		for (i = 0; i < 8; i++)
+		for (int i = 0; i < 8; i++)
 		{
 			Emu::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
