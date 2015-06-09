@@ -590,7 +590,6 @@ int main(int argc, char **argv)
 	}
 
 /*
-
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =
@@ -976,6 +975,6 @@ int main(int argc, char **argv)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-	*/
+		*/
 }
 

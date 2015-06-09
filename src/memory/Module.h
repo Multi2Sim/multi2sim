@@ -230,8 +230,10 @@ private:
 	// between 0 and access_list.getSize() at all times.
 	int access_list_coalesced_count = 0;
 
-	// Hash table of accesses, indexed by an frame ID
-	std::unordered_map<long long, Frame *> access_map;
+	// Hash table of accesses, indexed by a block address (that is, a
+	// memory address divided by the module's block size). There can be
+	// multiple in-flight accesses for the same block.
+	std::unordered_multimap<unsigned, Frame *> access_map;
 
 
 
@@ -588,8 +590,47 @@ public:
 	
 	/// Add the given frame to the list of in-flight accesses, and record
 	/// its access type. This function is invoked internally by the event
-	/// handlers of certain NMOESI events.
+	/// handlers of the first NMOESI event for an access.
 	void StartAccess(Frame *frame, AccessType access_type);
+
+	/// Remove the given frame from the list of in-flight accesses. This
+	/// function is invoked internally by the event handler of the last
+	/// NMOESI event for an access.
+	void FinishAccess(Frame *frame);
+
+	/// Return the youngest in-flight access older than \a older_than_frame
+	/// to the block containing \a address. If \a older_than_frame is
+	/// nullptr, return the youngest in-flight access containing \a address.
+	/// The function returns nullptr if there is no in-flight access to
+	/// block containing \a address.
+	Frame *getInFlightAddress(unsigned address,
+			Frame *older_than_frame = nullptr);
+
+	/// Return the youngest in-flight write older than \a older_than_frame.
+	/// If \a older_than_frame is `nullptr`, return the youngest in-flight
+	/// write. Return `nullptr` if there is no in-flight write.
+	Frame *getInFlightWrite(Frame *older_than_frame = nullptr);
+
+	/// Check if an access to a module can be coalesced with another access
+	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,
+	/// check if it can be coalesced with any in-flight access. If it can,
+	/// return the access that it would be coalesced with. Otherwise, return
+	/// nullptr.
+	Frame *canCoalesce(AccessType access_type,
+			unsigned address,
+			Frame *older_than_frame = nullptr);
+
+	/// Coalesce access \a frame with access \a master_frame. The master
+	/// frame must represent the oldest access in a coalesced chain.
+	void Coalesce(Frame *master_frame, Frame *frame);
+
+
+
+	//
+	// Statistics
+	//
+
+	void incCoalescedReads() { coalesced_reads++; }
 };
 
 

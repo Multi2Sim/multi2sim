@@ -56,9 +56,10 @@ public:
 	///	Type of event to schedule when the queue receives a wakeup
 	///	signal. This event will be scheduled using the current event
 	///	frame. The event type cannot be `nullptr`.
+	///
 	void Wait(EventType *event_type);
 
-	/// Wake the last recently suspended event frame, scheduling the wakeup
+	/// Wake the least recently suspended event frame, scheduling the wakeup
 	/// event for the current cycle. The queue must have at least one
 	/// suspended event in it.
 	void WakeupOne();
