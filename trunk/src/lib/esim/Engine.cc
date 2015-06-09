@@ -52,8 +52,7 @@ const char *engine_err_max_inflight_events =
 	"avoid this warning. ";
 
 
-Engine::Engine() :
-		timer("esim::Timer")
+Engine::Engine() : timer("esim::Timer")
 {
 	// Initialize timer
 	timer.Start();
@@ -170,7 +169,7 @@ Engine *Engine::getInstance()
 		return instance.get();
 	
 	// Create instance
-	instance.reset(new Engine());
+	instance = misc::new_unique<Engine>();
 	return instance.get();
 }
 
@@ -335,7 +334,10 @@ void Engine::Schedule(EventType *event_type,
 			frequency_domain->getCycleTime() * after;
 
 	// Create new event and insert it in the event list
-	events.emplace(new Event(event_type, event_frame, when, period));
+	events.emplace(misc::new_unique<Event>(event_type,
+			event_frame,
+			when,
+			period));
 
 	// Increment the number of in-flight events of this type.
 	event_type->incInFlight();
@@ -370,7 +372,7 @@ void Engine::Next(EventType *event_type,
 	if (current_event)
 		event_frame = current_event->getFrame();
 	else
-		event_frame.reset(new EventFrame);
+		event_frame = misc::new_shared<EventFrame>();
 
 	// Schedule event
 	Schedule(event_type, event_frame, after, period);
@@ -389,10 +391,13 @@ void Engine::Execute(EventType *event_type)
 	if (current_event)
 		event_frame = current_event->getFrame();
 	else
-		event_frame.reset(new EventFrame);
+		event_frame = misc::new_shared<EventFrame>();
 
 	// Create new event
-	std::unique_ptr<Event> event(new Event(event_type, event_frame, 0, 0));
+	auto event = misc::new_unique<Event>(event_type,
+			event_frame,
+			0,
+			0);
 
 	// Save current event
 	Event *old_event = current_event;
@@ -415,7 +420,7 @@ void Engine::Call(EventType *event_type,
 {
 	// Create new frame if none passed
 	if (event_frame == nullptr)
-		event_frame.reset(new EventFrame);
+		event_frame = misc::new_shared<EventFrame>();
 
 	// Set return event
 	event_frame->setReturnEventType(return_event_type);
@@ -456,7 +461,10 @@ void Engine::EndEvent(EventType *event_type)
 		return;
 
 	// Add event to queue of end events
-	end_events.emplace(new Event(event_type, nullptr, 0, 0));
+	end_events.emplace(misc::new_unique<Event>(event_type,
+			nullptr,
+			0,
+			0));
 }
 
 

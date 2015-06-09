@@ -150,17 +150,17 @@ void System::evLoadHandler(esim::EventType *event_type,
 		module->StartAccess(frame, Module::AccessLoad);
 
 		// Coalesce access
-		/*
-		FIXME
-		master_stack = mod_can_coalesce(mod, mod_access_load, stack->addr, stack);
-		if (master_stack)
+		Frame *master_frame = module->canCoalesce(
+				Module::AccessLoad,
+				frame->getAddress(),
+				frame);
+		if (master_frame)
 		{
-			mod->coalesced_reads++;
-			mod_coalesce(mod, master_stack, stack);
-			mod_stack_wait_in_stack(stack, master_stack, EV_MOD_NMOESI_LOAD_FINISH);
+			module->incCoalescedReads();
+			module->Coalesce(master_frame, frame);
+			master_frame->queue.Wait(event_type_load_finish);
 			return;
 		}
-		*/
 
 		// Next event
 		esim_engine->Next(event_type_load_lock);
@@ -170,6 +170,54 @@ void System::evLoadHandler(esim::EventType *event_type,
 	// Event "load_lock"
 	if (event_type == event_type_load_lock)
 	{
+		debug << misc::fmt("  %lld %lld 0x%x %s load lock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If there is any older write, wait for it
+		Frame *older_frame = module->getInFlightWrite(frame);
+		if (older_frame)
+		{
+			debug << misc::fmt("    %lld wait for write %lld\n",
+					frame->getId(),
+					older_frame->getId());
+			older_frame->queue.Wait(event_type_load_lock);
+			return;
+		}
+
+		// If there is any older access to the same address that this
+		// access could not be coalesced with, wait for it.
+		older_frame = module->getInFlightAddress(
+				frame->getAddress(),
+				frame);
+		if (older_frame)
+		{
+			debug << misc::fmt("    %lld wait for access %lld\n",
+					frame->getId(),
+					older_frame->getId());
+			older_frame->queue.Wait(event_type_load_lock);
+			return;
+		}
+
+		// Call "find_and_lock" event chain
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->getAddress());
+		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = true;
+		new_frame->read = true;
+		new_frame->retry = frame->retry;
+		esim_engine->Call(event_type_find_and_lock,
+				new_frame,
+				event_type_load_action);
 		return;
 	}
 

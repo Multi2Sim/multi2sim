@@ -126,10 +126,6 @@ class Engine
 	// (1M events).
 	const int max_finalization_events = 1000000;
 
-	// Private constructor, used internally to instantiate a singleton. Use
-	// a call to getInstance() instead.
-	Engine();
-
 	// Signals received from the user are captured by this function
 	static void SignalHandler(int sig);
 
@@ -157,8 +153,8 @@ class Engine
 
 public:
 
-	/// Virtual destructor
-	virtual ~Engine() {};
+	// Constructor
+	Engine();
 
 	/// Obtain the instance of the event-driven simulator singleton.
 	static Engine *getInstance();
@@ -305,8 +301,14 @@ public:
 	///	Type of event to execute
 	void Execute(EventType *event_type);
 
-	/// Schedule an event, remembering the current event frame. This
-	/// function should only be invoked in the body of an event handler.
+	/// Schedule an event, creating a new event chain with its new event
+	/// frame. The next invocation to Return() in an event handler of any
+	/// event of the new chain will return to the previous event chain and
+	/// restore the previous event frame.
+	///
+	/// If Call() is invoked outside of an event handler, a call to Return()
+	/// in any event handler of any event of the new chain will be ignored,
+	/// since there will be no previous event chain to return to.
 	///
 	/// \param event_type
 	///	Type of event to schedule
@@ -329,6 +331,7 @@ public:
 	///	If specified, the event will be scheduled periodically after its
 	///	first occurrence. The period is given in number of cycles with
 	///	respect to the event's frequency domain.
+	///
 	void Call(EventType *event_type,
 			std::shared_ptr<EventFrame> event_frame = nullptr,
 			EventType *return_event_type = nullptr,
