@@ -24,6 +24,7 @@
 #include <memory>
 
 #include <lib/esim/Event.h>
+#include <lib/esim/Queue.h>
 
 #include "Module.h"
 
@@ -57,13 +58,17 @@ class Frame : public esim::EventFrame
 	// Decoded tag from address
 	unsigned tag = -1;
 
-	// List of dependent waiting frames
-	std::list<std::shared_ptr<Frame>> waiting_frames;
-
-	// Event to be invoked when the frame wakes up from a waiting list
-	esim::EventType *wakeup_event_type = nullptr;
-
 public:
+
+	/// Direction of an access
+	enum RequestDirection
+	{
+		RequestDirectionInvalid = 0,
+		RequestDirectionUpDown,
+		RequestDirectionDownUp
+	};
+
+
 	
 	//
 	// Public fields
@@ -84,35 +89,52 @@ public:
 	/// Type of memory access
 	Module::AccessType access_type = Module::AccessInvalid;
 
+	/// If true, this access has been coalesced with another access.
+	bool coalesced = false;
+
+	/// If this access is coalesced, this field refers to the oldest
+	/// access to the same block that this access is coalesced with.
+	Frame *master_frame = nullptr;
+
+	/// Queue of suspended dependent frames. When the access represented
+	/// by this frame completes, it will wake up all accesses enqueued
+	/// here.
+	esim::Queue queue;
+
+	/// If true, the current access is locking a port in a module.
+	bool port_locked = nullptr;
+
+	/// Direction of an access. Up-down refers to processor-to-memory, while
+	/// down-up refers to memory-to-processor direction.
+	RequestDirection request_direction = RequestDirectionInvalid;
+
+	/// If true, this access waits in the queue of a port for it to be
+	/// released. If false, it backtracks to give priority to other accesses
+	/// and avoid deadlock.
+	bool blocking = false;
+
+	/// If true, this is a read request. If false, it is a write request.
+	bool read = true;
+
+	/// If true, this is a retried access.
+	bool retry = false;
+
 
 
 	//
 	// Functions
 	//
 
+	/// Return a new unique value for a frame identifier.
+	static long long getNewId() { return ++id_counter; }
+
 	/// Constructor
-	Frame(Module *module, unsigned address) :
-			id(++id_counter),
+	Frame(long long id, Module *module, unsigned address) :
+			id(id),
 			module(module),
 			address(address)
 	{
 	}
-
-	/// Add a dependent frame to the list of waiting frames. Dependent
-	/// frames are woken up when the access represented with this frame
-	/// completes.
-	///
-	/// \param frame
-	///	Shared pointer of the dependent frame.
-	///
-	/// \param event_type
-	///	Event to schedule upon wakeup
-	///
-	void addWaitingFrame(std::shared_ptr<Frame> frame,
-			esim::EventType *event_type);
-
-	/// Wake up all dependent frames in the list of waiting frames.
-	void WakeupWaitingFrames();
 
 	/// Return a unique identifier for this event frame, assigned
 	/// internally when created.
