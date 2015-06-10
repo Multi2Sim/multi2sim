@@ -44,8 +44,11 @@ class Queue
 	// Remove an event frame from the queue.
 	std::shared_ptr<EventFrame> PopFront();
 
-	// Add an event frame to the queue
+	// Add an event frame to the tail of the queue
 	void PushBack(std::shared_ptr<EventFrame> event_frame);
+
+	// Add an event frame to the front of the queue
+	void PushFront(std::shared_ptr<EventFrame> event_frame);
 
 public:
 
@@ -57,7 +60,13 @@ public:
 	///	signal. This event will be scheduled using the current event
 	///	frame. The event type cannot be `nullptr`.
 	///
-	void Wait(EventType *event_type);
+	/// \param priority
+	///	If set to `true`, this event chain will be suspended at the
+	///	head of the queue, making it the first candidate to wake up
+	///	in the next call to WakeupOne() or WakeupAll(). Otherwise,
+	///	suspend at the tail - this is the default behavior.
+	///
+	void Wait(EventType *event_type, bool priority = false);
 
 	/// Wake the least recently suspended event frame, scheduling the wakeup
 	/// event for the current cycle. The queue must have at least one

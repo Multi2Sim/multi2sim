@@ -76,24 +76,17 @@ public:
 		AccessNCStore
 	};
 
-private:
-
 	// Port in a memory module
-	class Port
+	struct Port
 	{
-		// Port lock status
-		bool locked = false;
-
-		// Cycle when port was last locked
-		long long lock_when = 0;
-
-		// Memory access locking port
-		std::shared_ptr<Frame> frame;
+		// Memory access locking port, or nullptr if the port is free
+		Frame *frame = nullptr;
 
 		// Memory accesses waiting in port
 		esim::Queue queue;
 	};
 
+private:
 
 
 	//
@@ -623,6 +616,11 @@ public:
 	/// Coalesce access \a frame with access \a master_frame. The master
 	/// frame must represent the oldest access in a coalesced chain.
 	void Coalesce(Frame *master_frame, Frame *frame);
+
+	// Lock a port, and schedule event when done. If there is no free port,
+	// the access is enqueued in the port waiting list, and it will retry
+	// once a port becomes available with a call to UnlockPort().
+	void LockPort(Frame *frame, esim::EventType *event_type);
 
 
 

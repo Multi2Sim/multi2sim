@@ -26,6 +26,7 @@
 #include <lib/esim/Event.h>
 #include <lib/esim/Queue.h>
 
+#include "Cache.h"
 #include "Module.h"
 
 
@@ -50,13 +51,6 @@ class Frame : public esim::EventFrame
 
 	// Physical address, initialized in constructor.
 	unsigned address;
-
-	// Block coordinates
-	unsigned set_id = -1;
-	unsigned way_id = -1;
-
-	// Decoded tag from address
-	unsigned tag = -1;
 
 public:
 
@@ -101,12 +95,18 @@ public:
 	/// here.
 	esim::Queue queue;
 
-	/// If true, the current access is locking a port in a module.
-	bool port_locked = nullptr;
-
 	/// Direction of an access. Up-down refers to processor-to-memory, while
 	/// down-up refers to memory-to-processor direction.
 	RequestDirection request_direction = RequestDirectionInvalid;
+
+	/// Port currently being locked by this access, or nullptr if the
+	/// access is not locking a port.
+	Module::Port *port = nullptr;
+
+	/// Flag indicating whether this access has locked a port for the first
+	/// time. It is used to decide whether we're still on time to
+	/// coalesce.
+	bool port_locked = false;
 
 	/// If true, this access waits in the queue of a port for it to be
 	/// released. If false, it backtracks to give priority to other accesses
@@ -118,6 +118,21 @@ public:
 
 	/// If true, this is a retried access.
 	bool retry = false;
+
+	/// Return error code from a child event chain.
+	bool error = false;
+	
+	/// Tag associated with the access	
+	int tag = -1;
+
+	/// Set associated with the access
+	int set = -1;
+
+	/// Way associated with the access
+	int way = -1;
+
+	/// Block state
+	Cache::BlockState state = Cache::BlockInvalid;
 
 
 
