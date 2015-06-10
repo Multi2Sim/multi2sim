@@ -49,6 +49,29 @@ void Queue::PushBack(std::shared_ptr<EventFrame> event_frame)
 }
 
 
+void Queue::PushFront(std::shared_ptr<EventFrame> event_frame)
+{
+	// Mark frame as inserted
+	assert(!event_frame->isInQueue());
+	assert(!event_frame->getNext());
+	event_frame->setInQueue(true);
+
+	// Add to front of the list
+	if (head == nullptr && tail == nullptr)
+	{
+		head = event_frame;
+		tail = event_frame;
+	}
+	else
+	{
+		assert(head != nullptr && tail != nullptr);
+		assert(tail->getNext() == nullptr);
+		event_frame->setNext(head);
+		head = event_frame;
+	}
+}
+
+
 std::shared_ptr<EventFrame> Queue::PopFront()
 {
 	// Check if queue is empty
@@ -77,7 +100,7 @@ std::shared_ptr<EventFrame> Queue::PopFront()
 }
 
 
-void Queue::Wait(EventType *event_type)
+void Queue::Wait(EventType *event_type, bool priority)
 {
 	// This function must be invoked within an event handler
 	Engine *engine = Engine::getInstance();
@@ -91,12 +114,15 @@ void Queue::Wait(EventType *event_type)
 		throw misc::Panic("Cannot suspend an event with a null "
 				"wakeup event type");
 
-	// Add event frame to the stack
+	// Add event frame to the queue
 	std::shared_ptr<EventFrame> event_frame = current_event->getFrame();
 	assert(event_frame != nullptr);
 	assert(event_frame->getWakeupEventType() == nullptr);
 	event_frame->setWakeupEventType(event_type);
-	PushBack(event_frame);
+	if (priority)
+		PushFront(event_frame);
+	else
+		PushBack(event_frame);
 }
 
 
