@@ -24,10 +24,14 @@
 
 #include <lib/cpp/Bitmap.h>
 #include <lib/cpp/Misc.h>
+#include <lib/esim/Queue.h>
 
 
 namespace mem
 {
+
+// Forward declarations
+class Frame;
 
 /// A cache directory in the memory system
 class Directory
@@ -72,6 +76,16 @@ public:
 
 private:
 
+	// Entry lock
+	struct Lock
+	{
+		// Access frame locking entry, or nullptr if entry is unlocked.
+		Frame *frame = nullptr;
+
+		// Queue of frames waiting for the lock to be released.
+		esim::Queue queue;
+	};
+
 	// Name of directory
 	std::string name;
 
@@ -85,7 +99,10 @@ private:
 	misc::Bitmap sharers;
 
 	// Directory entries
-	std::unique_ptr<Entry> entries;
+	std::unique_ptr<Entry[]> entries;
+
+	// Directory locks
+	std::unique_ptr<Lock[]> locks;
 
 public:
 
@@ -105,6 +122,7 @@ public:
 	///
 	/// \param num_nodes
 	///	Number of nodes that can be sharers of each sub-block
+	///
 	Directory(const std::string &name,
 			int num_sets,
 			int num_ways,
@@ -155,6 +173,52 @@ public:
 	/// Dump array of sharers of a sub-block into an output stream
 	void DumpSharers(int set_id, int way_id, int sub_block_id,
 			std::ostream &os = std::cout);
+
+	/// Lock a directory entry at the given set and way, and schedule the
+	/// given event once the entry is locked successfully. If the entry
+	/// was already locked, the current frame is enqueued in the entry's
+	/// frame queue.
+	///
+	/// This function must be invoked within an event handler.
+	///
+	/// \param set_id
+	///	Directory entry set.
+	///
+	/// \param way_id
+	///	Directory entry way.
+	///
+	/// \param event_type
+	///	Event to be scheduled once the directory entry has been
+	///	successfully locked. If the directory entry was not locked, this
+	///	will happen in 0 time. Otherwise, the current event chain is
+	///	enqueued at the tail of the queue of the directory entry.
+	///
+	/// \param frame
+	///	Current frame in event handler.
+	///
+	/// \return
+	///	The function returns true if the directory entry was locked
+	///	immediately, or false if it was locked before and the current
+	///	event chain was suspended in the entry queue.
+	///
+	bool LockEntry(int set_id,
+			int way_id,
+			esim::EventType *event_type,
+			Frame *frame);
+
+	/// Unlock the given directory entry, and wake up the next event chain
+	/// suspended in the directory entry queue.
+	void UnlockEntry(int set_id, int way_id);
+
+	/// Return whether the given directory entry is currently locked.
+	bool isEntryLocked(int set_id, int way_id) const
+	{
+		return getEntryFrame(set_id, way_id);
+	}
+
+	/// Return the frame locking the given directory entry, or `nullptr`
+	/// if the entry is not locked.
+	Frame *getEntryFrame(int set_id, int way_id) const;
 };
 
 

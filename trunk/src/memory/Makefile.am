@@ -72,8 +72,8 @@ libmemory_a_SOURCES = \
 	SpecMem.h \
 	\
 	System.cc \
-	SystemCoherenceProtocol.cc \
 	SystemConfig.cc \
+	SystemEvents.cc \
 	System.h \
 	\
 	Wrapper.cc \

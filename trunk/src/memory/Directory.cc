@@ -17,9 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
 #include "Directory.h"
+#include "Frame.h"
 #include "System.h"
 
 
@@ -43,7 +45,11 @@ Directory::Directory(const std::string &name,
 		sharers(num_sets * num_ways * num_sub_blocks * num_nodes)
 {
 	// Initialize entries
-	entries.reset(new Entry[num_sets * num_ways * num_sub_blocks]);
+	entries = misc::new_unique_array<Entry>(num_sets
+			* num_ways * num_sub_blocks);
+
+	// Initialize locks
+	locks = misc::new_unique_array<Lock>(num_sets * num_ways);
 }
 	
 
@@ -205,6 +211,62 @@ void Directory::DumpSharers(int set_id, int way_id, int sub_block_id,
 		if (isSharer(set_id, way_id, sub_block_id, i))
 			os << misc::fmt("%d ", i);
 	os << "}\n";
+}
+
+
+bool Directory::LockEntry(
+		int set_id,
+		int way_id,
+		esim::EventType *event_type,
+		Frame *frame)
+{
+	// Get lock
+	assert(misc::inRange(set_id, 0, num_sets - 1));
+	assert(misc::inRange(way_id, 0, num_ways - 1));
+	Lock *lock = &locks[set_id * num_ways + way_id];
+
+	// If the entry is already locked, enqueue a new waiter and return
+	// failure to lock.
+	if (lock->frame)
+	{
+		lock->queue.Wait(event_type);
+		System::debug << misc::fmt("    0x%x access suspended\n",
+				frame->tag);
+		return false;
+	}
+
+	// Trace
+	System::trace << misc::fmt("mem.new_access_block "
+			"cache=\"%s\" "
+			"access=\"A-%lld\" "
+			"set=%d "
+			"way=%d\n",
+			name.c_str(),
+			frame->getId(),
+			set_id,
+			way_id);
+
+	// Lock entry
+	lock->frame = frame;
+	return true;
+}
+
+
+void Directory::UnlockEntry(int set_id, int way_id)
+{
+	throw misc::Panic("Not implemented");
+}
+
+
+Frame *Directory::getEntryFrame(int set_id, int way_id) const
+{
+	// Get lock
+	assert(misc::inRange(set_id, 0, num_sets - 1));
+	assert(misc::inRange(way_id, 0, num_ways - 1));
+	Lock *lock = &locks[set_id * num_ways + way_id];
+
+	// Return frame locking entry
+	return lock->frame;
 }
 
 
