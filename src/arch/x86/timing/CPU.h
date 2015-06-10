@@ -52,9 +52,11 @@ public:
 		RecoverKindWriteback,
 		RecoverKindCommit
 	};
+
+	/// Recover kind string map
 	static misc::StringMap recover_kind_map;
 
-	/// Fetch stage
+	/// Fetch stage kind
 	enum FetchKind
 	{
 		FetchKindInvalid = 0,
@@ -62,43 +64,64 @@ public:
 		FetchKindTimeslice,
 		FetchKindSwitchonevent
 	};
+
+	/// Fetch kind string map
 	static misc::StringMap fetch_kind_map;
 
-	/// Dispatch stage
+	/// Dispatch stage kind
 	enum DispatchKind
 	{
 		DispatchKindInvalid = 0,
 		DispatchKindShared,
 		DispatchKindTimeslice,
 	};
+
+	/// Dispatch kind string map
 	static misc::StringMap dispatch_kind_map;
 
-	/// Issue stage
+	/// Issue stage kind
 	enum IssueKind
 	{
 		IssueKindInvalid = 0,
 		IssueKindShared,
 		IssueKindTimeslice,
 	};
+
+	/// Issue kind string map
 	static misc::StringMap issue_kind_map;
 
-	/// Commit stage
+	/// Commit stage kind
 	enum CommitKind
 	{
 		CommitKindInvalid = 0,
 		CommitKindShared,
 		CommitKindTimeslice
 	};
+
+	/// Commit kind string map
 	static misc::StringMap commit_kind_map;
 
-	/// Reorder buffer parameters
+	/// Reorder buffer kind
 	enum ReorderBufferKind
 	{
 		ReorderBufferKindInvalid = 0,
 		ReorderBufferKindPrivate,
 		ReorderBufferKindShared
 	};
+
+	/// Reorder buffer kind string map
 	static misc::StringMap reorder_buffer_kind_map;
+
+	/// Instruction queue kind
+	enum InstructionQueueKind
+	{
+		InstructionQueueKindInvalid = 0,
+		InstructionQueueKindShared,
+		InstructionQueueKindPrivate
+	};
+
+	/// Instruction queue kind string map
+	static misc::StringMap instruction_queue_kind_map;
 
 
 private:
@@ -112,7 +135,6 @@ private:
 	// MMU used by this CPU 
 	std::shared_ptr<mem::MMU> mmu;
 
-	// Some fields 
 	// Counter of uop ID assignment 
 	long long uop_id_counter = 0;
 
@@ -127,7 +149,7 @@ private:
 	long long min_alloc_cycle = 0;
 
 	// List containing uops that need to report an 'end_inst' trace event 
-	std::list<std::unique_ptr<Uop>> uop_trace_list;
+	std::list<std::shared_ptr<Uop>> uop_trace_list;
 
 
 
@@ -135,17 +157,33 @@ private:
 	//
 	// Statistics 
 	//
-	long long num_fast_forward_inst = 0;  // Fast-forwarded x86 instructions
+
+	// Number of fectched micro-instructions
 	long long num_fetched_uinst = 0;
+
+	// Number of dispatched micro-instructions for every opcode
 	long long num_dispatched_uinst_array[UInstOpcodeCount];
+
+	// Number of issued micro-instructions for every opcode
 	long long num_issued_uinst_array[UInstOpcodeCount];
+
+	// Number of committed micro-instructions for every opcode
 	long long num_committed_uinst_array[UInstOpcodeCount];
-	long long num_committed_uinst = 0;  // Committed micro-instructions
-	long long num_committed_inst = 0;  // Committed x86 instructions
+
+	// Committed micro-instructions
+	long long num_committed_uinst = 0;
+
+	// Committed macro-instructions
+	long long num_committed_inst = 0;
+
+	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
+
+	// Number of branch micro-instructions
 	long long num_branch_uinst = 0;
+
+	// Number of mis-predicted branch micro-instructions
 	long long num_mispred_branch_uinst = 0;
-	double time = 0.0;
 
 
 
@@ -153,7 +191,11 @@ private:
 	//
 	// For dumping 
 	//
+
+	// Cycle of last dump
 	long long last_committed = 0;
+
+	// IPC since last dump
 	long long last_dump = 0;
 
 
@@ -162,58 +204,57 @@ private:
 	//
 	// CPU parameters
 	//
+
+	// Number of Cores
 	static int num_cores;
+
+	// Number of Threads
 	static int num_threads;
+
+	// Context quantum
 	static int context_quantum;
+
+	// Thread quantum
 	static int thread_quantum;
+
+	// Thread swtich penalty
 	static int thread_switch_penalty;
 
 
 
 
 	//
-	// CPU recover parameters
+	// CPU stage parameters
 	//
+
+	// Recover penalty
 	static int recover_penalty;
+
+	// Recover penalty kind
 	static RecoverKind recover_kind;
-
-
-
 
 	// CPU fetch parameter
 	static FetchKind fetch_kind;
 
-
-
-
 	// CPU decode stage parameter
 	static int decode_width;
 
-
-
-
-	//
-	// CPU dispatch stage parameters
-	//
+	// Dispatch width
 	static int dispatch_width;
+
+	// Dispath kind
 	static DispatchKind dispatch_kind;
 
-
-
-
-	//
-	// CPU issue stage parameters
-	//
+	// Issue width
 	static int issue_width;
+
+	// Issue kind
 	static IssueKind issue_kind;
 
-
-
-
-	//
-	// CPU commit stage parameters
-	//
+	// Commit width
 	static int commit_width;
+
+	// Commit kind
 	static CommitKind commit_kind;
 
 
@@ -222,35 +263,85 @@ private:
 	//
 	// Other CPU parameters
 	//
+
+	// Flag that indicates CPU ignore any prefetch hints/instructions
 	static bool process_prefetch_hints;
+
+	// Flag that indicates CPU to reduce protocol overhead
 	static bool use_nc_store;
-	static bool prefetch_history_size;
-	static int occupancy_stats;
+
+	// Prefetch history size
+	static int prefetch_history_size;
+
+	// Flag that indicates CPU to calculate structures occupancy statistics
+	static bool occupancy_stats;
 
 
 
 
 	//
-	// ROB parameter
+	// Queue/Buffer parameters
 	//
+
+	// reorder buffer size
 	static int reorder_buffer_size;
+
+	// reorder buffer kind
 	static ReorderBufferKind reorder_buffer_kind;
+
+	// Fetch queue
+	static int fetch_queue_size;
+
+	// Instruction queue kind
+	static InstructionQueueKind instruction_queue_kind;
+
+	// Instruction queue size
+	static int instruction_queue_size;
 
 public:
 
 	/// CPU constructor
 	CPU();
 
+
+
+
 	//
 	// Static member getters
 	//
+
+	// Get number of cores
 	static int getNumCores() { return num_cores; }
+
+	// Get number of threads
 	static int getNumThreads() { return num_threads; }
+
+	// Get context quantum
 	static int getContextQuantum() { return context_quantum; }
+
+	// Get thread quantum
 	static int getThreadQuantum() { return thread_quantum; }
+
+	// Get thread switch penalty
 	static int getThreadSwitchPenalty() { return thread_switch_penalty; }
+
+	// Get reorder buffer size
 	static int getReorderBufferSize() { return reorder_buffer_size; }
+
+	// Get reorder buffer kind
 	static ReorderBufferKind getReorderBufferKind() { return reorder_buffer_kind; }
+
+	// Get fetch queue size
+	static int getFetchQueueSize() { return fetch_queue_size; }
+
+	// Get instruction queue kind
+	static InstructionQueueKind getInstructionQueueKind() { return instruction_queue_kind; }
+
+	// Get instruction queue size
+	static int getInstructionQueueSize() { return instruction_queue_size; }
+
+
+
 
 	/// Return the core with the given index
 	Core *getCore(int index) const

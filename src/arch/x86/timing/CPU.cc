@@ -26,44 +26,53 @@ namespace x86
 // String maps
 //
 
-misc::StringMap CPU::recover_kind_map
+misc::StringMap CPU::recover_kind_map =
 {
 	{"Writeback", RecoverKindWriteback},
 	{"Commit", RecoverKindCommit}
 };
 
-misc::StringMap CPU::fetch_kind_map
+misc::StringMap CPU::fetch_kind_map =
 {
 	{"Shared", FetchKindShared},
 	{"TimeSlice", FetchKindTimeslice},
 	{"SwitchOnEvent", FetchKindSwitchonevent},
 };
 
-misc::StringMap CPU::dispatch_kind_map
+misc::StringMap CPU::dispatch_kind_map =
 {
 	{"Shared", DispatchKindShared},
 	{"TimeSlice", DispatchKindTimeslice},
 };
 
-misc::StringMap CPU::issue_kind_map
+misc::StringMap CPU::issue_kind_map =
 {
 	{"Shared", IssueKindShared},
 	{"TimeSlice", IssueKindTimeslice},
 };
 
-misc::StringMap CPU::commit_kind_map
+misc::StringMap CPU::commit_kind_map =
 {
 	{"Shared", CommitKindShared},
 	{"TimeSlice", CommitKindTimeslice},
 };
 
-misc::StringMap CPU::reorder_buffer_kind_map
+misc::StringMap CPU::reorder_buffer_kind_map =
 {
 	{"Private", ReorderBufferKindPrivate},
 	{"Shared", ReorderBufferKindShared},
 };
 
+misc::StringMap CPU::instruction_queue_kind_map =
+{
+	{"Shared", InstructionQueueKindShared},
+	{"Private", InstructionQueueKindPrivate},
+};
+
+//
 // static member
+//
+
 int CPU::num_cores = 1;
 int CPU::num_threads = 1;
 int CPU::context_quantum;
@@ -81,10 +90,13 @@ int CPU::commit_width;
 CPU::CommitKind CPU::commit_kind;
 bool CPU::process_prefetch_hints;
 bool CPU::use_nc_store;
-bool CPU::prefetch_history_size;
-int CPU::occupancy_stats;
+int CPU::prefetch_history_size;
+bool CPU::occupancy_stats;
 int CPU::reorder_buffer_size;
 CPU::ReorderBufferKind CPU::reorder_buffer_kind;
+int CPU::fetch_queue_size;
+CPU::InstructionQueueKind CPU::instruction_queue_kind;
+int CPU::instruction_queue_size;
 
 CPU::CPU()
 {
@@ -149,13 +161,12 @@ void CPU::ParseConfiguration(misc::IniFile *ini_file)
 	reorder_buffer_kind = (ReorderBufferKind) ini_file->ReadEnum(section, "RobKind",
 				reorder_buffer_kind_map, ReorderBufferKindPrivate);
 	reorder_buffer_size = ini_file->ReadInt(section, "RobSize", 64);
-	// x86_fetch_queue_size = ini_file->ReadInt(section, "FetchQueueSize", 64);
+	fetch_queue_size = ini_file->ReadInt(section, "FetchQueueSize", 64);
+	instruction_queue_kind = (InstructionQueueKind) ini_file->ReadEnum(section, "IqKind",
+			instruction_queue_kind_map, InstructionQueueKindPrivate);
+	instruction_queue_size = ini_file->ReadInt(section, "IqSize", 40);
 
 	// x86_uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
-
-	// x86_iq_kind = ini_file->ReadEnum(section, "IqKind",
-			//x86_iq_kind_private, x86_iq_kind_map, 2);
-	// x86_iq_size = ini_file->ReadInt(section, "IqSize", 40);
 
 	// x86_lsq_kind = ini_file->ReadEnum(section, "LsqKind",
 			//x86_lsq_kind_private, x86_lsq_kind_map, 2);
