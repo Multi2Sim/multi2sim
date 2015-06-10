@@ -1614,6 +1614,14 @@ DEFINST(V_INTERP_MOV_F32,
  * DS
  */
 
+DEFINST(DS_ADD_U32,
+	" ds_add_u32    %ADDR, %DATA0",
+	DS,
+	0,
+	8,
+	0
+)
+
 DEFINST(DS_INC_U32,
 	" ds_inc_u32    %ADDR, %DATA0",
 	DS,
