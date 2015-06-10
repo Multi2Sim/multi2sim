@@ -6332,6 +6332,15 @@ void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
  * DS
  */
 
+// DS[A] = DS[A] + D0; uint add.
+#define INST INST_DS
+void WorkItem::ISA_DS_ADD_U32_Impl(Inst *inst)
+{
+	ISAUnimplemented(inst);
+}
+#undef INST
+
+
 // DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.
 #define INST INST_DS
 void WorkItem::ISA_DS_INC_U32_Impl(Inst *inst)

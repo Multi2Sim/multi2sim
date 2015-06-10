@@ -78,6 +78,9 @@ class BasicBlock : public comm::BasicBlock
 	// Convert literal to vector
 	void ArgLiteralToVector(std::unique_ptr<si2bin::Argument> &arg);
 
+	// Convert literal to float point format 
+	void ArgLiteralToFPFormat(std::unique_ptr<si2bin::Argument> &arg);
+
 	// Emit instructions
 	void EmitAdd(llvm::BinaryOperator *llvm_inst);
 	void EmitCall(llvm::CallInst *llvm_inst);
