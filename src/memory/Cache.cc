@@ -92,7 +92,7 @@ Cache::Cache(const std::string &name,
 void Cache::DecodeAddress(unsigned address,
 		unsigned &set_id,
 		unsigned &tag,
-		unsigned &block_offset)
+		unsigned &block_offset) const
 {
 	set_id = (address >> log_block_size) % num_sets;
 	tag = address & ~block_mask;
@@ -100,13 +100,10 @@ void Cache::DecodeAddress(unsigned address,
 }
 
 
-/* Look for a block in the cache. If it is found and its state is other than 0,
- * the function returns 1 and the state and way of the block are also returned.
- * The set where the address would belong is returned anyways. */
 bool Cache::FindBlock(unsigned address,
 		unsigned &set_id,
 		unsigned &way_id,
-		BlockState &state)
+		BlockState &state) const
 {
 	// Get set and tag
 	set_id = (address >> log_block_size) % num_sets;
@@ -167,7 +164,7 @@ void Cache::setBlock(unsigned set_id,
 void Cache::getBlock(unsigned set_id,
 		unsigned way_id,
 		unsigned &tag,
-		BlockState &state)
+		BlockState &state) const
 {
 	Block *block = getBlock(set_id, way_id);
 	tag = block->tag;

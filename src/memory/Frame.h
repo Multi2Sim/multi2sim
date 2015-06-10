@@ -113,8 +113,14 @@ public:
 	/// and avoid deadlock.
 	bool blocking = false;
 
-	/// If true, this is a read request. If false, it is a write request.
+	/// Flag indicating whether this access is a read.
 	bool read = true;
+
+	/// Flag indicating whether this access is a write.
+	bool write = false;
+
+	/// Flag indicating whether this access is a non-coherent write.
+	bool nc_write = false;
 
 	/// If true, this is a retried access.
 	bool retry = false;
@@ -122,6 +128,13 @@ public:
 	/// Return error code from a child event chain.
 	bool error = false;
 	
+	/// Flag indicating whether there was a hit in the cache
+	bool hit = false;
+
+	/// Flag activated when a block was not found in a find-and-lock
+	/// event for a down-up request.
+	bool block_not_found = false;
+
 	/// Tag associated with the access	
 	int tag = -1;
 
