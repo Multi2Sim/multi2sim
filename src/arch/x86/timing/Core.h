@@ -70,7 +70,7 @@ private:
 	int id;
 
 	// Shared structures 
-	std::list<std::unique_ptr<Uop>> event_queue;
+	std::list<std::shared_ptr<Uop>> event_queue;
 
 	// Function unit
 	std::unique_ptr<FunctionUnit> function_unit;
@@ -239,14 +239,17 @@ public:
 	// Increment counters
 	//
 
-	// Increment the INT register file count
+	/// Increment the INT register file count
 	void incRegFileIntCount() { reg_file_int_count++; }
 
-	// Increment the FP register file count
+	/// Increment the FP register file count
 	void incRegFileFpCount() { reg_file_fp_count++; }
 
-	// Increment the XMM register file count
+	/// Increment the XMM register file count
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
+
+	/// Increment the Uop count in instruction queue
+	void incInstructionQueueCount() { instruction_queue_count++; }
 
 
 
@@ -255,14 +258,17 @@ public:
 	// Decrement counters
 	//
 
-	// Decrement the INT register file count
+	/// Decrement the INT register file count
 	void decRegFileIntCount() { reg_file_int_count--; }
 
-	// Decrement the FP register file count
+	/// Decrement the FP register file count
 	void decRegFileFpCount() { reg_file_fp_count--; }
 
-	// Decrement the XMM register file count
+	/// Decrement the XMM register file count
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
+
+	/// Decrement the Uop count in instruction queue
+	void decInstructionQueueCount() { instruction_queue_count--; }
 
 
 
@@ -271,17 +277,20 @@ public:
 	// Getters
 	//
 
-	// get core ID
+	/// get core ID
 	int getID() { return id; }
 
-	// Get the INT register file count
+	/// Get the INT register file count
 	int getRegFileIntCount() { return reg_file_int_count; }
 
-	// Get the FP register file count
+	/// Get the FP register file count
 	int getRegFileFpCount() { return reg_file_fp_count; }
 
-	// Get the XMM register file count
+	/// Get the XMM register file count
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
+
+	/// Get the Uop count in instruction queue
+	int getInstructionQueueCount() { return instruction_queue_count; }
 
 
 

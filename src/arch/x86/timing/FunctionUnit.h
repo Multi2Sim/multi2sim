@@ -30,7 +30,8 @@ namespace x86
 class FunctionUnit
 {
 public:
-	/// Global varable
+
+	/// Maximum number of reserved function unit
 	static const int MaxFunctionUnitReservation = 10;
 
 	/// Function unit type
@@ -72,26 +73,26 @@ public:
 private:
 
 	//
-	// Function unit parameter
+	// Function unit parameters
 	//
 
 	// Cycle count when function unit is free
-	long long cycle_when_free[TypeCount][MaxFunctionUnitReservation];
+	long long cycle_when_free[TypeCount][MaxFunctionUnitReservation] = { };
 
 	// Access count of function unit
-	long long accesses[TypeCount];
+	long long accesses[TypeCount] = { };
 
 	// Denied count of function unit
-	long long denied[TypeCount];
+	long long denied[TypeCount] = { };
 
 	// Waiting time of function unit
-	long long waiting_time[TypeCount];
+	long long waiting_time[TypeCount] = { };
 
 
 
 
 	//
-	// static member
+	// static members
 	//
 
 	// The name of the function unit
@@ -109,7 +110,7 @@ public:
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Dump configuration
-	void DumpConfig(std::ostream &os = std::cout);
+	void DumpConfiguration(std::ostream &os = std::cout);
 };
 
 }
