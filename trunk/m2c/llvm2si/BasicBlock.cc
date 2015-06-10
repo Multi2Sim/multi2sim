@@ -213,6 +213,45 @@ void BasicBlock::ArgLiteralToVector(std::unique_ptr<Argument> &arg)
 	}
 }
 
+
+void BasicBlock::ArgLiteralToFPFormat(std::unique_ptr<Argument> &arg)
+{
+	auto arg_type = arg->getType();
+
+	union converter
+	{
+		uint as_uint;
+		float as_float;
+	} cvt;
+
+	switch (arg_type)
+	{
+	
+	case Argument::TypeLiteral:
+	case Argument::TypeLiteralReduced:
+	{
+		ArgLiteral *arg_literal = 
+				dynamic_cast<ArgLiteral *>(arg.get());
+		cvt.as_float = static_cast<float>(arg_literal->getValue());
+		arg = misc::new_unique<ArgLiteral>(cvt.as_uint);
+		break;
+	}
+	case Argument::TypeLiteralFloat:
+	case Argument::TypeLiteralFloatReduced:
+	{
+		ArgLiteralFloat *arg_literal = 
+				dynamic_cast<ArgLiteralFloat *>(arg.get());
+		cvt.as_float = arg_literal->getValue();
+		arg = misc::new_unique<ArgLiteral>(cvt.as_uint);
+		break;
+	}
+
+	default:
+		break;
+		
+	}
+}
+
 void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 {
 	// Only supported for 2 operands (op1, op2)
@@ -388,8 +427,9 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 
 		if (func_name == "llvm.sqrt.f32")
 		{
-			// Make sure in vector register
+			// Make sure in vector register and in F32 format
 			ArgScalarToVector(arg1, llvm_arg1);
+			ArgLiteralToFPFormat(arg1);
 
 			// Allocate a new vector register to copy global size.
 			int ret_vreg = function->AllocVReg();
@@ -397,7 +437,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 			ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 			// v_sqrt_f32 ret_vreg, vreg
-			Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+			Instruction *instruction = addInstruction(SI::INST_V_SQRT_F32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addArgument(std::move(arg1));
 			assert(instruction->hasValidArguments());
@@ -409,6 +449,60 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 	}
 	else 
 	{
+		// Atomic add
+		if (func_name == "_Z10atomic_addPVU3AS3jj")
+		{
+			llvm::Value *llvm_arg1 = llvm_inst->getOperand(0);
+			llvm::Value *llvm_arg2 = llvm_inst->getOperand(1);
+			llvm::Type *llvm_arg1_type = llvm_arg1->getType();
+			llvm::Type *llvm_arg2_type = llvm_arg2->getType();
+			
+			// Sanity check
+			if (!llvm_arg1_type->isPointerTy() && !llvm_arg2_type->isIntegerTy())
+				throw Error("Invalid parameters in atomic_add");
+
+			std::unique_ptr<Argument> arg1 = 
+				function->TranslateValue(llvm_arg1);
+			std::unique_ptr<Argument> arg2 = 
+				function->TranslateValue(llvm_arg2);
+
+			arg1->ValidTypes(Argument::TypeVectorRegister);
+			arg2->ValidTypes(Argument::TypeLiteral,
+				Argument::TypeLiteralReduced);
+
+			unsigned addr_space = llvm_arg1_type->getPointerAddressSpace();
+			switch (addr_space)
+			{
+
+			case 0:
+			{
+				throw Error("atomic_add: not implemented yet");
+				break;
+			}
+
+			case 3:
+			{
+				// Has to be in vector register
+				ArgLiteralToVector(arg2);
+
+				Instruction *instruction = addInstruction(SI::INST_DS_ADD_U32);
+				instruction->addArgument(std::move(arg1));
+				instruction->addArgument(std::move(arg2));
+				assert(instruction->hasValidArguments());
+				break;				
+			}
+
+			default:
+			{
+				throw Error("atomic_add: address space not supported");
+				break;				
+			}
+
+			}
+
+			return;
+		}
+
 		// Get argument and check type
 		llvm::Value *llvm_op = llvm_inst->getOperand(0);
 		llvm::Type *llvm_type = llvm_op->getType();
@@ -575,28 +669,6 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 	arg_ptr->ValidTypes(Argument::TypeVectorRegister,
 			Argument::TypeScalarRegister);
 
-	// If arg_ptr is a scalar register convert it to a vector register
-	// if (arg_ptr->getType() == Argument::TypeScalarRegister)
-	// {	
-	// 	ArgScalarRegister *arg_scalar = 
-	// 			dynamic_cast<ArgScalarRegister *>(arg_ptr.get());
-		
-	// 	// Allocate vector register and create symbol for return value
-	// 	std::string ret_name = llvm_arg_ptr->getName();
-	// 	int ret_vreg = function->AllocVReg();
-	// 	ptr_symbol->setType(Symbol::TypeVectorRegister);
-	// 	ptr_symbol->setRegister(ret_vreg);
-
-	// 	// Emit instruction
-	// 	// v_mov_b32 ret_vreg, arg1
-	// 	Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
-	// 	instruction->addVectorRegister(ret_vreg);
-	// 	instruction->addScalarRegister(arg_scalar->getId());
-	// 	assert(instruction->hasValidArguments());
-
-	// 	arg_ptr = misc::new_unique<ArgVectorRegister>(ret_vreg);
-	// }
-
 	// Get size of pointed value
 	llvm::Type *llvm_type_ptr = llvm_arg_ptr->getType();
 	int ptr_size = getPointedLlvmTypeSize(llvm_type_ptr);
@@ -659,10 +731,12 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			assert(instruction->hasValidArguments());
 		}
 
+		ArgLiteralToVector(arg_offset);
+
 		// Emit effective address calculation as the addition between the
 		// original pointer and the offset.
 		//
-		// v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
+		// v_add_i32 ret_vreg, vcc, arg_pointer, arg_offset
 		//
 		Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
 		instruction->addVectorRegister(ret_vreg);
@@ -716,6 +790,8 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 				instruction->addArgument(std::move(arg_index));
 				assert(instruction->hasValidArguments());
 			}
+
+			ArgLiteralToVector(arg_offset);
 
 			// Emit effective address calculation as the addition between the
 			// original pointer and the offset.
@@ -786,11 +862,14 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 					assert(instruction->hasValidArguments());
 				}
 
+				ArgLiteralToVector(arg_offset);
+
 				// Emit effective address calculation as the addition between the
 				// original pointer and the offset.
 				//
 				// v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 				//
+				
 				Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
 				instruction->addVectorRegister(ret_vreg);
 				instruction->addSpecialRegister(SI::InstSpecialRegVcc);
@@ -1327,6 +1406,10 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		int ret_vreg = function->AllocVReg();
 		Symbol *ret_symbol = function->addSymbol(ret_name);
 		ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
+
+		// Literal to register
+		ArgLiteralToVector(arg1);
+		ArgLiteralToVector(arg2);
 
 		// Emit effective address calculation.
 		//
@@ -1954,6 +2037,9 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	Symbol *ret_symbol = function->addSymbol(ret_name);
 	ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
+	// Literals need to be convert to hex format
+	ArgLiteralToFPFormat(arg1);
+
 	// Emit effective address calculation.
 	//
 	// v_mul_f32 ret_vreg, arg_op1, arg_op2
@@ -2050,6 +2136,8 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 	//
 	// Currently, the v3 step has not been implemented yet. A simplified version of
 	// floating point division is carried out.
+
+	ArgLiteralToFPFormat(arg1);
 
 	int arg2_rcp_id = function->AllocVReg();
 
