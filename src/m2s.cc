@@ -972,9 +972,10 @@ int main(int argc, char **argv)
 
 	// Simulation loop
 	esim::Engine::setDebugPath("stdout");/////////
+	mem::System::debug.setPath("stdout");/////////
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-		*/
+	*/
 }
 

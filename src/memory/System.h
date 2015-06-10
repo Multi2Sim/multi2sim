@@ -208,21 +208,21 @@ class System
 	// are defined in SystemCoherenceProtocol.cc.
 	//
 
-	static void evLoadHandler(esim::EventType *, esim::EventFrame *);
-	static void evStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void evNCStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void evPrefetchHandler(esim::EventType *, esim::EventFrame *);
-	static void evFindAndLockHandler(esim::EventType *, esim::EventFrame *);
-	static void evEvictHandler(esim::EventType *, esim::EventFrame *);
-	static void evWriteRequestHandler(esim::EventType *, esim::EventFrame *);
-	static void evReadRequestHandler(esim::EventType *, esim::EventFrame *);
-	static void evInvalidateHandler(esim::EventType *, esim::EventFrame *);
-	static void evPeerHandler(esim::EventType *, esim::EventFrame *);
-	static void evMessageHandler(esim::EventType *, esim::EventFrame *);
-	static void evFlushHandler(esim::EventType *, esim::EventFrame *);
-	static void evLocalLoadHandler(esim::EventType *, esim::EventFrame *);
-	static void evLocalStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void evLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+	static void EventLoadHandler(esim::EventType *, esim::EventFrame *);
+	static void EventStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void EventNCStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void EventPrefetchHandler(esim::EventType *, esim::EventFrame *);
+	static void EventFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+	static void EventEvictHandler(esim::EventType *, esim::EventFrame *);
+	static void EventWriteRequestHandler(esim::EventType *, esim::EventFrame *);
+	static void EventReadRequestHandler(esim::EventType *, esim::EventFrame *);
+	static void EventInvalidateHandler(esim::EventType *, esim::EventFrame *);
+	static void EventPeerHandler(esim::EventType *, esim::EventFrame *);
+	static void EventMessageHandler(esim::EventType *, esim::EventFrame *);
+	static void EventFlushHandler(esim::EventType *, esim::EventFrame *);
+	static void EventLocalLoadHandler(esim::EventType *, esim::EventFrame *);
+	static void EventLocalStoreHandler(esim::EventType *, esim::EventFrame *);
+	static void EventLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
 
 
 	// List of networks

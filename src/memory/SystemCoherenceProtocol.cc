@@ -121,7 +121,7 @@ esim::EventType *System::event_type_local_find_and_lock_action;
 esim::EventType *System::event_type_local_find_and_lock_finish;
 
 
-void System::evLoadHandler(esim::EventType *event_type,
+void System::EventLoadHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
 	// Get engine, frame, and module
@@ -225,100 +225,164 @@ void System::evLoadHandler(esim::EventType *event_type,
 	// Event "load_action"
 	if (event_type == event_type_load_action)
 	{
-		return;
+		throw misc::Panic("Not implemented");
 	}
 
 
 	// Event "load_miss"
 	if (event_type == event_type_load_miss)
 	{
-		return;
+		throw misc::Panic("Not implemented");
 	}
 
 
 	// Event "load_unlock"
 	if (event_type == event_type_load_unlock)
 	{
-		return;
+		throw misc::Panic("Not implemented");
 	}
 
 
 	// Event "load_finish"
 	if (event_type == event_type_load_finish)
 	{
-		return;
+		throw misc::Panic("Not implemented");
 	}
 
 }
 
 
-void System::evStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evNCStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventNCStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evPrefetchHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventPrefetchHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventFindAndLockHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
+	// Get engine, frame, and module
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Module *module = frame->getModule();
+
+	// Event "find_and_lock"
+	if (event_type == event_type_find_and_lock)
+	{
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"find and lock (blocking=%d)\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str(),
+				frame->blocking);
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Default return values
+		parent_frame->error = false;
+
+		// If this access has already been assigned a way, keep using it
+		frame->way = parent_frame->way;
+
+		// Get a port
+		module->LockPort(frame, event_type_find_and_lock_port);
+		return;
+	}
+
+	// Event "find_and_lock_port"
+	if (event_type == event_type_find_and_lock_port)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "find_and_lock_action"
+	if (event_type == event_type_find_and_lock_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "find_and_lock_finish"
+	if (event_type == event_type_find_and_lock_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
 }
 
 
-void System::evEvictHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventEvictHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evWriteRequestHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventWriteRequestHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evReadRequestHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventReadRequestHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evInvalidateHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventInvalidateHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evPeerHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventPeerHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evMessageHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventMessageHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evFlushHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventFlushHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evLocalLoadHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalLoadHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evLocalStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 
-void System::evLocalFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
 {
+	throw misc::Panic("Not implemented");
 }
 
 

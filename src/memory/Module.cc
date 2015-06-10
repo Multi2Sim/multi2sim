@@ -386,5 +386,50 @@ void Module::Coalesce(Frame *master_frame, Frame *frame)
 }
 
 
+void Module::LockPort(Frame *frame, esim::EventType *event_type)
+{
+	// No free port
+	if (num_locked_ports >= num_ports)
+	{
+		// Event chain must not be suspended in a queue
+		assert(!frame->isInQueue());
+
+		// If the request to lock the port is down-up, give it priority
+		// since it is possibly holding up a large portion of the memory
+		// hierarchy.
+		port_queue.Wait(event_type, frame->request_direction ==
+				Frame::RequestDirectionDownUp);
+		return;
+	}
+
+	// Get free port
+	int port_index;
+	Port *port = nullptr;
+	for (port_index = 0; port_index < num_ports; port_index++)
+	{
+		port = &ports[port_index];
+		if (!port->frame)
+			break;
+	}
+
+	// Lock port
+	assert(port && port_index < num_ports);
+	port->frame = frame;
+	frame->port = port;
+	num_locked_ports++;
+
+	// Debug
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	System::debug << misc::fmt("  %lld stack %lld %s port %d locked\n",
+			esim_engine->getTime(),
+			frame->getId(),
+			name.c_str(),
+			port_index);
+
+	// Schedule event
+	esim_engine->Next(event_type);
+}
+
+
 }  // namespace mem
 
