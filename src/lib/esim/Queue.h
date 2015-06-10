@@ -79,7 +79,16 @@ public:
 	void WakeupAll();
 
 	/// Return `true` if the queue has no suspended events in it.
-	bool isEmpty() { return head == nullptr; }
+	bool isEmpty() const { return head == nullptr; }
+
+	/// Return the frame at the head of the queue, or `nullptr` if the
+	/// queue is empty. This is the frame that will wake up first upon a
+	/// call to WakeupOne().
+	EventFrame *getHead() const { return head.get(); }
+
+	/// Return the frame at the tail of the queue, or `nullptr` if the
+	/// queue is empty.
+	EventFrame *getTail() const { return tail.get(); }
 };
 
 }  // namespace esim

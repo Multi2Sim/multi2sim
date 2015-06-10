@@ -258,8 +258,8 @@ private:
 
 	long long evictions = 0;
 
-	long long dir_entry_conflicts = 0;
-	long long retry_dir_entry_conflicts = 0;
+	long long directory_entry_conflicts = 0;
+	long long retry_directory_entry_conflicts = 0;
 
 	long long conflict_invalidations = 0;
 
@@ -295,12 +295,8 @@ private:
 	// Statistics for other coherence traffic
 	long long hlc_evictions = 0;
 
-	// FIXME Update the local memory protocol and remove these
-	long long effective_reads = 0;
-	long long effective_writes = 0;
-
 	// Statistics that are possibly power related
-	long long dir_accesses = 0;
+	long long directory_accesses = 0;
 	long long data_accesses = 0;
 
 public:
@@ -622,13 +618,89 @@ public:
 	// once a port becomes available with a call to UnlockPort().
 	void LockPort(Frame *frame, esim::EventType *event_type);
 
+	// Unlock the given port, currently locked by the given frame. If there
+	// is any access waiting in the port queue to lock it, the port will
+	// be locked right away, and the waiting event will be scheduled for
+	// time 0.
+	void UnlockPort(Port *port, Frame *frame);
+
+	/// Look for the given address in the cache associated with this
+	/// module. Three cases are possible:
+	///
+	/// - There is a block with a state other than I (invalid) and a tag
+	///   matching the given address. This is considered a hit, and the
+	///   function returns true. The set, way, tag, and state of the found
+	///   block are populated in the arguments passed by reference.
+	///
+	/// - There is a block with a transient tag matching the given address
+	///   and a locked directory entry. This is considered a hit as well,
+	///   and the function returns true, regardless of the current state
+	///   of the block. The set, way, tag, and state of the found block
+	///   are populated in the arguments passed by reference.
+	///
+	/// - None of the two previous cases apply, which is considered a miss,
+	///   and the function returns false. The `set` and `tag` arguments
+	///   are populated according to the set where the block would be
+	///   found, and the tag corresponding to the address, respectively.
+	///   The `state` argument is set to `Cache::BlockInvalid`, and the
+	///   `way` argument is set to 0.
+	///
+	bool FindBlock(unsigned address,
+			int &set,
+			int &way,
+			int &tag,
+			Cache::BlockState &state);
 
 
 	//
 	// Statistics
 	//
 
+	/// Increment number of accesses
+	void incAccesses() { accesses++; }
+
+	/// Increment number of retried accesses
+	void incRetryAccesses() { retry_accesses++; }
+
+	/// Increment number of coalesced reads
 	void incCoalescedReads() { coalesced_reads++; }
+
+	/// Increment number of coalesced writes
+	void incCoalescedWrites() { coalesced_writes++; }
+
+	/// Increment the number of conflicts while trying to lock directory
+	/// entries.
+	void incDirectoryEntryConflicts() { directory_entry_conflicts++; }
+
+	/// Increment the number of conflicts found when trying to lock a
+	/// directory entry in a retried access.
+	void incRetryDirectoryEntryConflicts() { retry_directory_entry_conflicts++; }
+
+	/// Increment the number of accesses to the directory.
+	void incDirectoryAccesses() { directory_accesses++; }
+
+	/// Update the following statistics based on the information collected
+	/// from the given frame:
+	///
+	/// - Number of reads
+	/// - Number of retried reads
+	/// - Number of read hits
+	/// - Number of retried read hits
+	/// - Number of read misses
+	/// - Number of retried read misses
+	/// - Number of non-coherent writes
+	/// - Number of retried non-coherent writes
+	/// - Number of non-coherent write hits
+	/// - Number of retried non-coherent write hits
+	/// - Number of non-coherent write misses
+	/// - Number of retried non-coherent write misses
+	/// - Number of write probes
+	/// - Number of retried write probes
+	/// - Number of read probes
+	/// - Number of retried read probes
+	/// - Number of evictions
+	///
+	void UpdateStats(Frame *frame);
 };
 
 

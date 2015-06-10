@@ -182,7 +182,7 @@ public:
 			WritePolicy write_policy);
 	
 	/// Return a pointer to a cache block
-	Block *getBlock(unsigned set_id, unsigned way_id)
+	Block *getBlock(unsigned set_id, unsigned way_id) const
 	{
 		assert(misc::inRange(set_id, 0, num_sets - 1));
 		assert(misc::inRange(way_id, 0, num_ways - 1));
@@ -202,10 +202,11 @@ public:
 	///
 	/// \param block_offset
 	///	Return here the block offset for the address
+	///
 	void DecodeAddress(unsigned address,
 			unsigned &set_id,
 			unsigned &tag,
-			unsigned &block_offset);
+			unsigned &block_offset) const;
 
 	/// Check whether an address is present in the cache.
 	///
@@ -230,7 +231,7 @@ public:
 	bool FindBlock(unsigned address,
 			unsigned &set_id,
 			unsigned &way_id,
-			BlockState &state);
+			BlockState &state) const;
 
 	/// Set a new tag and state for a cache block. If a new tag is set to
 	/// the block, this function also updates the FIFO counters to indicate
@@ -265,10 +266,11 @@ public:
 	///
 	/// \param state
 	///	The state of the queried block is returned here.
+	///
 	void getBlock(unsigned set_id,
 			unsigned way_id,
 			unsigned &tag,
-			BlockState &state);
+			BlockState &state) const;
 
 	/// Mark a block as last accessed as per the LRU policy. This function
 	/// internally updates the linked list that keeps track of the LRU order
@@ -285,6 +287,37 @@ public:
 		Block *block = getBlock(set_id, way_id);
 		block->transient_tag = tag;
 	}
+
+
+
+	//
+	// Getters
+	//
+
+	/// Return the name of the cache
+	const std::string &getName() const { return name; }
+
+	/// Return the number of sets
+	unsigned getNumSets() const { return num_sets; }
+
+	/// Return the number of ways
+	unsigned getNumWays() const { return num_ways; }
+
+	/// Return the block size
+	unsigned getBlockSize() const { return block_size; }
+
+	/// Return the replacement policy
+	ReplacementPolicy getReplacementPolicy() const { return replacement_policy; }
+
+	/// Return the write policy
+	WritePolicy getWritePolicy() const { return write_policy; }
+
+	/// Return a mask used to extract the bits corresponding to the block
+	/// offset of an address.
+	unsigned getBlockMask() const { return block_mask; }
+
+	/// Return the log2 of the block size
+	int getLogBlockSize() const { return log_block_size; }
 };
 
 

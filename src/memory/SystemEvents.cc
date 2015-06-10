@@ -278,6 +278,8 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	Frame *frame = misc::cast<Frame *>(event_frame);
 	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
 	Module *module = frame->getModule();
+	Cache *cache = module->getCache();
+	Directory *directory = module->getDirectory();
 
 	// Event "find_and_lock"
 	if (event_type == event_type_find_and_lock)
@@ -309,7 +311,193 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	// Event "find_and_lock_port"
 	if (event_type == event_type_find_and_lock_port)
 	{
-		throw misc::Panic("Not implemented");
+		// Get locked port
+		Module::Port *port = frame->port;
+		assert(port);
+
+		// Debug
+		debug << misc::fmt("  %lld %lld 0x%x %s find and lock port\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_port\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Statistics
+		module->incAccesses();
+		if (frame->retry)
+			module->incRetryAccesses();
+
+		// Set parent frame flag expressing that port has already been 
+		// locked. This flag is checked by new writes to find out if 
+		// it is already too late to coalesce.
+		parent_frame->port_locked = true;
+
+		// Look for block
+		frame->hit = module->FindBlock(frame->getAddress(),
+				frame->set,
+				frame->way,
+				frame->tag,
+				frame->state);
+		if (frame->hit)
+		{
+			assert(frame->state);
+			debug << misc::fmt("    %lld 0x%x %s "
+					"hit: set=%d, way=%d, "
+					"state=%s\n",
+					frame->getId(),
+					frame->tag,
+					module->getName().c_str(),
+					frame->set,
+					frame->way,
+					Cache::BlockStateMap[frame->state]);
+		}
+
+		// If a store access hits in the cache, we can be sure
+		// that the it will complete and can allow processing to
+		// continue by incrementing the witness pointer.  Misses
+		// cannot do this without violating consistency, so their
+		// witness pointer is updated in the write request logic.
+		if (frame->write && frame->hit && frame->witness)
+			(*frame->witness)++;
+
+		// Check if miss
+		if (!frame->hit)
+		{
+			// If the request is down-up and the block was not
+			// found, it must be because it was previously
+			// evicted.  We must stop here because going any
+			// further would result in a new space being allocated
+			// for it.
+			if (frame->request_direction == Frame::RequestDirectionDownUp)
+			{
+				debug << misc::fmt("        %lld "
+						"block not found",
+						frame->getId());
+				parent_frame->block_not_found = true;
+				module->UnlockPort(port, frame);
+				parent_frame->port_locked = false;
+				esim_engine->Return();
+				return;
+			}
+
+			// Find a victim to evict, only in up-down accesses.
+			assert(!frame->way);
+			frame->way = cache->ReplaceBlock(frame->set);
+		}
+		assert(frame->way >= 0);
+
+		// If directory entry is locked and the call to find-and-lock
+		// is not blocking, release port and return error.
+		if (directory->isEntryLocked(frame->set, frame->way) &&
+				frame->blocking)
+		{
+			// Debug
+			debug << misc::fmt("    %lld 0x%x %s block locked at "
+					"set=%d, "
+					"way=%d "
+					"by A-%lld - aborting\n",
+					frame->getId(),
+					frame->tag,
+					module->getName().c_str(),
+					frame->set,
+					frame->way,
+					directory->getEntryFrame(frame->set,
+							frame->way)->getId());
+
+			// Return error code to parent frame
+			parent_frame->error = true;
+			module->UnlockPort(port, frame);
+			parent_frame->port_locked = false;
+			esim_engine->Return();
+
+			// Statistics
+			module->incDirectoryEntryConflicts();
+			if (frame->retry)
+				module->incRetryDirectoryEntryConflicts();
+
+			// Done
+			return;
+		}
+
+		// Lock directory entry. If lock fails, port needs to be 
+		// released to prevent deadlock.  When the directory entry 
+		// is released, locking port and directory entry will be 
+		// retried.
+		if (!directory->LockEntry(frame->set, frame->way,
+				event_type_find_and_lock, frame))
+		{
+			// Debug
+			debug << misc::fmt("    %lld 0x%x %s block locked at "
+					"set=%d, "
+					"way=%d by "
+					"A-%lld - waiting\n",
+					frame->getId(), 
+					frame->tag,
+					module->getName().c_str(),
+					frame->set,
+					frame->way,
+					directory->getEntryFrame(frame->set,
+							frame->way)->getId());
+
+			// Unlock port
+			module->UnlockPort(port, frame);
+			parent_frame->port_locked = false;
+
+			// Statistics
+			module->incDirectoryEntryConflicts();
+			if (frame->retry)
+				module->incRetryDirectoryEntryConflicts();
+
+			// Done
+			return;
+		}
+
+		// Miss
+		if (!frame->hit)
+		{
+			// Find victim
+			unsigned tag;
+			cache->getBlock(frame->set,
+					frame->way,
+					tag,
+					frame->state);
+			assert(frame->state || !directory->isBlockSharedOrOwned(
+					frame->set, frame->way));
+			
+			// Debug
+			debug << misc::fmt("    %lld 0x%x %s miss -> lru: "
+					"set=%d, "
+					"way=%d, "
+					"state=%s\n",
+					frame->getId(),
+					frame->tag,
+					module->getName().c_str(),
+					frame->set,
+					frame->way,
+					Cache::BlockStateMap[frame->state]);
+		}
+
+		// Statistics
+		module->UpdateStats(frame);
+
+		// Entry is locked. Record the transient tag so that a 
+		// subsequent lookup detects that the block is being brought.
+		// Also, update LRU counters here.
+		cache->setTransientTag(frame->set, frame->way, frame->tag);
+		cache->AccessBlock(frame->set, frame->way);
+
+		// Access latency
+		module->incDirectoryAccesses();
+		esim_engine->Next(event_type_find_and_lock_action,
+				module->getDirectoryLatency());
+
+		// Done
+		return;
 	}
 
 	// Event "find_and_lock_action"

@@ -420,7 +420,7 @@ void Module::LockPort(Frame *frame, esim::EventType *event_type)
 
 	// Debug
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	System::debug << misc::fmt("  %lld stack %lld %s port %d locked\n",
+	System::debug << misc::fmt("  %lld frame %lld %s port %d locked\n",
 			esim_engine->getTime(),
 			frame->getId(),
 			name.c_str(),
@@ -428,6 +428,191 @@ void Module::LockPort(Frame *frame, esim::EventType *event_type)
 
 	// Schedule event
 	esim_engine->Next(event_type);
+}
+
+
+void Module::UnlockPort(Port *port, Frame *frame)
+{
+	// Checks
+	assert(num_locked_ports > 0);
+	assert(frame->port == port && port->frame == frame);
+	assert(frame->getModule() == this);
+
+	// Unlock port
+	frame->port = nullptr;
+	port->frame = nullptr;
+	num_locked_ports--;
+
+	// Debug
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	System::debug << misc::fmt("  %lld %lld %s port unlocked\n",
+			esim_engine->getTime(),
+			frame->getId(),
+			name.c_str());
+
+	// Check if there was any access waiting for free port
+	if (port_queue.isEmpty())
+		return;
+
+	// Lock port with an access waiting for a free port
+	frame = misc::cast<Frame *>(port_queue.getHead());
+	port->frame = frame;
+	frame->port = port;
+	num_locked_ports++;
+
+	// Wake up access
+	port_queue.WakeupOne();
+	
+	// Debug
+	System::debug << misc::fmt("  %lld frame %lld %s port locked\n",
+			esim_engine->getTime(),
+			frame->getId(),
+			name.c_str());
+}
+
+
+bool Module::FindBlock(unsigned address,
+		int &set,
+		int &way,
+		int &tag,
+		Cache::BlockState &state)
+{
+	// A transient tag is considered a hit if the block is locked in the
+	// corresponding directory.
+	tag = address & ~cache->getBlockMask();
+	if (range_type == RangeInterleaved)
+	{
+		int num_modules = range.interleaved.mod;
+		set = ((tag >> cache->getLogBlockSize()) / num_modules)
+				% cache->getNumSets();
+	}
+	else if (range_type == RangeBounds)
+	{
+		set = (tag >> cache->getLogBlockSize())
+				% cache->getNumSets();
+	}
+	else 
+	{
+		throw misc::Panic("Invalid range type");
+	}
+
+	// Find way in set
+	for (way = 0; way < (int) cache->getNumWays(); way++)
+	{
+		// Get block
+		Cache::Block *block = cache->getBlock(set, way);
+		state = block->getState();
+
+		// Permanent tag available with state other than invalid
+		if (block->getTag() == (unsigned) tag && state)
+			return true;
+
+		// Transient tag available while directory entry is locked.
+		// This is considered a hit, regardless of the state of the
+		// block.
+		if (block->getTransientTag() == (unsigned) tag &&
+				directory->isEntryLocked(set, way))
+			return true;
+	}
+
+	// Miss
+	way = 0;
+	state = Cache::BlockInvalid;
+	return false;
+}
+
+
+void Module::UpdateStats(Frame *frame)
+{
+	// Record access type. I purposefully chose to record both hits and
+	// misses separately here so that we can sanity check them against
+	// the total number of accesses.
+	if (frame->request_direction == Frame::RequestDirectionUpDown)
+	{
+		if (frame->read)
+		{
+			reads++;
+			if (frame->retry)
+				retry_reads++;
+			if (frame->hit)
+			{
+				read_hits++;
+				if (frame->retry)
+					retry_read_hits++;
+			}
+			else
+			{
+				read_misses++;
+				if (frame->retry)
+					retry_read_misses++;
+			}
+
+		}
+		else if (frame->nc_write)  // Must go after read
+		{
+			nc_writes++;
+			if (frame->retry)
+				retry_nc_writes++;
+			if (frame->hit)
+			{
+				nc_write_hits++;
+				if (frame->retry)
+					retry_nc_write_hits++;
+			}
+			else
+			{
+				nc_write_misses++;
+				if (frame->retry)
+					retry_nc_write_misses++;
+			}
+		}
+		else if (frame->write)
+		{
+			writes++;
+			if (frame->retry)
+				retry_writes++;
+			if (frame->hit)
+			{
+				write_hits++;
+				if (frame->retry)
+					retry_write_hits++;
+			}
+			else
+			{
+				write_misses++;
+				if (frame->retry)
+					retry_write_misses++;
+			}
+		}
+		else 
+		{
+			throw misc::Panic("Invalid memory operation type");
+		}
+	}
+	else if (frame->request_direction == Frame::RequestDirectionDownUp)
+	{
+		assert(frame->hit);
+		if (frame->write)
+		{
+			write_probes++;
+			if (frame->retry)
+				retry_write_probes++;
+		}
+		else if (frame->read)
+		{
+			read_probes++;
+			if (frame->retry)
+				retry_read_probes++;
+		}
+		else
+		{
+			throw misc::Panic("Invalid memory operation type");
+		}
+	}
+	else
+	{
+		hlc_evictions++;
+	}
 }
 
 
