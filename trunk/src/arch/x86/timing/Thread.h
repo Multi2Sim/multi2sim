@@ -146,22 +146,22 @@ private:
 	//
 
 	// Fetch queue
-	std::vector<std::unique_ptr<Uop>> fetch_queue;
+	std::vector<std::shared_ptr<Uop>> fetch_queue;
 
 	// Uop queue
-	std::vector<std::unique_ptr<Uop>> uop_queue;
+	std::vector<std::shared_ptr<Uop>> uop_queue;
 
 	// Instruction queue
-	std::list<std::unique_ptr<Uop>> instruction_queue;
+	std::list<std::shared_ptr<Uop>> instruction_queue;
 
 	// Load queue
-	std::list<std::unique_ptr<Uop>> load_queue;
+	std::list<std::shared_ptr<Uop>> load_queue;
 
 	// Store queue
-	std::list<std::unique_ptr<Uop>> store_queue;
+	std::list<std::shared_ptr<Uop>> store_queue;
 
 	// Prefetch queue
-	std::list<std::unique_ptr<Uop>> prefetch_queue;
+	std::list<std::shared_ptr<Uop>> prefetch_queue;
 
 
 
@@ -189,7 +189,7 @@ private:
 	unsigned int fetch_eip = 0, fetch_neip = 0;
 
 	// Number of bytes occupied in the fetch queue
-	int fetchq_occupied  = 0;
+	int fetch_queue_occupied  = 0;
 
 	// Number of uops occupied in the trace cache queue
 	int trace_cache_queue_occupied  = 0;
@@ -313,37 +313,37 @@ public:
 	// Increment counters
 	//
 
-	// Increment the Uop count in reorder buffer
+	/// Increment the Uop count in reorder buffer
 	void incUopCountInRob() { uop_count_in_rob++; }
 
-	// Increment the INT register file count
+	/// Increment the INT register file count
 	void incRegFileIntCount() { reg_file_int_count++; }
 
-	// Increment the FP register file count
+	/// Increment the FP register file count
 	void incRegFileFpCount() { reg_file_fp_count++; }
 
-	// Increment the XMM register file count
+	/// Increment the XMM register file count
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
 
-	// Increment the read count of Register Aliasing Table for INT registers
+	/// Increment the read count of Register Aliasing Table for INT registers
 	void incRatIntReads() { rat_int_reads++; }
 
-	// Increment the read count of Register Aliasing Table for FP registers
+	/// Increment the read count of Register Aliasing Table for FP registers
 	void incRatFpReads() { rat_fp_reads++; }
 
-	// Increment the read count of Register Aliasing Table for XMM registers
+	/// Increment the read count of Register Aliasing Table for XMM registers
 	void incRatXmmReads() { rat_xmm_reads++; }
 
-	// Increment the write count of Register Aliasing Table for INT registers
+	/// Increment the write count of Register Aliasing Table for INT registers
 	void incRatIntWrites() { rat_int_writes++; }
 
-	// Increment the write count of Register Aliasing Table for FP registers
+	/// Increment the write count of Register Aliasing Table for FP registers
 	void incRatFpWrites() { rat_fp_writes++; }
 
-	// Increment the write count of Register Aliasing Table for XMM registers
+	/// Increment the write count of Register Aliasing Table for XMM registers
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
-	// Increment reorder buffer head index
+	/// Increment reorder buffer head index
 	void incReorderBufferHead()
 	{
 		reorder_buffer_head == reorder_buffer_right_bound ?
@@ -351,7 +351,7 @@ public:
 				reorder_buffer_head++;
 	}
 
-	// Increment reorder buffer tail index
+	/// Increment reorder buffer tail index
 	void incReorderBufferTail()
 	{
 		reorder_buffer_tail == reorder_buffer_right_bound ?
@@ -366,34 +366,34 @@ public:
 	// Decrement counters
 	//
 
-	// Decrement the Uop count in reorder buffer
+	/// Decrement the Uop count in reorder buffer
 	void decUopCountInRob() { uop_count_in_rob--; }
 
-	// Decrement the INT register file count
+	/// Decrement the INT register file count
 	void decRegFileIntCount() { reg_file_int_count--; }
 
-	// Decrement the FP register file count
+	/// Decrement the FP register file count
 	void decRegFileFpCount() { reg_file_fp_count--; }
 
-	// Decrement the XMM registers count
+	/// Decrement the XMM registers count
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
 
-	// Decrement the read count of Register Aliasing Table for INT registers
+	/// Decrement the read count of Register Aliasing Table for INT registers
 	void decRatIntReads() { rat_int_reads--; }
 
-	// Decrement the read count of Register Aliasing Table for FP registers
+	/// Decrement the read count of Register Aliasing Table for FP registers
 	void decRatFpReads() { rat_fp_reads--; }
 
-	// Decrement the read count of Register Aliasing Table for XMM registers
+	/// Decrement the read count of Register Aliasing Table for XMM registers
 	void decRatXmmReads() { rat_xmm_reads--; }
 
-	// Increment the write count of Register Aliasing Table for INT registers
+	/// Increment the write count of Register Aliasing Table for INT registers
 	void decRatIntWrites() { rat_int_writes--; }
 
-	// Increment the write count of Register Aliasing Table for INT registers
+	/// Increment the write count of Register Aliasing Table for INT registers
 	void decRatFpWrites() { rat_fp_writes--; }
 
-	// Increment the write count of Register Aliasing Table for INT registers
+	/// Increment the write count of Register Aliasing Table for INT registers
 	void decRatXmmWrites() { rat_xmm_writes--; }
 
 
@@ -403,7 +403,7 @@ public:
 	// Setters
 	//
 
-	// Set Tail of reorder buffer
+	/// Set Tail of reorder buffer
 	void setReorderBufferTail(int reorder_buffer_tail)
 	{
 		this->reorder_buffer_tail = reorder_buffer_tail;
@@ -416,49 +416,49 @@ public:
 	// Getters
 	//
 
-	// Get thread ID in core
+	/// Get thread ID in core
 	int getIDInCore() const { return id_in_core; }
 
-	// Get the Uop count in reorder buffer
+	/// Get the Uop count in reorder buffer
 	int getUopCountInRob() const { return uop_count_in_rob; }
 
-	// Get the INT register file count
+	/// Get the INT register file count
 	int getRegFileIntCount() const { return reg_file_int_count; }
 
-	// Get the FP register file count
+	/// Get the FP register file count
 	int getRegFileFpCount() { return reg_file_fp_count; }
 
-	// Get the XMM registers count
+	/// Get the XMM registers count
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
 
-	// Get the read count of Register Aliasing Table for INT registers
+	/// Get the read count of Register Aliasing Table for INT registers
 	int getRatIntReads() { return rat_int_reads; }
 
-	// Get the read count of Register Aliasing Table for INT registers
+	/// Get the read count of Register Aliasing Table for INT registers
 	int getRatFpReads() { return rat_fp_reads; }
 
-	// Get the read count of Register Aliasing Table for INT registers
+	/// Get the read count of Register Aliasing Table for INT registers
 	int getRatXmmReads() { return rat_xmm_reads; }
 
-	// Get the write count of Register Aliasing Table for INT registers
+	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatIntWrites() { return rat_int_writes; }
 
-	// Get the write count of Register Aliasing Table for INT registers
+	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatFpWrites() { return rat_fp_writes; }
 
-	// Get the write count of Register Aliasing Table for INT registers
+	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatXmmWrites() { return rat_xmm_writes; }
 
-	// Get reorder buffer head index
+	/// Get reorder buffer head index
 	int getReorderBufferHead() { return reorder_buffer_head; }
 
-	// Get reorder buffer tail index
+	/// Get reorder buffer tail index
 	int getReorderBufferTail() { return reorder_buffer_tail; }
 
-	// Get reorder buffer left bound
+	/// Get reorder buffer left bound
 	int getReorderBufferLeftBound() { return reorder_buffer_left_bound; }
 
-	// Get reorder buffer right bound
+	/// Get reorder buffer right bound
 	int getReorderBufferRightBound() { return reorder_buffer_right_bound; }
 
 
@@ -489,6 +489,34 @@ public:
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();
 
+
+
+
+	//
+	// Fetch queue functions
+	//
+
+	/// Recover fetch queue
+	void RecoverFetchQueue();
+
+
+
+
+	//
+	// Instruction queue functions
+	//
+
+	/// Check whether Uop can be inserted in the inst queue
+	bool CanInsertInInstructionQueue();
+
+	/// Insert Uop into the inst queue
+	void InsertInInstructionQueue(std::shared_ptr<Uop> &uop);
+
+	/// Remove Uop from the inst queue
+	void RemoveFromInstructionQueue();
+
+	/// Recover inst queue
+	void RecoverInstructionQueue() { instruction_queue.clear(); };
 };
 
 }

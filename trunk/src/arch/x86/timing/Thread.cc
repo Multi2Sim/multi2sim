@@ -36,6 +36,7 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 	// Initialize Instruction queue
 
 	// Initialize fetch queue
+	fetch_queue.resize(CPU::getFetchQueueSize());
 
 	// Initialize reorder buffer
 	reorder_buffer_left_bound = this->id_in_core * CPU::getReorderBufferSize();
@@ -56,5 +57,101 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 	reg_file = misc::new_unique<RegisterFile>(core, this);
 	reg_file->InitRegisterFile();
 }
+
+
+void Thread::RecoverFetchQueue()
+{
+	// Local variable declaration
+	Uop *uop;
+
+	// Recover fetch queue
+	while (fetch_queue.size())
+	{
+		uop = fetch_queue.back().get();
+		assert(uop->getThread() == this);
+		if (!uop->getSpeculativeMode())
+			break;
+		uop->setInFetchQueue(false);
+		if (!uop->IsFromTraceCache() && !uop->getMopIndex())
+		{
+			fetch_queue_occupied -= uop->getMopSize();
+			assert(fetch_queue_occupied >= 0);
+		}
+		if (uop->IsFromTraceCache())
+		{
+			trace_cache_queue_occupied--;
+			assert(trace_cache_queue_occupied >= 0);
+		}
+		if (fetch_queue.size() > 0)
+		{
+			assert(fetch_queue_occupied > 0);
+			assert(trace_cache_queue_occupied > 0);
+		}
+		fetch_queue.pop_back();
+
+		// Trace FIXME
+	}
+}
+
+
+bool Thread::CanInsertInInstructionQueue()
+{
+	// Local variable
+	int count;
+	int size;
+
+	// Get the size of the queue and the Uop count in the queue
+	if (CPU::getInstructionQueueKind() == CPU::InstructionQueueKindPrivate)
+	{
+		size = CPU::getInstructionQueueSize();
+		count = instruction_queue_count;
+	}
+	else
+	{
+		size = CPU::getInstructionQueueSize() * CPU::getNumThreads();
+		count = core->getInstructionQueueCount();
+	}
+
+	// return the flag
+	return count < size;
+}
+
+
+void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> &uop)
+{
+	// Make sure the Uop is not in the instruction queue
+	assert(!uop.get()->IsInInstructionQueue());
+
+	// Insert
+	instruction_queue.push_back(uop);
+
+	// Set the flag to true to indicate that the Uop is in the instruction queue
+	uop.get()->setInInstructionQueue(true);
+
+	// Increment the Uop count both for thread and core
+	core->incInstructionQueueCount();
+	instruction_queue_count++;
+}
+
+
+void Thread::RemoveFromInstructionQueue()
+{
+	// Make sure there is Uop in the instruction queue
+	assert(instruction_queue.size() > 0);
+
+	// Set the flag to false to indicate that
+	// The Uop is not in the instruction queue anymore
+	Uop *uop = instruction_queue.back().get();
+	uop->setInInstructionQueue(false);
+
+	// Remove
+	instruction_queue.pop_back();
+
+	// Decrement the Uop count both for thread and core
+	assert(core->getInstructionQueueCount() > 0 && instruction_queue_count > 0);
+	core->decInstructionQueueCount();
+	instruction_queue_count--;
+}
+
 
 }

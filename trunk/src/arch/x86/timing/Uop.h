@@ -89,7 +89,7 @@ private:
 	long long fetch_access = 0;
 
 	// Flag telling if uop came from trace cache
-	bool trace_cache = false;
+	bool is_from_trace_cache = false;
 
 
 
@@ -363,6 +363,21 @@ public:
 	void setInReorderBuffer(bool in_reorder_buffer) { this->in_reorder_buffer = in_reorder_buffer; }
 
 
+	// Set flag that indicates whether instruction is in fetch queue
+	void setInFetchQueue(bool in_fetch_queue) { this->in_fetch_queue = in_fetch_queue; }
+
+	// Set flag that indicates whether instruction is from trace cache
+	void setIsFromTraceCache(bool is_from_trace_cache)
+	{
+		this->is_from_trace_cache = is_from_trace_cache;
+	}
+
+	// Set flag that indicates whether instruction is in instruction queue
+	void setInInstructionQueue(bool in_instruction_queue)
+	{
+		this->in_instruction_queue = in_instruction_queue;
+	}
+
 
 
 	//
@@ -464,6 +479,15 @@ public:
 
 	// Get flag of indicating whether uop is in reorder buffer
 	bool getInReorderBuffer() { return in_reorder_buffer; }
+
+	// Get flag that indicates whether instruction is in fetch queue
+	bool IsInFetchQueue() { return in_fetch_queue; }
+
+	// Get flag that indicates whether instruction is from trace cache
+	bool IsFromTraceCache() { return is_from_trace_cache; }
+
+	// Get flag that indicates whether instruction is in instruction queue
+	bool IsInInstructionQueue() { return in_instruction_queue; }
 
 };
 
