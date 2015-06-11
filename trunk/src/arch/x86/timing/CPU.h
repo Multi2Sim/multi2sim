@@ -123,6 +123,17 @@ public:
 	/// Instruction queue kind string map
 	static misc::StringMap instruction_queue_kind_map;
 
+	/// Load/Store queue kind
+	enum LoadStoreQueueKind
+	{
+		LoadStoreQueueKindInvalid = 0,
+		LoadStoreQueueKindShared,
+		LoadStoreQueueKindPrivate
+	};
+
+	/// Load/Store queue kind string map
+	static misc::StringMap load_store_queue_kind_map;
+
 
 private:
 
@@ -298,6 +309,12 @@ private:
 	// Instruction queue size
 	static int instruction_queue_size;
 
+	// Load/Store queue kind
+	static LoadStoreQueueKind load_store_queue_kind;
+
+	// Load/Store queue size
+	static int load_store_queue_size;
+
 public:
 
 	/// CPU constructor
@@ -339,6 +356,12 @@ public:
 
 	// Get instruction queue size
 	static int getInstructionQueueSize() { return instruction_queue_size; }
+
+	// Get instruction queue kind
+	static LoadStoreQueueKind getLoadStoreQueueKind() { return load_store_queue_kind; }
+
+	// Get instruction queue size
+	static int getLoadStoreQueueSize() { return load_store_queue_size; }
 
 
 
