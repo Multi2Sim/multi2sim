@@ -52,6 +52,8 @@ libnetwork_a_SOURCES = \
 	EndNode.h \
 	EndNode.cc \
 	\
+	Frame.h \
+	\
 	Link.h \
 	Link.cc \
 	\
@@ -60,8 +62,6 @@ libnetwork_a_SOURCES = \
 	\
 	Network.cc \
 	Network.h \
-	\
-	NetworkEventFrame.h \
 	\
 	Node.cc \
 	Node.h \
