@@ -662,6 +662,9 @@ public:
 	/// Increment number of retried accesses
 	void incRetryAccesses() { retry_accesses++; }
 
+	/// Increment the number of evictions
+	void incEvictions() { evictions++; }
+
 	/// Increment number of coalesced reads
 	void incCoalescedReads() { coalesced_reads++; }
 
@@ -671,6 +674,9 @@ public:
 	/// Increment the number of conflicts while trying to lock directory
 	/// entries.
 	void incDirectoryEntryConflicts() { directory_entry_conflicts++; }
+
+	/// Increment the number of invalidations due to conflicts.
+	void incConflictInvalidations() { conflict_invalidations++; }
 
 	/// Increment the number of conflicts found when trying to lock a
 	/// directory entry in a retried access.

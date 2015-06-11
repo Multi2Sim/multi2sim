@@ -503,14 +503,131 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	// Event "find_and_lock_action"
 	if (event_type == event_type_find_and_lock_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Get locked port
+		Module::Port *port = frame->port;
+		assert(port);
+
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s find and lock action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Release port
+		module->UnlockPort(port, frame);
+		parent_frame->port_locked = false;
+
+		// On miss, evict if victim is a valid block.
+		if (!frame->hit && frame->state)
+		{
+			// Record eviction
+			frame->eviction = true;
+			module->incConflictInvalidations();
+
+			// Call 'evict'
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					module,
+					0);
+			new_frame->set = frame->set;
+			new_frame->way = frame->way;
+			esim_engine->Call(event_type_evict,
+					new_frame,
+					event_type_find_and_lock_finish);
+			return;
+		}
+
+		// Continue
+		esim_engine->Next(event_type_find_and_lock_finish);
+		return;
 	}
 
 	// Event "find_and_lock_finish"
 	if (event_type == event_type_find_and_lock_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Cache and directory
+		Cache *cache = module->getCache();
+		Directory *directory = module->getDirectory();
+
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"find and lock finish (err=%d)\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str(),
+				frame->error);
+		trace << misc::fmt("mem.access name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If evict produced error, return this error
+		if (frame->error)
+		{
+			// Get block
+			unsigned tag;
+			cache->getBlock(frame->set, frame->way, tag,
+					frame->state);
+			assert(frame->state);
+			assert(frame->eviction);
+
+			// Unlock directory entry
+			directory->UnlockEntry(frame->set, frame->way);
+			
+			// Return error
+			parent_frame->error = true;
+			esim_engine->Return();
+			return;
+		}
+
+		// Eviction
+		if (frame->eviction)
+		{
+			// Stats
+			module->incEvictions();
+
+			// Get cache block
+			unsigned tag;
+			cache->getBlock(frame->set, frame->way, tag,
+					frame->state);
+			assert(frame->state == Cache::BlockInvalid ||
+					frame->state == Cache::BlockShared ||
+					frame->state == Cache::BlockExclusive);
+
+			// After an eviction, set the block to invalid
+			cache->setBlock(frame->set, frame->way, 0,
+					Cache::BlockInvalid);
+		}
+
+		// If this is a main memory, the block is here. A previous miss
+		// was just a miss in the directory.
+		if (module->getType() == Module::TypeMainMemory
+				&& !frame->state)
+		{
+			frame->state = Cache::BlockExclusive;
+			cache->setBlock(frame->set, frame->way, frame->tag,
+					frame->state);
+		}
+
+		// Return
+		parent_frame->error = 0;
+		parent_frame->set = frame->set;
+		parent_frame->way = frame->way;
+		parent_frame->state = frame->state;
+		parent_frame->tag = frame->tag;
+		esim_engine->Return();
+		return;
 	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
