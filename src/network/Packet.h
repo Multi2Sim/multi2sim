@@ -67,6 +67,9 @@ public:
 	/// Update the buffer that the packet is at
 	void setBuffer(Buffer *buffer) { this->buffer = buffer; }
 
+	/// Get buffer
+	Buffer *getBuffer() const { return buffer; }
+
 	/// Update the cycle until which the packet is in transit
 	void setBusy(long long busy) { this->busy = busy; }
 
