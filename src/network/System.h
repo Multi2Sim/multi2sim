@@ -101,7 +101,7 @@ class System
 	static std::unique_ptr<System> instance;
 
 	// Private construtor
-	System();
+	System() {};
 
 	// Hash table of networks indexed by their names
 	std::unordered_map<std::string, Network *> network_map;
@@ -133,10 +133,12 @@ class System
 	static esim::FrequencyDomain *frequency_domain;
 
 	// Network event handlers
-	static void evNetSendHandler(esim::EventType *, esim::EventFrame *);
-	static void evNetOutputBufferHandler(esim::EventType *, esim::EventFrame *);
-	static void evNetInputBufferHandler(esim::EventType *, esim::EventFrame *);
-	static void evNetReceiveHandler(esim::EventType *, esim::EventFrame *);
+	static void EventTypeSendHandler(esim::EventType *, esim::EventFrame *);
+	static void EventTypeOutputBufferHandler(esim::EventType *, 
+			esim::EventFrame *);
+	static void EventTypeInputBufferHandler(esim::EventType *, 
+			esim::EventFrame *);
+	static void EventTypeReceiveHandler(esim::EventType *, esim::EventFrame *);
 
 public:
 
@@ -150,10 +152,10 @@ public:
 	// Event driven simulation event types
 	//
 
-	static esim::EventType *ev_net_send;
-	static esim::EventType *ev_net_output_buffer;
-	static esim::EventType *ev_net_input_buffer;
-	static esim::EventType *ev_net_receive;
+	static esim::EventType *event_type_send;
+	static esim::EventType *event_type_output_buffer;
+	static esim::EventType *event_type_input_buffer;
+	static esim::EventType *event_type_receive;
 	
 
 	/// Debugger for network
