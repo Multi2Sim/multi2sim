@@ -24,7 +24,8 @@
 
 #include "System.h"
 #include "Packet.h"
-#include "NetworkEventFrame.h"
+#include "Frame.h"
+#include "Network.h"
 #include "Message.h"
 
 namespace net
@@ -58,18 +59,13 @@ void Message::Packetize(int packet_size)
 void Message::Send()
 {
 	esim::Engine *esim = esim::Engine::getInstance();
-	for (auto it = packets.begin(); it != packets.end(); it++)
+	for (auto &packet : packets)
 	{
-		Packet *packet = it->get();
-
 		// Create event frame
-		auto frame = misc::new_shared<NetworkEventFrame>(packet);
+		auto frame = misc::new_shared<Frame>(packet.get());
 
 		// Schedule event
-		// FIXME: I know this is not correct. But what is the correct
-		// function to use? Call? This function is not in an
-		// eventhandler. Next? I need to pass the frame to the handler.
-		esim->Schedule(System::ev_net_send, frame, 0, 0);
+		esim->Call(System::event_type_send, frame);
 	}
 }
 

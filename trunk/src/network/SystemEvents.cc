@@ -22,7 +22,7 @@
 #include "Packet.h"
 #include "Message.h"
 #include "Network.h"
-#include "NetworkEventFrame.h"
+#include "Frame.h"
 #include "RoutingTable.h"
 #include "System.h"
 
@@ -31,22 +31,20 @@ namespace net
 
 esim::FrequencyDomain *System::frequency_domain;
 
-esim::EventType *System::ev_net_send;
-esim::EventType *System::ev_net_output_buffer;
-esim::EventType *System::ev_net_input_buffer;
-esim::EventType *System::ev_net_receive;
+esim::EventType *System::event_type_send;
+esim::EventType *System::event_type_output_buffer;
+esim::EventType *System::event_type_input_buffer;
+esim::EventType *System::event_type_receive;
 
 
-void System::evNetSendHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventTypeSendHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 	// Get engine
 	esim::Engine *esim = esim::Engine::getInstance();
 	long long cycle = esim->getCycle();
 
 	// Cast event frame type
-	NetworkEventFrame *network_frame = 
-			misc::cast<NetworkEventFrame *, esim::EventFrame *>(
-					frame);
+	Frame *network_frame = misc::cast<Frame *>(frame);
 
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
@@ -83,21 +81,24 @@ void System::evNetSendHandler(esim::EventType *type, esim::EventFrame *frame)
 	packet->setBusy(cycle);
 
 	// Schedule next event
-	esim->Next(ev_net_output_buffer, 1);
+	esim->Next(event_type_output_buffer, 1);
 }
 	
 
-void System::evNetOutputBufferHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventTypeOutputBufferHandler(esim::EventType *type, 
+		esim::EventFrame *frame)
 {
 }
 
 
-void System::evNetInputBufferHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventTypeInputBufferHandler(esim::EventType *type, 
+		esim::EventFrame *frame)
 {
 }
 
 
-void System::evNetReceiveHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventTypeReceiveHandler(esim::EventType *type, 
+		esim::EventFrame *frame)
 {
 }
 

@@ -43,14 +43,14 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 			net_system_frequency);
 
 	// Register events
-	ev_net_send = esim->RegisterEventType("ev_net_send", evNetSendHandler, 
+	event_type_send = esim->RegisterEventType("send", EventTypeSendHandler, 
 			frequency_domain);
-	ev_net_output_buffer = esim->RegisterEventType("ev_net_output_buffer", 
-			evNetOutputBufferHandler, frequency_domain);
-	ev_net_input_buffer = esim->RegisterEventType("ev_net_input_buffer",
-			evNetInputBufferHandler, frequency_domain);
-	ev_net_receive = esim->RegisterEventType("ev_net_receive", 
-			evNetReceiveHandler, frequency_domain);
+	event_type_output_buffer = esim->RegisterEventType("output_buffer", 
+			EventTypeOutputBufferHandler, frequency_domain);
+	event_type_input_buffer = esim->RegisterEventType("input_buffer",
+			EventTypeInputBufferHandler, frequency_domain);
+	event_type_receive = esim->RegisterEventType("receive", 
+			EventTypeReceiveHandler, frequency_domain);
 
 	// First configuration look-up is for networks
 	for (int i = 0; i < ini_file->getNumSections(); i++)

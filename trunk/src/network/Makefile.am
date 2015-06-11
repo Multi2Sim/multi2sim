@@ -72,8 +72,8 @@ libnetwork_a_SOURCES = \
 	RoutingTable.h \
 	RoutingTable.cc \
 	\
-	System.cc \
 	System.h \
+	System.cc \
 	SystemConfig.cc \
 	SystemEvents.cc \
 	\

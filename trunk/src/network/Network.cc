@@ -374,13 +374,13 @@ Message *Network::ProduceMessage(Node *source_node, Node *destination_node,
 				destination_node, size));
 
 	// Get the pointer to the newly created messag
-	Message *message_ptr = message_table[message_id_counter].get();
+	Message *message = message_table[message_id_counter].get();
 
 	// Increase message id counter
 	message_id_counter++;
 
 	// Return the pointer
-	return message_ptr;
+	return message;
 }
 
 
@@ -394,8 +394,9 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 	// Check if route exist
 	if (!output_buffer)
 	{
-		std::cout << "Route not exist\n";
-		routing_table.Dump(std::cout);
+		throw Error(misc::fmt("Route from %s to  %s not found",
+				source_node->getName().c_str(),
+				destination_node->getName().c_str()));
 		return false;
 	}
 
