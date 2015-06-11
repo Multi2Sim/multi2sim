@@ -69,6 +69,12 @@ misc::StringMap CPU::instruction_queue_kind_map =
 	{"Private", InstructionQueueKindPrivate},
 };
 
+misc::StringMap CPU::load_store_queue_kind_map =
+{
+	{"Shared", LoadStoreQueueKindShared},
+	{"Private", LoadStoreQueueKindPrivate},
+};
+
 //
 // static member
 //
@@ -97,6 +103,8 @@ CPU::ReorderBufferKind CPU::reorder_buffer_kind;
 int CPU::fetch_queue_size;
 CPU::InstructionQueueKind CPU::instruction_queue_kind;
 int CPU::instruction_queue_size;
+CPU::LoadStoreQueueKind CPU::load_store_queue_kind;
+int CPU::load_store_queue_size;
 
 CPU::CPU()
 {
@@ -166,11 +174,11 @@ void CPU::ParseConfiguration(misc::IniFile *ini_file)
 			instruction_queue_kind_map, InstructionQueueKindPrivate);
 	instruction_queue_size = ini_file->ReadInt(section, "IqSize", 40);
 
+	load_store_queue_kind = (LoadStoreQueueKind) ini_file->ReadEnum(section, "LsqKind",
+			load_store_queue_kind_map, LoadStoreQueueKindPrivate);
+	load_store_queue_size = ini_file->ReadInt(section, "LsqSize", 20);
 	// x86_uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
 
-	// x86_lsq_kind = ini_file->ReadEnum(section, "LsqKind",
-			//x86_lsq_kind_private, x86_lsq_kind_map, 2);
-	// x86_lsq_size = ini_file->ReadInt(section, "LsqSize", 20);*/
 }
 
 }

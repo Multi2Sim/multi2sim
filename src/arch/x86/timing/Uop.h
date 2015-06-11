@@ -378,6 +378,25 @@ public:
 		this->in_instruction_queue = in_instruction_queue;
 	}
 
+	// Set flag that indicates whether instruction is in load queue
+	void setInLoadQueue(bool in_load_queue)
+	{
+		this->in_load_queue = in_load_queue;
+	}
+
+	// Set flag that indicates whether instruction is in store queue
+	void setInStoreQueue(bool in_store_queue)
+	{
+		this->in_store_queue = in_store_queue;
+	}
+
+	// Set flag that indicates whether instruction is in store queue
+	void setInPrefetchQueue(bool in_prefetch_queue)
+	{
+		this->in_prefetch_queue = in_prefetch_queue;
+	}
+
+
 
 
 	//
@@ -488,6 +507,15 @@ public:
 
 	// Get flag that indicates whether instruction is in instruction queue
 	bool IsInInstructionQueue() { return in_instruction_queue; }
+
+	// Get flag that indicates whether instruction is in load queue
+	bool IsInLoadQueue() { return in_load_queue; }
+
+	// Get flag that indicates whether instruction is in store queue
+	bool IsInStoreQueue() { return in_store_queue; }
+
+	// Get flag that indicates whether instruction is in prefetch queue
+	bool IsInPrefetchQueue() { return in_prefetch_queue; }
 
 };
 

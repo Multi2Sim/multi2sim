@@ -251,6 +251,9 @@ public:
 	/// Increment the Uop count in instruction queue
 	void incInstructionQueueCount() { instruction_queue_count++; }
 
+	/// Increment the Uop count in load/store queue
+	void incLoadStoreQueueCount() { load_store_queue_count++; }
+
 
 
 
@@ -269,6 +272,9 @@ public:
 
 	/// Decrement the Uop count in instruction queue
 	void decInstructionQueueCount() { instruction_queue_count--; }
+
+	/// Decrement the Uop count in load/store queue
+	void decLoadStoreQueueCount() { load_store_queue_count--; }
 
 
 
@@ -291,6 +297,9 @@ public:
 
 	/// Get the Uop count in instruction queue
 	int getInstructionQueueCount() { return instruction_queue_count; }
+
+	/// Get the Uop count in load/store queue
+	int getLoadStoreQueueCount() { return load_store_queue_count; }
 
 
 
