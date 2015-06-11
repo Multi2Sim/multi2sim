@@ -31,9 +31,6 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 {
 	// Initialize Uop queue
 
-	// Initialize Load/Store queue
-
-	// Initialize Instruction queue
 
 	// Initialize fetch queue
 	fetch_queue.resize(CPU::getFetchQueueSize());
@@ -134,23 +131,197 @@ void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> &uop)
 }
 
 
-void Thread::RemoveFromInstructionQueue()
+void Thread::RemoveFromInstructionQueue(int index)
 {
 	// Make sure there is Uop in the instruction queue
 	assert(instruction_queue.size() > 0);
 
 	// Set the flag to false to indicate that
 	// The Uop is not in the instruction queue anymore
-	Uop *uop = instruction_queue.back().get();
+	Uop *uop = instruction_queue[index].get();
 	uop->setInInstructionQueue(false);
 
 	// Remove
-	instruction_queue.pop_back();
+	instruction_queue.erase(instruction_queue.begin() + index);
 
 	// Decrement the Uop count both for thread and core
 	assert(core->getInstructionQueueCount() > 0 && instruction_queue_count > 0);
 	core->decInstructionQueueCount();
 	instruction_queue_count--;
+}
+
+
+void Thread::RecoverInstructionQueue()
+{
+	// Local variable declaration
+	Uop *uop;
+
+	// Remove the Uop in speculative mode
+	for (unsigned int index = 0; index < instruction_queue.size(); index++)
+	{
+		uop = instruction_queue[index].get();
+		if (uop->getSpeculativeMode())
+		{
+			// Remove
+			RemoveFromInstructionQueue(index);
+
+			// Keep the index unchanged and loop
+			continue;
+		}
+		index++;
+	}
+}
+
+
+bool Thread::CanInsertInLoadStoreQueue()
+{
+	// Local variable
+	int count;
+	int size;
+
+	// Get the size of the queue and the Uop count in the queue
+	if (CPU::getLoadStoreQueueKind() == CPU::LoadStoreQueueKindPrivate)
+	{
+		size = CPU::getLoadStoreQueueSize();
+		count = load_store_queue_count;
+	}
+	else
+	{
+		size = CPU::getLoadStoreQueueSize() * CPU::getNumThreads();
+		count = core->getLoadStoreQueueCount();
+	}
+
+	// return the flag
+	return count < size;
+}
+
+
+void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop)
+{
+	// Make sure there is Uop in the load/store queue
+	assert(!uop->IsInLoadQueue() && !uop->IsInStoreQueue());
+
+	// Make sure the Opcode is correct
+	assert(uop->getUinst()->getOpcode() == UInstLoad || uop->getUinst()->getOpcode() == UInstStore ||
+			uop->getUinst()->getOpcode() == UInstPrefetch);
+
+	// Insert and set flag accordingly
+	if (uop->getUinst()->getOpcode() == UInstLoad)
+	{
+		load_queue.push_back(uop);
+		uop->setInLoadQueue(true);
+	}
+	else if (uop->getUinst()->getOpcode() == UInstStore)
+	{
+		store_queue.push_back(uop);
+		uop->setInStoreQueue(true);
+	}
+	else if (uop->getUinst()->getOpcode() == UInstPrefetch)
+	{
+		prefetch_queue.push_back(uop);
+		uop->setInPrefetchQueue(true);
+	}
+
+	// Increment the Uop count both for thread and core
+	core->incLoadStoreQueueCount();
+	load_store_queue_count++;
+}
+
+
+void Thread::RemoveFromLoadQueue(int index)
+{
+	// Make sure there is Uop in the load queue
+	assert(load_queue.size() > 0);
+
+	// Set the flag to false to indicate that
+	// The Uop is not in the load queue anymore
+	Uop *uop = load_queue[index].get();
+	uop->setInLoadQueue(false);
+
+	// Remove
+	load_queue.erase(load_queue.begin() + index);
+
+	// Decrement the Uop count both for thread and core
+	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
+	core->decLoadStoreQueueCount();
+	load_store_queue_count--;
+}
+
+
+void Thread::RemoveFromStoreQueue(int index)
+{
+	// Make sure there is Uop in the store queue
+	assert(store_queue.size() > 0);
+
+	// Set the flag to false to indicate that
+	// The Uop is not in the store queue anymore
+	Uop *uop = store_queue[index].get();
+	uop->setInStoreQueue(false);
+
+	// Remove
+	store_queue.erase(store_queue.begin() + index);
+
+	// Decrement the Uop count both for thread and core
+	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
+	core->decLoadStoreQueueCount();
+	load_store_queue_count--;
+}
+
+
+void Thread::RemoveFromPrefetchQueue(int index)
+{
+	// Make sure there is Uop in the prefetch queue
+	assert(prefetch_queue.size() > 0);
+
+	// Set the flag to false to indicate that
+	// The Uop is not in the prefetch queue anymore
+	Uop *uop = prefetch_queue[index].get();
+	uop->setInPrefetchQueue(false);
+
+	// Remove
+	prefetch_queue.erase(prefetch_queue.begin() + index);
+
+	// Decrement the Uop count both for thread and core
+	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
+	core->decLoadStoreQueueCount();
+	load_store_queue_count--;
+}
+
+
+void Thread::RecoverLoadStoreQueue()
+{
+	// Local variable declaration
+	Uop *uop;
+
+	// Remove the Uop in speculative mode from load queue
+	for (unsigned int index = 0; index < load_queue.size(); index++)
+	{
+		uop = load_queue[index].get();
+		if (uop->getSpeculativeMode())
+		{
+			// Remove
+			RemoveFromLoadQueue(index);
+
+			// Keep the index unchanged and loop
+			continue;
+		}
+		index++;
+	}
+
+	// Remove the Uop in speculative mode from store queue
+	for (unsigned int index = 0; index < store_queue.size(); index++)
+	{
+		uop = store_queue[index].get();
+		if (uop->getSpeculativeMode())
+		{
+			// Remove
+			RemoveFromStoreQueue(index);
+
+			// Keep the index unchanged and loop
+			continue;
+		}
+		index++;
+	}
 }
 
 

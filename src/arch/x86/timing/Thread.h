@@ -20,8 +20,7 @@
 #ifndef ARCH_X86_TIMING_THREAD_H
 #define ARCH_X86_TIMING_THREAD_H
 
-#include <vector>
-#include <list>
+#include <deque>
 #include <string>
 
 #include <memory/Module.h>
@@ -146,22 +145,22 @@ private:
 	//
 
 	// Fetch queue
-	std::vector<std::shared_ptr<Uop>> fetch_queue;
+	std::deque<std::shared_ptr<Uop>> fetch_queue;
 
 	// Uop queue
-	std::vector<std::shared_ptr<Uop>> uop_queue;
+	std::deque<std::shared_ptr<Uop>> uop_queue;
 
 	// Instruction queue
-	std::list<std::shared_ptr<Uop>> instruction_queue;
+	std::deque<std::shared_ptr<Uop>> instruction_queue;
 
 	// Load queue
-	std::list<std::shared_ptr<Uop>> load_queue;
+	std::deque<std::shared_ptr<Uop>> load_queue;
 
 	// Store queue
-	std::list<std::shared_ptr<Uop>> store_queue;
+	std::deque<std::shared_ptr<Uop>> store_queue;
 
 	// Prefetch queue
-	std::list<std::shared_ptr<Uop>> prefetch_queue;
+	std::deque<std::shared_ptr<Uop>> prefetch_queue;
 
 
 
@@ -513,10 +512,35 @@ public:
 	void InsertInInstructionQueue(std::shared_ptr<Uop> &uop);
 
 	/// Remove Uop from the inst queue
-	void RemoveFromInstructionQueue();
+	void RemoveFromInstructionQueue(int index);
 
 	/// Recover inst queue
-	void RecoverInstructionQueue() { instruction_queue.clear(); };
+	void RecoverInstructionQueue();
+
+
+
+
+	//
+	// Load/Store queue functions
+	//
+
+	/// Check whether Uop can be inserted in the load/store queue
+	bool CanInsertInLoadStoreQueue();
+
+	/// Insert Uop into the load/store queue
+	void InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop);
+
+	/// Remove Uop from the load/store queue
+	void RemoveFromLoadQueue(int index);
+
+	/// Remove Uop from the load/store queue
+	void RemoveFromStoreQueue(int index);
+
+	// Remove Uop from the prefetch queue
+	void RemoveFromPrefetchQueue(int index);
+
+	/// Recover load/store queue
+	void RecoverLoadStoreQueue();
 };
 
 }
