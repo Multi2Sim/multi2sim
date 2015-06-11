@@ -122,6 +122,10 @@ public:
 	/// Flag indicating whether this access is a non-coherent write.
 	bool nc_write = false;
 
+	/// Flag indicating whether there is a block eviction in the current
+	/// access.
+	bool eviction = false;
+
 	/// If true, this is a retried access.
 	bool retry = false;
 
