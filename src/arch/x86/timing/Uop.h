@@ -390,10 +390,16 @@ public:
 		this->in_store_queue = in_store_queue;
 	}
 
-	// Set flag that indicates whether instruction is in store queue
+	// Set flag that indicates whether instruction is in prefetch queue
 	void setInPrefetchQueue(bool in_prefetch_queue)
 	{
 		this->in_prefetch_queue = in_prefetch_queue;
+	}
+
+	// Set flag that indicates whether instruction is in uop queue
+	void setInUopQueue(bool in_uop_queue)
+	{
+		this->in_uop_queue = in_uop_queue;
 	}
 
 
@@ -516,6 +522,9 @@ public:
 
 	// Get flag that indicates whether instruction is in prefetch queue
 	bool IsInPrefetchQueue() { return in_prefetch_queue; }
+
+	// Get flag that indicates whether instruction is in uop queue
+	bool IsInUopQueue() { return in_uop_queue; }
 
 };
 

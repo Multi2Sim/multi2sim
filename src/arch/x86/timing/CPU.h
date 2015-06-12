@@ -34,12 +34,6 @@
 namespace x86
 {
 
-// Forward declaration
-//class Uop;
-//class Emu;
-class Core;
-class MMU;
-
 // Class CPU
 class CPU
 {
@@ -315,6 +309,9 @@ private:
 	// Load/Store queue size
 	static int load_store_queue_size;
 
+	// Uop queue size
+	static int uop_queue_size;
+
 public:
 
 	/// CPU constructor
@@ -357,11 +354,14 @@ public:
 	// Get instruction queue size
 	static int getInstructionQueueSize() { return instruction_queue_size; }
 
-	// Get instruction queue kind
+	// Get load/store queue kind
 	static LoadStoreQueueKind getLoadStoreQueueKind() { return load_store_queue_kind; }
 
-	// Get instruction queue size
+	// Get load/store queue size
 	static int getLoadStoreQueueSize() { return load_store_queue_size; }
+
+	// Get uop queue size
+	static int getUopQueueSize() { return uop_queue_size; }
 
 
 
