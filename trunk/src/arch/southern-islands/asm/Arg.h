@@ -156,6 +156,7 @@ public:
 				data_type(data_type),
 				num_elems(num_elems),
 				constant_buffer_num(constant_buffer_num),
+				constant_offset(constant_offset),
 				scope(scope),
 				buffer_num(buffer_num),
 				alignment(alignment),

@@ -167,6 +167,15 @@ public:
 		return kernels[id].get();
 	}
 
+	/// Get count of ndranges in list
+	int getNDRangeCount() const { return ndranges.size(); }
+
+	/// Get ndrange by its Id
+	NDRange *getNDRangeById(unsigned id)
+	{
+		assert(id < ndranges.size());
+		return ndranges[id].get();
+	}
 };
 
 

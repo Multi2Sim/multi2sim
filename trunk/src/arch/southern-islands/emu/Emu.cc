@@ -159,4 +159,201 @@ void Emu::Run()
 	}
 }
 
+/// Initialize a buffer description of type EmuBufferDesc
+void Emu::createBufferDesc(unsigned base_addr, unsigned size,
+		int num_elems, ArgDataType data_type, 
+		EmuBufferDesc *buffer_desc)
+{
+	int num_format;                                                          
+	int data_format;                                                         
+	int elem_size;                                                           
+
+	// Check size of buffer descriptor
+	assert(sizeof(EmuBufferDesc) == 16);                           
+
+	// Initialize num_format and data_format
+	num_format = BufDescNumFmtInvalid;
+	data_format = BufDescDataFmtInvalid;                              
+
+	// Set num_format and data_format
+	switch (data_type)                                                       
+	{                                                                        
+	case ArgDataTypeInt8:                                                          
+	case ArgDataTypeUInt8:                                                         
+
+		num_format = BufDescNumFmtSint;                           
+		switch (num_elems)                                               
+		{                                                                
+		case 1:      
+
+			data_format = BufDescDataFmt8;                    
+			break;                                                   
+
+		case 2:      
+
+			data_format = BufDescDataFmt8_8;                  
+			break;                                                   
+
+		case 4:
+
+			data_format = BufDescDataFmt8_8_8_8;              
+			break;                                                   
+
+		default:
+
+			throw Error(misc::fmt("%s: invalid number of i8/u8 elements (%d)", 
+					__FUNCTION__, num_elems));
+		}                                                                
+		elem_size = 1 * num_elems;                                       
+		break; 
+
+	case ArgDataTypeInt16:                                                         
+	case ArgDataTypeUInt16:                                                        
+
+		num_format = BufDescNumFmtSint;                           
+		switch (num_elems)                                               
+		{                                                                
+		case 1:    
+
+			data_format = BufDescDataFmt16;                   
+			break;                                                   
+
+		case 2:       
+
+			data_format = BufDescDataFmt16_16;                
+			break;                                                   
+
+		case 4:
+
+			data_format = BufDescDataFmt16_16_16_16;          
+			break;                                                   
+
+		default:
+
+			throw Error(misc::fmt("%s: invalid number of i16/u16 elements (%d)",     
+					__FUNCTION__, num_elems));                
+		}                                                                
+		elem_size = 2 * num_elems;                                       
+		break;    
+
+	case ArgDataTypeInt32:                                                         
+	case ArgDataTypeUInt32:                                                        
+
+		num_format = BufDescNumFmtSint;                           
+		switch (num_elems)                                               
+		{                                                                
+		case 1:   
+
+			data_format = BufDescDataFmt32;                   
+			break;                                                   
+
+		case 2:  
+
+			data_format = BufDescDataFmt32_32;                
+			break;                                                   
+
+		case 3: 
+
+			data_format = BufDescDataFmt32_32_32;             
+			break;                                                   
+
+		case 4:   
+
+			data_format = BufDescDataFmt32_32_32_32;          
+			break;                                                   
+
+		default:
+
+			throw Error(misc::fmt("%s: invalid number of i32/u32 elements (%d)",     
+					__FUNCTION__, num_elems));                
+		}                                                                
+		elem_size = 4 * num_elems;                                       
+		break;
+
+	case ArgDataTypeFloat:                                                         
+
+		num_format = BufDescNumFmtFloat;                          
+		switch (num_elems)                                               
+		{                                                                
+		case 1:  
+
+			data_format = BufDescDataFmt32;                   
+			break;                                                   
+
+		case 2:                                                          
+			
+			data_format = BufDescDataFmt32_32;                
+			break;                                                   
+
+		case 3: 
+
+			data_format = BufDescDataFmt32_32_32;             
+			break;                                                   
+
+		case 4: 
+
+			data_format = BufDescDataFmt32_32_32_32;          
+			break;                                                   
+
+		default:     
+
+			throw Error(misc::fmt("%s: invalid number of float elements (%d)",       
+				__FUNCTION__, num_elems));                
+		}                                                                
+		elem_size = 4 * num_elems;                                       
+		break;
+
+	case ArgDataTypeDouble:                                                        
+
+		num_format = BufDescNumFmtFloat;                          
+		switch (num_elems)                                               
+		{                                                                
+		case 1:               
+
+			data_format = BufDescDataFmt32_32;                
+			break;                                                   
+
+		case 2:    
+
+			data_format = BufDescDataFmt32_32_32_32;          
+			break;                                                   
+
+		default:                                      
+		
+			throw Error(misc::fmt("%s: invalid number of double elements (%d)",      
+					__FUNCTION__, num_elems));                
+		}                                                                
+		elem_size = 8 * num_elems;                                       
+		break;   
+
+	case ArgDataTypeStruct:                                                        
+
+		num_format = BufDescNumFmtUint;                           
+		data_format = BufDescDataFmt8;                            
+		elem_size = 1;                                                   
+		break;                                                           
+
+	default:
+
+		throw Error(misc::fmt("%s: invalid data type for SI buffer (%d)",                
+				__FUNCTION__, data_type));                                
+	}
+
+	// Make sure that num_format and data_format were set
+	assert(num_format != BufDescNumFmtInvalid);                       
+	assert(data_format != BufDescDataFmtInvalid);                     
+
+	// Set fields of buffer description
+	buffer_desc->base_addr = base_addr;                                      
+	buffer_desc->num_format = num_format;                                    
+	buffer_desc->data_format = data_format;                                  
+	assert(!(size % elem_size));                                             
+	buffer_desc->elem_size = elem_size;                                      
+	buffer_desc->num_records = size/elem_size;                               
+
+	// Return
+	return;   
+}
+
+
 }  // namespace SI
