@@ -46,8 +46,6 @@ namespace SI
 namespace SI
 {
 
-
-
 /// This class represents an OpenCL NDRange. The NDRange is an index space
 /// which can be one, two, or three dimensions.
 class NDRange
@@ -167,9 +165,6 @@ private:
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
 	unsigned cb1 = 0;
-
-	// List of kernel arguments with their values
-	std::vector<std::unique_ptr<Arg>> args;
 
 public:
 
