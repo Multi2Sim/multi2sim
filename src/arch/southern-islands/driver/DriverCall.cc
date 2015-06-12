@@ -508,7 +508,6 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 	
 	// Return ID of new nd-range 
 	return ndrange->getId();
-	//return 0;
 }
 
 
@@ -544,7 +543,42 @@ int Driver::CallNDRangeFinish(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	int kernel_id;
+	int ndrange_id;
+	unsigned table_ptr;
+	unsigned cb_ptr;
+	
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
+	memory->Read(args_ptr + 4, sizeof(int), (char *) &kernel_id);
+	memory->Read(args_ptr + 8, sizeof(int), (char *) &table_ptr);
+	memory->Read(args_ptr + 12, sizeof(int), (char *) &cb_ptr);
+	
+	// Get NDRange
+	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	if (!ndrange)
+		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
+			__FUNCTION__, ndrange_id));
+
+	// Get kernel
+	SI::Kernel *kernel = getKernelById(kernel_id);
+	if (!kernel)
+		throw Error(misc::fmt("%s: invalid kernel ID (%d)", 
+			__FUNCTION__, kernel_id));
+
+	// TODO - Add support for fused memory
+	// TODO - Add support for timing simulator
+
+	// Allocate tables and constant buffers
+	kernel->CreateNDRangeTables(ndrange);
+	kernel->CreateNDRangeConstantBuffers(ndrange);
+
+	// Setup constant buffers and arguments
+	kernel->SetupNDRangeConstantBuffers(ndrange);
+	kernel->SetupNDRangeArgs(ndrange);
+	
+	// TODO SetupNDRangeState
+
 	return 0;
 }
 

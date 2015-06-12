@@ -89,8 +89,10 @@ public:
 	/// Get pointer to contant buffer by index
 	ConstantBuffer *getConstantBufferByIndex(int index) const 
 	{
-		assert(index >= 0 && index < (int) constant_buffers.size());
-		return constant_buffers[index].get();
+		if (index >= 0 && index < (int) constant_buffers.size())
+			return constant_buffers[index].get();
+		else
+			return nullptr;
 	}
 };
 

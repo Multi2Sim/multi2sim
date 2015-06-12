@@ -24,6 +24,7 @@
 #include <list>
 #include <memory>
 
+#include <arch/southern-islands/asm/Arg.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <memory/Memory.h>
@@ -327,6 +328,11 @@ public:
 	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
 	int getWavefrontSize() { return wavefront_size; }
 
+	/// Initialize a buffer description of type EmuBufferDesc
+	static void createBufferDesc(unsigned base_addr, unsigned size,
+			int num_elems, ArgDataType data_type, 
+			EmuBufferDesc *buffer_desc);
+
 	/// Get the only instance of the Southern Islands emulator. If the
 	/// instance does not exist yet, it will be created, and will remain
 	/// allocated until the end of the execution.
@@ -348,6 +354,9 @@ public:
 
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return ndrange_count++; }
+	
+	/// get current NDRange
+	NDRange *getNDRange() { return ndrange; }
 
 	/// Get a new address space index
 	unsigned getNewAddressSpaceIdx() { return address_space_index++; }

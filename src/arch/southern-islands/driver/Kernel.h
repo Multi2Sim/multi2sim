@@ -132,11 +132,15 @@ public:
 	void DebugNDRangeState(NDRange *ndrange);
 
 	/// Create NDRange tables
-	void CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */);
+	// TODO - Add param: MMU *gpu_mmu
+	void CreateNDRangeTables(NDRange *ndrange); 
+	
+	/// Create constant buffers
+	// TODO - Add param: MMU *gpu_mmu
+	void CreateNDRangeConstantBuffers(NDRange *ndrange);
 	
 	/// FIXME not implemented yet
 	static void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
-	void CreateNDRangeConstantBuffers(NDRange *ndrange /*MMU *gpu_mmu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
 
 };

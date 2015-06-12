@@ -147,8 +147,8 @@ void NDRange::ConstantBufferWrite(int const_buffer_num,
 	assert(const_buffer_num < 2);
 	
 	// Check constant buffer sizes
-	assert(const_buffer_num != 0 || offset + size < Emu::ConstBuf0Size);
-	assert(const_buffer_num != 1 || offset + size < Emu::ConstBuf1Size);
+	assert(const_buffer_num != 0 || offset + size < Emu::ConstBuf1Size);
+	assert(const_buffer_num != 1 || offset + size < Emu::ConstBuf0Size);
 
 	// Calculate address
 	unsigned addr = this->const_buf_table +
@@ -178,8 +178,8 @@ void NDRange::ConstantBufferRead(int const_buffer_num,
 	assert(const_buffer_num < 2);
 	
 	// Check constant buffer sizes
-	assert(const_buffer_num != 0 || offset + size < Emu::ConstBuf0Size);
-	assert(const_buffer_num != 1 || offset + size < Emu::ConstBuf1Size);
+	assert(const_buffer_num != 0 || offset + size < Emu::ConstBuf1Size);
+	assert(const_buffer_num != 1 || offset + size < Emu::ConstBuf0Size);
 
 	// Calculate address
 	unsigned addr = this->const_buf_table +

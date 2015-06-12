@@ -185,7 +185,6 @@ void Kernel::LoadMetaDataV3()
 			token_list.erase(token_list.begin());
 			std::string name = *token_list.begin();
 		
-
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
 			const char *data_type_string = (*token_list.begin()).c_str();
@@ -258,7 +257,7 @@ void Kernel::LoadMetaDataV3()
 			std::unique_ptr<SI::Arg> arg(new SI::ArgPointer(name, data_type, num_elems,
 				constant_buffer_num, constant_offset, arg_scope, buffer_num, alignment,
 				access_type));
-
+			
 			// Debug
 			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
@@ -792,7 +791,9 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 
 void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 {
-	Emu *emu = SI::Emu::getInstance();
+	// Get emulator instance and video_memory               
+	Emu *si_emu = SI::Emu::getInstance();
+	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	unsigned size_of_tables = Emu::ConstBufTableSize +
 		Emu::ResourceTableSize + Emu::UAVTableSize;
@@ -807,25 +808,51 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 	// 	}
 	// }
 
-	// Map new pages
-	// mem_map(emu->video_mem, emu->video_mem_top, size_of_tables,
-	// 	mem_access_read | mem_access_write);
+	// Allocate space in video memory for tables                             
+	video_mem->Map(si_emu->getVideoMemoryTop(), size_of_tables,              
+			mem::Memory::AccessRead | mem::Memory::AccessWrite);             
 
+	// Debug print out
 	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
-		emu->getVideoMemoryTop());
+		si_emu->getVideoMemoryTop());
 
-	// Setup internal tables
-	ndrange->setConstBufferTable(emu->getVideoMemoryTop());
-	emu->incVideoMemoryTop(Emu::ConstBufTableSize);
-	ndrange->setResourceTable(emu->getVideoMemoryTop());
-	emu->incVideoMemoryTop(Emu::ResourceTableSize);
-	ndrange->setUAVTable(emu->getVideoMemoryTop());
-	emu->incVideoMemoryTop(Emu::UAVTableSize);
+	// Set constant buffer table address                                     
+	ndrange->setConstBufferTable(si_emu->getVideoMemoryTop());                  
+	si_emu->incVideoMemoryTop(Emu::ConstBufTableSize);                       
 
+	// Set resource table address                                            
+	ndrange->setResourceTable(si_emu->getVideoMemoryTop());                     
+	si_emu->incVideoMemoryTop(Emu::ResourceTableSize);                       
+
+	// Set uav table address                                                 
+	ndrange->setUAVTable(si_emu->getVideoMemoryTop());                          
+	si_emu->incVideoMemoryTop(Emu::UAVTableSize); 
+	
 	// Return
 	return;
 }
+
+void Kernel::CreateNDRangeConstantBuffers(NDRange *ndrange)                                            
+{                                                                                
+	// Get emulator instance and video_memory                                
+	SI::Emu *si_emu = SI::Emu::getInstance();                                
+	mem::Memory *video_mem = si_emu->getVideoMemory();                       
+
+	// Map new pages                                                         
+	video_mem->Map(si_emu->getVideoMemoryTop(), Emu::TotalConstBufSize,      
+			mem::Memory::AccessRead | mem::Memory::AccessWrite);     
+
+	// TODO - setup for timing simulator                                     
+
+	// Set constant buffer addresses                                         
+	ndrange->setCB0(si_emu->getVideoMemoryTop());                                 
+	ndrange->setCB1(si_emu->getVideoMemoryTop() + Emu::ConstBuf0Size);            
+
+	// Increment video memory pointer                                        
+	si_emu->incVideoMemoryTop(Emu::TotalConstBufSize);                       
+}  
+
 
 void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 {
@@ -841,7 +868,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	ndrange->setNumVgprUsed(enc_dict->num_vgpr);
 
 	// Kernel arguments
-	int index = 0;;
+	int index = 0;
 	for (auto &arg : getArgs())
 	{
 		// Check that argument was set
@@ -874,9 +901,9 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 		case ArgTypePointer:
 		{
-			ArgPointer &arg_ptr = dynamic_cast<ArgPointer&>(*arg);
+			ArgPointer *arg_ptr = dynamic_cast<ArgPointer *>(arg.get());
 
-			switch (arg_ptr.getScope())
+			switch (arg_ptr->getScope())
 			{
 
 			// Hardware local memory
@@ -886,38 +913,38 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 				// Argument value is always NULL, just assign
 				// space for it.
 				ndrange->ConstantBufferWrite(
-					arg_ptr.getConstantBufferNum(),
-					arg_ptr.getConstantOffset(),
+					arg_ptr->getConstantBufferNum(),
+					arg_ptr->getConstantOffset(),
 					ndrange->getLocalMemTopPtr(), 4);
 
-				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr.getSize(),
+				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
 					ndrange->getLocalMemTop());
 
-				ndrange->incLocalMemTop(arg_ptr.getSize());
+				ndrange->incLocalMemTop(arg_ptr->getSize());
 
 				break;
 
 			// UAV
 			case ArgScopeUAV:
 			{
-				x86::Emu::opencl_debug << misc::fmt("(0x%x)", arg_ptr.getDevicePtr());
+				x86::Emu::opencl_debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
 
 				// Create descriptor for argument
 				CreateBufferDesc(
-					arg_ptr.getDevicePtr(),
-					arg_ptr.getSize(),
-					arg_ptr.getNumElems(),
-					arg_ptr.getDataType(), &buffer_desc);
+					arg_ptr->getDevicePtr(),
+					arg_ptr->getSize(),
+					arg_ptr->getNumElems(),
+					arg_ptr->getDataType(), &buffer_desc);
 
 				// Add to UAV table
 				ndrange->InsertBufferIntoUAVTable(
 					&buffer_desc,
-					arg_ptr.getBufferNum());
+					arg_ptr->getBufferNum());
 
 				// Write 0 to CB1
 				ndrange->ConstantBufferWrite(
-					arg_ptr.getConstantBufferNum(),
-					arg_ptr.getConstantOffset(),
+					arg_ptr->getConstantBufferNum(),
+					arg_ptr->getConstantOffset(),
 					&zero, 4);
 
 				break;
@@ -927,10 +954,10 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			case ArgScopeHwConstant:
 			{
 				CreateBufferDesc(
-					arg_ptr.getDevicePtr(),
-					arg_ptr.getSize(),
-					arg_ptr.getNumElems(),
-					arg_ptr.getDataType(), &buffer_desc);
+					arg_ptr->getDevicePtr(),
+					arg_ptr->getSize(),
+					arg_ptr->getNumElems(),
+					arg_ptr->getDataType(), &buffer_desc);
 
 				// Data stored in hw constant memory
 				// uses a 4-byte stride
@@ -939,12 +966,12 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 				// Add to Constant Buffer table
 				ndrange->InsertBufferIntoConstantBufferTable(
 					&buffer_desc,
-					arg_ptr.getBufferNum());
+					arg_ptr->getBufferNum());
 
 				// Write 0 to CB1
 				ndrange->ConstantBufferWrite(
-					arg_ptr.getConstantBufferNum(),
-					arg_ptr.getConstantOffset(),
+					arg_ptr->getConstantBufferNum(),
+					arg_ptr->getConstantOffset(),
 					&zero, 4);
 
 				break;
@@ -1023,28 +1050,26 @@ void Kernel::DebugNDRangeState(NDRange *ndrange)
 void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 {
 	EmuBufferDesc buffer_desc;
-
 	unsigned zero = 0;
-
 	float f;
 
-	/* Constant buffer 0 */
+	// Constant buffer 0
 	CreateBufferDesc(ndrange->getConstBufferAddr(0), Emu::ConstBuf0Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
 
-	/* Constant buffer 1 */
+	// Constant buffer 1
 	CreateBufferDesc(ndrange->getConstBufferAddr(1), Emu::ConstBuf1Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 1);
 
-	/* Initialize constant buffer 0 */
+	// Initialize constant buffer 0
 
-	/* CB0 bytes 0:15 */
+	// CB0 bytes 0:15
 
-	/* Global work size for the {x,y,z} dimensions */
+	// Global work size for the {x,y,z} dimensions
 	ndrange->ConstantBufferWrite(0, 0,
 		ndrange->getGlobalSizePtr(0), 4);
 	ndrange->ConstantBufferWrite(0, 4,
@@ -1052,12 +1077,12 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	ndrange->ConstantBufferWrite(0, 8,
 		ndrange->getGlobalSizePtr(2), 4);
 
-	/* Number of work dimensions */
+	// Number of work dimensions
 	ndrange->ConstantBufferWrite(0, 12, ndrange->getWorkDimPtr(), 4);
 
-	/* CB0 bytes 16:31 */
+	// CB0 bytes 16:31
 
-	/* Local work size for the {x,y,z} dimensions */
+	// Local work size for the {x,y,z} dimensions
 	ndrange->ConstantBufferWrite(0, 16,
 		ndrange->getLocalSizePtr(0), 4);
 	ndrange->ConstantBufferWrite(0, 20,
@@ -1065,12 +1090,12 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	ndrange->ConstantBufferWrite(0, 24,
 		ndrange->getLocalSizePtr(2), 4);
 
-	/* 0  */
+	// 0 
 	ndrange->ConstantBufferWrite(0, 28, &zero, 4);
 
-	/* CB0 bytes 32:47 */
+	// CB0 bytes 32:47
 
-	/* Global work size {x,y,z} / local work size {x,y,z} */
+	// Global work size {x,y,z} / local work size {x,y,z}
 	ndrange->ConstantBufferWrite(0, 32,
 		ndrange->getGroupCountPtr(0), 4);
 	ndrange->ConstantBufferWrite(0, 36,
@@ -1078,78 +1103,78 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	ndrange->ConstantBufferWrite(0, 40,
 		ndrange->getGroupCountPtr(2), 4);
 
-	/* 0  */
+	// 0 
 	ndrange->ConstantBufferWrite(0, 44, &zero, 4);
 
-	/* CB0 bytes 48:63 */
+	// CB0 bytes 48:63
 
-	/* FIXME Offset to private memory ring (0 if private memory is
-	 * not emulated) */
+	// FIXME Offset to private memory ring (0 if private memory is
+	// not emulated)
 
-	/* FIXME Private memory allocated per work_item */
+	// FIXME Private memory allocated per work_item
 
-	/* 0  */
+	// 0 
 	ndrange->ConstantBufferWrite(0, 56, &zero, 4);
 
-	/* 0  */
+	// 0 
 	ndrange->ConstantBufferWrite(0, 60, &zero, 4);
 
-	/* CB0 bytes 64:79 */
+	// CB0 bytes 64:79
 
-	/* FIXME Offset to local memory ring (0 if local memory is
-	 * not emulated) */
+	// FIXME Offset to local memory ring (0 if local memory is
+	// not emulated)
 
-	/* FIXME Local memory allocated per group */
+	// FIXME Local memory allocated per group
 
-	/* 0 */
+	// 0
 	ndrange->ConstantBufferWrite(0, 72, &zero, 4);
 
-	/* FIXME Pointer to location in global buffer where math library
-	 * tables start. */
+	// FIXME Pointer to location in global buffer where math library
+	// tables start.
 
-	/* CB0 bytes 80:95 */
+	// CB0 bytes 80:95
 
-	/* 0.0 as IEEE-32bit float - required for math library. */
+	// 0.0 as IEEE-32bit float - required for math library.
 	f = 0.0f;
 	ndrange->ConstantBufferWrite(0, 80, &f, 4);
 
-	/* 0.5 as IEEE-32bit float - required for math library. */
+	// 0.5 as IEEE-32bit float - required for math library.
 	f = 0.5f;
 	ndrange->ConstantBufferWrite(0, 84, &f, 4);
 
-	/* 1.0 as IEEE-32bit float - required for math library. */
+	// 1.0 as IEEE-32bit float - required for math library.
 	f = 1.0f;
 	ndrange->ConstantBufferWrite(0, 88, &f, 4);
 
-	/* 2.0 as IEEE-32bit float - required for math library. */
+	// 2.0 as IEEE-32bit float - required for math library.
 	f = 2.0f;
 	ndrange->ConstantBufferWrite(0, 92, &f, 4);
 
-	/* CB0 bytes 96:111 */
+	// CB0 bytes 96:111
 
-	/* Global offset for the {x,y,z} dimension of the work_item spawn */
+	// Global offset for the {x,y,z} dimension of the work_item spawn
 	ndrange->ConstantBufferWrite(0, 96, &zero, 4);
 	ndrange->ConstantBufferWrite(0, 100, &zero, 4);
 	ndrange->ConstantBufferWrite(0, 104, &zero, 4);
 
-	/* Global single dimension flat offset: x * y * z */
+	// Global single dimension flat offset: x * y * z
 	ndrange->ConstantBufferWrite(0, 108, &zero, 4);
 
-	/* CB0 bytes 112:127 */
+	// CB0 bytes 112:127
 
-	/* Group offset for the {x,y,z} dimensions of the work_item spawn */
+	// Group offset for the {x,y,z} dimensions of the work_item spawn
 	ndrange->ConstantBufferWrite(0, 112, &zero, 4);
 	ndrange->ConstantBufferWrite(0, 116, &zero, 4);
 	ndrange->ConstantBufferWrite(0, 120, &zero, 4);
 
-	/* Group single dimension flat offset, x * y * z */
+	// Group single dimension flat offset, x * y * z
 	ndrange->ConstantBufferWrite(0, 124, &zero, 4);
 
-	/* CB0 bytes 128:143 */
+	// CB0 bytes 128:143
 
-	/* FIXME Offset in the global buffer where data segment exists */
-	/* FIXME Offset in buffer for printf support */
-	/* FIXME Size of the printf buffer */
+	// FIXME Offset in the global buffer where data segment exists
+	// FIXME Offset in buffer for printf support
+	// FIXME Size of the printf buffer
 
 }
 
