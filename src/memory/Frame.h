@@ -148,8 +148,23 @@ public:
 	/// Way associated with the access
 	int way = -1;
 
+	/// Tag of an evicted block
+	int src_tag = -1;
+
+	/// Set of an evicted block
+	int src_set = -1;
+
+	/// Way of an evicted block
+	int src_way = -1;
+
 	/// Block state
 	Cache::BlockState state = Cache::BlockInvalid;
+
+	/// Target module for transfers
+	Module *target_module = nullptr;
+
+	/// Exception module to send invalidations
+	Module *except_module = nullptr;
 
 
 
