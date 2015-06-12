@@ -30,7 +30,7 @@ Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
 		id_in_core(id_in_core)
 {
 	// Initialize Uop queue
-
+	uop_queue.resize(CPU::getUopQueueSize());
 
 	// Initialize fetch queue
 	fetch_queue.resize(CPU::getFetchQueueSize());
@@ -324,5 +324,22 @@ void Thread::RecoverLoadStoreQueue()
 	}
 }
 
+
+void Thread::RecoverUopQueue()
+{
+	// Local variable declaration
+	Uop *uop;
+
+	// Recover
+	while (uop_queue.size() > 0)
+	{
+		uop = uop_queue.back().get();
+		assert(uop->getThread() == this);
+		if (!uop->getSpeculativeMode())
+			break;
+		uop->setInUopQueue(false);
+		uop_queue.pop_back();
+	}
+}
 
 }

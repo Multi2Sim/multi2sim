@@ -541,6 +541,16 @@ public:
 
 	/// Recover load/store queue
 	void RecoverLoadStoreQueue();
+
+
+
+
+	//
+	// Uop queue functions
+	//
+
+	// Recover Uop queue
+	void RecoverUopQueue();
 };
 
 }

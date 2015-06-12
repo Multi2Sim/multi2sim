@@ -105,6 +105,7 @@ CPU::InstructionQueueKind CPU::instruction_queue_kind;
 int CPU::instruction_queue_size;
 CPU::LoadStoreQueueKind CPU::load_store_queue_kind;
 int CPU::load_store_queue_size;
+int CPU::uop_queue_size;
 
 CPU::CPU()
 {
@@ -177,7 +178,7 @@ void CPU::ParseConfiguration(misc::IniFile *ini_file)
 	load_store_queue_kind = (LoadStoreQueueKind) ini_file->ReadEnum(section, "LsqKind",
 			load_store_queue_kind_map, LoadStoreQueueKindPrivate);
 	load_store_queue_size = ini_file->ReadInt(section, "LsqSize", 20);
-	// x86_uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
+	uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
 
 }
 
