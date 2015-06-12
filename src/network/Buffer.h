@@ -20,6 +20,10 @@
 #ifndef NETWORK_BUFFER_H
 #define NETWORK_BUFFER_H
 
+#include <lib/esim/Engine.h>
+#include <lib/esim/Event.h>
+#include <lib/esim/Queue.h>
+
 #include "System.h"
 
 namespace net
@@ -46,6 +50,9 @@ class Buffer
 	// Occupied buffer entries
 	int count = 0;
 
+	// A queue of events suspended due to the buffer 
+	esim::Queue event_queue;
+
 	// Connection that the buffer is connected to
 	Connection *connection;
 
@@ -54,6 +61,9 @@ class Buffer
 
 	// Cycle until a write operation on buffer lasts
 	long long write_busy = -1;
+
+	// A list of packets in the buffer
+	std::list<Packet *> packets;
 
 public:
 
@@ -98,9 +108,36 @@ public:
 		this->read_busy = read_busy;
 	}
 
-	/// Insert a packet to the buffer
-	void InsertPacket(Packet *packet)
+	/// Suspend an event queue in the buffer
+	void Wait(esim::EventType *event_type)
 	{
+		event_queue.Wait(event_type);
+	}
+
+	/// Wake up all events in the queue
+	void Wakeup()
+	{
+		event_queue.WakeupAll();
+	}
+
+	/// Insert a packet to the buffer
+	void InsertPacket(Packet *packet);
+
+	/// Pop the packet at the head of the buffer
+	void PopPacket();
+
+	/// Get number of packets in the buffer
+	int getNumPacket()
+	{
+		return packets.size();
+	}
+
+	/// Get the packet by index
+	Packet *getBufferHead() 
+	{
+		if (packets.empty())
+			return nullptr;
+		return packets.front();
 	}
 
 };

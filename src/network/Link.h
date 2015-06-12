@@ -109,6 +109,9 @@ public:
 
 	/// Dump the node information.
 	void Dump(std::ostream &os = std::cout) const;
+
+	/// Transfer the packet from an output buffer 
+	void TransferPacket(Packet *packet);
 };
 
 
