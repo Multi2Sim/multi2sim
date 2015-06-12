@@ -31,6 +31,35 @@ Buffer::Buffer(const std::string &name,
 		index(index),
 		size(size),
 		connection(connection)
-{}
+{
+}
+
+
+void Buffer::InsertPacket(Packet *packet)
+{
+	// Check if buffer large enough to hold the packet
+	if (count + packet->getSize() > size)
+		throw misc::Panic("No enough space in buffer.");
+
+	// Update count
+	count += packet->getSize();
+
+	// Insert the packet into buffer
+	packets.push_back(packet);
+
+}
+
+
+void Buffer::PopPacket()
+{
+	// Get the reference of packet that is going to be poped
+	Packet *packet = packets.front();
+
+	// Remove the packet from the queue
+	packets.pop_front();
+
+	// Reduce the count of the packet
+	count -= packet->getSize();
+}
 
 }  // namespace net

@@ -17,6 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <algorithm>
+
+#include <lib/esim/Event.h>
+
 #include "Node.h"
 #include "Link.h"
 
@@ -64,6 +68,63 @@ void Link::Dump(std::ostream &os) const
 		os << misc::fmt(" \t %s", 
 				buffer->getNode()->getName().c_str());
 	}
+}
+
+
+void Link::TransferPacket(Packet *packet)
+{
+	// Get current cycle
+	esim::Engine *esim = esim::Engine::getInstance();
+	esim::Event *event = esim->getCurrentEvent();
+	long long cycle = esim->getCycle();
+
+	// Check if the packet is in an output buffer that connects to 
+	// this link
+	Buffer *source_buffer = packet->getBuffer();
+	if (std::find(source_buffers.begin(), source_buffers.end(), 
+			source_buffer) != source_buffers.end())
+	{
+		throw misc::Panic("Packet is not ready to be send over the "
+				"link");
+	}
+
+	// Check if the link is busy
+	if (busy >= cycle)
+	{
+		esim->Next(event->getType(), busy - cycle + 1);
+		return;
+	}
+
+	// Check if the destination buffer is busy
+	Buffer *destination_buffer = destination_buffers[0];
+	long long write_busy = destination_buffer->getWriteBusy();
+	if (write_busy >= cycle)
+	{
+		esim->Next(event->getType(), write_busy - cycle + 1);
+		return;
+	}
+
+	// Check if the destination buffer is full
+	if (destination_buffer->getCount() + packet->getSize() > 
+			destination_buffer->getSize())
+	{
+		destination_buffer->Wait(event->getType());
+		return;
+	}
+
+	// Calculate latency and occypy resources
+	int latency = (packet->getSize() - 1) / bandwidth + 1;
+	source_buffer->setReadBusy(cycle + latency - 1);
+	busy = cycle + latency - 1;
+	destination_buffer->setWriteBusy(cycle + latency - 1);
+
+	// Transfer message to next input buffer
+	source_buffer->PopPacket();		
+	destination_buffer->InsertPacket(packet);
+	packet->setNode(destination_buffer->getNode());
+	packet->setBuffer(destination_buffer);
+	packet->setBusy(cycle + latency - 1);
+
 }
 
 }
