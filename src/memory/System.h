@@ -211,13 +211,11 @@ class System
 	static void EventLoadHandler(esim::EventType *, esim::EventFrame *);
 	static void EventStoreHandler(esim::EventType *, esim::EventFrame *);
 	static void EventNCStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void EventPrefetchHandler(esim::EventType *, esim::EventFrame *);
 	static void EventFindAndLockHandler(esim::EventType *, esim::EventFrame *);
 	static void EventEvictHandler(esim::EventType *, esim::EventFrame *);
 	static void EventWriteRequestHandler(esim::EventType *, esim::EventFrame *);
 	static void EventReadRequestHandler(esim::EventType *, esim::EventFrame *);
 	static void EventInvalidateHandler(esim::EventType *, esim::EventFrame *);
-	static void EventPeerHandler(esim::EventType *, esim::EventFrame *);
 	static void EventMessageHandler(esim::EventType *, esim::EventFrame *);
 	static void EventFlushHandler(esim::EventType *, esim::EventFrame *);
 	static void EventLocalLoadHandler(esim::EventType *, esim::EventFrame *);
@@ -305,13 +303,6 @@ public:
 	static esim::EventType *event_type_nc_store_unlock;
 	static esim::EventType *event_type_nc_store_finish;
 
-	static esim::EventType *event_type_prefetch;
-	static esim::EventType *event_type_prefetch_lock;
-	static esim::EventType *event_type_prefetch_action;
-	static esim::EventType *event_type_prefetch_miss;
-	static esim::EventType *event_type_prefetch_unlock;
-	static esim::EventType *event_type_prefetch_finish;
-
 	static esim::EventType *event_type_find_and_lock;
 	static esim::EventType *event_type_find_and_lock_port;
 	static esim::EventType *event_type_find_and_lock_action;
@@ -352,11 +343,6 @@ public:
 
 	static esim::EventType *event_type_invalidate;
 	static esim::EventType *event_type_invalidate_finish;
-
-	static esim::EventType *event_type_peer_send;
-	static esim::EventType *event_type_peer_receive;
-	static esim::EventType *event_type_peer_reply;
-	static esim::EventType *event_type_peer_finish;
 
 	static esim::EventType *event_type_message;
 	static esim::EventType *event_type_message_receive;

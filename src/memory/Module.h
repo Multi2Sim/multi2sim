@@ -498,11 +498,22 @@ public:
 		return low_modules[index];
 	}
 
+	/// Given a memory address, return the low module (the one closer to
+	/// main memory) that serves that address. The current module must also
+	/// serve the given address. If no lower module serves the address, the
+	/// function will cause a fatal error, assuming a bad memory
+	/// configuration given by the user.
+	Module *getLowModuleServingAddress(unsigned address) const;
+
 	/// Add a low module (one that is closer to main memory)
 	void addLowModule(Module *low_module)
 	{
 		low_modules.push_back(low_module);
 	}
+
+	/// Return `true` if the current module serves the address given in
+	/// the argument.
+	bool ServesAddress(unsigned address) const;
 
 	/// Get the low network (the one closer to main memory)
 	net::Network *getLowNetwork() const { return low_network; }
@@ -707,6 +718,10 @@ public:
 	/// - Number of evictions
 	///
 	void UpdateStats(Frame *frame);
+
+	/// Return a random latency calculated in proportion to the standard
+	/// data latency, used for access retries.
+	int getRetryLatency() const;
 };
 
 

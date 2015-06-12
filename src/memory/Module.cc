@@ -47,6 +47,69 @@ Module::Module(const std::string &name,
 }
 
 
+bool Module::ServesAddress(unsigned address) const
+{
+	// Address bounds
+	if (range_type == RangeBounds)
+		return address >= range.bounds.low &&
+				address <= range.bounds.high;
+
+	// Interleaved addresses
+	if (range_type == RangeInterleaved)
+		return (address / range.interleaved.div) %
+				range.interleaved.mod ==
+				range.interleaved.eq;
+
+	// Invalid
+	throw misc::Panic("Invalid range type");
+}
+
+
+Module *Module::getLowModuleServingAddress(unsigned address) const
+{
+	// The address must be served by the current module
+	assert(ServesAddress(address));
+
+	// Main memory does not have a low module
+	if (type == TypeMainMemory)
+	{
+		assert(!low_modules.size());
+		throw misc::Panic("Main memory has no lower modules");
+	}
+
+	// Check which low module serves address
+	Module *server_module = nullptr;
+	for (Module *low_module : low_modules)
+	{
+		// Skip if this low module doesn't serve address
+		if (!low_module->ServesAddress(address))
+			continue;
+
+		// Address served by more than one module
+		if (server_module)
+			throw Error(misc::fmt("%s: low modules '%s' "
+					"and '%s' both serve address 0x%x",
+					name.c_str(),
+					server_module->getName().c_str(),
+					low_module->getName().c_str(),
+					address));
+
+		// Assign serving module
+		server_module = low_module;
+	}
+
+	// Error if no low module serves address
+	if (!server_module)
+		throw Error(misc::fmt("Module %s: no lower module "
+				"serves address 0x%x",
+				name.c_str(),
+				address));
+
+	// Return server module
+	return server_module;
+}
+
+
 long long Module::Access(AccessType access_type,
 		unsigned address,
 		int *witness)
@@ -613,6 +676,15 @@ void Module::UpdateStats(Frame *frame)
 	{
 		hlc_evictions++;
 	}
+}
+
+
+int Module::getRetryLatency() const
+{
+	// To support a data latency of zero, we must ensure that at least
+	// one of the following values is non-zero so that the modulo operation
+	// will work.  Using two instead of one to avoid livelock situations.
+	return random() % (data_latency + 2);
 }
 
 

@@ -123,25 +123,6 @@ System::System()
 			EventNCStoreHandler,
 			frequency_domain);
 
-	event_type_prefetch = esim_engine->RegisterEventType("prefetch",
-			EventPrefetchHandler,
-			frequency_domain);
-	event_type_prefetch_lock = esim_engine->RegisterEventType("prefetch_lock",
-			EventPrefetchHandler,
-			frequency_domain);
-	event_type_prefetch_action = esim_engine->RegisterEventType("prefetch_action",
-			EventPrefetchHandler,
-			frequency_domain);
-	event_type_prefetch_miss = esim_engine->RegisterEventType("prefetch_miss",
-			EventPrefetchHandler,
-			frequency_domain);
-	event_type_prefetch_unlock = esim_engine->RegisterEventType("prefetch_unlock",
-			EventPrefetchHandler,
-			frequency_domain);
-	event_type_prefetch_finish = esim_engine->RegisterEventType("prefetch_finish",
-			EventPrefetchHandler,
-			frequency_domain);
-
 	event_type_find_and_lock = esim_engine->RegisterEventType("find_and_lock",
 			EventFindAndLockHandler,
 			frequency_domain);
@@ -256,19 +237,6 @@ System::System()
 			frequency_domain);
 	event_type_invalidate_finish = esim_engine->RegisterEventType("invalidate_finish",
 			EventInvalidateHandler,
-			frequency_domain);
-
-	event_type_peer_send = esim_engine->RegisterEventType("peer_send",
-			EventPeerHandler,
-			frequency_domain);
-	event_type_peer_receive = esim_engine->RegisterEventType("peer_receive",
-			EventPeerHandler,
-			frequency_domain);
-	event_type_peer_reply = esim_engine->RegisterEventType("peer_reply",
-			EventPeerHandler,
-			frequency_domain);
-	event_type_peer_finish = esim_engine->RegisterEventType("peer_finish",
-			EventPeerHandler,
 			frequency_domain);
 
 	event_type_message = esim_engine->RegisterEventType("message",

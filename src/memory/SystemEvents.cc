@@ -45,13 +45,6 @@ esim::EventType *System::event_type_nc_store_miss;
 esim::EventType *System::event_type_nc_store_unlock;
 esim::EventType *System::event_type_nc_store_finish;
 
-esim::EventType *System::event_type_prefetch;
-esim::EventType *System::event_type_prefetch_lock;
-esim::EventType *System::event_type_prefetch_action;
-esim::EventType *System::event_type_prefetch_miss;
-esim::EventType *System::event_type_prefetch_unlock;
-esim::EventType *System::event_type_prefetch_finish;
-
 esim::EventType *System::event_type_find_and_lock;
 esim::EventType *System::event_type_find_and_lock_port;
 esim::EventType *System::event_type_find_and_lock_action;
@@ -92,11 +85,6 @@ esim::EventType *System::event_type_read_request_finish;
 
 esim::EventType *System::event_type_invalidate;
 esim::EventType *System::event_type_invalidate_finish;
-
-esim::EventType *System::event_type_peer_send;
-esim::EventType *System::event_type_peer_receive;
-esim::EventType *System::event_type_peer_reply;
-esim::EventType *System::event_type_peer_finish;
 
 esim::EventType *System::event_type_message;
 esim::EventType *System::event_type_message_receive;
@@ -225,7 +213,55 @@ void System::EventLoadHandler(esim::EventType *event_type,
 	// Event "load_action"
 	if (event_type == event_type_load_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s load action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access name=\"A-%lld\" "
+				"state=\"%s:load_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error locking
+		if (frame->error)
+		{
+			// Calculate a retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n",
+					retry_latency);
+
+			// Reschedule 'load-lock'
+			frame->retry = true;
+			esim_engine->Next(event_type_load_lock, retry_latency);
+			return;
+		}
+
+		// Hit
+		if (frame->state)
+		{
+			// Continue with 'load-unlock'
+			esim_engine->Next(event_type_load_unlock);
+			return;
+		}
+
+		// Miss
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->tag);
+		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
+		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		esim_engine->Call(event_type_read_request,
+				new_frame,
+				event_type_load_miss);
+
+		// Done
+		return;
 	}
 
 
@@ -259,12 +295,6 @@ void System::EventStoreHandler(esim::EventType *type, esim::EventFrame *frame)
 
 
 void System::EventNCStoreHandler(esim::EventType *type, esim::EventFrame *frame)
-{
-	throw misc::Panic("Not implemented");
-}
-
-
-void System::EventPrefetchHandler(esim::EventType *type, esim::EventFrame *frame)
 {
 	throw misc::Panic("Not implemented");
 }
@@ -631,63 +661,365 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 }
 
 
-void System::EventEvictHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventEvictHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Engine, frame, module
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Module *module = frame->getModule();
+	Cache *cache = module->getCache();
+	Directory *directory = module->getDirectory();
+
+	// Event 'evict'
+	if (event_type == event_type_evict)
+	{
+		// Default return value
+		parent_frame->error = false;
+
+		// Get block info
+		unsigned tag;
+		cache->getBlock(frame->set, frame->way, tag, frame->state);
+		frame->tag = tag;
+		assert(frame->state || !directory->isBlockSharedOrOwned(
+				frame->set, frame->way));
+
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict "
+				"(set=%d, way=%d, state=%s)\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str(),
+				frame->set,
+				frame->way,
+				Cache::BlockStateMap[frame->state]);
+		trace << misc::fmt("mem.access name=\"A-%lld\" "
+				"state=\"%s:evict\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Save some data
+		frame->src_set = frame->set;
+		frame->src_way = frame->way;
+		frame->src_tag = frame->tag;
+		frame->target_module = module->getLowModuleServingAddress(frame->tag);
+
+		// Send write request to all sharers
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				0);
+		new_frame->except_module = nullptr;
+		new_frame->set = frame->set;
+		new_frame->way = frame->way;
+		esim_engine->Call(event_type_invalidate,
+				new_frame,
+				event_type_evict_invalid);
+		return;
+	}
+
+	// Event "evict_invalid"
+	if (event_type == event_type_evict_invalid)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_action"
+	if (event_type == event_type_evict_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_receive"
+	if (event_type == event_type_evict_receive)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_process"
+	if (event_type == event_type_evict_process)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_process_noncoherent"
+	if (event_type == event_type_evict_process_noncoherent)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_reply"
+	if (event_type == event_type_evict_reply)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_reply_receive"
+	if (event_type == event_type_evict_reply_receive)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "evict_finish"
+	if (event_type == event_type_evict_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventWriteRequestHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventWriteRequestHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "store"
+	if (event_type == event_type_store)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_lock"
+	if (event_type == event_type_store_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_action"
+	if (event_type == event_type_store_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_unlock"
+	if (event_type == event_type_store_unlock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_finish"
+	if (event_type == event_type_store_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventReadRequestHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventReadRequestHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "nc_store"
+	if (event_type == event_type_nc_store)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_lock"
+	if (event_type == event_type_nc_store_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_writeback"
+	if (event_type == event_type_nc_store_writeback)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_action"
+	if (event_type == event_type_nc_store_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_miss"
+	if (event_type == event_type_nc_store_miss)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_unlock"
+	if (event_type == event_type_nc_store_unlock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_finish"
+	if (event_type == event_type_nc_store_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventInvalidateHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventInvalidateHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "invalidate"
+	if (event_type == event_type_invalidate)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "invalidate_finish"
+	if (event_type == event_type_invalidate_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventPeerHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventMessageHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "message"
+	if (event_type == event_type_message)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "message_receive"
+	if (event_type == event_type_message_receive)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "message_action"
+	if (event_type == event_type_message_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "message_reply"
+	if (event_type == event_type_message_reply)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "message_finish"
+	if (event_type == event_type_message_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventMessageHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventFlushHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "flush"
+	if (event_type == event_type_flush)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "flush_finish"
+	if (event_type == event_type_flush_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventFlushHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalLoadHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "local_load"
+	if (event_type == event_type_local_load)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "local_load_lock"
+	if (event_type == event_type_local_load_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "local_load_finish"
+	if (event_type == event_type_local_load_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventLocalLoadHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalStoreHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "local_store"
+	if (event_type == event_type_local_store)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "local_store_lock"
+	if (event_type == event_type_local_store_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "local_store_finish"
+	if (event_type == event_type_local_store_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventLocalStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventLocalFindAndLockHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
-}
+	// Event "local_find_and_lock"
+	if (event_type == event_type_local_find_and_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
 
+	// Event "local_find_and_lock_port"
+	if (event_type == event_type_local_find_and_lock_port)
+	{
+		throw misc::Panic("Not implemented");
+	}
 
-void System::EventLocalFindAndLockHandler(esim::EventType *type, esim::EventFrame *frame)
-{
-	throw misc::Panic("Not implemented");
+	// Event "local_find_and_lock_action"
+	if (event_type == event_type_local_find_and_lock_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "local_find_and_lock_finish"
+	if (event_type == event_type_local_find_and_lock_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
