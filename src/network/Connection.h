@@ -24,7 +24,7 @@
 
 namespace net
 {
-
+class Packet;
 class Network;
 class Buffer;
 
@@ -87,6 +87,9 @@ public:
 	{ 
 		return destination_buffers[index]; 
 	}
+
+	/// Transfer the packet 
+	virtual void TransferPacket(Packet *packet) = 0;
 };
 }
 

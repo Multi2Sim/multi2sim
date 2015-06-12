@@ -94,15 +94,23 @@ void System::EventTypeOutputBufferHandler(esim::EventType *type,
 	// long long cycle = esim->getCycle();
 
 	// Cast event frame type
-	// Frame *network_frame = misc::cast<Frame *>(frame);
+	Frame *network_frame = misc::cast<Frame *>(frame);
 
 	// Lookup route from routing table
-	/*
 	Packet *packet = network_frame->getPacket();
-	Message *message = packet->getMessage();
-	Network *network = message->getNetwork();
+	// Message *message = packet->getMessage();
+	// Network *network = message->getNetwork();
 	Buffer *buffer = packet->getBuffer();
-	*/
+
+	// Check if the packet is at the head of the buffer
+	if (buffer->getBufferHead() != packet)
+	{
+		buffer->Wait(type);
+	}
+
+	// Let the connection to pass the packet to input buffer
+	Connection *connection = buffer->getConnection();
+	connection->TransferPacket(packet);
 	
 }
 
