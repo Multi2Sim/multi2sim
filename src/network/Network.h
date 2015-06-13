@@ -147,7 +147,7 @@ public:
 	}
 
 	/// Get the name of the network.
-	std::string getName() const { return name; }
+	const std::string &getName() const { return name; }
 
 	/// Return the routing table of the network.
 	RoutingTable *getRoutingTable() { return &routing_table; }
@@ -163,16 +163,119 @@ public:
 	Message *ProduceMessage(Node *source_node, Node *destination_node,
 			int size);
 
-	/// Check if a message can be sent throught this network
-	bool CanSend(Node *source_node, Node *destination_node, int size);
+	/// Check if a message can be sent throught from the given source to
+	/// the given destination node. A message can be sent if:
+	///
+	/// - There is enough room in the destination buffer for the next hop
+	///   toward the destination.
+	///
+	/// - The link to be traversed is not busy.
+	///
+	/// \param source_node
+	///	Source node for the message transfer. This must be an end node.
+	///
+	/// \param destination_node
+	///	Destination node for the message transfer. Must be an end node.
+	///
+	/// \param size
+	///	Size in bytes of the message to transfer.
+	///
+	/// \param retry_event
+	///	If the message cannot be sent in the current cycle, this
+	///	optional argument indicates an event to be scheduled when the
+	///	condition should be evaluated again. This doesn't mean that
+	///	when the event occurs the message will be ready to be sent.
+	///	But for sure the message will not be ready before the event is
+	///	scheduled. If this argument is other than `nullptr`, the
+	///	CanSend() function must be invoked within an event handler.
+	///
+	/// \return
+	///	The function returns true if the message can be sent right
+	///	away. If not, the function returns false and schedules event
+	///	`retry_event` if other than `nullptr`.
+	///
+	bool CanSend(Node *source_node,
+			Node *destination_node,
+			int size,
+			esim::EventType *retry_event = nullptr);
 
-	/// Send a message through network
-	void Send(Node *source_node, Node *destination_node, int size);
+	/// Send a message through network.
+	///
+	/// \param source_node
+	///	Source node for message transfer. Must be an end node.
+	///
+	/// \param destination_node
+	///	Final destination for message. Must be an end node.
+	///
+	/// \param size
+	///	Size in bytes of the message, which will be split into packets
+	///	internally.
+	///
+	/// \param receive_event
+	///	If this optional argument is specified and other than `nullptr`,
+	///	the given event will be scheduled once the full message is
+	///	received by the destination node. If the Send() function is
+	///	invoked within an event handler, the current event frame will
+	///	be available once `receive_event` is scheduled.
+	///
+	/// \return
+	///	The function returns a new message object internally used in
+	///	the network to track the progress of the packets. Careful: the
+	///	validity of this object is limited until the time the message
+	///	reaches its destination (when `receive_event` would be
+	///	scheduled).
+	///
+	Message *Send(Node *source_node,
+			Node *destination_node,
+			int size,
+			esim::EventType *receive_event = nullptr);
 
-	/// Request to send a message,
-	void RequestSend(Node *source_node, Node *destination_node, int size,
-			esim::EventType *retry_event,
-			esim::EventFrame *retry_frame);
+	/// Send a message through the network, only if it is possible to send
+	/// it right away. A message can be sent if:
+	///
+	/// - There is enough room in the destination buffer for the next hop
+	///   toward the destination.
+	///
+	/// - The link to be traversed is not busy.
+	///
+	/// This function must be invoked within an event handler.
+	///
+	/// \param source_node
+	///	Source node for the message transfer. This must be an end node.
+	///
+	/// \param destination_node
+	///	Final destination node for the message. Must be an end node.
+	///
+	/// \param size
+	///	Size in bytes of the message to transfer. The message will be
+	///	internally split into packets.
+	///
+	/// \param receive_event
+	///	If this optional argument is specified and other than `nullptr`,
+	///	this event will be scheduled once the message has been fully
+	///	received in the destination node. The current event frame will
+	///	be available at that time. This argument has no effect if the
+	///	message could not be sent right away.
+	///
+	/// \param retry_event
+	///	If this optional argument is specified and other than `nullptr`,
+	///	this event will be scheduled in order for the caller to invoke
+	///	`TrySend` again, and check whether the message can be sent this
+	///	time. The current event frame will be available at that time.
+	///	This argument has no effect if the message was sent right away.
+	///
+	/// \return
+	///	If the message was sent right away, the function returns a
+	///	pointer to the created message object. Careful: the validity of
+	///	this object is limited until the time when the message is fully
+	///	received by the destination node. If the message was not sent
+	///	right away, the function returns `nullptr`.
+	///
+	Message *TrySend(Node *source_node,
+			Node *destination_node,
+			int size,
+			esim::EventType *receive_event = nullptr,
+			esim::EventType *retry_event = nullptr);
 
 
 

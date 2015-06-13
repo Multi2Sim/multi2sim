@@ -108,7 +108,8 @@ public:
 		this->read_busy = read_busy;
 	}
 
-	/// Suspend an event queue in the buffer
+	/// Suspend the current event chain in the event queue associated with
+	/// the buffer. This function must be invoked within an event handler.
 	void Wait(esim::EventType *event_type)
 	{
 		event_queue.Wait(event_type);

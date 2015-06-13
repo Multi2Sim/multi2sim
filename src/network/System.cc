@@ -43,6 +43,8 @@ std::string System::debug_file;
 
 misc::Debug System::debug;
 
+esim::Trace System::trace;
+
 std::string System::report_file;
 
 std::string System::routing_table_file;
@@ -73,8 +75,18 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new System());
+	instance = misc::new_unique<System>();
 	return instance.get();
+}
+
+
+System::System()
+{
+	// Create frequency domain
+	esim_engine = esim::Engine::getInstance();
+	frequency_domain = esim_engine->RegisterFrequencyDomain("Network");
+
+	// FIXME - register events here
 }
 
 
@@ -281,12 +293,6 @@ void System::UniformTrafficSimulation(Network *network)
 
 		}
 	}
-}
-
-
-Network *System::getNetworkByName(const std::string &name)
-{
-	return network_map[name];
 }
 
 }
