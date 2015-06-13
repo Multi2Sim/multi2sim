@@ -864,10 +864,95 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 void System::EventInvalidateHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
+	// Objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Module *module = frame->getModule();
+	Cache *cache = module->getCache();
+	Directory *directory = module->getDirectory();
+
 	// Event "invalidate"
 	if (event_type == event_type_invalidate)
 	{
-		throw misc::Panic("Not implemented");
+		// Get block info
+		unsigned tag;
+		cache->getBlock(frame->set, frame->way, tag, frame->state);
+		frame->tag = tag;
+
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s invalidate "
+				"(set=%d, way=%d, state=%s)\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str(),
+				frame->set,
+				frame->way,
+				Cache::BlockStateMap[frame->state]);
+		trace << misc::fmt("mem.access name=\"A-%lld\" "
+				"state=\"%s:invalidate\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// At least one pending reply
+		frame->pending = 1;
+		
+		// Send write request to all upper level sharers except
+		// 'except_module'.
+		for (int z = 0; z < directory->getNumSubBlocks(); z++)
+		{
+			unsigned directory_entry_tag = frame->tag +
+					z * module->getSubBlockSize();
+			assert(directory_entry_tag < frame->tag +
+					(unsigned) module->getSubBlockSize());
+			Directory::Entry *directory_entry = directory->getEntry(
+					frame->set, frame->way, z);
+			for (int i = 0; i < directory->getNumNodes(); i++)
+			{
+				// Skip non-sharers and 'except_module'
+				if (!directory->isSharer(frame->set,
+						frame->way,
+						z,
+						i))
+					continue;
+
+				net::Network *high_network = module->getHighNetwork();
+				net::Node *node = high_network->getNode(i);
+				Module *sharer = (Module *) node->getUserData();
+				if (sharer == frame->except_module)
+					continue;
+
+				// Clear sharer and owner
+				directory->clearSharer(frame->set,
+						frame->way,
+						z,
+						i);
+				if (directory_entry->getOwner() == i)
+					directory->setOwner(frame->set,
+							frame->way,
+							z,
+							Directory::NoOwner);
+
+				// Skip mid-block sub-blocks
+				if (directory_entry_tag % sharer->getBlockSize())
+					continue;
+				
+				// Send write request upwards if beginning of block
+				auto new_frame = misc::new_shared<Frame>(
+						frame->getId(),
+						module,
+						directory_entry_tag);
+				new_frame->target_module = sharer;
+				new_frame->request_direction = Frame::RequestDirectionDownUp;
+				esim_engine->Call(event_type_write_request,
+						new_frame,
+						event_type_invalidate_finish);
+			}
+		}
+
+		// Continue with 'invalidate-finish' event
+		esim_engine->Next(event_type_invalidate_finish);
+		return;
 	}
 
 	// Event "invalidate_finish"
