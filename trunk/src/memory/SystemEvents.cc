@@ -745,6 +745,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	Frame *frame = misc::cast<Frame *>(event_frame);
 	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
 	Module *module = frame->getModule();
+	Module *target_module = frame->target_module;
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
 
@@ -799,25 +800,254 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	// Event "evict_invalid"
 	if (event_type == event_type_evict_invalid)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict invalid\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_invalid\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Update the cache state since it may have changed after its 
+		// higher-level modules were invalidated.
+		unsigned tag;
+		cache->getBlock(frame->set, frame->way, tag, frame->state);
+		
+		// If module is main memory, we just need to set the block 
+		// as invalid, and finish.
+		if (module->getType() == Module::TypeMainMemory)
+		{
+			cache->setBlock(frame->src_set,
+					frame->src_way,
+					0,
+					Cache::BlockInvalid);
+
+			// Continue with 'evict-finish'
+			esim_engine->Next(event_type_evict_finish);
+			return;
+		}
+
+		// Note: if state is invalid (happens during invalidate?)
+		// just skip to FINISH also?
+		// Just set the block to invalid if there is no data to
+		// return, and let the protocol deal with catching up later.
+		if (module->getType() == Module::TypeCache &&
+				(frame->state == Cache::BlockShared ||
+				frame->state == Cache::BlockExclusive))
+		{
+			cache->setBlock(frame->src_set,
+					frame->src_way,
+					0,
+					Cache::BlockInvalid);
+			frame->state = Cache::BlockInvalid;
+			esim_engine->Next(event_type_evict_finish);
+			return;
+		}
+
+		// Continue with 'evict-action'
+		esim_engine->Next(event_type_evict_action);
+		return;
 	}
 
 	// Event "evict_action"
 	if (event_type == event_type_evict_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Get low node
+		Module *low_module = frame->target_module;
+		net::Node *low_node = low_module->getHighNetworkNode();
+		assert(low_module != module);
+		assert(low_module == module->getLowModuleServingAddress(frame->tag));
+		assert(low_node && low_node->getUserData() == low_module);
+
+		// State = I
+		if (frame->state == Cache::BlockInvalid)
+		{
+			esim_engine->Next(event_type_evict_finish);
+			return;
+		}
+
+		// If state is M/O/N, data must be sent to lower level module
+		if (frame->state == Cache::BlockModified ||
+			frame->state == Cache::BlockOwned ||
+			frame->state == Cache::BlockNonCoherent)
+		{
+			// Need to transmit data to low module.
+			frame->reply = Frame::ReplyAckData;
+		}
+
+		// States E/S shouldn't happen
+		else 
+		{
+			throw misc::Panic("Unexpected E or S states");
+		}
+
+		// Send message
+		int message_size = 8 + module->getBlockSize();
+		net::Network *network = module->getLowNetwork();
+		net::Node *source_node = module->getLowNetworkNode();
+		frame->message = network->TrySend(source_node,
+				low_node,
+				message_size,
+				event_type_evict_receive,
+				event_type);
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "evict_receive"
 	if (event_type == event_type_evict_receive)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict receive\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_receive\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Receive message
+		net::Network *network = target_module->getHighNetwork();
+		net::Node *node = target_module->getHighNetworkNode();
+		network->Receive(node, frame->message);
+
+		// Call find-and-lock
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				target_module,
+				frame->src_tag);
+		new_frame->blocking = false;
+		new_frame->request_direction = Frame::RequestDirectionDownUp;
+		new_frame->write = true;
+		new_frame->retry = false;
+		if (frame->state == Cache::BlockNonCoherent)
+			esim_engine->Call(event_type_find_and_lock,
+					new_frame,
+					event_type_evict_process_noncoherent);
+		else
+			esim_engine->Call(event_type_find_and_lock,
+					new_frame,
+					event_type_evict_process);
+		return;
 	}
 
 	// Event "evict_process"
 	if (event_type == event_type_evict_process)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict process\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_process\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Error locking block
+		if (frame->error)
+		{
+			parent_frame->error = true;
+			esim_engine->Next(event_type_evict_reply);
+			return;
+		}
+
+		// If data was received, set the block to modified
+		if (frame->reply == Frame::ReplyAck)
+		{
+			// Nothing to do
+		}
+		else if (frame->reply == Frame::ReplyAckData)
+		{
+			if (frame->state == Cache::BlockExclusive)
+			{
+				Cache *target_cache = target_module->getCache();
+				target_cache->setBlock(frame->set,
+						frame->way,
+						frame->tag,
+						Cache::BlockModified);
+			}
+			else if (frame->state == Cache::BlockModified)
+			{
+				// Nothing to do
+			}
+			else
+			{
+				throw misc::Panic("Invalid block state");
+			}
+		}
+		else 
+		{
+			throw misc::Panic("Invalid cache reply");
+		}
+
+		// Remove sharer and owner
+		Directory *directory = target_module->getDirectory();
+		for (int z = 0; z < directory->getNumSubBlocks(); z++)
+		{
+			// Skip other sub-blocks
+			unsigned directory_entry_tag = frame->tag + 
+					z * target_module->getSubBlockSize();
+			assert((int) directory_entry_tag < frame->tag + 
+					target_module->getBlockSize());
+			if ((int) directory_entry_tag < frame->src_tag || 
+					(int) directory_entry_tag >=
+					frame->src_tag + 
+					module->getBlockSize())
+				continue;
+
+			Directory::Entry *directory_entry = directory->getEntry(
+					frame->set, frame->way, z);
+			directory->clearSharer(frame->set,
+					frame->way,
+					z,
+					module->getLowNetworkNode()->getIndex());
+			if (directory_entry->getOwner() == module->
+					getLowNetworkNode()->getIndex())
+				directory->setOwner(frame->set,
+						frame->way,
+						z,
+						Directory::NoOwner);
+		}
+
+		// Unlock the directory entry
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		target_module->incDataAccesses();
+
+		// Continue with 'evict-reply', after data latency
+		esim_engine->Next(event_type_evict_reply,
+				target_module->getDataLatency());
+		return;
 	}
 
 	// Event "evict_process_noncoherent"
@@ -994,13 +1224,105 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	// Event "read_request_receive"
 	if (event_type == event_type_read_request_receive)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s read request receive\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_receive\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Receive message
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			net::Network *network = target_module->getHighNetwork();
+			net::Node *node = target_module->getHighNetworkNode();
+			network->Receive(node, frame->message);
+		}
+		else
+		{
+			net::Network *network = target_module->getLowNetwork();
+			net::Node *node = target_module->getLowNetworkNode();
+			network->Receive(node, frame->message);
+		}
+		
+		// Call 'find-and-lock'
+		// TODO Read requests should always be able to be blocking.  
+		// It's impossible to get into a livelock situation because we 
+		// only need to hit and not have ownership.  We would never 
+		// cross paths with a request coming down-up because we would
+		// hit before that.
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				target_module,
+				frame->getAddress());
+		new_frame->request_direction = frame->request_direction;
+		new_frame->blocking = frame->request_direction ==
+				Frame::RequestDirectionDownUp;
+		new_frame->read = true;
+		new_frame->retry = false;
+		esim_engine->Call(event_type_find_and_lock,
+				new_frame,
+				event_type_read_request_action);
+		return;
 	}
 
 	// Event "read_request_action"
 	if (event_type == event_type_read_request_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s read request action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_action\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Check block locking error. If read request is down-up, 
+		// there should not have been any error while locking.
+		if (frame->error)
+		{
+			assert(frame->request_direction == Frame::RequestDirectionUpDown);
+			parent_frame->error = true;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckError);
+			frame->reply_size = 8;
+
+			// Continue with 'read-request-reply'
+			esim_engine->Next(event_type_read_request_reply);
+			return;
+		}
+
+		// If we have a down-up read request, it is possible that the 
+		// block has already been evicted by the higher-level cache if
+		// it was in an unmodified state.
+		if (frame->block_not_found)
+		{
+			// TODO Create a reply_ack_removed message so that
+			// the cache can update its metadata
+			assert(frame->request_direction == Frame::RequestDirectionDownUp);
+
+			// Simply send an ack
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+			frame->reply_size = 8;
+
+			// Continue with 'read-request-reply'
+			esim_engine->Next(event_type_read_request_reply);
+			return;
+		}
+
+		// Continue with 'read-request-updown' or 'read-request-downup'
+		esim_engine->Next(frame->request_direction == Frame::RequestDirectionUpDown ?
+				event_type_read_request_updown :
+				event_type_read_request_downup);
+		return;
 	}
 
 	// Event "read_request_updown"
@@ -1153,7 +1475,34 @@ void System::EventInvalidateHandler(esim::EventType *event_type,
 	// Event "invalidate_finish"
 	if (event_type == event_type_invalidate_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s invalidate finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:invalidate_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// The following line updates the block state.  We must
+		// be sure that the directory entry is always locked if we
+		// allow this to happen.
+		if (frame->reply == Frame::ReplyAckData)
+			cache->setBlock(frame->set, frame->way, frame->tag,
+					Cache::BlockModified);
+
+		// Ignore while pending
+		assert(frame->pending > 0);
+		frame->pending--;
+		if (frame->pending)
+			return;
+
+		// Return to parent event chain
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event

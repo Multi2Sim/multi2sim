@@ -475,6 +475,12 @@ Message *Network::TrySend(Node *source_node,
 }
 
 
+void Network::Receive(Node *node, Message *message)
+{
+	misc::Warning("net::Receive not implemented");
+}
+
+
 EndNode *Network::addEndNode(int input_buffer_size,
 		int output_buffer_size,
 		const std::string &name,
