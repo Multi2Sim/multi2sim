@@ -54,38 +54,14 @@ public:
 /// Network system singleton.
 class System
 {
-	//
-	// Configuration options
-	//
-
-	// Traffic pattern states for network system
-	enum TrafficPattern
-	{
-		TrafficPatternInvalid = 0,
-		TrafficPatternUniform,
-		TrafficPatternCommand
-	};
-
-	// String map for traffic pattern
-	static const misc::StringMap TrafficPatternMap;
-
 	// Debugger file
 	static std::string debug_file;
 
 	// Configuration file
 	static std::string config_file;
 
-	// Report file
-	static std::string report_file;
-
-	// Visual file
-	static std::string visual_file;
-
-	// Routing table print file
-	static std::string routing_table_file;
-
-	// Network Traffic Pattern
-	static TrafficPattern traffic_pattern;
+	// Trace file
+	static std::string trace_file;
 
 	// Stand-Alone Simulator Network Name
 	static std::string sim_net_name;
@@ -96,17 +72,14 @@ class System
 	// Stand-alone message injection rate
 	static int injection_rate;
 
-	// Network snapshot sampling period
-	static int snapshot_period;
-
-	// Network Help
-	static bool net_help;
-
 	// Stand-alone simulator instantiator
 	static bool stand_alone;
 
 	// Networks configuration file
 	static misc::IniFile ini_file;
+
+	// Print network help information
+	static bool network_help;
 
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
@@ -118,11 +91,7 @@ class System
 	static int message_size;
 
 	// Get a exponential random valueclass Network;
-	static double RandomExponential(double lambda)
-	{
-		double x = (double) random() / RAND_MAX;
-		return log(1 - x) / -lambda;
-	}
+	static double RandomExponential(double lambda);
 
 	// Uniform traffic simulation
 	static void UniformTrafficSimulation(Network *network);

@@ -29,14 +29,6 @@
 namespace net
 {
 
-const misc::StringMap System::TrafficPatternMap =
-{
-	{ "command", TrafficPatternCommand },
-	{ "uniform", TrafficPatternUniform }
-};
-
-net::System::TrafficPattern System::traffic_pattern = net::System::TrafficPatternUniform;
-
 std::string System::config_file;
 
 std::string System::debug_file;
@@ -45,13 +37,7 @@ misc::Debug System::debug;
 
 esim::Trace System::trace;
 
-std::string System::report_file;
-
-std::string System::routing_table_file;
-
 std::string System::sim_net_name;
-
-std::string System::visual_file;
 
 long long System::max_cycles = 1000000;
 
@@ -59,11 +45,11 @@ int System::message_size = 1;
 
 int System::injection_rate = 0.001;
 
-int System::snapshot_period = 0;
-
-bool System::net_help = false;
+bool System::network_help = false;
 
 bool System::stand_alone = false;
+
+int System::net_system_frequency = 1000;
 
 std::unique_ptr<System> System::instance;
 
@@ -80,13 +66,32 @@ System *System::getInstance()
 }
 
 
+double System::RandomExponential(double lambda)
+{
+	double x = (double) random() / RAND_MAX;
+	return log(1 - x) / -lambda;
+}
+
+
 System::System()
 {
 	// Create frequency domain
 	esim_engine = esim::Engine::getInstance();
 	frequency_domain = esim_engine->RegisterFrequencyDomain("Network");
 
-	// FIXME - register events here
+	// Register events here
+	event_type_send = esim_engine->RegisterEventType("send", 
+			EventTypeSendHandler, frequency_domain);
+	event_type_output_buffer = esim_engine->RegisterEventType(
+			"output_buffer", EventTypeOutputBufferHandler, 
+			frequency_domain);
+	event_type_input_buffer = esim_engine->RegisterEventType(
+			"input_buffer", EventTypeInputBufferHandler, 
+			frequency_domain);
+	event_type_receive = esim_engine->RegisterEventType("receive", 
+			EventTypeReceiveHandler, frequency_domain);
+
+
 }
 
 
@@ -118,7 +123,7 @@ void System::RegisterOptions()
 
 	// Network Help Message
 	command_line->RegisterBool("--net-help",
-			net_help,
+			network_help,
 			"Print help message describing the network configuration"
 			" file, passed to the simulator "
 			"with option '--net-config <file>'.");
@@ -131,24 +136,6 @@ void System::RegisterOptions()
 			"transfer latency through a link will depend on the "
 			"message size and the link bandwidth. This option must "
 			"be used together with '--net-sim'.");
-
-	// Report file for each Network
-	command_line->RegisterString("--net-report <file>",
-			report_file,
-			"File to dump detailed statistics for each network "
-			"defined in the network configuration file (option "
-			"'--net-config'). The report includes statistics"
-			"on bandwidth utilization, network traffic, etc. and "
-			"will be presented as <network_name>_<file>");
-
-	// Visual File for each Network
-	command_line->RegisterString("--net-visual <file>",
-			visual_file,
-			"File for graphically representing the interconnection "
-			"networks. It we be presented as a file with name "
-			"<network_name>_<file>. This file is an input for a "
-			"supplementary tool called 'graphplot' which is "
-			"located in samples/network folder in multi2sim trunk.");
 
 	// Injection rate for stand-alone simulator
 	command_line->RegisterInt32("--net-injection-rate <number> (default 0.001)"
@@ -167,32 +154,6 @@ void System::RegisterOptions()
 			"where <network> is the name of a network specified "
 			"in the network configuration file (option "
 			"'--net-config')");
-
-	// Network traffic snapshot
-	command_line->RegisterInt32("--net-snapshot <number> (default = 0)",
-			snapshot_period,
-			"Accumulates the network traffic in specified periods "
-			"and creates a plot for each individual network, "
-			"showing the traffic pattern ");
-
-	// Network Routing Table representation
-	command_line->RegisterString("--net-dump-routes <file>",
-			routing_table_file,
-			"Prints a table that shows the connection between"
-			"all the nodes in each individual network. The provided"
-			"file would be in <network_name>_<file> format");
-
-	// Network Traffic Pattern
-	command_line->RegisterEnum("--net-traffic-pattern {uniform|command} "
-			"(default = uniform) ",
-			(int &) traffic_pattern, TrafficPatternMap,
-			"If set on uniform, messages are injected in the network"
-			"uniformly with random delays with exponential "
-			"distribution. If set on command, the Commands section"
-			"of configuration file is activated and messages are"
-			"inserted in the network on certain cycles indicated in"
-			"commands (use '--net-help' for learning more about"
-			"commands");
 }
 
 
@@ -224,13 +185,9 @@ void System::ProcessOptions()
 			throw Error(misc::fmt("Option --net-sim requires "
 					" --net-config option "));
 
-		// Check traffic pattern
-		if (traffic_pattern == TrafficPatternUniform)
-		{
-			System *system = getInstance();
-			UniformTrafficSimulation(
-					system->getNetworkByName(sim_net_name));
-		}
+		System *system = getInstance();
+		UniformTrafficSimulation(
+				system->getNetworkByName(sim_net_name));
 	}
 }
 
@@ -248,8 +205,8 @@ void System::UniformTrafficSimulation(Network *network)
 		}
 
 		// Get current cycle and check max cycles
-		esim::Engine *engine = esim::Engine::getInstance();
-		long long cycle = engine->getCycle();
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		long long cycle = System::getInstance()->getCycle();
 		if (cycle >= max_cycles)
 			break;
 
@@ -289,7 +246,7 @@ void System::UniformTrafficSimulation(Network *network)
 			}
 
 			// Next cycle
-			engine->ProcessEvents();
+			esim_engine->ProcessEvents();
 
 		}
 	}
