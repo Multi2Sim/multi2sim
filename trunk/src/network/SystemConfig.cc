@@ -26,8 +26,6 @@
 namespace net
 {
 
-int System::net_system_frequency = 1000;
-
 void System::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Debug
@@ -41,16 +39,6 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 	esim::Engine *esim = esim::Engine::getInstance();
 	frequency_domain = esim->RegisterFrequencyDomain("network", 
 			net_system_frequency);
-
-	// Register events
-	event_type_send = esim->RegisterEventType("send", EventTypeSendHandler, 
-			frequency_domain);
-	event_type_output_buffer = esim->RegisterEventType("output_buffer", 
-			EventTypeOutputBufferHandler, frequency_domain);
-	event_type_input_buffer = esim->RegisterEventType("input_buffer",
-			EventTypeInputBufferHandler, frequency_domain);
-	event_type_receive = esim->RegisterEventType("receive", 
-			EventTypeReceiveHandler, frequency_domain);
 
 	// First configuration look-up is for networks
 	for (int i = 0; i < ini_file->getNumSections(); i++)

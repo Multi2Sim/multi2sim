@@ -74,9 +74,9 @@ void Link::Dump(std::ostream &os) const
 void Link::TransferPacket(Packet *packet)
 {
 	// Get current cycle
-	esim::Engine *esim = esim::Engine::getInstance();
-	esim::Event *event = esim->getCurrentEvent();
-	long long cycle = esim->getCycle();
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	esim::Event *event = esim_engine->getCurrentEvent();
+	long long cycle = System::getInstance()->getCycle();
 
 	// Check if the packet is in an output buffer that connects to 
 	// this link
@@ -91,7 +91,7 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
-		esim->Next(event->getType(), busy - cycle + 1);
+		esim_engine->Next(event->getType(), busy - cycle + 1);
 		return;
 	}
 
@@ -100,7 +100,7 @@ void Link::TransferPacket(Packet *packet)
 	long long write_busy = destination_buffer->getWriteBusy();
 	if (write_busy >= cycle)
 	{
-		esim->Next(event->getType(), write_busy - cycle + 1);
+		esim_engine->Next(event->getType(), write_busy - cycle + 1);
 		return;
 	}
 

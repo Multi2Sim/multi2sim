@@ -39,7 +39,7 @@ void System::EventTypeSendHandler(esim::EventType *type,
 		esim::EventFrame *frame)
 {
 	// Useful objects
-	esim::Engine *esim = esim::Engine::getInstance();
+	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
 	// Lookup route from routing table
@@ -79,7 +79,7 @@ void System::EventTypeSendHandler(esim::EventType *type,
 	packet->setBusy(cycle);
 
 	// Schedule next event
-	esim->Next(event_type_output_buffer, 1);
+	esim_engine->Next(event_type_output_buffer, 1);
 }
 	
 
