@@ -133,30 +133,30 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 
 			// End-node should be able to contain an entire msg or
 			// or equivalent number of packets for that message.
-			if (input_buffer_size <= System::message_size)
+			if (input_buffer_size <= System::getMessageSize())
 			{
 				if(packet_size != 0)
 					end_node_input_buffer_size =
-							((System::message_size
+							((System::getMessageSize()
 							- 1)/
 							packet_size + 1) *
 							packet_size;
 				else
 					end_node_input_buffer_size =
-							System::message_size;
+							System::getMessageSize();
 			}
 
-			if (output_buffer_size <= System::message_size)
+			if (output_buffer_size <= System::getMessageSize())
 			{
 				if(packet_size != 0)
 					end_node_output_buffer_size =
-							((System::message_size
+							((System::getMessageSize()
 							- 1)/
 							packet_size + 1) *
 							packet_size;
 				else
 					end_node_output_buffer_size =
-							System::message_size;
+							System::getMessageSize();
 			}
 			addEndNode(end_node_input_buffer_size,
 					end_node_output_buffer_size,
@@ -206,9 +206,8 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 {
 	for (int i = 0; i < ini_file->getNumSections(); i++)
 	{
-		std::string section = ini_file->getSection(i);
-		
 		// Tokenize section name
+		std::string section = ini_file->getSection(i);
 		std::vector<std::string> tokens;
 		misc::StringTokenize(section, tokens, ".");
 
@@ -230,11 +229,19 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 			std::string src_name = ini_file->ReadString(section,
 					"Source");
 			Node *source = getNodeByName(src_name);
+			if (!source)
+				throw Error(misc::fmt("%s: %s: invalid node name",
+						section.c_str(),
+						src_name.c_str()));
 
 			// Get destination node
 			std::string dst_name = ini_file->ReadString(section,
 					"Dest");
 			Node *destination = getNodeByName(dst_name);
+			if (!destination)
+				throw Error(misc::fmt("%s: %s: invalid node name",
+						section.c_str(),
+						dst_name.c_str()));
 
 			// Get number of virtual channels
 			int num_virtual_channel = ini_file->ReadInt(section,
@@ -245,8 +252,9 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 					default_bandwidth);
 
 			// Add link
-			this->addBidirectionalLink(tokens[3],
-					source, destination,
+			addBidirectionalLink(tokens[3],
+					source,
+					destination,
 					bandwidth,
 					default_input_buffer_size,
 					default_output_buffer_size,
@@ -384,8 +392,15 @@ Message *Network::ProduceMessage(Node *source_node, Node *destination_node,
 }
 
 
-bool Network::CanSend(Node *source_node, Node *destination_node, int size)
+bool Network::CanSend(Node *source_node,
+		Node *destination_node,
+		int size,
+		esim::EventType *retry_event)
 {
+	// If 'retry_event' was specified, we must be in an event handler
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	assert(!retry_event || esim_engine->getCurrentEvent());
+
 	// Get output buffer
 	RoutingTable::Entry *entry = routing_table.Lookup(source_node, 
 			destination_node);
@@ -393,19 +408,23 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 
 	// Check if route exist
 	if (!output_buffer)
-	{
-		throw Error(misc::fmt("Route from %s to  %s not found",
+		throw Error(misc::fmt("No route from '%s' to '%s'",
 				source_node->getName().c_str(),
 				destination_node->getName().c_str()));
-		return false;
-	}
 
 	// Get current cycle
-	long long cycle = esim::Engine::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 
 	// Check if output buffer is busy
 	if (output_buffer->getWriteBusy() >= cycle)
+	{
+		if (retry_event)
+			esim_engine->Next(retry_event,
+					output_buffer->getWriteBusy()
+					- cycle + 1);
 		return false;
+	}
 
 	// Check if output buffer is large enough
 	int required_size = size;
@@ -413,21 +432,43 @@ bool Network::CanSend(Node *source_node, Node *destination_node, int size)
 		required_size = ((size - 1) / packet_size + 1) * packet_size;
 	if (output_buffer->getCount() + required_size >
 			output_buffer->getSize())
-			return false;
+	{
+		if (retry_event)
+			output_buffer->Wait(retry_event);
+		return false;
+	}
 
-	// All criterion met, return true
+	// All criteria met, return true
 	return true;
-	
 }
 
 
-void Network::Send(Node *source_node, Node *destination_node, int size)
+Message *Network::Send(Node *source_node,
+		Node *destination_node,
+		int size,
+		esim::EventType *receive_event)
 {
 	// Make sure both source node and destination node are end nodes
 	if (dynamic_cast<EndNode *>(source_node) == nullptr)
 		throw misc::Panic("Source node is not an end node");
 	if (dynamic_cast<EndNode *>(destination_node) == nullptr)
 		throw misc::Panic("Source node is not an end node");
+
+	// FIXME - RAFA - Temporarily assume that the package is receive
+	// in one cycle from now.
+	System::debug << misc::fmt("[Network] Send %d bytes from "
+			"'%s' to '%s'\n",
+			size,
+			source_node->getName().c_str(),
+			destination_node->getName().c_str());
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	esim_engine->Next(receive_event, 1);
+	
+	// FIXME - CAREFUL! Message is currently not being freed
+	return ProduceMessage(source_node, destination_node, size);
+
+/*
+	FIXME by RAFA: Commented this all out until my comments are applied.
 
 	// Create message
 	Message *message = ProduceMessage(source_node, destination_node, size);
@@ -445,6 +486,22 @@ void Network::Send(Node *source_node, Node *destination_node, int size)
 
 	// Send the message out
 	message->Send();
+*/
+}
+
+
+Message *Network::TrySend(Node *source_node,
+		Node *destination_node,
+		int size,
+		esim::EventType *receive_event,
+		esim::EventType *retry_event)
+{
+	// Check if message can be sent
+	if (!CanSend(source_node, destination_node, size, retry_event))
+		return nullptr;
+
+	// Send message
+	return Send(source_node, destination_node, size, receive_event);
 }
 
 

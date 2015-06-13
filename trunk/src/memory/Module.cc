@@ -39,7 +39,7 @@ Module::Module(const std::string &name,
 		num_ports(num_ports)
 {
 	// Create 'num_ports' in vector of ports
-	ports.reserve(num_ports);
+	ports.resize(num_ports);
 
 	// Block size
 	assert(!(block_size & (block_size - 1)) && block_size >= 4);
@@ -498,6 +498,7 @@ void Module::UnlockPort(Port *port, Frame *frame)
 {
 	// Checks
 	assert(num_locked_ports > 0);
+	assert(frame->port && port->frame);
 	assert(frame->port == port && port->frame == frame);
 	assert(frame->getModule() == this);
 

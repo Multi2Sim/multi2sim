@@ -614,28 +614,28 @@ int main(int argc, char **argv)
 			"Type = Cache\n"
 			"Geometry = geo-l1\n"
 			"LowNetwork = net0\n"
-			"LowNetworkNode = n0\n"
+			"LowNetworkNode = mod-l1-0\n"
 			"LowModules = mod-l2-0\n"
 			"\n"
 			"[Module mod-l1-1]\n"
 			"Type = Cache\n"
 			"Geometry = geo-l1\n"
 			"LowNetwork = net0\n"
-			"LowNetworkNode = n1\n"
+			"LowNetworkNode = mod-l1-1\n"
 			"LowModules = mod-l2-0\n"
 			"\n"
 			"[Module mod-l1-2]\n"
 			"Type = Cache\n"
 			"Geometry = geo-l1\n"
 			"LowNetwork = net1\n"
-			"LowNetworkNode = n3\n"
+			"LowNetworkNode = mod-l1-2\n"
 			"LowModules = mod-l2-1\n"
 			"\n"
 			"[Module mod-l1-3]\n"
 			"Type = Cache\n"
 			"Geometry = geo-l1\n"
 			"LowNetwork = net1\n"
-			"LowNetworkNode = n4\n"
+			"LowNetworkNode = mod-l1-3\n"
 			"LowModules = mod-l2-1\n"
 			"\n"
 			"; 1 l2 cpu cache\n"
@@ -644,18 +644,18 @@ int main(int argc, char **argv)
 			"Type = Cache\n"
 			"Geometry = geo-l2\n"
 			"HighNetwork = net0\n"
-			"HighNetworkNode = n2\n"
+			"HighNetworkNode = mod-l2-0\n"
 			"LowNetwork = net2\n"
-			"LowNetworkNode = n6\n"
+			"LowNetworkNode = mod-l2-0\n"
 			"LowModules = mod-mm\n"
 			"\n"
 			"[Module mod-l2-1]\n"
 			"Type = Cache\n"
 			"Geometry = geo-l2\n"
 			"HighNetwork = net1\n"
-			"HighNetworkNode = n5\n"
+			"HighNetworkNode = mod-l2-1\n"
 			"LowNetwork = net2\n"
-			"LowNetworkNode = n7\n"
+			"LowNetworkNode = mod-l2-1\n"
 			"LowModules = mod-mm\n"
 			"\n"
 			"; 1 mm\n"
@@ -665,7 +665,7 @@ int main(int argc, char **argv)
 			"BlockSize = 128\n"
 			"Latency = 200\n"
 			"HighNetwork = net2\n"
-			"HighNetworkNode = n8\n"
+			"HighNetworkNode = mod-mm\n"
 			"\n"
 			"\n"
 			"[Entry core-0]\n"
@@ -696,134 +696,6 @@ int main(int argc, char **argv)
 			"DataModule = mod-l1-3\n"
 			"InstModule = mod-l1-3\n";
 
-	const std::string mem_config_1 =
-			"[ CacheGeometry geo-l1 ]\n"
-			"Sets = 4\n"
-			"Assoc = 1\n"
-			"BlockSize = 64\n"
-			"Latency = 1\n"
-			"Policy = LRU\n"
-			"Ports = 2\n"
-			"\n"
-			"[ CacheGeometry geo-l2 ]\n"
-			"Sets = 8\n"
-			"Assoc = 1\n"
-			"BlockSize = 64\n"
-			"Latency = 2\n"
-			"Policy = LRU\n"
-			"Ports = 4\n"
-			"\n"
-			"[ CacheGeometry geo-l3 ]\n"
-			"Sets = 16\n"
-			"Assoc = 1\n"
-			"BlockSize = 64\n"
-			"Latency = 4\n"
-			"Policy = LRU\n"
-			"Ports = 8\n"
-			"\n"
-			"\n"
-			"; L1 Caches\n"
-			"\n"
-			"[ Module mod-l1-0 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net-0\n"
-			"LowNetworkNode = n0\n"
-			"LowModules = mod-l2-0\n"
-			"\n"
-			"[ Module mod-l1-1 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net-0\n"
-			"LowNetworkNode = n1\n"
-			"LowModules = mod-l2-0\n"
-			"\n"
-			"[ Module mod-l1-2 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net-1\n"
-			"LowNetworkNode = n0\n"
-			"LowModules = mod-l2-1\n"
-			"\n"
-			"[ Module mod-l1-3 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net-1\n"
-			"LowNetworkNode = n1\n"
-			"LowModules = mod-l2-1\n"
-			"\n"
-			"\n"
-			"; L2 Caches\n"
-			"\n"
-			"[ Module mod-l2-0 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l2\n"
-			"HighNetwork = net-0\n"
-			"HighNetworkNode = n2\n"
-			"LowNetwork = net-2\n"
-			"LowNetworkNode = n0\n"
-			"LowModules = mod-l3\n"
-			"\n"
-			"[ Module mod-l2-1 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l2\n"
-			"HighNetwork = net-1\n"
-			"HighNetworkNode = n2\n"
-			"LowNetwork = net-2\n"
-			"LowNetworkNode = n1\n"
-			"LowModules = mod-l3\n"
-			"\n"
-			"\n"
-			"; L3 Cache\n"
-			"\n"
-			"[ Module mod-l3 ]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l3\n"
-			"HighNetwork = net-2\n"
-			"HighNetworkNode = n2\n"
-			"LowNetwork = net-3\n"
-			"LowNetworkNode = n0\n"
-			"LowModules = mod-mm\n"
-			"\n"
-			"\n"
-			"; Main Memory\n"
-			"\n"
-			"[ Module mod-mm ]\n"
-			"Type = MainMemory\n"
-			"BlockSize = 64\n"
-			"DirectorySize = 32\n"
-			"DirectoryAssoc = 1\n"
-			"Latency = 8\n"
-			"HighNetwork = net-3\n"
-			"HighNetworkNode = n1\n"
-			"\n"
-			"\n"
-			"; Cores\n"
-			"\n"
-			"[ Entry core-0 ]\n"
-			"Arch = x86\n"
-			"Core = 0\n"
-			"Thread = 0\n"
-			"Module = mod-l1-0\n"
-			"\n"
-			"[ Entry core-1 ]\n"
-			"Arch = x86\n"
-			"Core = 1\n"
-			"Thread = 0\n"
-			"Module = mod-l1-1\n"
-			"\n"
-			"[ Entry core-2 ]\n"
-			"Arch = x86\n"
-			"Core = 2\n"
-			"Thread = 0\n"
-			"Module = mod-l1-2\n"
-			"\n"
-			"[ Entry core-3 ]\n"
-			"Arch = x86\n"
-			"Core = 3\n"
-			"Thread = 0\n"
-			"Module = mod-l1-3\n";
-
 	const std::string x86_config =
 			"[ General ]\n"
 			"Cores = 4\n"
@@ -845,31 +717,31 @@ int main(int argc, char **argv)
 			"DefaultOutputBufferSize = 1024\n"
 			"DefaultBandwidth = 256\n"
 			"\n"
-			"[ Network.net0.Node.n0 ]\n"
+			"[ Network.net0.Node.mod-l1-0 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net0.Node.n1 ]\n"
+			"[ Network.net0.Node.mod-l1-1 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net0.Node.n2 ]\n"
+			"[ Network.net0.Node.mod-l2-0 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net1.Node.n3 ]\n"
+			"[ Network.net1.Node.mod-l1-2 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net1.Node.n4 ]\n"
+			"[ Network.net1.Node.mod-l1-3 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net1.Node.n5 ]\n"
+			"[ Network.net1.Node.mod-l2-1 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net2.Node.n6 ]\n"
+			"[ Network.net2.Node.mod-l2-0 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net2.Node.n7 ]\n"
+			"[ Network.net2.Node.mod-l2-1 ]\n"
 			"Type = EndNode\n"
 			"\n"
-			"[ Network.net2.Node.n8 ]\n"
+			"[ Network.net2.Node.mod-mm ]\n"
 			"Type = EndNode\n"
 			"\n"
 			"[ Network.net0.Node.s0 ]\n"
@@ -883,98 +755,106 @@ int main(int argc, char **argv)
 			"\n"
 			"[ Network.net0.Link.l0 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n0\n"
+			"Source = mod-l1-0\n"
 			"Dest = s0\n"
 			"\n"
 			"[ Network.net0.Link.l1 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n1\n"
+			"Source = mod-l1-1\n"
 			"Dest = s0\n"
 			"\n"
 			"[ Network.net0.Link.l2 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n2 \n"
+			"Source = mod-l2-0 \n"
 			"Dest = s0\n"
 			"\n"
 			"[ Network.net1.Link.l3 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n3 \n"
+			"Source = mod-l1-2 \n"
 			"Dest = s1\n"
 			"\n"
 			"[ Network.net1.Link.l4 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n4 \n"
+			"Source = mod-l1-3 \n"
 			"Dest = s1\n"
 			"\n"
 			"[ Network.net1.Link.l5 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n5 \n"
+			"Source = mod-l2-1 \n"
 			"Dest = s1\n"
 			"\n"
 			"[ Network.net2.Link.l6 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n6 \n"
+			"Source = mod-l2-0 \n"
 			"Dest = s2\n"
 			"\n"
 			"[ Network.net2.Link.l7 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n7 \n"
+			"Source = mod-l2-1 \n"
 			"Dest = s2\n"
 			"\n"
 			"[ Network.net2.Link.l8 ]\n"
 			"Type = Bidirectional\n"
-			"Source = n8 \n"
+			"Source = mod-mm \n"
 			"Dest = s2\n";
+	try
+	{
+		// Load configuration files
+		misc::IniFile ini_file_mem;
+		misc::IniFile ini_file_x86;
+		misc::IniFile ini_file_net;
+		ini_file_mem.LoadFromString(mem_config_0);
+		ini_file_x86.LoadFromString(x86_config);
+		ini_file_net.LoadFromString(net_config);
 
-	// Load configuration files
-	misc::IniFile ini_file_mem;
-	misc::IniFile ini_file_x86;
-	misc::IniFile ini_file_net;
-	ini_file_mem.LoadFromString(mem_config_0);
-	ini_file_x86.LoadFromString(x86_config);
-	ini_file_net.LoadFromString(net_config);
+		// Set up x86 timing simulator
+		x86::Timing::ParseConfiguration(&ini_file_x86);
+		x86::Timing::getInstance();
 
-	// Set up x86 timing simulator
-	x86::Timing::ParseConfiguration(&ini_file_x86);
-	x86::Timing::getInstance();
+		// Set up network system
+		net::System *network_system = net::System::getInstance();
+		network_system->ParseConfiguration(&ini_file_net);
 
-	// Set up network system
-	net::System *network_system = net::System::getInstance();
-	network_system->ParseConfiguration(&ini_file_net);
+		// Set up memory system
+		System *memory_system = System::getInstance();
+		memory_system->ReadConfiguration(&ini_file_mem);
 
-	// Set up memory system
-	System *memory_system = System::getInstance();
-	memory_system->ReadConfiguration(&ini_file_mem);
+		// Get modules
+		Module *module_l1_0 = memory_system->getModule("mod-l1-0");
+		Module *module_l1_1 = memory_system->getModule("mod-l1-1");
+		Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+		Module *module_mm = memory_system->getModule("mod-mm");
 
-	// Get modules
-	Module *module_l1_0 = memory_system->getModule("mod-l1-0");
-	Module *module_l1_1 = memory_system->getModule("mod-l1-1");
-	Module *module_l2_0 = memory_system->getModule("mod-l2-0");
-	Module *module_mm = memory_system->getModule("mod-mm");
+		// Set block states
+		module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockModified, 0x0);
+		module_l1_1->getCache()->getBlock(1, 0)->setStateTag(Cache::BlockModified, 0x40);
+		module_l2_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
+		module_mm->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
+		module_l2_0->setOwner(0, 0, 0, module_l1_0);
+		module_l2_0->setOwner(0, 0, 1, module_l1_1);
+		module_l2_0->setSharer(0, 0, 0, module_l1_0);
+		module_l2_0->setSharer(0, 0, 1, module_l1_1);
+		module_mm->setOwner(0, 0, 0, module_l2_0);
+		module_mm->setSharer(0, 0, 0, module_l2_0);
 
-	// Set block states
-	module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockModified, 0x0);
-	module_l1_1->getCache()->getBlock(1, 0)->setStateTag(Cache::BlockModified, 0x40);
-	module_l2_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
-	module_mm->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
-	module_l2_0->setOwner(0, 0, 0, module_l1_0);
-	module_l2_0->setOwner(0, 0, 1, module_l1_1);
-	module_l2_0->setSharer(0, 0, 0, module_l1_0);
-	module_l2_0->setSharer(0, 0, 1, module_l1_1);
-	module_mm->setOwner(0, 0, 0, module_l2_0);
-	module_mm->setSharer(0, 0, 0, module_l2_0);
+		// Accesses
+		int witness = -2;
+		module_l1_0->Access(Module::AccessLoad, 0x400, &witness);
+		module_l1_0->Access(Module::AccessLoad, 0x800, &witness);
 
-	// Accesses
-	int witness = -2;
-	module_l1_0->Access(Module::AccessLoad, 0x400, &witness);
-	module_l1_0->Access(Module::AccessLoad, 0x800, &witness);
-
-	// Simulation loop
-	esim::Engine::setDebugPath("stdout");/////////
-	mem::System::debug.setPath("stdout");/////////
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-	while (witness < 0)
-		esim_engine->ProcessEvents();
+		// Simulation loop
+		esim::Engine::setDebugPath("stdout");
+		mem::System::debug.setPath("stdout");
+		net::System::debug.setPath("stdout");
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		while (witness < 0)
+			esim_engine->ProcessEvents();
+	}
+	catch (misc::Exception &e)
+	{
+		e.Dump();
+		return 1;
+	}
 */
 }
 

@@ -29,8 +29,6 @@
 namespace net
 {
 
-esim::FrequencyDomain *System::frequency_domain;
-
 esim::EventType *System::event_type_send;
 esim::EventType *System::event_type_output_buffer;
 esim::EventType *System::event_type_input_buffer;
@@ -40,11 +38,8 @@ esim::EventType *System::event_type_receive;
 void System::EventTypeSendHandler(esim::EventType *type, 
 		esim::EventFrame *frame)
 {
-	// Get engine
+	// Useful objects
 	esim::Engine *esim = esim::Engine::getInstance();
-	long long cycle = esim->getCycle();
-
-	// Cast event frame type
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
 	// Lookup route from routing table
@@ -75,6 +70,8 @@ void System::EventTypeSendHandler(esim::EventType *type,
 					__FUNCTION__));
 
 	// Insert in output buffer (1 cycle latency)
+	System *system = getInstance();
+	long long cycle = system->getCycle();
 	output_buffer->InsertPacket(packet);
 	output_buffer->setWriteBusy(cycle);
 	packet->setNode(source_node);
@@ -89,10 +86,6 @@ void System::EventTypeSendHandler(esim::EventType *type,
 void System::EventTypeOutputBufferHandler(esim::EventType *type, 
 		esim::EventFrame *frame)
 {
-	// Get engine
-	// esim::Engine *esim = esim::Engine::getInstance();
-	// long long cycle = esim->getCycle();
-
 	// Cast event frame type
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
