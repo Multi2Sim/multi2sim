@@ -26,11 +26,16 @@
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
+#include <lib/esim/Engine.h>
 #include <lib/esim/Event.h>
+#include <lib/esim/Trace.h>
+
 
 namespace net
 {
+
 class Network;
+
 
 /// Class representing a runtime error in network system
 class Error : public misc::Error
@@ -45,8 +50,14 @@ public:
 	}
 };
 
+
+/// Network system singleton.
 class System
 {
+	//
+	// Configuration options
+	//
+
 	// Traffic pattern states for network system
 	enum TrafficPattern
 	{
@@ -100,17 +111,11 @@ class System
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
 
-	// Private construtor
-	System() {};
-
-	// Hash table of networks indexed by their names
-	std::unordered_map<std::string, Network *> network_map;
-
-	// List of networks in the system
-	std::vector<std::unique_ptr<Network>> networks;
-
 	// General frequency if not specified in the network section
 	static int net_system_frequency;
+	
+	/// Message size in stand alone network
+	static int message_size;
 
 	// Get a exponential random valueclass Network;
 	static double RandomExponential(double lambda)
@@ -126,11 +131,27 @@ class System
 
 
 	//
-	// Event driven simulation
+	// Class members
 	//
+	
+	// Pointer to event-driven simulator, for efficiency
+	esim::Engine *esim_engine = nullptr;
 
 	// Network frequency domain
-	static esim::FrequencyDomain *frequency_domain;
+	esim::FrequencyDomain *frequency_domain = nullptr;
+
+	// Hash table of networks indexed by their names
+	std::unordered_map<std::string, Network *> network_map;
+
+	// List of networks in the system
+	std::vector<std::unique_ptr<Network>> networks;
+
+
+
+
+	//
+	// Event driven simulation
+	//
 
 	// Network event handlers
 	static void EventTypeSendHandler(esim::EventType *, esim::EventFrame *);
@@ -142,12 +163,6 @@ class System
 
 public:
 
-	/// Message Size in stand alone network
-	static int message_size;
-
-
-
-
 	//
 	// Event driven simulation event types
 	//
@@ -158,6 +173,9 @@ public:
 	static esim::EventType *event_type_receive;
 	
 
+	/// Network system trace
+	static esim::Trace trace;
+
 	/// Debugger for network
 	static misc::Debug debug;
 
@@ -166,12 +184,20 @@ public:
 
 
 
+	//
+	// Class members
+	//
 
-	/// Find and returns a network in the network system given its name.
-	///
-	/// \param name
-	///	Network name
-	Network *getNetworkByName(const std::string &name);
+	/// Constructor
+	System();
+
+	/// Find and returns a network in the network system given its name,
+	/// or `nullptr` if no network exists with that name.
+	Network *getNetworkByName(const std::string &name) const
+	{
+		auto it = network_map.find(name);
+		return it == network_map.end() ? nullptr : it->second;
+	}
 
 	/// Create a new network.
 	///
@@ -179,18 +205,33 @@ public:
 	///	Name of the new network.
 	Network *newNetwork(const std::string &name);
 
+	/// Return the current cycle in the network frequency domain.
+	long long getCycle() const
+	{
+		return frequency_domain->getCycle();
+	}
+
+	/// Parse a configuration INI file
+	void ParseConfiguration(misc::IniFile *ini_file);
+
+
+
+	//
+	// Configuration
+	//
+
 	/// Register command-line options
 	static void RegisterOptions();
 
 	/// Process command-line options
 	static void ProcessOptions();
 
-	/// Parse a configuration INI file
-	void ParseConfiguration(misc::IniFile *ini_file);
+	/// Returns whether we are running as a stand alone simulator.
+	static bool isStandAlone() { return stand_alone; }
 
-	/// Returns whether or not Network is running as a stand alone simulator.
-	bool isStandAlone() { return stand_alone; }
-
+	/// Return the message size for stand-alone simulation, as configured
+	/// by the user.
+	static int getMessageSize() { return message_size; }
 };
 
 }  // namespace net

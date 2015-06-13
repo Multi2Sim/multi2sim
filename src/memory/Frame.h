@@ -30,6 +30,13 @@
 #include "Module.h"
 
 
+// Forward declarations
+namespace network
+{
+class Message;
+}
+
+
 namespace mem
 {
 
@@ -139,6 +146,10 @@ public:
 	/// event for a down-up request.
 	bool block_not_found = false;
 
+	/// Return value of a read request, indicating whether the transfered
+	/// block is shared among other caches.
+	bool shared = false;
+
 	/// Tag associated with the access	
 	int tag = -1;
 
@@ -168,6 +179,9 @@ public:
 
 	/// Number of pending replies
 	int pending = 0;
+
+	/// Message sent through the network for this access
+	net::Message *message = nullptr;
 
 
 

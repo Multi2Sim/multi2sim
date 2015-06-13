@@ -288,15 +288,91 @@ void System::EventLoadHandler(esim::EventType *event_type,
 }
 
 
-void System::EventStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventStoreHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "store"
+	if (event_type == event_type_store)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_lock"
+	if (event_type == event_type_store_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_action"
+	if (event_type == event_type_store_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_unlock"
+	if (event_type == event_type_store_unlock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "store_finish"
+	if (event_type == event_type_store_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
-void System::EventNCStoreHandler(esim::EventType *type, esim::EventFrame *frame)
+void System::EventNCStoreHandler(esim::EventType *event_type,
+		esim::EventFrame *event_frame)
 {
-	throw misc::Panic("Not implemented");
+	// Event "nc_store"
+	if (event_type == event_type_nc_store)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_lock"
+	if (event_type == event_type_nc_store_lock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_writeback"
+	if (event_type == event_type_nc_store_writeback)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_action"
+	if (event_type == event_type_nc_store_action)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_miss"
+	if (event_type == event_type_nc_store_miss)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_unlock"
+	if (event_type == event_type_nc_store_unlock)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "nc_store_finish"
+	if (event_type == event_type_nc_store_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Invalid event
+	throw misc::Panic("Invalid event");
 }
 
 
@@ -776,32 +852,62 @@ void System::EventEvictHandler(esim::EventType *event_type,
 void System::EventWriteRequestHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
-	// Event "store"
-	if (event_type == event_type_store)
+	// Event "write_request"
+	if (event_type == event_type_write_request)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "store_lock"
-	if (event_type == event_type_store_lock)
+	// Event "write_request_receive"
+	if (event_type == event_type_write_request_receive)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "store_action"
-	if (event_type == event_type_store_action)
+	// Event "write_request_action"
+	if (event_type == event_type_write_request_action)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "store_unlock"
-	if (event_type == event_type_store_unlock)
+	// Event "write_request_exclusive"
+	if (event_type == event_type_write_request_exclusive)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "store_finish"
-	if (event_type == event_type_store_finish)
+	// Event "write_request_updown"
+	if (event_type == event_type_write_request_updown)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "write_request_updown_finish"
+	if (event_type == event_type_write_request_updown_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "write_request_downup"
+	if (event_type == event_type_write_request_downup)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "write_request_downup_finish"
+	if (event_type == event_type_write_request_downup_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "write_request_reply"
+	if (event_type == event_type_write_request_reply)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "write_request_finish"
+	if (event_type == event_type_write_request_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -814,44 +920,133 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 void System::EventReadRequestHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
-	// Event "nc_store"
-	if (event_type == event_type_nc_store)
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Module *module = frame->getModule();
+	Module *target_module = frame->target_module;
+
+	// Event "read_request"
+	if (event_type == event_type_read_request)
+	{
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s read request\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Default return values
+		parent_frame->shared = false;
+		parent_frame->error = false;
+
+		// Sanity
+		assert(frame->request_direction);
+		assert(module->getLowModuleServingAddress(frame->getAddress())
+				== target_module ||
+				frame->request_direction ==
+				Frame::RequestDirectionDownUp);
+		assert(target_module->getLowModuleServingAddress(
+				frame->getAddress()) == module ||
+				frame->request_direction ==
+				Frame::RequestDirectionUpDown);
+
+		// Get source and destination nodes
+		net::Network *network;
+		net::Node *source_node;
+		net::Node *destination_node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = module->getLowNetwork();
+			source_node = module->getLowNetworkNode();
+			destination_node = target_module->getHighNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			source_node = module->getHighNetworkNode();
+			destination_node = target_module->getLowNetworkNode();
+		}
+
+		// Send message
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				8,
+				event_type_read_request_receive,
+				event_type);
+		if (frame->message)
+			net::System::trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
+	}
+
+	// Event "read_request_receive"
+	if (event_type == event_type_read_request_receive)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_lock"
-	if (event_type == event_type_nc_store_lock)
+	// Event "read_request_action"
+	if (event_type == event_type_read_request_action)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_writeback"
-	if (event_type == event_type_nc_store_writeback)
+	// Event "read_request_updown"
+	if (event_type == event_type_read_request_updown)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_action"
-	if (event_type == event_type_nc_store_action)
+	// Event "read_request_updown_miss"
+	if (event_type == event_type_read_request_updown_miss)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_miss"
-	if (event_type == event_type_nc_store_miss)
+	// Event "read_request_updown_finish"
+	if (event_type == event_type_read_request_updown_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_unlock"
-	if (event_type == event_type_nc_store_unlock)
+	// Event "read_request_downup"
+	if (event_type == event_type_read_request_downup)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
-	// Event "nc_store_finish"
-	if (event_type == event_type_nc_store_finish)
+	// Event "read_request_downup_wait_for_reqs"
+	if (event_type == event_type_read_request_downup_wait_for_reqs)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "read_request_downup_finish"
+	if (event_type == event_type_read_request_downup_finish)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "read_request_reply"
+	if (event_type == event_type_read_request_reply)
+	{
+		throw misc::Panic("Not implemented");
+	}
+
+	// Event "read_request_finish"
+	if (event_type == event_type_read_request_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
