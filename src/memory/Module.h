@@ -407,7 +407,7 @@ public:
 	}
 
 	/// Return data access latency
-	int getLatency() const { return data_latency; }
+	int getDataLatency() const { return data_latency; }
 
 	/// Set the high network and high network node that the module is
 	/// connected to.
@@ -695,6 +695,9 @@ public:
 
 	/// Increment the number of accesses to the directory.
 	void incDirectoryAccesses() { directory_accesses++; }
+
+	/// Increment the number of accesses to the data.
+	void incDataAccesses() { data_accesses++; }
 
 	/// Update the following statistics based on the information collected
 	/// from the given frame:
