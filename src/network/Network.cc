@@ -87,9 +87,6 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	// Parse the routing elements, for manual routing.
 	if (!ParseConfigurationForRoutes(config))
 		routing_table.FloydWarshall();
-
-	// Parse the commands for manual(input trace) injection and testing.
-	ParseConfigurationForCommands(config);
 }
 
 
@@ -276,12 +273,6 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 }
 
 
-void Network::ParseConfigurationForCommands(misc::IniFile *ini_file)
-{
-
-}
-	
-	
 void Network::addBidirectionalLink(const std::string name,
 		Node *source_node,
 		Node *dest_node,
@@ -373,7 +364,7 @@ void Network::Dump(std::ostream &os) const
 }
 
 
-Message *Network::ProduceMessage(Node *source_node, Node *destination_node,
+Message *Network::newMessage(Node *source_node, Node *destination_node,
 			int size)
 {
 	// Insert the created message into the hashtable
@@ -465,28 +456,7 @@ Message *Network::Send(Node *source_node,
 	esim_engine->Next(receive_event, 1);
 	
 	// FIXME - CAREFUL! Message is currently not being freed
-	return ProduceMessage(source_node, destination_node, size);
-
-/*
-	FIXME by RAFA: Commented this all out until my comments are applied.
-
-	// Create message
-	Message *message = ProduceMessage(source_node, destination_node, size);
-
-	// TODO: generate trace here
-
-	// Packetize message
-	if (packet_size == 0)
-		message->Packetize(size);
-	else
-	{
-		message->Packetize(packet_size);
-		// TODO: generate trace here
-	}
-
-	// Send the message out
-	message->Send();
-*/
+	return nullptr;
 }
 
 

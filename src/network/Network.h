@@ -85,9 +85,6 @@ class Network
 	// Parse the routing elements, for manual routing.
 	bool ParseConfigurationForRoutes(misc::IniFile *ini_file);
 
-	// Parse the commands for manual(input trace) injection and testing.
-	void ParseConfigurationForCommands(misc::IniFile *ini_file);
-
 
 
 
@@ -158,9 +155,11 @@ public:
 	/// Get packet size
 	int getPacketSize() const { return packet_size; }
 
-	/// Produce an message, keeps the ownership of the message by the
-	/// network
-	Message *ProduceMessage(Node *source_node, Node *destination_node,
+	/// Create a message to be transfered in the network. The network 
+	/// keeps the ownership of the message. Message is destoried when it 
+	/// is received by the \a destination node.
+	///
+	Message *newMessage(Node *source_node, Node *destination_node,
 			int size);
 
 	/// Check if a message can be sent throught from the given source to
