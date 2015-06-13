@@ -166,6 +166,9 @@ public:
 	/// Exception module to send invalidations
 	Module *except_module = nullptr;
 
+	/// Number of pending replies
+	int pending = 0;
+
 
 
 	//
