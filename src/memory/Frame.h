@@ -69,6 +69,16 @@ public:
 		RequestDirectionDownUp
 	};
 
+	/// Reply message type
+	enum ReplyType
+	{
+		ReplyNone = 0,
+		ReplyAck,
+		ReplyAckData,
+		ReplyAckError
+	};
+
+
 
 	
 	//
@@ -183,6 +193,13 @@ public:
 	/// Message sent through the network for this access
 	net::Message *message = nullptr;
 
+	/// Type of reply
+	ReplyType reply = ReplyNone;
+
+	/// Size in bytes of a reply
+	int reply_size = 0;
+
+
 
 
 	//
@@ -209,6 +226,15 @@ public:
 
 	/// Return the memory address associated with this event frame.
 	unsigned getAddress() const { return address; }
+
+	/// Set the reply type to the given value only if it is a higher reply
+	/// than the one set to far. This is useful to select a reply type from
+	/// several sub-blocks.
+	void setReplyIfHigher(ReplyType reply)
+	{
+		if (reply > this->reply)
+			this->reply = reply;
+	}
 };
 
 

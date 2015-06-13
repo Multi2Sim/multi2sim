@@ -277,6 +277,14 @@ public:
 			esim::EventType *retry_event = nullptr);
 
 
+	/// Absorb a message located at the head of the input buffer of a
+	/// node. The caller must make sure that this is the actual location
+	/// of the message. This function should be called when the
+	/// `receive_event` is triggered after a call to Send() or TrySend().
+	/// The message object is freed in this call.
+	void Receive(Node *node, Message *message);
+
+
 
 
 	//
