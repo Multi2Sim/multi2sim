@@ -26,7 +26,7 @@
 #include <arch/x86/emu/UInst.h>
 
 #include "Thread.h"
-#include "FunctionUnit.h"
+#include "FunctionalUnit.h"
 
 
 namespace x86
@@ -72,8 +72,8 @@ private:
 	// Shared structures 
 	std::list<std::shared_ptr<Uop>> event_queue;
 
-	// Function unit
-	std::unique_ptr<FunctionUnit> function_unit;
+	// Functional unit
+	std::unique_ptr<FunctionalUnit> function_unit;
 	//struct prefetch_history_t *prefetch_history;
 
 
@@ -159,16 +159,16 @@ private:
 	//
 
 	// Number of stalled micro-instruction when dispatch divded by reason
-	long long num_dispatch_stall[DispatchStallReasonMax];
+	long long num_dispatch_stall[DispatchStallReasonMax] = { };
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[UInstOpcodeCount];
+	long long num_dispatched_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[UInstOpcodeCount];
+	long long num_issued_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[UInstOpcodeCount];
+	long long num_committed_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
@@ -239,13 +239,13 @@ public:
 	// Increment counters
 	//
 
-	/// Increment the INT register file count
+	/// Increment the count of physical integer register file that have been occupied
 	void incRegFileIntCount() { reg_file_int_count++; }
 
-	/// Increment the FP register file count
+	/// Increment the count of physical floating point register file that have been occupied
 	void incRegFileFpCount() { reg_file_fp_count++; }
 
-	/// Increment the XMM register file count
+	/// Increment the count of physical XMM register file that have been occupied
 	void incRegFileXmmCount() { reg_file_xmm_count++; }
 
 	/// Increment the Uop count in instruction queue
@@ -261,13 +261,13 @@ public:
 	// Decrement counters
 	//
 
-	/// Decrement the INT register file count
+	/// Decrement the count of physical integer register file that have been occupied
 	void decRegFileIntCount() { reg_file_int_count--; }
 
-	/// Decrement the FP register file count
+	/// Decrement the count of physical floating register file that have been occupied
 	void decRegFileFpCount() { reg_file_fp_count--; }
 
-	/// Decrement the XMM register file count
+	/// Decrement the count of physical XMM register file count have been occupied
 	void decRegFileXmmCount() { reg_file_xmm_count--; }
 
 	/// Decrement the Uop count in instruction queue
@@ -286,13 +286,13 @@ public:
 	/// get core ID
 	int getID() { return id; }
 
-	/// Get the INT register file count
+	/// Get the count of integer register file that have been used
 	int getRegFileIntCount() { return reg_file_int_count; }
 
-	/// Get the FP register file count
+	/// Get the count of floating register file that have been used
 	int getRegFileFpCount() { return reg_file_fp_count; }
 
-	/// Get the XMM register file count
+	/// Get the count of XMM register file that have been used
 	int getRegFileXmmCount() { return reg_file_xmm_count; }
 
 	/// Get the Uop count in instruction queue

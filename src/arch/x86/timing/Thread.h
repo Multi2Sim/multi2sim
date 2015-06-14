@@ -110,10 +110,10 @@ private:
 	// Right bound of the reorder buffer
 	int reorder_buffer_right_bound = 0;
 
-	// reorder buffer head index
+	// Reorder buffer head index
 	int reorder_buffer_head = 0;
 
-	// reorder buffer tail index
+	// Reorder buffer tail index
 	int reorder_buffer_tail = 0;
 
 
@@ -158,9 +158,6 @@ private:
 
 	// Store queue
 	std::deque<std::shared_ptr<Uop>> store_queue;
-
-	// Prefetch queue
-	std::deque<std::shared_ptr<Uop>> prefetch_queue;
 
 
 
@@ -235,13 +232,13 @@ private:
 	long long num_fetched_uinst = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[UInstOpcodeCount];
+	long long num_dispatched_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[UInstOpcodeCount];
+	long long num_issued_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[UInstOpcodeCount];
+	long long num_committed_uinst_array[UInstOpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;

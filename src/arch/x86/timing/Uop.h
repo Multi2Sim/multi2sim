@@ -167,9 +167,6 @@ private:
 	// Is in store queue
 	bool in_store_queue = false;
 
-	// Is in prefetch queue
-	bool in_prefetch_queue = false;
-
 	// Is in event queue
 	bool in_event_queue = false;
 
@@ -390,12 +387,6 @@ public:
 		this->in_store_queue = in_store_queue;
 	}
 
-	// Set flag that indicates whether instruction is in prefetch queue
-	void setInPrefetchQueue(bool in_prefetch_queue)
-	{
-		this->in_prefetch_queue = in_prefetch_queue;
-	}
-
 	// Set flag that indicates whether instruction is in uop queue
 	void setInUopQueue(bool in_uop_queue)
 	{
@@ -506,25 +497,22 @@ public:
 	bool getInReorderBuffer() { return in_reorder_buffer; }
 
 	// Get flag that indicates whether instruction is in fetch queue
-	bool IsInFetchQueue() { return in_fetch_queue; }
+	bool isInFetchQueue() { return in_fetch_queue; }
 
 	// Get flag that indicates whether instruction is from trace cache
-	bool IsFromTraceCache() { return is_from_trace_cache; }
+	bool isFromTraceCache() { return is_from_trace_cache; }
 
 	// Get flag that indicates whether instruction is in instruction queue
-	bool IsInInstructionQueue() { return in_instruction_queue; }
+	bool isInInstructionQueue() { return in_instruction_queue; }
 
 	// Get flag that indicates whether instruction is in load queue
-	bool IsInLoadQueue() { return in_load_queue; }
+	bool isInLoadQueue() { return in_load_queue; }
 
 	// Get flag that indicates whether instruction is in store queue
-	bool IsInStoreQueue() { return in_store_queue; }
-
-	// Get flag that indicates whether instruction is in prefetch queue
-	bool IsInPrefetchQueue() { return in_prefetch_queue; }
+	bool isInStoreQueue() { return in_store_queue; }
 
 	// Get flag that indicates whether instruction is in uop queue
-	bool IsInUopQueue() { return in_uop_queue; }
+	bool isInUopQueue() { return in_uop_queue; }
 
 };
 
