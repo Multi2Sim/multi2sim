@@ -41,9 +41,13 @@ public:
 			int bandwidth,
 			const std::string &name,
 			void *user_data) :
-			Node(network, index,
-					input_buffer_size, output_buffer_size,
-					name, user_data),
+			Node(network,
+					index,
+					input_buffer_size,
+					output_buffer_size,
+					name,
+					TypeSwitch,
+					user_data),
 			bandwidth(bandwidth)
 	{};
 

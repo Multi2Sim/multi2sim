@@ -199,6 +199,10 @@ public:
 	/// Size in bytes of a reply
 	int reply_size = 0;
 
+	/// If true, notify the lower-level directory that it should retain
+	/// the owner.
+	bool retain_owner = false;
+
 
 
 

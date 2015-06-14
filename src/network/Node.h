@@ -37,6 +37,18 @@ class Connection;
 /// forwarded and consumed
 class Node
 {
+public:
+
+	/// Different node types, each indicating which actual subclass
+	/// each instance of a node is of.
+	enum Type
+	{
+		TypeInvalid = 0,
+		TypeEndNode,
+		TypeSwitch,
+		TypeBug
+	};
+
 protected:
 
 	// Network that it belongs to
@@ -44,6 +56,9 @@ protected:
 	
 	// Node Name
 	std::string name;
+
+	// Node type
+	Type type;
 
 	// Node index
 	int index;
@@ -72,10 +87,14 @@ public:
 			int input_buffer_size,
 			int output_buffer_size,
 			const std::string &name,
+			Type type,
 			void *user_data);
 
 	/// Get name
 	std::string getName() const { return name; }
+
+	/// Get the node type
+	Type getType() const { return type; }
 
 	/// Get the index of the node
 	int getIndex() const { return index; }
