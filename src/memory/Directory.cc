@@ -254,7 +254,37 @@ bool Directory::LockEntry(
 
 void Directory::UnlockEntry(int set_id, int way_id)
 {
-	throw misc::Panic("Not implemented");
+	// Get lock
+	assert(misc::inRange(set_id, 0, num_sets - 1));
+	assert(misc::inRange(way_id, 0, num_ways - 1));
+	Lock *lock = &locks[set_id * num_ways + way_id];
+	assert(lock->frame);
+
+	// Wake up first waiter
+	if (lock->queue.getHead())
+	{
+		// Debug
+		Frame *frame = misc::cast<Frame *>(lock->queue.getHead());
+		System::debug << misc::fmt("    A-%lld resumed\n",
+				frame->getId());
+
+		// Wake up access
+		lock->queue.WakeupOne();
+	}
+
+	// Trace
+	System::trace << misc::fmt("mem.end_access_block "
+			"cache=\"%s\" "
+			"access=\"A-%lld\" "
+			"set=%d "
+			"way=%d\n",
+			name.c_str(),
+			lock->frame->getId(),
+			set_id,
+			way_id);
+
+	// Unlock entry
+	lock->frame = nullptr;
 }
 
 
