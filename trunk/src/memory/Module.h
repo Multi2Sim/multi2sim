@@ -364,7 +364,7 @@ public:
 	bool canAccess();
 
 	/// Return module name
-	std::string getName() const { return name; }
+	const std::string &getName() const { return name; }
 
 	/// Return the module type
 	Type getType() const { return type; }
@@ -500,9 +500,15 @@ public:
 
 	/// Given a memory address, return the low module (the one closer to
 	/// main memory) that serves that address. The current module must also
-	/// serve the given address. If no lower module serves the address, the
-	/// function will cause a fatal error, assuming a bad memory
-	/// configuration given by the user.
+	/// serve the given address.
+	///
+	/// If the current module is a cache memory, and no lower module serves
+	/// the address, the function will cause a fatal error, assuming a bad
+	/// memory configuration given by the user.
+	///
+	/// If the current module is main memory, the function returns
+	/// `nullptr`.
+	///
 	Module *getLowModuleServingAddress(unsigned address) const;
 
 	/// Add a low module (one that is closer to main memory)

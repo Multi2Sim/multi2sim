@@ -74,7 +74,7 @@ Module *Module::getLowModuleServingAddress(unsigned address) const
 	if (type == TypeMainMemory)
 	{
 		assert(!low_modules.size());
-		throw misc::Panic("Main memory has no lower modules");
+		return nullptr;
 	}
 
 	// Check which low module serves address

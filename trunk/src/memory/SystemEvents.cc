@@ -1016,12 +1016,11 @@ void System::EventEvictHandler(esim::EventType *event_type,
 			// Skip other sub-blocks
 			unsigned directory_entry_tag = frame->tag + 
 					z * target_module->getSubBlockSize();
-			assert((int) directory_entry_tag < frame->tag + 
-					target_module->getBlockSize());
-			if ((int) directory_entry_tag < frame->src_tag || 
-					(int) directory_entry_tag >=
+			assert(directory_entry_tag < frame->tag + (unsigned) target_module->getBlockSize());
+			if (directory_entry_tag < (unsigned) frame->src_tag || 
+					directory_entry_tag >=
 					frame->src_tag + 
-					module->getBlockSize())
+					(unsigned) module->getBlockSize())
 				continue;
 
 			Directory::Entry *directory_entry = directory->getEntry(
@@ -1328,19 +1327,279 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	// Event "read_request_updown"
 	if (event_type == event_type_read_request_updown)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s read request updown\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_updown\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// One pending request initially
+		frame->pending = 1;
+
+		// Set the initial reply message and size.  This will be 
+		// adjusted later if a transfer occurs between peers.
+		frame->reply_size = module->getBlockSize() + 8;
+		frame->setReplyIfHigher(Frame::ReplyAckData);
+	
+		// Check state
+		if (frame->state)
+		{
+			// Status = M/O/E/S/N
+			// Check: address is a multiple of requester's 
+			// block_size. Send read request to owners other than
+			// 'module' for all sub-blocks.
+			assert(frame->getAddress() % module->getBlockSize() == 0);
+			Directory *directory = target_module->getDirectory();
+			for (int z = 0; z < directory->getNumSubBlocks(); z++)
+			{
+				// Check that address is a multiple of block
+				// size.
+				unsigned directory_entry_tag = frame->tag + z * target_module->getSubBlockSize();
+				assert(directory_entry_tag < frame->tag + (unsigned) target_module->getBlockSize());
+
+				// Get directory entry
+				Directory::Entry *directory_entry = directory->getEntry(
+						frame->set,
+						frame->way,
+						z);
+
+				// No owner, skip
+				if (directory_entry->getOwner() == Directory::NoOwner)
+					continue;
+
+				// Owner is 'module', skip
+				if (directory_entry->getOwner() == module->getLowNetworkNode()->getIndex())
+					continue;
+
+				// Get owner module
+				net::Network *network = target_module->getHighNetwork();
+				net::Node *node = network->getNode(directory_entry->getOwner());
+				assert(node->getType() == net::Node::TypeEndNode);
+				Module *owner_module = (Module *) node->getUserData();
+				assert(owner_module);
+
+				// Not the first sub-block, skip
+				if (directory_entry_tag % owner_module->getBlockSize())
+					continue;
+
+				// One more pending request
+				frame->pending++;
+
+				// Call 'read-request'
+				auto new_frame = misc::new_shared<Frame>(
+						frame->getId(),
+						target_module,
+						directory_entry_tag);
+				new_frame->target_module = owner_module;
+				new_frame->request_direction = Frame::RequestDirectionDownUp;
+				esim_engine->Call(event_type_read_request,
+						new_frame,
+						event_type_read_request_updown_finish);
+			}
+
+			// Continue with 'read-request-updown-finish'
+			esim_engine->Next(event_type_read_request_updown_finish);
+		}
+		else
+		{
+			// State = I
+			Directory *directory = target_module->getDirectory();
+			assert(!directory->isBlockSharedOrOwned(frame->set, frame->way));
+
+			// Call 'read-request'
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					target_module,
+					frame->tag);
+			new_frame->target_module = target_module->getLowModuleServingAddress(frame->tag);
+			new_frame->request_direction = Frame::RequestDirectionUpDown;
+			esim_engine->Call(event_type_read_request,
+					new_frame,
+					event_type_read_request_updown_miss);
+		}
+		return;
 	}
 
 	// Event "read_request_updown_miss"
 	if (event_type == event_type_read_request_updown_miss)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"read request updown miss\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_updown_miss\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Check error
+		if (frame->error)
+		{
+			// Unlock directory entry
+			Directory *directory = target_module->getDirectory();
+			directory->UnlockEntry(frame->set, frame->way);
+
+			// Return error
+			parent_frame->error = true;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckError);
+
+			// Continue with 'read-request-reply'
+			frame->reply_size = 8;
+			esim_engine->Next(event_type_read_request_reply);
+			return;
+		}
+
+		// Set block state to E/S depending on the return value 'shared'
+		// that comes from a read request into the next cache level.
+		// Also set the tag of the block.
+		Cache *target_cache = target_module->getCache();
+		target_cache->setBlock(frame->set,
+				frame->way,
+				frame->tag,
+				frame->shared ? Cache::BlockShared : Cache::BlockExclusive);
+
+		// Continue with 'read-request-updown-finish'
+		esim_engine->Next(event_type_read_request_updown_finish);
+		return;
 	}
 
 	// Event "read_request_updown_finish"
 	if (event_type == event_type_read_request_updown_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Ensure that a reply was received
+		assert(frame->reply);
+
+		// Ignore while pending requests
+		assert(frame->pending > 0);
+		frame->pending--;
+		if (frame->pending)
+			return;
+
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"read request updown finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_updown_finish\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// If blocks were sent directly to the peer, the reply size
+		// would have been decreased.  Based on the final size, we can
+		// tell whether to send more data or simply ack.
+		if (frame->reply_size == 8) 
+		{
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+		}
+		else if (frame->reply_size > 8)
+		{
+			parent_frame->setReplyIfHigher(Frame::ReplyAckData);
+		}
+		else 
+		{
+			throw misc::Panic("Invalid reply size");
+		}
+
+		// Get directory
+		Directory *directory = target_module->getDirectory();
+		bool shared = false;
+
+		// With the Owned state, the directory entry may remain owned by
+		// the sender.
+		if (!frame->retain_owner)
+		{
+			// Set owner to 0 for all directory entries not owned by
+			// the module.
+			for (int z = 0; z < directory->getNumSubBlocks(); z++)
+			{
+				Directory::Entry *entry = directory->getEntry(
+						frame->set,
+						frame->way,
+						z);
+				if (entry->getOwner() != module->getLowNetworkNode()->getIndex())
+					directory->setOwner(frame->set,
+							frame->way,
+							z,
+							Directory::NoOwner);
+			}
+		}
+
+		// For each sub-block requested by the module, set it as sharer,
+		// and check whether there is other cache sharing it. */
+		for (int z = 0; z < directory->getNumSubBlocks(); z++)
+		{
+			unsigned directory_entry_tag = frame->tag + z * target_module->getSubBlockSize();
+			if (directory_entry_tag < frame->getAddress() ||
+					directory_entry_tag >= frame->getAddress()
+					+ (unsigned) module->getBlockSize())
+				continue;
+			
+			Directory::Entry *entry = directory->getEntry(frame->set,
+					frame->way,
+					z);
+			directory->setSharer(frame->set,
+					frame->way,
+					z,
+					module->getLowNetworkNode()->getIndex());
+			if (entry->getNumSharers() > 1 || frame->nc_write || frame->shared)
+				shared = true;
+
+			// If the block is owned, non-coherent, or shared,  
+			// 'module' (the higher-level cache) should never be E.
+			if (frame->state == Cache::BlockOwned ||
+					frame->state == Cache::BlockNonCoherent ||
+					frame->state == Cache::BlockShared)
+				shared = true;
+		}
+
+		// If no sub-block requested by 'module' is shared by other
+		// cache, set 'module' as owner of all of them. Otherwise,
+		// notify requester that the block is shared by setting the
+		// 'shared' return value to true.
+		parent_frame->shared = shared;
+		if (!shared)
+		{
+			for (int z = 0; z < directory->getNumSubBlocks(); z++)
+			{
+				unsigned directory_entry_tag = frame->tag + z * target_module->getSubBlockSize();
+				if (directory_entry_tag < frame->getAddress() ||
+						directory_entry_tag >= frame->getAddress()
+						+ (unsigned) module->getBlockSize())
+					continue;
+
+				// Set owner
+				directory->setOwner(
+						frame->set,
+						frame->way,
+						z,
+						module->getLowNetworkNode()->getIndex());
+			}
+		}
+
+		// Unlock directory entry
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		target_module->incDataAccesses();
+
+		// Continue with 'read-request-reply' after latency
+		esim_engine->Next(event_type_read_request_reply,
+				target_module->getDataLatency());
+		return;
 	}
 
 	// Event "read_request_downup"

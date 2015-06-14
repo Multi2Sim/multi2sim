@@ -28,9 +28,13 @@ EndNode::EndNode(Network *network,
 		int output_buffer_size,
 		const std::string &name,
 		void *user_data) :
-		Node(network, index,
-				input_buffer_size, output_buffer_size,
-				name, user_data)
+		Node(network,
+				index,
+				input_buffer_size,
+				output_buffer_size,
+				name,
+				TypeEndNode,
+				user_data)
 {}
 
 
