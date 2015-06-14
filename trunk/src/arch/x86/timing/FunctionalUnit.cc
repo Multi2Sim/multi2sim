@@ -17,12 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "FunctionUnit.h"
+#include "FunctionalUnit.h"
 
 namespace x86
 {
 
-std::string FunctionUnit::name[TypeCount] =
+std::string FunctionalUnit::name[TypeCount] =
 {
 		// Invalid
 		"<invalid>",
@@ -57,7 +57,7 @@ std::string FunctionUnit::name[TypeCount] =
 		"XMMFloatComplex"
 };
 
-FunctionUnit::ReservationPool FunctionUnit::reservation_pool[TypeCount] =
+FunctionalUnit::ReservationPool FunctionalUnit::reservation_pool[TypeCount] =
 {
 		{ 0, 0, 0 },  // Unused
 
@@ -89,7 +89,7 @@ FunctionUnit::ReservationPool FunctionUnit::reservation_pool[TypeCount] =
 		{ 1, 22, 14 }  // XmmFloatComplex
 };
 
-FunctionUnit::Type FunctionUnit::type_table[UInstOpcodeCount] =
+FunctionalUnit::Type FunctionalUnit::type_table[UInstOpcodeCount] =
 {
 		TypeNone,  // UInstNop
 
