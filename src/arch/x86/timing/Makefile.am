@@ -2,8 +2,8 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
-	FunctionUnit.h \
-	FunctionUnit.cc \
+	FunctionalUnit.h \
+	FunctionalUnit.cc \
 	\
 	Uop.h \
 	Uop.cc \

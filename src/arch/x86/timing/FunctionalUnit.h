@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_TIMING_FUNCTION_UNIT_H
-#define ARCH_X86_TIMING_FUNCTION_UNIT_H
+#ifndef ARCH_X86_TIMING_FUNCTIONAL_UNIT_H
+#define ARCH_X86_TIMING_FUNCTIONAL_UNIT_H
 
 #include <lib/cpp/IniFile.h>
 
@@ -27,14 +27,14 @@
 namespace x86
 {
 
-class FunctionUnit
+class FunctionalUnit
 {
 public:
 
-	/// Maximum number of reserved function unit
-	static const int MaxFunctionUnitReservation = 10;
+	/// Maximum number of reserved functional unit
+	static const int MaxFunctionalUnitReservation = 10;
 
-	/// Function unit type
+	/// Functional unit type
 	enum Type
 	{
 		TypeNone = 0,
@@ -62,7 +62,7 @@ public:
 		TypeCount
 	};
 
-	/// Structure of function unit reservation pool
+	/// Structure of functional unit reservation pool
 	struct ReservationPool
 	{
 		int count;
@@ -73,19 +73,19 @@ public:
 private:
 
 	//
-	// Function unit parameters
+	// Functional unit parameters
 	//
 
-	// Cycle count when function unit is free
-	long long cycle_when_free[TypeCount][MaxFunctionUnitReservation] = { };
+	// Cycle count when functional unit is free
+	long long cycle_when_free[TypeCount][MaxFunctionalUnitReservation] = { };
 
-	// Access count of function unit
+	// Access count of functional unit
 	long long accesses[TypeCount] = { };
 
-	// Denied count of function unit
+	// Denied count of functional unit
 	long long denied[TypeCount] = { };
 
-	// Waiting time of function unit
+	// Waiting time of functional unit
 	long long waiting_time[TypeCount] = { };
 
 
@@ -95,18 +95,18 @@ private:
 	// static members
 	//
 
-	// The name of the function unit
+	// The name of the functional unit
 	static std::string name[TypeCount];
 
 	// Reservation pool
 	static ReservationPool reservation_pool[TypeCount];
 
-	// Function Unit type table
+	// Functional Unit type table
 	static Type type_table[UInstOpcodeCount];
 
 public:
 
-	/// Read function unit configuration from configuration file
+	/// Read functional unit configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Dump configuration
@@ -115,4 +115,4 @@ public:
 
 }
 
-#endif // ARCH_X86_TIMING_FUNCTION_UNIT_H
+#endif // ARCH_X86_TIMING_FUNCTIONAL_UNIT_H

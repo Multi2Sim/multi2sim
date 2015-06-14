@@ -69,12 +69,12 @@ void Thread::RecoverFetchQueue()
 		if (!uop->getSpeculativeMode())
 			break;
 		uop->setInFetchQueue(false);
-		if (!uop->IsFromTraceCache() && !uop->getMopIndex())
+		if (!uop->isFromTraceCache() && !uop->getMopIndex())
 		{
 			fetch_queue_occupied -= uop->getMopSize();
 			assert(fetch_queue_occupied >= 0);
 		}
-		if (uop->IsFromTraceCache())
+		if (uop->isFromTraceCache())
 		{
 			trace_cache_queue_occupied--;
 			assert(trace_cache_queue_occupied >= 0);
@@ -117,7 +117,7 @@ bool Thread::CanInsertInInstructionQueue()
 void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> &uop)
 {
 	// Make sure the Uop is not in the instruction queue
-	assert(!uop.get()->IsInInstructionQueue());
+	assert(!uop.get()->isInInstructionQueue());
 
 	// Insert
 	instruction_queue.push_back(uop);
@@ -159,7 +159,10 @@ void Thread::RecoverInstructionQueue()
 	// Remove the Uop in speculative mode
 	for (unsigned int index = 0; index < instruction_queue.size(); index++)
 	{
+		// Get Uop from instruction queue
 		uop = instruction_queue[index].get();
+
+		// If Uop is in speculative mode, then remove it from the queue
 		if (uop->getSpeculativeMode())
 		{
 			// Remove
@@ -168,6 +171,8 @@ void Thread::RecoverInstructionQueue()
 			// Keep the index unchanged and loop
 			continue;
 		}
+
+		// Increment the queue index
 		index++;
 	}
 }
@@ -199,7 +204,7 @@ bool Thread::CanInsertInLoadStoreQueue()
 void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop)
 {
 	// Make sure there is Uop in the load/store queue
-	assert(!uop->IsInLoadQueue() && !uop->IsInStoreQueue());
+	assert(!uop->isInLoadQueue() && !uop->isInStoreQueue());
 
 	// Make sure the Opcode is correct
 	assert(uop->getUinst()->getOpcode() == UInstLoad || uop->getUinst()->getOpcode() == UInstStore ||
@@ -215,11 +220,6 @@ void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop)
 	{
 		store_queue.push_back(uop);
 		uop->setInStoreQueue(true);
-	}
-	else if (uop->getUinst()->getOpcode() == UInstPrefetch)
-	{
-		prefetch_queue.push_back(uop);
-		uop->setInPrefetchQueue(true);
 	}
 
 	// Increment the Uop count both for thread and core
@@ -268,26 +268,6 @@ void Thread::RemoveFromStoreQueue(int index)
 }
 
 
-void Thread::RemoveFromPrefetchQueue(int index)
-{
-	// Make sure there is Uop in the prefetch queue
-	assert(prefetch_queue.size() > 0);
-
-	// Set the flag to false to indicate that
-	// The Uop is not in the prefetch queue anymore
-	Uop *uop = prefetch_queue[index].get();
-	uop->setInPrefetchQueue(false);
-
-	// Remove
-	prefetch_queue.erase(prefetch_queue.begin() + index);
-
-	// Decrement the Uop count both for thread and core
-	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
-	core->decLoadStoreQueueCount();
-	load_store_queue_count--;
-}
-
-
 void Thread::RecoverLoadStoreQueue()
 {
 	// Local variable declaration
@@ -296,7 +276,10 @@ void Thread::RecoverLoadStoreQueue()
 	// Remove the Uop in speculative mode from load queue
 	for (unsigned int index = 0; index < load_queue.size(); index++)
 	{
+		// Get Uop from load queue
 		uop = load_queue[index].get();
+
+		// If Uop is in speculative mode, then remove it from the queue
 		if (uop->getSpeculativeMode())
 		{
 			// Remove
@@ -305,13 +288,18 @@ void Thread::RecoverLoadStoreQueue()
 			// Keep the index unchanged and loop
 			continue;
 		}
+
+		// Increment the queue index
 		index++;
 	}
 
 	// Remove the Uop in speculative mode from store queue
 	for (unsigned int index = 0; index < store_queue.size(); index++)
 	{
+		// Get Uop from store queue
 		uop = store_queue[index].get();
+
+		// If Uop is in speculative mode, then remove it from the queue
 		if (uop->getSpeculativeMode())
 		{
 			// Remove
@@ -320,6 +308,8 @@ void Thread::RecoverLoadStoreQueue()
 			// Keep the index unchanged and loop
 			continue;
 		}
+
+		// Increment the queue index
 		index++;
 	}
 }
@@ -333,11 +323,21 @@ void Thread::RecoverUopQueue()
 	// Recover
 	while (uop_queue.size() > 0)
 	{
+		// Get the last Uop from Uop queue
 		uop = uop_queue.back().get();
+
+		// Check whether the thread is correct
 		assert(uop->getThread() == this);
+
+		// If the Uop is not in speculative mode, then exit
 		if (!uop->getSpeculativeMode())
 			break;
+
+		// Set the flag to false to indicate that
+		// The Uop is not in the Uop queue anymore
 		uop->setInUopQueue(false);
+
+		// Remove
 		uop_queue.pop_back();
 	}
 }

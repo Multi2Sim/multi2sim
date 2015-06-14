@@ -19,11 +19,67 @@
 
 #include "gtest/gtest.h"
 
+#include <string>
+
 #include <lib/cpp/IniFile.h>
 #include <arch/x86/timing/TraceCache.h>
 
 namespace x86
 {
+
+enum UopInstanceType
+{
+	UopInstanceTypeBranch = 0,
+	UopInstanceTypeOther
+};
+
+// Set up a static branch instruction
+static UInst uinst_branch(UInstBranch);
+
+// Set up a static move instruction
+static UInst uinst_move(UInstMove);
+
+static std::vector<std::unique_ptr<Uop>> uop_list;
+
+void ParseUopInstance(UopInstanceType instance_type, int address,
+		int instruction_size, int target_distance, bool taken)
+{
+	// Local variable
+	Uop *uop;
+
+	// Generate uop and insert it into Uop list
+	switch (instance_type)
+	{
+	case UopInstanceTypeBranch:
+
+		uop_list.push_back(misc::new_unique<Uop>());
+		uop = uop_list.back().get();
+		uop->setUInst(&uinst_branch);
+		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setEip(address);
+		if (taken)
+			uop->setNeip(address + target_distance);
+		else
+			uop->setNeip(address + instruction_size);
+		uop->setMopSize(instruction_size);
+		break;
+
+	case UopInstanceTypeOther:
+
+		uop_list.push_back(misc::new_unique<Uop>());
+		uop = uop_list.back().get();
+		uop->setUInst(&uinst_move);
+		uop->setFlags(UInstFlagInt);
+		uop->setEip(address);
+		uop->setMopSize(instruction_size);
+		break;
+
+	default:
+
+		break;
+	}
+}
+
 
 TEST(TestTraceCache, read_ini_configuration_file)
 {

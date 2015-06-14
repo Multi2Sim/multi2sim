@@ -541,11 +541,16 @@ void Timing::ProcessOptions()
 	misc::IniFile ini_file;
 	if (!config_file.empty())
 		ini_file.Load(config_file);
-	ParseConfiguration(&ini_file);
 
 	// Instantiate timing simulator if '--x86-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
+	{
+		// First: parse configuration
+		ParseConfiguration(&ini_file);
+
+		// Second: generate instance
 		getInstance();
+	}
 
 	// Print x86 configuration INI format
 	if (help)
