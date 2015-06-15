@@ -539,25 +539,67 @@ TEST(TestSystemEvents, config_0_evict_0)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 0, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
 
 /*
 [Commands]
-Command[0] = SetBlock mod-l1-0 0 0 0x0 M
-Command[1] = SetBlock mod-l1-1 1 0 0x40 M
-Command[2] = SetBlock mod-l2-0 0 0 0x0 E
-Command[3] = SetBlock mod-mm 0 0 0x0 E
-Command[4] = SetOwner mod-l2-0 0 0 0 mod-l1-0
-Command[5] = SetOwner mod-l2-0 0 0 1 mod-l1-1
-Command[6] = SetSharers mod-l2-0 0 0 0 mod-l1-0
-Command[7] = SetSharers mod-l2-0 0 0 1 mod-l1-1
-Command[8] = SetOwner mod-mm 0 0 0 mod-l2-0
-Command[9] = SetSharers mod-mm 0 0 0 mod-l2-0
-Command[10] = Access mod-l1-0 1 LOAD 0x400
-Command[11] = Access mod-l1-0 1 LOAD 0x800
-Command[12] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[13] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[14] = CheckBlock mod-l1-1 1 0 0x40 M
-Command[15] = CheckBlock mod-l2-0 0 0 0x0 M
 Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
 Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
 Command[18] = CheckSharers mod-l2-0 0 0 0 None

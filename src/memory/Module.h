@@ -560,6 +560,11 @@ public:
 		directory->setOwner(set_id, way_id, sub_block_id, index);
 	}
 
+	/// Return the owner module associated with a directory entry. If the
+	/// entry has no owner, the function returns `nullptr`. A directory
+	/// must have been created for this module.
+	Module *getOwner(int set_id, int way_id, int sub_block_id);
+
 	/// Add the given module as a sharer for the given set, way, and
 	/// sub-block of the current module's directory. A directory must
 	/// have been created for this module.
@@ -575,6 +580,33 @@ public:
 		assert(module);
 		int index = getSharerIndex(module);
 		directory->setSharer(set_id, way_id, sub_block_id, index);
+	}
+
+	/// Return whether the given module is a sharer for the given
+	/// directory entry (set, way, and sub-block) in the current module. A
+	/// directory must have been created for this module.
+	///
+	/// The given module's low network must be the same as the current
+	/// module's high network.
+	///
+	/// Argument \a module cannot be \c nullptr.
+	///
+	bool isSharer(int set_id, int way_id, int sub_block_id, Module *module)
+	{
+		assert(directory.get());
+		assert(module);
+		int index = getSharerIndex(module);
+		return directory->isSharer(set_id, way_id, sub_block_id, index);
+	}
+
+	/// Return the number of sharers for the given directory entry. A
+	/// directory must have been created for this module.
+	int getNumSharers(int set_id, int way_id, int sub_block_id)
+	{
+		assert(directory.get());
+		Directory::Entry *entry = directory->getEntry(set_id, way_id,
+				sub_block_id);
+		return entry->getNumSharers();
 	}
 	
 	/// Access the module.

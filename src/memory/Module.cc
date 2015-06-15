@@ -110,6 +110,31 @@ Module *Module::getLowModuleServingAddress(unsigned address) const
 }
 
 
+Module *Module::getOwner(int set_id, int way_id, int sub_block_id)
+{
+	// Get directory entry
+	assert(directory.get());
+	Directory::Entry *entry = directory->getEntry(set_id,
+			way_id,
+			sub_block_id);
+
+	// Get owner ID
+	assert(entry);
+	int owner = entry->getOwner();
+
+	// No owner
+	if (owner == Directory::NoOwner)
+		return nullptr;
+	
+	// Get node
+	net::Node *node = high_network->getNode(owner);
+	assert(node);
+
+	// Return owner module
+	return (Module *) node->getUserData();
+}
+
+
 long long Module::Access(AccessType access_type,
 		unsigned address,
 		int *witness)
