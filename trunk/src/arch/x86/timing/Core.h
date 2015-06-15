@@ -33,6 +33,7 @@ namespace x86
 {
 
 // Forward declaration
+class Timing;
 class CPU;
 
 // Class Core
@@ -60,6 +61,9 @@ private:
 	// name of this Core
 	std::string name;
 
+	// Associated timing simulator
+	Timing *timing;
+
 	// CPU that it belongs to 
 	CPU *cpu;
 
@@ -73,7 +77,7 @@ private:
 	std::list<std::shared_ptr<Uop>> event_queue;
 
 	// Functional unit
-	std::unique_ptr<FunctionalUnit> function_unit;
+	std::unique_ptr<FunctionalUnit> functional_unit;
 	//struct prefetch_history_t *prefetch_history;
 
 
@@ -220,7 +224,7 @@ private:
 public:
 
 	/// Constructor
-	Core(const std::string &name, CPU *cpu, int id);
+	Core(const std::string &name, Timing *timing, CPU *cpu, int id);
 
 	/// Return the number of threads
 	int getNumThreads() const { return threads.size(); }

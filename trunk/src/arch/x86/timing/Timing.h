@@ -78,7 +78,7 @@ class Timing : public comm::Timing
 	//
 
 	// CPU instance of this timing simulator
-	CPU cpu;
+	CPU cpu = CPU(this);
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
