@@ -326,6 +326,8 @@ public:
 	int getMaxKernels() { return max_kernels; }
 
 	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
+
+	/// Return the size of the wavefront object
 	int getWavefrontSize() { return wavefront_size; }
 
 	/// Initialize a buffer description of type EmuBufferDesc
