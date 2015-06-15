@@ -24,7 +24,6 @@
 #include <memory>
 
 #include <arch/southern-islands/asm/Binary.h>
-#include <driver/opengl/southern-islands/SPI.h>
 #include <memory/Memory.h>
 
 #include "Emu.h"
@@ -451,9 +450,6 @@ public:
 
 	/// Move workgroups in waiting list to running list
 	void WaitingToRunning();	
-
-	/// Get initialization data from SPI module
-	void ReceiveInitData(std::unique_ptr<DataForPixelShader> data);
 
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);

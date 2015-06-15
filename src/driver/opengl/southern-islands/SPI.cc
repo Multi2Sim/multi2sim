@@ -85,19 +85,6 @@ void DataForPixelShader::setVGPRs(int x, int y, float i, float j)
 		DataForVGPRs(x, y, i, j)));
 }
 
-void SPI::InitDataToNDRange(NDRange *ndrange)
-{
-	assert(ndrange->getStage() == NDRange::StagePixelShader);
-
-	unsigned id = ndrange->getId();
-
-	for( auto &elem : init_data_repo)
-	{
-		if (elem->getId() == id)
-			ndrange->ReceiveInitData(std::move(elem));
-	}
-}
-
 void SPI::setViewport(int x, int y, int width, int height)
 {
 	viewport.reset(new ViewPort(x, y, width, height));
