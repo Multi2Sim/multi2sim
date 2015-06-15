@@ -199,9 +199,6 @@ private:
 	// Maximum number of kernels
 	static int max_kernels;
 
-	// OpenGL binary name
-	static std::string opengl_binary_name;
-
 	// Size of wavefront
 	static int wavefront_size;
 
@@ -324,8 +321,6 @@ public:
 	/// Return the maximum number of kernels as set by the 
 	/// --si-max-kernels command-line option
 	int getMaxKernels() { return max_kernels; }
-
-	const std::string &getOpenGLBinaryName() { return opengl_binary_name; }
 
 	/// Return the size of the wavefront object
 	int getWavefrontSize() { return wavefront_size; }
