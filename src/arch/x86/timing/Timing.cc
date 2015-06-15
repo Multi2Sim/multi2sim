@@ -590,7 +590,8 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 	// Parse Trace Cacher configuration by their sections
 	TraceCache::ParseConfiguration(ini_file);
 
-
+	// Parse Functional Unit configuration by their sections
+	FunctionalUnit::ParseConfiguration(ini_file);
 }
 
 } // namespace x86

@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Timing.h"
 #include "CPU.h"
 #include "Core.h"
 
@@ -45,7 +46,8 @@ Core::Core(const std::string &name, Timing *timing, CPU *cpu, int id)
 	for (int i = 0; i < CPU::getNumThreads(); i++)
 	{
 		thread_name = prefix + misc::fmt("%d", i);
-		threads.emplace_back(misc::new_unique<Thread>(thread_name, this->cpu, this, i));
+		threads.emplace_back(misc::new_unique<Thread>(thread_name, this->timing,
+				this->cpu, this, i));
 	}
 }
 
@@ -285,10 +287,8 @@ void Core::RemoveReorderBufferHead(int thread_id)
 
 	// Free instruction
 	uop->setInReorderBuffer(false);
-
-	// FIXME
-	// x86_uop_free_if_not_queued(uop);
 }
+
 
 Uop *Core::getReorderBufferTail(int thread_id)
 {
@@ -392,9 +392,6 @@ void Core::RemoveReorderBufferTail(int thread_id)
 
 	// Free instruction
 	uop->setInReorderBuffer(false);
-
-	// FIXME
-	//x86_uop_free_if_not_queued(uop);
 }
 
 Uop *Core::getReorderBufferEntry(int index, int thread_id)
@@ -436,5 +433,166 @@ Uop *Core::getReorderBufferEntry(int index, int thread_id)
 	return nullptr;
 }
 
+
+void Core::InsertInEventQueue(std::shared_ptr<Uop> &uop)
+{
+	// Local variable declaration
+	auto it = event_queue.begin();
+
+	// Make sure the uop is not in the event queue at the moment
+	assert(!uop->isInEventQueue());
+
+	// Traverse the list to find the proper position
+	for (auto item : event_queue)
+	{
+		// Check whether the current item should be handled after the uop
+		if (uop->Compare(item.get()) < 0)
+		{
+			// Insert the Uop
+			event_queue.insert(it, uop);
+
+			// Exit the loop
+			break;
+		}
+
+		// Increment the iterator
+		it++;
+	}
+
+	// Set flat to indicate the uop is in the event queue
+	uop->setInEventQueue(true);
+}
+
+
+Uop *Core::ExtractFromEventQueue()
+{
+	// If the queue is empty, return a null pointer
+	if (event_queue.size() <= 0)
+		return nullptr;
+
+	// Get the first element of the queue
+	Uop *uop = event_queue.front().get();
+
+	// Make sure the uop is currently in the event queue
+	assert(uop->isInEventQueue());
+
+	// Remove the uop
+	event_queue.pop_front();
+
+	// Set flag to indicate that the uop is not in the queue anymore
+	uop->setInEventQueue(false);
+
+	// Return the uop
+	return uop;
+}
+
+
+void Core::Fetch()
+{
+	// Local variable declaration
+	Thread *thread;
+	Thread *new_thread;
+	bool must_switch;
+	int new_index;
+
+	// Invoke fetch stage function according to the kind
+	switch (CPU::getFetchKind())
+	{
+
+	case CPU::FetchKindShared:
+	{
+		// Fetch from all threads
+		for (int i = 0; i < CPU::getNumThreads(); i++)
+			if (threads[i]->CanFetch())
+				threads[i]->Fetch();
+		break;
+	}
+
+	case CPU::FetchKindTimeslice:
+	{
+		// Round-robin fetch
+		for (int i = 0; i < CPU::getNumThreads(); i++)
+		{
+			current_fetch_thread = (current_fetch_thread + 1) % CPU::getNumThreads();
+			thread = threads[current_fetch_thread].get();
+			if (thread->CanFetch())
+			{
+				thread->Fetch();
+				break;
+			}
+		}
+		break;
+	}
+
+	case CPU::FetchKindSwitchonevent:
+	{
+		// If current thread is stalled, it means that we just switched to it.
+		// No fetching and no switching either.
+		thread = threads[current_fetch_thread].get();
+		if (thread->getFetchStallUntil() >= timing->getCycle())
+			break;
+
+		// Switch thread if:
+		// - Quantum expired for current thread.
+		// - Long latency instruction is in progress.
+		must_switch = !thread->CanFetch();
+		must_switch = must_switch || timing->getCycle() - fetch_switch_when >
+				CPU::getThreadQuantum() + CPU::getThreadSwitchPenalty();
+		must_switch = must_switch || thread->isLongLatencyInEventQueue();
+
+		// Switch thread
+		if (must_switch)
+		{
+			// Find a new thread to switch to
+			for (new_index = (thread->getIDInCore() + 1) % CPU::getNumThreads();
+					new_index != thread->getIDInCore();
+					new_index = (new_index + 1) % CPU::getNumThreads())
+			{
+				// Do not choose it if it is not eligible for fetching
+				new_thread = threads[new_index].get();
+				if (!new_thread->CanFetch())
+					continue;
+
+				// Do not choose it if it is unfair
+				if (new_thread->getNumFetchedUinst() >
+					thread->getNumFetchedUinst() + 100000)
+					continue;
+
+				// Do not choose it if it is stalled
+				if (new_thread->isLongLatencyInEventQueue())
+					continue;
+
+				// Choose it if we need to switch
+				if (new_thread->CanFetch())
+					break;
+			}
+
+			if (new_index != thread->getIDInCore())
+			{
+				// Thread switch successful
+				current_fetch_thread = new_index;
+				fetch_switch_when = timing->getCycle();
+				new_thread->setFetchStallUntil(timing->getCycle() +
+						CPU::getThreadSwitchPenalty() - 1);
+			}
+			else
+			{
+				// Thread switch fail
+				break;
+			}
+		}
+
+		// Fetch
+		thread = threads[current_fetch_thread].get();
+		if (thread->CanFetch())
+			thread->Fetch();
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("wrong fetch policy\n");
+	}
+}
 
 }
