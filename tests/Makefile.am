@@ -70,5 +70,6 @@ src_memory_test_LDADD = \
 	$(am__append_2) -lz
 
 src_memory_test_SOURCES = \
-	src/memory/TestSystemConfig.cc
+	src/memory/TestSystemConfig.cc \
+	src/memory/TestSystemEvents.cc
 
