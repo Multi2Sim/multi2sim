@@ -57,6 +57,9 @@ class Driver : public comm::Driver
 	// Primary list of NDRanges
 	std::vector<std::unique_ptr<NDRange>> ndranges;
 
+	// Number of ndranges currently running
+	int ndranges_running = 0;
+
 	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
 	//
@@ -168,7 +171,7 @@ public:
 	}
 
 	/// Get count of ndranges in list
-	int getNDRangeCount() const { return ndranges.size(); }
+	int getNumNDRanges() const { return ndranges.size(); }
 
 	/// Get ndrange by its Id
 	NDRange *getNDRangeById(unsigned id)
