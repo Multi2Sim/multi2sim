@@ -34,6 +34,9 @@
 namespace x86
 {
 
+// Forward declaration
+class Timing;
+
 // Class CPU
 class CPU
 {
@@ -130,6 +133,9 @@ public:
 
 
 private:
+
+	// Associated timing simulator
+	Timing *timing;
 
 	// Associated emulator 
 	Emu *emu;
@@ -315,7 +321,7 @@ private:
 public:
 
 	/// CPU constructor
-	CPU();
+	CPU(Timing *timing);
 
 
 
