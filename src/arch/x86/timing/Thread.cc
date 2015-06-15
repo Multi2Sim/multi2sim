@@ -19,12 +19,16 @@
 
 #include "Thread.h"
 #include "CPU.h"
+#include "Timing.h"
 
 namespace x86
 {
 
-Thread::Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core) :
+Thread::Thread(const std::string &name, Timing *timing,
+	CPU *cpu, Core *core, int id_in_core)
+		:
 		name(name),
+		timing(timing),
 		cpu(cpu),
 		core(core),
 		id_in_core(id_in_core)
@@ -117,13 +121,13 @@ bool Thread::CanInsertInInstructionQueue()
 void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> &uop)
 {
 	// Make sure the Uop is not in the instruction queue
-	assert(!uop.get()->isInInstructionQueue());
+	assert(!uop->isInInstructionQueue());
 
 	// Insert
 	instruction_queue.push_back(uop);
 
 	// Set the flag to true to indicate that the Uop is in the instruction queue
-	uop.get()->setInInstructionQueue(true);
+	uop->setInInstructionQueue(true);
 
 	// Increment the Uop count both for thread and core
 	core->incInstructionQueueCount();
@@ -340,6 +344,70 @@ void Thread::RecoverUopQueue()
 		// Remove
 		uop_queue.pop_back();
 	}
+}
+
+
+bool Thread::isLongLatencyInEventQueue()
+{
+	for (auto uop : core->getEventQueue())
+	{
+		// Only check the uop that belong to the current thread
+		if (uop->getThread() != this)
+			continue;
+
+		// Check whether there is uop that have waited for more than 20 cycles
+		if (timing->getCycle() - uop->getIssueWhen() > 20)
+			return true;
+	}
+	return false;
+}
+
+
+bool Thread::isCacheMissInEventQueue()
+{
+	for (auto uop : core->getEventQueue())
+	{
+		// Only check the uop that belong to the current thread
+		// Only check the uop that load memory
+		if (uop->getThread() != this ||uop->getUinst()->getOpcode() != UInstLoad)
+			continue;
+
+		// Check whether there is uop that have waited for more than 5 cycles
+		// Assume that a load that take more than 5 cycles is means that cache miss happened
+		if (timing->getCycle() - uop->getIssueWhen() > 5)
+			return true;
+	}
+	return false;
+}
+
+
+void Thread::RecoverEventQueue()
+{
+
+}
+
+
+bool Thread::CanFetch()
+{
+	return true;
+}
+
+
+Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
+{
+	return nullptr;
+}
+
+
+bool Thread::FetchFromTraceCache()
+{
+	return true;
+}
+
+
+void Thread::Fetch()
+{
+
 }
 
 }

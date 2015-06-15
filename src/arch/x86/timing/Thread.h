@@ -38,6 +38,7 @@ namespace x86
 // Forward declarations
 class Core;
 class CPU;
+class Timing;
 
 /// X86 Thread
 class Thread
@@ -50,13 +51,16 @@ private:
 
 
 	//
-	// CPU and Core that it belongs to
+	// Timing simulator, CPU and Core that it belongs to
 	//
 
-	// cpu the thread belongs to
+	// Timing simulator the thread belongs to
+	Timing *timing;
+
+	// CPU the thread belongs to
 	CPU *cpu;
 
-	// core the thread belongs to
+	// Core the thread belongs to
 	Core *core;
 
 
@@ -65,10 +69,10 @@ private:
 	// IDs
 	//
 
-	// thread ID in the core
+	// Thread ID in the core
 	int id_in_core = 0;
 
-	// global thread ID in the cpu
+	// Global thread ID in the cpu
 	int id_in_cpu = 0;
 
 
@@ -300,7 +304,8 @@ private:
 public:
 
 	/// Constructor
-	Thread(const std::string &name, CPU *cpu, Core *core, int id_in_core);
+	Thread(const std::string &name, Timing *timing,
+			CPU *cpu, Core *core, int id_in_core);
 
 
 
@@ -405,6 +410,18 @@ public:
 		this->reorder_buffer_tail = reorder_buffer_tail;
 	}
 
+	/// Set cycle until which fetch is stalled
+	void setFetchStallUntil(long long fetch_stall_until)
+	{
+		this->fetch_stall_until = fetch_stall_until;
+	}
+
+	/// Set number of fetched micro-instructions
+	void setNumFetchedUinst(long long num_fetched_uinst)
+	{
+		this->num_fetched_uinst = num_fetched_uinst;
+	}
+
 
 
 
@@ -456,6 +473,12 @@ public:
 
 	/// Get reorder buffer right bound
 	int getReorderBufferRightBound() { return reorder_buffer_right_bound; }
+
+	/// Get cycle until which fetch is stalled
+	long long getFetchStallUntil() { return fetch_stall_until; }
+
+	/// Get number of fetched micro-instructions
+	long long getNumFetchedUinst() { return num_fetched_uinst; }
 
 
 
@@ -546,8 +569,49 @@ public:
 	// Uop queue functions
 	//
 
-	// Recover Uop queue
+	/// Recover Uop queue
 	void RecoverUopQueue();
+
+
+
+
+
+	//
+	// Event queue functions
+	//
+
+	/// Check whether there is uop within current thread with long latency
+	bool isLongLatencyInEventQueue();
+
+	/// Check whether there is uop within current thread that caused cache miss
+	bool isCacheMissInEventQueue();
+
+	/// Recover the event queue
+	void RecoverEventQueue();
+
+
+
+
+	//
+	// Fetch stages
+	//
+
+	/// Check whether or not the fecth is allowed
+	bool CanFetch();
+
+	/// Fetch instructions
+	/// Run the emulation of one x86 macro-instruction and create its uops.
+	/// If any of the uops is a control uop, this uop will be the return value of
+	/// the function. Otherwise, the first decoded uop is returned
+	Uop *FetchInstruction(bool fetch_from_trace_cache);
+
+	/// Try to fetch instruction from trace cache.
+	/// Return true if there was a hit and fetching succeeded.
+	bool FetchFromTraceCache();
+
+	/// Fetch stage function
+	void Fetch();
+
 };
 
 }

@@ -21,6 +21,7 @@
 #define ARCH_X86_TIMING_CORE_H
 
 #include <vector>
+#include <list>
 #include <string>
 
 #include <arch/x86/emu/UInst.h>
@@ -73,12 +74,11 @@ private:
 	// Unique ID in CPU 
 	int id;
 
-	// Shared structures 
+	// Event queue
 	std::list<std::shared_ptr<Uop>> event_queue;
 
 	// Functional unit
 	std::unique_ptr<FunctionalUnit> functional_unit;
-	//struct prefetch_history_t *prefetch_history;
 
 
 
@@ -287,8 +287,11 @@ public:
 	// Getters
 	//
 
-	/// get core ID
+	/// Get core ID
 	int getID() { return id; }
+
+	/// Get event queue
+	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
 
 	/// Get the count of integer register file that have been used
 	int getRegFileIntCount() { return reg_file_int_count; }
@@ -341,6 +344,29 @@ public:
 
 	/// Get ROB entry based on the index
 	Uop *getReorderBufferEntry(int index, int thread_id);
+
+
+
+
+	//
+	// Event queue functions
+	//
+
+	/// Insert Uop into event queue
+	void InsertInEventQueue(std::shared_ptr<Uop> &uop);
+
+	/// Extract Uop from event queue
+	Uop *ExtractFromEventQueue();
+
+
+
+
+	//
+	// Pipeline stages
+	//
+
+	/// Fetch stage
+	void Fetch();
 };
 
 }

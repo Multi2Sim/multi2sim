@@ -142,8 +142,8 @@ void FunctionalUnit::ParseConfiguration(misc::IniFile *ini_file)
 	// Section
 	std::string section = "FunctionalUnits";
 
-	// Subsection
-	std::string subsection;
+	// Value
+	std::string value;
 
 	// Local variable
 	ReservationPool *pool_ptr;
@@ -155,17 +155,17 @@ void FunctionalUnit::ParseConfiguration(misc::IniFile *ini_file)
 		pool_ptr = &reservation_pool[i];
 
 		// Get functional units count
-		subsection = name[i] + ".Count";
-		pool_ptr->count = ini_file->ReadInt(section, subsection, pool_ptr->count);
+		value = name[i] + ".Count";
+		pool_ptr->count = ini_file->ReadInt(section, value, pool_ptr->count);
 
 		// Get operation latency
-		subsection = name[i] + ".OpLat";
-		pool_ptr->operation_latency = ini_file->ReadInt(section, subsection,
+		value = name[i] + ".OpLat";
+		pool_ptr->operation_latency = ini_file->ReadInt(section, value,
 				pool_ptr->operation_latency);
 
 		// Get issue latency
-		subsection = name[i] + ".IssueLat";
-		pool_ptr->issue_latency = ini_file->ReadInt(section, subsection,
+		value = name[i] + ".IssueLat";
+		pool_ptr->issue_latency = ini_file->ReadInt(section, value,
 				pool_ptr->issue_latency);
 	}
 }

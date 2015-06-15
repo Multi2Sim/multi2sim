@@ -184,4 +184,12 @@ void CPU::ParseConfiguration(misc::IniFile *ini_file)
 
 }
 
+
+void CPU::Fetch()
+{
+	stage = "Fetch";
+	for (int i = 0; i < num_cores; i++)
+		cores[i]->Fetch();
+}
+
 }
