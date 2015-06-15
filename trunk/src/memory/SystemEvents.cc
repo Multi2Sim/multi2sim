@@ -116,6 +116,8 @@ void System::EventLoadHandler(esim::EventType *event_type,
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
 	Module *module = frame->getModule();
+	Cache *cache = module->getCache();
+	Directory *directory = module->getDirectory();
 
 	// Event "load"
 	if (event_type == event_type_load)
@@ -268,21 +270,107 @@ void System::EventLoadHandler(esim::EventType *event_type,
 	// Event "load_miss"
 	if (event_type == event_type_load_miss)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s load miss\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_miss\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error on read request. Unlock block and retry load.
+		if (frame->error)
+		{
+			// Unlock directory entry
+			directory->UnlockEntry(frame->set, frame->way);
+			
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying "
+					"in %d cycles\n", retry_latency);
+
+			// Continue with 'load-lock' after retry latency
+			frame->retry = true;
+			esim_engine->Next(event_type_load_lock, retry_latency);
+			return;
+		}
+
+		// Set block state to E/S depending on return var 'shared'.
+		// Also set the tag of the block.
+		cache->setBlock(frame->set,
+				frame->way,
+				frame->tag,
+				frame->shared ? Cache::BlockShared : Cache::BlockExclusive);
+
+		// Continue
+		esim_engine->Next(event_type_load_unlock);
+		return;
 	}
 
 
 	// Event "load_unlock"
 	if (event_type == event_type_load_unlock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"load unlock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_unlock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Unlock directory entry
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		module->incDataAccesses();
+
+		// Continue with 'load-finish' after latency
+		esim_engine->Next(event_type_load_finish,
+				module->getDataLatency());
+		return;
 	}
 
 
 	// Event "load_finish"
 	if (event_type == event_type_load_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("%lld %lld 0x%x %s load finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.end_access "
+				"name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Increment witness variable
+		if (frame->witness)
+			(*frame->witness)++;
+
+		// Finish access
+		module->FinishAccess(frame);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 }
@@ -1052,25 +1140,199 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	// Event "evict_process_noncoherent"
 	if (event_type == event_type_evict_process_noncoherent)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"evict process noncoherent\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_process_noncoherent\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Error locking block
+		if (frame->error)
+		{
+			parent_frame->error = true;
+			esim_engine->Next(event_type_evict_reply);
+			return;
+		}
+
+		// If data was received, set the block to modified
+		Cache *target_cache = target_module->getCache();
+		if (frame->reply == Frame::ReplyAckData)
+		{
+			switch (frame->state)
+			{
+			case Cache::BlockExclusive:
+
+				target_cache->setBlock(frame->set,
+						frame->way,
+						frame->tag,
+						Cache::BlockModified);
+				break;
+			
+			case Cache::BlockOwned:
+			case Cache::BlockModified:
+
+				// Nothing to do
+				break;
+			
+			case Cache::BlockShared:
+			case Cache::BlockNonCoherent:
+
+				target_cache->setBlock(frame->set,
+						frame->way,
+						frame->tag,
+						Cache::BlockNonCoherent);
+				break;
+			
+			default:
+
+				throw misc::Panic("Invalid cache block state");
+			}
+		}
+		else 
+		{
+			throw misc::Panic("Invalid cache reply");
+		}
+
+		// Remove sharer and owner
+		Directory *directory = target_module->getDirectory();
+		for (int z = 0; z < directory->getNumSubBlocks(); z++)
+		{
+			// Skip other sub-blocks
+			unsigned directory_entry_tag = frame->tag + z *
+					target_module->getSubBlockSize();
+			assert(directory_entry_tag < frame->tag + (unsigned)
+					target_module->getBlockSize());
+			if (directory_entry_tag < (unsigned) frame->src_tag || 
+					directory_entry_tag >= frame->src_tag +
+					(unsigned) module->getBlockSize())
+				continue;
+
+			// Set sharer and owner
+			Directory::Entry *entry = directory->getEntry(
+					frame->set,
+					frame->way,
+					z);
+			int index = module->getLowNetworkNode()->getIndex();
+			directory->clearSharer(frame->set,
+					frame->way,
+					z,
+					index);
+			if (entry->getOwner() == index)
+				directory->setOwner(frame->set,
+						frame->way,
+						z,
+						Directory::NoOwner);
+		}
+
+		// Unlock the directory entry
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		target_module->incDataAccesses();
+		
+		// Continue with 'evict-reply' after latency
+		esim_engine->Next(event_type_evict_reply,
+				target_module->getDataLatency());
+		return;
 	}
 
 	// Event "evict_reply"
 	if (event_type == event_type_evict_reply)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"evict reply\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_reply\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Send message
+		net::Network *network = target_module->getHighNetwork();
+		net::Node *source_node = target_module->getHighNetworkNode();
+		net::Node *destination_node = module->getLowNetworkNode();
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				8,
+				event_type_evict_reply_receive,
+				event_type);
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "evict_reply_receive"
 	if (event_type == event_type_evict_reply_receive)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"evict reply receive\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_reply_receive\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Receive message
+		net::Network *network = module->getLowNetwork();
+		net::Node *node = module->getLowNetworkNode();
+		network->Receive(node, frame->message);
+
+		// Invalidate block if there was no error
+		if (!frame->error)
+			cache->setBlock(frame->src_set,
+					frame->src_way,
+					0,
+					Cache::BlockInvalid);
+		
+		// Sanity
+		assert(!directory->isBlockSharedOrOwned(frame->src_set, frame->src_way));
+
+		// Continue with 'evict-finish'
+		esim_engine->Next(event_type_evict_finish);
+		return;
 	}
 
 	// Event "evict_finish"
 	if (event_type == event_type_evict_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s evict finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:evict_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
@@ -1623,13 +1885,96 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	// Event "read_request_reply"
 	if (event_type == event_type_read_request_reply)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"read request reply\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_reply\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Checks
+		assert(frame->reply_size);
+		assert(frame->request_direction);
+		assert(module->getLowModuleServingAddress(frame->getAddress())
+				== target_module ||
+				target_module->getLowModuleServingAddress(frame->getAddress())
+				== module);
+
+		// Get network and nodes
+		net::Network *network;
+		net::Node *source_node;
+		net::Node *destination_node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = module->getLowNetwork();
+			source_node = target_module->getHighNetworkNode();
+			destination_node = module->getLowNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			source_node = target_module->getLowNetworkNode();
+			destination_node = module->getHighNetworkNode();
+		}
+
+		// Send message
+		frame->message = network->TrySend(
+				source_node,
+				destination_node,
+				frame->reply_size,
+				event_type_read_request_finish,
+				event_type);
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "read_request_finish"
 	if (event_type == event_type_read_request_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"read request finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Receive message
+		net::Network *network;
+		net::Node *node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = module->getLowNetwork();
+			node = module->getLowNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			node = module->getHighNetworkNode();
+		}
+		network->Receive(node, frame->message);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event

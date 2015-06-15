@@ -850,12 +850,84 @@ int main(int argc, char **argv)
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		while (witness < 0)
 			esim_engine->ProcessEvents();
+	
+
+#define EXPECT_EQ(a, b) assert((a) == (b));
+
+		// Check block
+		unsigned tag;
+		Cache::BlockState state;
+		module_l1_0->getCache()->getBlock(0, 1, tag, state);
+		EXPECT_EQ(tag, 0x400);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+
+		// Check block
+		module_l1_0->getCache()->getBlock(0, 0, tag, state);
+		EXPECT_EQ(tag, 0x800);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+
+		// Check block
+		module_l1_1->getCache()->getBlock(1, 0, tag, state);
+		EXPECT_EQ(tag, 0x40);
+		EXPECT_EQ(state, Cache::BlockModified);
+
+		// Check block
+		module_l2_0->getCache()->getBlock(0, 0, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockModified);
+
+		// Check block
+		module_l2_0->getCache()->getBlock(0, 3, tag, state);
+		EXPECT_EQ(tag, 0x400);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+
+		// Check block
+		module_l2_0->getCache()->getBlock(0, 2, tag, state);
+		EXPECT_EQ(tag, 0x800);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+
+		// Check sharers
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
+
+		// Check sharers
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+		EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
+
+		// Check sharers
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+		EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+		// Check sharers
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+		EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+		// Check owner
+		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
+
+		// Check owner
+		EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
+
+		// Check owner
+		EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+		// Check owner
+		EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+// Command[26] = CheckLink mod-l1-0 Low Out 88
+// Command[27] = CheckLink mod-l1-0 Low In 152
+// Command[28] = CheckLink mod-l1-1 Low Out 0
+// Command[29] = CheckLink mod-l1-1 Low In 0
+// Command[30] = CheckLink mod-l2-0 High Out 152
+// Command[31] = CheckLink mod-l2-0 High In 88
+// Command[32] = CheckLink mod-l2-0 Low Out 16
+// Command[33] = CheckLink mod-l2-0 Low In 272
+
 	}
 	catch (misc::Exception &e)
 	{
 		e.Dump();
 		return 1;
 	}
-	*/
+*/
 }
 
