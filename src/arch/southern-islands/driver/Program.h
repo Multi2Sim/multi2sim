@@ -86,7 +86,11 @@ public:
 	/// Get the id of the program
 	int getId() const { return id; }
 
-	/// Get pointer to contant buffer by index
+	/// Get pointer to constant buffer by index. If index is out of bounds,
+	/// the function will return a nullptr. This allows the user to keep 
+	/// retrieving successive constant buffers. They will receive the
+	/// nullptr when they have reached the end of the implemented constant
+	/// buffers.
 	ConstantBuffer *getConstantBufferByIndex(int index) const 
 	{
 		if (index >= 0 && index < (int) constant_buffers.size())

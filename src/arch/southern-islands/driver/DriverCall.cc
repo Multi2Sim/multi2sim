@@ -614,7 +614,18 @@ int Driver::CallNDRangeFree(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeStart(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+
+	//X86Emu *x86_emu = ctx->emu;                                              
+	//OpenclDriver *driver = x86_emu->opencl_driver;                           
+
+	// Make sure ndranges are greater than or equal to 0
+	assert(ndranges_running >= 0);                                   
+	ndranges_running++;                                              
+
+	// TODO - x86 emulator might need to keep track of ndranges running too
+	//if (driver->x86_cpu)                                                     
+	//	driver->x86_cpu->ndranges_running++;                             
+
 	return 0;
 }
 
