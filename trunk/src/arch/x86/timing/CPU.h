@@ -330,44 +330,47 @@ public:
 	// Static member getters
 	//
 
-	// Get number of cores
+	/// Get number of cores
 	static int getNumCores() { return num_cores; }
 
-	// Get number of threads
+	/// Get number of threads
 	static int getNumThreads() { return num_threads; }
 
-	// Get context quantum
+	/// Get context quantum
 	static int getContextQuantum() { return context_quantum; }
 
-	// Get thread quantum
+	/// Get thread quantum
 	static int getThreadQuantum() { return thread_quantum; }
 
-	// Get thread switch penalty
+	/// Get thread switch penalty
 	static int getThreadSwitchPenalty() { return thread_switch_penalty; }
 
-	// Get reorder buffer size
+	/// Get reorder buffer size
 	static int getReorderBufferSize() { return reorder_buffer_size; }
 
-	// Get reorder buffer kind
+	/// Get reorder buffer kind
 	static ReorderBufferKind getReorderBufferKind() { return reorder_buffer_kind; }
 
-	// Get fetch queue size
+	/// Get fetch queue size
 	static int getFetchQueueSize() { return fetch_queue_size; }
 
-	// Get instruction queue kind
+	/// Get instruction queue kind
 	static InstructionQueueKind getInstructionQueueKind() { return instruction_queue_kind; }
 
-	// Get instruction queue size
+	/// Get instruction queue size
 	static int getInstructionQueueSize() { return instruction_queue_size; }
 
-	// Get load/store queue kind
+	/// Get load/store queue kind
 	static LoadStoreQueueKind getLoadStoreQueueKind() { return load_store_queue_kind; }
 
-	// Get load/store queue size
+	/// Get load/store queue size
 	static int getLoadStoreQueueSize() { return load_store_queue_size; }
 
-	// Get uop queue size
+	/// Get uop queue size
 	static int getUopQueueSize() { return uop_queue_size; }
+
+	/// Get fetch kind
+	static FetchKind getFetchKind() { return fetch_kind; }
 
 
 
@@ -407,6 +410,16 @@ public:
 
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
+
+
+
+
+	//
+	// Pipeline stages
+	//
+
+	/// Fetch stage
+	void Fetch();
 };
 
 }

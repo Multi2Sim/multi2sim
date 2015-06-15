@@ -27,6 +27,7 @@ Uop::Uop()
 
 }
 
+
 Uop::Uop(int id, int id_in_core, Thread *thread)
 	:
 	id(id),
@@ -34,6 +35,16 @@ Uop::Uop(int id, int id_in_core, Thread *thread)
 	thread(thread)
 {
 
+}
+
+
+int Uop::Compare(Uop *uop)
+{
+	// If the time when is ready for these two Uops is different, then return the time difference
+	// If the time when is ready for these two Uops is same, then return the ID difference
+	// (Uop with smaller ID should be handled first)
+	return this->ready_when != uop->getReadyWhen() ? this->ready_when - uop->getReadyWhen()
+			: this->id - uop->getID();
 }
 
 }

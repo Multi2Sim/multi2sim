@@ -109,4 +109,9 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	EXPECT_EQ(64, TraceCache::getQueuesize());
 }
 
+TEST(TestTraceCache, test_multiple_branch_predictor)
+{
+
+}
+
 }
