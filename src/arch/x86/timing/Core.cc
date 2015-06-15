@@ -24,9 +24,12 @@
 namespace x86
 {
 
-Core::Core(const std::string &name, CPU *cpu, int id)
+Core::Core(const std::string &name, Timing *timing, CPU *cpu, int id)
 	:
-	name(name), cpu(cpu), id(id)
+	name(name),
+	timing(timing),
+	cpu(cpu),
+	id(id)
 {
 	// The prefix for each core
 	std::string prefix = name + "Thread";
@@ -34,6 +37,9 @@ Core::Core(const std::string &name, CPU *cpu, int id)
 
 	// Initialize ROB
 	InitializeReorderBuffer();
+
+	// Initialize functional unit
+	functional_unit = misc::new_unique<FunctionalUnit>(this->timing);
 
 	// Create threads
 	for (int i = 0; i < CPU::getNumThreads(); i++)

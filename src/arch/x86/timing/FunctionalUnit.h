@@ -27,6 +27,9 @@
 namespace x86
 {
 
+// Forward declaration
+class Timing;
+
 class FunctionalUnit
 {
 public:
@@ -66,11 +69,17 @@ public:
 	struct ReservationPool
 	{
 		int count;
-		int operation_laterncy;
-		int issue_laterncy;
+		int operation_latency;
+		int issue_latency;
 	};
 
 private:
+
+	// Timing simulator the function unit belongs to
+	Timing *timing;
+
+
+
 
 	//
 	// Functional unit parameters
@@ -106,11 +115,22 @@ private:
 
 public:
 
+	/// Constructor
+	FunctionalUnit(Timing *timing);
+
 	/// Read functional unit configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
+
+	/// Reserve the functional unit required by the uop.
+	/// The return value is the functional unit latency, or 0 if it could not
+	/// be reserved.
+	int Reserve(Uop *uop);
+
+	/// Release all functional units
+	void ReleaseAll();
 };
 
 }

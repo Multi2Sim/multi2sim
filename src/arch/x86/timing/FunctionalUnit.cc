@@ -18,6 +18,7 @@
  */
 
 #include "FunctionalUnit.h"
+#include "Timing.h"
 
 namespace x86
 {
@@ -126,5 +127,101 @@ FunctionalUnit::Type FunctionalUnit::type_table[UInstOpcodeCount] =
 		TypeFloatComplex,  // UInstFpAtan
 		TypeFloatComplex,  // UInstFpSqrt
 };
+
+
+FunctionalUnit::FunctionalUnit(Timing *timing)
+	:
+	timing(timing)
+{
+
+}
+
+
+void FunctionalUnit::ParseConfiguration(misc::IniFile *ini_file)
+{
+	// Section
+	std::string section = "FunctionalUnits";
+
+	// Subsection
+	std::string subsection;
+
+	// Local variable
+	ReservationPool *pool_ptr;
+
+	// Get configuration parameter
+	for (int i = 1; i < TypeCount; i++)
+	{
+		// Get corresponding pool entry
+		pool_ptr = &reservation_pool[i];
+
+		// Get functional units count
+		subsection = name[i] + ".Count";
+		pool_ptr->count = ini_file->ReadInt(section, subsection, pool_ptr->count);
+
+		// Get operation latency
+		subsection = name[i] + ".OpLat";
+		pool_ptr->operation_latency = ini_file->ReadInt(section, subsection,
+				pool_ptr->operation_latency);
+
+		// Get issue latency
+		subsection = name[i] + ".IssueLat";
+		pool_ptr->issue_latency = ini_file->ReadInt(section, subsection,
+				pool_ptr->issue_latency);
+	}
+}
+
+
+int FunctionalUnit::Reserve(Uop *uop)
+{
+	// Get the functional unit type required by the uop.
+	// If the uop does not require a functional unit, return
+	// 1 cycle latency.
+	Type type = type_table[uop->getUinst()->getOpcode()];
+	if (type == TypeNone)
+		return 1;
+
+	// First time uop tries to reserve functional unit
+	if (!uop->getFirstCycleTryReserve() == 0)
+		uop->setFirstCycleTryReserve(timing->getCycle());
+
+	// Find a free functional unit
+	assert(type > TypeNone && type < TypeCount);
+	assert(reservation_pool[type].count <= MaxFunctionalUnitReservation);
+	for (int i = 0; i < reservation_pool[type].count; i++)
+	{
+		if (cycle_when_free[type][i] <= timing->getCycle())
+		{
+			// Make sure the latency exist
+			assert(reservation_pool[type].issue_latency > 0);
+			assert(reservation_pool[type].operation_latency > 0);
+
+			// Calculate the cycle count when functional unit is free
+			cycle_when_free[type][i] = timing->getCycle()
+					+ reservation_pool[type].issue_latency;
+
+			// Increment the access count
+			accesses[type]++;
+
+			// Calculate the wait time in cycle
+			waiting_time[type] += timing->getCycle() - uop->getFirstCycleTryReserve();
+
+			// Return the operation latency and indication functional unit is reserved
+			return reservation_pool[type].operation_latency;
+		}
+	}
+
+	// No free functional unit was found
+	denied[type]++;
+	return 0;
+}
+
+
+void FunctionalUnit::ReleaseAll()
+{
+	// Clear the free cycle count for each functional unit
+	for (int i = 0; i < TypeCount; i++)
+		for (int j = 0; j < reservation_pool[i].count; j++)
+			cycle_when_free[i][j] = 0;
+}
 
 }

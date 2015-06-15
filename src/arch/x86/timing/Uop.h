@@ -208,8 +208,8 @@ private:
 	// cycle when ready
 	long long when = 0;
 
-	// first cycle when f.u. is tried to be reserved
-	long long issue_try_when = 0;
+	// first cycle when functional unit is tried to be reserved
+	long long first_cycle_try_reserve = 0;
 
 	// cycle when issued
 	long long issue_when = 0;
@@ -393,6 +393,12 @@ public:
 		this->in_uop_queue = in_uop_queue;
 	}
 
+	// Set first cycle when functional unit is tried to be reserved
+	void setFirstCycleTryReserve(long long first_cycle_try_reserve)
+	{
+		this->first_cycle_try_reserve = first_cycle_try_reserve;
+	}
+
 
 
 
@@ -513,6 +519,9 @@ public:
 
 	// Get flag that indicates whether instruction is in uop queue
 	bool isInUopQueue() { return in_uop_queue; }
+
+	// Get first cycle when functional unit is tried to be reserved
+	long long getFirstCycleTryReserve() { return first_cycle_try_reserve; }
 
 };
 
