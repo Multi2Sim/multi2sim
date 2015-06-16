@@ -598,27 +598,37 @@ TEST(TestSystemEvents, config_0_evict_0)
 	// Check owner
 	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
 
-/*
-[Commands]
-Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[18] = CheckSharers mod-l2-0 0 0 0 None
-Command[19] = CheckSharers mod-l2-0 0 0 1 mod-l1-1
-Command[20] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckOwner mod-l2-0 0 0 0 None
-Command[23] = CheckOwner mod-l2-0 0 0 1 mod-l1-1
-Command[24] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[25] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[26] = CheckLink mod-l1-0 Low Out 88
-Command[27] = CheckLink mod-l1-0 Low In 152
-Command[28] = CheckLink mod-l1-1 Low Out 0
-Command[29] = CheckLink mod-l1-1 Low In 0
-Command[30] = CheckLink mod-l2-0 High Out 152
-Command[31] = CheckLink mod-l2-0 High In 88
-Command[32] = CheckLink mod-l2-0 Low Out 16
-Command[33] = CheckLink mod-l2-0 Low In 272
-*/
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 88);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 152);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 152);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 88);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_1)

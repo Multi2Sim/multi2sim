@@ -589,7 +589,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/*
+/*
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =
@@ -913,14 +913,37 @@ int main(int argc, char **argv)
 		// Check owner
 		EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
 
-// Command[26] = CheckLink mod-l1-0 Low Out 88
-// Command[27] = CheckLink mod-l1-0 Low In 152
-// Command[28] = CheckLink mod-l1-1 Low Out 0
-// Command[29] = CheckLink mod-l1-1 Low In 0
-// Command[30] = CheckLink mod-l2-0 High Out 152
-// Command[31] = CheckLink mod-l2-0 High In 88
-// Command[32] = CheckLink mod-l2-0 Low Out 16
-// Command[33] = CheckLink mod-l2-0 Low In 272
+		// Check link
+		net::Node *node = module_l1_0->getLowNetworkNode();
+		EXPECT_EQ(node->getSentBytes(), 88);
+
+		// Check link
+		node = module_l1_0->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 152);
+
+		// Check link
+		node = module_l1_1->getLowNetworkNode();
+		EXPECT_EQ(node->getSentBytes(), 0);
+
+		// Check link
+		node = module_l1_1->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 0);
+
+		// Check link
+		node = module_l2_0->getHighNetworkNode();
+		EXPECT_EQ(node->getSentBytes(), 152);
+
+		// Check link
+		node = module_l2_0->getHighNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 88);
+
+		// Check link
+		node = module_l2_0->getLowNetworkNode();
+		EXPECT_EQ(node->getSentBytes(), 16);
+
+		// Check link
+		node = module_l2_0->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 272);
 
 	}
 	catch (misc::Exception &e)
@@ -928,6 +951,6 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-*/
+	*/
 }
 
