@@ -422,13 +422,14 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 	unsigned int work_group_start, unsigned int work_group_count)
 {
 
-	int max_work_groups_to_send;
-	/* Ask the driver how many work groups it can buffer */
-	/* Send work groups to the driver */
+	// int max_work_groups_to_send;
+	// Ask the driver how many work groups it can buffer
+	// Send work groups to the driver
 	// FIXME should implement the partial. Now it just does a whole run
-	ioctl(opencl_si_device->fd,
-		SINDRangeGetBufferEntries,
-		&max_work_groups_to_send);
+	// FIXME ioctl call not used properly
+	// ioctl(opencl_si_device->fd,
+	// 	SINDRangeGetBufferEntries,
+	// 	&max_work_groups_to_send);
 
 	unsigned args[3] = { ndrange->id, work_group_start, work_group_count};
 	ioctl(opencl_si_device->fd, 

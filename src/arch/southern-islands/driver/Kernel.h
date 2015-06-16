@@ -142,7 +142,6 @@ public:
 	/// FIXME not implemented yet
 	static void FlushNDRangeBuffers(NDRange *ndrange /*SIGpu *gpu, X86Emu *x86_emu*/);
 	void NDRangeSetupMMU(NDRange *ndrange);
-
 };
 
 }  // namespace SI
