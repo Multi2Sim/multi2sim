@@ -588,7 +588,6 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-
 /*
 	using namespace mem; //////////
 
@@ -822,26 +821,10 @@ int main(int argc, char **argv)
 
 		// Get modules
 		Module *module_l1_0 = memory_system->getModule("mod-l1-0");
-		Module *module_l1_1 = memory_system->getModule("mod-l1-1");
-		Module *module_l2_0 = memory_system->getModule("mod-l2-0");
-		Module *module_mm = memory_system->getModule("mod-mm");
-
-		// Set block states
-		module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockModified, 0x0);
-		module_l1_1->getCache()->getBlock(1, 0)->setStateTag(Cache::BlockModified, 0x40);
-		module_l2_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
-		module_mm->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
-		module_l2_0->setOwner(0, 0, 0, module_l1_0);
-		module_l2_0->setOwner(0, 0, 1, module_l1_1);
-		module_l2_0->setSharer(0, 0, 0, module_l1_0);
-		module_l2_0->setSharer(0, 0, 1, module_l1_1);
-		module_mm->setOwner(0, 0, 0, module_l2_0);
-		module_mm->setSharer(0, 0, 0, module_l2_0);
 
 		// Accesses
-		int witness = -2;
-		module_l1_0->Access(Module::AccessLoad, 0x400, &witness);
-		module_l1_0->Access(Module::AccessLoad, 0x800, &witness);
+		int witness = -1;
+		module_l1_0->Access(Module::AccessStore, 0x0, &witness);
 
 		// Simulation loop
 		esim::Engine::setDebugPath("stdout");
@@ -854,103 +837,12 @@ int main(int argc, char **argv)
 
 #define EXPECT_EQ(a, b) assert((a) == (b));
 
-		// Check block
-		unsigned tag;
-		Cache::BlockState state;
-		module_l1_0->getCache()->getBlock(0, 1, tag, state);
-		EXPECT_EQ(tag, 0x400);
-		EXPECT_EQ(state, Cache::BlockExclusive);
-
-		// Check block
-		module_l1_0->getCache()->getBlock(0, 0, tag, state);
-		EXPECT_EQ(tag, 0x800);
-		EXPECT_EQ(state, Cache::BlockExclusive);
-
-		// Check block
-		module_l1_1->getCache()->getBlock(1, 0, tag, state);
-		EXPECT_EQ(tag, 0x40);
-		EXPECT_EQ(state, Cache::BlockModified);
-
-		// Check block
-		module_l2_0->getCache()->getBlock(0, 0, tag, state);
-		EXPECT_EQ(tag, 0x0);
-		EXPECT_EQ(state, Cache::BlockModified);
-
-		// Check block
-		module_l2_0->getCache()->getBlock(0, 3, tag, state);
-		EXPECT_EQ(tag, 0x400);
-		EXPECT_EQ(state, Cache::BlockExclusive);
-
-		// Check block
-		module_l2_0->getCache()->getBlock(0, 2, tag, state);
-		EXPECT_EQ(tag, 0x800);
-		EXPECT_EQ(state, Cache::BlockExclusive);
-
-		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
-
-		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
-		EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
-
-		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
-		EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
-
-		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
-		EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
-
-		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
-
-		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
-
-		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
-
-		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
-
-		// Check link
-		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 88);
-
-		// Check link
-		node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 152);
-
-		// Check link
-		node = module_l1_1->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 0);
-
-		// Check link
-		node = module_l1_1->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 0);
-
-		// Check link
-		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 152);
-
-		// Check link
-		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 88);
-
-		// Check link
-		node = module_l2_0->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 16);
-
-		// Check link
-		node = module_l2_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 272);
-
 	}
 	catch (misc::Exception &e)
 	{
 		e.Dump();
 		return 1;
 	}
-	*/
+*/
 }
 

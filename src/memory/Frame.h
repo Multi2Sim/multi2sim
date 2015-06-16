@@ -214,12 +214,7 @@ public:
 	static long long getNewId() { return ++id_counter; }
 
 	/// Constructor
-	Frame(long long id, Module *module, unsigned address) :
-			id(id),
-			module(module),
-			address(address)
-	{
-	}
+	Frame(long long id, Module *module, unsigned address);
 
 	/// Return a unique identifier for this event frame, assigned
 	/// internally when created.

@@ -29,6 +29,18 @@ namespace mem
 {
 
 long long Frame::id_counter = 0;
+	
+	
+Frame::Frame(long long id, Module *module, unsigned address) :
+		id(id),
+		module(module),
+		address(address)
+{
+	// Initialize iterators to past-the-end iterators
+	assert(module);
+	access_list_iterator = module->getAccessListEnd();
+	write_access_list_iterator = module->getWriteAccessListEnd();
+}
 
 
 }  // namespace mem
