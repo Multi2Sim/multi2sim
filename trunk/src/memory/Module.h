@@ -700,6 +700,34 @@ public:
 			int &tag,
 			Cache::BlockState &state);
 
+	/// Return an iterator to the first element of the access list.
+	std::list<Frame *>::iterator getAccessListBegin()
+	{
+		return access_list.begin();
+	}
+
+	/// Return a past-the-end iterator for the list of in-flight accesses.
+	std::list<Frame *>::iterator getAccessListEnd()
+	{
+		return access_list.end();
+	}
+
+	/// Return an iterator to the first element of the list of in-flight
+	/// write accesses.
+	std::list<Frame *>::iterator getWriteAccessListBegin()
+	{
+		return write_access_list.begin();
+	}
+
+	/// Return a past-the-end iterator to the list of in-flight write
+	/// accesses.
+	std::list<Frame *>::iterator getWriteAccessListEnd()
+	{
+		return write_access_list.end();
+	}
+
+
+
 
 	//
 	// Statistics

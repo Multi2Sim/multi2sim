@@ -381,34 +381,233 @@ void System::EventLoadHandler(esim::EventType *event_type,
 void System::EventStoreHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Module *module = frame->getModule();
+	Cache *cache = module->getCache();
+	Directory *directory = module->getDirectory();
+
 	// Event "store"
 	if (event_type == event_type_store)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("%lld %lld 0x%x %s store\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"store\" "
+				"state=\"%s:store\" addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Record access
+		module->StartAccess(frame, Module::AccessStore);
+
+		// Coalesce access
+		Frame *master_frame = module->canCoalesce(
+				Module::AccessStore,
+				frame->getAddress(),
+				frame);
+		if (master_frame)
+		{
+			// Coalesce
+			module->incCoalescedWrites();
+			module->Coalesce(master_frame, frame);
+			master_frame->queue.Wait(event_type_store_finish);
+
+			// Increment witness
+			if (frame->witness)
+				(*frame->witness)++;
+
+			// Done
+			return;
+		}
+
+		// Continue
+		esim_engine->Next(event_type_store_lock);
+		return;
 	}
 
 	// Event "store_lock"
 	if (event_type == event_type_store_lock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s store lock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If there is any older access, wait for it
+		auto it = frame->access_list_iterator;
+		assert(it != module->getAccessListEnd());
+		if (it != module->getAccessListBegin())
+		{
+			// Get older access
+			--it;
+			Frame *older_frame = *it;
+
+			// Debug
+			debug << misc::fmt("    %lld wait for access %lld\n",
+					frame->getId(),
+					older_frame->getId());
+
+			// Enqueue
+			older_frame->queue.Wait(event_type_store_lock);
+			return;
+		}
+
+		// Call 'find-and-lock'
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->getAddress());
+		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = true;
+		new_frame->write = true;
+		new_frame->retry = frame->retry;
+		new_frame->witness = frame->witness;
+		esim_engine->Call(event_type_find_and_lock,
+				new_frame,
+				event_type_store_action);
+		return;
 	}
 
 	// Event "store_action"
 	if (event_type == event_type_store_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s store action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error locking
+		if (frame->error)
+		{
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n",
+					retry_latency);
+
+			// Reschedule 'store-lock' after lantecy
+			frame->retry = true;
+			esim_engine->Next(event_type_store_lock, retry_latency);
+			return;
+		}
+
+		// Hit - state=M/E
+		if (frame->state == Cache::BlockModified ||
+			frame->state == Cache::BlockExclusive)
+		{
+			// Continue with 'store-unlock'
+			esim_engine->Next(event_type_store_unlock);
+			return;
+		}
+
+		// Miss - state=O/S/I/N
+		// Call 'write-request'
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->tag);
+		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
+		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		esim_engine->Call(event_type_write_request,
+				new_frame,
+				event_type_store_unlock);
+		return;
 	}
 
 	// Event "store_unlock"
 	if (event_type == event_type_store_unlock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s store unlock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_unlock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error in write request, unlock block and retry store.
+		if (frame->error)
+		{
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n", retry_latency);
+
+			// Unlock directory entry
+			directory->UnlockEntry(frame->set, frame->way);
+
+			// Continue with 'store-lock' after latency
+			frame->retry = true;
+			esim_engine->Next(event_type_store_lock, retry_latency);
+			return;
+		}
+
+		// Update tag/state and unlock
+		cache->setBlock(frame->set, frame->way, frame->tag,
+				Cache::BlockModified);
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Continue to 'store-finish' after data latency
+		module->incDataAccesses();
+		esim_engine->Next(event_type_store_finish,
+				module->getDataLatency());
+		return;
 	}
 
 	// Event "store_finish"
 	if (event_type == event_type_store_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("%lld %lld 0x%x %s store finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.end_access "
+				"name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Finish access
+		module->FinishAccess(frame);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
@@ -469,7 +668,7 @@ void System::EventNCStoreHandler(esim::EventType *event_type,
 void System::EventFindAndLockHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
-	// Get engine, frame, and module
+	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
 	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
@@ -1345,10 +1544,78 @@ void System::EventEvictHandler(esim::EventType *event_type,
 void System::EventWriteRequestHandler(esim::EventType *event_type,
 		esim::EventFrame *event_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Module *module = frame->getModule();
+	Module *target_module = frame->target_module;
+
 	// Event "write_request"
 	if (event_type == event_type_write_request)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s write request\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Default return values
+		parent_frame->error = false;
+
+		// For write requests, we need to set the initial reply size 
+		// because in updown, peer transfers must be allowed to 
+		// decrease this value (during invalidate). If the request 
+		// turns out to be downup, then these values will get 
+		// overwritten.
+		frame->reply_size = module->getBlockSize() + 8;
+		frame->setReplyIfHigher(Frame::ReplyAckData);
+
+		// Sanity
+		assert(frame->request_direction);
+		assert(module->getLowModuleServingAddress(frame->getAddress()) == target_module ||
+				frame->request_direction == Frame::RequestDirectionDownUp);
+		assert(target_module->getLowModuleServingAddress(frame->getAddress()) == module ||
+				frame->request_direction == Frame::RequestDirectionUpDown);
+
+		// Get source and destination nodes
+		net::Network *network;
+		net::Node *source_node;
+		net::Node *destination_node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = module->getLowNetwork();
+			source_node = module->getLowNetworkNode();
+			destination_node = target_module->getHighNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			source_node = module->getHighNetworkNode();
+			destination_node = target_module->getLowNetworkNode();
+		}
+
+		// Send message
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				8,
+				event_type_write_request_receive,
+				event_type);
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "write_request_receive"
