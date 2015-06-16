@@ -116,12 +116,19 @@ public:
 	/// Return the number of input buffers
 	int getNumInputBuffer() { return input_buffers.size(); }
 
-	/// Rreturn input buffer by index
+	/// Return input buffer by index
 	Buffer *getInputBuffer(int index) 
 	{ 
 		return input_buffers[index].get(); 
 	}
 
+	/// Return the outgoing traffic from this node in number of bytes, as
+	/// the sum of the bytes sent through all its output links.
+	long long getSentBytes();
+
+	/// Return the incoming traffic into this node in number of bytes, as
+	/// the sum of the bytes received through all its input links.
+	long long getReceivedBytes();
 };
 
 
