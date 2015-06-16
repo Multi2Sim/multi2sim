@@ -440,9 +440,9 @@ Message *Network::Send(Node *source_node,
 		esim::EventType *receive_event)
 {
 	// Make sure both source node and destination node are end nodes
-	if (source_node->getType() != Node::TypeEndNode)
+	if (dynamic_cast<EndNode *>(source_node) != nullptr)
 		throw misc::Panic("Source node is not an end node");
-	if (destination_node->getType() != Node::TypeEndNode)
+	if (dynamic_cast<EndNode *>(destination_node) != nullptr)
 		throw misc::Panic("Destination node is not an end node");
 
 	// FIXME - RAFA - Temporarily assume that the package is receive

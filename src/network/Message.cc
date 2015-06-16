@@ -56,6 +56,12 @@ void Message::Packetize(int packet_size)
 }
 
 
+bool Message::Assemble(Packet *packet)
+{
+	return true;
+}
+
+
 void Message::Send()
 {
 	esim::Engine *esim = esim::Engine::getInstance();

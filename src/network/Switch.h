@@ -46,13 +46,38 @@ public:
 					input_buffer_size,
 					output_buffer_size,
 					name,
-					TypeSwitch,
 					user_data),
 			bandwidth(bandwidth)
 	{};
 
 	/// Dump node information
 	void Dump(std::ostream &os) const;
+
+	/// Forward the packet to next hop
+	/// 
+	/// This function would at first assert the packet is in an input 
+	/// buffer of this switch. If so, this function would lookup routing 
+	/// table for next hop and the corresponding output buffer for next
+	/// hop node. If the output buffer is busy, current event will be 
+	/// rescheduled when the output buffer is free. If the output buffer
+	/// is full, the output_buffer event will be suspended in the buffer
+	/// event queue. Moreover, if the switch's scheduler is not scheduled
+	/// for the target output buffer, the event will be recheduled next 
+	/// cycle. Finally, if the switch can forward the packet, an 
+	/// output_buffer event will be scheduled after a certain amount of 
+	/// latencey, which is specified in the node class.
+	///
+	/// This function is designed to be called from the input buffer
+	/// event handler and the input buffer event handler has to check 
+	/// if the packets has arrived its destination node before calling
+	/// this function.
+	///
+	/// \param packet
+	///	The packet to be forwared to next hop. The packet has to 
+	/// 	be in an input buffer of current switch.
+	///
+	void Forward(Packet *packet);
+
 
 };
 

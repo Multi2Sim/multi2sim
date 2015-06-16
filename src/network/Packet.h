@@ -64,6 +64,9 @@ public:
 	/// Update the node that the packet is at
 	void setNode(Node *node) { this->node = node; }
 
+	/// Get the node that the packet is at
+	Node *getNode() const { return node; }
+
 	/// Update the buffer that the packet is at
 	void setBuffer(Buffer *buffer) { this->buffer = buffer; }
 
