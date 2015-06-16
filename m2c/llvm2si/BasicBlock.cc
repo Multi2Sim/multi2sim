@@ -1896,6 +1896,9 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 			Argument::TypeLiteralFloatReduced);
 	arg2->ValidTypes(Argument::TypeVectorRegister);
 
+	// Literal to FP format
+	ArgLiteralToFPFormat(arg1);
+
 	// Emit instructions based on instruction type
 	llvm::Type *llvm_type = llvm_inst->getType();
 	if (llvm_type->isFloatTy())
@@ -1983,6 +1986,9 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 			Argument::TypeLiteralFloat,
 			Argument::TypeLiteralFloatReduced);
 	arg2->ValidTypes(Argument::TypeVectorRegister);
+
+	// Literal to FP format
+	ArgLiteralToFPFormat(arg1);
 
 	// Allocate vector register and create symbol for return value
 	std::string ret_name = llvm_inst->getName();
