@@ -88,6 +88,13 @@ void Link::TransferPacket(Packet *packet)
 				"link");
 	}
 
+	// Check if the packet is at the head of the buffer
+	if (source_buffer->getBufferHead() != packet)
+	{
+		source_buffer->Wait(event->getType());
+		return;
+	}
+
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
@@ -125,6 +132,8 @@ void Link::TransferPacket(Packet *packet)
 	packet->setBuffer(destination_buffer);
 	packet->setBusy(cycle + latency - 1);
 
+	// Schedule input buffer event	
+	esim_engine->Next(System::event_type_input_buffer);
 }
 
 }

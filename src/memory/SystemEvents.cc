@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <network/EndNode.h>
+
 #include "Frame.h"
 #include "System.h"
 
@@ -1642,7 +1644,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 				// Get owner module
 				net::Network *network = target_module->getHighNetwork();
 				net::Node *node = network->getNode(directory_entry->getOwner());
-				assert(node->getType() == net::Node::TypeEndNode);
+				assert(dynamic_cast<net::EndNode *>(node)!=nullptr);
 				Module *owner_module = (Module *) node->getUserData();
 				assert(owner_module);
 

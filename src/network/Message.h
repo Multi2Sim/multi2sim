@@ -51,6 +51,9 @@ class Message
 	// A list of packet
 	std::vector<std::unique_ptr<Packet>> packets;
 
+	// A list of received packet
+	std::vector<Packet *> packet;
+
 public:
 
 	/// Constructor
@@ -60,6 +63,18 @@ public:
 
 	/// Packetize
 	void Packetize(int packet_size);
+
+	/// Collect a packet that has arrived at its destination. If the 
+	/// packet are the last packet to receive, return true. Otherwise, 
+	/// return false.
+	///
+	/// This function can only be called in the received event handler. 
+	/// This function would check if the packet belongs to the message, 
+	/// and the packet has not been received before. This function will 
+	/// also pop the packet from the buffer, but this function has to 
+	/// guarantee that the packet is at the head of the buffer. This 
+	/// function will also check if the packet arrived its destination
+	bool Assemble(Packet *packet);
 
 	/// Send the message by scheduling events
 	void Send();
