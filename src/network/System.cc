@@ -214,8 +214,9 @@ void System::UniformTrafficSimulation(Network *network)
 		for (int i = 0; i < network->getNumNodes(); i++)
 		{
 			// Get end node
-			Node *node = network->getNode(i);
-			if (dynamic_cast<EndNode *>(node) == nullptr)
+			EndNode *node = dynamic_cast<EndNode *>(
+					network->getNode(i));
+			if (node)
 				continue;
 
 			// Check turn for next injection
@@ -223,14 +224,14 @@ void System::UniformTrafficSimulation(Network *network)
 				continue;
 
 			// Get a random destination node
-			Node * dst_node = nullptr;
+			EndNode * dst_node = nullptr;
 			while (1)
 			{
 				int num_nodes = network->getNumNodes();
 				int index = random() % num_nodes;
-				dst_node = network->getNode(index);
-				if (dynamic_cast<EndNode *>(node) != nullptr
-						&& dst_node != node)
+				dst_node = dynamic_cast<EndNode *>(
+						network->getNode(index));
+				if (!dst_node && dst_node != node)
 					break;
 			}
 

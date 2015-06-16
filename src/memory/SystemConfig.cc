@@ -322,7 +322,7 @@ void System::ConfigInsertModuleInInternalNetwork(
 		const std::string &network_name,
 		const std::string &network_node_name,
 		net::Network *&network,
-		net::Node *&network_node)
+		net::EndNode *&network_node)
 {
 	// No network specified
 	network = nullptr;
@@ -410,7 +410,7 @@ void System::ConfigInsertModuleInExternalNetwork(
 		const std::string &network_name,
 		const std::string &network_node_name,
 		net::Network *&network,
-		net::Node *&network_node)
+		net::EndNode *&network_node)
 {
 	// Get network
 	net::System *network_system = net::System::getInstance();
@@ -432,7 +432,8 @@ void System::ConfigInsertModuleInExternalNetwork(
 				err_config_net));
 
 	// Get node
-	network_node = network->getNodeByName(network_node_name);
+	network_node = dynamic_cast<net::EndNode *>(network->getNodeByName(
+			network_node_name));
 	if (!network_node)
 		throw Error(misc::fmt("%s: network %s: node %s: invalid node "
 				"name.\n%s%s",
@@ -588,7 +589,7 @@ Module *System::ConfigReadCache(misc::IniFile *ini_file,
 	std::string network_name = ini_file->ReadString(section, "HighNetwork");
 	std::string network_node_name = ini_file->ReadString(section, "HighNetworkNode");
 	net::Network *network;
-	net::Node *network_node;
+	net::EndNode *network_node;
 	ConfigInsertModuleInInternalNetwork(
 			ini_file,
 			module,
@@ -696,7 +697,7 @@ Module *System::ConfigReadMainMemory(misc::IniFile *ini_file,
 	std::string network_name = ini_file->ReadString(section, "HighNetwork");
 	std::string network_node_name = ini_file->ReadString(section, "HighNetworkNode");
 	net::Network *network;
-	net::Node *network_node;
+	net::EndNode *network_node;
 	ConfigInsertModuleInInternalNetwork(
 			ini_file,
 			module,

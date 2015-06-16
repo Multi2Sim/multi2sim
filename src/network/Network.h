@@ -193,8 +193,8 @@ public:
 	///	away. If not, the function returns false and schedules event
 	///	`retry_event` if other than `nullptr`.
 	///
-	bool CanSend(Node *source_node,
-			Node *destination_node,
+	bool CanSend(EndNode *source_node,
+			EndNode *destination_node,
 			int size,
 			esim::EventType *retry_event = nullptr);
 
@@ -224,8 +224,8 @@ public:
 	///	reaches its destination (when `receive_event` would be
 	///	scheduled).
 	///
-	Message *Send(Node *source_node,
-			Node *destination_node,
+	Message *Send(EndNode *source_node,
+			EndNode *destination_node,
 			int size,
 			esim::EventType *receive_event = nullptr);
 
@@ -270,8 +270,8 @@ public:
 	///	received by the destination node. If the message was not sent
 	///	right away, the function returns `nullptr`.
 	///
-	Message *TrySend(Node *source_node,
-			Node *destination_node,
+	Message *TrySend(EndNode *source_node,
+			EndNode *destination_node,
 			int size,
 			esim::EventType *receive_event = nullptr,
 			esim::EventType *retry_event = nullptr);
