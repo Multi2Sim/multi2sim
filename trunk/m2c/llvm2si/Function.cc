@@ -478,6 +478,47 @@ void Function::EmitHeader()
 	// in COMPUTE_PGM_RSRC2 metadata.
 	sreg_wgid = AllocSReg(3);
 
+	// Dummy instructions for liveness analysis pass
+	for (int index = 0; index < 3; index++)
+	{
+		Instruction *inst = basic_block->addInstruction(SI::INST_V_MOV_B32);
+		inst->addVectorRegister(vreg_lid + index);
+		inst->addVectorRegister(vreg_lid + index);
+		assert(inst->hasValidArguments());
+	}
+
+	for (int index = 0; index < 2; ++index)
+	{
+		Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
+		inst->addScalarRegister(sreg_uav_table + index);
+		inst->addScalarRegister(sreg_uav_table + index);
+		assert(inst->hasValidArguments());
+	}
+
+	for (int index = 0; index < 4; ++index)
+	{
+		Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
+		inst->addScalarRegister(sreg_cb0 + index);
+		inst->addScalarRegister(sreg_cb0 + index);
+		assert(inst->hasValidArguments());
+	}
+
+	for (int index = 0; index < 4; ++index)
+	{
+		Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
+		inst->addScalarRegister(sreg_cb1 + index);
+		inst->addScalarRegister(sreg_cb1 + index);
+		assert(inst->hasValidArguments());
+	}
+
+	for (int index = 0; index < 3; ++index)
+	{
+		Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
+		inst->addScalarRegister(sreg_wgid + index);
+		inst->addScalarRegister(sreg_wgid + index);
+		assert(inst->hasValidArguments());
+	}
+
 	// Obtain global size in s[gsize:gsize + 2].
 	//
 	// s_buffer_load_dword s[gsize], s[cb0:cb0 + 3], 0x00
@@ -635,26 +676,6 @@ void Function::EmitBody()
 		BasicBlock *basic_block = newBasicBlock(leaf_node);
 		basic_block->Emit(leaf_node->getLLVMBasicBlock());
 	}
-
-	// Special pass for Phi
-	// for (auto node : node_list)
-	// {
-	// 	// Skip abstract nodes
-	// 	comm::LeafNode *leaf_node = dynamic_cast
-	// 			<comm::LeafNode *>(node);
-	// 	if (!leaf_node)
-	// 		continue;
-
-	// 	// Skip nodes with no LLVM code to translate
-	// 	if (!leaf_node->getLLVMBasicBlock())
-	// 		continue;
-
-	// 	// Phi should have enough information about symbols/registers
-	// 	auto basic_block = leaf_node->getBasicBlock();
-	// 	assert(basic_block);
-	// 	basic_block->PhiPass(leaf_node->getLLVMBasicBlock());
-	// }
-
 }
 
 
