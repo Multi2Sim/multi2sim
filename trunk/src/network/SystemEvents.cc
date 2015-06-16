@@ -22,6 +22,7 @@
 #include "Packet.h"
 #include "Message.h"
 #include "Network.h"
+#include "Switch.h"
 #include "Frame.h"
 #include "RoutingTable.h"
 #include "System.h"
@@ -91,32 +92,69 @@ void System::EventTypeOutputBufferHandler(esim::EventType *type,
 
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
-	// Message *message = packet->getMessage();
-	// Network *network = message->getNetwork();
 	Buffer *buffer = packet->getBuffer();
-
-	// Check if the packet is at the head of the buffer
-	if (buffer->getBufferHead() != packet)
-	{
-		buffer->Wait(type);
-	}
-
+	
 	// Let the connection to pass the packet to input buffer
 	Connection *connection = buffer->getConnection();
 	connection->TransferPacket(packet);
-	
 }
 
 
 void System::EventTypeInputBufferHandler(esim::EventType *type, 
 		esim::EventFrame *frame)
 {
+	// Get esim engine
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	
+	// Cast event frame type
+	Frame *network_frame = misc::cast<Frame *>(frame);
+
+	// Lookup route from routing table
+	Packet *packet = network_frame->getPacket();
+	Buffer *buffer = packet->getBuffer();
+	Node *node = packet->getNode();
+
+	// If the message is not at buffer head, process later
+	if (buffer->getBufferHead() == packet)
+	{
+		buffer->Wait(type);
+		return;
+	}
+
+	// If this is the destination node, schedule receive event
+	if (node == packet->getMessage()->getDestinationNode())
+	{
+		esim_engine->Next(event_type_receive);
+		return;
+	}
+
+	// If this not destination, current node must be a switch 
+	Switch *switch_node = dynamic_cast<Switch *>(node);
+	if (switch_node == nullptr)
+		throw Error("Message can only pass through switch nodes");
+
+	// Switch forward the packet
+	switch_node->Forward(packet);
 }
 
 
 void System::EventTypeReceiveHandler(esim::EventType *type, 
 		esim::EventFrame *frame)
 {
+	// Cast event frame type
+	Frame *network_frame = misc::cast<Frame *>(frame);
+
+	// Lookup route from routing table
+	Packet *packet = network_frame->getPacket();
+	Message *message = packet->getMessage();
+	Node *node = packet->getNode();
+	Network *network = message->getNetwork();
+
+	// Check if the packet can be assembled 
+	if (message->Assemble(packet))
+	{
+		network->Receive(node, message);
+	}
 }
 
 }

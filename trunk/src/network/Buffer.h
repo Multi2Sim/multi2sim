@@ -121,10 +121,13 @@ public:
 		event_queue.WakeupAll();
 	}
 
-	/// Insert a packet to the buffer
+	/// Insert a packet to the buffer. A pointer is used because the 
+	/// message keeps the ownership of the packet
 	void InsertPacket(Packet *packet);
 
-	/// Pop the packet at the head of the buffer
+	/// Pop the packet at the head of the buffer. The packet is not 
+	/// destoried. The message still keeps the ownership of the packet. 
+	/// When the message is destoried, the packet is destoried together.
 	void PopPacket();
 
 	/// Get number of packets in the buffer
@@ -133,7 +136,7 @@ public:
 		return packets.size();
 	}
 
-	/// Get the packet by index
+	/// Get the first packet in the buffer
 	Packet *getBufferHead() 
 	{
 		if (packets.empty())

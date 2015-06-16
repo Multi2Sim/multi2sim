@@ -33,7 +33,6 @@ EndNode::EndNode(Network *network,
 				input_buffer_size,
 				output_buffer_size,
 				name,
-				TypeEndNode,
 				user_data)
 {}
 

@@ -17,16 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Packet.h"
 #include "Switch.h"
 
 namespace net
 {
 
-	void Switch::Dump(std::ostream &os) const
-	{
-		os << misc::fmt("\n***** %s: %s *****\n", 
-				"Switch",
-				getName().c_str());
-	}
+void Switch::Dump(std::ostream &os) const
+{
+	os << misc::fmt("\n***** %s: %s *****\n", 
+			"Switch",
+			getName().c_str());
+}
+
+
+void Switch::Forward(Packet *packet) 
+{
+	throw misc::Panic(misc::fmt("%s: not implemented", __FUNCTION__));
+}
 
 }

@@ -46,12 +46,15 @@ void Buffer::InsertPacket(Packet *packet)
 
 	// Insert the packet into buffer
 	packets.push_back(packet);
-
 }
 
 
 void Buffer::PopPacket()
 {
+	// Check if there is a packet to be poped
+	if (packets.size() == 0)
+		throw misc::Panic("No packets to pop");
+
 	// Get the reference of packet that is going to be poped
 	Packet *packet = packets.front();
 
