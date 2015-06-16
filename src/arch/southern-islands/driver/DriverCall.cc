@@ -516,7 +516,34 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	unsigned host_ptr;                                                   
+	int available_buffer_entries;                                            
+
+	// Read in arguments                                                          
+	memory->Read(args_ptr, sizeof(int), (char *) &host_ptr);
+	
+	// TODO - Implement this part for timing simulator
+	// if (si_gpu)                                                              
+	// {                                                                        
+	//  	available_buffer_entries =                                       
+	// 		SI_DRIVER_MAX_WORK_GROUP_BUFFER_SIZE -                   
+	// 		list_count(si_gpu->waiting_work_groups);                 
+	// }                                                                        
+	//else                                                                     
+	//{                                                                        
+	
+	// Set available buffer entries
+	available_buffer_entries = MaxWorkGroupBufferSize;
+
+	// Debug
+	debug << misc::fmt("\tavailable buffer entries = %d\n", 
+			available_buffer_entries);                                       
+
+	// Write to memory
+	memory->Write(host_ptr, sizeof available_buffer_entries, 
+			(const char *) &available_buffer_entries);
+
+	// Return
 	return 0;
 }
 
@@ -525,7 +552,45 @@ int Driver::CallNDRangeGetNumBufferEntries(mem::Memory *memory, unsigned args_pt
 // ...
 int Driver::CallNDRangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	int ndrange_id;                                                          
+	unsigned work_group_start;                                           
+	unsigned work_group_count;                                           
+	long work_group_id;                                                      
+	
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &work_group_start);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &work_group_count);
+
+	// Get ndrange
+	NDRange *ndrange = getNDRangeById(ndrange_id);
+
+	// Check for ndrange
+	if (!ndrange)                                                            
+		throw Error(misc::fmt("%s: invalid ndrange ID (%d)",
+				__FUNCTION__, ndrange_id));  
+	
+	// Debug
+	debug << misc::fmt("\tndrange %d\n", ndrange_id);                             
+
+	assert(work_group_count <= MaxWorkGroupBufferSize - 
+			ndrange->getWaitingWorkgroupsCount());
+
+	debug << misc::fmt("\treceiving %d work groups: (%d) through (%d)\n",          
+			work_group_count, work_group_start,                              
+			work_group_start + work_group_count - 1);                        
+
+	// Receive work groups (add them to the waiting queue)               
+	for (work_group_id = work_group_start;                                   
+			work_group_id < work_group_start + work_group_count;             
+			work_group_id++)                                                                                                                        
+		ndrange->AddWorkgroupIdToWaitingList(work_group_id);                                          
+
+	// Suspend x86 context until driver needs more work             
+	//ctx->Suspend(opencl_abi_si_ndrange_send_work_groups_can_wakeup,               
+	//		opencl_abi_si_ndrange_send_work_groups_wakeup);             
+
+	// Return
 	return 0;
 }
 
@@ -534,7 +599,39 @@ int Driver::CallNDRangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeFinish(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	int ndrange_id;
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
+
+	// Get ndrange
+	NDRange *ndrange = getNDRangeById(ndrange_id);
+	
+	// Check for ndrange
+	if (!ndrange)                                                            
+		throw Error(misc::fmt("%s: invalid ndrange ID (%d)",
+				__FUNCTION__, ndrange_id));  
+	
+	// Last work group has been sent
+	ndrange->setLastWorkgroupSent(true);
+
+	// If no work-groups are left in the queues, remove the nd-range         
+	// from the driver list                                           
+	if (!(ndrange->getRunningWorkgroupsCount()) &&                         
+			!(ndrange->getWaitingWorkgroupsCount()))                       
+	{                                                                        
+		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);            
+	}                                                                        
+	else                                                                     
+	{                                                                        
+		debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n", 
+				ndrange_id);                                     
+		//X86ContextSuspend(ctx,                                           
+		//		opencl_abi_si_ndrange_finish_can_wakeup, ndrange,        
+		//		opencl_abi_si_ndrange_finish_wakeup, ndrange);           
+	}                                                                        
+
+	// Return
 	return 0;
 }
 
@@ -587,6 +684,23 @@ int Driver::CallNDRangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeSetFused(mem::Memory *memory, unsigned args_ptr)
 {
+	// Read arguments
+	memory->Read(args_ptr, sizeof(bool), (char *) &fused);
+
+	// With a fused device, the GPU MMU will be initialized by               
+	// the CPU                                                         
+	// if (driver->fused)                                                       
+	// {                                                                        
+	//	opencl_debug("\tfused\n");                                       
+	//	assert(si_gpu);                                                  
+	//	si_gpu->mmu->read_only = 1;                                      
+	// }                                                                        
+	// else                                                                     
+	//{                                                                       
+	
+	debug << misc::fmt("\tnot fused\n");                                                                                                           
+
+	// Return
 	return 0;
 }
 
@@ -595,7 +709,33 @@ int Driver::CallNDRangeSetFused(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeFlush(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	// TODO - add support for timing simulator
+
+	// If there's not a timing simulator, no need to flush
+	// if (!si_gpu)                                                             
+	//	return 0;                                                        
+
+	int ndrange_id;                                                          
+
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
+	
+	// Get NDRange
+	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	if (!ndrange)
+		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
+			__FUNCTION__, ndrange_id));
+
+	debug << misc::fmt("\tndrange %d\n", ndrange_id);                             
+
+	// Flush RW or WO buffers from this ND-Range                          
+	//opencl_si_kernel_flush_ndrange_buffers(ndrange, si_gpu, x86_emu);        
+
+	// X86ContextSuspend(ctx, opencl_abi_si_ndrange_flush_can_wakeup,           
+	//		&(ndrange->flushing), opencl_abi_si_ndrange_flush_wakeup,        
+	//		&(ndrange->flushing));                                           
+
+	// Return                                      
 	return 0;
 }
 
@@ -604,7 +744,21 @@ int Driver::CallNDRangeFlush(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeFree(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	int ndrange_id;                                                          
+	
+	// Read arguments
+	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
+	
+	// Get NDRange
+	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	if (!ndrange)
+		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
+			__FUNCTION__, ndrange_id));
+
+	// Free       
+	RemoveNDRange(ndrange_id);
+
+	// Return
 	return 0;
 }
 
@@ -635,7 +789,18 @@ int Driver::CallNDRangeStart(mem::Memory *memory, unsigned args_ptr)
 // ...
 int Driver::CallNDRangeEnd(mem::Memory *memory, unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
+	// Decrement number of ndranges running
+	ndranges_running--;                                              
+	assert(ndranges_running >= 0);                                   
+
+	// TODO - x86 emulator might need to keep track of ndranges
+	//if (driver->x86_cpu)                                                     
+	//{                                                                        
+	//	driver->x86_cpu->ndranges_running--;                             
+	//	assert(driver->ndranges_running >= 0);                           
+	//}                                                                        
+
+	// Return
 	return 0;
 }
 

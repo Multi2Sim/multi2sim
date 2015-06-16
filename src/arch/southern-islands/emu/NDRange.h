@@ -359,7 +359,7 @@ public:
 	void setWgIdSgpr(unsigned value) { wg_id_sgpr = value; }
 
 	/// Set last_work_group_sent
-	void setLastWorkgroupSend(bool value) { last_work_group_sent = value; }
+	void setLastWorkgroupSent(bool value) { last_work_group_sent = value; }
 
 	/// Set const_buf_table
 	void setConstBufferTable(unsigned value) { const_buf_table = value; }

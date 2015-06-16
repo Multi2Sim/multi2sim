@@ -60,6 +60,9 @@ class Driver : public comm::Driver
 	// Number of ndranges currently running
 	int ndranges_running = 0;
 
+	// Indicates whether memory is fused or not
+	bool fused = false;
+
 	// Enumeration with all ABI call codes. Each entry of Driver.def will
 	// expand into an assignment. For example, entry
 	//
@@ -110,9 +113,15 @@ class Driver : public comm::Driver
 
 	// Add ndrange
 	NDRange *AddNDRange();
+	
+	// Remove ndrange
+	void RemoveNDRange(unsigned id);
 
 public:
 
+	/// Maximum work goup buffer size
+	static const unsigned MaxWorkGroupBufferSize = 1024 * 1024;
+	
 	/// Error related with the Southern Islands driver
 	class Error : public misc::Error
 	{

@@ -155,5 +155,11 @@ NDRange *Driver::AddNDRange()
 	return ndranges.back().get();
 }
 
+void Driver::RemoveNDRange(unsigned id)
+{
+	// Remove element from vector
+	ndranges.erase(ndranges.begin() + id);
+}
+
 }  // namepsace SI
 
