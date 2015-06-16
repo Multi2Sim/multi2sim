@@ -383,8 +383,8 @@ Message *Network::newMessage(Node *source_node, Node *destination_node,
 }
 
 
-bool Network::CanSend(Node *source_node,
-		Node *destination_node,
+bool Network::CanSend(EndNode *source_node,
+		EndNode *destination_node,
 		int size,
 		esim::EventType *retry_event)
 {
@@ -434,16 +434,18 @@ bool Network::CanSend(Node *source_node,
 }
 
 
-Message *Network::Send(Node *source_node,
-		Node *destination_node,
+Message *Network::Send(EndNode *source_node,
+		EndNode *destination_node,
 		int size,
 		esim::EventType *receive_event)
 {
 	// Make sure both source node and destination node are end nodes
+	/*
 	if (dynamic_cast<EndNode *>(source_node) != nullptr)
 		throw misc::Panic("Source node is not an end node");
 	if (dynamic_cast<EndNode *>(destination_node) != nullptr)
 		throw misc::Panic("Destination node is not an end node");
+	*/
 
 	// FIXME - RAFA - Temporarily assume that the package is receive
 	// in one cycle from now.
@@ -460,8 +462,8 @@ Message *Network::Send(Node *source_node,
 }
 
 
-Message *Network::TrySend(Node *source_node,
-		Node *destination_node,
+Message *Network::TrySend(EndNode *source_node,
+		EndNode *destination_node,
 		int size,
 		esim::EventType *receive_event,
 		esim::EventType *retry_event)

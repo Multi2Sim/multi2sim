@@ -152,9 +152,7 @@ void System::EventTypeReceiveHandler(esim::EventType *type,
 
 	// Check if the packet can be assembled 
 	if (message->Assemble(packet))
-	{
 		network->Receive(node, message);
-	}
 }
 
 }
