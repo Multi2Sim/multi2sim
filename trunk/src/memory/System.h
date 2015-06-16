@@ -153,7 +153,7 @@ class System
 			const std::string &network_name,
 			const std::string &network_node_name,
 			net::Network *&network,
-			net::Node *&node);
+			net::EndNode *&node);
 
 	void ConfigInsertModuleInExternalNetwork(
 			misc::IniFile *ini_file,
@@ -161,7 +161,7 @@ class System
 			const std::string &network_name,
 			const std::string &network_node_name,
 			net::Network *&network,
-			net::Node *&node);
+			net::EndNode *&node);
 
 	Module *ConfigReadCache(misc::IniFile *ini_file,
 			const std::string &section);

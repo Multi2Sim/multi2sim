@@ -1159,7 +1159,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 
 		// Get low node
 		Module *low_module = frame->target_module;
-		net::Node *low_node = low_module->getHighNetworkNode();
+		net::EndNode *low_node = low_module->getHighNetworkNode();
 		assert(low_module != module);
 		assert(low_module == module->getLowModuleServingAddress(frame->tag));
 		assert(low_node && low_node->getUserData() == low_module);
@@ -1189,7 +1189,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		// Send message
 		int message_size = 8 + module->getBlockSize();
 		net::Network *network = module->getLowNetwork();
-		net::Node *source_node = module->getLowNetworkNode();
+		net::EndNode *source_node = module->getLowNetworkNode();
 		frame->message = network->TrySend(source_node,
 				low_node,
 				message_size,
@@ -1462,8 +1462,8 @@ void System::EventEvictHandler(esim::EventType *event_type,
 
 		// Send message
 		net::Network *network = target_module->getHighNetwork();
-		net::Node *source_node = target_module->getHighNetworkNode();
-		net::Node *destination_node = module->getLowNetworkNode();
+		net::EndNode *source_node = target_module->getHighNetworkNode();
+		net::EndNode *destination_node = module->getLowNetworkNode();
 		frame->message = network->TrySend(source_node,
 				destination_node,
 				8,
@@ -1586,8 +1586,8 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 
 		// Get source and destination nodes
 		net::Network *network;
-		net::Node *source_node;
-		net::Node *destination_node;
+		net::EndNode *source_node;
+		net::EndNode *destination_node;
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = module->getLowNetwork();
@@ -1719,8 +1719,8 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 
 		// Get source and destination nodes
 		net::Network *network;
-		net::Node *source_node;
-		net::Node *destination_node;
+		net::EndNode *source_node;
+		net::EndNode *destination_node;
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = module->getLowNetwork();
@@ -1911,7 +1911,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 				// Get owner module
 				net::Network *network = target_module->getHighNetwork();
 				net::Node *node = network->getNode(directory_entry->getOwner());
-				assert(dynamic_cast<net::EndNode *>(node)!=nullptr);
+				assert(dynamic_cast<net::EndNode *>(node));
 				Module *owner_module = (Module *) node->getUserData();
 				assert(owner_module);
 
@@ -2177,8 +2177,8 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 
 		// Get network and nodes
 		net::Network *network;
-		net::Node *source_node;
-		net::Node *destination_node;
+		net::EndNode *source_node;
+		net::EndNode *destination_node;
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = module->getLowNetwork();

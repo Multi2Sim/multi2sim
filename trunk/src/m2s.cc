@@ -188,19 +188,6 @@ void LoadProgram(const std::vector<std::string> &args,
 		emu = MIPS::Emu::getInstance();
 		break;
 
-	/*
-	case 0: 
-		
-		// ELF file for HSA Brig format do not have machine code
-		// FIXME: Rather than preload the whole brig file, modify the 
-		// 	ELFReader to support brig file validation
-		if(HSA::Asm::isValidBrigELF(exe))
-		{
-			emu = HSA::Emu::getInstance();
-		}
-		break;
-	*/
-
 	default:
 		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
 	}
@@ -578,6 +565,7 @@ int MainProgram(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	// Main exception handler
+
 	try
 	{
 		// Run main program
@@ -588,7 +576,8 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-/*
+
+	/*
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =

@@ -27,7 +27,7 @@
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Queue.h>
-#include <network/Node.h>
+#include <network/EndNode.h>
 
 #include "Cache.h"
 #include "Directory.h"
@@ -202,10 +202,10 @@ private:
 	net::Network *low_network = nullptr;
 
 	// Node in the high network that the module is associated with
-	net::Node *high_network_node = nullptr;
+	net::EndNode *high_network_node = nullptr;
 
 	// Node in the low network that the module is associated with
-	net::Node *low_network_node = nullptr;
+	net::EndNode *low_network_node = nullptr;
 
 
 	
@@ -412,7 +412,7 @@ public:
 	/// Set the high network and high network node that the module is
 	/// connected to.
 	void setHighNetwork(net::Network *high_network,
-			net::Node *high_network_node)
+			net::EndNode *high_network_node)
 	{
 		this->high_network = high_network;
 		this->high_network_node = high_network_node;
@@ -421,7 +421,7 @@ public:
 	/// Set the low network and low network node that the module is
 	/// connected to.
 	void setLowNetwork(net::Network *low_network,
-			net::Node *low_network_node)
+			net::EndNode *low_network_node)
 	{
 		this->low_network = low_network;
 		this->low_network_node = low_network_node;
@@ -526,14 +526,14 @@ public:
 
 	/// Get the node representing this module in the network that is closer
 	/// to main memory.
-	net::Node *getLowNetworkNode() const { return low_network_node; }
+	net::EndNode *getLowNetworkNode() const { return low_network_node; }
 
 	/// Get the network that is closer to the processor.
 	net::Network *getHighNetwork() const { return high_network; }
 
 	/// Get the node representing this module in the network that is closer
 	/// to the processor.
-	net::Node *getHighNetworkNode() const { return high_network_node; }
+	net::EndNode *getHighNetworkNode() const { return high_network_node; }
 
 	/// Given a module connected to the high network of the current module,
 	/// and closer to the processor, return the index in the sharers bitmap
