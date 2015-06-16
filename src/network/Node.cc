@@ -69,4 +69,16 @@ Buffer *Node::addOutputBuffer(int size, Connection *connection)
 }
 
 
+long long Node::getSentBytes()
+{
+	throw misc::Panic("Not implemented");
 }
+
+
+long long Node::getReceivedBytes()
+{
+	throw misc::Panic("Not implemented");
+}
+
+}
+
