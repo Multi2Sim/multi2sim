@@ -8,6 +8,9 @@ libesim_a_SOURCES = \
 	Event.cc \
 	Event.h \
 	\
+	Frame.cc \
+	Frame.h \
+	\
 	FrequencyDomain.cc \
 	FrequencyDomain.h \
 	\
