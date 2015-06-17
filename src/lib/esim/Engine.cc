@@ -94,14 +94,20 @@ bool Engine::Drain(int max_events)
 	while (1)
 	{
 		// No more elements in heap
-		if (events.size() == 0)
+		if (heap.size() == 0)
 			return false;
 
-		// Get event from top of heap
-		Event *event = events.top().get();
+		// Get frame from top of the heap
+		assert(current_frame == nullptr);
+		current_frame = heap.top();
+		assert(current_frame->in_heap);
+
+		// Extract from heap
+		heap.pop();
+		current_frame->in_heap = false;
 
 		// Debug
-		EventType *event_type = event->getType();
+		EventType *event_type = current_frame->event_type;
 		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
 		debug << misc::fmt("[%.2fns] Event '%s/%s' drained\n",
 				(double) current_time / 1000,
@@ -109,19 +115,17 @@ bool Engine::Drain(int max_events)
 				event_type->getName().c_str());
 
 		// Set current time to the time of the event
-		current_time = event->getTime();
+		current_time = current_frame->time;
 
 		// One more events
 		num_events++;
 
 		// Run event handler
 		EventHandler event_handler = event_type->getEventHandler();
-		current_event = event;
-		event_handler(event_type, event->getFrame().get());
-		current_event = nullptr;
+		event_handler(event_type, current_frame.get());
 
-		// Remove from heap
-		events.pop();
+		// Free frame
+		current_frame = nullptr;
 
 		// Interrupt heap draining after exceeding a given number of
 		// events. This can happen if the event handlers of processed
@@ -138,25 +142,25 @@ bool Engine::Drain(int max_events)
 
 void Engine::ProcessEndEvents()
 {
-	while (end_events.size())
+	while (end_frames.size())
 	{
-		// Get event from the head of the queue
-		Event *event = end_events.front().get();
+		// Dequeue frame from the head of the queue
+		assert(current_frame == nullptr);
+		current_frame = end_frames.front();
+		end_frames.pop();
 
 		// Debug
-		EventType *event_type = event->getType();
+		EventType *event_type = current_frame->event_type;
 		debug << misc::fmt("[%.2fns] End event '%s' triggered\n",
 				(double) current_time / 1000,
 				event_type->getName().c_str());
 
 		// Run event handler with null frame
 		EventHandler event_handler = event_type->getEventHandler();
-		current_event = event;
-		event_handler(event_type, nullptr);
-		current_event = nullptr;
+		event_handler(event_type, current_frame.get());
 
-		// Dequeue
-		end_events.pop();
+		// Free frame
+		current_frame = nullptr;
 	}
 }
 
@@ -204,19 +208,25 @@ void Engine::ProcessEvents()
 	while (1)
 	{
 		// No more elements in heap
-		if (events.size() == 0)
+		if (heap.size() == 0)
 			break;
-
-		// Get event from top of heap
-		Event *event = events.top().get();
 
 		// Stop when we find the first event that should run in the
 		// future.
-		if (event->getTime() > current_time)
+		if (heap.top()->time > current_time)
 			break;
 		
+		// Get frame from top of heap
+		assert(current_frame == nullptr);
+		current_frame = heap.top();
+		assert(current_frame->in_heap);
+
+		// Remove frame from the heap
+		heap.pop();
+		current_frame->in_heap = false;
+
 		// Debug
-		EventType *event_type = event->getType();
+		EventType *event_type = current_frame->event_type;
 		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
 		debug << misc::fmt("[%.2fns] Event '%s/%s' triggered\n",
 				(double) current_time / 1000,
@@ -229,17 +239,15 @@ void Engine::ProcessEvents()
 
 		// Run event handler
 		EventHandler event_handler = event_type->getEventHandler();
-		current_event = event;
-		event_handler(event_type, event->getFrame().get());
-		current_event = nullptr;
+		event_handler(event_type, current_frame.get());
 
-		// Reschedule event if it is periodic
-		int period = event->getPeriod();
+		// Reschedule if it is periodic
+		int period = current_frame->period;
 		if (period > 0)
-			Schedule(event_type, event->getFrame(), period, period);
+			Schedule(event_type, current_frame, period, period);
 
-		// Remove from heap
-		events.pop();
+		// Free frame
+		current_frame = nullptr;
 	}
 	
 	// Next simulation cycle
@@ -300,9 +308,16 @@ void Engine::Schedule(EventType *event_type,
 	assert(event_frame != nullptr);
 
 	// Frame must not be suspended in a queue
-	if (event_frame->isInQueue())
-		throw misc::Panic("Attempt to schedule an event "
+	if (event_frame->in_queue)
+		throw misc::Panic("Cannot schedule an event in an event chain "
 				"that is currently suspended in a queue");
+
+	// Frame must not be enqueued in the heap
+	if (event_frame->in_heap)
+		throw misc::Panic("Cannot schedule a second event for this "
+				"event queue before the first event occurs. Do "
+				"you have two consecutive calls to Next() or "
+				"Call()?");
 
 	// Ignore event if engine is locked
 	if (locked)
@@ -328,15 +343,17 @@ void Engine::Schedule(EventType *event_type,
 	// Calculate absolute time for the event based on the event's frequency
 	// domain. First, get the actual current time for the current frequency
 	// domain, then add the time after which the event should be scheduled.
-	long long when = current_time / frequency_domain->getCycleTime() *
+	event_frame->time = current_time / frequency_domain->getCycleTime() *
 			frequency_domain->getCycleTime() +
 			frequency_domain->getCycleTime() * after;
 
-	// Create new event and insert it in the event list
-	events.emplace(misc::new_unique<Event>(event_type,
-			event_frame,
-			when,
-			period));
+	// Set event and period
+	event_frame->event_type = event_type;
+	event_frame->period = period;
+
+	// Insert frame into the heap
+	heap.emplace(event_frame);
+	event_frame->in_heap = true;
 
 	// Increment the number of in-flight events of this type.
 	event_type->incInFlight();
@@ -346,10 +363,10 @@ void Engine::Schedule(EventType *event_type,
 			(double) current_time / 1000,
 			frequency_domain->getName().c_str(),
 			event_type->getName().c_str(),
-			(double) when / 1000);
+			(double) event_frame->time / 1000);
 
 	// Warn when heap is overloaded
-	if (!max_inflight_events_warning && (int) events.size() >=
+	if (!max_inflight_events_warning && (int) heap.size() >=
 			max_inflight_events)
 	{
 		max_inflight_events_warning = true;
@@ -367,10 +384,8 @@ void Engine::Next(EventType *event_type,
 {
 	// Use current event's frame if this function is invoked within an
 	// event handler, or create new frame otherwise.
-	std::shared_ptr<EventFrame> event_frame;
-	if (current_event)
-		event_frame = current_event->getFrame();
-	else
+	std::shared_ptr<EventFrame> event_frame = current_frame;
+	if (!event_frame)
 		event_frame = misc::new_shared<EventFrame>();
 
 	// Schedule event
@@ -384,30 +399,19 @@ void Engine::Execute(EventType *event_type)
 	if (event_type == nullptr || event_type == null_event_type)
 		return;
 
-	// Use current event's frame if this function is invoked within an
-	// event handler, or create new frame otherwise.
-	std::shared_ptr<EventFrame> event_frame;
-	if (current_event)
-		event_frame = current_event->getFrame();
-	else
-		event_frame = misc::new_shared<EventFrame>();
+	// Save old current frame
+	std::shared_ptr<EventFrame> old_current_frame = current_frame;
 
-	// Create new event
-	auto event = misc::new_unique<Event>(event_type,
-			event_frame,
-			0,
-			0);
-
-	// Save current event
-	Event *old_event = current_event;
-	current_event = event.get();
+	// Create new frame if none exists
+	if (!current_frame)
+		current_frame = misc::new_shared<EventFrame>();
 
 	// Execute event handler
 	EventHandler event_handler = event_type->getEventHandler();
-	event_handler(event_type, event_frame.get());
+	event_handler(event_type, current_frame.get());
 
-	// Restore current event
-	current_event = old_event;
+	// Restore previous current frame
+	current_frame = old_current_frame;
 }
 
 
@@ -421,13 +425,9 @@ void Engine::Call(EventType *event_type,
 	if (event_frame == nullptr)
 		event_frame = misc::new_shared<EventFrame>();
 
-	// Set return event
-	event_frame->setReturnEventType(return_event_type);
-
-	// Set return frame to the current event's frame, if this function is
-	// being invoked from an event handler
-	if (current_event)
-		event_frame->setParentFrame(current_event->getFrame());
+	// Set return event and frame
+	event_frame->return_event_type = return_event_type;
+	event_frame->parent_frame = current_frame;
 
 	// Schedule event
 	Schedule(event_type, event_frame, after, period);
@@ -437,18 +437,17 @@ void Engine::Call(EventType *event_type,
 void Engine::Return(int after)
 {
 	// This function must be invoked within an event handler
-	if (!current_event)
+	if (!current_frame)
 		throw misc::Panic("Function cannot be invoked outside of "
 				"an event handler");
 
 	// If this is the bottom of the stack, ignore
-	if (current_event->getFrame()->getReturnEventType() == nullptr)
+	if (current_frame->return_event_type == nullptr)
 		return;
 
 	// Schedule return event
-	assert(current_event->getFrame() != nullptr);
-	Schedule(current_event->getFrame()->getReturnEventType(),
-			current_event->getFrame()->getParentFrame(),
+	Schedule(current_frame->return_event_type,
+			current_frame->parent_frame,
 			after);
 }
 
@@ -458,24 +457,13 @@ void Engine::EndEvent(EventType *event_type)
 	// Discard null event
 	if (event_type == nullptr || event_type == null_event_type)
 		return;
+	
+	// Create frame
+	auto frame = misc::new_shared<EventFrame>();
+	frame->event_type = event_type;
 
 	// Add event to queue of end events
-	end_events.emplace(misc::new_unique<Event>(event_type,
-			nullptr,
-			0,
-			0));
-}
-
-
-EventFrame *Engine::getParentFrame()
-{
-	// Check that we are in an event handler
-	if (!current_event)
-		throw misc::Panic(misc::fmt("Function %s invoked "
-				"outside of an event handler", __FUNCTION__));
-
-	// Return parent frame
-	return current_event->getFrame()->getParentFrame().get();
+	end_frames.emplace(frame);
 }
 
 

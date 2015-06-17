@@ -95,6 +95,27 @@ public:
 /// This class represents data associated with an event.
 class EventFrame
 {
+	// Only simulation engine and event queue can access private fields of
+	// the frame. This is preferrable to creating public fields or getters/
+	// setters, in order to make it clear that user classes derived from
+	// this one should not have access to these values.
+	friend class Engine;
+	friend class Queue;
+
+	// Event associated with this frame when the frame is enqueued in the
+	// event heap.
+	EventType *event_type = nullptr;
+
+	// Time in picoseconds for when the event is scheduled in the event heap
+	long long time = 0;
+
+	// Number of cycles after which the event will repeat, in the frequency
+	// domain associated with the event (0 = no repeat)
+	int period = 0;
+
+	// Flag indicating whether the frame is currently enqueue in the event
+	// heap of the simulation engine
+	bool in_heap = false;
 
 	// Parent frame is this event was invoked as a call
 	std::shared_ptr<EventFrame> parent_frame;
@@ -114,116 +135,23 @@ class EventFrame
 	EventType *wakeup_event_type = nullptr;
 
 public:
-
-	/// A virtual destructor guarantees that child classes are destructed
-	/// properly when the last reference to this frame is destroyed.
-	virtual ~EventFrame() { }
-
-	/// Set the parent frame
-	void setParentFrame(const std::shared_ptr<EventFrame> &parent_frame)
-	{
-		this->parent_frame = parent_frame;
-	}
-
-	/// Set the return event
-	void setReturnEventType(EventType *return_event_type)
-	{
-		this->return_event_type = return_event_type;
-	}
-
-	/// Get parent frame
-	const std::shared_ptr<EventFrame> &getParentFrame() const
-	{
-		return parent_frame;
-	}
-
-	/// Get the return event type
-	EventType *getReturnEventType() const { return return_event_type; }
-
-	/// Return whether the event frame is currently suspended in an
-	/// event queue.
-	bool isInQueue() const { return in_queue; }
-
-	/// Mark the event frame as suspended in an event queue. This function
-	/// should only be used internally.
-	void setInQueue(bool in_queue) { this->in_queue = in_queue; }
-
-	/// Return the next event frame suspended in an event queue. Only used
-	/// internally by class Queue.
-	std::shared_ptr<EventFrame> getNext() { return next; }
-
-	/// Set the next event frame suspended in an event queue. Only used
-	/// internally by class Queue;
-	void setNext(std::shared_ptr<EventFrame> next) { this->next = next; }
-
-	/// Return the event type to schedule when the frame is woken up from
-	/// a suspension queue.
-	EventType *getWakeupEventType() const { return wakeup_event_type; }
-
-	/// When an event is suspended in a queue, set the event to schedule
-	/// when the frame is woken up.
-	void setWakeupEventType(EventType *wakeup_event_type)
-	{
-		this->wakeup_event_type = wakeup_event_type;
-	}
-};
-
-
-/// Class representing a scheduled event. This class should not be instantiated
-/// directly from outside of this library.
-class Event
-{
-	// Event type
-	EventType *type;
-
-	// Data associated with the event
-	std::shared_ptr<EventFrame> frame;
-
-	// Time in picoseconds for when the event is scheduled
-	long long time;
-
-	// Cycles after which the event will repeat (0 = no repeat)
-	int period;
-
-public:
-
+	
 	// Comparison lambda, used as the comparison function in the event
 	// min-heap of the simulation engine.
-	struct CompareUniquePtrs
+	struct CompareSharedPointers
 	{
-		bool operator()(const std::unique_ptr<Event> &lhs,
-				const std::unique_ptr<Event> &rhs) const
+		bool operator()(const std::shared_ptr<EventFrame> &lhs,
+				const std::shared_ptr<EventFrame> &rhs) const
 		{
 			return lhs->time > rhs->time;
 		}
 	};
 
-	/// Constructor
-	Event(EventType *type,
-			const std::shared_ptr<EventFrame> &frame,
-			long long time,
-			int period)
-			:
-			type(type),
-			frame(frame),
-			time(time),
-			period(period)
-	{
-	}
-	
-	/// Return the event type
-	EventType *getType() const { return type; }
+	/// Virtual destructor to make class polymorphic
+	virtual ~EventFrame() { }
 
-	/// Return the frame associated with the event
-	const std::shared_ptr<EventFrame> &getFrame() const { return frame; }
-
-	/// Return the time in picoseconds for which the event is scheduled.
-	long long getTime() const { return time; }
-
-	/// Return the number of cycles after which the event is rescheduled.
-	/// This number of cycles is given with respect to the event's frequency
-	/// domain.
-	int getPeriod() const { return period; }
+	/// Return whether the frame is currently suspended in an event queue.
+	bool isInQueue() const { return in_queue; }
 };
 
 

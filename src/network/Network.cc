@@ -390,7 +390,7 @@ bool Network::CanSend(EndNode *source_node,
 {
 	// If 'retry_event' was specified, we must be in an event handler
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	assert(!retry_event || esim_engine->getCurrentEvent());
+	assert(!retry_event || esim_engine->getCurrentEventType());
 
 	// Get output buffer
 	RoutingTable::Entry *entry = routing_table.Lookup(source_node, 

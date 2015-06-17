@@ -29,9 +29,9 @@ namespace esim
 void Queue::PushBack(std::shared_ptr<EventFrame> event_frame)
 {
 	// Mark frame as inserted
-	assert(!event_frame->isInQueue());
-	assert(!event_frame->getNext());
-	event_frame->setInQueue(true);
+	assert(!event_frame->in_queue);
+	assert(!event_frame->next);
+	event_frame->in_queue = true;
 
 	// Add to back of the list
 	if (head == nullptr && tail == nullptr)
@@ -42,8 +42,8 @@ void Queue::PushBack(std::shared_ptr<EventFrame> event_frame)
 	else
 	{
 		assert(head != nullptr && tail != nullptr);
-		assert(tail->getNext() == nullptr);
-		tail->setNext(event_frame);
+		assert(tail->next == nullptr);
+		tail->next = event_frame;
 		tail = event_frame;
 	}
 }
@@ -52,9 +52,9 @@ void Queue::PushBack(std::shared_ptr<EventFrame> event_frame)
 void Queue::PushFront(std::shared_ptr<EventFrame> event_frame)
 {
 	// Mark frame as inserted
-	assert(!event_frame->isInQueue());
-	assert(!event_frame->getNext());
-	event_frame->setInQueue(true);
+	assert(!event_frame->in_queue);
+	assert(!event_frame->next);
+	event_frame->in_queue = true;
 
 	// Add to front of the list
 	if (head == nullptr && tail == nullptr)
@@ -65,8 +65,8 @@ void Queue::PushFront(std::shared_ptr<EventFrame> event_frame)
 	else
 	{
 		assert(head != nullptr && tail != nullptr);
-		assert(tail->getNext() == nullptr);
-		event_frame->setNext(head);
+		assert(!tail->next);
+		event_frame->next = head;
 		head = event_frame;
 	}
 }
@@ -90,24 +90,32 @@ std::shared_ptr<EventFrame> Queue::PopFront()
 	}
 	else
 	{
-		head = head->getNext();
+		head = head->next;
 	}
 
 	// Mark as extracted
-	event_frame->setNext(nullptr);
-	event_frame->setInQueue(false);
+	event_frame->next = nullptr;
+	event_frame->in_queue = false;
 	return event_frame;
 }
 
 
 void Queue::Wait(EventType *event_type, bool priority)
 {
-	// This function must be invoked within an event handler
+	// Get current event frame
 	Engine *engine = Engine::getInstance();
-	Event *current_event = engine->getCurrentEvent();
-	if (current_event == nullptr)
+	std::shared_ptr<EventFrame> current_frame = engine->getCurrentFrame();
+	
+	// This function must be invoked within an event handler
+	if (current_frame == nullptr)
 		throw misc::Panic("Function cannot be invoked outside of "
 				"an event handler");
+
+	// The caller must have not scheduled another event for this frame
+	if (current_frame->in_heap)
+		throw misc::Panic("Cannot suspend the current event chain in "
+				"a queue after having scheduled another "
+				"event with Next().");
 
 	// The event type must be valid
 	if (event_type == nullptr)
@@ -115,14 +123,12 @@ void Queue::Wait(EventType *event_type, bool priority)
 				"wakeup event type");
 
 	// Add event frame to the queue
-	std::shared_ptr<EventFrame> event_frame = current_event->getFrame();
-	assert(event_frame != nullptr);
-	assert(event_frame->getWakeupEventType() == nullptr);
-	event_frame->setWakeupEventType(event_type);
+	assert(!current_frame->wakeup_event_type);
+	current_frame->wakeup_event_type = event_type;
 	if (priority)
-		PushFront(event_frame);
+		PushFront(current_frame);
 	else
-		PushBack(event_frame);
+		PushBack(current_frame);
 }
 
 
@@ -136,8 +142,8 @@ void Queue::WakeupOne()
 	std::shared_ptr<EventFrame> event_frame = PopFront();
 
 	// Get event to schedule
-	EventType *event_type = event_frame->getWakeupEventType();
-	event_frame->setWakeupEventType(nullptr);
+	EventType *event_type = event_frame->wakeup_event_type;
+	event_frame->wakeup_event_type = nullptr;
 	assert(event_type);
 
 	// Schedule event
