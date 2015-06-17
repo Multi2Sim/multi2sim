@@ -672,7 +672,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
-	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
@@ -1033,7 +1033,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	// Engine, frame, module
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
-	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
 	Cache *cache = module->getCache();
@@ -1548,7 +1548,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
-	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
 	Directory *target_directory = target_module->getDirectory();
@@ -2032,7 +2032,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *frame = misc::cast<Frame *>(event_frame);
-	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
 
