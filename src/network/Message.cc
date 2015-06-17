@@ -71,7 +71,7 @@ void Message::Send()
 		auto frame = misc::new_shared<Frame>(packet.get());
 
 		// Schedule event
-		esim->Call(System::event_type_send, frame);
+		esim->Call(System::event_send, frame);
 	}
 }
 

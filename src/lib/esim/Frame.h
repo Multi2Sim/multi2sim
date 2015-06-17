@@ -28,7 +28,7 @@ namespace esim
 {
 
 // Forward declarations
-class EventType;
+class Event;
 
 
 /// This class represents data associated with an event.
@@ -43,7 +43,7 @@ class EventFrame
 
 	// Event associated with this frame when the frame is enqueued in the
 	// event heap.
-	EventType *event_type = nullptr;
+	Event *event = nullptr;
 
 	// Time in picoseconds for when the event is scheduled in the event heap
 	long long time = 0;
@@ -61,7 +61,7 @@ class EventFrame
 
 	// Event type to invoke upon return, or null if there is no parent
 	// event
-	EventType *return_event_type = nullptr;
+	Event *return_event = nullptr;
 
 	// Flag indicating whether the frame is currently suspended in a queue
 	bool in_queue = false;
@@ -71,7 +71,7 @@ class EventFrame
 	std::shared_ptr<EventFrame> next;
 
 	// Event type scheduled when the frame is woken up from a queue
-	EventType *wakeup_event_type = nullptr;
+	Event *wakeup_event = nullptr;
 
 public:
 	

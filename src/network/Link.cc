@@ -75,7 +75,7 @@ void Link::TransferPacket(Packet *packet)
 {
 	// Get current cycle
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	esim::EventType *current_event_type = esim_engine->getCurrentEventType();
+	esim::Event*current_event = esim_engine->getCurrentEvent();
 	long long cycle = System::getInstance()->getCycle();
 
 	// Check if the packet is in an output buffer that connects to 
@@ -91,14 +91,14 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the packet is at the head of the buffer
 	if (source_buffer->getBufferHead() != packet)
 	{
-		source_buffer->Wait(current_event_type);
+		source_buffer->Wait(current_event);
 		return;
 	}
 
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
-		esim_engine->Next(current_event_type, busy - cycle + 1);
+		esim_engine->Next(current_event, busy - cycle + 1);
 		return;
 	}
 
@@ -107,7 +107,7 @@ void Link::TransferPacket(Packet *packet)
 	long long write_busy = destination_buffer->getWriteBusy();
 	if (write_busy >= cycle)
 	{
-		esim_engine->Next(current_event_type, write_busy - cycle + 1);
+		esim_engine->Next(current_event, write_busy - cycle + 1);
 		return;
 	}
 
@@ -115,7 +115,7 @@ void Link::TransferPacket(Packet *packet)
 	if (destination_buffer->getCount() + packet->getSize() > 
 			destination_buffer->getSize())
 	{
-		destination_buffer->Wait(current_event_type);
+		destination_buffer->Wait(current_event);
 		return;
 	}
 
@@ -133,7 +133,7 @@ void Link::TransferPacket(Packet *packet)
 	packet->setBusy(cycle + latency - 1);
 
 	// Schedule input buffer event	
-	esim_engine->Next(System::event_type_input_buffer);
+	esim_engine->Next(System::event_input_buffer);
 }
 
 }

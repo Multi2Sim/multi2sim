@@ -82,7 +82,7 @@ class Engine
 	misc::Timer timer;
 
 	// Registered event types
-	std::list<EventType> event_types;
+	std::list<Event> events;
 
 	// Registered frequency domains
 	std::list<FrequencyDomain> frequency_domains;
@@ -96,7 +96,7 @@ class Engine
 	std::queue<std::shared_ptr<EventFrame>> end_frames;
 
 	// Null event type used to schedule useless events
-	EventType *null_event_type = nullptr;
+	Event *null_event = nullptr;
 
 	// If true, no new events will be scheduled
 	bool locked = false;
@@ -193,14 +193,14 @@ public:
 
 	/// Return a null event type. This type can be used in calls to
 	/// ScheduleEvent() to schedule useless events.
-	EventType *getNullEventType() const { return null_event_type; }
+	Event *getNullEvent() const { return null_event; }
 
 	/// If an event handler is currently executing, return the corresponding
 	/// event. If no event handler is executing, return `nullptr`.
-	EventType *getCurrentEventType() const
+	Event *getCurrentEvent() const
 	{
 		return current_frame == nullptr ? nullptr :
-				current_frame->event_type;
+				current_frame->event;
 	}
 
 	/// If an event handler is currently executing, return the current
@@ -221,7 +221,7 @@ public:
 	///
 	/// \return
 	///	This function returns an object of type FrequencyDomain, which
-	///	can be used later in calls to RegisterEventType().
+	///	can be used later in calls to RegisterEvent().
 	FrequencyDomain *RegisterFrequencyDomain(const std::string &name,
 			int frequency = 1000);
 
@@ -255,14 +255,14 @@ public:
 	/// \return
 	///	This function returns a new object of type EvenType, which can
 	///	be used later in calls to ScheduleEvent().
-	EventType *RegisterEventType(const std::string &name,
+	Event *RegisterEvent(const std::string &name,
 			EventHandler handler,
 			FrequencyDomain *frequency_domain = nullptr);
 
 	/// Schedule an event. This function is only used internally and should
 	/// not be invoked from outside of this library. Use Call() or Next()
 	/// instead. See Next() for the meaning of the arguments.
-	void Schedule(EventType *event_type,
+	void Schedule(Event *event,
 			std::shared_ptr<EventFrame> event_frame,
 			int after = 0,
 			int period = 0);
@@ -271,7 +271,7 @@ public:
 	/// to Call() in the event chain, or nullptr if no event frame was set
 	/// before.
 	///
-	/// \param event_type
+	/// \param event
 	///	Type of event to schedule.
 	///
 	/// \param after (optional)
@@ -288,7 +288,7 @@ public:
 	///	If specified, the event will be scheduled periodically after its
 	///	first occurrence. The period is given in number of cycles with
 	///	respect to the event's frequency domain.
-	void Next(EventType *event_type,
+	void Next(Event *event,
 			int after = 0,
 			int period = 0);
 
@@ -297,9 +297,9 @@ public:
 	/// Next() with a value of \a after equal to 0, which would insert it
 	/// in the event heap for a deferred execution.
 	///
-	/// \param event_type
+	/// \param event
 	///	Type of event to execute
-	void Execute(EventType *event_type);
+	void Execute(Event *event);
 
 	/// Schedule an event, creating a new event chain with its new event
 	/// frame. The next invocation to Return() in an event handler of any
@@ -310,7 +310,7 @@ public:
 	/// in any event handler of any event of the new chain will be ignored,
 	/// since there will be no previous event chain to return to.
 	///
-	/// \param event_type
+	/// \param event
 	///	Type of event to schedule
 	///
 	/// \param event_frame
@@ -318,9 +318,9 @@ public:
 	///	object will be freed automatically when the last reference to
 	///	it disappears.
 	///
-	/// \param return_event_type
-	///	During the execution of the event handler of \a event_type, an
-	///	invocation to Return() will cause \a return_event_type to be
+	/// \param return_event
+	///	During the execution of the event handler of \a event, an
+	///	invocation to Return() will cause \a return_event to be
 	///	scheduled, using the current frame as the event data.
 	///
 	/// \param after (optional)
@@ -332,14 +332,14 @@ public:
 	///	first occurrence. The period is given in number of cycles with
 	///	respect to the event's frequency domain.
 	///
-	void Call(EventType *event_type,
+	void Call(Event *event,
 			std::shared_ptr<EventFrame> event_frame = nullptr,
-			EventType *return_event_type = nullptr,
+			Event *return_event = nullptr,
 			int after = 0,
 			int period = 0);
 
 	/// Schedule the return event specified in the last invocation to
-	/// Call() in argument \a return_event_type, using the frame that was
+	/// Call() in argument \a return_event, using the frame that was
 	/// active at that time. This function should only be invoked in the
 	/// body of an event handler.
 	///
@@ -351,7 +351,7 @@ public:
 
 	/// Schedule an event for the end of the simulation. End events have
 	/// no event frame (event frame set to `nullptr`).
-	void EndEvent(EventType *event_type);
+	void EndEvent(Event *event);
 
 	/// Return the parent frame in the event stack of the current event
 	/// chain, or `nullptr` if the current event is in the bottom of the

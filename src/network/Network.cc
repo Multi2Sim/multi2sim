@@ -386,11 +386,11 @@ Message *Network::newMessage(Node *source_node, Node *destination_node,
 bool Network::CanSend(EndNode *source_node,
 		EndNode *destination_node,
 		int size,
-		esim::EventType *retry_event)
+		esim::Event *retry_event)
 {
 	// If 'retry_event' was specified, we must be in an event handler
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	assert(!retry_event || esim_engine->getCurrentEventType());
+	assert(!retry_event || esim_engine->getCurrentEvent());
 
 	// Get output buffer
 	RoutingTable::Entry *entry = routing_table.Lookup(source_node, 
@@ -437,7 +437,7 @@ bool Network::CanSend(EndNode *source_node,
 Message *Network::Send(EndNode *source_node,
 		EndNode *destination_node,
 		int size,
-		esim::EventType *receive_event)
+		esim::Event *receive_event)
 {
 	// Make sure both source node and destination node are end nodes
 	/*
@@ -465,8 +465,8 @@ Message *Network::Send(EndNode *source_node,
 Message *Network::TrySend(EndNode *source_node,
 		EndNode *destination_node,
 		int size,
-		esim::EventType *receive_event,
-		esim::EventType *retry_event)
+		esim::Event *receive_event,
+		esim::Event *retry_event)
 {
 	// Check if message can be sent
 	if (!CanSend(source_node, destination_node, size, retry_event))

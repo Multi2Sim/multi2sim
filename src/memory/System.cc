@@ -66,234 +66,234 @@ System::System()
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	frequency_domain = esim_engine->RegisterFrequencyDomain("Memory");
 
-	event_type_load = esim_engine->RegisterEventType("load",
+	event_load = esim_engine->RegisterEvent("load",
 			EventLoadHandler,
 			frequency_domain);
-	event_type_load_lock = esim_engine->RegisterEventType("load_lock",
+	event_load_lock = esim_engine->RegisterEvent("load_lock",
 			EventLoadHandler,
 			frequency_domain);
-	event_type_load_action = esim_engine->RegisterEventType("load_action",
+	event_load_action = esim_engine->RegisterEvent("load_action",
 			EventLoadHandler,
 			frequency_domain);
-	event_type_load_miss = esim_engine->RegisterEventType("load_miss",
+	event_load_miss = esim_engine->RegisterEvent("load_miss",
 			EventLoadHandler,
 			frequency_domain);
-	event_type_load_unlock = esim_engine->RegisterEventType("load_unlock",
+	event_load_unlock = esim_engine->RegisterEvent("load_unlock",
 			EventLoadHandler,
 			frequency_domain);
-	event_type_load_finish = esim_engine->RegisterEventType("load_finish",
+	event_load_finish = esim_engine->RegisterEvent("load_finish",
 			EventLoadHandler,
 			frequency_domain);
 
-	event_type_store = esim_engine->RegisterEventType("store",
+	event_store = esim_engine->RegisterEvent("store",
 			EventStoreHandler,
 			frequency_domain);
-	event_type_store_lock = esim_engine->RegisterEventType("store_lock",
+	event_store_lock = esim_engine->RegisterEvent("store_lock",
 			EventStoreHandler,
 			frequency_domain);
-	event_type_store_action = esim_engine->RegisterEventType("store_action",
+	event_store_action = esim_engine->RegisterEvent("store_action",
 			EventStoreHandler,
 			frequency_domain);
-	event_type_store_unlock = esim_engine->RegisterEventType("store_unlock",
+	event_store_unlock = esim_engine->RegisterEvent("store_unlock",
 			EventStoreHandler,
 			frequency_domain);
-	event_type_store_finish = esim_engine->RegisterEventType("store_finish",
+	event_store_finish = esim_engine->RegisterEvent("store_finish",
 			EventStoreHandler,
 			frequency_domain);
 
-	event_type_nc_store = esim_engine->RegisterEventType("nc_store",
+	event_nc_store = esim_engine->RegisterEvent("nc_store",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_lock = esim_engine->RegisterEventType("nc_store_lock",
+	event_nc_store_lock = esim_engine->RegisterEvent("nc_store_lock",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_writeback = esim_engine->RegisterEventType("nc_store_writeback",
+	event_nc_store_writeback = esim_engine->RegisterEvent("nc_store_writeback",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_action = esim_engine->RegisterEventType("nc_store_action",
+	event_nc_store_action = esim_engine->RegisterEvent("nc_store_action",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_miss= esim_engine->RegisterEventType("nc_store_miss",
+	event_nc_store_miss= esim_engine->RegisterEvent("nc_store_miss",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_unlock = esim_engine->RegisterEventType("nc_store_unlock",
+	event_nc_store_unlock = esim_engine->RegisterEvent("nc_store_unlock",
 			EventNCStoreHandler,
 			frequency_domain);
-	event_type_nc_store_finish = esim_engine->RegisterEventType("nc_store_finish",
+	event_nc_store_finish = esim_engine->RegisterEvent("nc_store_finish",
 			EventNCStoreHandler,
 			frequency_domain);
 
-	event_type_find_and_lock = esim_engine->RegisterEventType("find_and_lock",
+	event_find_and_lock = esim_engine->RegisterEvent("find_and_lock",
 			EventFindAndLockHandler,
 			frequency_domain);
-	event_type_find_and_lock_port = esim_engine->RegisterEventType("find_and_lock_port",
+	event_find_and_lock_port = esim_engine->RegisterEvent("find_and_lock_port",
 			EventFindAndLockHandler,
 			frequency_domain);
-	event_type_find_and_lock_action = esim_engine->RegisterEventType("find_and_lock_action",
+	event_find_and_lock_action = esim_engine->RegisterEvent("find_and_lock_action",
 			EventFindAndLockHandler,
 			frequency_domain);
-	event_type_find_and_lock_finish = esim_engine->RegisterEventType("find_and_lock_finish",
+	event_find_and_lock_finish = esim_engine->RegisterEvent("find_and_lock_finish",
 			EventFindAndLockHandler,
 			frequency_domain);
 
-	event_type_evict = esim_engine->RegisterEventType("evict",
+	event_evict = esim_engine->RegisterEvent("evict",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_invalid = esim_engine->RegisterEventType("evict_invalid",
+	event_evict_invalid = esim_engine->RegisterEvent("evict_invalid",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_action = esim_engine->RegisterEventType("evict_action",
+	event_evict_action = esim_engine->RegisterEvent("evict_action",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_receive = esim_engine->RegisterEventType("evict_receive",
+	event_evict_receive = esim_engine->RegisterEvent("evict_receive",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_process = esim_engine->RegisterEventType("evict_process",
+	event_evict_process = esim_engine->RegisterEvent("evict_process",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_process_noncoherent = esim_engine->RegisterEventType("evict_process_noncoherent",
+	event_evict_process_noncoherent = esim_engine->RegisterEvent("evict_process_noncoherent",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_reply = esim_engine->RegisterEventType("evict_reply",
+	event_evict_reply = esim_engine->RegisterEvent("evict_reply",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_reply = esim_engine->RegisterEventType("evict_reply",
+	event_evict_reply = esim_engine->RegisterEvent("evict_reply",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_reply_receive = esim_engine->RegisterEventType("evict_reply_receive",
+	event_evict_reply_receive = esim_engine->RegisterEvent("evict_reply_receive",
 			EventEvictHandler,
 			frequency_domain);
-	event_type_evict_finish = esim_engine->RegisterEventType("evict_finish",
+	event_evict_finish = esim_engine->RegisterEvent("evict_finish",
 			EventEvictHandler,
 			frequency_domain);
 
-	event_type_write_request = esim_engine->RegisterEventType("write_request",
+	event_write_request = esim_engine->RegisterEvent("write_request",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_receive = esim_engine->RegisterEventType("write_request_receive",
+	event_write_request_receive = esim_engine->RegisterEvent("write_request_receive",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_action = esim_engine->RegisterEventType("write_request_action",
+	event_write_request_action = esim_engine->RegisterEvent("write_request_action",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_exclusive = esim_engine->RegisterEventType("write_request_exclusive",
+	event_write_request_exclusive = esim_engine->RegisterEvent("write_request_exclusive",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_updown = esim_engine->RegisterEventType("write_request_updown",
+	event_write_request_updown = esim_engine->RegisterEvent("write_request_updown",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_updown_finish = esim_engine->RegisterEventType("write_request_updown_finish",
+	event_write_request_updown_finish = esim_engine->RegisterEvent("write_request_updown_finish",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_downup = esim_engine->RegisterEventType("write_request_downup",
+	event_write_request_downup = esim_engine->RegisterEvent("write_request_downup",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_downup_finish = esim_engine->RegisterEventType("write_request_downup_finish",
+	event_write_request_downup_finish = esim_engine->RegisterEvent("write_request_downup_finish",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_reply = esim_engine->RegisterEventType("write_request_reply",
+	event_write_request_reply = esim_engine->RegisterEvent("write_request_reply",
 			EventWriteRequestHandler,
 			frequency_domain);
-	event_type_write_request_finish = esim_engine->RegisterEventType("write_request_finish",
+	event_write_request_finish = esim_engine->RegisterEvent("write_request_finish",
 			EventWriteRequestHandler,
 			frequency_domain);
 
-	event_type_read_request = esim_engine->RegisterEventType("read_request",
+	event_read_request = esim_engine->RegisterEvent("read_request",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_receive = esim_engine->RegisterEventType("read_request_receive",
+	event_read_request_receive = esim_engine->RegisterEvent("read_request_receive",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_action = esim_engine->RegisterEventType("read_request_action",
+	event_read_request_action = esim_engine->RegisterEvent("read_request_action",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_updown = esim_engine->RegisterEventType("read_request_updown",
+	event_read_request_updown = esim_engine->RegisterEvent("read_request_updown",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_updown_miss = esim_engine->RegisterEventType("read_request_updown_miss",
+	event_read_request_updown_miss = esim_engine->RegisterEvent("read_request_updown_miss",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_updown_finish = esim_engine->RegisterEventType("read_request_updown_finish",
+	event_read_request_updown_finish = esim_engine->RegisterEvent("read_request_updown_finish",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_downup = esim_engine->RegisterEventType("read_request_downup",
+	event_read_request_downup = esim_engine->RegisterEvent("read_request_downup",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_downup_wait_for_reqs = esim_engine->RegisterEventType("read_request_downup_wait_for_reqs",
+	event_read_request_downup_wait_for_reqs = esim_engine->RegisterEvent("read_request_downup_wait_for_reqs",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_downup_finish = esim_engine->RegisterEventType("read_request_downup_finish",
+	event_read_request_downup_finish = esim_engine->RegisterEvent("read_request_downup_finish",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_reply = esim_engine->RegisterEventType("read_request_reply",
+	event_read_request_reply = esim_engine->RegisterEvent("read_request_reply",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_type_read_request_finish = esim_engine->RegisterEventType("read_request_finish",
+	event_read_request_finish = esim_engine->RegisterEvent("read_request_finish",
 			EventReadRequestHandler,
 			frequency_domain);
 
-	event_type_invalidate = esim_engine->RegisterEventType("invalidate",
+	event_invalidate = esim_engine->RegisterEvent("invalidate",
 			EventInvalidateHandler,
 			frequency_domain);
-	event_type_invalidate_finish = esim_engine->RegisterEventType("invalidate_finish",
+	event_invalidate_finish = esim_engine->RegisterEvent("invalidate_finish",
 			EventInvalidateHandler,
 			frequency_domain);
 
-	event_type_message = esim_engine->RegisterEventType("message",
+	event_message = esim_engine->RegisterEvent("message",
 			EventMessageHandler,
 			frequency_domain);
-	event_type_message_receive = esim_engine->RegisterEventType("message_receive",
+	event_message_receive = esim_engine->RegisterEvent("message_receive",
 			EventMessageHandler,
 			frequency_domain);
-	event_type_message_action = esim_engine->RegisterEventType("message_action",
+	event_message_action = esim_engine->RegisterEvent("message_action",
 			EventMessageHandler,
 			frequency_domain);
-	event_type_message_reply = esim_engine->RegisterEventType("message_reply",
+	event_message_reply = esim_engine->RegisterEvent("message_reply",
 			EventMessageHandler,
 			frequency_domain);
-	event_type_message_finish = esim_engine->RegisterEventType("message_finish",
+	event_message_finish = esim_engine->RegisterEvent("message_finish",
 			EventMessageHandler,
 			frequency_domain);
 
-	event_type_flush = esim_engine->RegisterEventType("flush",
+	event_flush = esim_engine->RegisterEvent("flush",
 			EventFlushHandler,
 			frequency_domain);
-	event_type_flush_finish = esim_engine->RegisterEventType("flush_finish",
+	event_flush_finish = esim_engine->RegisterEvent("flush_finish",
 			EventFlushHandler,
 			frequency_domain);
 
 	// Local memory event driven simulation
 
-	event_type_local_load = esim_engine->RegisterEventType("local_load",
+	event_local_load = esim_engine->RegisterEvent("local_load",
 			EventLocalLoadHandler,
 			frequency_domain);
-	event_type_local_load_lock = esim_engine->RegisterEventType("local_load_lock",
+	event_local_load_lock = esim_engine->RegisterEvent("local_load_lock",
 			EventLocalLoadHandler,
 			frequency_domain);
-	event_type_local_load_finish = esim_engine->RegisterEventType("local_load_finish",
+	event_local_load_finish = esim_engine->RegisterEvent("local_load_finish",
 			EventLocalLoadHandler,
 			frequency_domain);
 
-	event_type_local_store = esim_engine->RegisterEventType("local_store",
+	event_local_store = esim_engine->RegisterEvent("local_store",
 			EventLocalStoreHandler,
 			frequency_domain);
-	event_type_local_store_lock = esim_engine->RegisterEventType("local_store_lock",
+	event_local_store_lock = esim_engine->RegisterEvent("local_store_lock",
 			EventLocalStoreHandler,
 			frequency_domain);
-	event_type_local_store_finish = esim_engine->RegisterEventType("local_store_finish",
+	event_local_store_finish = esim_engine->RegisterEvent("local_store_finish",
 			EventLocalStoreHandler,
 			frequency_domain);
 
-	event_type_local_find_and_lock = esim_engine->RegisterEventType("local_find_and_lock",
+	event_local_find_and_lock = esim_engine->RegisterEvent("local_find_and_lock",
 			EventLocalFindAndLockHandler,
 			frequency_domain);
-	event_type_local_find_and_lock_port = esim_engine->RegisterEventType("local_find_and_lock_port",
+	event_local_find_and_lock_port = esim_engine->RegisterEvent("local_find_and_lock_port",
 			EventLocalFindAndLockHandler,
 			frequency_domain);
-	event_type_local_find_and_lock_action = esim_engine->RegisterEventType("local_find_and_lock_action",
+	event_local_find_and_lock_action = esim_engine->RegisterEvent("local_find_and_lock_action",
 			EventLocalFindAndLockHandler,
 			frequency_domain);
-	event_type_local_find_and_lock_finish = esim_engine->RegisterEventType("local_find_and_lock_finish",
+	event_local_find_and_lock_finish = esim_engine->RegisterEvent("local_find_and_lock_finish",
 			EventLocalFindAndLockHandler,
 			frequency_domain);
 }

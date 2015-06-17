@@ -109,7 +109,7 @@ public:
 	void ParseConfiguration(misc::IniFile &config);
 
 	/// Event handler that adds a request to the DRAM system.
-	static void ActionRequestHandler(esim::EventType *,
+	static void ActionRequestHandler(esim::Event *,
 			esim::EventFrame *);
 
 	/// Adds a check for a command type at a cycle to the list of checks to

@@ -101,11 +101,11 @@ class Controller
 	std::queue<std::shared_ptr<Request>> incoming_requests;
 
 	// Map of ids to EventTypes for each controller's request processor
-	static std::map<int, esim::EventType *> REQUEST_PROCESSORS;
+	static std::map<int, esim::Event *> REQUEST_PROCESSORS;
 
 	// Map of ids to EventTypes for each channel's scheduler for the
 	// controller
-	std::map<int, esim::EventType *> SCHEDULERS;
+	std::map<int, esim::Event *> SCHEDULERS;
 
 public:
 
@@ -155,17 +155,17 @@ public:
 	/// Add a request to the controller's incoming request queue.
 	void AddRequest(std::shared_ptr<Request> request);
 
-	/// Obtain the EventType for the controller's request processor.
-	static esim::EventType *getRequestProcessor(int controller)
+	/// Obtain the Event for the controller's request processor.
+	static esim::Event *getRequestProcessor(int controller)
 	{
 		return REQUEST_PROCESSORS[controller];
 	}
 
-	/// Create a new EventType for a controller's request processor.
+	/// Create a new Event for a controller's request processor.
 	static void CreateRequestProcessor(int controller);
 
-	/// Obtain the EventType for the channel's scheduler.
-	esim::EventType *getScheduler(int channel)
+	/// Obtain the Event for the channel's scheduler.
+	esim::Event *getScheduler(int channel)
 	{
 		return SCHEDULERS[channel];
 	}
@@ -180,7 +180,7 @@ public:
 	void CallRequestProcessor();
 
 	/// Event handler that runs the request processor.
-	static void RequestProcessorHandler(esim::EventType *,
+	static void RequestProcessorHandler(esim::Event *,
 			esim::EventFrame *);
 
 	/// Process requests in the incoming requests queue, breaking them
@@ -188,7 +188,7 @@ public:
 	void RunRequestProcessor();
 
 	/// Event handler that for when a command finishes executing.
-	static void CommandReturnHandler(esim::EventType *,
+	static void CommandReturnHandler(esim::Event *,
 			esim::EventFrame *);
 
 	/// Dump the object to an output stream.

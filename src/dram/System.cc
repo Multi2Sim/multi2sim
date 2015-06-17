@@ -63,9 +63,9 @@ std::unique_ptr<System> System::instance;
 
 esim::FrequencyDomain *System::DRAM_DOMAIN(nullptr);
 
-esim::EventType *System::ACTION_REQUEST(nullptr);
+esim::Event *System::ACTION_REQUEST(nullptr);
 
-esim::EventType *System::COMMAND_RETURN(nullptr);
+esim::Event *System::COMMAND_RETURN(nullptr);
 
 
 System *System::getInstance()
@@ -156,7 +156,7 @@ void System::ParseConfiguration(const std::string &path)
 			"DRAM_DOMAIN", frequency);
 
 	// Create events used by the entire system
-	COMMAND_RETURN = esim->RegisterEventType("COMMAND_RETURN",
+	COMMAND_RETURN = esim->RegisterEvent("COMMAND_RETURN",
 			Controller::CommandReturnHandler, DRAM_DOMAIN);
 
 	// Iterate through each section.

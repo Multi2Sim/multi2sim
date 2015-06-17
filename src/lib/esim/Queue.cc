@@ -100,7 +100,7 @@ std::shared_ptr<EventFrame> Queue::PopFront()
 }
 
 
-void Queue::Wait(EventType *event_type, bool priority)
+void Queue::Wait(Event *event, bool priority)
 {
 	// Get current event frame
 	Engine *engine = Engine::getInstance();
@@ -118,13 +118,13 @@ void Queue::Wait(EventType *event_type, bool priority)
 				"event with Next().");
 
 	// The event type must be valid
-	if (event_type == nullptr)
+	if (event == nullptr)
 		throw misc::Panic("Cannot suspend an event with a null "
 				"wakeup event type");
 
 	// Add event frame to the queue
-	assert(!current_frame->wakeup_event_type);
-	current_frame->wakeup_event_type = event_type;
+	assert(!current_frame->wakeup_event);
+	current_frame->wakeup_event = event;
 	if (priority)
 		PushFront(current_frame);
 	else
@@ -142,13 +142,13 @@ void Queue::WakeupOne()
 	std::shared_ptr<EventFrame> event_frame = PopFront();
 
 	// Get event to schedule
-	EventType *event_type = event_frame->wakeup_event_type;
-	event_frame->wakeup_event_type = nullptr;
-	assert(event_type);
+	Event *event = event_frame->wakeup_event;
+	event_frame->wakeup_event = nullptr;
+	assert(event);
 
 	// Schedule event
 	Engine *engine = Engine::getInstance();
-	engine->Schedule(event_type, event_frame);
+	engine->Schedule(event, event_frame);
 }
 
 
