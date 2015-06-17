@@ -29,12 +29,12 @@ namespace esim
 
 // Forward declarations
 class Event;
-class EventFrame;
+class Frame;
 class FrequencyDomain;
 
 
 /// Event handler function prototype
-typedef void (*EventHandler)(Event *, EventFrame *);
+typedef void (*EventHandler)(Event *, Frame *);
 
 
 /// Event type used for event registrations. This class should not be

@@ -45,7 +45,7 @@ class Module;
 
 
 /// Event frame for memory system events.
-class Frame : public esim::EventFrame
+class Frame : public esim::Frame
 {
 	// Counter for identifiers
 	static long long id_counter;
