@@ -26,53 +26,53 @@
 namespace esim
 {
 
-void Queue::PushBack(std::shared_ptr<EventFrame> event_frame)
+void Queue::PushBack(std::shared_ptr<Frame> frame)
 {
 	// Mark frame as inserted
-	assert(!event_frame->in_queue);
-	assert(!event_frame->next);
-	event_frame->in_queue = true;
+	assert(!frame->in_queue);
+	assert(!frame->next);
+	frame->in_queue = true;
 
 	// Add to back of the list
 	if (head == nullptr && tail == nullptr)
 	{
-		head = event_frame;
-		tail = event_frame;
+		head = frame;
+		tail = frame;
 	}
 	else
 	{
 		assert(head != nullptr && tail != nullptr);
 		assert(tail->next == nullptr);
-		tail->next = event_frame;
-		tail = event_frame;
+		tail->next = frame;
+		tail = frame;
 	}
 }
 
 
-void Queue::PushFront(std::shared_ptr<EventFrame> event_frame)
+void Queue::PushFront(std::shared_ptr<Frame> frame)
 {
 	// Mark frame as inserted
-	assert(!event_frame->in_queue);
-	assert(!event_frame->next);
-	event_frame->in_queue = true;
+	assert(!frame->in_queue);
+	assert(!frame->next);
+	frame->in_queue = true;
 
 	// Add to front of the list
 	if (head == nullptr && tail == nullptr)
 	{
-		head = event_frame;
-		tail = event_frame;
+		head = frame;
+		tail = frame;
 	}
 	else
 	{
 		assert(head != nullptr && tail != nullptr);
 		assert(!tail->next);
-		event_frame->next = head;
-		head = event_frame;
+		frame->next = head;
+		head = frame;
 	}
 }
 
 
-std::shared_ptr<EventFrame> Queue::PopFront()
+std::shared_ptr<Frame> Queue::PopFront()
 {
 	// Check if queue is empty
 	if (head == nullptr)
@@ -82,7 +82,7 @@ std::shared_ptr<EventFrame> Queue::PopFront()
 	}
 
 	// Extract element from the head
-	std::shared_ptr<EventFrame> event_frame = head;
+	std::shared_ptr<Frame> frame = head;
 	if (head == tail)
 	{
 		head = nullptr;
@@ -94,9 +94,9 @@ std::shared_ptr<EventFrame> Queue::PopFront()
 	}
 
 	// Mark as extracted
-	event_frame->next = nullptr;
-	event_frame->in_queue = false;
-	return event_frame;
+	frame->next = nullptr;
+	frame->in_queue = false;
+	return frame;
 }
 
 
@@ -104,7 +104,7 @@ void Queue::Wait(Event *event, bool priority)
 {
 	// Get current event frame
 	Engine *engine = Engine::getInstance();
-	std::shared_ptr<EventFrame> current_frame = engine->getCurrentFrame();
+	std::shared_ptr<Frame> current_frame = engine->getCurrentFrame();
 	
 	// This function must be invoked within an event handler
 	if (current_frame == nullptr)
@@ -139,16 +139,16 @@ void Queue::WakeupOne()
 		throw misc::Panic("Queue is empty");
 
 	// Get event frame from the head
-	std::shared_ptr<EventFrame> event_frame = PopFront();
+	std::shared_ptr<Frame> frame = PopFront();
 
 	// Get event to schedule
-	Event *event = event_frame->wakeup_event;
-	event_frame->wakeup_event = nullptr;
+	Event *event = frame->wakeup_event;
+	frame->wakeup_event = nullptr;
 	assert(event);
 
 	// Schedule event
 	Engine *engine = Engine::getInstance();
-	engine->Schedule(event, event_frame);
+	engine->Schedule(event, frame);
 }
 
 

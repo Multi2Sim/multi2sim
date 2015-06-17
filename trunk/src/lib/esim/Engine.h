@@ -88,12 +88,12 @@ class Engine
 	std::list<FrequencyDomain> frequency_domains;
 
 	// Heap of pending events
-	std::priority_queue<std::shared_ptr<EventFrame>,
-			std::vector<std::shared_ptr<EventFrame>>,
-			EventFrame::CompareSharedPointers> heap;
+	std::priority_queue<std::shared_ptr<Frame>,
+			std::vector<std::shared_ptr<Frame>>,
+			Frame::CompareSharedPointers> heap;
 
 	// Queue of frames associated with the end events
-	std::queue<std::shared_ptr<EventFrame>> end_frames;
+	std::queue<std::shared_ptr<Frame>> end_frames;
 
 	// Null event type used to schedule useless events
 	Event *null_event = nullptr;
@@ -112,7 +112,7 @@ class Engine
 
 	// When an event handler is being executed, this is the current frame.
 	// Otherwise, it is null.
-	std::shared_ptr<EventFrame> current_frame;
+	std::shared_ptr<Frame> current_frame;
 
 	// Number of in-flight events before a warning is shown (10k events)
 	const int max_inflight_events = 10000;
@@ -205,7 +205,7 @@ public:
 
 	/// If an event handler is currently executing, return the current
 	/// frame. Otherwise, return `nullptr`.
-	const std::shared_ptr<EventFrame> &getCurrentFrame() const
+	const std::shared_ptr<Frame> &getCurrentFrame() const
 	{
 		return current_frame;
 	}
@@ -263,7 +263,7 @@ public:
 	/// not be invoked from outside of this library. Use Call() or Next()
 	/// instead. See Next() for the meaning of the arguments.
 	void Schedule(Event *event,
-			std::shared_ptr<EventFrame> event_frame,
+			std::shared_ptr<Frame> event_frame,
 			int after = 0,
 			int period = 0);
 
@@ -333,7 +333,7 @@ public:
 	///	respect to the event's frequency domain.
 	///
 	void Call(Event *event,
-			std::shared_ptr<EventFrame> event_frame = nullptr,
+			std::shared_ptr<Frame> event_frame = nullptr,
 			Event *return_event = nullptr,
 			int after = 0,
 			int period = 0);
@@ -356,7 +356,7 @@ public:
 	/// Return the parent frame in the event stack of the current event
 	/// chain, or `nullptr` if the current event is in the bottom of the
 	/// stack. This function should be invoked only within an event handler.
-	EventFrame *getParentFrame()
+	Frame *getParentFrame()
 	{
 		assert(current_frame);
 		return current_frame->parent_frame.get();

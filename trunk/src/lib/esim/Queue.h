@@ -30,25 +30,25 @@ namespace esim
 {
 
 /// Event queue used to suspend a chain of events. An event handler can suspend
-/// the event chain in a queue using a call to EventFrame::Wait(). When the
+/// the event chain in a queue using a call to Frame::Wait(). When the
 /// queue receives a wakeup signal, it will schedule another event with the
 /// event frame.
 class Queue
 {
 	// Head pointer
-	std::shared_ptr<EventFrame> head;
+	std::shared_ptr<Frame> head;
 
 	// Tail pointer
-	std::shared_ptr<EventFrame> tail;
+	std::shared_ptr<Frame> tail;
 
 	// Remove an event frame from the queue.
-	std::shared_ptr<EventFrame> PopFront();
+	std::shared_ptr<Frame> PopFront();
 
 	// Add an event frame to the tail of the queue
-	void PushBack(std::shared_ptr<EventFrame> event_frame);
+	void PushBack(std::shared_ptr<Frame> frame);
 
 	// Add an event frame to the front of the queue
-	void PushFront(std::shared_ptr<EventFrame> event_frame);
+	void PushFront(std::shared_ptr<Frame> frame);
 
 public:
 
@@ -84,11 +84,11 @@ public:
 	/// Return the frame at the head of the queue, or `nullptr` if the
 	/// queue is empty. This is the frame that will wake up first upon a
 	/// call to WakeupOne().
-	EventFrame *getHead() const { return head.get(); }
+	Frame *getHead() const { return head.get(); }
 
 	/// Return the frame at the tail of the queue, or `nullptr` if the
 	/// queue is empty.
-	EventFrame *getTail() const { return tail.get(); }
+	Frame *getTail() const { return tail.get(); }
 };
 
 }  // namespace esim

@@ -37,7 +37,7 @@ esim::Event *System::event_receive;
 
 
 void System::EventTypeSendHandler(esim::Event *type, 
-		esim::EventFrame *frame)
+		esim::Frame *frame)
 {
 	// Useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -85,7 +85,7 @@ void System::EventTypeSendHandler(esim::Event *type,
 	
 
 void System::EventTypeOutputBufferHandler(esim::Event *type, 
-		esim::EventFrame *frame)
+		esim::Frame *frame)
 {
 	// Cast event frame type
 	Frame *network_frame = misc::cast<Frame *>(frame);
@@ -101,7 +101,7 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 
 
 void System::EventTypeInputBufferHandler(esim::Event *type, 
-		esim::EventFrame *frame)
+		esim::Frame *frame)
 {
 	// Get esim engine
 	esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -139,7 +139,7 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 
 
 void System::EventTypeReceiveHandler(esim::Event *type, 
-		esim::EventFrame *frame)
+		esim::Frame *frame)
 {
 	// Cast event frame type
 	Frame *network_frame = misc::cast<Frame *>(frame);

@@ -32,7 +32,7 @@ class Event;
 
 
 /// This class represents data associated with an event.
-class EventFrame
+class Frame
 {
 	// Only simulation engine and event queue can access private fields of
 	// the frame. This is preferrable to creating public fields or getters/
@@ -57,7 +57,7 @@ class EventFrame
 	bool in_heap = false;
 
 	// Parent frame is this event was invoked as a call
-	std::shared_ptr<EventFrame> parent_frame;
+	std::shared_ptr<Frame> parent_frame;
 
 	// Event type to invoke upon return, or null if there is no parent
 	// event
@@ -68,7 +68,7 @@ class EventFrame
 
 	// Pointer to next frames in a waiting queue, or null if the event
 	// frame is not suspended in a queue.
-	std::shared_ptr<EventFrame> next;
+	std::shared_ptr<Frame> next;
 
 	// Event type scheduled when the frame is woken up from a queue
 	Event *wakeup_event = nullptr;
@@ -79,15 +79,15 @@ public:
 	// min-heap of the simulation engine.
 	struct CompareSharedPointers
 	{
-		bool operator()(const std::shared_ptr<EventFrame> &lhs,
-				const std::shared_ptr<EventFrame> &rhs) const
+		bool operator()(const std::shared_ptr<Frame> &lhs,
+				const std::shared_ptr<Frame> &rhs) const
 		{
 			return lhs->time > rhs->time;
 		}
 	};
 
 	/// Virtual destructor to make class polymorphic
-	virtual ~EventFrame() { }
+	virtual ~Frame() { }
 
 	/// Return whether the frame is currently suspended in an event queue.
 	bool isInQueue() const { return in_queue; }

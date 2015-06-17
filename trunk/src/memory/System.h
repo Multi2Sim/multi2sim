@@ -208,19 +208,19 @@ class System
 	// are defined in SystemCoherenceProtocol.cc.
 	//
 
-	static void EventLoadHandler(esim::Event *, esim::EventFrame *);
-	static void EventStoreHandler(esim::Event *, esim::EventFrame *);
-	static void EventNCStoreHandler(esim::Event *, esim::EventFrame *);
-	static void EventFindAndLockHandler(esim::Event *, esim::EventFrame *);
-	static void EventEvictHandler(esim::Event *, esim::EventFrame *);
-	static void EventWriteRequestHandler(esim::Event *, esim::EventFrame *);
-	static void EventReadRequestHandler(esim::Event *, esim::EventFrame *);
-	static void EventInvalidateHandler(esim::Event *, esim::EventFrame *);
-	static void EventMessageHandler(esim::Event *, esim::EventFrame *);
-	static void EventFlushHandler(esim::Event *, esim::EventFrame *);
-	static void EventLocalLoadHandler(esim::Event *, esim::EventFrame *);
-	static void EventLocalStoreHandler(esim::Event *, esim::EventFrame *);
-	static void EventLocalFindAndLockHandler(esim::Event *, esim::EventFrame *);
+	static void EventLoadHandler(esim::Event *, esim::Frame *);
+	static void EventStoreHandler(esim::Event *, esim::Frame *);
+	static void EventNCStoreHandler(esim::Event *, esim::Frame *);
+	static void EventFindAndLockHandler(esim::Event *, esim::Frame *);
+	static void EventEvictHandler(esim::Event *, esim::Frame *);
+	static void EventWriteRequestHandler(esim::Event *, esim::Frame *);
+	static void EventReadRequestHandler(esim::Event *, esim::Frame *);
+	static void EventInvalidateHandler(esim::Event *, esim::Frame *);
+	static void EventMessageHandler(esim::Event *, esim::Frame *);
+	static void EventFlushHandler(esim::Event *, esim::Frame *);
+	static void EventLocalLoadHandler(esim::Event *, esim::Frame *);
+	static void EventLocalStoreHandler(esim::Event *, esim::Frame *);
+	static void EventLocalFindAndLockHandler(esim::Event *, esim::Frame *);
 
 
 	// List of networks

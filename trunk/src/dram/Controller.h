@@ -180,16 +180,14 @@ public:
 	void CallRequestProcessor();
 
 	/// Event handler that runs the request processor.
-	static void RequestProcessorHandler(esim::Event *,
-			esim::EventFrame *);
+	static void RequestProcessorHandler(esim::Event *, esim::Frame *);
 
 	/// Process requests in the incoming requests queue, breaking them
 	/// down into their commands.
 	void RunRequestProcessor();
 
 	/// Event handler that for when a command finishes executing.
-	static void CommandReturnHandler(esim::Event *,
-			esim::EventFrame *);
+	static void CommandReturnHandler(esim::Event *, esim::Frame *);
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;
@@ -204,7 +202,7 @@ public:
 };
 
 
-class RequestProcessorFrame : public esim::EventFrame
+class RequestProcessorFrame : public esim::Frame
 {
 
 public:
@@ -216,7 +214,7 @@ public:
 };
 
 
-class CommandReturnFrame : public esim::EventFrame
+class CommandReturnFrame : public esim::Frame
 {
 	// The command that this event was created for.
 	std::shared_ptr<Command> command;
