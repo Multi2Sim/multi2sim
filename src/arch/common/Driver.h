@@ -52,7 +52,12 @@ public:
 	/// \param path
 	///	Path of the virtual device used to access the driver (e.g.
 	///	 `/dev/southern-islands`)
-	Driver(const std::string &name, const std::string &path);
+	///
+	Driver(const std::string &name, const std::string &path) :
+			name(name),
+			path(path)
+	{
+	}
 
 	/// Return the path of the virtual device
 	const std::string &getPath() const { return path; }
@@ -87,9 +92,6 @@ class DriverPool
 
 	// List of drivers
 	std::list<Driver *> driver_list;
-
-	// Private constructor for singleton
-	DriverPool() { }
 
 public:
 

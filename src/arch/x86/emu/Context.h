@@ -23,13 +23,14 @@
 #include <memory>
 
 #include <arch/common/CallStack.h>
+#include <arch/common/Context.h>
+#include <arch/common/FileTable.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
 
-#include "arch/common/FileTable.h"
 #include "Regs.h"
 #include "Signal.h"
 #include "UInst.h"
@@ -100,7 +101,7 @@ class Emu;
 
 
 /// x86 Context
-class Context
+class Context : public comm::Context
 {
 public:
 
@@ -155,15 +156,12 @@ private:
 	// Emulator that it belongs to
 	Emu *emu;
 
-	// Process ID
-	int pid;
-	
 	// Virtual memory address space index
 	int address_space_index;
 
 	// Context state, expressed as a bitmap of flags, e.g.,
 	// ContextSuspended | ContextFutex
-	unsigned state;
+	unsigned state = 0;
 
 	// Context memory. This object can be shared by multiple contexts, so it
 	// is declared as a shared pointer. The last freed context pointing to
@@ -189,34 +187,39 @@ private:
 	unsigned target_eip;  // Target address for branch, even if not taken
 
 	// Parent context
-	Context *parent;
+	Context *parent = nullptr;
 
 	// Context group initiator. There is only one group parent (if not null)
 	// with many group children, no tree organization.
-	Context *group_parent;
+	Context *group_parent = nullptr;
+	
+	// Signal to send parent when finished
+	int exit_signal = 0;
 
-	int exit_signal;  // Signal to send parent when finished
-	int exit_code;  // For zombie contexts
+	// For zombie contexts
+	int exit_code = 0;
 
-	unsigned int clear_child_tid;
-	unsigned int robust_list_head;  // robust futex list
+	unsigned int clear_child_tid = 0;
+
+	// Robust futex list
+	unsigned int robust_list_head = 0;
 
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
 	unsigned last_effective_address;
 	
 	// For emulation of string operations
-	unsigned int str_op_esi;  // Initial value for register 'esi'
-	unsigned int str_op_edi;  // Initial value for register 'edi'
-	int str_op_dir;  // Direction: 1 = forward, -1 = backward
-	int str_op_count;  // Number of iterations in string operation //
+	unsigned int str_op_esi = 0;  // Initial value for register 'esi'
+	unsigned int str_op_edi = 0;  // Initial value for register 'edi'
+	int str_op_dir = 0;  // Direction: 1 = forward, -1 = backward
+	int str_op_count = 0;  // Number of iterations in string operation //
 
 	// Last emulated instruction
 	Inst inst;
 	
 	// For segmented memory access in glibc
-	unsigned glibc_segment_base;
-	unsigned glibc_segment_limit;
+	unsigned glibc_segment_base = 0;
+	unsigned glibc_segment_limit = 0;
 
 	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
@@ -224,17 +227,17 @@ private:
 	// It is clear when the context finished (by the host thread).
 	// It should be accessed safely by locking the emulator mutex
 	pthread_t host_thread_suspend;  // Thread
-	bool host_thread_suspend_active;  // Thread-spawned flag
+	bool host_thread_suspend_active = false;  // Thread-spawned flag
 
 	// Host thread that lets time elapse and schedules call to
 	// emu->ProcessEvents()
 	pthread_t host_thread_timer;
-	int host_thread_timer_active;
+	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;
 	
 	// Scheduler
-	int sched_policy;
-	int sched_priority;
+	int sched_policy = SCHED_RR;
+	int sched_priority = 1;
 
 	// Variables used to wake up suspended contexts.
 	unsigned wakeup_futex;  // Address of futex where context is suspended
@@ -283,8 +286,8 @@ private:
 	// suspended contexts. Variable 'wakeup_state' contains the state
 	// or states that will be set when suspended and cleared when
 	// waken up
-	CanWakeupFn can_wakeup_fn;
-	WakeupFn wakeup_fn;
+	CanWakeupFn can_wakeup_fn = nullptr;
+	WakeupFn wakeup_fn = nullptr;
 	State wakeup_state;
 
 	// Suspend a context, using callbacks 'can_wakeup_fn' and 'wakeup_fn'
@@ -425,7 +428,7 @@ private:
 	// instruction has already been emitted. This flag is used to avoid
 	// multiple address computations for macro-instruction that implicitly
 	// load, operate, and store.
-	bool uinst_effaddr_emitted;
+	bool uinst_effaddr_emitted = false;
 
 	// List of micro-instructions produced during the emulation of the last
 	// x86 macro-instruction.
@@ -772,7 +775,7 @@ public:
 	/// Flag indicating whether this context is present in a certain context
 	/// list of the emulator. This field is exclusively managed by the
 	/// emulator.
-	bool context_list_present[ListCount];
+	bool context_list_present[ListCount] = { };
 
 	/// Position of the context in a certain context list. This field is
 	/// exclusively managed by the emulator.
@@ -786,9 +789,6 @@ public:
 
 	/// Destructor
 	~Context();
-
-	/// Return the context pid
-	int getPid() const { return pid; }
 
 	/// Load a program on the context. The meaning of each argument is
 	/// identical to the prototype of comm::Emu::Load().

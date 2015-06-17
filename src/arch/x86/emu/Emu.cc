@@ -238,7 +238,7 @@ Context *Emu::getContext(int pid)
 {
 	// Find context
 	for (auto &context : contexts)
-		if (context->getPid() == pid)
+		if (context->getId() == pid)
 			return context.get();
 	
 	// Not found

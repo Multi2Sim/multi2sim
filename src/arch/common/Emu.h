@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <string>
 
+#include <lib/cpp/Error.h>
 #include <lib/cpp/Timer.h>
 #include <lib/esim/Engine.h>
 
@@ -49,6 +50,9 @@ protected:
 public:
 	/// Constructor
 	Emu(const std::string &name);
+
+	/// Return the emulator name
+	const std::string &getName() const { return name; }
 
 	/// Increment the number of emulated instructions
 	void incInstructions() { ++instructions; }
@@ -100,9 +104,7 @@ public:
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "")
 	{
-		std::cout<<"virtual";
-		// Should not be invoked directly
-		abort();
+		throw misc::Panic("Unimplemented");
 	}
 
 	/// Run one iteration of the emulation loop for the architecture. If

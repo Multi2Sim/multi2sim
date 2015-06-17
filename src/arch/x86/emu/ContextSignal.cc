@@ -35,7 +35,7 @@ void Context::RunSignalHandler(int sig)
 {
 	// Debug
 	assert(misc::inRange(sig, 1, 64));
-	Emu::syscall_debug << "context " << pid << " executes signal "
+	Emu::syscall_debug << getName() << " executes signal "
 			"handler for signal " << sig << '\n';
 
 	// Signal SIGCHLD ignored if no signal handler installed

@@ -17,6 +17,9 @@ libcommon_a_SOURCES = \
 	CallStack.cc \
 	CallStack.h \
 	\
+	Context.cc \
+	Context.h \
+	\
 	Driver.cc \
 	Driver.h \
 	\
