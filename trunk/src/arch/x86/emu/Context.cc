@@ -105,8 +105,9 @@ void Context::UpdateState(unsigned state)
 	if (Emu::context_debug && (diff & ~StateSpecMode))
 	{
 		Emu::context_debug << misc::fmt(
-				"inst %lld: context %d changed state to %s\n",
-				emu->getInstructions(), pid,
+				"[%s] Instruction %lld: Changed state to %s\n",
+				getName().c_str(),
+				emu->getInstructions(),
 				StateMap.MapFlags(this->state).c_str());
 	}
 
@@ -145,7 +146,7 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 			wakeup_context->clearState(StateFutex);
 			wakeup_context->clearState(StateSuspended);
 			emu->syscall_debug << misc::fmt("  futex 0x%x: thread %d woken up\n",
-					futex, wakeup_context->pid);
+					futex, wakeup_context->getId());
 			wakeup_count++;
 			count--;
 
@@ -181,8 +182,8 @@ void Context::ExitRobustList()
 	if (!lock_entry)
 		return;
 
-	emu->syscall_debug << misc::fmt("ctx %d: processing robust futex list\n",
-			pid);
+	emu->syscall_debug << misc::fmt("[%s] Processing robust futex list\n",
+			getName().c_str());
 	for (;;)
 	{
 		unsigned int next, offset, lock_word;
@@ -316,53 +317,22 @@ std::string Context::OpenProcCPUInfo()
 // Public functions
 //
 
-Context::Context()
+Context::Context() :
+		comm::Context(Emu::getInstance()),
+		emu(Emu::getInstance())
 {
-	// Save emulator instance
-	emu = Emu::getInstance();
-
-	// Initialize
-	state = 0;
-	glibc_segment_base = 0;
-	glibc_segment_limit = 0;
-	pid = emu->getPid();
-	parent = nullptr;
-	group_parent = nullptr;
-	exit_signal = 0;
-	exit_code = 0;
-	clear_child_tid = 0;
-	robust_list_head = 0;
-	host_thread_suspend_active = false;
-	host_thread_timer_active = false;
-	sched_policy = SCHED_RR;
-	sched_priority = 1;  // Lowest priority
-
-	wakeup_fn = nullptr;
-	can_wakeup_fn = nullptr;
-	
-	// String operations
-	str_op_esi = 0;
-	str_op_edi = 0;
-	str_op_dir = 0;
-	str_op_count = 0;
-
-	// Presence in context lists
-	for (int i = 0; i < ListCount; i++)
-		context_list_present[i] = false;
-
 	// Micro-instructions
 	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
-	uinst_effaddr_emitted = false;
 
 	// Debug
-	emu->context_debug << "Context " << pid << " created\n";
+	emu->context_debug << "Context " << getId() << " created\n";
 }
 
 
 Context::~Context()
 {
 	// Debug
-	emu->context_debug << "Context " << pid << " destroyed\n";
+	emu->context_debug << "Context " << getId() << " destroyed\n";
 }
 
 
@@ -627,8 +597,9 @@ void Context::HostThreadSuspendCancelUnsafe()
 	if (host_thread_suspend_active)
 	{
 		if (pthread_cancel(host_thread_suspend))
-			throw misc::Panic(misc::fmt("[Context %d] Error "
-					"canceling host thread", pid));
+			throw misc::Panic(misc::fmt("[%s] Error "
+					"canceling host thread",
+					getName().c_str()));
 		host_thread_suspend_active = false;
 	}
 	emu->ProcessEventsScheduleUnsafe();
@@ -700,8 +671,9 @@ void Context::HostThreadTimerCancelUnsafe()
 	if (!host_thread_timer_active)
 		return;
 	if (pthread_cancel(host_thread_timer))
-		throw misc::Panic(misc::fmt("[Context %d] Error canceling "
-				"host thread", pid));
+		throw misc::Panic(misc::fmt("[%s] Error canceling "
+				"host thread",
+				getName().c_str()));
 	host_thread_timer_active = false;
 	emu->ProcessEventsScheduleUnsafe();
 }
@@ -771,7 +743,7 @@ void Context::Execute()
 
 	// Debug
 	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+		emu->isa_debug << misc::fmt("%d %8lld %x: ", getId(),
 				emu->getInstructions(), current_eip)
 				<< inst
 				<< misc::fmt("  (%d bytes)",
@@ -804,7 +776,7 @@ void Context::Execute()
 			// information to the error message
 			if (!spec_mode)
 			{
-				e.AppendPrefix(misc::fmt("pid %d", pid));
+				e.AppendPrefix(misc::fmt("pid %d", getId()));
 				e.AppendPrefix(misc::fmt("eip 0x%x",
 						regs.getEip()));
 				throw e;
@@ -896,7 +868,7 @@ void Context::Finish(int exit_code)
 	if (exit_signal && parent)
 	{
 		emu->syscall_debug << misc::fmt("  sending signal %d to pid %d\n",
-				exit_signal, parent->pid);
+				exit_signal, parent->getId());
 		parent->signal_mask_table.getPending().Add(exit_signal);
 		emu->ProcessEventsSchedule();
 	}
@@ -928,7 +900,7 @@ Context *Context::getZombie(int pid)
 	{
 		if (context->parent != this)
 			continue;
-		if (context->pid == pid || pid == -1)
+		if (context->getId() == pid || pid == -1)
 			return context;
 	}
 	return nullptr;
