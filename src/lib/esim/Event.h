@@ -28,8 +28,8 @@ namespace esim
 {
 
 // Forward declarations
-class EventFrame;
 class EventType;
+class EventFrame;
 class FrequencyDomain;
 
 
@@ -90,70 +90,6 @@ public:
 	/// Decrease the number of in-flight events of this type by one.
 	void decInFlight() { num_in_flight--; }
 };
-
-
-/// This class represents data associated with an event.
-class EventFrame
-{
-	// Only simulation engine and event queue can access private fields of
-	// the frame. This is preferrable to creating public fields or getters/
-	// setters, in order to make it clear that user classes derived from
-	// this one should not have access to these values.
-	friend class Engine;
-	friend class Queue;
-
-	// Event associated with this frame when the frame is enqueued in the
-	// event heap.
-	EventType *event_type = nullptr;
-
-	// Time in picoseconds for when the event is scheduled in the event heap
-	long long time = 0;
-
-	// Number of cycles after which the event will repeat, in the frequency
-	// domain associated with the event (0 = no repeat)
-	int period = 0;
-
-	// Flag indicating whether the frame is currently enqueue in the event
-	// heap of the simulation engine
-	bool in_heap = false;
-
-	// Parent frame is this event was invoked as a call
-	std::shared_ptr<EventFrame> parent_frame;
-
-	// Event type to invoke upon return, or null if there is no parent
-	// event
-	EventType *return_event_type = nullptr;
-
-	// Flag indicating whether the frame is currently suspended in a queue
-	bool in_queue = false;
-
-	// Pointer to next frames in a waiting queue, or null if the event
-	// frame is not suspended in a queue.
-	std::shared_ptr<EventFrame> next;
-
-	// Event type scheduled when the frame is woken up from a queue
-	EventType *wakeup_event_type = nullptr;
-
-public:
-	
-	// Comparison lambda, used as the comparison function in the event
-	// min-heap of the simulation engine.
-	struct CompareSharedPointers
-	{
-		bool operator()(const std::shared_ptr<EventFrame> &lhs,
-				const std::shared_ptr<EventFrame> &rhs) const
-		{
-			return lhs->time > rhs->time;
-		}
-	};
-
-	/// Virtual destructor to make class polymorphic
-	virtual ~EventFrame() { }
-
-	/// Return whether the frame is currently suspended in an event queue.
-	bool isInQueue() const { return in_queue; }
-};
-
 
 }  // namespace esim
 

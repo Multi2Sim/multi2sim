@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-#include <lib/esim/Event.h>
+#include <lib/esim/Frame.h>
 
 #include "Rank.h"
 #include "Scheduler.h"

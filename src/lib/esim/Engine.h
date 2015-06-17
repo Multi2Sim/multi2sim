@@ -34,6 +34,7 @@
 #include <lib/cpp/Timer.h>
 
 #include "Event.h"
+#include "Frame.h"
 #include "FrequencyDomain.h"
 
 
