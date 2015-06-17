@@ -52,7 +52,6 @@
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
-#include <lib/esim/Action.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
 
@@ -66,9 +65,6 @@ std::string m2s_context_config;
 
 // Debug information in CUDA runtime
 std::string m2s_cuda_debug;
-
-// Event-driven simulator configuration file
-std::string m2s_esim_config;
 
 // Event-driven simulator debugger
 std::string m2s_debug_esim;
@@ -283,15 +279,6 @@ void RegisterOptions()
 			"call stacks, including function invocations and "
 			"returns.");
 	
-	// Event-driven simulator configuration
-	command_line->RegisterString("--esim-config <file>",
-			m2s_esim_config,
-			"Use <file> as the event-driven simulation engine "
-			"configuration file.  This file can describe a set of "
-			"frequency domains, event types, times to schedule "
-			"events, and commands to check that events were "
-			"triggered at certain cycles.");
-	
 	// Debugger for event-driven simulator
 	command_line->RegisterString("--debug-esim <file>",
 			m2s_debug_esim,
@@ -415,14 +402,6 @@ void ProcessOptions()
 	// OpenCL binary
 	if (!m2s_opencl_binary.empty())
 		environment->addVariable("M2S_OPENCL_BINARY", m2s_opencl_binary);
-
-	// Go to event-driven simulation configuration if it's been passed.
-	if (!m2s_esim_config.empty())
-	{
-		esim::Engine *esim = esim::Engine::getInstance();
-		esim->TestLoop(m2s_esim_config);
-		exit(0);
-	}
 
 	// Trace file
 	if (!m2s_trace_file.empty())

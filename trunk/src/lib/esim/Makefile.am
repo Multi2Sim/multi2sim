@@ -2,9 +2,6 @@ lib_LIBRARIES = libesim.a
 
 libesim_a_SOURCES = \
 	\
-	Action.cc \
-	Action.h \
-	\
 	Engine.cc \
 	Engine.h \
 	\

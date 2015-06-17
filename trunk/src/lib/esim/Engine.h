@@ -129,19 +129,6 @@ class Engine
 	// Signals received from the user are captured by this function
 	static void SignalHandler(int sig);
 
-	// Called by ParseConfiguration to process an action line.
-	void ParseAction(const std::string &line,
-			std::map<std::string, FrequencyDomain *> &domains,
-			std::map<std::string, EventType *> &events);
-	void ParseActionDomainRegistration(const std::vector<std::string> &tokens,
-			std::map<std::string, FrequencyDomain *> &domains);
-	void ParseActionEventRegistration(const std::vector<std::string> &tokens,
-			std::map<std::string, EventType *> &events,
-			std::map<std::string, FrequencyDomain *> &domains);
-	void ParseActionEventSchedule(const std::vector<std::string> &tokens,
-			std::map<std::string, EventType *> &events);
-	void ParseActionCreateCheck(const std::vector<std::string> &tokens);
-
 	// Drain the event heap, with a maximum number of events specified in
 	// the argument. If this number is exceeded, the function returns true.
 	// If the heap is drained successfully, the function returns false.
@@ -346,6 +333,7 @@ public:
 	/// \param after (optional)
 	///	Number of cycles after which the return event will execute. See
 	///	Schedule() for details.
+	///
 	void Return(int after = 0);
 
 	/// Schedule an event for the end of the simulation. End events have
@@ -363,24 +351,12 @@ public:
 	///	Path to dump debug information. Strings \c stdout and \c stderr
 	///	are special values referring to the standard output and standard
 	///	error output, respectively.
+	///
 	static void setDebugPath(const std::string &path)
 	{
 		debug.setPath(path);
 		debug.setPrefix("[esim]");
 	}
-
-	/// Load and process a configuration file for event-driven simulation.
-	///
-	/// \param path
-	///	Path to the configuration file to load.
-	void ParseConfiguration(const std::string &path);
-
-	/// Run a test event-driven simulation with domains, events and checks
-	/// passed in a configuration file.
-
-	/// \param config_path
-	/// Path to the configuration file to load.
-	void TestLoop(const std::string &config_path);
 };
 
 
