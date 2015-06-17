@@ -532,6 +532,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 				frame->tag);
 		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
 		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->witness = frame->witness;
 		esim_engine->Call(event_type_write_request,
 				new_frame,
 				event_type_store_unlock);
@@ -1550,6 +1551,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	Frame *parent_frame = misc::cast<Frame *>(frame->getParentFrame().get());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
+	Directory *target_directory = target_module->getDirectory();
 
 	// Event "write_request"
 	if (event_type == event_type_write_request)
@@ -1621,31 +1623,291 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	// Event "write_request_receive"
 	if (event_type == event_type_write_request_receive)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request receive\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_receive\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Receive message
+		net::Network *network;
+		net::Node *node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = target_module->getHighNetwork();
+			node = target_module->getHighNetworkNode();
+		}
+		else
+		{
+			network = target_module->getLowNetwork();
+			node = target_module->getLowNetworkNode();
+		}
+		network->Receive(node, frame->message);
+		
+		// Call 'find-and-lock'
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				target_module,
+				frame->getAddress());
+		new_frame->blocking = frame->request_direction ==
+				Frame::RequestDirectionDownUp;
+		new_frame->request_direction = frame->request_direction;
+		new_frame->write = true;
+		new_frame->retry = false;
+		esim_engine->Call(event_type_find_and_lock,
+				new_frame,
+				event_type_write_request_action);
+		return;
 	}
 
 	// Event "write_request_action"
 	if (event_type == event_type_write_request_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s write request action\n", 
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_action\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Check lock error. If write request is down-up, there should
+		// have been no error.
+		if (frame->error)
+		{
+			// Return error
+			assert(frame->request_direction == Frame::RequestDirectionUpDown);
+			parent_frame->error = true;
+			
+			// Adjust reply size
+			frame->reply_size = 8;
+
+			// Continue with 'write-request-reply'
+			esim_engine->Next(event_type_write_request_reply);
+			return;
+		}
+
+		// If we have a down-up write request, it is possible that the
+		// block has already been evicted by the higher-level cache if
+		// it was in an unmodified state.
+		if (frame->block_not_found)
+		{
+			// TODO Create a reply_ack_removed message so that
+			// the cache can update its metadata.
+			assert(frame->request_direction == Frame::RequestDirectionDownUp);
+
+			// Simply send an ack
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+
+			// Adjust reply size
+			frame->reply_size = 8;
+
+			// Continue with 'write-request-reply'
+			esim_engine->Next(event_type_write_request_reply);
+			return;
+		}
+
+		// Invalidate the rest of higher-level sharers.
+		// Call 'invalidate' event chain.
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				target_module,
+				0);
+		new_frame->except_module = module;
+		new_frame->set = frame->set;
+		new_frame->way = frame->way;
+		esim_engine->Call(event_type_invalidate,
+				new_frame,
+				event_type_write_request_exclusive);
+		return;
 	}
 
 	// Event "write_request_exclusive"
 	if (event_type == event_type_write_request_exclusive)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request exclusive\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_exclusive\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Continue with 'write-request-updown' or
+		// 'write-request-downup', depending on direction.
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+			esim_engine->Next(event_type_write_request_updown);
+		else
+			esim_engine->Next(event_type_write_request_downup);
+		return;
 	}
 
 	// Event "write_request_updown"
 	if (event_type == event_type_write_request_updown)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s write request updown\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_updown\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Check state
+		switch (frame->state)
+		{
+
+		// State = M/E
+		case Cache::BlockModified:
+		case Cache::BlockExclusive:
+		{
+			esim_engine->Next(event_type_write_request_updown_finish);
+			break;
+		}
+		
+		// State = O/S/I/N
+		case Cache::BlockOwned:
+		case Cache::BlockShared:
+		case Cache::BlockInvalid:
+		case Cache::BlockNonCoherent:
+		{
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					target_module,
+					frame->tag);
+			new_frame->target_module = target_module->
+					getLowModuleServingAddress(frame->tag);
+			new_frame->request_direction = Frame::RequestDirectionUpDown;
+			esim_engine->Call(event_type_write_request,
+					new_frame,
+					event_type_write_request_updown_finish);
+			break;
+		}
+		
+		default:
+
+			throw misc::Panic("Invalid block state");
+		}
+
+		return;
 	}
 
 	// Event "write_request_updown_finish"
 	if (event_type == event_type_write_request_updown_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request updown finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_updown_finish\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Ensure that a reply was received
+		assert(frame->reply);
+
+		// Error in write request to next cache level
+		if (frame->error)
+		{
+			// Return error
+			parent_frame->error = true;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckError);
+
+			// Adjust reply size
+			frame->reply_size = 8;
+
+			// Unlock directory entry
+			target_directory->UnlockEntry(frame->set, frame->way);
+
+			// Continue with 'write-request-reply'
+			esim_engine->Next(event_type_write_request_reply);
+			return;
+		}
+
+		// Check that address is a multiple of the module's block size.
+		// Set module as sharer and owner. */
+		for (int z = 0; z < target_directory->getNumSubBlocks(); z++)
+		{
+			assert(frame->getAddress() % module->getBlockSize() == 0);
+			unsigned directory_entry_tag = frame->tag +
+					z * target_module->getSubBlockSize();
+			assert(directory_entry_tag < frame->tag + 
+					(unsigned) target_module->getBlockSize());
+			if (directory_entry_tag < frame->getAddress() || 
+					directory_entry_tag >=
+					frame->getAddress() +
+					(unsigned) module->getBlockSize())
+				continue;
+
+			// Set sharer and owner
+			int index = module->getLowNetworkNode()->getIndex();
+			Directory::Entry *entry = target_directory->getEntry(
+					frame->set,
+					frame->way,
+					z);
+			target_directory->setSharer(frame->set,
+					frame->way,
+					z,
+					index);
+			target_directory->setOwner(frame->set,
+					frame->way,
+					z,
+					index);
+			assert(entry->getNumSharers() == 1);
+		}
+
+		// Set state to E
+		Cache *target_cache = target_module->getCache();
+		target_cache->setBlock(frame->set,
+				frame->way,
+				frame->tag,
+				Cache::BlockExclusive);
+
+		// If blocks were sent directly to the peer, the reply size 
+		// would have been decreased.  Based on the final size, we can
+		// tell whether to send more data up or simply ack
+		if (frame->reply_size == 8) 
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+		else if (frame->reply_size > 8)
+			parent_frame->setReplyIfHigher(Frame::ReplyAckData);
+		else 
+			throw misc::Panic("Invalid reply size");
+
+		// Unlock directory entry
+		target_directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		target_module->incDataAccesses();
+
+		// Continue with 'write-request-reply' after data latency
+		esim_engine->Next(event_type_write_request_reply,
+				target_module->getDataLatency());
+		return;
 	}
 
 	// Event "write_request_downup"
@@ -1663,13 +1925,100 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	// Event "write_request_reply"
 	if (event_type == event_type_write_request_reply)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request reply\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_reply\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Sanity
+		assert(frame->reply_size);
+		assert(module->getLowModuleServingAddress(frame->getAddress()) == target_module ||
+				target_module->getLowModuleServingAddress(frame->getAddress()) == module);
+
+		// Get network and nodes
+		net::Network *network;
+		net::EndNode *source_node;
+		net::EndNode *destination_node;
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
+		{
+			network = module->getLowNetwork();
+			source_node = target_module->getHighNetworkNode();
+			destination_node = module->getLowNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			source_node = target_module->getLowNetworkNode();
+			destination_node = module->getHighNetworkNode();
+		}
+
+		// Send message
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				frame->reply_size,
+				event_type_write_request_finish,
+				event_type);
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "write_request_finish"
 	if (event_type == event_type_write_request_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Receive message
+		net::Network *network;
+		net::Node *node;
+		if (frame->request_direction == Frame::RequestDirectionDownUp)
+		{
+			network = module->getLowNetwork();
+			node = module->getLowNetworkNode();
+		}
+		else
+		{
+			network = module->getHighNetwork();
+			node = module->getHighNetworkNode();
+		}
+		network->Receive(node, frame->message);
+		
+		// If the write request was generated from a store, we can
+		// be sure that it will complete at this point and so can
+		// increment the witness pointer to allow processing to 
+		// continue while assuring consistency.
+		if (frame->request_direction == Frame::RequestDirectionUpDown
+				&& frame->witness)
+			(*frame->witness)++;
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
@@ -2294,7 +2643,7 @@ void System::EventInvalidateHandler(esim::EventType *event_type,
 			unsigned directory_entry_tag = frame->tag +
 					z * module->getSubBlockSize();
 			assert(directory_entry_tag < frame->tag +
-					(unsigned) module->getSubBlockSize());
+					(unsigned) module->getBlockSize());
 			Directory::Entry *directory_entry = directory->getEntry(
 					frame->set, frame->way, z);
 			for (int i = 0; i < directory->getNumNodes(); i++)

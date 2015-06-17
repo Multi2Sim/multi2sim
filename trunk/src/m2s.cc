@@ -565,7 +565,6 @@ int MainProgram(int argc, char **argv)
 int main(int argc, char **argv)
 {
 	// Main exception handler
-
 	try
 	{
 		// Run main program
@@ -577,7 +576,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/*
+/*
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =
@@ -820,8 +819,7 @@ int main(int argc, char **argv)
 		mem::System::debug.setPath("stdout");
 		net::System::debug.setPath("stdout");
 		esim::Engine *esim_engine = esim::Engine::getInstance();
-		while (witness < 0)
-			esim_engine->ProcessEvents();
+		esim_engine->ProcessAllEvents();
 	
 
 #define EXPECT_EQ(a, b) assert((a) == (b));
