@@ -93,8 +93,7 @@ void Channel::CallScheduler(int after)
 }
 
 
-void Channel::SchedulerHandler(esim::Event *type,
-		esim::EventFrame *frame)
+void Channel::SchedulerHandler(esim::Event *type, esim::Frame *frame)
 {
 	// Get the channel pointer out of the frame.
 	SchedulerFrame *scheduler_frame = dynamic_cast<SchedulerFrame *>(frame);

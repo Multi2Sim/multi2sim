@@ -123,12 +123,10 @@ class System
 	//
 
 	// Network event handlers
-	static void EventTypeSendHandler(esim::Event *, esim::EventFrame *);
-	static void EventTypeOutputBufferHandler(esim::Event *, 
-			esim::EventFrame *);
-	static void EventTypeInputBufferHandler(esim::Event *, 
-			esim::EventFrame *);
-	static void EventTypeReceiveHandler(esim::Event *, esim::EventFrame *);
+	static void EventTypeSendHandler(esim::Event *, esim::Frame *);
+	static void EventTypeOutputBufferHandler(esim::Event *, esim::Frame *);
+	static void EventTypeInputBufferHandler(esim::Event *, esim::Frame *);
+	static void EventTypeReceiveHandler(esim::Event *, esim::Frame *);
 
 public:
 

@@ -231,8 +231,7 @@ void Controller::CallRequestProcessor()
 }
 
 
-void Controller::RequestProcessorHandler(esim::Event *type,
-		esim::EventFrame *frame)
+void Controller::RequestProcessorHandler(esim::Event *type, esim::Frame *frame)
 {
 	// Get the controller pointer out of the frame.
 	RequestProcessorFrame *request_frame =
@@ -271,8 +270,7 @@ void Controller::RunRequestProcessor()
 }
 
 
-void Controller::CommandReturnHandler(esim::Event *type,
-		esim::EventFrame *frame)
+void Controller::CommandReturnHandler(esim::Event *type, esim::Frame *frame)
 {
 	// Get the command pointer out of the frame.
 	CommandReturnFrame *command_frame =

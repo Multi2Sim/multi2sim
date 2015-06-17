@@ -25,7 +25,7 @@
 namespace net
 {
 
-class Frame : public esim::EventFrame
+class Frame : public esim::Frame
 {
 	// Packet
 	Packet *packet;

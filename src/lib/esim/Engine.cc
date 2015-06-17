@@ -299,21 +299,21 @@ Event *Engine::RegisterEvent(const std::string &name,
 	
 	
 void Engine::Schedule(Event *event,
-		std::shared_ptr<EventFrame> event_frame,
+		std::shared_ptr<Frame> frame,
 		int after,
 		int period)
 {
 	// Sanity
 	assert(after >= 0);
-	assert(event_frame != nullptr);
+	assert(frame != nullptr);
 
 	// Frame must not be suspended in a queue
-	if (event_frame->in_queue)
+	if (frame->in_queue)
 		throw misc::Panic("Cannot schedule an event in an event chain "
 				"that is currently suspended in a queue");
 
 	// Frame must not be enqueued in the heap
-	if (event_frame->in_heap)
+	if (frame->in_heap)
 		throw misc::Panic("Cannot schedule a second event for this "
 				"event queue before the first event occurs. Do "
 				"you have two consecutive calls to Next() or "
@@ -343,17 +343,17 @@ void Engine::Schedule(Event *event,
 	// Calculate absolute time for the event based on the event's frequency
 	// domain. First, get the actual current time for the current frequency
 	// domain, then add the time after which the event should be scheduled.
-	event_frame->time = current_time / frequency_domain->getCycleTime() *
+	frame->time = current_time / frequency_domain->getCycleTime() *
 			frequency_domain->getCycleTime() +
 			frequency_domain->getCycleTime() * after;
 
 	// Set event and period
-	event_frame->event = event;
-	event_frame->period = period;
+	frame->event = event;
+	frame->period = period;
 
 	// Insert frame into the heap
-	heap.emplace(event_frame);
-	event_frame->in_heap = true;
+	heap.emplace(frame);
+	frame->in_heap = true;
 
 	// Increment the number of in-flight events of this type.
 	event->incInFlight();
@@ -363,7 +363,7 @@ void Engine::Schedule(Event *event,
 			(double) current_time / 1000,
 			frequency_domain->getName().c_str(),
 			event->getName().c_str(),
-			(double) event_frame->time / 1000);
+			(double) frame->time / 1000);
 
 	// Warn when heap is overloaded
 	if (!max_inflight_events_warning && (int) heap.size() >=
@@ -384,12 +384,12 @@ void Engine::Next(Event *event,
 {
 	// Use current event's frame if this function is invoked within an
 	// event handler, or create new frame otherwise.
-	std::shared_ptr<EventFrame> event_frame = current_frame;
-	if (!event_frame)
-		event_frame = misc::new_shared<EventFrame>();
+	std::shared_ptr<Frame> frame = current_frame;
+	if (!frame)
+		frame = misc::new_shared<Frame>();
 
 	// Schedule event
-	Schedule(event, event_frame, after, period);
+	Schedule(event, frame, after, period);
 }
 
 
@@ -400,11 +400,11 @@ void Engine::Execute(Event *event)
 		return;
 
 	// Save old current frame
-	std::shared_ptr<EventFrame> old_current_frame = current_frame;
+	std::shared_ptr<Frame> old_current_frame = current_frame;
 
 	// Create new frame if none exists
 	if (!current_frame)
-		current_frame = misc::new_shared<EventFrame>();
+		current_frame = misc::new_shared<Frame>();
 
 	// Execute event handler
 	EventHandler event_handler = event->getEventHandler();
@@ -416,21 +416,21 @@ void Engine::Execute(Event *event)
 
 
 void Engine::Call(Event *event,
-		std::shared_ptr<EventFrame> event_frame,
+		std::shared_ptr<Frame> frame,
 		Event *return_event,
 		int after,
 		int period)
 {
 	// Create new frame if none passed
-	if (event_frame == nullptr)
-		event_frame = misc::new_shared<EventFrame>();
+	if (frame == nullptr)
+		frame = misc::new_shared<Frame>();
 
 	// Set return event and frame
-	event_frame->return_event = return_event;
-	event_frame->parent_frame = current_frame;
+	frame->return_event = return_event;
+	frame->parent_frame = current_frame;
 
 	// Schedule event
-	Schedule(event, event_frame, after, period);
+	Schedule(event, frame, after, period);
 }
 
 
@@ -459,7 +459,7 @@ void Engine::EndEvent(Event *event)
 		return;
 	
 	// Create frame
-	auto frame = misc::new_shared<EventFrame>();
+	auto frame = misc::new_shared<Frame>();
 	frame->event = event;
 
 	// Add event to queue of end events

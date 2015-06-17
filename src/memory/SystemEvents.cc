@@ -111,12 +111,11 @@ esim::Event *System::event_local_find_and_lock_action;
 esim::Event *System::event_local_find_and_lock_finish;
 
 
-void System::EventLoadHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 {
 	// Get engine, frame, and module
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Module *module = frame->getModule();
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
@@ -379,11 +378,11 @@ void System::EventLoadHandler(esim::Event *event,
 
 
 void System::EventStoreHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Module *module = frame->getModule();
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
@@ -617,7 +616,7 @@ void System::EventStoreHandler(esim::Event *event,
 
 
 void System::EventNCStoreHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "nc_store"
 	if (event == event_nc_store)
@@ -667,11 +666,11 @@ void System::EventNCStoreHandler(esim::Event *event,
 
 
 void System::EventFindAndLockHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Cache *cache = module->getCache();
@@ -1028,11 +1027,11 @@ void System::EventFindAndLockHandler(esim::Event *event,
 
 
 void System::EventEvictHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Engine, frame, module
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
@@ -1543,11 +1542,11 @@ void System::EventEvictHandler(esim::Event *event,
 
 
 void System::EventWriteRequestHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
@@ -2027,11 +2026,11 @@ void System::EventWriteRequestHandler(esim::Event *event,
 
 
 void System::EventReadRequestHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Get useful objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
@@ -2601,11 +2600,11 @@ void System::EventReadRequestHandler(esim::Event *event,
 
 
 void System::EventInvalidateHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Objects
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	Frame *frame = misc::cast<Frame *>(event_frame);
+	Frame *frame = misc::cast<Frame *>(esim_frame);
 	Module *module = frame->getModule();
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
@@ -2733,7 +2732,7 @@ void System::EventInvalidateHandler(esim::Event *event,
 
 
 void System::EventMessageHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "message"
 	if (event == event_message)
@@ -2771,7 +2770,7 @@ void System::EventMessageHandler(esim::Event *event,
 
 
 void System::EventFlushHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "flush"
 	if (event == event_flush)
@@ -2791,7 +2790,7 @@ void System::EventFlushHandler(esim::Event *event,
 
 
 void System::EventLocalLoadHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "local_load"
 	if (event == event_local_load)
@@ -2817,7 +2816,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 
 
 void System::EventLocalStoreHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "local_store"
 	if (event == event_local_store)
@@ -2843,7 +2842,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 
 
 void System::EventLocalFindAndLockHandler(esim::Event *event,
-		esim::EventFrame *event_frame)
+		esim::Frame *esim_frame)
 {
 	// Event "local_find_and_lock"
 	if (event == event_local_find_and_lock)
