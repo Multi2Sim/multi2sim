@@ -147,7 +147,7 @@ long long Module::Access(AccessType access_type,
 	frame->witness = witness;
 
 	// Select initial event type
-	esim::EventType *event_type;
+	esim::Event *event;
 	switch (type)
 	{
 
@@ -159,17 +159,17 @@ long long Module::Access(AccessType access_type,
 
 		case AccessLoad:
 
-			event_type = System::event_type_load;
+			event = System::event_load;
 			break;
 
 		case AccessStore:
 
-			event_type = System::event_type_store;
+			event = System::event_store;
 			break;
 
 		case AccessNCStore:
 
-			event_type = System::event_type_nc_store;
+			event = System::event_nc_store;
 			break;
 
 		default:
@@ -185,12 +185,12 @@ long long Module::Access(AccessType access_type,
 
 		case AccessLoad:
 
-			event_type = System::event_type_local_load;
+			event = System::event_local_load;
 			break;
 
 		case AccessStore:
 
-			event_type = System::event_type_local_store;
+			event = System::event_local_store;
 			break;
 
 		default:
@@ -206,7 +206,7 @@ long long Module::Access(AccessType access_type,
 
 	// Schedule event
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	esim_engine->Call(event_type, frame);
+	esim_engine->Call(event, frame);
 
 	// Return frame ID
 	return frame->getId();
@@ -474,7 +474,7 @@ void Module::Coalesce(Frame *master_frame, Frame *frame)
 }
 
 
-void Module::LockPort(Frame *frame, esim::EventType *event_type)
+void Module::LockPort(Frame *frame, esim::Event *event)
 {
 	// No free port
 	if (num_locked_ports >= num_ports)
@@ -485,7 +485,7 @@ void Module::LockPort(Frame *frame, esim::EventType *event_type)
 		// If the request to lock the port is down-up, give it priority
 		// since it is possibly holding up a large portion of the memory
 		// hierarchy.
-		port_queue.Wait(event_type, frame->request_direction ==
+		port_queue.Wait(event, frame->request_direction ==
 				Frame::RequestDirectionDownUp);
 		return;
 	}
@@ -515,7 +515,7 @@ void Module::LockPort(Frame *frame, esim::EventType *event_type)
 			port_index);
 
 	// Schedule event
-	esim_engine->Next(event_type);
+	esim_engine->Next(event);
 }
 
 

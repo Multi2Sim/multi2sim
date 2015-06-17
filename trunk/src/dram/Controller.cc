@@ -44,7 +44,7 @@ misc::StringMap PagePolicyTypeMap
 	{ "Closed", PagePolicyClosed }
 };
 
-std::map<int, esim::EventType *> Controller::REQUEST_PROCESSORS;
+std::map<int, esim::Event *> Controller::REQUEST_PROCESSORS;
 
 
 Controller::Controller(int id)
@@ -185,9 +185,9 @@ void Controller::CreateRequestProcessor(int controller)
 {
 	esim::Engine *esim = esim::Engine::getInstance();
 
-	// Create a new EventType for this controller's request processor
+	// Create a new Event for this controller's request processor
 	// and store it in the map.
-	REQUEST_PROCESSORS[controller] = esim->RegisterEventType(
+	REQUEST_PROCESSORS[controller] = esim->RegisterEvent(
 			misc::fmt("%d_REQUEST_PROCESSOR", controller),
 			Controller::RequestProcessorHandler,
 			System::DRAM_DOMAIN);
@@ -198,10 +198,10 @@ void Controller::CreateSchedulers(int num_channels)
 {
 	esim::Engine *esim = esim::Engine::getInstance();
 
-	// Create a new EventType for each channel's scheduler for this
+	// Create a new Event for each channel's scheduler for this
 	// controller and store them in the map.
 	for (int i = 0; i < num_channels; i++)
-		SCHEDULERS[i] = esim->RegisterEventType(
+		SCHEDULERS[i] = esim->RegisterEvent(
 				misc::fmt("%d_%d_SCHEDULER", id, i),
 				Channel::SchedulerHandler,
 				System::DRAM_DOMAIN);
@@ -214,7 +214,7 @@ void Controller::CallRequestProcessor()
 	esim::Engine *esim = esim::Engine::getInstance();
 
 	// Get the request processor event for this controller.
-	esim::EventType *request_processor = getRequestProcessor(id);
+	esim::Event *request_processor = getRequestProcessor(id);
 
 	// Check that the event isn't already scheduled.
 	if (request_processor->isInFlight())
@@ -231,7 +231,7 @@ void Controller::CallRequestProcessor()
 }
 
 
-void Controller::RequestProcessorHandler(esim::EventType *type,
+void Controller::RequestProcessorHandler(esim::Event *type,
 		esim::EventFrame *frame)
 {
 	// Get the controller pointer out of the frame.
@@ -271,7 +271,7 @@ void Controller::RunRequestProcessor()
 }
 
 
-void Controller::CommandReturnHandler(esim::EventType *type,
+void Controller::CommandReturnHandler(esim::Event *type,
 		esim::EventFrame *frame)
 {
 	// Get the command pointer out of the frame.

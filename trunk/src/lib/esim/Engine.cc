@@ -57,7 +57,7 @@ Engine::Engine() : timer("esim::Timer")
 	timer.Start();
 
 	// Create null event
-	null_event_type = RegisterEventType("Null event", nullptr, nullptr);
+	null_event = RegisterEvent("Null event", nullptr, nullptr);
 
 	// Debug
 	debug << "Event-driven simulation engine initialized\n";
@@ -107,12 +107,12 @@ bool Engine::Drain(int max_events)
 		current_frame->in_heap = false;
 
 		// Debug
-		EventType *event_type = current_frame->event_type;
-		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+		Event *event = current_frame->event;
+		FrequencyDomain *frequency_domain = event->getFrequencyDomain();
 		debug << misc::fmt("[%.2fns] Event '%s/%s' drained\n",
 				(double) current_time / 1000,
 				frequency_domain->getName().c_str(),
-				event_type->getName().c_str());
+				event->getName().c_str());
 
 		// Set current time to the time of the event
 		current_time = current_frame->time;
@@ -121,8 +121,8 @@ bool Engine::Drain(int max_events)
 		num_events++;
 
 		// Run event handler
-		EventHandler event_handler = event_type->getEventHandler();
-		event_handler(event_type, current_frame.get());
+		EventHandler event_handler = event->getEventHandler();
+		event_handler(event, current_frame.get());
 
 		// Free frame
 		current_frame = nullptr;
@@ -150,14 +150,14 @@ void Engine::ProcessEndEvents()
 		end_frames.pop();
 
 		// Debug
-		EventType *event_type = current_frame->event_type;
+		Event *event = current_frame->event;
 		debug << misc::fmt("[%.2fns] End event '%s' triggered\n",
 				(double) current_time / 1000,
-				event_type->getName().c_str());
+				event->getName().c_str());
 
 		// Run event handler with null frame
-		EventHandler event_handler = event_type->getEventHandler();
-		event_handler(event_type, current_frame.get());
+		EventHandler event_handler = event->getEventHandler();
+		event_handler(event, current_frame.get());
 
 		// Free frame
 		current_frame = nullptr;
@@ -226,25 +226,25 @@ void Engine::ProcessEvents()
 		current_frame->in_heap = false;
 
 		// Debug
-		EventType *event_type = current_frame->event_type;
-		FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+		Event *event = current_frame->event;
+		FrequencyDomain *frequency_domain = event->getFrequencyDomain();
 		debug << misc::fmt("[%.2fns] Event '%s/%s' triggered\n",
 				(double) current_time / 1000,
 				frequency_domain->getName().c_str(),
-				event_type->getName().c_str());
+				event->getName().c_str());
 
 		// The event is being run, so decrement the number of in-flight
 		// events of its type.
-		event_type->decInFlight();
+		event->decInFlight();
 
 		// Run event handler
-		EventHandler event_handler = event_type->getEventHandler();
-		event_handler(event_type, current_frame.get());
+		EventHandler event_handler = event->getEventHandler();
+		event_handler(event, current_frame.get());
 
 		// Reschedule if it is periodic
 		int period = current_frame->period;
 		if (period > 0)
-			Schedule(event_type, current_frame, period, period);
+			Schedule(event, current_frame, period, period);
 
 		// Free frame
 		current_frame = nullptr;
@@ -289,16 +289,16 @@ void Engine::UpdateFastestFrequency()
 }
 
 
-EventType *Engine::RegisterEventType(const std::string &name,
+Event *Engine::RegisterEvent(const std::string &name,
 		EventHandler handler,
 		FrequencyDomain *frequency_domain)
 {
-	event_types.emplace_back(name, handler, frequency_domain);
-	return &event_types.back();
+	events.emplace_back(name, handler, frequency_domain);
+	return &events.back();
 }
 	
 	
-void Engine::Schedule(EventType *event_type,
+void Engine::Schedule(Event *event,
 		std::shared_ptr<EventFrame> event_frame,
 		int after,
 		int period)
@@ -324,7 +324,7 @@ void Engine::Schedule(EventType *event_type,
 		return;
 
 	// Null event
-	if (event_type == nullptr || event_type == null_event_type)
+	if (event == nullptr || event == null_event)
 	{
 		debug << misc::fmt("[%.2fns] Null event discarded\n",
 				(double) current_time / 1000);
@@ -333,12 +333,12 @@ void Engine::Schedule(EventType *event_type,
 
 	// Get frequency domain. All events scheduled here must belong to a
 	// valid frequency domain.
-	FrequencyDomain *frequency_domain = event_type->getFrequencyDomain();
+	FrequencyDomain *frequency_domain = event->getFrequencyDomain();
 	if (!frequency_domain)
 		throw misc::Panic(misc::fmt("Event '%s' has been "
 				"scheduled, but it does not belong to a "
 				"valid frequency domain",
-				event_type->getName().c_str()));
+				event->getName().c_str()));
 
 	// Calculate absolute time for the event based on the event's frequency
 	// domain. First, get the actual current time for the current frequency
@@ -348,7 +348,7 @@ void Engine::Schedule(EventType *event_type,
 			frequency_domain->getCycleTime() * after;
 
 	// Set event and period
-	event_frame->event_type = event_type;
+	event_frame->event = event;
 	event_frame->period = period;
 
 	// Insert frame into the heap
@@ -356,13 +356,13 @@ void Engine::Schedule(EventType *event_type,
 	event_frame->in_heap = true;
 
 	// Increment the number of in-flight events of this type.
-	event_type->incInFlight();
+	event->incInFlight();
 
 	// Debug
 	debug << misc::fmt("[%.2fns] Event '%s/%s' scheduled for [%.2fns]\n",
 			(double) current_time / 1000,
 			frequency_domain->getName().c_str(),
-			event_type->getName().c_str(),
+			event->getName().c_str(),
 			(double) event_frame->time / 1000);
 
 	// Warn when heap is overloaded
@@ -378,7 +378,7 @@ void Engine::Schedule(EventType *event_type,
 }
 
 
-void Engine::Next(EventType *event_type,
+void Engine::Next(Event *event,
 		int after,
 		int period)
 {
@@ -389,14 +389,14 @@ void Engine::Next(EventType *event_type,
 		event_frame = misc::new_shared<EventFrame>();
 
 	// Schedule event
-	Schedule(event_type, event_frame, after, period);
+	Schedule(event, event_frame, after, period);
 }
 
 
-void Engine::Execute(EventType *event_type)
+void Engine::Execute(Event *event)
 {
 	// Null event
-	if (event_type == nullptr || event_type == null_event_type)
+	if (event == nullptr || event == null_event)
 		return;
 
 	// Save old current frame
@@ -407,17 +407,17 @@ void Engine::Execute(EventType *event_type)
 		current_frame = misc::new_shared<EventFrame>();
 
 	// Execute event handler
-	EventHandler event_handler = event_type->getEventHandler();
-	event_handler(event_type, current_frame.get());
+	EventHandler event_handler = event->getEventHandler();
+	event_handler(event, current_frame.get());
 
 	// Restore previous current frame
 	current_frame = old_current_frame;
 }
 
 
-void Engine::Call(EventType *event_type,
+void Engine::Call(Event *event,
 		std::shared_ptr<EventFrame> event_frame,
-		EventType *return_event_type,
+		Event *return_event,
 		int after,
 		int period)
 {
@@ -426,11 +426,11 @@ void Engine::Call(EventType *event_type,
 		event_frame = misc::new_shared<EventFrame>();
 
 	// Set return event and frame
-	event_frame->return_event_type = return_event_type;
+	event_frame->return_event = return_event;
 	event_frame->parent_frame = current_frame;
 
 	// Schedule event
-	Schedule(event_type, event_frame, after, period);
+	Schedule(event, event_frame, after, period);
 }
 
 
@@ -442,25 +442,25 @@ void Engine::Return(int after)
 				"an event handler");
 
 	// If this is the bottom of the stack, ignore
-	if (current_frame->return_event_type == nullptr)
+	if (current_frame->return_event == nullptr)
 		return;
 
 	// Schedule return event
-	Schedule(current_frame->return_event_type,
+	Schedule(current_frame->return_event,
 			current_frame->parent_frame,
 			after);
 }
 
 
-void Engine::EndEvent(EventType *event_type)
+void Engine::EndEvent(Event *event)
 {
 	// Discard null event
-	if (event_type == nullptr || event_type == null_event_type)
+	if (event == nullptr || event == null_event)
 		return;
 	
 	// Create frame
 	auto frame = misc::new_shared<EventFrame>();
-	frame->event_type = event_type;
+	frame->event = event;
 
 	// Add event to queue of end events
 	end_frames.emplace(frame);

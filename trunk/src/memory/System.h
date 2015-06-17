@@ -208,19 +208,19 @@ class System
 	// are defined in SystemCoherenceProtocol.cc.
 	//
 
-	static void EventLoadHandler(esim::EventType *, esim::EventFrame *);
-	static void EventStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void EventNCStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void EventFindAndLockHandler(esim::EventType *, esim::EventFrame *);
-	static void EventEvictHandler(esim::EventType *, esim::EventFrame *);
-	static void EventWriteRequestHandler(esim::EventType *, esim::EventFrame *);
-	static void EventReadRequestHandler(esim::EventType *, esim::EventFrame *);
-	static void EventInvalidateHandler(esim::EventType *, esim::EventFrame *);
-	static void EventMessageHandler(esim::EventType *, esim::EventFrame *);
-	static void EventFlushHandler(esim::EventType *, esim::EventFrame *);
-	static void EventLocalLoadHandler(esim::EventType *, esim::EventFrame *);
-	static void EventLocalStoreHandler(esim::EventType *, esim::EventFrame *);
-	static void EventLocalFindAndLockHandler(esim::EventType *, esim::EventFrame *);
+	static void EventLoadHandler(esim::Event *, esim::EventFrame *);
+	static void EventStoreHandler(esim::Event *, esim::EventFrame *);
+	static void EventNCStoreHandler(esim::Event *, esim::EventFrame *);
+	static void EventFindAndLockHandler(esim::Event *, esim::EventFrame *);
+	static void EventEvictHandler(esim::Event *, esim::EventFrame *);
+	static void EventWriteRequestHandler(esim::Event *, esim::EventFrame *);
+	static void EventReadRequestHandler(esim::Event *, esim::EventFrame *);
+	static void EventInvalidateHandler(esim::Event *, esim::EventFrame *);
+	static void EventMessageHandler(esim::Event *, esim::EventFrame *);
+	static void EventFlushHandler(esim::Event *, esim::EventFrame *);
+	static void EventLocalLoadHandler(esim::Event *, esim::EventFrame *);
+	static void EventLocalStoreHandler(esim::Event *, esim::EventFrame *);
+	static void EventLocalFindAndLockHandler(esim::Event *, esim::EventFrame *);
 
 
 	// List of networks
@@ -282,89 +282,89 @@ public:
 	// Event-driven simulation
 	//
 
-	static esim::EventType *event_type_load;
-	static esim::EventType *event_type_load_lock;
-	static esim::EventType *event_type_load_action;
-	static esim::EventType *event_type_load_miss;
-	static esim::EventType *event_type_load_unlock;
-	static esim::EventType *event_type_load_finish;
+	static esim::Event *event_load;
+	static esim::Event *event_load_lock;
+	static esim::Event *event_load_action;
+	static esim::Event *event_load_miss;
+	static esim::Event *event_load_unlock;
+	static esim::Event *event_load_finish;
 
-	static esim::EventType *event_type_store;
-	static esim::EventType *event_type_store_lock;
-	static esim::EventType *event_type_store_action;
-	static esim::EventType *event_type_store_unlock;
-	static esim::EventType *event_type_store_finish;
+	static esim::Event *event_store;
+	static esim::Event *event_store_lock;
+	static esim::Event *event_store_action;
+	static esim::Event *event_store_unlock;
+	static esim::Event *event_store_finish;
 
-	static esim::EventType *event_type_nc_store;
-	static esim::EventType *event_type_nc_store_lock;
-	static esim::EventType *event_type_nc_store_writeback;
-	static esim::EventType *event_type_nc_store_action;
-	static esim::EventType *event_type_nc_store_miss;
-	static esim::EventType *event_type_nc_store_unlock;
-	static esim::EventType *event_type_nc_store_finish;
+	static esim::Event *event_nc_store;
+	static esim::Event *event_nc_store_lock;
+	static esim::Event *event_nc_store_writeback;
+	static esim::Event *event_nc_store_action;
+	static esim::Event *event_nc_store_miss;
+	static esim::Event *event_nc_store_unlock;
+	static esim::Event *event_nc_store_finish;
 
-	static esim::EventType *event_type_find_and_lock;
-	static esim::EventType *event_type_find_and_lock_port;
-	static esim::EventType *event_type_find_and_lock_action;
-	static esim::EventType *event_type_find_and_lock_finish;
+	static esim::Event *event_find_and_lock;
+	static esim::Event *event_find_and_lock_port;
+	static esim::Event *event_find_and_lock_action;
+	static esim::Event *event_find_and_lock_finish;
 
-	static esim::EventType *event_type_evict;
-	static esim::EventType *event_type_evict_invalid;
-	static esim::EventType *event_type_evict_action;
-	static esim::EventType *event_type_evict_receive;
-	static esim::EventType *event_type_evict_process;
-	static esim::EventType *event_type_evict_process_noncoherent;
-	static esim::EventType *event_type_evict_reply;
-	static esim::EventType *event_type_evict_reply_receive;
-	static esim::EventType *event_type_evict_finish;
+	static esim::Event *event_evict;
+	static esim::Event *event_evict_invalid;
+	static esim::Event *event_evict_action;
+	static esim::Event *event_evict_receive;
+	static esim::Event *event_evict_process;
+	static esim::Event *event_evict_process_noncoherent;
+	static esim::Event *event_evict_reply;
+	static esim::Event *event_evict_reply_receive;
+	static esim::Event *event_evict_finish;
 
-	static esim::EventType *event_type_write_request;
-	static esim::EventType *event_type_write_request_receive;
-	static esim::EventType *event_type_write_request_action;
-	static esim::EventType *event_type_write_request_exclusive;
-	static esim::EventType *event_type_write_request_updown;
-	static esim::EventType *event_type_write_request_updown_finish;
-	static esim::EventType *event_type_write_request_downup;
-	static esim::EventType *event_type_write_request_downup_finish;
-	static esim::EventType *event_type_write_request_reply;
-	static esim::EventType *event_type_write_request_finish;
+	static esim::Event *event_write_request;
+	static esim::Event *event_write_request_receive;
+	static esim::Event *event_write_request_action;
+	static esim::Event *event_write_request_exclusive;
+	static esim::Event *event_write_request_updown;
+	static esim::Event *event_write_request_updown_finish;
+	static esim::Event *event_write_request_downup;
+	static esim::Event *event_write_request_downup_finish;
+	static esim::Event *event_write_request_reply;
+	static esim::Event *event_write_request_finish;
 
-	static esim::EventType *event_type_read_request;
-	static esim::EventType *event_type_read_request_receive;
-	static esim::EventType *event_type_read_request_action;
-	static esim::EventType *event_type_read_request_updown;
-	static esim::EventType *event_type_read_request_updown_miss;
-	static esim::EventType *event_type_read_request_updown_finish;
-	static esim::EventType *event_type_read_request_downup;
-	static esim::EventType *event_type_read_request_downup_wait_for_reqs;
-	static esim::EventType *event_type_read_request_downup_finish;
-	static esim::EventType *event_type_read_request_reply;
-	static esim::EventType *event_type_read_request_finish;
+	static esim::Event *event_read_request;
+	static esim::Event *event_read_request_receive;
+	static esim::Event *event_read_request_action;
+	static esim::Event *event_read_request_updown;
+	static esim::Event *event_read_request_updown_miss;
+	static esim::Event *event_read_request_updown_finish;
+	static esim::Event *event_read_request_downup;
+	static esim::Event *event_read_request_downup_wait_for_reqs;
+	static esim::Event *event_read_request_downup_finish;
+	static esim::Event *event_read_request_reply;
+	static esim::Event *event_read_request_finish;
 
-	static esim::EventType *event_type_invalidate;
-	static esim::EventType *event_type_invalidate_finish;
+	static esim::Event *event_invalidate;
+	static esim::Event *event_invalidate_finish;
 
-	static esim::EventType *event_type_message;
-	static esim::EventType *event_type_message_receive;
-	static esim::EventType *event_type_message_action;
-	static esim::EventType *event_type_message_reply;
-	static esim::EventType *event_type_message_finish;
+	static esim::Event *event_message;
+	static esim::Event *event_message_receive;
+	static esim::Event *event_message_action;
+	static esim::Event *event_message_reply;
+	static esim::Event *event_message_finish;
 
-	static esim::EventType *event_type_flush;
-	static esim::EventType *event_type_flush_finish;
+	static esim::Event *event_flush;
+	static esim::Event *event_flush_finish;
 	
-	static esim::EventType *event_type_local_load;
-	static esim::EventType *event_type_local_load_lock;
-	static esim::EventType *event_type_local_load_finish;
+	static esim::Event *event_local_load;
+	static esim::Event *event_local_load_lock;
+	static esim::Event *event_local_load_finish;
 
-	static esim::EventType *event_type_local_store;
-	static esim::EventType *event_type_local_store_lock;
-	static esim::EventType *event_type_local_store_finish;
+	static esim::Event *event_local_store;
+	static esim::Event *event_local_store_lock;
+	static esim::Event *event_local_store_finish;
 
-	static esim::EventType *event_type_local_find_and_lock;
-	static esim::EventType *event_type_local_find_and_lock_port;
-	static esim::EventType *event_type_local_find_and_lock_action;
-	static esim::EventType *event_type_local_find_and_lock_finish;
+	static esim::Event *event_local_find_and_lock;
+	static esim::Event *event_local_find_and_lock_port;
+	static esim::Event *event_local_find_and_lock_action;
+	static esim::Event *event_local_find_and_lock_finish;
 
 
 

@@ -55,7 +55,7 @@ public:
 	/// Suspend the current event chain in the queue. This function should
 	/// only be invoked in the body of an event handler.
 	///
-	/// \param event_type
+	/// \param event
 	///	Type of event to schedule when the queue receives a wakeup
 	///	signal. This event will be scheduled using the current event
 	///	frame. The event type cannot be `nullptr`.
@@ -66,7 +66,7 @@ public:
 	///	in the next call to WakeupOne() or WakeupAll(). Otherwise,
 	///	suspend at the tail - this is the default behavior.
 	///
-	void Wait(EventType *event_type, bool priority = false);
+	void Wait(Event *event, bool priority = false);
 
 	/// Wake the least recently suspended event frame, scheduling the wakeup
 	/// event for the current cycle. The queue must have at least one

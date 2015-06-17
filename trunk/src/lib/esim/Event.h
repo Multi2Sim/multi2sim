@@ -28,19 +28,19 @@ namespace esim
 {
 
 // Forward declarations
-class EventType;
+class Event;
 class EventFrame;
 class FrequencyDomain;
 
 
 /// Event handler function prototype
-typedef void (*EventHandler)(EventType *, EventFrame *);
+typedef void (*EventHandler)(Event *, EventFrame *);
 
 
 /// Event type used for event registrations. This class should not be
 /// instantiated directly by the user. The user should call
-/// Engine::RegisterEventType instead.
-class EventType
+/// Engine::RegisterEvent instead.
+class Event
 {
 	// Name of the event
 	std::string name;
@@ -57,7 +57,7 @@ class EventType
 public:
 
 	/// Constructor
-	EventType(const std::string &name,
+	Event(const std::string &name,
 			EventHandler handler,
 			FrequencyDomain *frequency_domain = nullptr)
 			:

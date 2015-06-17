@@ -665,7 +665,7 @@ public:
 	// Lock a port, and schedule event when done. If there is no free port,
 	// the access is enqueued in the port waiting list, and it will retry
 	// once a port becomes available with a call to UnlockPort().
-	void LockPort(Frame *frame, esim::EventType *event_type);
+	void LockPort(Frame *frame, esim::Event *event);
 
 	// Unlock the given port, currently locked by the given frame. If there
 	// is any access waiting in the port queue to lock it, the port will

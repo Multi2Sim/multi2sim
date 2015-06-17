@@ -75,7 +75,7 @@ void Channel::CallScheduler(int after)
 	esim::Engine *esim = esim::Engine::getInstance();
 
 	// Get the scheduler event for this channel.
-	esim::EventType *scheduler = controller->getScheduler(id);
+	esim::Event *scheduler = controller->getScheduler(id);
 
 	// Check that the event isn't already scheduled.
 	if (scheduler->isInFlight())
@@ -93,7 +93,7 @@ void Channel::CallScheduler(int after)
 }
 
 
-void Channel::SchedulerHandler(esim::EventType *type,
+void Channel::SchedulerHandler(esim::Event *type,
 		esim::EventFrame *frame)
 {
 	// Get the channel pointer out of the frame.
