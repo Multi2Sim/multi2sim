@@ -30,13 +30,13 @@
 namespace net
 {
 
-esim::EventType *System::event_type_send;
-esim::EventType *System::event_type_output_buffer;
-esim::EventType *System::event_type_input_buffer;
-esim::EventType *System::event_type_receive;
+esim::Event *System::event_send;
+esim::Event *System::event_output_buffer;
+esim::Event *System::event_input_buffer;
+esim::Event *System::event_receive;
 
 
-void System::EventTypeSendHandler(esim::EventType *type, 
+void System::EventTypeSendHandler(esim::Event *type, 
 		esim::EventFrame *frame)
 {
 	// Useful objects
@@ -80,11 +80,11 @@ void System::EventTypeSendHandler(esim::EventType *type,
 	packet->setBusy(cycle);
 
 	// Schedule next event
-	esim_engine->Next(event_type_output_buffer, 1);
+	esim_engine->Next(event_output_buffer, 1);
 }
 	
 
-void System::EventTypeOutputBufferHandler(esim::EventType *type, 
+void System::EventTypeOutputBufferHandler(esim::Event *type, 
 		esim::EventFrame *frame)
 {
 	// Cast event frame type
@@ -100,7 +100,7 @@ void System::EventTypeOutputBufferHandler(esim::EventType *type,
 }
 
 
-void System::EventTypeInputBufferHandler(esim::EventType *type, 
+void System::EventTypeInputBufferHandler(esim::Event *type, 
 		esim::EventFrame *frame)
 {
 	// Get esim engine
@@ -124,7 +124,7 @@ void System::EventTypeInputBufferHandler(esim::EventType *type,
 	// If this is the destination node, schedule receive event
 	if (node == packet->getMessage()->getDestinationNode())
 	{
-		esim_engine->Next(event_type_receive);
+		esim_engine->Next(event_receive);
 		return;
 	}
 
@@ -138,7 +138,7 @@ void System::EventTypeInputBufferHandler(esim::EventType *type,
 }
 
 
-void System::EventTypeReceiveHandler(esim::EventType *type, 
+void System::EventTypeReceiveHandler(esim::Event *type, 
 		esim::EventFrame *frame)
 {
 	// Cast event frame type

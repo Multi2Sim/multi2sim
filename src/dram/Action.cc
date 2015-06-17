@@ -37,7 +37,7 @@ Actions::Actions()
 {
 	// Get the esim engine instance and register events with it.
 	esim::Engine *esim = esim::Engine::getInstance();
-	System::ACTION_REQUEST = esim->RegisterEventType("ACTION_REQUEST",
+	System::ACTION_REQUEST = esim->RegisterEvent("ACTION_REQUEST",
 			ActionRequestHandler, System::DRAM_DOMAIN);
 
 	// Set the debugger
@@ -158,7 +158,7 @@ void Actions::ParseActionCheck(const std::vector<std::string> &tokens)
 }
 
 
-void Actions::ActionRequestHandler(esim::EventType *type,
+void Actions::ActionRequestHandler(esim::Event *type,
 		esim::EventFrame *frame)
 {
 	ActionRequestFrame *action_frame = misc::cast<ActionRequestFrame *>(frame);

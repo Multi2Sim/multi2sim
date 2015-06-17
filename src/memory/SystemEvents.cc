@@ -26,92 +26,92 @@
 namespace mem
 {
 	
-esim::EventType *System::event_type_load;
-esim::EventType *System::event_type_load_lock;
-esim::EventType *System::event_type_load_action;
-esim::EventType *System::event_type_load_miss;
-esim::EventType *System::event_type_load_unlock;
-esim::EventType *System::event_type_load_finish;
+esim::Event *System::event_load;
+esim::Event *System::event_load_lock;
+esim::Event *System::event_load_action;
+esim::Event *System::event_load_miss;
+esim::Event *System::event_load_unlock;
+esim::Event *System::event_load_finish;
 
-esim::EventType *System::event_type_store;
-esim::EventType *System::event_type_store_lock;
-esim::EventType *System::event_type_store_action;
-esim::EventType *System::event_type_store_unlock;
-esim::EventType *System::event_type_store_finish;
+esim::Event *System::event_store;
+esim::Event *System::event_store_lock;
+esim::Event *System::event_store_action;
+esim::Event *System::event_store_unlock;
+esim::Event *System::event_store_finish;
 
-esim::EventType *System::event_type_nc_store;
-esim::EventType *System::event_type_nc_store_lock;
-esim::EventType *System::event_type_nc_store_writeback;
-esim::EventType *System::event_type_nc_store_action;
-esim::EventType *System::event_type_nc_store_miss;
-esim::EventType *System::event_type_nc_store_unlock;
-esim::EventType *System::event_type_nc_store_finish;
+esim::Event *System::event_nc_store;
+esim::Event *System::event_nc_store_lock;
+esim::Event *System::event_nc_store_writeback;
+esim::Event *System::event_nc_store_action;
+esim::Event *System::event_nc_store_miss;
+esim::Event *System::event_nc_store_unlock;
+esim::Event *System::event_nc_store_finish;
 
-esim::EventType *System::event_type_find_and_lock;
-esim::EventType *System::event_type_find_and_lock_port;
-esim::EventType *System::event_type_find_and_lock_action;
-esim::EventType *System::event_type_find_and_lock_finish;
+esim::Event *System::event_find_and_lock;
+esim::Event *System::event_find_and_lock_port;
+esim::Event *System::event_find_and_lock_action;
+esim::Event *System::event_find_and_lock_finish;
 
-esim::EventType *System::event_type_evict;
-esim::EventType *System::event_type_evict_invalid;
-esim::EventType *System::event_type_evict_action;
-esim::EventType *System::event_type_evict_receive;
-esim::EventType *System::event_type_evict_process;
-esim::EventType *System::event_type_evict_process_noncoherent;
-esim::EventType *System::event_type_evict_reply;
-esim::EventType *System::event_type_evict_reply_receive;
-esim::EventType *System::event_type_evict_finish;
+esim::Event *System::event_evict;
+esim::Event *System::event_evict_invalid;
+esim::Event *System::event_evict_action;
+esim::Event *System::event_evict_receive;
+esim::Event *System::event_evict_process;
+esim::Event *System::event_evict_process_noncoherent;
+esim::Event *System::event_evict_reply;
+esim::Event *System::event_evict_reply_receive;
+esim::Event *System::event_evict_finish;
 
-esim::EventType *System::event_type_write_request;
-esim::EventType *System::event_type_write_request_receive;
-esim::EventType *System::event_type_write_request_action;
-esim::EventType *System::event_type_write_request_exclusive;
-esim::EventType *System::event_type_write_request_updown;
-esim::EventType *System::event_type_write_request_updown_finish;
-esim::EventType *System::event_type_write_request_downup;
-esim::EventType *System::event_type_write_request_downup_finish;
-esim::EventType *System::event_type_write_request_reply;
-esim::EventType *System::event_type_write_request_finish;
+esim::Event *System::event_write_request;
+esim::Event *System::event_write_request_receive;
+esim::Event *System::event_write_request_action;
+esim::Event *System::event_write_request_exclusive;
+esim::Event *System::event_write_request_updown;
+esim::Event *System::event_write_request_updown_finish;
+esim::Event *System::event_write_request_downup;
+esim::Event *System::event_write_request_downup_finish;
+esim::Event *System::event_write_request_reply;
+esim::Event *System::event_write_request_finish;
 
-esim::EventType *System::event_type_read_request;
-esim::EventType *System::event_type_read_request_receive;
-esim::EventType *System::event_type_read_request_action;
-esim::EventType *System::event_type_read_request_updown;
-esim::EventType *System::event_type_read_request_updown_miss;
-esim::EventType *System::event_type_read_request_updown_finish;
-esim::EventType *System::event_type_read_request_downup;
-esim::EventType *System::event_type_read_request_downup_wait_for_reqs;
-esim::EventType *System::event_type_read_request_downup_finish;
-esim::EventType *System::event_type_read_request_reply;
-esim::EventType *System::event_type_read_request_finish;
+esim::Event *System::event_read_request;
+esim::Event *System::event_read_request_receive;
+esim::Event *System::event_read_request_action;
+esim::Event *System::event_read_request_updown;
+esim::Event *System::event_read_request_updown_miss;
+esim::Event *System::event_read_request_updown_finish;
+esim::Event *System::event_read_request_downup;
+esim::Event *System::event_read_request_downup_wait_for_reqs;
+esim::Event *System::event_read_request_downup_finish;
+esim::Event *System::event_read_request_reply;
+esim::Event *System::event_read_request_finish;
 
-esim::EventType *System::event_type_invalidate;
-esim::EventType *System::event_type_invalidate_finish;
+esim::Event *System::event_invalidate;
+esim::Event *System::event_invalidate_finish;
 
-esim::EventType *System::event_type_message;
-esim::EventType *System::event_type_message_receive;
-esim::EventType *System::event_type_message_action;
-esim::EventType *System::event_type_message_reply;
-esim::EventType *System::event_type_message_finish;
+esim::Event *System::event_message;
+esim::Event *System::event_message_receive;
+esim::Event *System::event_message_action;
+esim::Event *System::event_message_reply;
+esim::Event *System::event_message_finish;
 
-esim::EventType *System::event_type_flush;
-esim::EventType *System::event_type_flush_finish;
+esim::Event *System::event_flush;
+esim::Event *System::event_flush_finish;
 	
-esim::EventType *System::event_type_local_load;
-esim::EventType *System::event_type_local_load_lock;
-esim::EventType *System::event_type_local_load_finish;
+esim::Event *System::event_local_load;
+esim::Event *System::event_local_load_lock;
+esim::Event *System::event_local_load_finish;
 
-esim::EventType *System::event_type_local_store;
-esim::EventType *System::event_type_local_store_lock;
-esim::EventType *System::event_type_local_store_finish;
+esim::Event *System::event_local_store;
+esim::Event *System::event_local_store_lock;
+esim::Event *System::event_local_store_finish;
 
-esim::EventType *System::event_type_local_find_and_lock;
-esim::EventType *System::event_type_local_find_and_lock_port;
-esim::EventType *System::event_type_local_find_and_lock_action;
-esim::EventType *System::event_type_local_find_and_lock_finish;
+esim::Event *System::event_local_find_and_lock;
+esim::Event *System::event_local_find_and_lock_port;
+esim::Event *System::event_local_find_and_lock_action;
+esim::Event *System::event_local_find_and_lock_finish;
 
 
-void System::EventLoadHandler(esim::EventType *event_type,
+void System::EventLoadHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Get engine, frame, and module
@@ -122,7 +122,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 	Directory *directory = module->getDirectory();
 
 	// Event "load"
-	if (event_type == event_type_load)
+	if (event == event_load)
 	{
 		debug << misc::fmt("%lld %lld 0x%x %s load\n",
 				esim_engine->getTime(),
@@ -150,17 +150,17 @@ void System::EventLoadHandler(esim::EventType *event_type,
 		{
 			module->incCoalescedReads();
 			module->Coalesce(master_frame, frame);
-			master_frame->queue.Wait(event_type_load_finish);
+			master_frame->queue.Wait(event_load_finish);
 			return;
 		}
 
 		// Next event
-		esim_engine->Next(event_type_load_lock);
+		esim_engine->Next(event_load_lock);
 		return;
 	}
 
 	// Event "load_lock"
-	if (event_type == event_type_load_lock)
+	if (event == event_load_lock)
 	{
 		debug << misc::fmt("  %lld %lld 0x%x %s load lock\n",
 				esim_engine->getTime(),
@@ -180,7 +180,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 			debug << misc::fmt("    %lld wait for write %lld\n",
 					frame->getId(),
 					older_frame->getId());
-			older_frame->queue.Wait(event_type_load_lock);
+			older_frame->queue.Wait(event_load_lock);
 			return;
 		}
 
@@ -194,7 +194,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 			debug << misc::fmt("    %lld wait for access %lld\n",
 					frame->getId(),
 					older_frame->getId());
-			older_frame->queue.Wait(event_type_load_lock);
+			older_frame->queue.Wait(event_load_lock);
 			return;
 		}
 
@@ -207,15 +207,15 @@ void System::EventLoadHandler(esim::EventType *event_type,
 		new_frame->blocking = true;
 		new_frame->read = true;
 		new_frame->retry = frame->retry;
-		esim_engine->Call(event_type_find_and_lock,
+		esim_engine->Call(event_find_and_lock,
 				new_frame,
-				event_type_load_action);
+				event_load_action);
 		return;
 	}
 
 
 	// Event "load_action"
-	if (event_type == event_type_load_action)
+	if (event == event_load_action)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s load action\n",
@@ -241,7 +241,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 
 			// Reschedule 'load-lock'
 			frame->retry = true;
-			esim_engine->Next(event_type_load_lock, retry_latency);
+			esim_engine->Next(event_load_lock, retry_latency);
 			return;
 		}
 
@@ -249,7 +249,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 		if (frame->state)
 		{
 			// Continue with 'load-unlock'
-			esim_engine->Next(event_type_load_unlock);
+			esim_engine->Next(event_load_unlock);
 			return;
 		}
 
@@ -260,9 +260,9 @@ void System::EventLoadHandler(esim::EventType *event_type,
 				frame->tag);
 		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
 		new_frame->request_direction = Frame::RequestDirectionUpDown;
-		esim_engine->Call(event_type_read_request,
+		esim_engine->Call(event_read_request,
 				new_frame,
-				event_type_load_miss);
+				event_load_miss);
 
 		// Done
 		return;
@@ -270,7 +270,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 
 
 	// Event "load_miss"
-	if (event_type == event_type_load_miss)
+	if (event == event_load_miss)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s load miss\n",
@@ -299,7 +299,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 
 			// Continue with 'load-lock' after retry latency
 			frame->retry = true;
-			esim_engine->Next(event_type_load_lock, retry_latency);
+			esim_engine->Next(event_load_lock, retry_latency);
 			return;
 		}
 
@@ -311,13 +311,13 @@ void System::EventLoadHandler(esim::EventType *event_type,
 				frame->shared ? Cache::BlockShared : Cache::BlockExclusive);
 
 		// Continue
-		esim_engine->Next(event_type_load_unlock);
+		esim_engine->Next(event_load_unlock);
 		return;
 	}
 
 
 	// Event "load_unlock"
-	if (event_type == event_type_load_unlock)
+	if (event == event_load_unlock)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -339,14 +339,14 @@ void System::EventLoadHandler(esim::EventType *event_type,
 		module->incDataAccesses();
 
 		// Continue with 'load-finish' after latency
-		esim_engine->Next(event_type_load_finish,
+		esim_engine->Next(event_load_finish,
 				module->getDataLatency());
 		return;
 	}
 
 
 	// Event "load_finish"
-	if (event_type == event_type_load_finish)
+	if (event == event_load_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("%lld %lld 0x%x %s load finish\n",
@@ -378,7 +378,7 @@ void System::EventLoadHandler(esim::EventType *event_type,
 }
 
 
-void System::EventStoreHandler(esim::EventType *event_type,
+void System::EventStoreHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Get useful objects
@@ -389,7 +389,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 	Directory *directory = module->getDirectory();
 
 	// Event "store"
-	if (event_type == event_type_store)
+	if (event == event_store)
 	{
 		// Debug and trace
 		debug << misc::fmt("%lld %lld 0x%x %s store\n",
@@ -418,7 +418,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 			// Coalesce
 			module->incCoalescedWrites();
 			module->Coalesce(master_frame, frame);
-			master_frame->queue.Wait(event_type_store_finish);
+			master_frame->queue.Wait(event_store_finish);
 
 			// Increment witness
 			if (frame->witness)
@@ -429,12 +429,12 @@ void System::EventStoreHandler(esim::EventType *event_type,
 		}
 
 		// Continue
-		esim_engine->Next(event_type_store_lock);
+		esim_engine->Next(event_store_lock);
 		return;
 	}
 
 	// Event "store_lock"
-	if (event_type == event_type_store_lock)
+	if (event == event_store_lock)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s store lock\n",
@@ -463,7 +463,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 					older_frame->getId());
 
 			// Enqueue
-			older_frame->queue.Wait(event_type_store_lock);
+			older_frame->queue.Wait(event_store_lock);
 			return;
 		}
 
@@ -477,14 +477,14 @@ void System::EventStoreHandler(esim::EventType *event_type,
 		new_frame->write = true;
 		new_frame->retry = frame->retry;
 		new_frame->witness = frame->witness;
-		esim_engine->Call(event_type_find_and_lock,
+		esim_engine->Call(event_find_and_lock,
 				new_frame,
-				event_type_store_action);
+				event_store_action);
 		return;
 	}
 
 	// Event "store_action"
-	if (event_type == event_type_store_action)
+	if (event == event_store_action)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s store action\n",
@@ -511,7 +511,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 
 			// Reschedule 'store-lock' after lantecy
 			frame->retry = true;
-			esim_engine->Next(event_type_store_lock, retry_latency);
+			esim_engine->Next(event_store_lock, retry_latency);
 			return;
 		}
 
@@ -520,7 +520,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 			frame->state == Cache::BlockExclusive)
 		{
 			// Continue with 'store-unlock'
-			esim_engine->Next(event_type_store_unlock);
+			esim_engine->Next(event_store_unlock);
 			return;
 		}
 
@@ -533,14 +533,14 @@ void System::EventStoreHandler(esim::EventType *event_type,
 		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
 		new_frame->request_direction = Frame::RequestDirectionUpDown;
 		new_frame->witness = frame->witness;
-		esim_engine->Call(event_type_write_request,
+		esim_engine->Call(event_write_request,
 				new_frame,
-				event_type_store_unlock);
+				event_store_unlock);
 		return;
 	}
 
 	// Event "store_unlock"
-	if (event_type == event_type_store_unlock)
+	if (event == event_store_unlock)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s store unlock\n",
@@ -569,7 +569,7 @@ void System::EventStoreHandler(esim::EventType *event_type,
 
 			// Continue with 'store-lock' after latency
 			frame->retry = true;
-			esim_engine->Next(event_type_store_lock, retry_latency);
+			esim_engine->Next(event_store_lock, retry_latency);
 			return;
 		}
 
@@ -580,13 +580,13 @@ void System::EventStoreHandler(esim::EventType *event_type,
 
 		// Continue to 'store-finish' after data latency
 		module->incDataAccesses();
-		esim_engine->Next(event_type_store_finish,
+		esim_engine->Next(event_store_finish,
 				module->getDataLatency());
 		return;
 	}
 
 	// Event "store_finish"
-	if (event_type == event_type_store_finish)
+	if (event == event_store_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("%lld %lld 0x%x %s store finish\n",
@@ -616,47 +616,47 @@ void System::EventStoreHandler(esim::EventType *event_type,
 }
 
 
-void System::EventNCStoreHandler(esim::EventType *event_type,
+void System::EventNCStoreHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "nc_store"
-	if (event_type == event_type_nc_store)
+	if (event == event_nc_store)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_lock"
-	if (event_type == event_type_nc_store_lock)
+	if (event == event_nc_store_lock)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_writeback"
-	if (event_type == event_type_nc_store_writeback)
+	if (event == event_nc_store_writeback)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_action"
-	if (event_type == event_type_nc_store_action)
+	if (event == event_nc_store_action)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_miss"
-	if (event_type == event_type_nc_store_miss)
+	if (event == event_nc_store_miss)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_unlock"
-	if (event_type == event_type_nc_store_unlock)
+	if (event == event_nc_store_unlock)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "nc_store_finish"
-	if (event_type == event_type_nc_store_finish)
+	if (event == event_nc_store_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -666,7 +666,7 @@ void System::EventNCStoreHandler(esim::EventType *event_type,
 }
 
 
-void System::EventFindAndLockHandler(esim::EventType *event_type,
+void System::EventFindAndLockHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Get useful objects
@@ -678,7 +678,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	Directory *directory = module->getDirectory();
 
 	// Event "find_and_lock"
-	if (event_type == event_type_find_and_lock)
+	if (event == event_find_and_lock)
 	{
 		debug << misc::fmt("  %lld %lld 0x%x %s "
 				"find and lock (blocking=%d)\n",
@@ -700,12 +700,12 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 		frame->way = parent_frame->way;
 
 		// Get a port
-		module->LockPort(frame, event_type_find_and_lock_port);
+		module->LockPort(frame, event_find_and_lock_port);
 		return;
 	}
 
 	// Event "find_and_lock_port"
-	if (event_type == event_type_find_and_lock_port)
+	if (event == event_find_and_lock_port)
 	{
 		// Get locked port
 		Module::Port *port = frame->port;
@@ -825,7 +825,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 		// is released, locking port and directory entry will be 
 		// retried.
 		if (!directory->LockEntry(frame->set, frame->way,
-				event_type_find_and_lock, frame))
+				event_find_and_lock, frame))
 		{
 			// Debug
 			debug << misc::fmt("    %lld 0x%x %s block locked at "
@@ -889,7 +889,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 
 		// Access latency
 		module->incDirectoryAccesses();
-		esim_engine->Next(event_type_find_and_lock_action,
+		esim_engine->Next(event_find_and_lock_action,
 				module->getDirectoryLatency());
 
 		// Done
@@ -897,7 +897,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 	}
 
 	// Event "find_and_lock_action"
-	if (event_type == event_type_find_and_lock_action)
+	if (event == event_find_and_lock_action)
 	{
 		// Get locked port
 		Module::Port *port = frame->port;
@@ -933,19 +933,19 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 					0);
 			new_frame->set = frame->set;
 			new_frame->way = frame->way;
-			esim_engine->Call(event_type_evict,
+			esim_engine->Call(event_evict,
 					new_frame,
-					event_type_find_and_lock_finish);
+					event_find_and_lock_finish);
 			return;
 		}
 
 		// Continue
-		esim_engine->Next(event_type_find_and_lock_finish);
+		esim_engine->Next(event_find_and_lock_finish);
 		return;
 	}
 
 	// Event "find_and_lock_finish"
-	if (event_type == event_type_find_and_lock_finish)
+	if (event == event_find_and_lock_finish)
 	{
 		// Cache and directory
 		Cache *cache = module->getCache();
@@ -1027,7 +1027,7 @@ void System::EventFindAndLockHandler(esim::EventType *event_type,
 }
 
 
-void System::EventEvictHandler(esim::EventType *event_type,
+void System::EventEvictHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Engine, frame, module
@@ -1040,7 +1040,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	Directory *directory = module->getDirectory();
 
 	// Event 'evict'
-	if (event_type == event_type_evict)
+	if (event == event_evict)
 	{
 		// Default return value
 		parent_frame->error = false;
@@ -1081,14 +1081,14 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		new_frame->except_module = nullptr;
 		new_frame->set = frame->set;
 		new_frame->way = frame->way;
-		esim_engine->Call(event_type_invalidate,
+		esim_engine->Call(event_invalidate,
 				new_frame,
-				event_type_evict_invalid);
+				event_evict_invalid);
 		return;
 	}
 
 	// Event "evict_invalid"
-	if (event_type == event_type_evict_invalid)
+	if (event == event_evict_invalid)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s evict invalid\n",
@@ -1117,7 +1117,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 					Cache::BlockInvalid);
 
 			// Continue with 'evict-finish'
-			esim_engine->Next(event_type_evict_finish);
+			esim_engine->Next(event_evict_finish);
 			return;
 		}
 
@@ -1134,17 +1134,17 @@ void System::EventEvictHandler(esim::EventType *event_type,
 					0,
 					Cache::BlockInvalid);
 			frame->state = Cache::BlockInvalid;
-			esim_engine->Next(event_type_evict_finish);
+			esim_engine->Next(event_evict_finish);
 			return;
 		}
 
 		// Continue with 'evict-action'
-		esim_engine->Next(event_type_evict_action);
+		esim_engine->Next(event_evict_action);
 		return;
 	}
 
 	// Event "evict_action"
-	if (event_type == event_type_evict_action)
+	if (event == event_evict_action)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s evict action\n",
@@ -1168,7 +1168,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		// State = I
 		if (frame->state == Cache::BlockInvalid)
 		{
-			esim_engine->Next(event_type_evict_finish);
+			esim_engine->Next(event_evict_finish);
 			return;
 		}
 
@@ -1194,8 +1194,8 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		frame->message = network->TrySend(source_node,
 				low_node,
 				message_size,
-				event_type_evict_receive,
-				event_type);
+				event_evict_receive,
+				event);
 		if (frame->message)
 			trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -1208,7 +1208,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	}
 
 	// Event "evict_receive"
-	if (event_type == event_type_evict_receive)
+	if (event == event_evict_receive)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s evict receive\n",
@@ -1237,18 +1237,18 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		new_frame->write = true;
 		new_frame->retry = false;
 		if (frame->state == Cache::BlockNonCoherent)
-			esim_engine->Call(event_type_find_and_lock,
+			esim_engine->Call(event_find_and_lock,
 					new_frame,
-					event_type_evict_process_noncoherent);
+					event_evict_process_noncoherent);
 		else
-			esim_engine->Call(event_type_find_and_lock,
+			esim_engine->Call(event_find_and_lock,
 					new_frame,
-					event_type_evict_process);
+					event_evict_process);
 		return;
 	}
 
 	// Event "evict_process"
-	if (event_type == event_type_evict_process)
+	if (event == event_evict_process)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s evict process\n",
@@ -1266,7 +1266,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		if (frame->error)
 		{
 			parent_frame->error = true;
-			esim_engine->Next(event_type_evict_reply);
+			esim_engine->Next(event_evict_reply);
 			return;
 		}
 
@@ -1334,13 +1334,13 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		target_module->incDataAccesses();
 
 		// Continue with 'evict-reply', after data latency
-		esim_engine->Next(event_type_evict_reply,
+		esim_engine->Next(event_evict_reply,
 				target_module->getDataLatency());
 		return;
 	}
 
 	// Event "evict_process_noncoherent"
-	if (event_type == event_type_evict_process_noncoherent)
+	if (event == event_evict_process_noncoherent)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1359,7 +1359,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		if (frame->error)
 		{
 			parent_frame->error = true;
-			esim_engine->Next(event_type_evict_reply);
+			esim_engine->Next(event_evict_reply);
 			return;
 		}
 
@@ -1440,13 +1440,13 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		target_module->incDataAccesses();
 		
 		// Continue with 'evict-reply' after latency
-		esim_engine->Next(event_type_evict_reply,
+		esim_engine->Next(event_evict_reply,
 				target_module->getDataLatency());
 		return;
 	}
 
 	// Event "evict_reply"
-	if (event_type == event_type_evict_reply)
+	if (event == event_evict_reply)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1468,8 +1468,8 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		frame->message = network->TrySend(source_node,
 				destination_node,
 				8,
-				event_type_evict_reply_receive,
-				event_type);
+				event_evict_reply_receive,
+				event);
 		if (frame->message)
 			trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -1482,7 +1482,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 	}
 
 	// Event "evict_reply_receive"
-	if (event_type == event_type_evict_reply_receive)
+	if (event == event_evict_reply_receive)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1513,12 +1513,12 @@ void System::EventEvictHandler(esim::EventType *event_type,
 		assert(!directory->isBlockSharedOrOwned(frame->src_set, frame->src_way));
 
 		// Continue with 'evict-finish'
-		esim_engine->Next(event_type_evict_finish);
+		esim_engine->Next(event_evict_finish);
 		return;
 	}
 
 	// Event "evict_finish"
-	if (event_type == event_type_evict_finish)
+	if (event == event_evict_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s evict finish\n",
@@ -1542,7 +1542,7 @@ void System::EventEvictHandler(esim::EventType *event_type,
 }
 
 
-void System::EventWriteRequestHandler(esim::EventType *event_type,
+void System::EventWriteRequestHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Get useful objects
@@ -1554,7 +1554,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	Directory *target_directory = target_module->getDirectory();
 
 	// Event "write_request"
-	if (event_type == event_type_write_request)
+	if (event == event_write_request)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s write request\n",
@@ -1607,8 +1607,8 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		frame->message = network->TrySend(source_node,
 				destination_node,
 				8,
-				event_type_write_request_receive,
-				event_type);
+				event_write_request_receive,
+				event);
 		if (frame->message)
 			trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -1621,7 +1621,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	}
 
 	// Event "write_request_receive"
-	if (event_type == event_type_write_request_receive)
+	if (event == event_write_request_receive)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1661,14 +1661,14 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		new_frame->request_direction = frame->request_direction;
 		new_frame->write = true;
 		new_frame->retry = false;
-		esim_engine->Call(event_type_find_and_lock,
+		esim_engine->Call(event_find_and_lock,
 				new_frame,
-				event_type_write_request_action);
+				event_write_request_action);
 		return;
 	}
 
 	// Event "write_request_action"
-	if (event_type == event_type_write_request_action)
+	if (event == event_write_request_action)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s write request action\n", 
@@ -1694,7 +1694,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 			frame->reply_size = 8;
 
 			// Continue with 'write-request-reply'
-			esim_engine->Next(event_type_write_request_reply);
+			esim_engine->Next(event_write_request_reply);
 			return;
 		}
 
@@ -1714,7 +1714,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 			frame->reply_size = 8;
 
 			// Continue with 'write-request-reply'
-			esim_engine->Next(event_type_write_request_reply);
+			esim_engine->Next(event_write_request_reply);
 			return;
 		}
 
@@ -1727,14 +1727,14 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		new_frame->except_module = module;
 		new_frame->set = frame->set;
 		new_frame->way = frame->way;
-		esim_engine->Call(event_type_invalidate,
+		esim_engine->Call(event_invalidate,
 				new_frame,
-				event_type_write_request_exclusive);
+				event_write_request_exclusive);
 		return;
 	}
 
 	// Event "write_request_exclusive"
-	if (event_type == event_type_write_request_exclusive)
+	if (event == event_write_request_exclusive)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1752,14 +1752,14 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		// Continue with 'write-request-updown' or
 		// 'write-request-downup', depending on direction.
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
-			esim_engine->Next(event_type_write_request_updown);
+			esim_engine->Next(event_write_request_updown);
 		else
-			esim_engine->Next(event_type_write_request_downup);
+			esim_engine->Next(event_write_request_downup);
 		return;
 	}
 
 	// Event "write_request_updown"
-	if (event_type == event_type_write_request_updown)
+	if (event == event_write_request_updown)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s write request updown\n",
@@ -1781,7 +1781,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		case Cache::BlockModified:
 		case Cache::BlockExclusive:
 		{
-			esim_engine->Next(event_type_write_request_updown_finish);
+			esim_engine->Next(event_write_request_updown_finish);
 			break;
 		}
 		
@@ -1798,9 +1798,9 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 			new_frame->target_module = target_module->
 					getLowModuleServingAddress(frame->tag);
 			new_frame->request_direction = Frame::RequestDirectionUpDown;
-			esim_engine->Call(event_type_write_request,
+			esim_engine->Call(event_write_request,
 					new_frame,
-					event_type_write_request_updown_finish);
+					event_write_request_updown_finish);
 			break;
 		}
 		
@@ -1813,7 +1813,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	}
 
 	// Event "write_request_updown_finish"
-	if (event_type == event_type_write_request_updown_finish)
+	if (event == event_write_request_updown_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1845,7 +1845,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 			target_directory->UnlockEntry(frame->set, frame->way);
 
 			// Continue with 'write-request-reply'
-			esim_engine->Next(event_type_write_request_reply);
+			esim_engine->Next(event_write_request_reply);
 			return;
 		}
 
@@ -1905,25 +1905,25 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		target_module->incDataAccesses();
 
 		// Continue with 'write-request-reply' after data latency
-		esim_engine->Next(event_type_write_request_reply,
+		esim_engine->Next(event_write_request_reply,
 				target_module->getDataLatency());
 		return;
 	}
 
 	// Event "write_request_downup"
-	if (event_type == event_type_write_request_downup)
+	if (event == event_write_request_downup)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "write_request_downup_finish"
-	if (event_type == event_type_write_request_downup_finish)
+	if (event == event_write_request_downup_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "write_request_reply"
-	if (event_type == event_type_write_request_reply)
+	if (event == event_write_request_reply)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -1964,8 +1964,8 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 		frame->message = network->TrySend(source_node,
 				destination_node,
 				frame->reply_size,
-				event_type_write_request_finish,
-				event_type);
+				event_write_request_finish,
+				event);
 		if (frame->message)
 			trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -1978,7 +1978,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 	}
 
 	// Event "write_request_finish"
-	if (event_type == event_type_write_request_finish)
+	if (event == event_write_request_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -2026,7 +2026,7 @@ void System::EventWriteRequestHandler(esim::EventType *event_type,
 }
 
 
-void System::EventReadRequestHandler(esim::EventType *event_type,
+void System::EventReadRequestHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Get useful objects
@@ -2037,7 +2037,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	Module *target_module = frame->target_module;
 
 	// Event "read_request"
-	if (event_type == event_type_read_request)
+	if (event == event_read_request)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s read request\n",
@@ -2087,8 +2087,8 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 		frame->message = network->TrySend(source_node,
 				destination_node,
 				8,
-				event_type_read_request_receive,
-				event_type);
+				event_read_request_receive,
+				event);
 		if (frame->message)
 			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -2101,7 +2101,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	}
 
 	// Event "read_request_receive"
-	if (event_type == event_type_read_request_receive)
+	if (event == event_read_request_receive)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s read request receive\n",
@@ -2144,14 +2144,14 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 				Frame::RequestDirectionDownUp;
 		new_frame->read = true;
 		new_frame->retry = false;
-		esim_engine->Call(event_type_find_and_lock,
+		esim_engine->Call(event_find_and_lock,
 				new_frame,
-				event_type_read_request_action);
+				event_read_request_action);
 		return;
 	}
 
 	// Event "read_request_action"
-	if (event_type == event_type_read_request_action)
+	if (event == event_read_request_action)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s read request action\n",
@@ -2175,7 +2175,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 			frame->reply_size = 8;
 
 			// Continue with 'read-request-reply'
-			esim_engine->Next(event_type_read_request_reply);
+			esim_engine->Next(event_read_request_reply);
 			return;
 		}
 
@@ -2193,19 +2193,19 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 			frame->reply_size = 8;
 
 			// Continue with 'read-request-reply'
-			esim_engine->Next(event_type_read_request_reply);
+			esim_engine->Next(event_read_request_reply);
 			return;
 		}
 
 		// Continue with 'read-request-updown' or 'read-request-downup'
 		esim_engine->Next(frame->request_direction == Frame::RequestDirectionUpDown ?
-				event_type_read_request_updown :
-				event_type_read_request_downup);
+				event_read_request_updown :
+				event_read_request_downup);
 		return;
 	}
 
 	// Event "read_request_updown"
-	if (event_type == event_type_read_request_updown)
+	if (event == event_read_request_updown)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s read request updown\n",
@@ -2278,13 +2278,13 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 						directory_entry_tag);
 				new_frame->target_module = owner_module;
 				new_frame->request_direction = Frame::RequestDirectionDownUp;
-				esim_engine->Call(event_type_read_request,
+				esim_engine->Call(event_read_request,
 						new_frame,
-						event_type_read_request_updown_finish);
+						event_read_request_updown_finish);
 			}
 
 			// Continue with 'read-request-updown-finish'
-			esim_engine->Next(event_type_read_request_updown_finish);
+			esim_engine->Next(event_read_request_updown_finish);
 		}
 		else
 		{
@@ -2299,15 +2299,15 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 					frame->tag);
 			new_frame->target_module = target_module->getLowModuleServingAddress(frame->tag);
 			new_frame->request_direction = Frame::RequestDirectionUpDown;
-			esim_engine->Call(event_type_read_request,
+			esim_engine->Call(event_read_request,
 					new_frame,
-					event_type_read_request_updown_miss);
+					event_read_request_updown_miss);
 		}
 		return;
 	}
 
 	// Event "read_request_updown_miss"
-	if (event_type == event_type_read_request_updown_miss)
+	if (event == event_read_request_updown_miss)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -2335,7 +2335,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 
 			// Continue with 'read-request-reply'
 			frame->reply_size = 8;
-			esim_engine->Next(event_type_read_request_reply);
+			esim_engine->Next(event_read_request_reply);
 			return;
 		}
 
@@ -2349,12 +2349,12 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 				frame->shared ? Cache::BlockShared : Cache::BlockExclusive);
 
 		// Continue with 'read-request-updown-finish'
-		esim_engine->Next(event_type_read_request_updown_finish);
+		esim_engine->Next(event_read_request_updown_finish);
 		return;
 	}
 
 	// Event "read_request_updown_finish"
-	if (event_type == event_type_read_request_updown_finish)
+	if (event == event_read_request_updown_finish)
 	{
 		// Ensure that a reply was received
 		assert(frame->reply);
@@ -2477,31 +2477,31 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 		target_module->incDataAccesses();
 
 		// Continue with 'read-request-reply' after latency
-		esim_engine->Next(event_type_read_request_reply,
+		esim_engine->Next(event_read_request_reply,
 				target_module->getDataLatency());
 		return;
 	}
 
 	// Event "read_request_downup"
-	if (event_type == event_type_read_request_downup)
+	if (event == event_read_request_downup)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "read_request_downup_wait_for_reqs"
-	if (event_type == event_type_read_request_downup_wait_for_reqs)
+	if (event == event_read_request_downup_wait_for_reqs)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "read_request_downup_finish"
-	if (event_type == event_type_read_request_downup_finish)
+	if (event == event_read_request_downup_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "read_request_reply"
-	if (event_type == event_type_read_request_reply)
+	if (event == event_read_request_reply)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -2546,8 +2546,8 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 				source_node,
 				destination_node,
 				frame->reply_size,
-				event_type_read_request_finish,
-				event_type);
+				event_read_request_finish,
+				event);
 		if (frame->message)
 			trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
@@ -2560,7 +2560,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 	}
 
 	// Event "read_request_finish"
-	if (event_type == event_type_read_request_finish)
+	if (event == event_read_request_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s "
@@ -2600,7 +2600,7 @@ void System::EventReadRequestHandler(esim::EventType *event_type,
 }
 
 
-void System::EventInvalidateHandler(esim::EventType *event_type,
+void System::EventInvalidateHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Objects
@@ -2611,7 +2611,7 @@ void System::EventInvalidateHandler(esim::EventType *event_type,
 	Directory *directory = module->getDirectory();
 
 	// Event "invalidate"
-	if (event_type == event_type_invalidate)
+	if (event == event_invalidate)
 	{
 		// Get block info
 		unsigned tag;
@@ -2683,19 +2683,19 @@ void System::EventInvalidateHandler(esim::EventType *event_type,
 						directory_entry_tag);
 				new_frame->target_module = sharer;
 				new_frame->request_direction = Frame::RequestDirectionDownUp;
-				esim_engine->Call(event_type_write_request,
+				esim_engine->Call(event_write_request,
 						new_frame,
-						event_type_invalidate_finish);
+						event_invalidate_finish);
 			}
 		}
 
 		// Continue with 'invalidate-finish' event
-		esim_engine->Next(event_type_invalidate_finish);
+		esim_engine->Next(event_invalidate_finish);
 		return;
 	}
 
 	// Event "invalidate_finish"
-	if (event_type == event_type_invalidate_finish)
+	if (event == event_invalidate_finish)
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld %lld 0x%x %s invalidate finish\n",
@@ -2732,35 +2732,35 @@ void System::EventInvalidateHandler(esim::EventType *event_type,
 }
 
 
-void System::EventMessageHandler(esim::EventType *event_type,
+void System::EventMessageHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "message"
-	if (event_type == event_type_message)
+	if (event == event_message)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "message_receive"
-	if (event_type == event_type_message_receive)
+	if (event == event_message_receive)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "message_action"
-	if (event_type == event_type_message_action)
+	if (event == event_message_action)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "message_reply"
-	if (event_type == event_type_message_reply)
+	if (event == event_message_reply)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "message_finish"
-	if (event_type == event_type_message_finish)
+	if (event == event_message_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -2770,17 +2770,17 @@ void System::EventMessageHandler(esim::EventType *event_type,
 }
 
 
-void System::EventFlushHandler(esim::EventType *event_type,
+void System::EventFlushHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "flush"
-	if (event_type == event_type_flush)
+	if (event == event_flush)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "flush_finish"
-	if (event_type == event_type_flush_finish)
+	if (event == event_flush_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -2790,23 +2790,23 @@ void System::EventFlushHandler(esim::EventType *event_type,
 }
 
 
-void System::EventLocalLoadHandler(esim::EventType *event_type,
+void System::EventLocalLoadHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "local_load"
-	if (event_type == event_type_local_load)
+	if (event == event_local_load)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_load_lock"
-	if (event_type == event_type_local_load_lock)
+	if (event == event_local_load_lock)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_load_finish"
-	if (event_type == event_type_local_load_finish)
+	if (event == event_local_load_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -2816,23 +2816,23 @@ void System::EventLocalLoadHandler(esim::EventType *event_type,
 }
 
 
-void System::EventLocalStoreHandler(esim::EventType *event_type,
+void System::EventLocalStoreHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "local_store"
-	if (event_type == event_type_local_store)
+	if (event == event_local_store)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_store_lock"
-	if (event_type == event_type_local_store_lock)
+	if (event == event_local_store_lock)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_store_finish"
-	if (event_type == event_type_local_store_finish)
+	if (event == event_local_store_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}
@@ -2842,29 +2842,29 @@ void System::EventLocalStoreHandler(esim::EventType *event_type,
 }
 
 
-void System::EventLocalFindAndLockHandler(esim::EventType *event_type,
+void System::EventLocalFindAndLockHandler(esim::Event *event,
 		esim::EventFrame *event_frame)
 {
 	// Event "local_find_and_lock"
-	if (event_type == event_type_local_find_and_lock)
+	if (event == event_local_find_and_lock)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_find_and_lock_port"
-	if (event_type == event_type_local_find_and_lock_port)
+	if (event == event_local_find_and_lock_port)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_find_and_lock_action"
-	if (event_type == event_type_local_find_and_lock_action)
+	if (event == event_local_find_and_lock_action)
 	{
 		throw misc::Panic("Not implemented");
 	}
 
 	// Event "local_find_and_lock_finish"
-	if (event_type == event_type_local_find_and_lock_finish)
+	if (event == event_local_find_and_lock_finish)
 	{
 		throw misc::Panic("Not implemented");
 	}

@@ -110,9 +110,9 @@ public:
 
 	/// Suspend the current event chain in the event queue associated with
 	/// the buffer. This function must be invoked within an event handler.
-	void Wait(esim::EventType *event_type)
+	void Wait(esim::Event *event)
 	{
-		event_queue.Wait(event_type);
+		event_queue.Wait(event);
 	}
 
 	/// Wake up all events in the queue

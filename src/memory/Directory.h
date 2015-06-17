@@ -203,7 +203,7 @@ public:
 	///
 	bool LockEntry(int set_id,
 			int way_id,
-			esim::EventType *event_type,
+			esim::Event *event_type,
 			Frame *frame);
 
 	/// Unlock the given directory entry, and wake up the next event chain

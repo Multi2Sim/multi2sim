@@ -196,7 +196,7 @@ public:
 	bool CanSend(EndNode *source_node,
 			EndNode *destination_node,
 			int size,
-			esim::EventType *retry_event = nullptr);
+			esim::Event *retry_event = nullptr);
 
 	/// Send a message through network.
 	///
@@ -227,7 +227,7 @@ public:
 	Message *Send(EndNode *source_node,
 			EndNode *destination_node,
 			int size,
-			esim::EventType *receive_event = nullptr);
+			esim::Event *receive_event = nullptr);
 
 	/// Send a message through the network, only if it is possible to send
 	/// it right away. A message can be sent if:
@@ -273,8 +273,8 @@ public:
 	Message *TrySend(EndNode *source_node,
 			EndNode *destination_node,
 			int size,
-			esim::EventType *receive_event = nullptr,
-			esim::EventType *retry_event = nullptr);
+			esim::Event *receive_event = nullptr,
+			esim::Event *retry_event = nullptr);
 
 
 	/// Absorb a message located at the head of the input buffer of a

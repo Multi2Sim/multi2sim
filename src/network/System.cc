@@ -80,15 +80,15 @@ System::System()
 	frequency_domain = esim_engine->RegisterFrequencyDomain("Network");
 
 	// Register events here
-	event_type_send = esim_engine->RegisterEventType("send", 
+	event_send = esim_engine->RegisterEvent("send", 
 			EventTypeSendHandler, frequency_domain);
-	event_type_output_buffer = esim_engine->RegisterEventType(
+	event_output_buffer = esim_engine->RegisterEvent(
 			"output_buffer", EventTypeOutputBufferHandler, 
 			frequency_domain);
-	event_type_input_buffer = esim_engine->RegisterEventType(
+	event_input_buffer = esim_engine->RegisterEvent(
 			"input_buffer", EventTypeInputBufferHandler, 
 			frequency_domain);
-	event_type_receive = esim_engine->RegisterEventType("receive", 
+	event_receive = esim_engine->RegisterEvent("receive", 
 			EventTypeReceiveHandler, frequency_domain);
 
 

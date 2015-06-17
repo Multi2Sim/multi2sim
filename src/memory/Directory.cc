@@ -217,7 +217,7 @@ void Directory::DumpSharers(int set_id, int way_id, int sub_block_id,
 bool Directory::LockEntry(
 		int set_id,
 		int way_id,
-		esim::EventType *event_type,
+		esim::Event *event,
 		Frame *frame)
 {
 	// Get lock
@@ -229,7 +229,7 @@ bool Directory::LockEntry(
 	// failure to lock.
 	if (lock->frame)
 	{
-		lock->queue.Wait(event_type);
+		lock->queue.Wait(event);
 		System::debug << misc::fmt("    0x%x access suspended\n",
 				frame->tag);
 		return false;

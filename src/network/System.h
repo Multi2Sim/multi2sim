@@ -123,12 +123,12 @@ class System
 	//
 
 	// Network event handlers
-	static void EventTypeSendHandler(esim::EventType *, esim::EventFrame *);
-	static void EventTypeOutputBufferHandler(esim::EventType *, 
+	static void EventTypeSendHandler(esim::Event *, esim::EventFrame *);
+	static void EventTypeOutputBufferHandler(esim::Event *, 
 			esim::EventFrame *);
-	static void EventTypeInputBufferHandler(esim::EventType *, 
+	static void EventTypeInputBufferHandler(esim::Event *, 
 			esim::EventFrame *);
-	static void EventTypeReceiveHandler(esim::EventType *, esim::EventFrame *);
+	static void EventTypeReceiveHandler(esim::Event *, esim::EventFrame *);
 
 public:
 
@@ -136,10 +136,10 @@ public:
 	// Event driven simulation event types
 	//
 
-	static esim::EventType *event_type_send;
-	static esim::EventType *event_type_output_buffer;
-	static esim::EventType *event_type_input_buffer;
-	static esim::EventType *event_type_receive;
+	static esim::Event *event_send;
+	static esim::Event *event_output_buffer;
+	static esim::Event *event_input_buffer;
+	static esim::Event *event_receive;
 	
 
 	/// Network system trace

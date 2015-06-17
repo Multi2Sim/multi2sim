@@ -104,7 +104,7 @@ public:
 	void CallScheduler(int after = 1);
 
 	/// Event handler that runs the scheduler.
-	static void SchedulerHandler(esim::EventType *,
+	static void SchedulerHandler(esim::Event *,
 			esim::EventFrame *);
 
 	/// Schedules commands from all the bank queues under this channel,
