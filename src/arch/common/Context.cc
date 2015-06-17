@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2015  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -12,53 +12,52 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
+ *  You should have received as copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/cpp/Misc.h>
+#include <lib/cpp/String.h>
 
-#include "Driver.h"
+#include "Context.h"
+#include "Emu.h"
 
 
 namespace comm
 {
 
+int Context::id_counter = 1000;
 
-std::unique_ptr<DriverPool> DriverPool::instance;
 
-
-DriverPool* DriverPool::getInstance()
+Context::Context(Emu *emu) :
+		emu(emu)
 {
-	// Return existing instance
-	if (instance.get())
-		return instance.get();
-	
-	// Create new driver pool
-	instance = misc::new_unique<DriverPool>();
-	return instance.get();	
+	// Assign ID
+	id = id_counter++;
+
+	// Compute name
+	name = misc::fmt("%s context %d",
+			emu->getName().c_str(),
+			id);
 }
 
 
-void DriverPool::Register(Driver *driver)
+void Context::Suspend()
 {
-	// Add it to the pool
-	driver_list.push_back(driver);
+	throw misc::Panic("Not implemented");
 }
 
 
-Driver *DriverPool::getDriverByPath(const std::string &path)
+void Context::Wakeup()
 {
-	// Traverse all drivers
-	for (auto driver : driver_list)
-		if (driver->getPath() == path)
-			return driver;
-	
-	// Not found
-	return nullptr;
+	throw misc::Panic("Not implemented");
 }
 
+
+bool Context::isSuspended()
+{
+	throw misc::Panic("Not implemented");
+}
 
 }  // namespace comm
 

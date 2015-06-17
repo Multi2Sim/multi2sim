@@ -254,14 +254,18 @@ void Context::ExecuteSyscall()
 		misc::fatal("invalid system call (code %d)", code);
 
 	// Debug
-	emu->call_debug << misc::fmt("system call '%s' "
-			"(code %d, inst %lld, pid %d)\n",
-			Context::syscall_name[code], code,
-			emu->getInstructions(), pid);
-	emu->syscall_debug << misc::fmt("system call '%s' "
-			"(code %d, inst %lld, pid %d)\n",
-			Context::syscall_name[code], code,
-			emu->getInstructions(), pid);
+	emu->call_debug << misc::fmt("[%s] System call '%s' "
+			"(code %d, inst %lld)\n",
+			getName().c_str(),
+			Context::syscall_name[code],
+			code,
+			emu->getInstructions());
+	emu->syscall_debug << misc::fmt("[%s] System call '%s' "
+			"(code %d, inst %lld)\n",
+			getName().c_str(),
+			Context::syscall_name[code],
+			code,
+			emu->getInstructions());
 
 	// Perform system call
 	ExecuteSyscallFn fn = execute_syscall_fn[code];
@@ -345,8 +349,9 @@ bool Context::SyscallReadCanWakeup()
 	if (pending_unblocked.Any())
 	{
 		CheckSignalHandlerIntr();
-		emu->syscall_debug << misc::fmt("syscall 'read' - "
-				"interrupted by signal (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'read' - "
+				"interrupted by signal\n",
+				getName().c_str());
 		return true;
 	}
 
@@ -379,8 +384,9 @@ bool Context::SyscallReadCanWakeup()
 		regs.setEax(count);
 		memory->Write(pbuf, count, buf.get());
 
-		emu->syscall_debug << misc::fmt("syscall 'read' - "
-				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'read' - "
+				"continue\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getEax());
 		return true;
 	}
@@ -474,8 +480,9 @@ bool Context::SyscallWriteCanWakeup()
 	if (pending_unblocked.Any())
 	{
 		CheckSignalHandlerIntr();
-		emu->syscall_debug << misc::fmt("syscall 'write' - "
-				"interrupted by signal (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'write' - "
+				"interrupted by signal\n",
+				getName().c_str());
 		return true;
 	}
 
@@ -507,8 +514,9 @@ bool Context::SyscallWriteCanWakeup()
 					__FUNCTION__);
 
 		regs.setEax(count);
-		emu->syscall_debug << misc::fmt("syscall write - "
-				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall write - "
+				"continue\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  return=0x%x\n", regs.getEax());
 		return true;
 	}
@@ -794,13 +802,14 @@ bool Context::SyscallWaitpidCanWakeup()
 	{
 		// Continue with 'waitpid' system call
 		unsigned pstatus = regs.getEcx();
-		regs.setEax(child->pid);
+		regs.setEax(child->getId());
 		if (pstatus)
 			memory->Write(pstatus, 4, (char *) &child->exit_code);
 		child->setState(StateFinished);
 
-		emu->syscall_debug << misc::fmt("syscall waitpid - "
-				"continue (pid %d)\n", pid)
+		emu->syscall_debug << misc::fmt("[%s] syscall waitpid - "
+				"continue)\n",
+				getName().c_str())
 				<< misc::fmt("  return=0x%x\n", regs.getEax());
 		return true;
 	}
@@ -847,7 +856,7 @@ int Context::ExecuteSyscall_waitpid()
 		if (status_ptr)
 			memory->Write(status_ptr, 4, (char *) &child->exit_code);
 		child->setState(StateFinished);
-		return child->pid;
+		return child->getId();
 	}
 
 	// Return
@@ -1085,7 +1094,7 @@ int Context::ExecuteSyscall_lseek()
 
 int Context::ExecuteSyscall_getpid()
 {
-	return pid;
+	return getId();
 }
 
 
@@ -1860,7 +1869,7 @@ int Context::ExecuteSyscall_getppid()
 		return 1;
 
 	// Return parent's ID
-	return parent->pid;
+	return parent->getId();
 }
 
 
@@ -2952,12 +2961,13 @@ int Context::ExecuteSyscall_clone()
 	}
 
 	// Flag CLONE_PARENT_SETTID
+	int child_id = context->getId();
 	if (flags & SIM_CLONE_PARENT_SETTID)
-		memory->Write(parent_tid_ptr, 4, (char *) &context->pid);
+		memory->Write(parent_tid_ptr, 4, (char *) &child_id);
 
 	// Flag CLONE_CHILD_SETTID
 	if (flags & SIM_CLONE_CHILD_SETTID)
-		context->memory->Write(child_tid_ptr, 4, (char *) &context->pid);
+		context->memory->Write(child_tid_ptr, 4, (char *) &child_id);
 
 	// Flag CLONE_CHILD_CLEARTID
 	if (flags & SIM_CLONE_CHILD_CLEARTID)
@@ -2997,8 +3007,8 @@ int Context::ExecuteSyscall_clone()
 
 	// Return PID of the new context
 	emu->syscall_debug << misc::fmt("  context created with pid %d\n",
-			context->pid);
-	return context->pid;
+			context->getId());
+	return context->getId();
 }
 
 
@@ -3613,7 +3623,7 @@ int Context::ExecuteSyscall_sched_setparam()
 			sched_priority);
 
 	// Currently only works when pid matches calling context
-	if (pid != this->pid)
+	if (pid != getId())
 		misc::panic("%s: only supported for same pid as current "
 				"context.\n%s", __FUNCTION__,
 				syscall_error_note);
@@ -3666,7 +3676,7 @@ int Context::ExecuteSyscall_sched_getparam()
 			<< misc::fmt("  param_ptr=0x%x\n", param_ptr);
 
 	// Currently only works when pid matches calling context
-	if (pid != this->pid)
+	if (pid != getId())
 		misc::panic("%s: only supported for same pid as current "
 				"context.\n%s", __FUNCTION__,
 				syscall_error_note);
@@ -3753,7 +3763,7 @@ int Context::ExecuteSyscall_sched_getscheduler()
 	emu->syscall_debug << misc::fmt("  pid=%d\n", pid);
 
 	// Currently only works when pid matches calling context
-	if (pid != this->pid)
+	if (pid != getId())
 		misc::panic("%s: only supported for same pid as current "
 				"context.\n%s", __FUNCTION__,
 				syscall_error_note);
@@ -3883,8 +3893,9 @@ bool Context::SyscallNanosleepCanWakeup()
 		if (rmtp)
 			memory->Write(rmtp, 8, (char *) &zero);
 		regs.setEax(0);
-		emu->syscall_debug << misc::fmt("syscall 'nanosleep' - "
-				"continue (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'nanosleep' - "
+				"continue\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  return=0x%x\n",
 				regs.getEax());
 		return true;
@@ -3904,8 +3915,9 @@ bool Context::SyscallNanosleepCanWakeup()
 			memory->Write(rmtp + 4, 4, (char *) &usec);
 		}
 		regs.setEax(-EINTR);
-		emu->syscall_debug << misc::fmt("syscall 'nanosleep' - "
-				"interrupted by signal (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'nanosleep' - "
+				"interrupted by signal\n",
+				getName().c_str());
 		return true;
 	}
 
@@ -4118,8 +4130,9 @@ bool Context::SyscallPollCanWakeup()
 	if (pending_unblocked.Any())
 	{
 		CheckSignalHandlerIntr();
-		emu->syscall_debug << misc::fmt("syscall 'poll' - "
-				"interrupted by signal (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'poll' - "
+				"interrupted by signal\n",
+				getName().c_str());
 		return true;
 	}
 
@@ -4140,9 +4153,10 @@ bool Context::SyscallPollCanWakeup()
 		revents = POLLOUT;
 		memory->Write(prevents, 2, (char *) &revents);
 		regs.setEax(1);
-		emu->syscall_debug << misc::fmt("syscall poll - "
-				"continue (pid %d) - POLLOUT "
-				"occurred in file\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall poll - "
+				"continue - POLLOUT "
+				"occurred in file\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  retval=%d\n",
 				regs.getEax());
 		return true;
@@ -4154,9 +4168,10 @@ bool Context::SyscallPollCanWakeup()
 		revents = POLLIN;
 		memory->Write(prevents, 2, (char *) &revents);
 		regs.setEax(1);
-		emu->syscall_debug << misc::fmt("syscall poll - "
-				"continue (pid %d) - POLLIN "
-				"occurred in file\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall poll - "
+				"continue - POLLIN "
+				"occurred in file\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  retval=%d\n",
 				regs.getEax());
 		return true;
@@ -4168,8 +4183,9 @@ bool Context::SyscallPollCanWakeup()
 		revents = 0;
 		memory->Write(prevents, 2, (char *) &revents);
 		regs.setEax(0);
-		emu->syscall_debug << misc::fmt("syscall poll - "
-				"continue (pid %d) - time out\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall poll - "
+				"continue - time out\n",
+				getName().c_str());
 		emu->syscall_debug << misc::fmt("  retval=%d\n",
 				regs.getEax());
 		return true;
@@ -4537,8 +4553,9 @@ bool Context::SyscallSigsuspendCanWakeup()
 	{
 		CheckSignalHandlerIntr();
 		signal_mask_table.RestoreBlockedSignals();
-		emu->syscall_debug << misc::fmt("syscall 'rt_sigsuspend' - "
-				"interrupted by signal (pid %d)\n", pid);
+		emu->syscall_debug << misc::fmt("[%s] Syscall 'rt_sigsuspend' - "
+				"interrupted by signal\n",
+				getName().c_str());
 		return true;
 	}
 
@@ -5408,7 +5425,7 @@ int Context::ExecuteSyscall_gettid()
 	// FIXME: return different 'tid' for threads, but the system call
 	// 'getpid' should return the same 'pid' for threads from the same group
 	// created with CLONE_THREAD flag.
-	return pid;
+	return getId();
 }
 
 
@@ -6088,7 +6105,7 @@ int Context::ExecuteSyscall_set_tid_address()
 	emu->syscall_debug << misc::fmt("  tidptr=0x%x\n", tidptr);
 
 	clear_child_tid = tidptr;
-	return pid;
+	return getId();
 }
 
 
