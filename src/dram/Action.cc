@@ -161,7 +161,7 @@ void Actions::ParseActionCheck(const std::vector<std::string> &tokens)
 void Actions::ActionRequestHandler(esim::EventType *type,
 		esim::EventFrame *frame)
 {
-	ActionRequestFrame *action_frame = dynamic_cast<ActionRequestFrame *>(frame);
+	ActionRequestFrame *action_frame = misc::cast<ActionRequestFrame *>(frame);
 	System *dram = System::getInstance();
 	dram->AddRequest(action_frame->request);
 }

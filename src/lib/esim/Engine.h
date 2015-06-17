@@ -87,12 +87,12 @@ class Engine
 	std::list<FrequencyDomain> frequency_domains;
 
 	// Heap of pending events
-	std::priority_queue<std::unique_ptr<Event>,
-			std::vector<std::unique_ptr<Event>>,
-			Event::CompareUniquePtrs> events;
+	std::priority_queue<std::shared_ptr<EventFrame>,
+			std::vector<std::shared_ptr<EventFrame>>,
+			EventFrame::CompareSharedPointers> heap;
 
-	// Queue of end events
-	std::queue<std::unique_ptr<Event>> end_events;
+	// Queue of frames associated with the end events
+	std::queue<std::shared_ptr<EventFrame>> end_frames;
 
 	// Null event type used to schedule useless events
 	EventType *null_event_type = nullptr;
@@ -109,8 +109,9 @@ class Engine
 	// Cycle time of the fastest frequency domain
 	long long shortest_cycle_time = 0;
 
-	// Event whose handler is currently being executed
-	Event *current_event = nullptr;
+	// When an event handler is being executed, this is the current frame.
+	// Otherwise, it is null.
+	std::shared_ptr<EventFrame> current_frame;
 
 	// Number of in-flight events before a warning is shown (10k events)
 	const int max_inflight_events = 10000;
@@ -195,7 +196,18 @@ public:
 
 	/// If an event handler is currently executing, return the corresponding
 	/// event. If no event handler is executing, return `nullptr`.
-	Event *getCurrentEvent() { return current_event; }
+	EventType *getCurrentEventType() const
+	{
+		return current_frame == nullptr ? nullptr :
+				current_frame->event_type;
+	}
+
+	/// If an event handler is currently executing, return the current
+	/// frame. Otherwise, return `nullptr`.
+	const std::shared_ptr<EventFrame> &getCurrentFrame() const
+	{
+		return current_frame;
+	}
 
 	/// Register a new frequency domain.
 	///
@@ -343,7 +355,11 @@ public:
 	/// Return the parent frame in the event stack of the current event
 	/// chain, or `nullptr` if the current event is in the bottom of the
 	/// stack. This function should be invoked only within an event handler.
-	EventFrame *getParentFrame();
+	EventFrame *getParentFrame()
+	{
+		assert(current_frame);
+		return current_frame->parent_frame.get();
+	}
 
 	/// Activate debug information for the event-driven simulator.
 	///
