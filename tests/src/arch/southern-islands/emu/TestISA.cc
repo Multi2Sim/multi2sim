@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Shi Dong (dong.sh@husky.neu.edu)
+ *  Copyright (C) 2015  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -121,33 +121,9 @@ TEST(TestISA, v_add_i32)
 	//
 
 	// Build new instruction with literal constant
-	inst_bytes = 
-	{
-		// src0 - v0
-		0xff,
-
-		// vsrc1 - v1
-		1,
-
-		// vdst - v2
-		2,
-
-		// op - v_add_i32 has opcode = 37                    
-		37,
-
-		// enc - 0
-		0,
-
-		// lit_cnst - 1
-		10
-	};
+	inst_bytes.src0 = 0xff;
+	inst_bytes.lit_cnst = 10;
 	inst->Decode((char *) &inst_bytes, 0);
-
-	// Get registers
-	src0 = inst->getBytes()->vop2.src0;
-	vsrc1 = inst->getBytes()->vop2.vsrc1;
-	vdst = inst->getBytes()->vop2.vdst;
-	vcc = Inst::RegisterVcc;
 
 	// Set values in registers - v1 = 2, v0 is replaced with the literal
 	work_item->WriteVReg(vsrc1, 2);
@@ -155,7 +131,7 @@ TEST(TestISA, v_add_i32)
 	// Execute instruction
 	work_item->Execute(inst->getOpcode(), inst.get());
 
-	// Read results - v2 should be 3 and vcc should be 0
+	// Read results - v2 should be 12 and vcc should be 0
 	EXPECT_EQ(12, work_item->ReadVReg(vdst));
 	EXPECT_EQ(0, work_item->ReadReg(vcc));
 }
