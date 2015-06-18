@@ -142,17 +142,12 @@ void FunctionalUnit::ParseConfiguration(misc::IniFile *ini_file)
 	// Section
 	std::string section = "FunctionalUnits";
 
-	// Value
-	std::string value;
-
-	// Local variable
-	ReservationPool *pool_ptr;
-
 	// Get configuration parameter
 	for (int i = 1; i < TypeCount; i++)
 	{
 		// Get corresponding pool entry
-		pool_ptr = &reservation_pool[i];
+		ReservationPool *pool_ptr = &reservation_pool[i];
+		std::string value = "";
 
 		// Get functional units count
 		value = name[i] + ".Count";

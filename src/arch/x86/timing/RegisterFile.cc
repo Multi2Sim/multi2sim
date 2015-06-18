@@ -171,8 +171,8 @@ int RegisterFile::RequestIntRegister()
 	assert(int_free_phy_reg_count > 0);
 	phy_reg = int_free_phy_reg[int_free_phy_reg_count - 1];
 	int_free_phy_reg_count--;
-	core->incRegFileIntCount();
-	thread->incRegFileIntCount();
+	core->incNumIntegerRegistersOccupied();
+	thread->incNumIntegerRegistersOccupied();
 	assert(!int_phy_reg[phy_reg].busy);
 	assert(!int_phy_reg[phy_reg].pending);
 	return phy_reg;
@@ -188,8 +188,8 @@ int RegisterFile::RequestFPRegister()
 	assert(fp_free_phy_reg_count > 0);
 	phy_reg = fp_free_phy_reg[fp_free_phy_reg_count - 1];
 	fp_free_phy_reg_count--;
-	core->incRegFileIntCount();
-	thread->incRegFileIntCount();
+	core->incNumIntegerRegistersOccupied();
+	thread->incNumIntegerRegistersOccupied();
 	assert(!fp_phy_reg[phy_reg].busy);
 	assert(!fp_phy_reg[phy_reg].pending);
 	return phy_reg;
@@ -205,8 +205,8 @@ int RegisterFile::RequestXMMRegister()
 	assert(xmm_free_phy_reg_count > 0);
 	phy_reg = xmm_free_phy_reg[xmm_free_phy_reg_count - 1];
 	xmm_free_phy_reg_count--;
-	core->incRegFileIntCount();
-	thread->incRegFileIntCount();
+	core->incNumIntegerRegistersOccupied();
+	thread->incNumIntegerRegistersOccupied();
 	assert(!xmm_phy_reg[phy_reg].busy);
 	assert(!xmm_phy_reg[phy_reg].pending);
 	return phy_reg;
@@ -219,20 +219,20 @@ bool RegisterFile::CanRename(Uop &uop)
 	//// assert(uop->thread == self);
 	if (kind == KindPrivate)
 	{
-		if (thread->getRegFileIntCount() + uop.getPhyRegIntOdepCount() > int_local_size)
+		if (thread->getNumIntegerRegistersOccupied() + uop.getPhyRegIntOdepCount() > int_local_size)
 			return false;
-		if (thread->getRegFileFpCount() + uop.getPhyRegFpOdepCount() > fp_local_size)
+		if (thread->getNumFloatPointRegistersOccupied() + uop.getPhyRegFpOdepCount() > fp_local_size)
 			return false;
-		if (thread->getRegFileXmmCount() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
+		if (thread->getNumXmmRegistersOccupied() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
 			return false;
 	}
 	else
 	{
-		if (core->getRegFileIntCount() + uop.getPhyRegIntOdepCount() > int_local_size)
+		if (core->getNumIntegerRegistersOccupied() + uop.getPhyRegIntOdepCount() > int_local_size)
 			return false;
-		if (core->getRegFileFpCount() + uop.getPhyRegFpOdepCount() > fp_local_size)
+		if (core->getNumFloatPointRegistersOccupied() + uop.getPhyRegFpOdepCount() > fp_local_size)
 			return false;
-		if (core->getRegFileXmmCount() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
+		if (core->getNumXmmRegistersOccupied() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
 			return false;
 	}
 
@@ -455,11 +455,11 @@ void RegisterFile::UndoUop(Uop &uop)
 			if (!int_phy_reg[phy_reg].busy)
 			{
 				assert(int_free_phy_reg_count < int_local_size);
-				assert(core->getRegFileIntCount() > 0 && thread->getRegFileIntCount() > 0);
+				assert(core->getNumIntegerRegistersOccupied() > 0 && thread->getNumIntegerRegistersOccupied() > 0);
 				int_free_phy_reg[int_free_phy_reg_count] = phy_reg;
 				int_free_phy_reg_count++;
-				core->decRegFileIntCount();
-				thread->decRegFileIntCount();
+				core->decNumIntegerRegistersOccupied();
+				thread->decNumIntegerRegistersOccupied();
 			}
 
 			// Return to previous mapping
@@ -480,11 +480,11 @@ void RegisterFile::UndoUop(Uop &uop)
 			if (!fp_phy_reg[phy_reg].busy)
 			{
 				assert(fp_free_phy_reg_count < fp_local_size);
-				assert(core->getRegFileFpCount() > 0 && thread->getRegFileFpCount() > 0);
+				assert(core->getNumFloatPointRegistersOccupied() > 0 && thread->getNumFloatPointRegistersOccupied() > 0);
 				fp_free_phy_reg[fp_free_phy_reg_count] = phy_reg;
 				fp_free_phy_reg_count++;
-				core->decRegFileFpCount();
-				thread->decRegFileFpCount();
+				core->decNumFloatPointRegistersOccupied();
+				thread->decNumFloatPointRegistersOccupied();
 			}
 
 			// Return to previous mapping
@@ -500,11 +500,11 @@ void RegisterFile::UndoUop(Uop &uop)
 			if (!xmm_phy_reg[phy_reg].busy)
 			{
 				assert(xmm_free_phy_reg_count < xmm_local_size);
-				assert(core->getRegFileXmmCount() > 0 && thread->getRegFileXmmCount() > 0);
+				assert(core->getNumXmmRegistersOccupied() > 0 && thread->getNumXmmRegistersOccupied() > 0);
 				xmm_free_phy_reg[xmm_free_phy_reg_count] = phy_reg;
 				xmm_free_phy_reg_count++;
-				core->decRegFileXmmCount();
-				thread->decRegFileXmmCount();
+				core->decNumXmmRegistersOccupied();
+				thread->decNumXmmRegistersOccupied();
 			}
 
 			// Return to previous mapping
@@ -554,11 +554,11 @@ void RegisterFile::CommitUop(Uop &uop)
 			{
 				assert(!int_phy_reg[ophy_reg].pending);
 				assert(int_free_phy_reg_count < int_local_size);
-				assert(core->getRegFileIntCount() > 0 && thread->getRegFileIntCount() > 0);
+				assert(core->getNumIntegerRegistersOccupied() > 0 && thread->getNumIntegerRegistersOccupied() > 0);
 				int_free_phy_reg[int_free_phy_reg_count] = ophy_reg;
 				int_free_phy_reg_count++;
-				core->decRegFileIntCount();
-				thread->decRegFileIntCount();
+				core->decNumIntegerRegistersOccupied();
+				thread->decNumIntegerRegistersOccupied();
 			}
 		}
 		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
@@ -570,11 +570,11 @@ void RegisterFile::CommitUop(Uop &uop)
 			{
 				assert(!fp_phy_reg[ophy_reg].pending);
 				assert(fp_free_phy_reg_count < fp_local_size);
-				assert(core->getRegFileFpCount() > 0 && thread->getRegFileFpCount() > 0);
+				assert(core->getNumFloatPointRegistersOccupied() > 0 && thread->getNumFloatPointRegistersOccupied() > 0);
 				fp_free_phy_reg[fp_free_phy_reg_count] = ophy_reg;
 				fp_free_phy_reg_count++;
-				core->decRegFileFpCount();
-				thread->decRegFileFpCount();
+				core->decNumFloatPointRegistersOccupied();
+				thread->decNumFloatPointRegistersOccupied();
 			}
 		}
 		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
@@ -586,11 +586,11 @@ void RegisterFile::CommitUop(Uop &uop)
 			{
 				assert(!xmm_phy_reg[ophy_reg].pending);
 				assert(xmm_free_phy_reg_count < xmm_local_size);
-				assert(core->getRegFileXmmCount() > 0 && thread->getRegFileXmmCount() > 0);
+				assert(core->getNumXmmRegistersOccupied() > 0 && thread->getNumXmmRegistersOccupied() > 0);
 				xmm_free_phy_reg[xmm_free_phy_reg_count] = ophy_reg;
 				xmm_free_phy_reg_count++;
-				core->decRegFileXmmCount();
-				thread->decRegFileXmmCount();
+				core->decNumXmmRegistersOccupied();
+				thread->decNumXmmRegistersOccupied();
 			}
 		}
 		else

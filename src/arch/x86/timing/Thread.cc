@@ -105,7 +105,7 @@ bool Thread::CanInsertInInstructionQueue()
 	if (CPU::getInstructionQueueKind() == CPU::InstructionQueueKindPrivate)
 	{
 		size = CPU::getInstructionQueueSize();
-		count = instruction_queue_count;
+		count = uop_count_in_instruction_queue;
 	}
 	else
 	{
@@ -131,7 +131,7 @@ void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> &uop)
 
 	// Increment the Uop count both for thread and core
 	core->incInstructionQueueCount();
-	instruction_queue_count++;
+	uop_count_in_instruction_queue++;
 }
 
 
@@ -149,9 +149,9 @@ void Thread::RemoveFromInstructionQueue(int index)
 	instruction_queue.erase(instruction_queue.begin() + index);
 
 	// Decrement the Uop count both for thread and core
-	assert(core->getInstructionQueueCount() > 0 && instruction_queue_count > 0);
+	assert(core->getInstructionQueueCount() > 0 && uop_count_in_instruction_queue > 0);
 	core->decInstructionQueueCount();
-	instruction_queue_count--;
+	uop_count_in_instruction_queue--;
 }
 
 
@@ -192,7 +192,7 @@ bool Thread::CanInsertInLoadStoreQueue()
 	if (CPU::getLoadStoreQueueKind() == CPU::LoadStoreQueueKindPrivate)
 	{
 		size = CPU::getLoadStoreQueueSize();
-		count = load_store_queue_count;
+		count = uop_count_in_load_store_queue;
 	}
 	else
 	{
@@ -228,7 +228,7 @@ void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop)
 
 	// Increment the Uop count both for thread and core
 	core->incLoadStoreQueueCount();
-	load_store_queue_count++;
+	uop_count_in_load_store_queue++;
 }
 
 
@@ -246,9 +246,9 @@ void Thread::RemoveFromLoadQueue(int index)
 	load_queue.erase(load_queue.begin() + index);
 
 	// Decrement the Uop count both for thread and core
-	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
+	assert(core->getLoadStoreQueueCount() > 0 && uop_count_in_load_store_queue > 0);
 	core->decLoadStoreQueueCount();
-	load_store_queue_count--;
+	uop_count_in_load_store_queue--;
 }
 
 
@@ -266,9 +266,9 @@ void Thread::RemoveFromStoreQueue(int index)
 	store_queue.erase(store_queue.begin() + index);
 
 	// Decrement the Uop count both for thread and core
-	assert(core->getLoadStoreQueueCount() > 0 && load_store_queue_count > 0);
+	assert(core->getLoadStoreQueueCount() > 0 && uop_count_in_load_store_queue > 0);
 	core->decLoadStoreQueueCount();
-	load_store_queue_count--;
+	uop_count_in_load_store_queue--;
 }
 
 
@@ -393,7 +393,7 @@ bool Thread::CanFetch()
 }
 
 
-Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
+std::shared_ptr<Uop> Thread::FetchInstruction(bool fetch_from_trace_cache)
 {
 	return nullptr;
 }
