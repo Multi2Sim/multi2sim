@@ -179,6 +179,9 @@ CUresult cuInit(unsigned int Flags)
 	pinned_memory_object_list = list_create();
 	device_memory_object_list = list_create();
 
+	pinned_memory_object_tail_list = list_create();
+	device_memory_object_tail_list = list_create();
+
 	/* Initialize mutex */
 	pthread_mutex_init(&cuda_mutex, NULL);
 
@@ -838,10 +841,10 @@ CUresult cuMemGetInfo(size_t *free, size_t *total)
 
 CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 {
-	int ret;
+	//int ret;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
-	cuda_debug("\t(driver) '%s' in: device_ptr = [%p]", __func__, dptr);
+	cuda_debug("\t(driver) '%s' in: device ptr address = [%p]", __func__, dptr);
 	cuda_debug("\t(driver) '%s' in: bytesize = %d", __func__, bytesize);
 
 	if (!active_device)
@@ -858,9 +861,10 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 		return CUDA_ERROR_INVALID_VALUE;
 	}
 
-	unsigned args[2] = {(unsigned)dptr, (unsigned) bytesize};
-	ret = ioctl(active_device->fd, cuda_call_MemAlloc, args);
-	cuda_debug("\t (driver) '%s' ret =  %d", __func__, ret);
+	//unsigned args[2] = {(unsigned)dptr, (unsigned) bytesize};
+	unsigned args[1] = {(unsigned) bytesize};
+	*dptr = (CUdeviceptr) ioctl(active_device->fd, cuda_call_MemAlloc, args);
+	// cuda_debug("\t (driver) '%s' ret =  %d", __func__, ret);
 	/* Syscall */
 	//ret = syscall(CUDA_SYS_CODE, cuda_call_cuKplMemAlloc, dptr, bytesize);
 	//ret = 0;
@@ -869,13 +873,21 @@ CUresult cuMemAlloc(CUdeviceptr *dptr, size_t bytesize)
 	/* Check that we are running on Multi2Sim. If a program linked with this
 	 * library is running natively, system call CUDA_SYS_CODE is not
 	 * supported. */
-	if (ret)
-		fatal("native execution not supported.\n%s", cuda_err_native);
+	//if (ret)
+	//	fatal("native execution not supported.\n%s", cuda_err_native);
 
 	/* Update device memory list */
 	list_enqueue(device_memory_object_list, (void *)*dptr);
 
-	cuda_debug("\t(driver) '%s' out: device_ptr = 0x%08x", __func__, *dptr);
+	/*Update device memory tail list */
+	CUdeviceptr dptr_tail;
+	dptr_tail = *dptr + bytesize;
+	list_enqueue(device_memory_object_tail_list, (void *) dptr_tail);
+
+	cuda_debug("\t(driver) '%s' out: device_ptr_tail = 0x%d", __func__,
+					dptr_tail);
+	cuda_debug("\t(driver) '%s' out: device ptr address = [%p]", __func__, dptr);
+	cuda_debug("\t(driver) '%s' out: device_ptr = 0x%d", __func__, *dptr);
 	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
 
 	return CUDA_SUCCESS;
@@ -1007,6 +1019,25 @@ CUresult cuMemHostAlloc(void **pp, size_t bytesize, unsigned int Flags)
 CUresult cuMemHostGetDevicePointer(CUdeviceptr *pdptr, void *p,
 		unsigned int Flags)
 {
+	/*int ret;
+
+	cuda_debug("CUDA driver API '%s'", __func__);
+	cuda_debug("\t(driver) '%s' in: pdptr = [%p]", __func__, pdptr);
+	cuda_debug("\t(driver) '%s' in: p = [%p]", __func__, p);
+	cuda_debug("\t(driver) '%s' in: Flags = %u", __func__, Flags);
+
+	if (!active_device)
+	{
+		cuda_debug("\t(driver) '%s' out: return = %d", __func__,
+				CUDA_ERROR_NOT_INITIALIZED);
+		return CUDA_ERROR_NOT_INITIALIZED;
+	}
+
+	unsigned args[2] = {(unsigned) pdptr, (unsigned) p};
+	ret = ioctl(active_device->fd, cuda_call_MemFree, args);
+
+	return CUDA_SUCCESS;
+	*/
 	__CUDA_NOT_IMPL__;
 	return CUDA_SUCCESS;
 }
@@ -1236,10 +1267,14 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 	struct memory_args_t *args;
 
 	cuda_debug("CUDA driver API '%s'", __func__);
-	cuda_debug("\t(driver) '%s' in: dst = 0x%08x", __func__, dst);
-	cuda_debug("\t(driver) '%s' in: src = 0x%08x", __func__, src);
-	cuda_debug("\t(driver) '%s' in: ByteCount = %d", __func__, ByteCount);
-	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
+	cuda_debug("\t(driver) '%s' in: dst = 0x%08x, stream id = %d",
+					__func__, dst, hStream->id);
+	cuda_debug("\t(driver) '%s' in: src = 0x%08x, stream id = %d",
+					__func__, src, hStream->id);
+	cuda_debug("\t(driver) '%s' in: ByteCount = %d, stream id = %d",
+					__func__, ByteCount, hStream->id);
+	cuda_debug("\t(driver) '%s' in: hStream = [%p], strean id = %d",
+					__func__, hStream, hStream->id);
 
 	if (!active_device)
 	{
@@ -1266,7 +1301,8 @@ CUresult cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount,
 	/* Free arguments */
 	free(args);
 
-	cuda_debug("\t(driver) '%s' out: return = %d", __func__, CUDA_SUCCESS);
+	cuda_debug("\t(driver) '%s' out: return = %d stream id = %d",
+					__func__, CUDA_SUCCESS, hStream->id);
 
 	return CUDA_SUCCESS;
 }
@@ -1969,6 +2005,12 @@ CUresult cuLaunchKernel(CUfunction f, unsigned int gridDimX,
 	cuda_debug("\t(driver) '%s' in: sharedMemBytes = %u", __func__,
 			sharedMemBytes);
 	cuda_debug("\t(driver) '%s' in: hStream = [%p]", __func__, hStream);
+
+
+	cuda_debug("\t(driver) '%s' in: hStream id = [%d]", __func__,
+			hStream->id);
+
+
 	cuda_debug("\t(driver) '%s' in: kernelParams = [%p]", __func__,
 			kernelParams);
 	cuda_debug("\t(driver) '%s' in: extra = [%p]", __func__, extra);

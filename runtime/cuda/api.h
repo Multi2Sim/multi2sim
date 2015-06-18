@@ -55,6 +55,8 @@ struct list_t *function_list;
 /* Memory object tables */
 struct list_t *pinned_memory_object_list;
 struct list_t *device_memory_object_list;
+struct list_t *device_memory_object_tail_list;
+struct list_t *pinned_memory_object_tail_list;
 
 /* User thread related */
 pthread_mutex_t cuda_mutex;
