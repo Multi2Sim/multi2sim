@@ -30,7 +30,7 @@ namespace esim
 
 bool handler_called = false;
 
-void test_handler(EventType *type, EventFrame *frame)
+void test_handler(Event *event, Frame *frame)
 {
 	handler_called = true;
 }
@@ -40,11 +40,11 @@ TEST(TestEngine, should_be_able_to_schedule_event)
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
 	FrequencyDomain domain("Test frequency domain", 2e3);
-	EventType type("test event", test_handler, &domain);
+	Event event("test event", test_handler, &domain);
 	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
 
 	// Schedule next event in next 10 events
-	engine->Next(&type, 10, 0);
+	engine->Next(&event, 10, 0);
 
 	// Process events should go to next cycle, and the scheduled
 	// event should not be triggered
@@ -62,31 +62,31 @@ TEST(TestEngine, should_be_able_to_schedule_event)
 	EXPECT_TRUE(handler_called);
 }
 
-class MockupEventFrame : public EventFrame
+class MockupFrame : public Frame
 {
 public:
 	int counter = 0;
 };
 
-void test_handler_2(EventType *type, EventFrame *frame)
+void test_handler_2(Event *event, Frame *frame)
 {
-	MockupEventFrame *data = dynamic_cast<MockupEventFrame *>(frame);
+	MockupFrame *data = dynamic_cast<MockupFrame *>(frame);
 	data->counter++;
 }
 
 TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
 {
 	// Set frame
-	auto frame = misc::new_shared<MockupEventFrame>();
+	auto frame = misc::new_shared<MockupFrame>();
 
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
 	FrequencyDomain domain("Test frequency domain", 2e3);
-	EventType type("test event", test_handler_2, &domain);
+	Event event("test event", test_handler_2, &domain);
 	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
 
 	// Schedule next event 
-	engine->Schedule(&type, frame, 0);
+	engine->Schedule(&event, frame, 0);
 
 	// Process event
 	engine->ProcessEvents();
