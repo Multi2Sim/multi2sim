@@ -93,6 +93,7 @@ struct cuda_stream_command_t
 	/* Flags */
 	unsigned completed;
 	unsigned ready_to_run;
+	unsigned id;
 };
 
 struct CUstream_st

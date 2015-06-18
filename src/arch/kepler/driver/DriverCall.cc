@@ -88,34 +88,37 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 {
 	// Arguments
-	unsigned device_ptr;
 	unsigned size;
 
 	// Read arguments
-	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
-	memory->Read(args_ptr+4, sizeof(unsigned), (char *) &size);
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &size);
 
 	// Debug
-	debug << misc::fmt("\tdevice_ptr = 0x%x\n", device_ptr);
 	debug << misc::fmt("\tsize = %u\n", size);
 
 	// Allocate memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
-	global_mem->Map(kpl_emu->getGlobalMemTop(), size,
-			mem::Memory::AccessRead | mem::Memory::AccessWrite);
-	memory->Write(device_ptr, sizeof(unsigned),
-				(char *) kpl_emu->getGlobalMemTopAddress());
 
-	memory->Write(device_ptr, sizeof(unsigned),
-	                          (char *) kpl_emu->getGlobalMemTopAddress());
-	debug << misc::fmt("\t%d bytes of device memory allocated at 0x%x\n",
-			size, device_ptr);
+	// Allocate 4 more bytes of memory
+	global_mem->Map(kpl_emu->getGlobalMemTop(), size + 4,
+			mem::Memory::AccessRead | mem::Memory::AccessWrite);
+	// Use the first word to record the size of memory
+	global_mem->Write(kpl_emu->getGlobalMemTop(), sizeof(unsigned),
+					(char *) &size);
+	// Make the pointer point to the second word of the allocated memory
+	unsigned addr = kpl_emu->getGlobalMemTop() + sizeof(unsigned) ;
+
+	// Debug information
+	debug << misc::fmt("\t%u bytes of device memory allocated at 0x%x\n",
+			size + 4, kpl_emu->getGlobalMemTop());
+	debug << misc::fmt("\tmemory base address is = 0x%x\n",
+					kpl_emu->getGlobalMemTop());
 
 	// Increase global memory top FIXME
-	kpl_emu->incGloablMemTop(size);
+	kpl_emu->incGloablMemTop(size + 4);
 
-	return 0;
+	return addr;
 }
 
 
@@ -196,10 +199,11 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &size);
 	debug << misc::fmt("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
 			device_ptr, host_ptr, size);
+	debug << misc::fmt("\tMemory top is = 0x%x\n", kpl_emu->getGlobalMemTop());
 
 	// Check memory range
-	if (device_ptr + size > kpl_emu->getGlobalMemTop())
-		throw Error("Accessing device memory not allocated");
+	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
+	//	throw Error("Accessing device memory not allocated");
 
 	// Read memory from host to device
 	std::unique_ptr<char> buffer(new char[size]);

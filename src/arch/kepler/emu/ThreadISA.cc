@@ -2827,7 +2827,7 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 
 void Thread::ExecuteInst_BPT(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	//this->ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_JMX(Inst *inst)
