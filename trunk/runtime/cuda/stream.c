@@ -22,6 +22,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "../include/cuda.h"
 #include "debug.h"
@@ -36,7 +37,7 @@
 void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 {
 	int i;
-	CUdeviceptr mem_ptr;
+	CUdeviceptr mem_ptr, mem_tail_ptr;
 	CUdeviceptr dst = command->m_args.dst_ptr;
 	CUdeviceptr src = command->m_args.src_ptr;
 	unsigned size = command->m_args.size;
@@ -44,21 +45,54 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 	int src_is_device = 0;
 
 	cuda_debug("CUDA stream command 'cuMemcpyAsync' running now");
-	cuda_debug("\tin: src_ptr = 0x%08x", src);
-	cuda_debug("\tin: dst_ptr = 0x%08x", dst);
-	cuda_debug("\tin: size = %d", size);
+	cuda_debug("\tin: '%s' stream id = %d", __func__, command->id);
+	cuda_debug("\tin: '%s' src_ptr = 0x%08x, stream id = %d",
+					__func__, src, command->id);
+	cuda_debug("\tin: '%s' dst_ptr = 0x%08x, stream id = %d",
+					__func__, dst, command->id);
+	cuda_debug("\tin: '%s' size = %d, stream id = %d",
+					__func__, size, command->id);
 
 	/* Determine if dst/src is host or device pointer */
 	for (i = 0; i < list_count(device_memory_object_list); ++i)
 	{
 		mem_ptr = (CUdeviceptr) list_get(device_memory_object_list, i);
-		if ((! dst_is_device) && (mem_ptr == dst))
+		mem_tail_ptr = (CUdeviceptr) list_get(device_memory_object_tail_list,
+						i);
+		cuda_debug("\tin: '%s' mem_ptr = 0x%08x, stream id = %d",
+						__func__, mem_ptr, command->id);
+		cuda_debug("\tin: '%s' mem_tail_ptr = 0x%08x, stream id = %d",
+						__func__, mem_tail_ptr, command->id);
+		//if ((! dst_is_device) && (mem_ptr == dst))
+		if ((! dst_is_device) && (mem_ptr <= dst && dst < mem_tail_ptr) )
 			dst_is_device = 1;
-		else if ((! src_is_device) && (mem_ptr == src))
+		else if ((! src_is_device) && (mem_ptr <= src && src < mem_tail_ptr))
 			src_is_device = 1;
 		if (dst_is_device && src_is_device)
 			break;
 	}
+
+	unsigned args[3] = {(unsigned) dst, (unsigned) src,
+				(unsigned) size};
+	int ret;
+	if ((!src_is_device) && dst_is_device)
+		ret = ioctl(active_device->fd, cuda_call_MemWrite, args);
+	else if (src_is_device && (! dst_is_device))
+		ret = ioctl(active_device->fd, cuda_call_MemRead, args);
+	else
+	{
+		warning("%s: host to host and device to device async memory copy \
+				not implemented.\n", __func__);
+
+		fatal("%s: not implemented\n", __FUNCTION__);
+	}
+
+	extern char *cuda_err_native;
+	/* Check that we are running on Multi2Sim. If a program linked with this
+	 * library is running natively, system call CUDA_SYS_CODE is not
+	 * supported. */
+	if (ret)
+		fatal("native execution not supported.\n%s", cuda_err_native);
 
 	/* Syscall */
 	/*
@@ -73,7 +107,7 @@ void cuMemcpyAsyncImpl(struct cuda_stream_command_t *command)
 				not implemented.\n", __func__);
 	else
 		fatal("device not supported.\n");*/
-	fatal("%s: not implemented", __FUNCTION__);
+	//fatal("%s: not implemented", __FUNCTION__);
 	
 	/* Debug */
 	cuda_debug("CUDA stream command 'cuMemcpyAsync' completed now");
@@ -252,6 +286,7 @@ struct cuda_stream_command_t *cuda_stream_command_create(CUstream stream,
 		command->cb.userData = cb->userData;
 	}
 	command->completed = 0;
+	command->id = stream->id;
 
 	return command;
 }

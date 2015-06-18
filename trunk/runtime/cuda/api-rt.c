@@ -1303,19 +1303,21 @@ cudaError_t cudaMalloc(void **devPtr, size_t size)
 	pthread_mutex_lock(&cuda_mutex);
 
 	cuda_debug("CUDA runtime API '%s'", __func__);
-	cuda_debug("\t(runtime) '%s' in: devPtr = [%p]", __func__, devPtr);
+	cuda_debug("\t(runtime) '%s' in: dptr address = [%p]", __func__, devPtr);
 	cuda_debug("\t(runtime) '%s' in: size = %d", __func__, size);
+	cuda_debug("\t(runtime) '%s' in: dptr = %d", __func__,  dptr);
 
 	if (!active_device)
 		cuInit(0);
 
 	cuMemAlloc(&dptr, size);
 	*(CUdeviceptr *)devPtr = dptr;
-
 	cuda_rt_last_error = cudaSuccess;
 
+	cuda_debug("\t(runtime) '%s' out: dptr = 0x%d", __func__, dptr);
 	cuda_debug("\t(runtime) '%s' out: devPtr = [%p]", __func__, *devPtr);
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+	cuda_debug("\t(runtime) '%s' out: dptr address = [%p]", __func__, devPtr);
 
 	pthread_mutex_unlock(&cuda_mutex);
 
@@ -1450,6 +1452,33 @@ cudaError_t cudaHostUnregister(void *ptr)
 cudaError_t cudaHostGetDevicePointer(void **pDevice, void *pHost,
 		unsigned int flags)
 {
+ /*
+	CUdeviceptr dptr;
+	pthread_mutex_lock(&cuda_mutex);
+
+	cuda_debug("CUDA runtime API '%s'", __func__);
+	cuda_debug("\t(runtime) '%s' in: device pointer address pDevice = [%p]",
+					__func__, pDevice);
+	cuda_debug("\t(runtime) '%s' in: Host pointer pHost =  [%p]", __func__,
+					pHost);
+	cuda_debug("\t(runtime) '%s' in: flags = %u", __func__, flags);
+
+	if (!active_device)
+		cuInit(0);
+
+	cuMemHostGetDevicePointer(&dptr, pHost, flags);
+	*(CUdeviceptr *)pDevice = dptr;
+
+	cuda_rt_last_error = cudaSuccess;
+
+	cuda_debug("\t(runtime) '%s' out: Device pointer dptr = 0x%d", __func__,
+					dptr);
+	cuda_debug("\t(runtime) '%s' out: Host pointer pHost = [%p]", __func__,
+					pHost);
+	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);
+
+	pthread_mutex_unlock(&cuda_mutex);
+*/
 	__CUDART_NOT_IMPL__;
 	return cudaSuccess;
 }
