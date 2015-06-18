@@ -127,19 +127,19 @@ private:
 	//
 
 	// Uop count in instruction queue
-	int instruction_queue_count = 0;
+	int uop_count_in_instruction_queue = 0;
 
 	// Uop count in load/store queue
-	int load_store_queue_count = 0;
+	int uop_count_in_load_store_queue = 0;
 
-	// INT register file count
-	int reg_file_int_count = 0;
+	// Number of occupied integer registers
+	int num_integer_registers_occupied = 0;
 
-	// FP register file count
-	int reg_file_fp_count = 0;
+	// Number of occupied float point registers
+	int num_float_point_registers_occupied = 0;
 
-	// XMM register file count
-	int reg_file_xmm_count = 0;
+	// Number of XMM registers
+	int num_xmm_registers_occupied = 0;
 
 
 
@@ -317,14 +317,14 @@ public:
 	/// Increment the Uop count in reorder buffer
 	void incUopCountInRob() { uop_count_in_rob++; }
 
-	/// Increment the INT register file count
-	void incRegFileIntCount() { reg_file_int_count++; }
+	/// Increment the number of occupied physical integer registers
+	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
 
-	/// Increment the FP register file count
-	void incRegFileFpCount() { reg_file_fp_count++; }
+	/// Increment the number of occupied physical float point registers
+	void incNumFloatPointRegistersOccupied() { num_float_point_registers_occupied++; }
 
-	/// Increment the XMM register file count
-	void incRegFileXmmCount() { reg_file_xmm_count++; }
+	/// Increment the number of occupied physical xmm registers
+	void incNumXmmRegistersOccupied() { num_xmm_registers_occupied++; }
 
 	/// Increment the read count of Register Aliasing Table for INT registers
 	void incRatIntReads() { rat_int_reads++; }
@@ -370,14 +370,14 @@ public:
 	/// Decrement the Uop count in reorder buffer
 	void decUopCountInRob() { uop_count_in_rob--; }
 
-	/// Decrement the INT register file count
-	void decRegFileIntCount() { reg_file_int_count--; }
+	/// Decrement the number of occupied physical integer registers
+	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
 
-	/// Decrement the FP register file count
-	void decRegFileFpCount() { reg_file_fp_count--; }
+	/// Decrement the number of occupied physical float point registers
+	void decNumFloatPointRegistersOccupied() { num_float_point_registers_occupied--; }
 
-	/// Decrement the XMM registers count
-	void decRegFileXmmCount() { reg_file_xmm_count--; }
+	/// Decrement the number of occupied physical xmm registers
+	void decNumXmmRegistersOccupied() { num_xmm_registers_occupied--; }
 
 	/// Decrement the read count of Register Aliasing Table for INT registers
 	void decRatIntReads() { rat_int_reads--; }
@@ -435,14 +435,14 @@ public:
 	/// Get the Uop count in reorder buffer
 	int getUopCountInRob() const { return uop_count_in_rob; }
 
-	/// Get the INT register file count
-	int getRegFileIntCount() const { return reg_file_int_count; }
+	/// Get the number of occupied physical integer registers
+	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
 
-	/// Get the FP register file count
-	int getRegFileFpCount() { return reg_file_fp_count; }
+	/// Get the number of occupied physical float point registers
+	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
 
-	/// Get the XMM registers count
-	int getRegFileXmmCount() { return reg_file_xmm_count; }
+	/// Get the number of occupied physical xmm registers
+	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
 
 	/// Get the read count of Register Aliasing Table for INT registers
 	int getRatIntReads() { return rat_int_reads; }
@@ -603,7 +603,7 @@ public:
 	/// Run the emulation of one x86 macro-instruction and create its uops.
 	/// If any of the uops is a control uop, this uop will be the return value of
 	/// the function. Otherwise, the first decoded uop is returned
-	Uop *FetchInstruction(bool fetch_from_trace_cache);
+	std::shared_ptr<Uop> FetchInstruction(bool fetch_from_trace_cache);
 
 	/// Try to fetch instruction from trace cache.
 	/// Return true if there was a hit and fetching succeeded.
@@ -611,7 +611,6 @@ public:
 
 	/// Fetch stage function
 	void Fetch();
-
 };
 
 }

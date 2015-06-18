@@ -434,19 +434,16 @@ Uop *Core::getReorderBufferEntry(int index, int thread_id)
 }
 
 
-void Core::InsertInEventQueue(std::shared_ptr<Uop> &uop)
+void Core::InsertInEventQueue(std::shared_ptr<Uop> uop)
 {
-	// Local variable declaration
-	auto it = event_queue.begin();
-
 	// Make sure the uop is not in the event queue at the moment
 	assert(!uop->isInEventQueue());
 
 	// Traverse the list to find the proper position
-	for (auto item : event_queue)
+	for (auto it = event_queue.begin(); it != event_queue.end(); it++)
 	{
 		// Check whether the current item should be handled after the uop
-		if (uop->Compare(item.get()) < 0)
+		if (uop->Compare(it->get()) < 0)
 		{
 			// Insert the Uop
 			event_queue.insert(it, uop);
@@ -454,9 +451,6 @@ void Core::InsertInEventQueue(std::shared_ptr<Uop> &uop)
 			// Exit the loop
 			break;
 		}
-
-		// Increment the iterator
-		it++;
 	}
 
 	// Set flat to indicate the uop is in the event queue
@@ -464,14 +458,14 @@ void Core::InsertInEventQueue(std::shared_ptr<Uop> &uop)
 }
 
 
-Uop *Core::ExtractFromEventQueue()
+std::shared_ptr<Uop> Core::ExtractFromEventQueue()
 {
 	// If the queue is empty, return a null pointer
 	if (event_queue.size() <= 0)
 		return nullptr;
 
 	// Get the first element of the queue
-	Uop *uop = event_queue.front().get();
+	std::shared_ptr<Uop> uop = event_queue.front();
 
 	// Make sure the uop is currently in the event queue
 	assert(uop->isInEventQueue());
@@ -489,12 +483,6 @@ Uop *Core::ExtractFromEventQueue()
 
 void Core::Fetch()
 {
-	// Local variable declaration
-	Thread *thread;
-	Thread *new_thread;
-	bool must_switch;
-	int new_index;
-
 	// Invoke fetch stage function according to the kind
 	switch (CPU::getFetchKind())
 	{
@@ -511,6 +499,7 @@ void Core::Fetch()
 	case CPU::FetchKindTimeslice:
 	{
 		// Round-robin fetch
+		Thread *thread;
 		for (int i = 0; i < CPU::getNumThreads(); i++)
 		{
 			current_fetch_thread = (current_fetch_thread + 1) % CPU::getNumThreads();
@@ -528,14 +517,14 @@ void Core::Fetch()
 	{
 		// If current thread is stalled, it means that we just switched to it.
 		// No fetching and no switching either.
-		thread = threads[current_fetch_thread].get();
+		Thread *thread = threads[current_fetch_thread].get();
 		if (thread->getFetchStallUntil() >= timing->getCycle())
 			break;
 
 		// Switch thread if:
 		// - Quantum expired for current thread.
 		// - Long latency instruction is in progress.
-		must_switch = !thread->CanFetch();
+		bool must_switch = !thread->CanFetch();
 		must_switch = must_switch || timing->getCycle() - fetch_switch_when >
 				CPU::getThreadQuantum() + CPU::getThreadSwitchPenalty();
 		must_switch = must_switch || thread->isLongLatencyInEventQueue();
@@ -544,6 +533,8 @@ void Core::Fetch()
 		if (must_switch)
 		{
 			// Find a new thread to switch to
+			Thread *new_thread;
+			int new_index;
 			for (new_index = (thread->getIDInCore() + 1) % CPU::getNumThreads();
 					new_index != thread->getIDInCore();
 					new_index = (new_index + 1) % CPU::getNumThreads())
@@ -591,7 +582,7 @@ void Core::Fetch()
 
 	default:
 
-		throw misc::Panic("wrong fetch policy\n");
+		throw misc::Panic("wrong fetch policy");
 	}
 }
 

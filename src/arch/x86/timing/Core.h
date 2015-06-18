@@ -99,14 +99,14 @@ private:
 	// Uop count in load/store queue
 	int load_store_queue_count = 0;
 
-	// INT register file count
-	int reg_file_int_count = 0;
+	// Number of occupied integer registers
+	int num_integer_registers_occupied = 0;
 
-	// FP register file count
-	int reg_file_fp_count = 0;
+	// Number of occupied float point registers
+	int num_float_point_registers_occupied = 0;
 
-	// XMM register file count
-	int reg_file_xmm_count = 0;
+	// Number of XMM registers
+	int num_xmm_registers_occupied = 0;
 
 
 
@@ -243,14 +243,14 @@ public:
 	// Increment counters
 	//
 
-	/// Increment the count of physical integer register file that have been occupied
-	void incRegFileIntCount() { reg_file_int_count++; }
+	/// Increment the number of occupied physical integer registers
+	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
 
-	/// Increment the count of physical floating point register file that have been occupied
-	void incRegFileFpCount() { reg_file_fp_count++; }
+	/// Increment the number of occupied physical float point registers
+	void incNumFloatPointRegistersOccupied() { num_float_point_registers_occupied++; }
 
-	/// Increment the count of physical XMM register file that have been occupied
-	void incRegFileXmmCount() { reg_file_xmm_count++; }
+	/// Increment the number of occupied physical xmm registers
+	void incNumXmmRegistersOccupied() { num_xmm_registers_occupied++; }
 
 	/// Increment the Uop count in instruction queue
 	void incInstructionQueueCount() { instruction_queue_count++; }
@@ -265,14 +265,14 @@ public:
 	// Decrement counters
 	//
 
-	/// Decrement the count of physical integer register file that have been occupied
-	void decRegFileIntCount() { reg_file_int_count--; }
+	/// Decrement the number of occupied physical integer registers
+	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
 
-	/// Decrement the count of physical floating register file that have been occupied
-	void decRegFileFpCount() { reg_file_fp_count--; }
+	/// Decrement the number of occupied physical float point registers
+	void decNumFloatPointRegistersOccupied() { num_float_point_registers_occupied--; }
 
-	/// Decrement the count of physical XMM register file count have been occupied
-	void decRegFileXmmCount() { reg_file_xmm_count--; }
+	/// Decrement the number of occupied physical xmm registers
+	void decNumXmmRegistersOccupied() { num_xmm_registers_occupied--; }
 
 	/// Decrement the Uop count in instruction queue
 	void decInstructionQueueCount() { instruction_queue_count--; }
@@ -293,14 +293,14 @@ public:
 	/// Get event queue
 	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
 
-	/// Get the count of integer register file that have been used
-	int getRegFileIntCount() { return reg_file_int_count; }
+	/// Get the number of occupied physical integer registers
+	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
 
-	/// Get the count of floating register file that have been used
-	int getRegFileFpCount() { return reg_file_fp_count; }
+	/// Get the number of occupied physical float point registers
+	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
 
-	/// Get the count of XMM register file that have been used
-	int getRegFileXmmCount() { return reg_file_xmm_count; }
+	/// Get the number of occupied physical xmm registers
+	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
 
 	/// Get the Uop count in instruction queue
 	int getInstructionQueueCount() { return instruction_queue_count; }
@@ -353,10 +353,10 @@ public:
 	//
 
 	/// Insert Uop into event queue
-	void InsertInEventQueue(std::shared_ptr<Uop> &uop);
+	void InsertInEventQueue(std::shared_ptr<Uop> uop);
 
 	/// Extract Uop from event queue
-	Uop *ExtractFromEventQueue();
+	std::shared_ptr<Uop> ExtractFromEventQueue();
 
 
 
