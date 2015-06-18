@@ -553,16 +553,15 @@ public:
 
 
 
-	/// Compare with other Uop
+	/// Compare with other Uop based on its ready time or unique ID
 	///
 	/// \ param uop
 	///	One other uop that is used to compare with current one
 	///
 	/// \return
-	///	< 0: Current uop should be handled before the other uop
-	///	> 0: Current uop should be handled after the other uop
+	///	< 0: Current uop should be fetched in a queue before the other uop
+	///	> 0: Current uop should be fetched in a queue after the other uop
 	int Compare(Uop *uop);
-
 };
 
 }
