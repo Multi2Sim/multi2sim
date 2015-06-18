@@ -27,9 +27,6 @@ libasm_a_SOURCES = \
 	input.c \
 	input.h \
 	\
-	opengl-bin-file.c \
-	opengl-bin-file.h \
-	\
 	ShaderBinary.cc \
 	ShaderBinary.h \
 	\

@@ -154,14 +154,6 @@ void SIAsmWrapDisassembleBinary(struct SIAsmWrap *self, char *path)
 }
 
 
-void SIAsmWrapDisassembleOpenGLBinary(struct SIAsmWrap *self, char *path,
-		int shader_index)
-{
-	Asm *as = (Asm *) self;
-	as->DisassembleOpenGLBinary(path, shader_index);
-}
-
-
 void *SIAsmWrapGetInstInfo(struct SIAsmWrap *self, int index)
 {
 	Asm *as = (Asm *) self;

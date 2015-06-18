@@ -59,13 +59,13 @@ class WorkGroup
 	int id_3d[3];
 
 	// Number of wavefronts suspended at a barrier
-	unsigned wavefronts_at_barrier;
+	unsigned wavefronts_at_barrier = 0;
 
 	// Number of wavefronts that have completed emulation
-	unsigned wavefronts_completed_emu;
+	unsigned wavefronts_completed_emu = 0;
 
 	// Number of wavefronts that have completed timing simulation
-	unsigned wavefronts_completed_timing;
+	unsigned wavefronts_completed_timing = 0;
 
 	// Bool indicating whether the work-group has finished emulation
 	bool finished_emu;
@@ -74,10 +74,10 @@ class WorkGroup
 	bool finished_timing;
 
 	// ND-Range that the work-group belongs to
-	NDRange *ndrange;
+	NDRange *ndrange = nullptr;
 
 	// Counter of workitems in the work-group
-	unsigned work_item_count;
+	unsigned work_item_count = 0;
 
 	// List of work-items in the work-group
 	std::vector<std::unique_ptr<WorkItem>> work_items;
@@ -92,16 +92,16 @@ class WorkGroup
 	std::unique_ptr<WorkGroupData> data;
 
 	// Number of scalar registers being read from
-	long long sreg_read_count;
+	long long sreg_read_count = 0;
 	
 	// Number of scalar registers being written to
-	long long sreg_write_count;
+	long long sreg_write_count = 0;
 	
 	// Number of vector registers being read from
-	long long vreg_read_count;
+	long long vreg_read_count = 0;
 	
 	// Number of vectorr registers being written to
-	long long vreg_write_count;
+	long long vreg_write_count = 0;
 
 	// Size of wavefront
 	static const unsigned WavefrontSize = 64;
