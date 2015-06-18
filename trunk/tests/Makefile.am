@@ -66,8 +66,8 @@ src_arch_southern_islands_emu_test_LDADD = \
 	$(top_builddir)/src/arch/southern-islands/emu/libemu.a \
 	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
 	$(top_builddir)/src/arch/common/libcommon.a \
-	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/memory/libmemory.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_arch_southern_islands_emu_test_SOURCES = \
