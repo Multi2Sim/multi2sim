@@ -366,7 +366,7 @@ extern "C" {
 ///////////////
 
 using namespace SI;
-
+/*
 void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 {
 	struct opengl_si_program_binary_t *program_bin;
@@ -410,5 +410,5 @@ void Asm::DisassembleOpenGLBinary(std::string path, int shader_index)
 
 	// Free
 	opengl_si_program_binary_free(program_bin);
-}
+}*/
 

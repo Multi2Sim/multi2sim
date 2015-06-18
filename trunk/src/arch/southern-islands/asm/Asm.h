@@ -101,7 +101,6 @@ public:
 
 	// Disassemblers
 	void DisassembleBinary(std::string path);
-	void DisassembleOpenGLBinary(std::string path, int shader_index);
 
 	// Getters
 	InstInfo *getInstInfo(int index) { assert(index >= 0 && index <
