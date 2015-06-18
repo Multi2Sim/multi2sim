@@ -684,31 +684,98 @@ TEST(TestSystemEvents, config_0_evict_1)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
- [Commands]
-Command[12] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[13] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[14] = CheckBlock mod-l1-1 1 0 0x40 M
-Command[15] = CheckBlock mod-l2-0 0 0 0x0 E
-Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[18] = CheckSharers mod-l2-0 0 0 0 mod-l1-0
-Command[19] = CheckSharers mod-l2-0 0 0 1 mod-l1-1
-Command[20] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckOwner mod-l2-0 0 0 0 mod-l1-0
-Command[23] = CheckOwner mod-l2-0 0 0 1 mod-l1-1
-Command[24] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[25] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[26] = CheckLink mod-l1-0 Low Out 16
-Command[27] = CheckLink mod-l1-0 Low In 144
-Command[28] = CheckLink mod-l1-1 Low Out 0
-Command[29] = CheckLink mod-l1-1 Low In 0
-Command[30] = CheckLink mod-l2-0 High Out 144
-Command[31] = CheckLink mod-l2-0 High In 16
-Command[32] = CheckLink mod-l2-0 Low Out 16
-Command[33] = CheckLink mod-l2-0 Low In 272
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 0, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 144);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 144);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_2)
@@ -764,32 +831,97 @@ TEST(TestSystemEvents, config_0_evict_2)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
 
-[Commands]
-Command[12] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[13] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[14] = CheckBlock mod-l1-1 1 0 0x40 M
-Command[15] = CheckBlock mod-l2-0 0 0 0x0 M
-Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[18] = CheckSharers mod-l2-0 0 0 0 None
-Command[19] = CheckSharers mod-l2-0 0 0 1 mod-l1-1
-Command[20] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckOwner mod-l2-0 0 0 0 None
-Command[23] = CheckOwner mod-l2-0 0 0 1 mod-l1-1
-Command[24] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[25] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[26] = CheckLink mod-l1-0 Low Out 88
-Command[27] = CheckLink mod-l1-0 Low In 152
-Command[28] = CheckLink mod-l1-1 Low Out 0
-Command[29] = CheckLink mod-l1-1 Low In 0
-Command[30] = CheckLink mod-l2-0 High Out 152
-Command[31] = CheckLink mod-l2-0 High In 88
-Command[32] = CheckLink mod-l2-0 Low Out 16
-Command[33] = CheckLink mod-l2-0 Low In 272
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 0, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 88);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 152);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 152);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 88);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_3)
@@ -845,31 +977,97 @@ TEST(TestSystemEvents, config_0_evict_3)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-[Commands]
-Command[12] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[13] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[14] = CheckBlock mod-l1-1 1 0 0x40 M
-Command[15] = CheckBlock mod-l2-0 0 0 0x0 M
-Command[16] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[17] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[18] = CheckSharers mod-l2-0 0 0 0 None
-Command[19] = CheckSharers mod-l2-0 0 0 1 mod-l1-1
-Command[20] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckOwner mod-l2-0 0 0 0 None
-Command[23] = CheckOwner mod-l2-0 0 0 1 mod-l1-1
-Command[24] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[25] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[26] = CheckLink mod-l1-0 Low Out 88
-Command[27] = CheckLink mod-l1-0 Low In 152
-Command[28] = CheckLink mod-l1-1 Low Out 0
-Command[29] = CheckLink mod-l1-1 Low In 0
-Command[30] = CheckLink mod-l2-0 High Out 152
-Command[31] = CheckLink mod-l2-0 High In 88
-Command[32] = CheckLink mod-l2-0 Low Out 16
-Command[33] = CheckLink mod-l2-0 Low In 272
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 0, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 88);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 152);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 152);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 88);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_4)
@@ -924,29 +1122,92 @@ TEST(TestSystemEvents, config_0_evict_4)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-[Commands]
-Command[10] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[11] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[12] = CheckBlock mod-l1-1 0 0 0x0 S
-Command[13] = CheckBlock mod-l2-0 0 0 0x0 E
-Command[14] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[15] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[16] = CheckSharers mod-l2-0 0 0 0 mod-l1-0 mod-l1-1
-Command[17] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[18] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[19] = CheckOwner mod-l2-0 0 0 0 None
-Command[20] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckLink mod-l1-0 Low Out 16
-Command[23] = CheckLink mod-l1-0 Low In 144
-Command[24] = CheckLink mod-l1-1 Low Out 0
-Command[25] = CheckLink mod-l1-1 Low In 0
-Command[26] = CheckLink mod-l2-0 High Out 144
-Command[27] = CheckLink mod-l2-0 High In 16
-Command[28] = CheckLink mod-l2-0 Low Out 16
-Command[29] = CheckLink mod-l2-0 Low In 272
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 144);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 144);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_5)
@@ -1001,29 +1262,92 @@ TEST(TestSystemEvents, config_0_evict_5)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-[Commands]
-Command[10] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[11] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[12] = CheckBlock mod-l1-1 0 0 0x0 S
-Command[13] = CheckBlock mod-l2-0 0 0 0x0 S
-Command[14] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[15] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[16] = CheckSharers mod-l2-0 0 0 0 mod-l1-0 mod-l1-1
-Command[17] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[18] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[19] = CheckOwner mod-l2-0 0 0 1 None
-Command[20] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckLink mod-l1-0 Low Out 16
-Command[23] = CheckLink mod-l1-0 Low In 144
-Command[24] = CheckLink mod-l1-1 Low Out 0
-Command[25] = CheckLink mod-l1-1 Low In 0
-Command[26] = CheckLink mod-l2-0 High Out 144
-Command[27] = CheckLink mod-l2-0 High In 16
-Command[28] = CheckLink mod-l2-0 Low Out 16
-Command[29] = CheckLink mod-l2-0 Low In 272
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 144);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 144);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_6)
@@ -1078,28 +1402,91 @@ TEST(TestSystemEvents, config_0_evict_6)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[10] = CheckBlock mod-l1-0 0 1 0x400 E
-Command[11] = CheckBlock mod-l1-0 0 0 0x800 E
-Command[12] = CheckBlock mod-l1-1 0 0 0x0 S
-Command[13] = CheckBlock mod-l2-0 0 0 0x0 N
-Command[14] = CheckBlock mod-l2-0 0 3 0x400 E
-Command[15] = CheckBlock mod-l2-0 0 2 0x800 E
-Command[16] = CheckSharers mod-l2-0 0 0 0 mod-l1-1
-Command[17] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[18] = CheckSharers mod-l2-0 0 2 0 mod-l1-0
-Command[19] = CheckOwner mod-l2-0 0 0 1 None
-Command[20] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[21] = CheckOwner mod-l2-0 0 2 0 mod-l1-0
-Command[22] = CheckLink mod-l1-0 Low Out 88
-Command[23] = CheckLink mod-l1-0 Low In 152
-Command[24] = CheckLink mod-l1-1 Low Out 0
-Command[25] = CheckLink mod-l1-1 Low In 0
-Command[26] = CheckLink mod-l2-0 High Out 152
-Command[27] = CheckLink mod-l2-0 High In 88
-Command[28] = CheckLink mod-l2-0 Low Out 16
-Command[29] = CheckLink mod-l2-0 Low In 272
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 88);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 152);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 152);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 88);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 272);
 }
 
 TEST(TestSystemEvents, config_0_evict_7)
@@ -1156,26 +1543,86 @@ TEST(TestSystemEvents, config_0_evict_7)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[12] = CheckBlock mod-l1-0 1 1 0x440 E
-Command[13] = CheckBlock mod-l1-0 1 0 0x840 E
-Command[14] = CheckBlock mod-l1-0 9 1 0x240 E
-Command[15] = CheckBlock mod-l1-0 9 0 0x640 E
-Command[16] = CheckBlock mod-l1-0 0 0 0x0 I
-Command[17] = CheckBlock mod-l1-1 0 0 0x0 I
-Command[18] = CheckBlock mod-l2-0 0 0 0x800 E
-Command[19] = CheckBlock mod-l2-0 0 1 0x600 E
-Command[20] = CheckBlock mod-l2-0 0 2 0x400 E
-Command[21] = CheckBlock mod-l2-0 0 3 0x200 E
-Command[22] = CheckSharers mod-l2-0 0 0 1 mod-l1-0
-Command[23] = CheckSharers mod-l2-0 0 1 1 mod-l1-0
-Command[24] = CheckSharers mod-l2-0 0 2 1 mod-l1-0
-Command[25] = CheckSharers mod-l2-0 0 3 1 mod-l1-0
-Command[26] = CheckOwner mod-l2-0 0 0 1 mod-l1-0
-Command[27] = CheckOwner mod-l2-0 0 1 1 mod-l1-0
-Command[28] = CheckOwner mod-l2-0 0 2 1 mod-l1-0
-Command[29] = CheckOwner mod-l2-0 0 3 1 mod-l1-0
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(1, 1, tag, state);
+	EXPECT_EQ(tag, 0x440);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(1, 0, tag, state);
+	EXPECT_EQ(tag, 0x840);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(9, 1, tag, state);
+	EXPECT_EQ(tag, 0x240);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(9, 0, tag, state);
+	EXPECT_EQ(tag, 0x640);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockInvalid);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockInvalid);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x800);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x600);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 2, tag, state);
+	EXPECT_EQ(tag, 0x400);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x200);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 1, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 1, 1, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 1, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 1, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 1, 1), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 2, 1), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 1), module_l1_0);
 }
 
 TEST(TestSystemEvents, config_0_load_0)
@@ -1203,13 +1650,17 @@ TEST(TestSystemEvents, config_0_load_0)
 	// Get modules
 	Module *module_l1_0 = memory_system->getModule("mod-l1-0");
 	Module *module_l1_2 = memory_system->getModule("mod-l1-2");
+	Module *module_l1_3 = memory_system->getModule("mod-l1-3");
 	Module *module_l1_1 = memory_system->getModule("mod-l1-1");
 	Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+	Module *module_l2_1 = memory_system->getModule("mod-l2-1");
 	Module *module_mm = memory_system->getModule("mod-mm");
 	ASSERT_NE(module_l1_0, nullptr);
 	ASSERT_NE(module_l1_1, nullptr);
 	ASSERT_NE(module_l1_2, nullptr);
+	ASSERT_NE(module_l1_3, nullptr);
 	ASSERT_NE(module_l2_0, nullptr);
+	ASSERT_NE(module_l2_1, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
 	// Set block states
@@ -1232,38 +1683,132 @@ TEST(TestSystemEvents, config_0_load_0)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[11] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[12] = CheckBlock mod-l1-1 1 1 0x40 S
-Command[13] = CheckBlock mod-l1-2 0 1 0x0 S
-Command[14] = CheckBlock mod-l2-0 0 3 0x0 S
-Command[15] = CheckBlock mod-l2-1 0 3 0x0 S
-Command[16] = CheckBlock mod-mm 0 7 0x0 E
-Command[17] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[18] = CheckSharers mod-l2-0 0 3 1 mod-l1-1
-Command[19] = CheckSharers mod-mm 0 7 0 mod-l2-0 mod-l2-1
-Command[20] = CheckOwner mod-l2-0 0 3 0 None
-Command[21] = CheckOwner mod-l2-1 0 3 0 None
-Command[22] = CheckOwner mod-mm 0 7 0 None
-Command[23] = CheckLink mod-l1-0 Low Out 8
-Command[24] = CheckLink mod-l1-0 Low In 8
-Command[25] = CheckLink mod-l1-1 Low Out 72
-Command[26] = CheckLink mod-l1-1 Low In 8
-Command[27] = CheckLink mod-l2-0 High Out 16
-Command[28] = CheckLink mod-l2-0 High In 80
-Command[29] = CheckLink mod-l2-0 Low Out 136
-Command[30] = CheckLink mod-l2-0 Low In 8
-Command[31] = CheckLink mod-mm High Out 144
-Command[32] = CheckLink mod-mm High In 144
-Command[33] = CheckLink mod-l2-1 Low Out 8
-Command[34] = CheckLink mod-l2-1 Low In 136
-Command[35] = CheckLink mod-l2-1 High Out 72
-Command[36] = CheckLink mod-l2-1 High In 8
-Command[37] = CheckLink mod-l1-2 Low Out 8
-Command[38] = CheckLink mod-l1-2 Low In 72
-Command[39] = CheckLink mod-l1-3 Low Out 0
-Command[40] = CheckLink mod-l1-3 Low In 0
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 1, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_2->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_1->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_1), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_1->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), nullptr);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 144);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 144);
+
+	// Check link
+	node = module_l2_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
+
+	// Check link
+	node = module_l2_1->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_1->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_2->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_2->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l1_3->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_3->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_load_1)
@@ -1314,26 +1859,83 @@ TEST(TestSystemEvents, config_0_load_1)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[9] = CheckBlock mod-l1-1 0 1 0x0 S
-Command[10] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[11] = CheckBlock mod-mm 0 7 0x0 E
-Command[12] = CheckSharers mod-l2-0 0 3 0 mod-l1-0 mod-l1-1
-Command[13] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[14] = CheckOwner mod-l2-0 0 3 0 None
-Command[15] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[16] = CheckLink mod-l1-0 Low Out 8
-Command[17] = CheckLink mod-l1-0 Low In 8
-Command[18] = CheckLink mod-l1-1 Low Out 8
-Command[19] = CheckLink mod-l1-1 Low In 72
-Command[20] = CheckLink mod-l2-0 High Out 80
-Command[21] = CheckLink mod-l2-0 High In 16
-Command[22] = CheckLink mod-l2-0 Low Out 0
-Command[23] = CheckLink mod-l2-0 Low In 0
-Command[24] = CheckLink mod-mm High Out 0
-Command[25] = CheckLink mod-mm High In 0
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_load_2)
@@ -1384,27 +1986,83 @@ TEST(TestSystemEvents, config_0_load_2)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[7] = Access mod-l1-1 1 LOAD 0x0
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[9] = CheckBlock mod-l1-1 0 1 0x0 S
-Command[10] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[11] = CheckBlock mod-mm 0 7 0x0 E
-Command[12] = CheckSharers mod-l2-0 0 3 0 mod-l1-0 mod-l1-1
-Command[13] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[14] = CheckOwner mod-l2-0 0 3 0 None
-Command[15] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[16] = CheckLink mod-l1-0 Low Out 72
-Command[17] = CheckLink mod-l1-0 Low In 8
-Command[18] = CheckLink mod-l1-1 Low Out 8
-Command[19] = CheckLink mod-l1-1 Low In 72
-Command[20] = CheckLink mod-l2-0 High Out 80
-Command[21] = CheckLink mod-l2-0 High In 80
-Command[22] = CheckLink mod-l2-0 Low Out 0
-Command[23] = CheckLink mod-l2-0 Low In 0
-Command[24] = CheckLink mod-mm High Out 0
-Command[25] = CheckLink mod-mm High In 0
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_load_3)
@@ -1446,25 +2104,77 @@ TEST(TestSystemEvents, config_0_load_3)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[1] = CheckBlock mod-l1-0 0 1 0x0 E
-Command[2] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[3] = CheckBlock mod-mm 0 15 0x0 E
-Command[4] = CheckSharers mod-mm 0 15 0 mod-l2-0
-Command[5] = CheckOwner mod-mm 0 15 0 mod-l2-0
-Command[6] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[7] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[8] = CheckLink mod-l1-0 Low In 72
-Command[9] = CheckLink mod-l1-0 Low Out 8
-Command[10] = CheckLink mod-l1-1 Low In 0
-Command[11] = CheckLink mod-l1-1 Low Out 0
-Command[12] = CheckLink mod-l2-0 High In 8
-Command[13] = CheckLink mod-l2-0 High Out 72
-Command[14] = CheckLink mod-l2-0 Low In 136
-Command[15] = CheckLink mod-l2-0 Low Out 8
-Command[16] = CheckLink mod-mm High In 8
-Command[17] = CheckLink mod-mm High Out 136
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 15, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 15, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 15, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 15, 0), module_l2_0);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 3, 0), module_l1_0);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 136);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
 }
 
 TEST(TestSystemEvents, config_0_load_4)
@@ -1510,25 +2220,77 @@ TEST(TestSystemEvents, config_0_load_4)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[4] = CheckBlock mod-l1-0 0 1 0x0 E
-Command[5] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[6] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[7] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[8] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[9] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[10] = CheckBlock mod-mm 0 7 0x0 M
-Command[11] = CheckLink mod-l1-0 Low In 72
-Command[12] = CheckLink mod-l1-0 Low Out 8
-Command[13] = CheckLink mod-l1-1 Low In 0
-Command[14] = CheckLink mod-l1-1 Low Out 0
-Command[15] = CheckLink mod-l2-0 High In 8
-Command[16] = CheckLink mod-l2-0 High Out 72
-Command[17] = CheckLink mod-l2-0 Low In 136
-Command[18] = CheckLink mod-l2-0 Low Out 8
-Command[19] = CheckLink mod-mm High In 8
-Command[20] = CheckLink mod-mm High Out 136
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 136);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
 }
 
 TEST(TestSystemEvents, config_0_load_5)
@@ -1556,10 +2318,12 @@ TEST(TestSystemEvents, config_0_load_5)
 	Module *module_l1_0 = memory_system->getModule("mod-l1-0");
 	Module *module_l1_1 = memory_system->getModule("mod-l1-1");
 	Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+	Module *module_l2_1 = memory_system->getModule("mod-l2-1");
 	Module *module_mm = memory_system->getModule("mod-mm");
 	ASSERT_NE(module_l1_0, nullptr);
 	ASSERT_NE(module_l1_1, nullptr);
 	ASSERT_NE(module_l2_0, nullptr);
+	ASSERT_NE(module_l2_1, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
 	// Set block states
@@ -1582,29 +2346,95 @@ TEST(TestSystemEvents, config_0_load_5)
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
-/*
-Command[11] = CheckBlock mod-l1-1 0 1 0x0 S
-Command[12] = CheckBlock mod-l1-1 1 1 0x40 S
-Command[13] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[14] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[15] = CheckBlock mod-mm 0 7 0x0 E
-Command[16] = CheckSharers mod-l2-0 0 3 0 mod-l1-0 mod-l1-1
-Command[17] = CheckSharers mod-l2-0 0 3 1 mod-l1-1
-Command[18] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[19] = CheckOwner mod-l2-0 0 3 0 None
-Command[20] = CheckOwner mod-l2-1 0 3 0 None
-Command[21] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[22] = CheckLink mod-l1-0 Low In 72
-Command[23] = CheckLink mod-l1-0 Low Out 8
-Command[24] = CheckLink mod-l1-1 Low In 16
-Command[25] = CheckLink mod-l1-1 Low Out 144
-Command[26] = CheckLink mod-l2-0 High Out 88
-Command[27] = CheckLink mod-l2-0 High In 152
-Command[28] = CheckLink mod-l2-0 Low Out 0
-Command[29] = CheckLink mod-l2-0 Low In 0
-Command[30] = CheckLink mod-mm High Out 0
-Command[31] = CheckLink mod-mm High In 0
-*/
+
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_1->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(1, 1, tag, state);
+	EXPECT_EQ(tag, 0x40);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 1), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 1, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_1->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 16);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 144);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 88);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 152);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_load_6)
@@ -1639,7 +2469,7 @@ TEST(TestSystemEvents, config_0_load_6)
 	ASSERT_NE(module_l2_0, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
-	//Set Block States
+	// Set Block States
 	module_l2_0->getCache()->getBlock(0, 3)->setStateTag(Cache::BlockExclusive, 0x0);
 	module_mm->getCache()->getBlock(0, 7)->setStateTag(Cache::BlockExclusive, 0x0);
 	module_mm->setOwner(0, 7, 0, module_l2_0);
@@ -1654,23 +2484,68 @@ TEST(TestSystemEvents, config_0_load_6)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[5] = CheckBlock mod-l1-0 0 1 0x0 E
-Command[6] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[7] = CheckBlock mod-mm 0 7 0x0 E
-Command[8] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[9] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[10] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[11] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[12] = CheckLink mod-l1-0 Low In 72
-Command[13] = CheckLink mod-l1-0 Low Out 8
-Command[14] = CheckLink mod-l1-1 Low In 0
-Command[15] = CheckLink mod-l1-1 Low Out 0
-Command[16] = CheckLink mod-l2-0 High In 8
-Command[17] = CheckLink mod-l2-0 High Out 72
-Command[18] = CheckLink mod-l2-0 Low In 0
-Command[19] = CheckLink mod-l2-0 Low Out 0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_load_7)
@@ -1700,11 +2575,13 @@ TEST(TestSystemEvents, config_0_load_7)
 	Module *module_l1_1 = memory_system->getModule("mod-l1-1");
 	Module *module_l1_2 = memory_system->getModule("mod-l1-1");
 	Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+	Module *module_l2_1 = memory_system->getModule("mod-l2-1");
 	Module *module_mm = memory_system->getModule("mod-mm");
 	ASSERT_NE(module_l1_0, nullptr);
 	ASSERT_NE(module_l1_1, nullptr);
 	ASSERT_NE(module_l1_2, nullptr);
 	ASSERT_NE(module_l2_0, nullptr);
+	ASSERT_NE(module_l2_1, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
 	//Set Block States
@@ -1725,20 +2602,54 @@ TEST(TestSystemEvents, config_0_load_7)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[7] = Access mod-l1-2 1 LOAD 0x0
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[9] = CheckBlock mod-l1-2 0 1 0x0 S
-Command[10] = CheckBlock mod-l2-0 0 3 0x0 S
-Command[11] = CheckBlock mod-l2-1 0 3 0x0 S
-Command[12] = CheckBlock mod-mm 0 7 0x0 E
-Command[13] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[14] = CheckSharers mod-l2-1 0 3 0 mod-l1-2
-Command[15] = CheckSharers mod-mm 0 7 0 mod-l2-0 mod-l2-1
-Command[16] = CheckOwner mod-l2-0 0 3 0 None
-Command[17] = CheckOwner mod-l2-1 0 3 0 None
-Command[18] = CheckOwner mod-mm 0 7 0 None
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l1_2->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_1->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_1->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_1->isSharer(0, 3, 0, module_l1_2), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 2);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_1), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l2_1->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), nullptr);
 }
 
 TEST(TestSystemEvents, config_0_load_8)
@@ -1788,15 +2699,36 @@ TEST(TestSystemEvents, config_0_load_8)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[5] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[6] = CheckBlock mod-l2-0 0 3 0x0 O
-Command[7] = CheckBlock mod-mm 0 7 0x0 E
-Command[8] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[9] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[10] = CheckOwner mod-l2-0 0 3 0 None
-Command[11] = CheckOwner mod-mm 0 7 0 mod-l2-0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockOwned);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
 }
 
 TEST(TestSystemEvents, config_0_load_9)
@@ -1845,15 +2777,36 @@ TEST(TestSystemEvents, config_0_load_9)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[4] = CheckBlock mod-l1-0 0 1 0x0 S
-Command[5] = CheckBlock mod-l2-0 0 3 0x0 S
-Command[6] = CheckBlock mod-mm 0 7 0x0 E
-Command[7] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[8] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[9] = CheckOwner mod-l2-0 0 3 0 None
-Command[10] = CheckOwner mod-mm 0 7 0 None
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), nullptr);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_0)
@@ -1897,24 +2850,68 @@ TEST(TestSystemEvents, config_0_ncstore_0)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[1] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[2] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[3] = CheckBlock mod-mm 0 15 0x0 E
-Command[4] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[5] = CheckSharers mod-mm 0 15 0 mod-l2-0
-Command[6] = CheckOwner mod-l2-0 0 3 0 None
-Command[7] = CheckOwner mod-mm 0 15 0 mod-l2-0
-Command[8] = CheckLink mod-l1-0 Low Out 8
-Command[9] = CheckLink mod-l1-0 Low In 72
-Command[10] = CheckLink mod-l2-0 High Out 72
-Command[11] = CheckLink mod-l2-0 High In 8
-Command[12] = CheckLink mod-l2-0 Low Out 8
-Command[13] = CheckLink mod-l2-0 Low In 136
-Command[14] = CheckLink mod-mm High Out 136
-Command[15] = CheckLink mod-mm High In 8
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
 
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 15, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 15, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 15, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 15, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 136);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_1)
@@ -1969,24 +2966,74 @@ TEST(TestSystemEvents, config_0_ncstore_1)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[9] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[10] = CheckBlock mod-l1-1 0 1 0x0 S
-Command[11] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[12] = CheckBlock mod-mm 0 7 0x0 E
-Command[13] = CheckSharers mod-l2-0 0 3 0 mod-l1-0 mod-l1-1
-Command[14] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[15] = CheckOwner mod-l2-0 0 3 0 None
-Command[16] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[17] = CheckLink mod-l1-0 Low Out 0
-Command[18] = CheckLink mod-l1-0 Low In 0
-Command[19] = CheckLink mod-l2-0 High Out 0
-Command[20] = CheckLink mod-l2-0 High In 0
-Command[21] = CheckLink mod-l2-0 Low Out 0
-Command[22] = CheckLink mod-l2-0 Low In 0
-Command[23] = CheckLink mod-mm High Out 0
-Command[24] = CheckLink mod-mm High In 0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 2);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_2)
@@ -2021,7 +3068,7 @@ TEST(TestSystemEvents, config_0_ncstore_2)
 	ASSERT_NE(module_l2_0, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
-	//Set Block States
+	// Set Block States
 	module_l1_0->getCache()->getBlock(0, 1)->setStateTag(Cache::BlockExclusive, 0x0);
 	module_l2_0->getCache()->getBlock(0, 3)->setStateTag(Cache::BlockExclusive, 0x0);
 	module_mm->getCache()->getBlock(0, 7)->setStateTag(Cache::BlockExclusive, 0x0);
@@ -2039,23 +3086,68 @@ TEST(TestSystemEvents, config_0_ncstore_2)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[9] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[10] = CheckBlock mod-mm 0 7 0x0 E
-Command[11] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[12] = CheckOwner mod-l2-0 0 3 0 None
-Command[13] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[14] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[15] = CheckLink mod-l1-0 Low Out 8
-Command[16] = CheckLink mod-l1-0 Low In 8
-Command[17] = CheckLink mod-l2-0 High Out 8
-Command[18] = CheckLink mod-l2-0 High In 8
-Command[19] = CheckLink mod-l2-0 Low Out 0
-Command[20] = CheckLink mod-l2-0 Low In 0
-Command[21] = CheckLink mod-mm High Out 0
-Command[22] = CheckLink mod-mm High In 0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_3)
@@ -2112,33 +3204,110 @@ TEST(TestSystemEvents, config_0_ncstore_3)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[9] = CheckBlock mod-l1-3 0 1 0x0 S
-Command[10] = CheckBlock mod-l2-0 0 3 0x0 S
-Command[11] = CheckBlock mod-l2-1 0 3 0x0 S
-Command[12] = CheckBlock mod-mm 0 15 0x0 E
-Command[13] = CheckSharers mod-mm 0 15 0 mod-l2-0 mod-l2-1
-Command[14] = CheckOwner mod-mm 0 15 0 None
-Command[15] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[16] = CheckOwner mod-l2-0 0 3 0 None
-Command[17] = CheckSharers mod-l2-1 0 3 0 mod-l1-3
-Command[18] = CheckOwner mod-l2-1 0 3 0 None
-Command[19] = CheckLink mod-l1-0 Low Out 8
-Command[20] = CheckLink mod-l1-0 Low In 72
-Command[21] = CheckLink mod-l1-3 Low Out 8
-Command[22] = CheckLink mod-l1-3 Low In 8
-Command[23] = CheckLink mod-l2-0 High Out 72
-Command[24] = CheckLink mod-l2-0 High In 8
-Command[25] = CheckLink mod-l2-0 Low Out 8
-Command[26] = CheckLink mod-l2-0 Low In 136
-Command[27] = CheckLink mod-l2-1 High Out 8
-Command[28] = CheckLink mod-l2-1 High In 8
-Command[29] = CheckLink mod-l2-1 Low Out 8
-Command[30] = CheckLink mod-l2-1 Low In 8
-Command[31] = CheckLink mod-mm High Out 144
-Command[32] = CheckLink mod-mm High In 16
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l1_3->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_l2_1->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockShared);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 15, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 15, 0), 2);
+	EXPECT_EQ(module_mm->isSharer(0, 15, 0, module_l2_0), true);
+	EXPECT_EQ(module_mm->isSharer(0, 15, 0, module_l2_1), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 15, 0), nullptr);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_1->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_1->isSharer(0, 3, 0, module_l1_3), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_1->getOwner(0, 3, 0), nullptr);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l1_3->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_3->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 136);
+
+	// Check link
+	node = module_l2_1->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_1->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_1->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_1->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 144);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 16);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_4)
@@ -2181,6 +3350,7 @@ TEST(TestSystemEvents, config_0_ncstore_4)
 	module_l2_0->setOwner(0, 3, 0, module_l1_0);
 	module_mm->setSharer(0, 7, 0, module_l2_0);
 	module_mm->setOwner(0, 7, 0, module_l2_0);
+
 	// Accesses
 	int witness = -1;
 	module_l1_0->Access(Module::AccessNCStore, 0x0, &witness);
@@ -2190,23 +3360,68 @@ TEST(TestSystemEvents, config_0_ncstore_4)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[9] = CheckBlock mod-l2-0 0 3 0x0 M
-Command[10] = CheckBlock mod-mm 0 7 0x0 E
-Command[11] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[12] = CheckOwner mod-l2-0 0 3 0 None
-Command[13] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[14] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[15] = CheckLink mod-l1-0 Low Out 80
-Command[16] = CheckLink mod-l1-0 Low In 80
-Command[17] = CheckLink mod-l2-0 High Out 80
-Command[18] = CheckLink mod-l2-0 High In 80
-Command[19] = CheckLink mod-l2-0 Low Out 0
-Command[20] = CheckLink mod-l2-0 Low In 0
-Command[21] = CheckLink mod-mm High Out 0
-Command[22] = CheckLink mod-mm High In 0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_ncstore_5)
@@ -2252,31 +3467,75 @@ TEST(TestSystemEvents, config_0_ncstore_5)
 
 	// Accesses
 	int witness = -1;
-	module_l1_0->Access(Module::AccessNCStore, 0x400, &witness);
+	module_l1_0->Access(Module::AccessNCStore, 0x0, &witness);
 
 	// Simulation loop
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[7] = Access mod-l1-0 1 NCStore 0x0
-Command[8] = CheckBlock mod-l1-0 0 1 0x0 N
-Command[9] = CheckBlock mod-l2-0 0 3 0x0 M
-Command[10] = CheckBlock mod-mm 0 7 0x0 E
-Command[11] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[12] = CheckOwner mod-l2-0 0 3 0 None
-Command[13] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[14] = CheckOwner mod-mm 0 7 0 mod-l2-0
-Command[15] = CheckLink mod-l1-0 Low Out 80
-Command[16] = CheckLink mod-l1-0 Low In 80
-Command[17] = CheckLink mod-l2-0 High Out 80
-Command[18] = CheckLink mod-l2-0 High In 80
-Command[19] = CheckLink mod-l2-0 Low Out 0
-Command[20] = CheckLink mod-l2-0 Low In 0
-Command[21] = CheckLink mod-mm High Out 0
-Command[22] = CheckLink mod-mm High In 0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockNonCoherent);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 7, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 80);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 0);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 0);
 }
 
 TEST(TestSystemEvents, config_0_store_0)
@@ -2311,9 +3570,6 @@ TEST(TestSystemEvents, config_0_store_0)
 	ASSERT_NE(module_l2_0, nullptr);
 	ASSERT_NE(module_mm, nullptr);
 
-	//Set Block States
-
-
 	// Accesses
 	int witness = -1;
 	module_l1_0->Access(Module::AccessStore, 0x0, &witness);
@@ -2323,23 +3579,68 @@ TEST(TestSystemEvents, config_0_store_0)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[1] = CheckBlock mod-l1-0 0 1 0x0 M
-Command[2] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[3] = CheckBlock mod-mm 0 15 0x0 E
-Command[4] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[5] = CheckSharers mod-mm 0 15 0 mod-l2-0
-Command[6] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[7] = CheckOwner mod-mm 0 15 0 mod-l2-0
-Command[8] = CheckLink mod-l1-0 Low Out 8
-Command[9] = CheckLink mod-l1-0 Low In 72
-Command[10] = CheckLink mod-l2-0 High Out 72
-Command[11] = CheckLink mod-l2-0 High In 8
-Command[12] = CheckLink mod-l2-0 Low Out 8
-Command[13] = CheckLink mod-l2-0 Low In 136
-Command[14] = CheckLink mod-mm High Out 136
-Command[15] = CheckLink mod-mm High In 8
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 15, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 15, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 15, 0, module_l2_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 15, 0), module_l2_0);
+
+	// Check link
+	net::Node *node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l1_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 72);
+
+	// Check link
+	node = module_l2_0->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 8);
+
+	// Check link
+	node = module_l2_0->getLowNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 136);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getSentBytes(), 136);
+
+	// Check link
+	node = module_mm->getHighNetworkNode();
+	EXPECT_EQ(node->getReceivedBytes(), 8);
 }
 
 TEST(TestSystemEvents, config_0_store_1)
@@ -2380,7 +3681,6 @@ TEST(TestSystemEvents, config_0_store_1)
 	module_mm->setOwner(0, 7, 0, module_l2_0);
 	module_mm->setSharer(0, 7, 0, module_l2_0);
 
-
 	// Accesses
 	int witness = -1;
 	module_l1_0->Access(Module::AccessStore, 0x0, &witness);
@@ -2390,15 +3690,36 @@ TEST(TestSystemEvents, config_0_store_1)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[5] = CheckBlock mod-l1-0 0 1 0x0 M
-Command[6] = CheckBlock mod-l2-0 0 3 0x0 E
-Command[7] = CheckBlock mod-mm 0 7 0x0 E
-Command[8] = CheckSharers mod-l2-0 0 3 0 mod-l1-0
-Command[9] = CheckSharers mod-mm 0 7 0 mod-l2-0
-Command[10] = CheckOwner mod-l2-0 0 3 0 mod-l1-0
-Command[11] = CheckOwner mod-mm 0 7 0 mod-l2-0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 1, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 3, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 7, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 3, 0, module_l1_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+	EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
+
+	// Check owner
+	EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
 }
 
 TEST(TestSystemEvents, config_1_evict_0)
@@ -2457,24 +3778,70 @@ TEST(TestSystemEvents, config_1_evict_0)
 	while (witness < 0)
 		esim_engine->ProcessEvents();
 
-/*
-Command[12] = CheckBlock mod-l1-0 0 0 0x0 I
-Command[13] = CheckBlock mod-l1-1 0 0 0x200 E
-Command[14] = CheckBlock mod-l2-0 0 0 0x200 E
-Command[15] = CheckBlock mod-l3 0 0 0x0 M
-Command[16] = CheckBlock mod-l3 8 0 0x200 E
-Command[17] = CheckBlock mod-mm 0 0 0x0 E
-Command[18] = CheckBlock mod-mm 8 0 0x200 E
-Command[19] = CheckSharers mod-l2-0 0 0 0 mod-l1-1
-Command[20] = CheckSharers mod-l3 0 0 0 None
-Command[21] = CheckSharers mod-l3 8 0 0 mod-l2-0
-Command[22] = CheckOwner mod-l2-0 0 0 0 mod-l1-1
-Command[23] = CheckOwner mod-l3 0 0 0 None
-Command[24] = CheckOwner mod-l3 8 0 0 mod-l2-0
-*/
+	// Check block
+	unsigned tag;
+	Cache::BlockState state;
+	module_l1_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockInvalid);
+
+	// Check block
+	module_l1_1->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x200);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l2_0->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x200);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_l3->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockModified);
+
+	// Check block
+	module_l3->getCache()->getBlock(8, 0, tag, state);
+	EXPECT_EQ(tag, 0x200);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(0, 0, tag, state);
+	EXPECT_EQ(tag, 0x0);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check block
+	module_mm->getCache()->getBlock(8, 0, tag, state);
+	EXPECT_EQ(tag, 0x200);
+	EXPECT_EQ(state, Cache::BlockExclusive);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l3->getNumSharers(0, 0, 0), 0);
+
+	// Check sharers
+	EXPECT_EQ(module_l3->getNumSharers(8, 0, 0), 1);
+	EXPECT_EQ(module_l3->isSharer(8, 0, 0, module_l2_0), true);
+
+	// Check sharers
+	EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
+	EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
+
+	// Check owner
+	EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), module_l1_1);
+
+	// Check owner
+	EXPECT_EQ(module_l3->getOwner(0, 0, 0), nullptr);
+
+	// Check owner
+	EXPECT_EQ(module_l3->getOwner(8, 0, 0), module_l2_0);
 }
 
 }
+
 
 
 
