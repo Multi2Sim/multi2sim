@@ -219,9 +219,6 @@ System::System()
 	event_read_request_downup = esim_engine->RegisterEvent("read_request_downup",
 			EventReadRequestHandler,
 			frequency_domain);
-	event_read_request_downup_wait_for_reqs = esim_engine->RegisterEvent("read_request_downup_wait_for_reqs",
-			EventReadRequestHandler,
-			frequency_domain);
 	event_read_request_downup_finish = esim_engine->RegisterEvent("read_request_downup_finish",
 			EventReadRequestHandler,
 			frequency_domain);

@@ -543,7 +543,6 @@ int MainProgram(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-/*
 	// Main exception handler
 	try
 	{
@@ -555,7 +554,7 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-	*/
+	/*
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =
@@ -809,5 +808,6 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
+	*/
 }
 
