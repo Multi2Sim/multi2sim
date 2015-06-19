@@ -80,7 +80,6 @@ esim::Event *System::event_read_request_updown;
 esim::Event *System::event_read_request_updown_miss;
 esim::Event *System::event_read_request_updown_finish;
 esim::Event *System::event_read_request_downup;
-esim::Event *System::event_read_request_downup_wait_for_reqs;
 esim::Event *System::event_read_request_downup_finish;
 esim::Event *System::event_read_request_reply;
 esim::Event *System::event_read_request_finish;
@@ -1874,6 +1873,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
 	Directory *target_directory = target_module->getDirectory();
+	Cache *target_cache = target_module->getCache();
 
 	// Event "write_request"
 	if (event == event_write_request)
@@ -2235,13 +2235,106 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	// Event "write_request_downup"
 	if (event == event_write_request_downup)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s write request downup\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_downup\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Sanity
+		assert(frame->state != Cache::BlockInvalid);
+		assert(!target_directory->isBlockSharedOrOwned(frame->set, frame->way));
+
+		// Compute reply size
+		switch (frame->state)
+		{
+
+		case Cache::BlockExclusive:
+		case Cache::BlockShared:
+		{
+			// E/S send an ack
+			frame->reply_size = 8;
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+			break;
+		}
+
+		case Cache::BlockNonCoherent:
+		case Cache::BlockModified:
+		case Cache::BlockOwned:
+		{
+			// N state sends data
+			frame->reply_size = target_module->getBlockSize() + 8;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckData);
+			break;
+		}
+
+		default:
+
+			throw misc::Panic("Invalid block state");
+		}
+
+		// Continue with 'write-request-downup-finish'
+		esim_engine->Next(event_write_request_downup_finish);
+		return;
 	}
 
 	// Event "write_request_downup_finish"
 	if (event == event_write_request_downup_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"write request downup complete\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:write_request_downup_finish\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Set state to I
+		target_cache->setBlock(frame->set, frame->way, 0,
+				Cache::BlockInvalid);
+
+		// Unlock directory entry
+		target_directory->UnlockEntry(frame->set, frame->way);
+
+		// Latency will depend of reply kind
+		switch (parent_frame->reply)
+		{
+
+		case Frame::ReplyAck:
+		case Frame::ReplyAckError:
+		{
+			// No latency
+			esim_engine->Next(event_write_request_reply);
+			break;
+		}
+
+		case Frame::ReplyAckData:
+		{
+			// Data latency
+			target_module->incDataAccesses();
+			esim_engine->Next(event_write_request_reply,
+					target_module->getDataLatency());
+			break;
+		}
+
+		default:
+
+			throw misc::Panic("Invalid reply type");
+		}
+
+		// Done
+		return;
 	}
 
 	// Event "write_request_reply"
@@ -2357,6 +2450,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
 	Module *module = frame->getModule();
 	Module *target_module = frame->target_module;
+	Directory *target_directory = target_module->getDirectory();
+	Cache *target_cache = target_module->getCache();
 
 	// Event "read_request"
 	if (event == event_read_request)
@@ -2807,19 +2902,195 @@ void System::EventReadRequestHandler(esim::Event *event,
 	// Event "read_request_downup"
 	if (event == event_read_request_downup)
 	{
-		throw misc::Panic("Not implemented");
-	}
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s read request downup\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_downup\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
 
-	// Event "read_request_downup_wait_for_reqs"
-	if (event == event_read_request_downup_wait_for_reqs)
-	{
-		throw misc::Panic("Not implemented");
+		// Check: state must not be invalid or shared. By default, only
+		// one pending request. Response depends on state.
+		assert(frame->state != Cache::BlockInvalid);
+		assert(frame->state != Cache::BlockShared);
+		assert(frame->state != Cache::BlockNonCoherent);
+		frame->pending = 1;
+
+		// Send a read request to the owner of each subblock.
+		for (int z = 0; z < target_directory->getNumSubBlocks(); z++)
+		{
+			unsigned directory_entry_tag = frame->tag + 
+					z * (unsigned) target_module->getSubBlockSize();
+			assert(directory_entry_tag < frame->tag +
+					(unsigned) target_module->getBlockSize());
+			Directory::Entry *entry = target_directory->getEntry(
+					frame->set,
+					frame->way,
+					z);
+
+			// No owner
+			if (entry->getOwner() == Directory::NoOwner)
+				continue;
+
+			// Get owner module
+			net::Network *network = target_module->getHighNetwork();
+			net::Node *node = network->getNode(entry->getOwner());
+			net::EndNode *end_node = misc::cast<net::EndNode *>(node);
+			Module *owner = (Module *) end_node->getUserData();
+
+			// Not the first sub-block
+			if (directory_entry_tag % owner->getBlockSize())
+				continue;
+
+			// One more pending request
+			frame->pending++;
+
+			// Call 'read-request'
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					target_module,
+					directory_entry_tag);
+			new_frame->target_module = owner;
+			new_frame->request_direction = Frame::RequestDirectionDownUp;
+			esim_engine->Call(event_read_request,
+					new_frame,
+					event_read_request_downup_finish);
+		}
+
+		// Continue with 'read-request-downup-finish'
+		esim_engine->Next(event_read_request_downup_finish);
+		return;
 	}
 
 	// Event "read_request_downup_finish"
 	if (event == event_read_request_downup_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Ignore while pending requests
+		assert(frame->pending > 0);
+		frame->pending--;
+		if (frame->pending)
+			return;
+		
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"read request downup finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				target_module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:read_request_downup_finish\"\n",
+				frame->getId(),
+				target_module->getName().c_str());
+
+		// Check reply type
+		switch (frame->reply)
+		{
+
+		case Frame::ReplyAckData:
+		{
+			// Set state to S
+			target_cache->setBlock(frame->set, frame->way,
+					frame->tag, Cache::BlockShared);
+
+			// State is changed to shared, set owner of 
+			// sub-blocks to 0.
+			for (int z = 0; z < target_directory->getNumSubBlocks(); z++)
+				target_directory->setOwner(frame->set,
+						frame->way,
+						z,
+						Directory::NoOwner);
+
+			// Set reply size
+			frame->reply_size = target_module->getBlockSize() + 8;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckData);
+
+			// Done
+			break;
+		}
+
+		case Frame::ReplyAck:
+		{
+			// Higher-level cache was exclusive with no
+			// modifications above it.
+			frame->reply_size = 8;
+
+			// Set state to S
+			target_cache->setBlock(frame->set, frame->way,
+					frame->tag, Cache::BlockShared);
+
+			// State is changed to shared, set owner of sub-blocks 
+			// to 0
+			for (int z = 0; z < target_directory->getNumSubBlocks(); z++)
+				target_directory->setOwner(frame->set,
+						frame->way,
+						z,
+						Directory::NoOwner);
+
+			// Set reply size
+			frame->reply_size = 8;
+			parent_frame->setReplyIfHigher(Frame::ReplyAck);
+
+			// Done
+			break;
+		}
+
+		case Frame::ReplyNone:
+		{
+			// This block is not present in any higher-level 
+			// caches. Check state.
+			switch (frame->state)
+			{
+
+			case Cache::BlockExclusive:
+			case Cache::BlockShared:
+
+				frame->reply_size = 8;
+				parent_frame->setReplyIfHigher(Frame::ReplyAck);
+				break;
+
+			case Cache::BlockOwned:
+			case Cache::BlockModified:
+			case Cache::BlockNonCoherent:
+				
+				frame->reply_size = target_module->getSubBlockSize() + 8;
+				parent_frame->setReplyIfHigher(Frame::ReplyAckData);
+				break;
+
+			default:
+
+				throw misc::Panic("Invalid block state");
+			}
+
+			// Set block to S
+			target_cache->setBlock(frame->set, frame->way,
+					frame->tag, Cache::BlockShared);
+
+			// Done
+			break;
+		}
+
+		default:
+
+			throw misc::Panic("Invalid reply type");
+		}
+
+		// Unlock directory entry
+		target_directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		target_module->incDataAccesses();
+
+		// Continue with 'read-request-reply' after data latency
+		esim_engine->Next(event_read_request_reply,
+				target_module->getDataLatency());
+		return;
 	}
 
 	// Event "read_request_reply"
