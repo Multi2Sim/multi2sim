@@ -17,44 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
 
+#include "ObjectPool.h"
 
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/WorkItem.h>
-#include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/asm/Inst.h>
 
 namespace SI
 {
 
-TEST(TestISA, v_add_i32)
+// This test checks the implementation of the V_ADD_I32 instruction.
+// It checks for basic addition, proper implementation of the carry-bit, 
+// and proper implementation of the literal constant
+TEST(TestISAVOP2, v_add_i32)
 {
-	// Build SI objects required for testing
-	Asm *as = Asm::getInstance();
-	Emu *emu = Emu::getInstance();
-	auto ndrange = misc::new_unique<NDRange>(emu);
+	// Initialize environment using the ObjectPool
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
-	// Set local size, global size, and work dimension
-	int work_dim = 1;
-	unsigned global_size[1] = {1};
-	unsigned local_size[1] = {1};
-	ndrange->SetupSize((unsigned *) &global_size, 
-			(unsigned * ) &local_size, work_dim);
-
-	// Build Work Group, Wavefront, and Work Item
-	auto work_group = misc::new_unique<WorkGroup>(ndrange.get(), 0);
-	auto wavefront = misc::new_unique<Wavefront>(work_group.get(), 0);
-	auto work_item = misc::new_unique<WorkItem>(wavefront.get(), 0);
-	work_item->setWorkGroup(work_group.get());
-
-	// Create new instruction object
-	auto inst = misc::new_unique<Inst>(as);
-
-	// Build instruction -  v_add_i32 v2, vcc, v0, v1,
+	
+	// Build instruction -  v_add_i32 v2, vcc, v0, v1
+	// inst_bytes fields are defined in southern-islands/asm/Inst.h
 	InstBytesVOP2 inst_bytes = 
 	{
 		// src0 - v0
@@ -84,6 +67,8 @@ TEST(TestISA, v_add_i32)
 	int vcc = Inst::RegisterVcc;
 
 
+
+
 	//
 	// Test basic addition
 	//
@@ -93,11 +78,13 @@ TEST(TestISA, v_add_i32)
 	work_item->WriteVReg(vsrc1, 2);
 
 	// Execute instruction
-	work_item->Execute(inst->getOpcode(), inst.get());
+	work_item->Execute(inst->getOpcode(), inst);
 
 	// Read results - v2 should be 3 and vcc should be 0
 	EXPECT_EQ(3, work_item->ReadVReg(vdst));
 	EXPECT_EQ(0, work_item->ReadReg(vcc));
+
+
 
 
 	//
@@ -109,12 +96,14 @@ TEST(TestISA, v_add_i32)
 	work_item->WriteVReg(vsrc1, 0xffffffff);
 
 	// Execute instruction
-	work_item->Execute(inst->getOpcode(), inst.get());
+	work_item->Execute(inst->getOpcode(), inst);
 
 	// Read results - v2 should be 3 and vcc should be 0
 	EXPECT_EQ(4294967294, work_item->ReadVReg(vdst));
 	EXPECT_EQ(1, work_item->ReadReg(vcc));
-	
+
+
+
 
 	//
 	// Test literal constant support
@@ -129,7 +118,7 @@ TEST(TestISA, v_add_i32)
 	work_item->WriteVReg(vsrc1, 2);
 	
 	// Execute instruction
-	work_item->Execute(inst->getOpcode(), inst.get());
+	work_item->Execute(inst->getOpcode(), inst);
 
 	// Read results - v2 should be 12 and vcc should be 0
 	EXPECT_EQ(12, work_item->ReadVReg(vdst));
