@@ -70,7 +70,7 @@ class System
 	static long long max_cycles;
 
 	// Stand-alone message injection rate
-	static int injection_rate;
+	static double injection_rate;
 
 	// Stand-alone simulator instantiator
 	static bool stand_alone;

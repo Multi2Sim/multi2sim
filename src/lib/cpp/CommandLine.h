@@ -49,6 +49,7 @@ public:
 		TypeString,
 		TypeInt32,
 		TypeInt64,
+		TypeDouble,
 		TypeEnum
 	};
 
@@ -194,6 +195,28 @@ public:
 	{
 	}
 	
+	/// Read option from command line. See CommandLineOption::Read().
+	void Read(std::deque<std::string> &arguments);
+};
+
+
+/// Command-line option taking a double precision floating point as an argument
+class CommandLineOptionDouble : public CommandLineOption
+{
+	// Variable affected by this option
+	double *variable;
+
+public:
+
+	/// Constructor
+	CommandLineOptionDouble(const std::string &name,
+			double *variable,
+			const std::string &help) :
+			CommandLineOption(TypeDouble, name, 1, help),
+			variable(variable)
+	{
+	}
+
 	/// Read option from command line. See CommandLineOption::Read().
 	void Read(std::deque<std::string> &arguments);
 };
@@ -468,6 +491,16 @@ public:
 	{
 		Register(misc::new_unique<CommandLineOptionInt64>(name,
 				(long long *) &variable, help));
+	}
+
+	/// Same as RegisterString(), but taking a double as the
+	/// type of the command-line option.
+	void RegisterDouble(const std::string &name,
+			double &variable,
+			const std::string &help)
+	{
+		Register(misc::new_unique<CommandLineOptionDouble>(name,
+				(double *) &variable, help));
 	}
 
 	/// Register an option that can take values from the string map provided

@@ -61,7 +61,7 @@ void System::EventTypeSendHandler(esim::Event *type,
 				destination_node->getName().c_str()));
 
 	// Dump debug information
-	debug << misc::fmt("Send Handler net=\"%s\", "
+	debug << misc::fmt("[Network] Send Handler net=\"%s\", "
 			"msg-->pkt=%lld-->%d, "
 			"source_node=\"%s\", destination_node=\"%s\", "
 			"output_buffer=\"%s\"\n",
@@ -111,7 +111,7 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 	Network *network = message->getNetwork();
 
 	// Dump debug information
-	debug << misc::fmt("msg a=\"obuf\", net=\"%s\", "
+	debug << misc::fmt("[Network] Output Buffer Event Handler, net=\"%s\", "
 			"msg-->pkt=%lld-->%d, node=\"%s\", buf=\"%s\"\n",
 			network->getName().c_str(), message->getId(), 
 			packet->getSessionId(), node->getName().c_str(), 

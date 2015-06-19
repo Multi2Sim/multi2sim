@@ -43,7 +43,7 @@ long long System::max_cycles = 1000000;
 
 int System::message_size = 1;
 
-int System::injection_rate = 0.001;
+double System::injection_rate = 0.001;
 
 bool System::network_help = false;
 
@@ -69,7 +69,9 @@ System *System::getInstance()
 double System::RandomExponential(double lambda)
 {
 	double x = (double) random() / RAND_MAX;
-	return log(1 - x) / -lambda;
+	double ret = log(1 - x) / -lambda;
+	std::cout << misc::fmt("Random %f, %f, %f\n", x, lambda, ret);
+	return ret;
 }
 
 
@@ -138,14 +140,14 @@ void System::RegisterOptions()
 			"be used together with '--net-sim'.");
 
 	// Injection rate for stand-alone simulator
-	command_line->RegisterInt32("--net-injection-rate <number> (default 0.001)"
-			, injection_rate,
+	command_line->RegisterDouble("--net-injection-rate <number> (default 0.001)",
+			injection_rate,
 			"For network simulation, packet injection rate for nodes"
 			" (e.g. 0.001 means one packet every 1000 cycles on "
 			"average. Nodes will inject packets into the network "
 			"using random delays with exponential distribution with "
 			"lambda = <rate>. This option must be used together "
-			"with '--net-sim'. (see '--net-traffic-pattern'");
+			"with '--net-sim'.");
 
 	// Stand-alone simulator
 	command_line->RegisterString("--net-sim <network name>",
@@ -194,16 +196,17 @@ void System::ProcessOptions()
 
 void System::UniformTrafficSimulation(Network *network)
 {
+	// Init a list of double for injection time
+	auto inject_time = misc::new_unique_array<double>(
+			network->getNumNodes());
+	for (int i = 0; i < network->getNumNodes(); i++)
+	{
+		inject_time[i] = 0.0f;
+	}
+
+	// Loop from the beginning to the end the simulation
 	while (1)
 	{
-		// Init a list of double for injection time
-		auto inject_time = misc::new_unique_array<double>(
-				network->getNumNodes());
-		for (int i = 0; i < network->getNumNodes(); i++)
-		{
-			inject_time[i] = 0.0f;
-		}
-
 		// Get current cycle and check max cycles
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		long long cycle = System::getInstance()->getCycle();
@@ -216,7 +219,7 @@ void System::UniformTrafficSimulation(Network *network)
 			// Get end node
 			EndNode *node = dynamic_cast<EndNode *>(
 					network->getNode(i));
-			if (node)
+			if (!node)
 				continue;
 
 			// Check turn for next injection
@@ -231,25 +234,40 @@ void System::UniformTrafficSimulation(Network *network)
 				int index = random() % num_nodes;
 				dst_node = dynamic_cast<EndNode *>(
 						network->getNode(index));
-				if (!dst_node && dst_node != node)
+				if (!dst_node || dst_node != node)
 					break;
 			}
 
 			// Inject
 			while (inject_time[i] < cycle)
 			{
+				// Dump debug information
+				debug << misc::fmt("[Network] [cycle %lld] "
+						"Injecting a message from node "
+						"%s to node %s.\n",
+						cycle,
+						node->getName().c_str(),
+						dst_node->getName().c_str());
+
+				// Schedule next injection
 				inject_time[i] += RandomExponential(
 						injection_rate);
+				debug << misc::fmt("[Network] [cycle %lld] "
+						"[node %s] next injection time "
+						"%f\n",
+						cycle, node->getName().c_str(),
+						inject_time[i]);
+
+				// Send the packet
 				if (network->CanSend(node, dst_node,
 					System::message_size))
 					network->Send(node, dst_node,
 							System::message_size);
 			}
-
-			// Next cycle
-			esim_engine->ProcessEvents();
-
 		}
+
+		// Next cycle
+		esim_engine->ProcessEvents();
 	}
 }
 
