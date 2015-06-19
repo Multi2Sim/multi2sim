@@ -706,12 +706,10 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		if (arg_index->getType() == Argument::TypeLiteral ||
 				arg_index->getType() == Argument::TypeLiteralReduced)
 		{
-			// Argument 'arg_offset' is just a modification of
-			// 'arg_index'.
+			// Argument 'arg_offset'
 			auto *arg_offset_literal = dynamic_cast<ArgLiteral *>(arg_index.get());
 			assert(arg_offset_literal);
-			arg_offset_literal->setValue(arg_offset_literal->getValue() * ptr_size);
-			arg_offset.reset(arg_offset_literal);
+			arg_offset = misc::new_unique<ArgLiteral>(arg_offset_literal->getValue() * ptr_size);
 		}
 		else
 		{
@@ -766,12 +764,10 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			if (arg_index->getType() == Argument::TypeLiteral ||
 					arg_index->getType() == Argument::TypeLiteralReduced)
 			{
-				// Argument 'arg_offset' is just a modification of
-				// 'arg_index'.
+				// Argument 'arg_offset'
 				auto *arg_offset_literal = dynamic_cast<ArgLiteral *>(arg_index.get());
 				assert(arg_offset_literal);
-				arg_offset_literal->setValue(arg_offset_literal->getValue() * ptr_size);
-				arg_offset.reset(arg_offset_literal);
+				arg_offset = misc::new_unique<ArgLiteral>(arg_offset_literal->getValue() * ptr_size);
 			}
 			else
 			{
@@ -837,12 +833,10 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 				if (arg_index->getType() == Argument::TypeLiteral ||
 						arg_index->getType() == Argument::TypeLiteralReduced)
 				{
-					// Argument 'arg_offset' is just a modification of
-					// 'arg_index'.
+					// Argument 'arg_offset'
 					auto *arg_offset_literal = dynamic_cast<ArgLiteral *>(arg_index.get());
 					assert(arg_offset_literal);
-					arg_offset_literal->setValue(arg_offset_literal->getValue() * ptr_size);
-					arg_offset.reset(arg_offset_literal);
+					arg_offset = misc::new_unique<ArgLiteral>(arg_offset_literal->getValue() * ptr_size);
 				}
 				else
 				{
