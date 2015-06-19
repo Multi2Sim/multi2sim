@@ -543,6 +543,7 @@ int MainProgram(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+/*
 	// Main exception handler
 	try
 	{
@@ -554,8 +555,7 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-
-	/*
+	*/
 	using namespace mem; //////////
 
 	const std::string mem_config_0 =
@@ -791,7 +791,7 @@ int main(int argc, char **argv)
 
 		// Accesses
 		int witness = -1;
-		module_l1_0->Access(Module::AccessStore, 0x0, &witness);
+		module_l1_0->Access(Module::AccessNCStore, 0x0, &witness);
 
 		// Simulation loop
 		esim::Engine::setDebugPath("stdout");
@@ -809,6 +809,5 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-	*/
 }
 
