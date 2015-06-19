@@ -361,7 +361,7 @@ public:
 
 	/// Return whether the module can be accessed. A module can be accessed
 	/// if there are available ports and enough room in the MSHR register.
-	bool canAccess();
+	bool canAccess(int address) { return true; } //FIXME;
 
 	/// Return module name
 	const std::string &getName() const { return name; }

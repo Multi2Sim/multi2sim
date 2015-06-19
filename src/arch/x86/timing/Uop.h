@@ -57,6 +57,9 @@ private:
 	// Micro-instruction
 	UInst *uinst = nullptr;
 
+	// Context
+	Context *context = nullptr;
+
 	// Uop flags
 	int flags = 0;
 
@@ -86,7 +89,7 @@ private:
 	unsigned int fetch_address = 0;
 
 	// Access identifier to fetch this instruction
-	long long fetch_access = 0;
+	long long fetch_access_id = 0;
 
 	// Flag telling if uop came from trace cache
 	bool is_from_trace_cache = false;
@@ -195,8 +198,8 @@ private:
 
 
 
-	// For memory uops 
-	unsigned int phy_addr = 0;  // ... corresponding to 'uop->uinst->address'
+	// Physical address for memory uops
+	unsigned int phy_addr = 0;
 
 
 
@@ -249,7 +252,8 @@ public:
 	/// Dump Uop information
 	void Dump();
 
-	void CountDeps();
+	/// Count the dependencies of the current Uop
+	void CountDependencies();
 
 
 
@@ -258,10 +262,22 @@ public:
 	//
 
 	/// Set micro-instruction associated with this Uop
+	void setThread(Thread *thread) {this->thread = thread; }
+
+	/// Set micro-instruction associated with this Uop
 	void setUInst(UInst *uinst) {this->uinst = uinst; }
+
+	/// Set micro-instruction associated with this Uop
+	void setContext(Context *context) {this->context = context; }
 
 	/// Set flags
 	void setFlags(int flags) { this->flags = flags; }
+
+	/// Set ID
+	void setID(int id) { this->id = id; }
+
+	/// set ID in core
+	void setIdInCore(int id_in_core) { this->id_in_core = id_in_core; }
 
 	/// Set global prediction
 	void setPrediction(BranchPredictor::Prediction pred)
@@ -328,6 +344,12 @@ public:
 
 	/// Set speculative mode
 	void setSpeculativeMode(bool speculative_mode) { this->speculative_mode = speculative_mode; }
+
+	/// Set fetch address
+	void setFetchAddress(int fetch_address) { this->fetch_address = fetch_address; }
+
+	/// set fetch access identifier
+	void setFetchAccessId(long long fetch_access_id) { this->fetch_access_id = fetch_access_id; }
 
 	/// Set input dependency count of INT physical register
 	void setPhyRegIntIdepCount(int phy_int_idep_count) { this->phy_int_idep_count = phy_int_idep_count; }
@@ -405,17 +427,20 @@ public:
 		this->first_cycle_try_reserve = first_cycle_try_reserve;
 	}
 
-	// Set the cycle when the uop is ready
+	/// Set the cycle when the uop is ready
 	void setReadyWhen(long long ready_when)
 	{
 		this->ready_when = ready_when;
 	}
 
-	// Set the cycle when the uop is issued
+	/// Set the cycle when the uop is issued
 	void setIssueWhen(long long issue_when)
 	{
 		this->issue_when = issue_when;
 	}
+
+	/// Set the physical address of Uop
+	void setPhyAddr(unsigned int phy_addr) { this->phy_addr = phy_addr; }
 
 
 
@@ -490,6 +515,12 @@ public:
 	/// Get speculative mode
 	bool getSpeculativeMode() const { return speculative_mode; }
 
+	/// Get fetch address
+	int getFetchAddress() { return fetch_address; }
+
+	/// Get fetch access identifier
+	long long getFetchAccessId() { return fetch_access_id; }
+
 	/// Get input dependency count of INT physical register
 	int getPhyRegIntIdepCount() const { return phy_int_idep_count; }
 
@@ -549,6 +580,9 @@ public:
 
 	/// Get the cycle when the uop is issued
 	long long getIssueWhen() { return issue_when; }
+
+	/// Get the physical address of Uop
+	unsigned int getPhyAddr() { return phy_addr; }
 
 
 

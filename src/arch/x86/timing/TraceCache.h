@@ -135,9 +135,10 @@ public:
 
 	/// Statistic setters
 
-
 	/// Statistic getters
 
+	/// Increment number of fetched Uinst in trace cache
+	void incNumFetchedUinst() { num_fetched_uinst++; }
 
 	/// Dump functions
 	/// Dump the trace cache report

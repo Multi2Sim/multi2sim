@@ -129,14 +129,6 @@ FunctionalUnit::Type FunctionalUnit::type_table[UInstOpcodeCount] =
 };
 
 
-FunctionalUnit::FunctionalUnit(Timing *timing)
-	:
-	timing(timing)
-{
-
-}
-
-
 void FunctionalUnit::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Section
@@ -177,28 +169,28 @@ int FunctionalUnit::Reserve(Uop *uop)
 
 	// First time uop tries to reserve functional unit
 	if (!uop->getFirstCycleTryReserve() == 0)
-		uop->setFirstCycleTryReserve(timing->getCycle());
+		uop->setFirstCycleTryReserve(Timing::getInstance()->getCycle());
 
 	// Find a free functional unit
 	assert(type > TypeNone && type < TypeCount);
 	assert(reservation_pool[type].count <= MaxFunctionalUnitReservation);
 	for (int i = 0; i < reservation_pool[type].count; i++)
 	{
-		if (cycle_when_free[type][i] <= timing->getCycle())
+		if (cycle_when_free[type][i] <= Timing::getInstance()->getCycle())
 		{
 			// Make sure the latency exist
 			assert(reservation_pool[type].issue_latency > 0);
 			assert(reservation_pool[type].operation_latency > 0);
 
 			// Calculate the cycle count when functional unit is free
-			cycle_when_free[type][i] = timing->getCycle()
+			cycle_when_free[type][i] = Timing::getInstance()->getCycle()
 					+ reservation_pool[type].issue_latency;
 
 			// Increment the access count
 			accesses[type]++;
 
 			// Calculate the wait time in cycle
-			waiting_time[type] += timing->getCycle() - uop->getFirstCycleTryReserve();
+			waiting_time[type] += Timing::getInstance()->getCycle() - uop->getFirstCycleTryReserve();
 
 			// Return the operation latency and indication functional unit is reserved
 			return reservation_pool[type].operation_latency;

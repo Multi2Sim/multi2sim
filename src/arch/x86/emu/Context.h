@@ -175,6 +175,9 @@ private:
 	// Register file. Each context has its own copy always.
 	Regs regs;
 
+	// Backup register file that is used for recovery
+	Regs backup_regs;
+
 	// File descriptor table, shared by contexts
 	std::shared_ptr<comm::FileTable> file_table;
 
@@ -235,7 +238,29 @@ private:
 	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;
 	
+
+
+
+	//
 	// Scheduler
+	//
+
+	// Cycle when the context was allocated to a node (core/thread),
+	long long alloc_cycle;
+
+	// Cycle when the context was evicted to a node (core/thread),
+	long long evict_cycle;
+
+	// The context is mapped and allocated, but its eviction is in progress.
+	// It will be effectively evicted once the last instruction reaches the
+	// commit stage.
+	int evict_signal;
+
+	// If context is in state 'mapped', these two variables represent the
+	// node (core/thread) associated with the context.
+	int core_index;
+	int thread_index;
+
 	int sched_policy = SCHED_RR;
 	int sched_priority = 1;
 
@@ -869,6 +894,15 @@ public:
 	/// Return a reference of the register file
 	Regs &getRegs() { return regs; }
 
+	/// Return a reference of instruction
+	Inst &getInst() { return inst; }
+
+	/// Return a reference of Uinst list
+	std::vector<std::unique_ptr<UInst>> &getUinstList()
+	{
+		return uinst_list;
+	}
+
 	/// Return a constant reference of the memory
 	mem::Memory &getMem() {
 		assert(memory.get());
@@ -881,6 +915,17 @@ public:
 		assert(memory.get());
 		return memory;
 	}
+
+	/// Force a new 'eip' value for the context. The forced value should be the same as
+	/// the current 'eip' under normal circumstances. If it is not, speculative execution
+	/// starts, which will end on the next call to 'recover' function
+	void ForceEip(unsigned int eip);
+
+	/// Recover the context
+	void Recover();
+
+	/// Get Target EIP
+	int getTargetEip() { return target_eip; }
 };
 
 }  // namespace x86

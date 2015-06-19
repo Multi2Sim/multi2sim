@@ -134,9 +134,6 @@ public:
 
 private:
 
-	// Associated timing simulator
-	Timing *timing;
-
 	// Associated emulator 
 	Emu *emu;
 
@@ -146,8 +143,8 @@ private:
 	// MMU used by this CPU 
 	std::shared_ptr<mem::MMU> mmu;
 
-	// Counter of uop ID assignment 
-	long long uop_id_counter = 0;
+	// Number of Uop
+	long long num_uop = 0;
 
 	// Name of currently simulated stage 
 	std::string stage;
@@ -321,7 +318,7 @@ private:
 public:
 
 	/// CPU constructor
-	CPU(Timing *timing);
+	CPU();
 
 
 
@@ -375,6 +372,10 @@ public:
 
 
 
+	//
+	// Getters
+	//
+
 	/// Return the core with the given index
 	Core *getCore(int index) const
 	{
@@ -388,6 +389,18 @@ public:
 		Core *core = getCore(core_index);
 		return core->getThread(thread_index);
 	}
+
+	/// Get the MMU
+	mem::MMU *getMMU() { return mmu.get(); }
+
+	/// Get number of Uop
+	int getNumUop() { return num_uop; }
+
+	/// Increment the number of Uop
+	void incNumUop() { num_uop++; }
+
+	/// Increment the number of fetched Uinst
+	void incNumFetchedUinst() { num_fetched_uinst++; }
 
 	/// Dump functions
 	void Dump();
