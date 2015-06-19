@@ -322,6 +322,8 @@ private:
 	// waken up.
 	void Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 			State wakeup_state);
+	
+
 
 
 	///////////////////////////////////////////////////////////////////////
@@ -863,14 +865,23 @@ public:
 	// memory map.
 	void FinishGroup(int status);
 	
+	/// Suspend the context. This is a virtual function mandated by the
+	/// parent class comm::Context.
+	void Suspend() override;
+
 	/// Check whether a context suspended with a call to Suspend() is ready
 	/// to wake up, by invoking the 'can_wakeup' callback.
 	bool CanWakeup();
 
-	/// Wake up a context in suspended state that went to sleep with a call
-	/// to Suspend(). The 'wakeup_fn' callback function is invoked, and the
-	/// wakeup data is internally freed by reseting the smart pointer.
-	void Wakeup();
+	/// Wake up the context. This is a virtual function mandated by the
+	/// parent class comm::Context. The 'wakeup_fn' callback function is
+	/// invoked, and the wakeup data is internally freed by reseting the
+	/// smart pointer.
+	void Wakeup() override;
+
+	/// Return whether the context is suspended. This is a virtual function
+	/// mandated by the parent class comm::Context.
+	bool isSuspended() override;
 
 	// Check whether there is any pending unblocked signal in the context,
 	// and invoke the corresponding signal handler.

@@ -55,7 +55,9 @@ const int Driver::version_minor = 0;
 ///
 /// \return
 ///	The function always returns 0.
-int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallInit(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Read arguments
 	unsigned version_ptr;
@@ -85,7 +87,9 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 ///	The function returns a pointer in the device memory space. This pointer
 ///	should not be dereferenced in the runtime, but instead passed to other
 ///	ABI calls taking device pointers as input arguments.
-int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemAlloc(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	unsigned size;
@@ -137,7 +141,9 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	The function does not have any return value.
-int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemRead(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory* global_mem = kpl_emu->getGlobalMem();
@@ -183,7 +189,9 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	The function does not have any return value.
-int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemWrite(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
@@ -257,7 +265,9 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	The function does not have any return value.
-int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallLaunchKernel(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
 	mem::Memory* const_mem = kpl_emu->getConstMem();
@@ -365,7 +375,9 @@ int Driver::CallLaunchKernel(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	the return is always 0 on success
-int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemGetInfo(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Get Emu instance and global memory
 	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
@@ -400,7 +412,9 @@ int Driver::CallMemGetInfo(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	The function always returns 0
-int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallModuleLoad(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	unsigned path_ptr;
@@ -430,7 +444,9 @@ int Driver::CallModuleLoad(mem::Memory *memory, unsigned args_ptr)
 /// \return
 ///	The return value is a valid function id on success otherwise an error will
 ///	be thrown
-int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallModuleGetFunction(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Read module id
 	unsigned module_id;
@@ -467,7 +483,9 @@ int Driver::CallModuleGetFunction(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return value
 ///	the return is always 0
-int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemFree(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	/*
 	// Arguments

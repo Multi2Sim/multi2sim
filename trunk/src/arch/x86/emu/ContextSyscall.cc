@@ -1715,7 +1715,7 @@ int Context::ExecuteSyscall_ioctl()
 		assert(driver);
 
 		// Invoke the driver call
-		return driver->Call(cmd, memory.get(), arg);
+		return driver->Call(this, memory.get(), cmd, arg);
 	}
 	
 	// Request on command
