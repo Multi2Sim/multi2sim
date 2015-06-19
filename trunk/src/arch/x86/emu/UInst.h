@@ -409,6 +409,9 @@ public:
 		return os;
 	}
 
+	/// Get micro-instruction information
+	UInstInfo *getInfo() { return &info[0]; }
+
 };
 
 }  // namespace UInst

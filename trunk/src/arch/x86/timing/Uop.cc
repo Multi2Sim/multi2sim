@@ -38,6 +38,12 @@ Uop::Uop(int id, int id_in_core, Thread *thread)
 }
 
 
+void Uop::CountDependencies()
+{
+
+}
+
+
 int Uop::Compare(Uop *uop)
 {
 	// If the time when is ready for these two Uops is different, then return the time difference

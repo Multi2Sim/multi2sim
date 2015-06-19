@@ -107,9 +107,7 @@ CPU::LoadStoreQueueKind CPU::load_store_queue_kind;
 int CPU::load_store_queue_size;
 int CPU::uop_queue_size;
 
-CPU::CPU(Timing *timing)
-	:
-	timing(timing)
+CPU::CPU()
 {
 	// The prefix for each core
 	std::string prefix = "Core";
@@ -123,7 +121,7 @@ CPU::CPU(Timing *timing)
 	for (int i = 0; i < num_cores; i++)
 	{
 		core_name = prefix + misc::fmt("%d", i);
-		cores.emplace_back(misc::new_unique<Core>(core_name, this->timing, this, i));
+		cores.emplace_back(misc::new_unique<Core>(core_name, this, i));
 	}
 }
 

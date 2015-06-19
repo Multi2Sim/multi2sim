@@ -455,33 +455,33 @@ void Context::DebugCallInst()
 	struct elf_symbol_t *from;
 	struct elf_symbol_t *to;
 
-	struct x86_loader_t *loader = self->loader;
-	struct x86_regs_t *regs = self->regs;
+	struct x86_loader_t *loader = loader;
+	struct x86_regs_t *regs = regs;
 
 	char *action;
 	int i;
 
 	/* Do nothing on speculative mode */
-	if (self->state & X86ContextSpecMode)
+	if (state & X86ContextSpecMode)
 		return;
 
 	/* Call or return. Otherwise, exit */
-	if (!strncmp(self->inst.format, "call", 4))
+	if (!strncmp(inst.format, "call", 4))
 		action = "call";
-	else if (!strncmp(self->inst.format, "ret", 3))
+	else if (!strncmp(inst.format, "ret", 3))
 		action = "ret";
 	else
 		return;
 
 	/* Debug it */
-	for (i = 0; i < self->function_level; i++)
+	for (i = 0; i < function_level; i++)
 		X86ContextDebugCall("| ");
-	from = elf_symbol_get_by_address(loader->elf_file, self->curr_eip, NULL);
+	from = elf_symbol_get_by_address(loader->elf_file, curr_eip, NULL);
 	to = elf_symbol_get_by_address(loader->elf_file, regs->eip, NULL);
 	if (from)
 		X86ContextDebugCall("%s", from->name);
 	else
-		X86ContextDebugCall("0x%x", self->curr_eip);
+		X86ContextDebugCall("0x%x", curr_eip);
 	X86ContextDebugCall(" - %s to ", action);
 	if (to)
 		X86ContextDebugCall("%s", to->name);
@@ -490,10 +490,10 @@ void Context::DebugCallInst()
 	X86ContextDebugCall("\n");
 
 	/* Change current level */
-	if (strncmp(self->inst.format, "call", 4))
-		self->function_level--;
+	if (strncmp(inst.format, "call", 4))
+		function_level--;
 	else
-		self->function_level++;
+		function_level++;
 #endif
 }
 
@@ -904,6 +904,42 @@ Context *Context::getZombie(int pid)
 			return context;
 	}
 	return nullptr;
+}
+
+
+void Context::ForceEip(unsigned int eip)
+{
+	// Entering specmode
+	if (regs.getEip() != eip && !getState(StateSpecMode))
+	{
+		// Set the context state to speculative mode
+		setState(StateSpecMode);
+
+		// Copy the register files to backup register files
+		backup_regs = regs;
+
+		// Mask all FP exceptions on wrong path
+		regs.setFpuCtrl(regs.getFpuCtrl() | 0x3f);
+	}
+
+	// Force it
+	regs.setEip(eip);
+}
+
+
+void Context::Recover()
+{
+	// Check to make sure the current context is in speculative mode
+	assert(getState(StateSpecMode));
+
+	// Clear the state
+	clearState(StateSpecMode);
+
+	// Copy the register files back
+	regs = backup_regs;
+
+	// Clear the speculative memory
+	spec_mem->Clear();
 }
 
 }  // namespace x86
