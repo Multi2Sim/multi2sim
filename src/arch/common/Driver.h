@@ -33,6 +33,8 @@ namespace mem { class Memory; }
 namespace comm
 {
 
+// Forward declaration
+class Context;
 
 class Driver
 {
@@ -65,12 +67,15 @@ public:
 	/// Invoke an ABI call of the driver. This is a pure virtual function
 	/// that every child of class Driver should implement.
 	///
-	/// \param code
-	///	The ABI call code
+	/// \param context
+	///	CPU context executing the ABI call.
 	///
 	/// \param memory
 	///	The memory of the host application where the arguments of the
 	///	ABI call can be found.
+	///
+	/// \param code
+	///	The ABI call code
 	///
 	/// \param args_ptr
 	///	The address in the host application memory where the arguments
@@ -80,7 +85,11 @@ public:
 	///	The functions forwards the return value of the ABI call. This
 	///	value is provided as a return value of the system call and made
 	///	available to the application.
-	virtual int Call(int code, mem::Memory *memory, unsigned args_ptr) = 0;
+	///
+	virtual int Call(comm::Context *context,
+			mem::Memory *memory,
+			int code,
+			unsigned args_ptr) = 0;
 };
 
 
