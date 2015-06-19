@@ -25,10 +25,9 @@
 namespace x86
 {
 
-Core::Core(const std::string &name, Timing *timing, CPU *cpu, int id)
+Core::Core(const std::string &name, CPU *cpu, int id)
 	:
 	name(name),
-	timing(timing),
 	cpu(cpu),
 	id(id)
 {
@@ -40,13 +39,13 @@ Core::Core(const std::string &name, Timing *timing, CPU *cpu, int id)
 	InitializeReorderBuffer();
 
 	// Initialize functional unit
-	functional_unit = misc::new_unique<FunctionalUnit>(this->timing);
+	functional_unit = misc::new_unique<FunctionalUnit>();
 
 	// Create threads
 	for (int i = 0; i < CPU::getNumThreads(); i++)
 	{
 		thread_name = prefix + misc::fmt("%d", i);
-		threads.emplace_back(misc::new_unique<Thread>(thread_name, this->timing,
+		threads.emplace_back(misc::new_unique<Thread>(thread_name,
 				this->cpu, this, i));
 	}
 }
@@ -518,14 +517,14 @@ void Core::Fetch()
 		// If current thread is stalled, it means that we just switched to it.
 		// No fetching and no switching either.
 		Thread *thread = threads[current_fetch_thread].get();
-		if (thread->getFetchStallUntil() >= timing->getCycle())
+		if (thread->getFetchStallUntil() >= Timing::getInstance()->getCycle())
 			break;
 
 		// Switch thread if:
 		// - Quantum expired for current thread.
 		// - Long latency instruction is in progress.
 		bool must_switch = !thread->CanFetch();
-		must_switch = must_switch || timing->getCycle() - fetch_switch_when >
+		must_switch = must_switch || Timing::getInstance()->getCycle() - fetch_switch_when >
 				CPU::getThreadQuantum() + CPU::getThreadSwitchPenalty();
 		must_switch = must_switch || thread->isLongLatencyInEventQueue();
 
@@ -562,8 +561,8 @@ void Core::Fetch()
 			{
 				// Thread switch successful
 				current_fetch_thread = new_index;
-				fetch_switch_when = timing->getCycle();
-				new_thread->setFetchStallUntil(timing->getCycle() +
+				fetch_switch_when = Timing::getInstance()->getCycle();
+				new_thread->setFetchStallUntil(Timing::getInstance()->getCycle() +
 						CPU::getThreadSwitchPenalty() - 1);
 			}
 			else

@@ -54,9 +54,6 @@ private:
 	// Timing simulator, CPU and Core that it belongs to
 	//
 
-	// Timing simulator the thread belongs to
-	Timing *timing;
-
 	// CPU the thread belongs to
 	CPU *cpu;
 
@@ -78,19 +75,16 @@ private:
 
 
 
-	// Context currently running in this thread. This is a context present
-	// in the thread's 'mapped' list. 
-	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
-
-
-
-
 	//
-	// Double-linked list of mapped contexts
+	// List of mapped contexts
 	//
 
 	// Mapped context list
 	std::list<std::unique_ptr<Context>> mapped_contexts_list;
+
+	// Context currently running in this thread. This is a context present
+	// in the thread's 'mapped' list.
+	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
 
 	// Count of context in the list
 	int mapped_list_count = 0;
@@ -189,10 +183,10 @@ private:
 	unsigned int fetch_eip = 0, fetch_neip = 0;
 
 	// Number of bytes occupied in the fetch queue
-	int fetch_queue_occupied  = 0;
+	int num_bytes_in_fetch_queue  = 0;
 
 	// Number of uops occupied in the trace cache queue
-	int trace_cache_queue_occupied  = 0;
+	int num_uop_in_trace_cache_queue  = 0;
 
 	// Virtual address of last fetched block
 	unsigned int fetch_block = 0;
@@ -304,8 +298,8 @@ private:
 public:
 
 	/// Constructor
-	Thread(const std::string &name, Timing *timing,
-			CPU *cpu, Core *core, int id_in_core);
+	Thread(const std::string &name, CPU *cpu,
+			Core *core, int id_in_core);
 
 
 

@@ -75,12 +75,6 @@ public:
 
 private:
 
-	// Timing simulator the function unit belongs to
-	Timing *timing;
-
-
-
-
 	//
 	// Functional unit parameters
 	//
@@ -114,9 +108,6 @@ private:
 	static Type type_table[UInstOpcodeCount];
 
 public:
-
-	/// Constructor
-	FunctionalUnit(Timing *timing);
 
 	/// Read functional unit configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);

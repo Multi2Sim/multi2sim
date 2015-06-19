@@ -62,9 +62,6 @@ private:
 	// name of this Core
 	std::string name;
 
-	// Associated timing simulator
-	Timing *timing;
-
 	// CPU that it belongs to 
 	CPU *cpu;
 
@@ -88,7 +85,7 @@ private:
 	//
 
 	// Counter for uop ID assignment
-	long long uop_id_counter = 0;
+	long long num_uop = 0;
 
 	// Counter for uop ID assignment
 	long long dispatch_seq = 0;
@@ -224,7 +221,7 @@ private:
 public:
 
 	/// Constructor
-	Core(const std::string &name, Timing *timing, CPU *cpu, int id);
+	Core(const std::string &name, CPU *cpu, int id);
 
 	/// Return the number of threads
 	int getNumThreads() const { return threads.size(); }
@@ -242,6 +239,9 @@ public:
 	//
 	// Increment counters
 	//
+
+	/// Increment the number of Uop
+	void incNumUop() { num_uop++; }
 
 	/// Increment the number of occupied physical integer registers
 	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
@@ -289,6 +289,9 @@ public:
 
 	/// Get core ID
 	int getID() { return id; }
+
+	/// Get number of Uop
+	int getNumUop() { return num_uop; }
 
 	/// Get event queue
 	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
