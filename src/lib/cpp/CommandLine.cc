@@ -18,6 +18,7 @@
  */
 
 #include <cstring>
+#include <string>
 
 #include "CommandLine.h"
 #include "Misc.h"
@@ -108,6 +109,25 @@ void CommandLineOptionInt64::Read(std::deque<std::string> &arguments)
 		throw CommandLine::Error(misc::fmt("Invalid value for option "
 				"'%s': %s", getName().c_str(),
 				StringErrorToString(error)));
+}
+
+
+void CommandLineOptionDouble::Read(std::deque<std::string> &arguments)
+{
+	// Read value
+	std::string argument = arguments.front();
+	arguments.pop_front();
+
+	// Convert value
+	try
+	{
+		*variable = stod(argument);
+	}
+	catch (Exception &e)
+	{
+		throw CommandLine::Error(misc::fmt("Invalid value for option "
+				"'%s'", getName().c_str()));
+	}
 }
 
 
