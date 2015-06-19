@@ -71,7 +71,9 @@ src_arch_southern_islands_emu_test_LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_arch_southern_islands_emu_test_SOURCES = \
-	src/arch/southern-islands/emu/TestISA.cc
+	src/arch/southern-islands/emu/ObjectPool.cc \
+	src/arch/southern-islands/emu/ObjectPool.h \
+	src/arch/southern-islands/emu/TestISAVOP2.cc
 
 
 src_memory_test_LDADD = \
