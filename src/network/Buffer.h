@@ -144,6 +144,9 @@ public:
 		return packets.front();
 	}
 
+	/// Remove a certain packet from the buffer
+	void RemovePacket(Packet *packet);
+
 };
 
 }  // namespace net

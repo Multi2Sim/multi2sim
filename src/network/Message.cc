@@ -58,21 +58,36 @@ void Message::Packetize(int packet_size)
 
 bool Message::Assemble(Packet *packet)
 {
-	return true;
-}
-
-
-void Message::Send()
-{
-	esim::Engine *esim = esim::Engine::getInstance();
-	for (auto &packet : packets)
+	// Check if the packet belongs to this message
+	bool is_packet_belongs_to_message = false;
+	for (auto &message_packet : packets)
 	{
-		// Create event frame
-		auto frame = misc::new_shared<Frame>(packet.get());
-
-		// Schedule event
-		esim->Call(System::event_send, frame);
+		if (message_packet.get() == packet)
+		{
+			is_packet_belongs_to_message = true;
+			break;
+		}
 	}
+	if (!is_packet_belongs_to_message)
+		throw misc::Panic("Cannot assemble the message from a packet"
+				"that does not belongs this message.");
+
+	// Check if the packet has been assembled before
+	for (auto &received_packet : received_packets)
+	{
+		if (received_packet == packet)
+			throw misc::Panic("Packets have been assembled twice");
+	}
+
+	// Mark the packet has been received
+	received_packets.push_back(packet);
+
+	// Check if all the packets of the message received
+	if (received_packets.size() == packets.size())
+	{
+		return true;
+	}
+	return false;
 }
 
 }  // namespace net
