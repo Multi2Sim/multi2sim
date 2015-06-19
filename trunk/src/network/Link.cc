@@ -82,7 +82,7 @@ void Link::TransferPacket(Packet *packet)
 	// this link
 	Buffer *source_buffer = packet->getBuffer();
 	if (std::find(source_buffers.begin(), source_buffers.end(), 
-			source_buffer) != source_buffers.end())
+			source_buffer) == source_buffers.end())
 	{
 		throw misc::Panic("Packet is not ready to be send over the "
 				"link");
