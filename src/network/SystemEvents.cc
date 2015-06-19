@@ -60,6 +60,18 @@ void System::EventTypeSendHandler(esim::Event *type,
 				source_node->getName().c_str(),
 				destination_node->getName().c_str()));
 
+	// Dump debug information
+	debug << misc::fmt("Send Handler net=\"%s\", "
+			"msg-->pkt=%lld-->%d, "
+			"source_node=\"%s\", destination_node=\"%s\", "
+			"output_buffer=\"%s\"\n",
+			network->getName().c_str(), 
+			message->getId(), 
+			packet->getSessionId(), 
+			source_node->getName().c_str(), 
+			destination_node->getName().c_str(), 
+			output_buffer->getName().c_str());
+
 	// Check if buffer fits the message
 	if (message->getSize() > output_buffer->getSize())
 		throw misc::Panic(misc::fmt("%s: message does not fit in "
@@ -93,7 +105,17 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
+	Message *message = packet->getMessage();
 	Buffer *buffer = packet->getBuffer();
+	Node *node = packet->getNode();
+	Network *network = message->getNetwork();
+
+	// Dump debug information
+	debug << misc::fmt("msg a=\"obuf\", net=\"%s\", "
+			"msg-->pkt=%lld-->%d, node=\"%s\", buf=\"%s\"\n",
+			network->getName().c_str(), message->getId(), 
+			packet->getSessionId(), node->getName().c_str(), 
+			buffer->getName().c_str());
 	
 	// Let the connection to pass the packet to input buffer
 	Connection *connection = buffer->getConnection();
