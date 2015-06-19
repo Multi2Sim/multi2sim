@@ -1545,7 +1545,7 @@ void System::EventEvictHandler(esim::Event *event,
 
 		// Receive message
 		net::Network *network = target_module->getHighNetwork();
-		net::Node *node = target_module->getHighNetworkNode();
+		net::EndNode *node = target_module->getHighNetworkNode();
 		network->Receive(node, frame->message);
 
 		// Call find-and-lock
@@ -1820,7 +1820,7 @@ void System::EventEvictHandler(esim::Event *event,
 
 		// Receive message
 		net::Network *network = module->getLowNetwork();
-		net::Node *node = module->getLowNetworkNode();
+		net::EndNode *node = module->getLowNetworkNode();
 		network->Receive(node, frame->message);
 
 		// Invalidate block if there was no error
@@ -1960,7 +1960,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 
 		// Receive message
 		net::Network *network;
-		net::Node *node;
+		net::EndNode *node;
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = target_module->getHighNetwork();
@@ -2410,7 +2410,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 
 		// Receive message
 		net::Network *network;
-		net::Node *node;
+		net::EndNode *node;
 		if (frame->request_direction == Frame::RequestDirectionDownUp)
 		{
 			network = module->getLowNetwork();
@@ -2536,13 +2536,13 @@ void System::EventReadRequestHandler(esim::Event *event,
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			net::Network *network = target_module->getHighNetwork();
-			net::Node *node = target_module->getHighNetworkNode();
+			net::EndNode *node = target_module->getHighNetworkNode();
 			network->Receive(node, frame->message);
 		}
 		else
 		{
 			net::Network *network = target_module->getLowNetwork();
-			net::Node *node = target_module->getLowNetworkNode();
+			net::EndNode *node = target_module->getLowNetworkNode();
 			network->Receive(node, frame->message);
 		}
 		
@@ -3170,7 +3170,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 
 		// Receive message
 		net::Network *network;
-		net::Node *node;
+		net::EndNode *node;
 		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = module->getLowNetwork();

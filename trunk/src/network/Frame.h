@@ -27,19 +27,27 @@ namespace net
 
 class Frame : public esim::Frame
 {
+
 	// Packet
 	Packet *packet;
+
+	// The event to be scheduled when the message arrived
+	esim::Event *return_event;
 
 public:
 
 	/// Constructor
-	Frame(Packet *packet) :
-		packet(packet)
+	Frame(Packet *packet, esim::Event *return_event) :
+		packet(packet),
+		return_event(return_event)
 	{
 	}
 
 	/// Return the packet
 	Packet *getPacket() const { return packet; }
+
+	/// Get the return event type
+	esim::Event *getReturnEvent() { return return_event; }
 };
 
 }

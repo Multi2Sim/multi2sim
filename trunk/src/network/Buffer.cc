@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <algorithm>
+
 #include "Network.h"
 #include "Buffer.h"
 
@@ -46,6 +48,22 @@ void Buffer::InsertPacket(Packet *packet)
 
 	// Insert the packet into buffer
 	packets.push_back(packet);
+}
+
+
+void Buffer::RemovePacket(Packet *packet)
+{
+	// Check if the packet is in the buffer
+	if (std::find(packets.begin(), packets.end(), packet) == packets.end())
+		throw misc::Panic("Trying to remove a packet that is not in"
+				" current buffer");
+
+	// Reduce the occupied size of the buffer
+	count -= packet->getSize();
+
+	// Remove the packet
+	packets.remove(packet);
+
 }
 
 

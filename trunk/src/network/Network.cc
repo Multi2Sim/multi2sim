@@ -29,6 +29,7 @@
 #include "Network.h"
 #include "RoutingTable.h"
 #include "Switch.h"
+#include "Frame.h"
 
 namespace net
 {
@@ -364,7 +365,7 @@ void Network::Dump(std::ostream &os) const
 }
 
 
-Message *Network::newMessage(Node *source_node, Node *destination_node,
+Message *Network::newMessage(EndNode *source_node, EndNode *destination_node,
 			int size)
 {
 	// Insert the created message into the hashtable
@@ -439,26 +440,42 @@ Message *Network::Send(EndNode *source_node,
 		int size,
 		esim::Event *receive_event)
 {
-	// Make sure both source node and destination node are end nodes
-	/*
-	if (dynamic_cast<EndNode *>(source_node) != nullptr)
-		throw misc::Panic("Source node is not an end node");
-	if (dynamic_cast<EndNode *>(destination_node) != nullptr)
-		throw misc::Panic("Destination node is not an end node");
-	*/
-
-	// FIXME - RAFA - Temporarily assume that the package is receive
-	// in one cycle from now.
 	System::debug << misc::fmt("[Network] Send %d bytes from "
 			"'%s' to '%s'\n",
 			size,
 			source_node->getName().c_str(),
 			destination_node->getName().c_str());
+
+	// Get esim engine
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	esim_engine->Next(receive_event, 1);
-	
-	// FIXME - CAREFUL! Message is currently not being freed
-	return nullptr;
+
+	// Create message
+	Message *message = newMessage(source_node, destination_node, size);
+
+	// Packetize message
+	if (packet_size == 0)
+		message->Packetize(size);
+	else 
+	{
+		// TODO generate trace here
+		message->Packetize(packet_size);
+	}
+
+	// Send the message out
+	for (int i = 0; i < message->getNumPacket(); i++)
+	{
+		Packet *packet = message->getPacket(i);
+		
+		// Create event frame
+		auto frame = misc::new_shared<Frame>(packet, receive_event);
+
+		// Schedule send event
+		esim_engine->Call(System::event_send, frame);
+	}
+
+	// Return message
+	return message;
 }
 
 
@@ -477,9 +494,30 @@ Message *Network::TrySend(EndNode *source_node,
 }
 
 
-void Network::Receive(Node *node, Message *message)
+void Network::Receive(EndNode *node, Message *message)
 {
-	misc::Warning("net::Receive not implemented");
+	// Assert that the location of the packets are in the receive node
+	for (int i = 0; i < message->getSize(); i++)
+	{
+		Packet *packet = message->getPacket(i);
+		Node *packet_node = packet->getNode();
+		if (packet_node != node)
+			throw misc::Panic(misc::fmt(
+					"Packet %d of the message %lld has "
+					"not arrived.", packet->getSessionId(), 
+					message->getId()));
+	}
+
+	// Remove packets from their buffer
+	for (int i = 0; i < message->getSize(); i++)
+	{
+		Packet *packet = message->getPacket(i);
+		Buffer *buffer = packet->getBuffer();
+		buffer->RemovePacket(packet);
+	}
+
+	// Destory the message
+	message_table.erase(message->getId());
 }
 
 

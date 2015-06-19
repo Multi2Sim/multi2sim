@@ -51,8 +51,8 @@ class Message
 	// A list of packet
 	std::vector<std::unique_ptr<Packet>> packets;
 
-	// A list of received packet
-	std::vector<Packet *> packet;
+	// A list of received packets
+	std::vector<Packet *> received_packets;
 
 public:
 
@@ -70,15 +70,10 @@ public:
 	///
 	/// This function can only be called in the received event handler. 
 	/// This function would check if the packet belongs to the message, 
-	/// and the packet has not been received before. This function will 
-	/// also pop the packet from the buffer, but this function has to 
-	/// guarantee that the packet is at the head of the buffer. This 
-	/// function will also check if the packet arrived its destination
+	/// and the packet has not been received before. This function would
+	/// not pop the packet from the buffer.
 	bool Assemble(Packet *packet);
 
-	/// Send the message by scheduling events
-	void Send();
-	
 	/// Get id of the node
 	long long getId() const { return id; }
 
@@ -93,6 +88,12 @@ public:
 
 	/// Get message size
 	int getSize() const { return size; }
+
+	/// Get number of packets belongs to the message
+	int getNumPacket() const { return packets.size(); }
+
+	/// Get packet by index
+	Packet *getPacket(int index) const { return packets[index].get(); }
 };
 
 }  // namespace net

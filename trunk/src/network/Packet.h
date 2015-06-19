@@ -55,6 +55,9 @@ public:
 	/// Set session id
 	void setSessionId(int session_id) { this->session_id = session_id; }
 
+	/// Get session id
+	int getSessionId() const { return session_id; }
+
 	/// Get message
 	Message *getMessage() const { return message; }
 

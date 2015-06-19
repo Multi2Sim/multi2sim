@@ -23,6 +23,7 @@
 #include "Message.h"
 #include "Network.h"
 #include "Switch.h"
+#include "EndNode.h"
 #include "Frame.h"
 #include "RoutingTable.h"
 #include "System.h"
@@ -144,15 +145,27 @@ void System::EventTypeReceiveHandler(esim::Event *type,
 	// Cast event frame type
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
+	// Get esim engine
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
 	Message *message = packet->getMessage();
-	Node *node = packet->getNode();
+	EndNode *node = dynamic_cast<EndNode *>(packet->getNode());
 	Network *network = message->getNetwork();
+
+	// Check if the message arrived at an end node
+	if (!node)
+		throw misc::Panic("The message is not arriving at an end node");
 
 	// Check if the packet can be assembled 
 	if (message->Assemble(packet))
-		network->Receive(node, message);
+	{
+		if(network_frame->getReturnEvent()) 
+			esim_engine->Next(network_frame->getReturnEvent());
+		else 
+			network->Receive(node, message);
+	}
 }
 
 }
