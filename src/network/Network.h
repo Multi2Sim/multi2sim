@@ -159,7 +159,7 @@ public:
 	/// keeps the ownership of the message. Message is destoried when it 
 	/// is received by the \a destination node.
 	///
-	Message *newMessage(Node *source_node, Node *destination_node,
+	Message *newMessage(EndNode *source_node, EndNode *destination_node,
 			int size);
 
 	/// Check if a message can be sent throught from the given source to
@@ -282,7 +282,7 @@ public:
 	/// of the message. This function should be called when the
 	/// `receive_event` is triggered after a call to Send() or TrySend().
 	/// The message object is freed in this call.
-	void Receive(Node *node, Message *message);
+	void Receive(EndNode *node, Message *message);
 
 
 
