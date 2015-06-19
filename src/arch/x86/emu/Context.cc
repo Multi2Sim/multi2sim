@@ -635,6 +635,21 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 }
 
 
+void Context::Suspend()
+{
+	// Suspend context
+	assert(!getState(StateSuspended));
+	setState(StateSuspended);
+	emu->ProcessEventsSchedule();
+}
+
+
+bool Context::isSuspended()
+{
+	return getState(StateSuspended);
+}
+
+
 bool Context::CanWakeup()
 {
 	// Checks
@@ -652,10 +667,12 @@ void Context::Wakeup()
 	// Checks
 	assert(getState(StateCallback));
 	assert(getState(StateSuspended));
-	assert(this->wakeup_fn);
+
+	// Invoke wakeup function
+	if (wakeup_fn)
+		(this->*wakeup_fn)();
 
 	// Wakeup context
-	(this->*wakeup_fn)();
 	clearState(StateCallback);
 	clearState(StateSuspended);
 	clearState(wakeup_state);

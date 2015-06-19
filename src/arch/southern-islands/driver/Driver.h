@@ -91,8 +91,10 @@ class Driver : public comm::Driver
 	//
 	//	void CallInit(mem::Memory *memory, unsigned args_ptr);
 	//
-#define DEFCALL(name, code) int Call##name(mem::Memory *memory, \
-		unsigned args_ptr);
+#define DEFCALL(name, code) \
+	int Call##name(comm::Context *context, \
+			mem::Memory *memory, \
+			unsigned args_ptr);
 #include "Driver.def"
 #undef DEFCALL
 
@@ -100,7 +102,9 @@ class Driver : public comm::Driver
 	static const char *call_name[CallCodeCount];
 
 	// Prototype of a member function executing an ABI call
-	typedef int (Driver::*CallFn)(mem::Memory *memory, unsigned args_ptr);
+	typedef int (Driver::*CallFn)(comm::Context *context,
+			mem::Memory *memory,
+			unsigned args_ptr);
 
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
@@ -145,7 +149,10 @@ public:
 
 	/// Invoke an ABI call. See documentation for comm::Driver::Call for
 	/// details on the meaning of the arguments.
-	int Call(int code, mem::Memory *memory, unsigned args_ptr);
+	int Call(comm::Context *context,
+			mem::Memory *memory,
+			int code,
+			unsigned args_ptr);
 	
 	/// Debugger
 	static misc::Debug debug;

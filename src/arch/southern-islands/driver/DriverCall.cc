@@ -35,7 +35,9 @@ namespace SI
 // ABI Call 'Init'
 //
 // ...
-int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallInit(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	return 0;
 }
@@ -50,7 +52,9 @@ int Driver::CallInit(mem::Memory *memory, unsigned args_ptr)
 ///	The function returns a pointer in the device memory space. This pointer
 ///	should not be dereferenced in the runtime, but instead passed to other
 ///	ABI calls taking device pointers as input arguments.
-int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemAlloc(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	unsigned size;
@@ -86,7 +90,9 @@ int Driver::CallMemAlloc(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'MemRead'
 //
 // ...
-int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemRead(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	return 0;
 }
@@ -107,7 +113,9 @@ int Driver::CallMemRead(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	The function does not have any return value.
-int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemWrite(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	SI::Emu *si_emu = SI::Emu::getInstance();
 	mem::Memory *video_mem = si_emu->getVideoMemory();
@@ -141,7 +149,9 @@ int Driver::CallMemWrite(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'MemCopy'
 //
 // ...
-int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemCopy(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	throw misc::Panic("ABI call not implemented");
 	return 0;
@@ -151,7 +161,9 @@ int Driver::CallMemCopy(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'MemFree'
 //
 // ...
-int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallMemFree(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	throw misc::Panic("ABI call not implemented");
 	return 0;
@@ -162,7 +174,9 @@ int Driver::CallMemFree(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	Return unique program id
-int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallProgramCreate(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Create program
 	int program_id = getProgramCount();
@@ -189,7 +203,9 @@ int Driver::CallProgramCreate(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	No return value.
-int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallProgramSetBinary(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments 
 	int program_id;
@@ -231,7 +247,9 @@ int Driver::CallProgramSetBinary(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return int
 ///	Unique kernel ID.
-int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallKernelCreate(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	int program_id;
@@ -288,7 +306,9 @@ int Driver::CallKernelCreate(mem::Memory *memory, unsigned args_ptr)
 ///
 ///	No return value.
 
-int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallKernelSetArgValue(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	int kernel_id;
@@ -358,7 +378,9 @@ int Driver::CallKernelSetArgValue(mem::Memory *memory, unsigned args_ptr)
 ///
 /// \return
 ///	No return value.
-int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallKernelSetArgPointer(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arguments
 	int kernel_id;
@@ -399,7 +421,9 @@ int Driver::CallKernelSetArgPointer(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'KernelSetArgSampler'
 //
 // ...
-int Driver::CallKernelSetArgSampler(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallKernelSetArgSampler(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	throw misc::Panic("ABI call not implemented");
 	return 0;
@@ -409,7 +433,9 @@ int Driver::CallKernelSetArgSampler(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'KernelSetArgImage'
 //
 // ...
-int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallKernelSetArgImage(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	throw misc::Panic("ABI call not implemented");
 	return 0;
@@ -441,7 +467,9 @@ int Driver::CallKernelSetArgImage(mem::Memory *memory, unsigned args_ptr)
 /// \return int
 ///	ID of new nd-range
 
-int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeCreate(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Arugments
 	int kernel_id;
@@ -514,7 +542,9 @@ int Driver::CallNDRangeCreate(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeGetNumBufferEntries'
 //
 // ...
-int Driver::CallNDRangeGetNumBufferEntries(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeGetNumBufferEntries(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	unsigned host_ptr;                                                   
 	int available_buffer_entries;                                            
@@ -550,7 +580,9 @@ int Driver::CallNDRangeGetNumBufferEntries(mem::Memory *memory, unsigned args_pt
 // ABI Call 'NDRangeSendWorkGroups'
 //
 // ...
-int Driver::CallNDRangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	int ndrange_id;                                                          
 	unsigned work_group_start;                                           
@@ -597,7 +629,9 @@ int Driver::CallNDRangeSendWorkGroups(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeFinish'
 //
 // ...
-int Driver::CallNDRangeFinish(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeFinish(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	int ndrange_id;
 
@@ -638,7 +672,9 @@ int Driver::CallNDRangeFinish(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangePassMemObjs'
 //
 // ...
-int Driver::CallNDRangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangePassMemObjs(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	int kernel_id;
 	int ndrange_id;
@@ -682,7 +718,9 @@ int Driver::CallNDRangePassMemObjs(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeSetFused'
 //
 // ...
-int Driver::CallNDRangeSetFused(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeSetFused(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Read arguments
 	memory->Read(args_ptr, sizeof(bool), (char *) &fused);
@@ -707,7 +745,9 @@ int Driver::CallNDRangeSetFused(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeFlush'
 //
 // ...
-int Driver::CallNDRangeFlush(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeFlush(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// TODO - add support for timing simulator
 
@@ -742,7 +782,9 @@ int Driver::CallNDRangeFlush(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeFree'
 //
 // ...
-int Driver::CallNDRangeFree(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeFree(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	int ndrange_id;                                                          
 	
@@ -766,7 +808,9 @@ int Driver::CallNDRangeFree(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeStart'
 //
 // ...
-int Driver::CallNDRangeStart(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeStart(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 
 	//X86Emu *x86_emu = ctx->emu;                                              
@@ -787,7 +831,9 @@ int Driver::CallNDRangeStart(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'NDRangeEnd'
 //
 // ...
-int Driver::CallNDRangeEnd(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallNDRangeEnd(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	// Decrement number of ndranges running
 	ndranges_running--;                                              
@@ -808,7 +854,9 @@ int Driver::CallNDRangeEnd(mem::Memory *memory, unsigned args_ptr)
 // ABI Call 'RuntimeDebug'
 //
 // ...
-int Driver::CallRuntimeDebug(mem::Memory *memory, unsigned args_ptr)
+int Driver::CallRuntimeDebug(comm::Context *context,
+		mem::Memory *memory,
+		unsigned args_ptr)
 {
 	throw misc::Panic("ABI call not implemented");
 	return 0;

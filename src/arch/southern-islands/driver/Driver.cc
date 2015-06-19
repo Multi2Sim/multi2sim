@@ -73,7 +73,10 @@ Driver *Driver::getInstance()
 }
 	
 
-int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
+int Driver::Call(comm::Context *context,
+		mem::Memory *memory,
+		int code,
+		unsigned args_ptr)
 {
 	// Check valid call
 	if (code < 0 || code >= CallCodeCount || !call_fn[code])
@@ -87,7 +90,7 @@ int Driver::Call(int code, mem::Memory *memory, unsigned args_ptr)
 
 	// Invoke call
 	CallFn fn = call_fn[code];
-	return (this->*fn)(memory, args_ptr);
+	return (this->*fn)(context, memory, args_ptr);
 }
 
 
