@@ -336,7 +336,6 @@ public:
 	static esim::Event *event_read_request_updown_miss;
 	static esim::Event *event_read_request_updown_finish;
 	static esim::Event *event_read_request_downup;
-	static esim::Event *event_read_request_downup_wait_for_reqs;
 	static esim::Event *event_read_request_downup_finish;
 	static esim::Event *event_read_request_reply;
 	static esim::Event *event_read_request_finish;
