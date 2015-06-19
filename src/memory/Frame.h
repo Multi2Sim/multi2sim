@@ -78,6 +78,13 @@ public:
 		ReplyAckError
 	};
 
+	/// Message type
+	enum MessageType
+	{
+		MessageNone = 0,
+		MessageClearOwner
+	};
+
 
 
 	
@@ -195,6 +202,9 @@ public:
 
 	/// Type of reply
 	ReplyType reply = ReplyNone;
+
+	/// Type of message
+	MessageType message_type = MessageNone;
 
 	/// Size in bytes of a reply
 	int reply_size = 0;

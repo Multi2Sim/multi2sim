@@ -618,46 +618,369 @@ void System::EventStoreHandler(esim::Event *event,
 void System::EventNCStoreHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Module *module = frame->getModule();
+	Directory *directory = module->getDirectory();
+	Cache *cache = module->getCache();
+
 	// Event "nc_store"
 	if (event == event_nc_store)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("%lld %lld 0x%x %s nc store\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"nc_store\" "
+				"state=\"%s:nc store\" "
+				"addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Record access
+		module->StartAccess(frame, Module::AccessNCStore);
+
+		// Coalesce access
+		Frame *master_frame = module->canCoalesce(
+				Module::AccessNCStore,
+				frame->getAddress(),
+				frame);
+		if (master_frame)
+		{
+			module->incCoalescedNCWrites();
+			module->Coalesce(master_frame, frame);
+			master_frame->queue.Wait(event_nc_store_finish);
+			return;
+		}
+
+		// Continue with 'nc-store-lock'
+		esim_engine->Next(event_nc_store_lock);
+		return;
 	}
 
 	// Event "nc_store_lock"
 	if (event == event_nc_store_lock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s nc store lock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If there is any older write, wait for it
+		Frame *older_frame = module->getInFlightWrite(frame);
+		if (older_frame)
+		{
+			// Debug
+			debug << misc::fmt("    %lld wait for write %lld\n",
+					frame->getId(),
+					older_frame->getId());
+
+			// Wait for access
+			older_frame->queue.Wait(event_nc_store_lock);
+			return;
+		}
+
+		// If there is any older access to the same address that this 
+		// access could not be coalesced with, wait for it.
+		older_frame = module->getInFlightAddress(frame->getAddress(),
+				frame);
+		if (older_frame)
+		{
+			// Debug
+			debug << misc::fmt("    %lld wait for write %lld\n",
+					frame->getId(),
+					older_frame->getId());
+
+			// Wait for it
+			older_frame->queue.Wait(event_nc_store_lock);
+			return;
+		}
+
+		// Call find and lock
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->getAddress());
+		new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = true;
+		new_frame->nc_write = true;
+		new_frame->retry = frame->retry;
+		esim_engine->Call(event_find_and_lock,
+				new_frame,
+				event_nc_store_writeback);
+		return;
 	}
 
 	// Event "nc_store_writeback"
 	if (event == event_nc_store_writeback)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s nc store writeback\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_writeback\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error locking
+		if (frame->error)
+		{
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n", retry_latency);
+
+			// Retry access after latency
+			frame->retry = true;
+			esim_engine->Next(event_nc_store_lock, retry_latency);
+			return;
+		}
+
+		// If the block has modified data, evict it so that the 
+		// lower-level cache will have the latest copy
+		if (frame->state == Cache::BlockModified ||
+				frame->state == Cache::BlockOwned)
+		{
+			// Record that there was an eviction
+			frame->eviction = true;
+
+			// Call 'evict'
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					module,
+					0);
+			new_frame->set = frame->set;
+			new_frame->way = frame->way;
+			esim_engine->Call(event_evict,
+					new_frame,
+					event_nc_store_action);
+			return;
+		}
+
+		// Continue with 'nc-store-action'
+		esim_engine->Next(event_nc_store_action);
+		return;
 	}
 
 	// Event "nc_store_action"
 	if (event == event_nc_store_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s nc store action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error locking
+		if (frame->error)
+		{
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n", retry_latency);
+
+			// Retry after latency
+			frame->retry = true;
+			esim_engine->Next(event_nc_store_lock, retry_latency);
+			return;
+		}
+
+		// Main memory modules are a special case
+		if (module->getType() == Module::TypeMainMemory)
+		{
+			// For non-coherent stores, finding an E or M for the
+			// state of a cache block in the directory still
+			// requires a message to the lower-level module so it
+			// can update its owner field. These messages should not
+			// be sent if the module is a main memory module.
+			esim_engine->Next(event_nc_store_unlock);
+			return;
+		}
+
+		// Check state
+		switch (frame->state)
+		{
+
+		case Cache::BlockShared:
+		case Cache::BlockNonCoherent:
+		{
+			// N/S are hit
+			esim_engine->Next(event_nc_store_unlock);
+			break;
+		}
+
+		case Cache::BlockExclusive:
+		{
+			// E state must tell the lower-level module to remove
+			// this module as an owner. Call 'message'.
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					module,
+					frame->tag);
+			new_frame->message_type = Frame::MessageClearOwner;
+			new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
+			esim_engine->Call(event_message,
+					new_frame,
+					event_nc_store_miss);
+			break;
+		}
+
+		case Cache::BlockModified:
+		case Cache::BlockOwned:
+		case Cache::BlockInvalid:
+		{
+			// Modified and Owned states need to call read request
+			// because we've already evicted the block so that the
+			// lower-level cache will have the latest value before
+			// it becomes non-coherent. Call 'read-request'.
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					module,
+					frame->tag);
+			new_frame->nc_write = true;
+			new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
+			new_frame->request_direction = Frame::RequestDirectionUpDown;
+			esim_engine->Call(event_read_request,
+					new_frame,
+					event_nc_store_miss);
+			break;
+		}
+
+		default:
+			
+			throw misc::Panic("Invalid block state");
+		}
+
+		// Done
+		return;
 	}
 
 	// Event "nc_store_miss"
 	if (event == event_nc_store_miss)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s nc store miss\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_miss\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Error on read request. Unlock block and retry nc store.
+		if (frame->error)
+		{
+			// Calculate retry latency
+			int retry_latency = module->getRetryLatency();
+
+			// Unlock directory entry
+			directory->UnlockEntry(frame->set, frame->way);
+
+			// Debug
+			debug << misc::fmt("    lock error, retrying in "
+					"%d cycles\n", retry_latency);
+
+
+			// Continue with 'nc-store-lock' after latency
+			frame->retry = true;
+			esim_engine->Next(event_nc_store_lock, retry_latency);
+			return;
+		}
+
+		// Continue with 'nc-store-unlock'
+		esim_engine->Next(event_nc_store_unlock);
+		return;
 	}
 
 	// Event "nc_store_unlock"
 	if (event == event_nc_store_unlock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("  %lld %lld 0x%x %s nc store unlock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_unlock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Set block state to E/S depending on return var 'shared'.
+		// Also set the tag of the block.
+		cache->setBlock(frame->set, frame->way, frame->tag,
+				Cache::BlockNonCoherent);
+
+		// Unlock directory entry
+		directory->UnlockEntry(frame->set, frame->way);
+
+		// Stats
+		module->incDataAccesses();
+
+		// Continue with 'store-finish' after access latency
+		esim_engine->Next(event_nc_store_finish,
+				module->getDataLatency());
+		return;
 	}
 
 	// Event "nc_store_finish"
 	if (event == event_nc_store_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug and trace
+		debug << misc::fmt("%lld %lld 0x%x %s nc store finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:nc_store_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.end_access name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Increment witness variable
+		if (frame->witness)
+			(*frame->witness)++;
+
+		// Finish access
+		module->FinishAccess(frame);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event

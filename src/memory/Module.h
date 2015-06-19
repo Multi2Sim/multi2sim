@@ -748,6 +748,9 @@ public:
 	/// Increment number of coalesced writes
 	void incCoalescedWrites() { coalesced_writes++; }
 
+	/// Increment number of coealesced non-coherent writes
+	void incCoalescedNCWrites() { coalesced_nc_writes++; }
+
 	/// Increment the number of conflicts while trying to lock directory
 	/// entries.
 	void incDirectoryEntryConflicts() { directory_entry_conflicts++; }
