@@ -136,6 +136,15 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 	Packet *packet = network_frame->getPacket();
 	Buffer *buffer = packet->getBuffer();
 	Node *node = packet->getNode();
+	Message *message = packet->getMessage();
+	Network *network = message->getNetwork();
+
+	// Dump debug information
+	debug << misc::fmt("[Network] Input Buffer Event Handler, net=\"%s\", "
+			"msg-->pkt=%lld-->%d, node=\"%s\", buf=\"%s\"\n",
+			network->getName().c_str(), message->getId(),
+			packet->getSessionId(), node->getName().c_str(),
+			buffer->getName().c_str());
 
 	// If the message is not at buffer head, process later
 	if (buffer->getBufferHead() == packet)
@@ -175,6 +184,12 @@ void System::EventTypeReceiveHandler(esim::Event *type,
 	Message *message = packet->getMessage();
 	EndNode *node = dynamic_cast<EndNode *>(packet->getNode());
 	Network *network = message->getNetwork();
+
+	// Dump debug information
+	debug << misc::fmt("[Network] Receive Event Handler, net=\"%s\", "
+			"msg-->pkt=%lld-->%d, node=\"%s\"\n",
+			network->getName().c_str(), message->getId(),
+			packet->getSessionId(), node->getName().c_str());
 
 	// Check if the message arrived at an end node
 	if (!node)

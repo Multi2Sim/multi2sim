@@ -440,6 +440,7 @@ Message *Network::Send(EndNode *source_node,
 		int size,
 		esim::Event *receive_event)
 {
+	// Debug information
 	System::debug << misc::fmt("[Network] Send %d bytes from "
 			"'%s' to '%s'\n",
 			size,
@@ -448,7 +449,6 @@ Message *Network::Send(EndNode *source_node,
 
 	// Get esim engine
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	esim_engine->Next(receive_event, 1);
 
 	// Create message
 	Message *message = newMessage(source_node, destination_node, size);
@@ -472,6 +472,9 @@ Message *Network::Send(EndNode *source_node,
 
 		// Schedule send event
 		esim_engine->Call(System::event_send, frame);
+
+		// Update statistics
+		source_node->IncreaseSentBytes(size);
 	}
 
 	// Return message
@@ -508,6 +511,9 @@ void Network::Receive(EndNode *node, Message *message)
 					message->getId()));
 	}
 
+	// Update statistics
+	node->IncreaseReceivedBytes(message->getSize());
+
 	// Remove packets from their buffer
 	for (int i = 0; i < message->getSize(); i++)
 	{
@@ -515,6 +521,10 @@ void Network::Receive(EndNode *node, Message *message)
 		Buffer *buffer = packet->getBuffer();
 		buffer->RemovePacket(packet);
 	}
+
+	// Dump debug information
+	System::debug << misc::fmt("[Network] message %lld received at [node %s]"
+			"\n", message->getId(), node->getName().c_str());
 
 	// Destory the message
 	message_table.erase(message->getId());
