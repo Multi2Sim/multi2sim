@@ -31,9 +31,9 @@ namespace SI
 TEST(TestISASOP2, S_ADD_U32)
 {
 	// Initialize environment using the ObjectPool
-	ObjectPool pool;
-	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	auto pool = misc::new_unique<ObjectPool>();
+	WorkItem *work_item = pool->getWorkItem();
+	Inst *inst = pool->getInst();
 
 	// Build instruction -  S_add_U32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h

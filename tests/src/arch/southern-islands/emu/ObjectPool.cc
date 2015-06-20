@@ -31,26 +31,32 @@
 namespace SI
 {
 
-NDRange *ObjectPool::SetNDRangeSize()
+ObjectPool::ObjectPool()
 {
+	// Get disassembler and emulator singletons
+	as = Asm::getInstance();
+	emu = Emu::getInstance();
+
+	// Allocate NDRange
+	ndrange = misc::new_unique<NDRange>(emu);
+	
 	// Set local size, global size, and work dimension
 	int work_dim = 1;
 	unsigned global_size[1] = {1};
 	unsigned local_size[1] = {1};
-	ndrange.SetupSize((unsigned *) &global_size, 
+	ndrange->SetupSize((unsigned *) &global_size, 
 			(unsigned * ) &local_size, work_dim);
 
-	// Return 
-	return &ndrange;
-}
-
-ObjectPool::ObjectPool() : as(Asm::getInstance()), emu(Emu::getInstance()),
-		ndrange(emu), work_group(SetNDRangeSize(), 0), 
-		wavefront(&work_group, 0), work_item(&wavefront, 0), 
-		inst(as)
-{
+	// Allocate Work Group, Wavefront, and Work Item
+	work_group = misc::new_unique<WorkGroup>(ndrange.get(), 0);
+	wavefront = misc::new_unique<Wavefront>(work_group.get(), 0);
+	work_item = misc::new_unique<WorkItem>(wavefront.get(), 0);
+	
 	// Assign work item to a work group
-	work_item.setWorkGroup(&work_group);
+	work_item->setWorkGroup(work_group.get());
+
+	// Create a new Instruction
+	inst = misc::new_unique<Inst>(as);
 }
 
 
