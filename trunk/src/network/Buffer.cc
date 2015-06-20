@@ -64,6 +64,9 @@ void Buffer::RemovePacket(Packet *packet)
 	// Remove the packet
 	packets.remove(packet);
 
+	// Wake up the buffer event queue
+	if (!event_queue.isEmpty())
+		event_queue.WakeupAll();
 }
 
 
@@ -81,6 +84,10 @@ void Buffer::PopPacket()
 
 	// Reduce the count of the packet
 	count -= packet->getSize();
+
+	// Wake up the buffer event queue
+	if (!event_queue.isEmpty())
+		event_queue.WakeupOne();
 }
 
 }  // namespace net
