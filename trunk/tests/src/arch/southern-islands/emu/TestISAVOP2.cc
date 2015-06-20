@@ -65,7 +65,7 @@ TEST(TestISAVOP2, v_add_i32)
 	int vsrc1 = inst->getBytes()->vop2.vsrc1;
 	int vdst = inst->getBytes()->vop2.vdst;
 	int vcc = Inst::RegisterVcc;
-
+	
 
 
 
