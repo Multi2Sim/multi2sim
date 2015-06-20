@@ -70,7 +70,6 @@ double System::RandomExponential(double lambda)
 {
 	double x = (double) random() / RAND_MAX;
 	double ret = log(1 - x) / -lambda;
-	std::cout << misc::fmt("Random %f, %f, %f\n", x, lambda, ret);
 	return ret;
 }
 
@@ -213,7 +212,7 @@ void System::UniformTrafficSimulation(Network *network)
 		if (cycle >= max_cycles)
 			break;
 
-		// Inject messages
+		// Traverse all nodes to check if some nodes need injection
 		for (int i = 0; i < network->getNumNodes(); i++)
 		{
 			// Get end node

@@ -126,8 +126,8 @@ public:
 	void InsertPacket(Packet *packet);
 
 	/// Pop the packet at the head of the buffer. The packet is not 
-	/// destoried. The message still keeps the ownership of the packet. 
-	/// When the message is destoried, the packet is destoried together.
+	/// destoryed. The message still keeps the ownership of the packet.
+	/// When the message is destroyed, the packet is destroyed together.
 	void PopPacket();
 
 	/// Get number of packets in the buffer
@@ -144,7 +144,7 @@ public:
 		return packets.front();
 	}
 
-	/// Remove a certain packet from the buffer
+	/// Remove a certain packet from the buffer.
 	void RemovePacket(Packet *packet);
 
 };

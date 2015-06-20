@@ -54,6 +54,10 @@ protected:
 	// Output buffer size
 	int output_buffer_size;
 
+	// Statistics
+	long long received_bytes = 0;
+	long long sent_bytes = 0;
+
 	// User data, used by the memory system to attach information about
 	// which module is associated with this network node.
 	void *user_data = nullptr;
@@ -124,11 +128,20 @@ public:
 
 	/// Return the outgoing traffic from this node in number of bytes, as
 	/// the sum of the bytes sent through all its output links.
-	long long getSentBytes();
+	long long getSentBytes() const { return sent_bytes; }
+
+	/// Increase the number of bytes sent
+	void IncreaseSentBytes(long long bytes) { sent_bytes += bytes; }
 
 	/// Return the incoming traffic into this node in number of bytes, as
 	/// the sum of the bytes received through all its input links.
-	long long getReceivedBytes();
+	long long getReceivedBytes() const { return received_bytes; }
+
+	/// Increase the number of bytes received
+	void IncreaseReceivedBytes(long long bytes) 
+	{ 
+		received_bytes += bytes; 
+	}
 };
 
 

@@ -51,6 +51,7 @@ Link::Link(Network *network,
 	addDestinationBuffer(destination_buffer);
 }
 
+
 void Link::Dump(std::ostream &os) const
 {
 	os << misc::fmt("\n***** Link %s *****\n", name.c_str());
@@ -78,19 +79,27 @@ void Link::TransferPacket(Packet *packet)
 	esim::Event*current_event = esim_engine->getCurrentEvent();
 	long long cycle = System::getInstance()->getCycle();
 
+	// Retrieve related information
+	Message *message = packet->getMessage();
+	Node *node = packet->getNode();
+
 	// Check if the packet is in an output buffer that connects to 
 	// this link
 	Buffer *source_buffer = packet->getBuffer();
 	if (std::find(source_buffers.begin(), source_buffers.end(), 
 			source_buffer) == source_buffers.end())
-	{
 		throw misc::Panic("Packet is not ready to be send over the "
 				"link");
-	}
 
 	// Check if the packet is at the head of the buffer
 	if (source_buffer->getBufferHead() != packet)
 	{
+		System::debug <<misc::fmt("[Network] [stall - queue] "
+				"message-->packet: %lld-->%d, at "
+				"[node %s], [buffer %s]\n",
+				message->getId(), packet->getSessionId(),
+				node->getName().c_str(),
+				source_buffer->getName().c_str());
 		source_buffer->Wait(current_event);
 		return;
 	}
@@ -98,6 +107,13 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
+		System::debug <<misc::fmt("[Network] [stall - link busy] "
+				"message-->packet: %lld-->%d, at "
+				"[node %s], [buffer %s], [link %s]\n",
+				message->getId(), packet->getSessionId(),
+				node->getName().c_str(),
+				source_buffer->getName().c_str(),
+				getName().c_str());
 		esim_engine->Next(current_event, busy - cycle + 1);
 		return;
 	}
@@ -107,6 +123,16 @@ void Link::TransferPacket(Packet *packet)
 	long long write_busy = destination_buffer->getWriteBusy();
 	if (write_busy >= cycle)
 	{
+		System::debug <<misc::fmt("[Network] [stall - buffer write busy] "
+				"message-->packet: %lld-->%d, at "
+				"[node %s], [buffer %s], [link %s],"
+				"destination: [node %s], [buffer %s]\n",
+				message->getId(), packet->getSessionId(),
+				node->getName().c_str(),
+				source_buffer->getName().c_str(),
+				getName().c_str(),
+				destination_buffer->getNode()->getName().c_str(),
+				destination_buffer->getName().c_str());
 		esim_engine->Next(current_event, write_busy - cycle + 1);
 		return;
 	}
@@ -115,6 +141,16 @@ void Link::TransferPacket(Packet *packet)
 	if (destination_buffer->getCount() + packet->getSize() > 
 			destination_buffer->getSize())
 	{
+		System::debug <<misc::fmt("[Network] [stall - dst buffer full] "
+				"message-->packet: %lld-->%d, at "
+				"[node %s], [buffer %s], [link %s],"
+				"destination: [node %s], [buffer %s]\n",
+				message->getId(), packet->getSessionId(),
+				node->getName().c_str(),
+				source_buffer->getName().c_str(),
+				getName().c_str(),
+				destination_buffer->getNode()->getName().c_str(),
+				destination_buffer->getName().c_str());
 		destination_buffer->Wait(current_event);
 		return;
 	}
