@@ -33,7 +33,7 @@ namespace SI
 {
 
 // ObjectPool holds all the initialized objects required to create a 
-// functioning Southern Islands environment  for testing
+// functioning Southern Islands environment for testing
 class ObjectPool 
 {
 	// Disassembler
@@ -43,25 +43,19 @@ class ObjectPool
 	Emu *emu = nullptr;
 
 	// NDRange
-	NDRange ndrange;
+	std::unique_ptr<NDRange> ndrange;
 
 	// WorkGroup
-	WorkGroup work_group;
+	std::unique_ptr<WorkGroup> work_group;
 
 	// Wavefront
-	Wavefront wavefront;
+	std::unique_ptr<Wavefront> wavefront;
 
 	// WorkItem
-	WorkItem work_item;
+	std::unique_ptr<WorkItem> work_item;
 
 	// Inst
-	Inst inst;
-
-	// Set the local and global size of the ndrange. The function returns
-	// a pointer to the ndrange member so that the work_group member
-	// constructor can be called in the initialization list. For testing
-	// purposes, the global and local size is set to one.
-	NDRange *SetNDRangeSize();
+	std::unique_ptr<Inst> inst;
 
 public:
 	/// Constructor
@@ -75,10 +69,10 @@ public:
 	//
 
 	/// Return a pointer to the work_item member
-	WorkItem *getWorkItem() { return &work_item; }	
+	WorkItem *getWorkItem() { return work_item.get(); }	
 	
 	/// Return a pointer to the work_item member
-	Inst *getInst() { return &inst; }	
+	Inst *getInst() { return inst.get(); }	
 };
 
 

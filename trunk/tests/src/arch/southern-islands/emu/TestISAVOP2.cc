@@ -28,12 +28,12 @@ namespace SI
 // This test checks the implementation of the V_ADD_I32 instruction.
 // It checks for basic addition, proper implementation of the carry-bit, 
 // and proper implementation of the literal constant
-TEST(TestISAVOP2, v_add_i32)
+TEST(TestISAVOP2, V_ADD_I32)
 {
 	// Initialize environment using the ObjectPool
-	ObjectPool pool;
-	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	auto pool = misc::new_unique<ObjectPool>();
+	WorkItem *work_item = pool->getWorkItem();
+	Inst *inst = pool->getInst();
 
 	
 	// Build instruction -  v_add_i32 v2, vcc, v0, v1
