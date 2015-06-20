@@ -73,8 +73,7 @@ src_arch_southern_islands_emu_test_LDADD = \
 src_arch_southern_islands_emu_test_SOURCES = \
 	src/arch/southern-islands/emu/ObjectPool.cc \
 	src/arch/southern-islands/emu/ObjectPool.h \
-	src/arch/southern-islands/emu/TestISAVOP2.cc \
-	src/arch/southern-islands/emu/TestISASOP2.cc
+	src/arch/southern-islands/emu/TestISAVOP2.cc 
 
 src_memory_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
