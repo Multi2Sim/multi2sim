@@ -155,6 +155,10 @@ public:
 		finish_why = why;
 	}
 
+	/// Return the event-driven simulation engine to its initial state,
+	/// with no pending events and the current time being 0.
+	void Reset();
+
 	/// Return whether the simulation finished
 	bool hasFinished() { return finish; }
 
