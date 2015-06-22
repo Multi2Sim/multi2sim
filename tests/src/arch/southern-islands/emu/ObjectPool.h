@@ -40,7 +40,7 @@ class ObjectPool
 	Asm *as = nullptr;
 
 	// Emulator
-	Emulator *emu = nullptr;
+	Emulator *emulator = nullptr;
 
 	// NDRange
 	std::unique_ptr<NDRange> ndrange;

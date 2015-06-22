@@ -135,7 +135,7 @@ public:
 private:
 
 	// Associated emulator 
-	Emulator *emu;
+	Emulator *emulator;
 
 	// Array of cores 
 	std::vector<std::unique_ptr<Core>> cores;

@@ -35,8 +35,8 @@ namespace Kepler
 Grid::Grid(Function *function)
 {
 	// Initialization
-	this->emu = emu->getInstance();
-	id = emu->getGridSize();
+	this->emulator = emulator->getInstance();
+	id = emulator->getGridSize();
 	const char * temp_buffer;
 	temp_buffer = function->getTextBuffer();
 	inst_buffer_size = function->getTextSize();
@@ -106,10 +106,10 @@ void Grid::GridSetupConstantMemory()
 {
 	unsigned v;
 
-	emu->WriteConstMem(0x28, 3*sizeof(unsigned), (const char*)thread_block_size3);
-	emu->WriteConstMem(0x34, 3*sizeof(unsigned), (const char*)thread_block_count3);
+	emulator->WriteConstMem(0x28, 3*sizeof(unsigned), (const char*)thread_block_size3);
+	emulator->WriteConstMem(0x34, 3*sizeof(unsigned), (const char*)thread_block_count3);
 	v = 0x1000000;
-	emu->WriteConstMem(0x100000, sizeof(unsigned), (const char*)&v);
+	emulator->WriteConstMem(0x100000, sizeof(unsigned), (const char*)&v);
 }
 
 void Grid::WaitingToRunning(int thread_block_id)

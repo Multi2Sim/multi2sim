@@ -143,7 +143,7 @@ void Wavefront::Execute()
 	// Get current work-group
 	WorkGroup *work_group = this->work_group;
 	NDRange *ndrange = work_group->getNDRange();
-	Emulator *emu = ndrange->getEmu();
+	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
 	std::unique_ptr<Inst> inst(new Inst(Asm::getInstance()));
 
@@ -175,13 +175,7 @@ void Wavefront::Execute()
 	InstBytes *bytes = inst->getBytes();
 	int op = inst->getOp();
 
-	// FIXME: Stats
-	// asEmu(emu)->instructions++;
-	// emu_inst_count++;
-	// inst_count++;
-
 	// Dump instruction string when debugging
-
 	switch (format)
 	{
 
@@ -189,7 +183,7 @@ void Wavefront::Execute()
 	case InstFormatSOP1:
 	{
 		// Stats
-		emu->incScalarAluInstCount();
+		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
 
 		// Only one work item executes the instruction
@@ -204,7 +198,7 @@ void Wavefront::Execute()
 	case InstFormatSOP2:
 	{
 		// Stats
-		emu->incScalarAluInstCount();
+		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
 
 		// Only one work item executes the instruction
@@ -222,11 +216,11 @@ void Wavefront::Execute()
 		if (bytes->sopp.op > 1 &&
 			bytes->sopp.op < 10)
 		{
-			emu->incBranchInstCount();
+			emulator->incBranchInstCount();
 			branch_inst_count++;
 		} else
 		{
-			emu->incScalarAluInstCount();
+			emulator->incScalarAluInstCount();
 			scalar_alu_inst_count++;
 		}
 
@@ -242,7 +236,7 @@ void Wavefront::Execute()
 	case InstFormatSOPC:
 	{
 		// Stats
-		emu->incScalarAluInstCount();
+		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
 
 		// Only one work item executes the instruction
@@ -257,7 +251,7 @@ void Wavefront::Execute()
 	case InstFormatSOPK:
 	{
 		// Stats
-		emu->incScalarAluInstCount();
+		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
 
 		// Only one work item executes the instruction
@@ -273,7 +267,7 @@ void Wavefront::Execute()
 	case InstFormatSMRD:
 	{
 		// Stats
-		emu->incScalarMemInstCount();
+		emulator->incScalarMemInstCount();
 		scalar_mem_inst_count++;
 
 		// Only one work item executes the instruction
@@ -289,7 +283,7 @@ void Wavefront::Execute()
 	case InstFormatVOP2:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
@@ -310,7 +304,7 @@ void Wavefront::Execute()
 	case InstFormatVOP1:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 
 		// Special case: V_READFIRSTLANE_B32
@@ -363,7 +357,7 @@ void Wavefront::Execute()
 	case InstFormatVOPC:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
@@ -386,7 +380,7 @@ void Wavefront::Execute()
 	case InstFormatVOP3a:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
@@ -409,7 +403,7 @@ void Wavefront::Execute()
 	case InstFormatVOP3b:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 	
 		// Execute the instruction
@@ -432,7 +426,7 @@ void Wavefront::Execute()
 	case InstFormatVINTRP:
 	{
 		// Stats
-		emu->incVectorAluInstCount();
+		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
 
 		// Execute the instruction
@@ -455,7 +449,7 @@ void Wavefront::Execute()
 	case InstFormatDS:
 	{
 		// Stats
-		emu->incLdsInstCount();
+		emulator->incLdsInstCount();
 		lds_inst_count++;
 
 		// Record access type
@@ -497,7 +491,7 @@ void Wavefront::Execute()
 	case InstFormatMTBUF:
 	{
 		// Stats
-		emu->incVectorMemInstCount();
+		emulator->incVectorMemInstCount();
 		vector_mem_inst_count++;
 
 		// Record access type
@@ -534,7 +528,7 @@ void Wavefront::Execute()
 	case InstFormatMUBUF:
 	{
 		// Stats
-		emu->incVectorMemInstCount();
+		emulator->incVectorMemInstCount();
 		vector_mem_inst_count++;
 
 		// Record access type
@@ -578,7 +572,7 @@ void Wavefront::Execute()
 	case InstFormatEXP:
 	{
 		// Stats
-		emu->incExportInstCount();
+		emulator->incExportInstCount();
 		export_inst_count++;
 
 		// Record access type
@@ -654,7 +648,7 @@ void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs,
 {
 	EmuBufferDesc buf_desc;
 	NDRange *ndrange = work_group->getNDRange();
-	Emulator *emu = ndrange->getEmu();
+	Emulator *emulator = ndrange->getEmulator();
 
 	unsigned buf_desc_addr;
 
@@ -668,7 +662,7 @@ void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs,
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emu->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
+	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
 		(char *)&buf_desc);
 
 	// Store the descriptor in 4 scalar registers 
@@ -697,7 +691,7 @@ void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
 {
 	EmuBufferDesc buf_desc;
 	NDRange *ndrange = work_group->getNDRange();
-	Emulator *emu = ndrange->getEmu();
+	Emulator *emulator = ndrange->getEmulator();
 
 	unsigned buf_desc_addr;
 
@@ -711,7 +705,7 @@ void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emu->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
+	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
 		(char *)&buf_desc);
 
 	// Store the descriptor in 4 scalar registers 

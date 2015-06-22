@@ -132,7 +132,7 @@ int Context::IsaGetOp2(unsigned int op2, ContextOp2Catecory cat)
 			}
 		}
 	}
-	emu->isa_debug << misc::fmt("  op2 = %d; 0x%x\n", op_val, op_val);
+	emulator->isa_debug << misc::fmt("  op2 = %d; 0x%x\n", op_val, op_val);
 	return op_val;
 }
 
@@ -174,7 +174,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 			carry_ret = 1;
 		else
 			carry_ret = 0;
-		emu->isa_debug << misc::fmt("  carry bit = %d, imm = 0x%x, rotate = %d\n",
+		emulator->isa_debug << misc::fmt("  carry bit = %d, imm = 0x%x, rotate = %d\n",
 				carry_ret, imm, rotate);
 	}
 	else if (cat == ContextOp2CatecoryReg)
@@ -385,7 +385,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				carry_ret = 0;
 		}
 
-		emu->isa_debug << misc::fmt("  carry bit = %d, rm_val = 0x%x, rotate = %d\n",
+		emulator->isa_debug << misc::fmt("  carry bit = %d, rm_val = 0x%x, rotate = %d\n",
 				carry_ret, rm_val, rot_val);
 	}
 
@@ -407,7 +407,7 @@ unsigned int Context::IsaGetAddrAmode2()
 	offset = inst.getBytes()->sdtr.off;
 	rn = inst.getBytes()->sdtr.base_rn;
 	IsaRegLoad(rn, rn_val);
-	emu->isa_debug << misc::fmt("  rn = 0x%x\n", rn_val);
+	emulator->isa_debug << misc::fmt("  rn = 0x%x\n", rn_val);
 	if(inst.getBytes()->sdtr.imm == 1)
 	{
 		rm = (offset & (0x0000000f));
@@ -625,7 +625,7 @@ unsigned int Context::IsaGetAddrAmode2()
 	}
 
 
-	emu->isa_debug << misc::fmt("  ls/st addr = 0x%x\n", ret_addr);
+	emulator->isa_debug << misc::fmt("  ls/st addr = 0x%x\n", ret_addr);
 	return ret_addr;
 }
 
@@ -639,7 +639,7 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 	unsigned int imm4l = inst.getBytes()->hfwrd_imm.imm_off_lo;
 	unsigned int imm4h = inst.getBytes()->hfwrd_imm.imm_off_hi;
 	unsigned int immd8 = (0x000000ff) & ((imm4h << 4) | (imm4l));
-	emu->isa_debug << misc::fmt("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
+	emulator->isa_debug << misc::fmt("  imm8 offset = %d,  (0x%x)\n", immd8, immd8);
 
 	if (inst.getBytes()->hfwrd_imm.idx_typ)
 	{
@@ -661,7 +661,7 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 			IsaRegStore(inst.getBytes()->hfwrd_imm.base_rn, rn_val);
 
 		}
-		emu->isa_debug << misc::fmt("  ld/str addr = %d,  (0x%x)\n", ret_addr, ret_addr);
+		emulator->isa_debug << misc::fmt("  ld/str addr = %d,  (0x%x)\n", ret_addr, ret_addr);
 		return ret_addr;
 	}
 	else
@@ -684,7 +684,7 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 					" unpredictable behavior possible. Please check your "
 					"compiler flags.\n",__FUNCTION__));
 		}
-		emu->isa_debug << misc::fmt("  addr = %d,  (0x%x)\n", ret_addr, ret_addr);
+		emulator->isa_debug << misc::fmt("  addr = %d,  (0x%x)\n", ret_addr, ret_addr);
 		return ret_addr;
 	}
 }
@@ -692,7 +692,7 @@ unsigned int Context::IsaGetAddrAmode3Imm()
 
 void Context::IsaRegStore(unsigned int reg_no, int value)
 {
-	emu->isa_debug << misc::fmt("  r%d <= %d; (0x%x)\n", reg_no, value, value);
+	emulator->isa_debug << misc::fmt("  r%d <= %d; (0x%x)\n", reg_no, value, value);
 	switch (reg_no)
 	{
 	case AsmUserRegistersR0:
@@ -784,7 +784,7 @@ void Context::IsaRegStore(unsigned int reg_no, int value)
 
 void Context::IsaRegStoreSafe(unsigned int reg_no, unsigned int value)
 {
-	emu->isa_debug << misc::fmt("  r%d <= %d; (0x%x); safe_store\n", reg_no, value, value);
+	emulator->isa_debug << misc::fmt("  r%d <= %d; (0x%x); safe_store\n", reg_no, value, value);
 	switch (reg_no)
 	{
 	case AsmUserRegistersR0:
@@ -881,97 +881,97 @@ void Context::IsaRegLoad(unsigned int reg_no, int &value)
 	case AsmUserRegistersR0:
 
 		value = regs.getRegister(0);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(0));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(0));
 		break;
 
 	case AsmUserRegistersR1:
 
 		value = regs.getRegister(1);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(1));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(1));
 		break;
 
 	case AsmUserRegistersR2:
 
 		value = regs.getRegister(2);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(2));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(2));
 		break;
 
 	case AsmUserRegistersR3:
 
 		value = regs.getRegister(3);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(3));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(3));
 		break;
 
 	case AsmUserRegistersR4:
 
 		value = regs.getRegister(4);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(4));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(4));
 		break;
 
 	case AsmUserRegistersR5:
 
 		value = regs.getRegister(5);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(5));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(5));
 		break;
 
 	case AsmUserRegistersR6:
 
 		value = regs.getRegister(6);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(6));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(6));
 		break;
 
 	case AsmUserRegistersR7:
 
 		value = regs.getRegister(7);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(7));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(7));
 		break;
 
 	case AsmUserRegistersR8:
 
 		value = regs.getRegister(8);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(8));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(8));
 		break;
 
 	case AsmUserRegistersR9:
 
 		value = regs.getRegister(9);
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(9));
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(9));
 		break;
 
 	case AsmUserRegistersR10:
 
 		value = regs.getSL();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSL());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSL());
 		break;
 
 	case AsmUserRegistersR11:
 
 		value = regs.getFP();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getFP());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getFP());
 		break;
 
 	case AsmUserRegistersR12:
 
 		value = regs.getIP();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getIP());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getIP());
 		break;
 
 	case AsmUserRegistersR13:
 
 		value = regs.getSP();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSP());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSP());
 		break;
 
 	case AsmUserRegistersR14:
 
 		value = regs.getLR();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getLR());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getLR());
 		break;
 
 	case AsmUserRegistersR15:
 
 		value = regs.getPC();
-		emu->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getPC());
+		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getPC());
 		break;
 
 	default:
@@ -998,7 +998,7 @@ void Context::IsaBranch()
 		}
 
 		regs.setPC(br_add + 4);
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n",
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n",
 				regs.getPC() - 4, regs.getPC());
 	}
 	else if (inst.getInstInfo()->category == InstCategoryBax)
@@ -1008,13 +1008,13 @@ void Context::IsaBranch()
 			IsaRegLoad(inst.getBytes()->bax.op0_rn, rm_val);
 			IsaRegStore(14, regs.getPC() - 4);
 			regs.setPC((rm_val & 0xfffffffe) + 4);
-			emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+			emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
 		else
 		{
 			IsaRegLoad(inst.getBytes()->bax.op0_rn, rm_val);
 			regs.setPC((rm_val & 0xfffffffe) + 4);
-			emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
+			emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n", rm_val, rm_val);
 		}
 	}
 }
@@ -1029,74 +1029,74 @@ bool Context::IsaCheckCond()
 	case (AsmConditionCodesEQ):
 
 		ret_val = (regs.getCPSR().z) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = EQ\n");
+		emulator->isa_debug << misc::fmt("  Cond = EQ\n");
 		break;
 
 	case (AsmConditionCodesNE):
 
 		ret_val = (!(regs.getCPSR().z)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = NE\n");
+		emulator->isa_debug << misc::fmt("  Cond = NE\n");
 		break;
 
 	case (AsmConditionCodesCS):
 
 		ret_val = (regs.getCPSR().C) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = CS\n");
+		emulator->isa_debug << misc::fmt("  Cond = CS\n");
 		break;
 
 	case (AsmConditionCodesCC):
 
 		ret_val = (!(regs.getCPSR().C)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = CC\n");
+		emulator->isa_debug << misc::fmt("  Cond = CC\n");
 		break;
 
 	case (AsmConditionCodesMI):
 		ret_val = (regs.getCPSR().n) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = MI\n");
+		emulator->isa_debug << misc::fmt("  Cond = MI\n");
 		break;
 
 	case (AsmConditionCodesPL):
 
 		ret_val = (!(regs.getCPSR().n)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = PL\n");
+		emulator->isa_debug << misc::fmt("  Cond = PL\n");
 		break;
 
 	case (AsmConditionCodesVS):
 
 		ret_val = (regs.getCPSR().v) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = VS\n");
+		emulator->isa_debug << misc::fmt("  Cond = VS\n");
 		break;
 
 	case (AsmConditionCodesVC):
 
 		ret_val = (!(regs.getCPSR().v)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = VC\n");
+		emulator->isa_debug << misc::fmt("  Cond = VC\n");
 		break;
 
 	case (AsmConditionCodesHI):
 
 		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = HI\n");
+		emulator->isa_debug << misc::fmt("  Cond = HI\n");
 		break;
 
 	case (AsmConditionCodesLS):
 
 		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = LS\n");
+		emulator->isa_debug << misc::fmt("  Cond = LS\n");
 		break;
 
 	case (AsmConditionCodesGE):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = GE\n");
+		emulator->isa_debug << misc::fmt("  Cond = GE\n");
 		break;
 
 	case (AsmConditionCodesLT):
 
 		ret_val = (((regs.getCPSR().n) & !(regs.getCPSR().v))
 			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = LT\n");
+		emulator->isa_debug << misc::fmt("  Cond = LT\n");
 		break;
 
 	case (AsmConditionCodesGT):
@@ -1104,14 +1104,14 @@ bool Context::IsaCheckCond()
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v) & !(regs.getCPSR().z))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v)
 			& !(regs.getCPSR().z))) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = GT\n");
+		emulator->isa_debug << misc::fmt("  Cond = GT\n");
 		break;
 
 	case (AsmConditionCodesLE):
 
 		ret_val = (((regs.getCPSR().z) | (!(regs.getCPSR().n) && (regs.getCPSR().v))
 			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? true : false;
-		emu->isa_debug << misc::fmt("  Cond = LE\n");
+		emulator->isa_debug << misc::fmt("  Cond = LE\n");
 		break;
 
 	case (AsmConditionCodesAL):
@@ -1151,7 +1151,7 @@ void Context::IsaAmode4sStr()
 
 					IsaRegLoad(misc::LogBase2(i), copy_buf);
 					memory->Write(wrt_val, 4, (char *)buf);
-					emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",
+					emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",
 							misc::LogBase2(i),wrt_val);
 					wrt_val += 4;
 				}
@@ -1170,7 +1170,7 @@ void Context::IsaAmode4sStr()
 				{
 					IsaRegLoad(misc::LogBase2(i), copy_buf);
 					memory->Write(wrt_val, 4, (char *)buf);
-					emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",
+					emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",
 							misc::LogBase2(i),wrt_val);
 					wrt_val -= 4;
 				}
@@ -1194,7 +1194,7 @@ void Context::IsaAmode4sStr()
 
 					IsaRegLoad(misc::LogBase2(i), copy_buf);
 					memory->Write(wrt_val, 4, (char *)buf);
-					emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",
+					emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",
 							misc::LogBase2(i),wrt_val);
 					wrt_val += 4;
 				}
@@ -1213,7 +1213,7 @@ void Context::IsaAmode4sStr()
 				{
 					IsaRegLoad(misc::LogBase2(i), copy_buf);
 					memory->Write(wrt_val, 4, (char *)buf);
-					emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",
+					emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",
 							misc::LogBase2(i),wrt_val);
 					wrt_val -= 4;
 				}
@@ -1252,7 +1252,7 @@ void Context::IsaAmode4sLd()
 						copy_buf = copy_buf - 1;
 					}
 					IsaRegStore(misc::LogBase2(i), copy_buf);
-					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+					emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
 							misc::LogBase2(i),read_val);
 					read_val += 4;
 				}
@@ -1275,7 +1275,7 @@ void Context::IsaAmode4sLd()
 						copy_buf = copy_buf - 1;
 					}
 					IsaRegStore(misc::LogBase2(i), copy_buf);
-					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+					emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
 							misc::LogBase2(i),read_val);
 					read_val -= 4;
 				}
@@ -1302,7 +1302,7 @@ void Context::IsaAmode4sLd()
 						copy_buf = copy_buf - 1;
 					}
 					IsaRegStore(misc::LogBase2(i), copy_buf);
-					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+					emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
 							misc::LogBase2(i),read_val);
 					read_val += 4;
 				}
@@ -1325,7 +1325,7 @@ void Context::IsaAmode4sLd()
 						copy_buf = copy_buf - 1;
 					}
 					IsaRegStore(misc::LogBase2(i), copy_buf);
-					emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
+					emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",
 							misc::LogBase2(i),read_val);
 					read_val -= 4;
 				}
@@ -1340,7 +1340,7 @@ void Context::IsaAmode4sLd()
 
 void Context::IsaCpsrPrint()
 {
-	emu->isa_debug << misc::fmt("  CPSR update\n"
+	emulator->isa_debug << misc::fmt("  CPSR update\n"
 			"  n = %d\n"
 			"  z = %d\n"
 			"  c = %d\n"
@@ -1356,7 +1356,7 @@ unsigned int Context::IsaRetCpsrVal()
 	unsigned int cpsr_val = ((regs.getCPSR().n << 31) | (regs.getCPSR().z << 30)
 			| (regs.getCPSR().C << 29) | (regs.getCPSR().v) | (regs.getCPSR().mode));
 
-	emu->isa_debug << misc::fmt("  cpsr = 0x%x\n",cpsr_val);
+	emulator->isa_debug << misc::fmt("  cpsr = 0x%x\n",cpsr_val);
 
 	return (cpsr_val);
 }
@@ -1369,7 +1369,7 @@ void Context::IsaSetCpsrVal(unsigned int op2)
 	IsaRegLoad(rd, rd_val);
 
 	unsigned int rd_str = (unsigned int)(rd_val);
-	emu->isa_debug << misc::fmt("  rd_str = 0x%x\n",rd_str);
+	emulator->isa_debug << misc::fmt("  rd_str = 0x%x\n",rd_str);
 	regs.getCPSR().n = (rd_str & (0x80000000)) ? 1 : 0;
 	regs.getCPSR().z = (rd_str & (0x40000000)) ? 1 : 0;
 	regs.getCPSR().C = (rd_str & (0x20000000)) ? 1 : 0;
@@ -1394,20 +1394,20 @@ void Context::IsaSubtract(unsigned int rd, unsigned int rn, int op2,
 		if (rd == 15)
 		{
 			rd_val_safe = rn_val - op2 - op3;
-			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+			emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 			IsaRegStoreSafe(rd, rd_val_safe);
 		}
 		else
 		{
 			rd_val = rn_val - op2 - op3;
-			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+			emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 			IsaRegStore(rd, rd_val);
 		}
 	}
 	else
 	{
 		rd_val = rn_val - op2 - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 
 		operand2 = (-1 * (op2  + op3));
 
@@ -1430,7 +1430,7 @@ void Context::IsaSubtract(unsigned int rd, unsigned int rn, int op2,
 				    : "eax"
 		);
 
-		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+		emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
@@ -1475,13 +1475,13 @@ void Context::IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
 	if (!(inst.getBytes()->dpr.s_cond))
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
+		emulator->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
 		IsaRegStore(rd, rd_val);
 	}
 	else
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
+		emulator->isa_debug << misc::fmt("  r%d = %d - r%d\n", rd, op2, rn);
 
 		operand2 = (-1 * (rn_val + op3));
 
@@ -1504,7 +1504,7 @@ void Context::IsaSubtractRev(unsigned int rd, unsigned int rn, int op2,
 				    : "eax"
 		);
 
-		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+		emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
@@ -1548,7 +1548,7 @@ void Context::IsaAdd(unsigned int rd, unsigned int rn, int op2,
 	if (!(inst.getBytes()->dpr.s_cond))
 	{
 		rd_val = rn_val + op2 + op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
 		IsaRegStore(rd, rd_val);
 	}
 	else
@@ -1590,7 +1590,7 @@ void Context::IsaAdd(unsigned int rd, unsigned int rn, int op2,
 			regs.getCPSR().n = 1;
 		}
 
-		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
 		IsaRegStore(rd, rd_val);
 		IsaCpsrPrint();
 	}
@@ -1774,9 +1774,9 @@ void Context::IsaSyscall()
 
 	// Debug
 	if(regs.getRegister(0) == 0)
-		emu->isa_debug << misc::fmt("  System call code = %d\n", regs.getRegister(7));
+		emulator->isa_debug << misc::fmt("  System call code = %d\n", regs.getRegister(7));
 	else
-		emu->isa_debug << misc::fmt("  System call code = %d\n", regs.getRegister(7));
+		emulator->isa_debug << misc::fmt("  System call code = %d\n", regs.getRegister(7));
 }
 
 
@@ -1904,7 +1904,7 @@ void Context::IsaThumbAdd(unsigned int rd, unsigned int rn, int op2,
 	if (!flag_set)
 	{
 		rd_val = rn_val + op2 + op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
 		IsaRegStore(rd, rd_val);
 	}
 	else
@@ -1946,7 +1946,7 @@ void Context::IsaThumbAdd(unsigned int rd, unsigned int rn, int op2,
 			regs.getCPSR().n = 1;
 		}
 
-		emu->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d + %d\n", rd, rn, op2);
 		IsaRegStore(rd, rd_val);
 		IsaCpsrPrint();
 	}
@@ -1968,20 +1968,20 @@ void Context::IsaThumbSubtract(unsigned int rd, unsigned int rn, int op2,
 		if (rd == 15)
 		{
 			rd_val_safe = rn_val - op2 - op3;
-			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+			emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 			IsaRegStoreSafe(rd, rd_val_safe);
 		}
 		else
 		{
 			rd_val = rn_val - op2 - op3;
-			emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+			emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 			IsaRegStore(rd, rd_val);
 		}
 	}
 	else
 	{
 		rd_val = rn_val - op2 - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 
 		operand2 = (-1 * (op2  + op3));
 
@@ -2004,7 +2004,7 @@ void Context::IsaThumbSubtract(unsigned int rd, unsigned int rn, int op2,
 				    : "eax"
 		);
 
-		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+		emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
@@ -2049,13 +2049,13 @@ void Context::IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
 	if (!(flag_set))
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 		IsaRegStore(rd, rd_val);
 	}
 	else
 	{
 		rd_val = op2 - rn_val - op3;
-		emu->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
+		emulator->isa_debug << misc::fmt("  r%d = r%d - %d\n", rd, rn, op2);
 
 		operand2 = (-1 * (rn_val + op3));
 
@@ -2078,7 +2078,7 @@ void Context::IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
 				    : "eax"
 		);
 
-		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+		emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 		if (flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
@@ -2189,7 +2189,7 @@ void Context::IsaThumb32BranchLink()
 				| (inst.getThumb32Bytes()->branch_link.immd10 << 12)
 				| (inst.getThumb32Bytes()->branch_link.immd11 << 1);
 		addr = misc::SignExtend32(addr,25);
-		emu->isa_debug << misc::fmt("  Inst_32 addr = 0x%x, Branch offset = 0x%x\n", inst.getAddress(), addr);
+		emulator->isa_debug << misc::fmt("  Inst_32 addr = 0x%x, Branch offset = 0x%x\n", inst.getAddress(), addr);
 		addr = (inst.getAddress() + 4) + addr;
 	}
 	else if (cat == InstThumb32CategoryBranchLx)
@@ -2220,10 +2220,10 @@ void Context::IsaThumb32BranchLink()
 		throw misc::Panic(misc::fmt("%d: addr fmt not recognized", cat));
 
 	// FIXME : Changed from +4 to +2
-	emu->isa_debug << misc::fmt("  Branch addr_32 = 0x%x, Current pc <= 0x%x\n", addr, regs.getPC());
+	emulator->isa_debug << misc::fmt("  Branch addr_32 = 0x%x, Current pc <= 0x%x\n", addr, regs.getPC());
 	IsaRegStore(14, regs.getPC() - 1);
 	regs.setPC(addr + 2);
-	emu->isa_debug << misc::fmt("  Branch addr_32 = 0x%x, Written pc <= 0x%x\n", addr, regs.getPC());
+	emulator->isa_debug << misc::fmt("  Branch addr_32 = 0x%x, Written pc <= 0x%x\n", addr, regs.getPC());
 }
 
 
@@ -2243,7 +2243,7 @@ void Context::IsaThumb32Branch()
 
 		addr = (regs.getPC() - 4) + (addr);
 		regs.setPC(addr + 4);
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= 0x%x\n", regs.getPC() - 2, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= 0x%x\n", regs.getPC() - 2, regs.getPC());
 	}
 	else if (cat == InstThumb32CategoryBranchCond)
 	{
@@ -2259,7 +2259,7 @@ void Context::IsaThumb32Branch()
 		{
 			addr = (regs.getPC() - 4) + (addr);
 			regs.setPC(addr + 4);
-			emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= 0x%x\n", regs.getPC() - 2, regs.getPC());
+			emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= 0x%x\n", regs.getPC() - 2, regs.getPC());
 		}
 	}
 	else
@@ -2279,75 +2279,75 @@ unsigned int Context::IsaThumbCheckCond(unsigned int cond)
 	case (AsmConditionCodesEQ):
 
 		ret_val = (regs.getCPSR().z) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = EQ\n");
+		emulator->isa_debug << misc::fmt("  Cond = EQ\n");
 		break;
 
 	case (AsmConditionCodesNE):
 
 		ret_val = (!(regs.getCPSR().z)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = NE\n");
+		emulator->isa_debug << misc::fmt("  Cond = NE\n");
 		break;
 
 	case (AsmConditionCodesCS):
 
 		ret_val = (regs.getCPSR().C) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = CS\n");
+		emulator->isa_debug << misc::fmt("  Cond = CS\n");
 		break;
 
 	case (AsmConditionCodesCC):
 
 		ret_val = (!(regs.getCPSR().C)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = CC\n");
+		emulator->isa_debug << misc::fmt("  Cond = CC\n");
 		break;
 
 	case (AsmConditionCodesMI):
 
 		ret_val = (regs.getCPSR().n) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = MI\n");
+		emulator->isa_debug << misc::fmt("  Cond = MI\n");
 		break;
 
 	case (AsmConditionCodesPL):
 
 		ret_val = (!(regs.getCPSR().n)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = PL\n");
+		emulator->isa_debug << misc::fmt("  Cond = PL\n");
 		break;
 
 	case (AsmConditionCodesVS):
 
 		ret_val = (regs.getCPSR().v) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = VS\n");
+		emulator->isa_debug << misc::fmt("  Cond = VS\n");
 		break;
 
 	case (AsmConditionCodesVC):
 
 		ret_val = (!(regs.getCPSR().v)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = VC\n");
+		emulator->isa_debug << misc::fmt("  Cond = VC\n");
 		break;
 
 	case (AsmConditionCodesHI):
 
 		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = HI\n");
+		emulator->isa_debug << misc::fmt("  Cond = HI\n");
 		break;
 
 	case (AsmConditionCodesLS):
 
 		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = LS\n");
+		emulator->isa_debug << misc::fmt("  Cond = LS\n");
 		break;
 
 	case (AsmConditionCodesGE):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = GE\n");
+		emulator->isa_debug << misc::fmt("  Cond = GE\n");
 		break;
 
 	case (AsmConditionCodesLT):
 
 		ret_val = (((regs.getCPSR().n) & !(regs.getCPSR().v))
 			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = LT\n");
+		emulator->isa_debug << misc::fmt("  Cond = LT\n");
 		break;
 
 	case (AsmConditionCodesGT):
@@ -2355,14 +2355,14 @@ unsigned int Context::IsaThumbCheckCond(unsigned int cond)
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v) & !(regs.getCPSR().z))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v)
 			& !(regs.getCPSR().z))) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = GT\n");
+		emulator->isa_debug << misc::fmt("  Cond = GT\n");
 		break;
 
 	case (AsmConditionCodesLE):
 
 		ret_val = (((regs.getCPSR().z) | (!(regs.getCPSR().n) && (regs.getCPSR().v))
 			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? 1 : 0;
-		emu->isa_debug << misc::fmt("  Cond = LE\n");
+		emulator->isa_debug << misc::fmt("  Cond = LE\n");
 		break;
 
 	case (AsmConditionCodesAL):
@@ -2389,7 +2389,7 @@ void Context::IsaThumbIteq()
 unsigned int Context::IsaThumbImmdExtend(unsigned int immd)
 {
 	unsigned int shift = (immd & 0x00000f80) >> 7;
-	emu->isa_debug << misc::fmt("  Shift = 0x%x\n", shift);
+	emulator->isa_debug << misc::fmt("  Shift = 0x%x\n", shift);
 	if (((immd & 0x00000c00) >> 10) == 0)
 	{
 		switch(((immd & 0x00000300) >> 8))
@@ -2422,7 +2422,7 @@ unsigned int Context::IsaThumbImmdExtend(unsigned int immd)
 	{
 		immd = (1 << 7) | (immd & 0x0000007f);
 		immd = IsaRotr(immd, shift);
-		emu->isa_debug << misc::fmt("  Rotated immd = 0x%x\n", immd);
+		emulator->isa_debug << misc::fmt("  Rotated immd = 0x%x\n", immd);
 	}
 	return (immd);
 }

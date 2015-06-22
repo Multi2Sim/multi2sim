@@ -32,9 +32,9 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	static unsigned int process_queue_id = 0;
 
 	// Allocate queue fields in quest memory
-	Emulator *emu = Emulator::getInstance();
-	mem::Manager *manager = emu->getMemoryManager();
-	mem::Memory *mem = emu->getMemory();
+	Emulator *emulator = Emulator::getInstance();
+	mem::Manager *manager = emulator->getMemoryManager();
+	mem::Memory *mem = emulator->getMemory();
 	fields_address = manager->Allocate(
 			sizeof(AqlQueueFields));
 	fields = (struct AqlQueueFields *)mem->getBuffer(
@@ -71,8 +71,8 @@ AQLQueue::~AQLQueue()
 	// Two things to be done in destructor
 	// 1. Free the memory allocated for the packets buffer
 	// 2. Free the memory allocated for the queue fields
-	Emulator *emu = Emulator::getInstance();
-	mem::Manager *manager = emu->getMemoryManager();
+	Emulator *emulator = Emulator::getInstance();
+	mem::Manager *manager = emulator->getMemoryManager();
 	manager->Free(fields->base_address);
 	manager->Free(fields_address);
 
@@ -116,8 +116,8 @@ AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)
 	unsigned long long address = IndexToAddress(index);
 
 	// Get the memory object
-	Emulator *emu = Emulator::getInstance();
-	mem::Memory *memory = emu->getMemory();
+	Emulator *emulator = Emulator::getInstance();
+	mem::Memory *memory = emulator->getMemory();
 
 	// Returns the buffer in real memory space
 	//std::cout << misc::fmt("Getting packet at 0x%llx\n", recursive_index);

@@ -135,7 +135,7 @@ void Context::ExecuteInstThumb32_LDRD_immd()
 			addr = offset;
 		else
 			addr = rn_val;
-		emu->isa_debug << misc::fmt("imm4  addr  = %d; (0x%x)\n", addr, addr);
+		emulator->isa_debug << misc::fmt("imm4  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
 			IsaRegStore( inst.getThumb32Bytes()->ld_st_double.rn, offset);
 
@@ -168,12 +168,12 @@ void Context::ExecuteInstThumb32_LDRD_immd()
 
 	else if (inst.getThumb32Bytes()->ldstr_imm.rn == 15)
 	{
-		emu->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
 		if((regs.getPC() - 4) % 4 == 2)
 			offset = (regs.getPC() - 4) + 2;
 		else
 			offset = regs.getPC() - 4;
-		emu->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
+		emulator->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
 		if(inst.getThumb32Bytes()->ld_st_double.add_sub)
 			addr = offset + immd12;
 		else
@@ -373,7 +373,7 @@ void Context::ExecuteInstThumb32_TBH()
 	buf = &hfwrd;
 	if(inst.getThumb32Bytes()->table_branch.rn == 15)
 	{
-		emu->isa_debug << misc::fmt("  PC = 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  PC = 0x%x\n", regs.getPC());
 		IsaRegLoad(inst.getThumb32Bytes()->table_branch.rn, rn_val);
 	}
 
@@ -382,10 +382,10 @@ void Context::ExecuteInstThumb32_TBH()
 	rm_val = rm_val << 1;
 
 	addr = rn_val + rm_val;
-	emu->isa_debug << misc::fmt("  Addr = 0x%x\n", addr);
+	emulator->isa_debug << misc::fmt("  Addr = 0x%x\n", addr);
 
 	memory->Read(addr, 2, (char *)buf);
-	emu->isa_debug << misc::fmt("  HFwrd = 0x%x; Changed PC = 0x%x\n", hfwrd, (regs.getPC() - 2 + (2 * hfwrd)));
+	emulator->isa_debug << misc::fmt("  HFwrd = 0x%x; Changed PC = 0x%x\n", hfwrd, (regs.getPC() - 2 + (2 * hfwrd)));
 	regs.incPC(2 * hfwrd);
 }
 
@@ -505,7 +505,7 @@ void Context::ExecuteInstThumb32_POP()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -515,7 +515,7 @@ void Context::ExecuteInstThumb32_POP()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -559,7 +559,7 @@ void Context::ExecuteInstThumb32_PUSH()
 		{
 			IsaRegLoad(misc::LogBase2(i) , reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1773,12 +1773,12 @@ void Context::ExecuteInstThumb32_ORR_imm4()
 
 
 	operand = IsaThumb32Immd12(inst.getInstThumb32Info()->cat32);
-	emu->isa_debug << misc::fmt("  immd32 = 0x%x\n", operand);
+	emulator->isa_debug << misc::fmt("  immd32 = 0x%x\n", operand);
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_immd.rn, rn_val);
 
 	result = rn_val | operand;
-	emu->isa_debug << misc::fmt("  result = 0x%x\n", result);
+	emulator->isa_debug << misc::fmt("  result = 0x%x\n", result);
 
 	IsaRegStore(inst.getThumb32Bytes()->data_proc_immd.rd, result);
 
@@ -1865,7 +1865,7 @@ void Context::ExecuteInstThumb32_MOV_imm()
 	unsigned int operand;
 
 	operand = IsaThumb32Immd12(inst.getInstThumb32Info()->cat32);
-	emu->isa_debug << misc::fmt("  immd32 = %d\n", operand);
+	emulator->isa_debug << misc::fmt("  immd32 = %d\n", operand);
 	IsaRegStore(inst.getThumb32Bytes()->data_proc_immd.rd, operand);
 }
 
@@ -2186,7 +2186,7 @@ void Context::ExecuteInstThumb32_CMN_imm()
 		| (inst.getThumb32Bytes()->data_proc_immd.immd8);
 
 	result = rn_val + operand2;
-	emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+	emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 	op2 = operand2;
 	regs.getCPSR().z = 0;
@@ -2341,7 +2341,7 @@ void Context::ExecuteInstThumb32_CMP_imm()
 	operand2 = immd;
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_immd.rn, rn_val);
 	result = rn_val - operand2;
-	emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+	emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 	op2 = (-1 * operand2);
 
@@ -2363,7 +2363,7 @@ void Context::ExecuteInstThumb32_CMP_imm()
 		    : "eax"
 	);
 
-	emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+	emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 	if(flags & 0x00000001)
 	{
 		regs.getCPSR().C = 1;
@@ -2660,7 +2660,7 @@ void Context::ExecuteInstThumb32_BFC_binimm()
 	immd3 = inst.getThumb32Bytes()->bit_field.immd3;
 
 	lsb = (immd3 << 2) | immd2;
-	emu->isa_debug << misc::fmt("  msb = 0x%x, lsb = 0x%x\n", msb, lsb);
+	emulator->isa_debug << misc::fmt("  msb = 0x%x, lsb = 0x%x\n", msb, lsb);
 	IsaRegLoad(inst.getThumb32Bytes()->bit_field.rd, rd_val);
 	for (unsigned int i = lsb; i <= msb; i++)
 	{
@@ -2708,9 +2708,9 @@ void Context::ExecuteInstThumb32_MOVT_binimm()
 
 		immd16 = (immd4 << 12) | (i << 11) | (immd3 << 8) | immd8;
 
-	emu->isa_debug << misc::fmt("  immd16 = 0x%x\n", immd16);
+	emulator->isa_debug << misc::fmt("  immd16 = 0x%x\n", immd16);
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_immd.rd, rd_val);
-	emu->isa_debug << misc::fmt("  rd_val = 0x%x\n", rd_val);
+	emulator->isa_debug << misc::fmt("  rd_val = 0x%x\n", rd_val);
 	rd_val = (rd_val & 0x0000ffff) | (immd16 << 16);
 	IsaRegStore(inst.getThumb32Bytes()->data_proc_immd.rd, rd_val);
 }
@@ -2742,7 +2742,7 @@ void Context::ExecuteInstThumb32_MOVW_binimm()
 
 		immd16 = (immd4 << 12) | (i << 11) | (immd3 << 8) | immd8;
 
-	emu->isa_debug << misc::fmt("  immd32 = %d\n", immd16);
+	emulator->isa_debug << misc::fmt("  immd32 = %d\n", immd16);
 	IsaRegStore(inst.getThumb32Bytes()->data_proc_immd.rd, immd16);
 
 }
@@ -3055,7 +3055,7 @@ void Context::ExecuteInstThumb32_STRHT_immd6()
 		addr = offset;
 	else
 		addr = rn_val;
-	emu->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
+	emulator->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 	if(wback)
 		IsaRegStore(inst.getThumb32Bytes()->ldstr_imm.rn, offset);
 
@@ -3088,7 +3088,7 @@ void Context::ExecuteInstThumb32_STRB_immdb()
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rn, rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
-	emu->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
+	emulator->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rd, value);
 	value = value & (0x000000ff);
@@ -3115,7 +3115,7 @@ void Context::ExecuteInstThumb32_STRB_immdd()
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rn, rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
-	emu->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
+	emulator->isa_debug << misc::fmt(" immd12 = %x; offset = %x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rd, value);
 	value = value & (0x000000ff);
@@ -3176,7 +3176,7 @@ void Context::ExecuteInstThumb32_STR_immdd()
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rd,
 					rd_val);
 
-	emu->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
 		inst.getThumb32Bytes()->ldstr_imm.rd, rd_val, addr);
 
 	memory->Write(addr, 4, (char *)buf);
@@ -5016,7 +5016,7 @@ void Context::ExecuteInstThumb32_LDRB_immA7140()
 	IsaRegLoad(inst.getThumb32Bytes()->ldstr_imm.rn, rn_val);
 	offset = rn_val + (immd12);
 	addr = offset;
-	emu->isa_debug << misc::fmt(" immd12 = 0x%x; offset = 0x%x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
+	emulator->isa_debug << misc::fmt(" immd12 = 0x%x; offset = 0x%x;  addr  = %d; (0x%x)\n", immd12, offset, addr, addr);
 	memory->Read(addr, 1, (char *)buf);
 	value = value & (0x000000ff);
 	if(inst.getThumb32Bytes()->ldstr_imm.rd < 15)
@@ -5152,7 +5152,7 @@ void Context::ExecuteInstThumb32_LDR_imm2()
 			addr = offset;
 		else
 			addr = rn_val;
-		emu->isa_debug << misc::fmt("imm2  addr  = %d; (0x%x)\n", addr, addr);
+		emulator->isa_debug << misc::fmt("imm2  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
 			IsaRegStore(inst.getThumb32Bytes()->ldstr_imm.rn, offset);
 
@@ -5171,12 +5171,12 @@ void Context::ExecuteInstThumb32_LDR_imm2()
 	}
 	else if (inst.getThumb32Bytes()->ldstr_imm.rn == 15)
 	{
-		emu->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
 		if((regs.getPC() - 4) % 4 == 2)
 			offset = (regs.getPC() - 4) + 2;
 		else
 			offset = regs.getPC() - 4;
-		emu->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
+		emulator->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
 		if(inst.getThumb32Bytes()->ldstr_imm.add)
 			addr = offset + immd12;
 		else
@@ -5232,7 +5232,7 @@ void Context::ExecuteInstThumb32_LDR_imm4()
 			addr = offset;
 		else
 			addr = rn_val;
-		emu->isa_debug << misc::fmt("imm4  addr  = %d; (0x%x)\n", addr, addr);
+		emulator->isa_debug << misc::fmt("imm4  addr  = %d; (0x%x)\n", addr, addr);
 		if(wback)
 			IsaRegStore(inst.getThumb32Bytes()->ldstr_imm.rn, offset);
 
@@ -5251,12 +5251,12 @@ void Context::ExecuteInstThumb32_LDR_imm4()
 	}
 	else if (inst.getThumb32Bytes()->ldstr_imm.rn == 15)
 	{
-		emu->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
 		if((regs.getPC() - 4) % 4 == 2)
 			offset = (regs.getPC() - 4) + 2;
 		else
 			offset = regs.getPC() - 4;
-		emu->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
+		emulator->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
 		if(inst.getThumb32Bytes()->ldstr_imm.add)
 			addr = offset + immd12;
 		else

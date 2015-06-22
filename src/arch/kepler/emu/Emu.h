@@ -26,9 +26,9 @@
 #include <vector>
 
 #include <arch/common/Arch.h>
+#include <arch/common/Emulator.h>
 #include <arch/kepler/asm/Asm.h>
 #include <lib/cpp/Debug.h>
-#include <arch/common/Emu.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <memory/Memory.h>

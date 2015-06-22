@@ -154,7 +154,7 @@ private:
 	static unsigned char host_fpenv[28];
 
 	// Emulator that it belongs to
-	Emulator *emu;
+	Emulator *emulator;
 
 	// Virtual memory address space index
 	int address_space_index;
@@ -224,7 +224,7 @@ private:
 	unsigned glibc_segment_base = 0;
 	unsigned glibc_segment_limit = 0;
 
-	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
+	// Host thread that suspends and then schedules call to ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
 	// is launched for this context (by caller).
 	// It is clear when the context finished (by the host thread).
@@ -233,7 +233,7 @@ private:
 	bool host_thread_suspend_active = false;  // Thread-spawned flag
 
 	// Host thread that lets time elapse and schedules call to
-	// emu->ProcessEvents()
+	// ProcessEvents()
 	pthread_t host_thread_timer;
 	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;
@@ -809,7 +809,7 @@ public:
 	std::list<Context *>::iterator context_list_iter[ListCount];
 
 	/// Create a context from a command line. To safely create a context,
-	/// function Emu::NewContext() should be used instead. After the
+	/// function NewContext() should be used instead. After the
 	/// creation of a context, its basic data structures are initialized
 	/// with Load(), Clone(), or Fork().
 	Context();
@@ -818,7 +818,7 @@ public:
 	~Context();
 
 	/// Load a program on the context. The meaning of each argument is
-	/// identical to the prototype of comm::Emu::Load().
+	/// identical to the prototype of comm::Emulator::Load().
 	void Load(const std::vector<std::string> &args,
 			const std::vector<std::string> &env = { },
 			const std::string &cwd = "",

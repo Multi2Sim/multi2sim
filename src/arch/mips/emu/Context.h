@@ -80,7 +80,7 @@ enum ContextListType
 class Context
 {
 	// Emulator it belongs to
-	Emulator *emu;
+	Emulator *emulator;
 
 	// Process ID
 	int pid;
@@ -96,7 +96,7 @@ class Context
 	unsigned glibc_segment_base = 0;
 	unsigned glibc_segment_limit = 0;
 
-	// Host thread that suspends and then schedules call to Emu::ProcessEvents()
+	// Host thread that suspends and then schedules call to ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
 	// is launched for this context (by caller).
 	// It is clear when the context finished (by the host thread).
@@ -105,7 +105,7 @@ class Context
 	bool host_thread_suspend_active = false;  // Thread-spawned flag
 
 	// Host thread that lets time elapse and schedules call to
-	// emu->ProcessEvents()
+	// ProcessEvents()
 	pthread_t host_thread_timer;
 	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;

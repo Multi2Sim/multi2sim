@@ -49,7 +49,7 @@ enum GridState
 class Grid
 {
 	// Emulator
-	Emulator *emu;
+	Emulator *emulator;
 
 	// ID
 	int id;
@@ -115,7 +115,7 @@ public:
 	int getID() const { return id; }
 
 	/// Get assambler
-	Asm *getAsm() const { return emu->getAsm(); }
+	Asm *getAsm() const { return emulator->getAsm(); }
 
 	/// Get shared memory top address
 	unsigned getSharedMemTop() const { return shared_mem_top; }
@@ -138,10 +138,7 @@ public:
 		//assert(index < 3);
 		return thread_block_count3[index];
 	}
-/*
-	///get instruction function
-	InstFunc getInstFunc(InstOpcode inst) { return emu->getInstFunc(inst); }
-*/
+
 	/// Get instruction buffer
 	std::vector<unsigned long long>::iterator getInstBuffer()
 	{

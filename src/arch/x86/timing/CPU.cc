@@ -114,7 +114,7 @@ CPU::CPU()
 	std::string core_name;
 
 	// Initialize
-	emu = Emulator::getInstance();
+	emulator = Emulator::getInstance();
 	mmu = misc::new_unique<mem::MMU>("x86");
 
 	// Create cores
