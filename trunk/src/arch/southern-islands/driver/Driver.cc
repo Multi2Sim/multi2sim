@@ -26,7 +26,7 @@ namespace SI
 {
 
 // Forward declarations                                                          
-class Asm; 
+class Disassembler; 
 
 // Initialize table of ABI call names
 const char *Driver::call_name[CallCodeCount] =
@@ -123,10 +123,10 @@ void Driver::ProcessOptions()
 	if (!binary_file.empty())                                                       
 	{        
 		// Get disassembler singleton
-		Asm *as = Asm::getInstance();
+		Disassembler *disassembler = Disassembler::getInstance();
 
 		// Disassemble binary
-		as->DisassembleBinary(binary_file);                                     
+		disassembler->DisassembleBinary(binary_file);                                     
 		exit(0);                                                         
 	} 
 }

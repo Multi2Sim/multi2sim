@@ -33,7 +33,7 @@ namespace MIPS
 // Configuration options
 //
 
-std::string Asm::path;
+std::string Disassembler::path;
 
 
 
@@ -69,7 +69,7 @@ std::string Asm::path;
 #define OPCODE_SPECIAL3_BSHFL       0x20
 
 
-void Asm::RegisterOptions()
+void Disassembler::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -87,19 +87,19 @@ void Asm::RegisterOptions()
 	command_line->setIncompatible("--mips-disasm");}
 
 
-void Asm::ProcessOptions()
+void Disassembler::ProcessOptions()
 {
 	// Run x86 disassembler
 	if (!path.empty())
 	{
-		Asm *as = Asm::getInstance();
-		as->DisassembleBinary(path);
+		Disassembler *disassembler = Disassembler::getInstance();
+		disassembler->DisassembleBinary(path);
 		exit(0);
 	}
 }
 
 
-Asm::Asm() : comm::Asm("MIPS")
+Disassembler::Disassembler() : comm::Disassembler("MIPS")
 {
 	// Allocate storage for the instruction tables
 	dec_table                   = new InstInfo[64]();
@@ -271,21 +271,21 @@ Asm::Asm() : comm::Asm("MIPS")
 }
 
 
-std::unique_ptr<Asm> Asm::instance;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
-Asm *Asm::getInstance()
+Disassembler *Disassembler::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 	
 	// Create instance
-	instance.reset(new Asm());
+	instance.reset(new Disassembler());
 	return instance.get();
 }
 
 
-Asm::~Asm()
+Disassembler::~Disassembler()
 {
 	delete dec_table;
 	delete dec_table_special;
@@ -320,7 +320,7 @@ Asm::~Asm()
 }
 
 
-void Asm::DisassembleBinary(const std::string &path)
+void Disassembler::DisassembleBinary(const std::string &path)
 {
 	ELFReader::File file(path);
 	Inst inst;

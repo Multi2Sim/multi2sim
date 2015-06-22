@@ -40,7 +40,7 @@ namespace SI
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 class NDRange;
 class ShaderExport;
 class WorkGroup;
@@ -207,7 +207,7 @@ private:
 	//
 
 	// Associated disassembler
-	Asm *as = nullptr;
+	Disassembler *disassembler = nullptr;
 
 	// Associated drivers
 	::Driver::OpenCLSIDriver *opencl_driver = nullptr;

@@ -31,9 +31,9 @@ namespace ARM
 //
 // Configuration options
 //
-std::string Asm::path;
+std::string Disassembler::path;
 
-void Asm::RegisterOptions()
+void Disassembler::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -52,19 +52,19 @@ void Asm::RegisterOptions()
 }
 
 
-void Asm::ProcessOptions()
+void Disassembler::ProcessOptions()
 {
 	// Run ARM disassembler
 	if (!path.empty())
 	{
-		Asm *as = Asm::getInstance();
-		as->DisassembleBinary(path);
+		Disassembler *disassembler = Disassembler::getInstance();
+		disassembler->DisassembleBinary(path);
 		exit(0);
 	}
 }
 
 
-Asm::Asm() : comm::Asm("ARM")
+Disassembler::Disassembler() : comm::Disassembler("ARM")
 {
 	// Form the Instruction table and read Information from table
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
@@ -662,22 +662,22 @@ Asm::Asm() : comm::Asm("ARM")
 }
 
 
-std::unique_ptr<Asm> Asm::instance;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
 
-Asm *Asm::getInstance()
+Disassembler *Disassembler::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Asm());
+	instance.reset(new Disassembler());
 	return instance.get();
 }
 
 
-Asm::~Asm()
+Disassembler::~Disassembler()
 {
 	// Thumb 16 tables 
 	delete dec_table_thumb16_asm;
@@ -804,7 +804,7 @@ Asm::~Asm()
 }
 
 
-void Asm::SetupInstInfo(const char* name, const char* fmt_str,
+void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		InstCategory category, int arg1, int arg2, InstOpcode inst_name)
 {
 	InstInfo *info;
@@ -1156,7 +1156,7 @@ void Asm::SetupInstInfo(const char* name, const char* fmt_str,
 }
 
 
-void Asm::Thumb32SetupTable(const char* name , const char* fmt_str ,
+void Disassembler::Thumb32SetupTable(const char* name , const char* fmt_str ,
 		InstThumb32Category cat32 , int op1 , int op2 , int op3 ,
 		int op4 , int op5 , int op6, int op7, int op8, InstThumb32Opcode inst_name)
 {
@@ -1188,7 +1188,7 @@ void Asm::Thumb32SetupTable(const char* name , const char* fmt_str ,
 }
 
 
-void Asm::Thumb16SetupTable(const char* name , const char* fmt_str ,
+void Disassembler::Thumb16SetupTable(const char* name , const char* fmt_str ,
 	InstThumb16Category cat16 , int op1 , int op2 , int op3 ,
 	int op4 , int op5 , int op6, InstThumb16Opcode inst_name)
 {
@@ -1223,13 +1223,14 @@ void Asm::Thumb16SetupTable(const char* name , const char* fmt_str ,
 }
 
 
-void Asm::ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
-		unsigned int inst_addr, AsmDisassemblyMode disasm_mode)
+void Disassembler::ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
+		unsigned int inst_addr,
+		DisassemblyMode disasm_mode)
 {
 	ELFReader::Symbol *symbol;
 	//unsigned int prev_symbol;
 
-	if (disasm_mode == AsmDisassemblyModeArm)
+	if (disasm_mode == DisassemblyModeArm)
 	{
 		for (int i = 0; i < file.getNumSymbols(); i++)
 		{
@@ -1251,7 +1252,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
 			}
 		}
 	}
-	else if (disasm_mode == AsmDisassemblyModeThumb)
+	else if (disasm_mode == DisassemblyModeThumb)
 	{
 		for (int i = 0; i < file.getNumSymbols(); i++)
 		{
@@ -1278,7 +1279,7 @@ void Asm::ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
 }
 
 
-unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &os,
+unsigned int Disassembler::ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, unsigned int *inst_ptr)
 {
 	ELFReader::Symbol *symbol;
@@ -1299,7 +1300,7 @@ unsigned int Asm::ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &o
 }
 
 
-unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostream &os,
+unsigned int Disassembler::ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostream &os,
 		unsigned int inst_addr, unsigned int *inst_ptr)
 {
 	ELFReader::Symbol *symbol;
@@ -1320,7 +1321,7 @@ unsigned int Asm::ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostre
 }
 
 
-void Asm::ElfSymbolListCreate(const ELFReader::File &file,
+void Disassembler::ElfSymbolListCreate(const ELFReader::File &file,
 			std::vector<ELFReader::Symbol*> &symbol_list)
 {
 	for (int i = 0; i < file.getNumSymbols(); i++)
@@ -1334,11 +1335,12 @@ void Asm::ElfSymbolListCreate(const ELFReader::File &file,
 }
 
 
-AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &symbol_list,
+Disassembler::DisassemblyMode Disassembler::DissassembleMode(
+		const std::vector<ELFReader::Symbol*> &symbol_list,
 		unsigned int addr)
 {
 	ELFReader::Symbol *symbol = NULL;
-	AsmDisassemblyMode disasm_mode;
+	DisassemblyMode disasm_mode;
 	unsigned int tag_index = 0;
 
 	// Binary search
@@ -1362,20 +1364,20 @@ AsmDisassemblyMode Asm::DissassembleMode(const std::vector<ELFReader::Symbol*> &
 	tag_index = mid;
 	symbol = symbol_list[tag_index];
 	if (!symbol)
-		return AsmDisassemblyModeArm;
+		return DisassemblyModeArm;
 
 	// Possible symbols
 	if(!(symbol->getName().compare(0, 2, "$a")))
-		disasm_mode = AsmDisassemblyModeArm;
+		disasm_mode = DisassemblyModeArm;
 	else if(!(symbol->getName().compare(0, 2, "$t")))
-		disasm_mode = AsmDisassemblyModeThumb;
+		disasm_mode = DisassemblyModeThumb;
 
 	// Return
 	return disasm_mode;
 }
 
 
-int Asm::TestThumb32(const char *inst_ptr)
+int Disassembler::TestThumb32(const char *inst_ptr)
 {
 	unsigned int byte_index;
 	unsigned int arg1;
@@ -1397,13 +1399,13 @@ int Asm::TestThumb32(const char *inst_ptr)
 }
 
 
-void Asm::DisassembleBinary(const std::string &path)
+void Disassembler::DisassembleBinary(const std::string &path)
 {
 	ELFReader::File file(path);
 	ELFReader::Section *section;
 	std::vector<ELFReader::Symbol*> symbol_list;
 	Inst inst;
-	static AsmDisassemblyMode disasm_mode;
+	static DisassemblyMode disasm_mode;
 
 	// Find the section
 	int i;
@@ -1427,7 +1429,7 @@ void Asm::DisassembleBinary(const std::string &path)
 		disasm_mode = DissassembleMode(symbol_list,
 			(section->getAddr() + inst_index));
 
-		if (disasm_mode == AsmDisassemblyModeArm)
+		if (disasm_mode == DisassemblyModeArm)
 		{
 			ElfSymbolFunc(
 				file,
@@ -1450,7 +1452,7 @@ void Asm::DisassembleBinary(const std::string &path)
 			inst_pos += 4;
 		}
 
-		else if(disasm_mode == AsmDisassemblyModeThumb)
+		else if(disasm_mode == DisassemblyModeThumb)
 		{
 
 			if(TestThumb32(section->getBuffer() + inst_pos))

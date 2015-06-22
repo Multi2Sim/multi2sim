@@ -114,9 +114,6 @@ public:
 	/// Get ID
 	int getID() const { return id; }
 
-	/// Get assambler
-	Asm *getAsm() const { return emulator->getAsm(); }
-
 	/// Get shared memory top address
 	unsigned getSharedMemTop() const { return shared_mem_top; }
 

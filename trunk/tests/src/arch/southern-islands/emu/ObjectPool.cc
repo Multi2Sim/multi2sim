@@ -34,7 +34,7 @@ namespace SI
 ObjectPool::ObjectPool()
 {
 	// Get disassembler and emulator singletons
-	as = Asm::getInstance();
+	as = Disassembler::getInstance();
 	emulator = Emulator::getInstance();
 
 	// Allocate NDRange

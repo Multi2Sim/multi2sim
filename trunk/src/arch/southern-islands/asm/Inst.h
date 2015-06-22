@@ -27,7 +27,7 @@ namespace SI
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 
 
 // Microcode Formats
@@ -477,7 +477,7 @@ struct InstInfo
 class Inst
 {
 	// Disassembler
-	Asm *as;
+	Disassembler *disassembler;
 
 	// Instruction identifier with all information
 	InstInfo *info;
@@ -511,7 +511,7 @@ class Inst
 public:
 
 	/// Constructor
-	Inst(Asm *as);
+	Inst();
 
 	/// Constants for special registers
 	static const unsigned RegisterM0 = 124;
@@ -528,7 +528,8 @@ public:
 	void Dump(std::ostream &os) const;
 
 	/// Print instruction (equivalent to Dump())
-	friend std::ostream &operator<<(std::ostream &os, const Inst &inst) {
+	friend std::ostream &operator<<(std::ostream &os, const Inst &inst)
+	{
 		inst.Dump(os);
 		return os;
 	}

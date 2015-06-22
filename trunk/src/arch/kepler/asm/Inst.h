@@ -26,7 +26,7 @@ namespace Kepler
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 
 
 enum InstOpcode
@@ -550,7 +550,7 @@ union InstBytes
 class Inst
 {
 	// Disassembler
-	const Asm *as;
+	const Disassembler *disassembler;
 
 	// Instruction offset within .text section
 	unsigned int address;

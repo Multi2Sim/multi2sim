@@ -34,7 +34,7 @@
 namespace x86
 {
 
-class Asm;
+class Disassembler;
 class Context;
 
 /// x86 exception

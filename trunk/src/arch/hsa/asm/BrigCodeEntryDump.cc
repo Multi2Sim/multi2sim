@@ -70,18 +70,18 @@ std::map<unsigned, BrigCodeEntry::DumpEntryFn> BrigCodeEntry::dump_entry_fn =
 
 void BrigCodeEntry::DumpIndent(std::ostream &os = std::cout) const
 {
-	Asm *as = Asm::getInstance();
-	for(int i = 0; i < as->getIndent(); i++)
+	Disassembler *disassembler = Disassembler::getInstance();
+	for(int i = 0; i < disassembler->getIndent(); i++)
 		os << "\t";
 }
 
 
 void BrigCodeEntry::DumpDirArgBlockEnd(std::ostream &os = std::cout) const
 {
-	Asm *as = Asm::getInstance();
+	Disassembler *disassembler = Disassembler::getInstance();
 
 	// First reduce the indent level, then output the close bracket
-	as->IndentLess();
+	disassembler->IndentLess();
 	DumpIndent(os);
 	os << "}\n";
 }
@@ -89,12 +89,12 @@ void BrigCodeEntry::DumpDirArgBlockEnd(std::ostream &os = std::cout) const
 
 void BrigCodeEntry::DumpDirArgBlockStart(std::ostream &os = std::cout) const
 {
-	Asm *as = Asm::getInstance();
+	Disassembler *disassembler = Disassembler::getInstance();
 	DumpIndent(os);
 	os << "{\n";
 
 	// All arguments within the bracket should indent one more level
-	as->IndentMore();
+	disassembler->IndentMore();
 }
 
 
@@ -673,7 +673,7 @@ void BrigCodeEntry::DumpArguments(std::unique_ptr<BrigCodeEntry> arg,
 	}
 	else if(count > 1)
 	{
-		Asm::getInstance()->IndentMore();	
+		Disassembler::getInstance()->IndentMore();	
 		for (unsigned int i = 0; i < count; i++)
 		{
 			os << "\n";
@@ -683,7 +683,7 @@ void BrigCodeEntry::DumpArguments(std::unique_ptr<BrigCodeEntry> arg,
 				os << ",";
 			arg = arg->Next();
 		}	
-		Asm::getInstance()->IndentLess();
+		Disassembler::getInstance()->IndentLess();
 	}
 	os << ")";
 }
@@ -695,7 +695,7 @@ void BrigCodeEntry::DumpBody(std::unique_ptr<BrigCodeEntry> start,
 {
 	os << "\n{\n";
 	
-	Asm::getInstance()->IndentMore();
+	Disassembler::getInstance()->IndentMore();
 	std::unique_ptr<BrigCodeEntry> entry = std::move(start);
 	while(true)
 	{
@@ -710,7 +710,7 @@ void BrigCodeEntry::DumpBody(std::unique_ptr<BrigCodeEntry> start,
 		entry = entry->Next();
 		
 	}
-	Asm::getInstance()->IndentLess();
+	Disassembler::getInstance()->IndentLess();
 	
 	os << "}";
 }

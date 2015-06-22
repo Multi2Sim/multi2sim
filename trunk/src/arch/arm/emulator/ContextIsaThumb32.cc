@@ -733,19 +733,19 @@ void Context::ExecuteInstThumb32_AND_reg9()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -840,19 +840,19 @@ void Context::ExecuteInstThumb32_BIC_reg()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -933,19 +933,19 @@ void Context::ExecuteInstThumb32_ORR_reg2()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1229,19 +1229,19 @@ void Context::ExecuteInstThumb32_ADD_reg0()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1279,19 +1279,19 @@ void Context::ExecuteInstThumb32_ADD_reg1()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1329,19 +1329,19 @@ void Context::ExecuteInstThumb32_ADD_reg2()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1384,19 +1384,19 @@ void Context::ExecuteInstThumb32_ADD_reg4()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1454,19 +1454,19 @@ void Context::ExecuteInstThumb32_ADD_reg9()
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (Inst::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (AsmShiftOperatorLsr):
+		case (Inst::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (AsmShiftOperatorAsr):
+		case (Inst::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (AsmShiftOperatorRor):
+		case (Inst::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}

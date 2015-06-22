@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/asm/Asm.h>
+#include <arch/southern-islands/asm/Inst.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Misc.h>
 
@@ -138,6 +139,7 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	scalar_work_item->setWorkGroup(this->work_group);
 }
 
+
 void Wavefront::Execute()
 {
 	// Get current work-group
@@ -145,7 +147,7 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
-	std::unique_ptr<Inst> inst(new Inst(Asm::getInstance()));
+	auto inst = misc::new_unique<Inst>();
 
 	// Reset instruction flags
 	vector_mem_write = 0;

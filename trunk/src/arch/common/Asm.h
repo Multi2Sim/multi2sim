@@ -17,15 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_ASM_H
-#define ARCH_COMMON_ASM_H
+#ifndef ARCH_COMMON_DISASSEMBLER_H
+#define ARCH_COMMON_DISASSEMBLER_H
 
 #include <string>
 
 namespace comm
 {
 
-class Asm
+class Disassembler
 {
 	// Name of disassembler
 	std::string name;
@@ -33,7 +33,7 @@ class Asm
 public:
 
 	/// Constructor
-	Asm(const std::string &name);
+	Disassembler(const std::string &name);
 
 	/// Check whether a token is found in the begninning of a format string.
 	///

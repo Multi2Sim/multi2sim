@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_ASM_H
-#define ARCH_SOUTHERN_ISLANDS_ASM_H
+#ifndef ARCH_SOUTHERN_ISLANDS_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_SOUTHERN_ISLANDS_DISASSEMBLER_DISASSEMBLER_H
 
 #include <cassert>
 #include <iostream>
@@ -32,10 +32,10 @@ namespace SI
 {
 
 
-class Asm
+class Disassembler
 {
 	// Unique instance of Southern Islands Disassembler                          
-	static std::unique_ptr<Asm> instance;  
+	static std::unique_ptr<Disassembler> instance;  
 
 	static const int dec_table_sopp_count = 24;
 	static const int dec_table_sopc_count = 17;
@@ -92,12 +92,12 @@ public:
 	};
 
 	// Constructor
-	Asm();
+	Disassembler();
 
 	/// Get the only instance of the Southern Islands disassembler. If the       
 	/// instance does not exist yet, it will be created, and will remain     
 	/// allocated until the end of the execution.                            
-	static Asm *getInstance(); 
+	static Disassembler *getInstance(); 
 
 	// Disassemblers
 	void DisassembleBinary(std::string path);

@@ -31,9 +31,9 @@
 namespace x86
 {
 
-std::string Asm::path;
+std::string Disassembler::path;
 
-void Asm::RegisterOptions()
+void Disassembler::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -52,13 +52,13 @@ void Asm::RegisterOptions()
 }
 
 
-void Asm::ProcessOptions()
+void Disassembler::ProcessOptions()
 {
 	// Run x86 disassembler
 	if (!path.empty())
 	{
-		Asm *as = Asm::getInstance();
-		as->DisassembleBinary(path);
+		Disassembler *disassembler = Disassembler::getInstance();
+		disassembler->DisassembleBinary(path);
 		exit(0);
 	}
 }
@@ -81,10 +81,10 @@ static const unsigned char asm_prefixes[] =
 };
 
 
-std::unique_ptr<Asm> Asm::instance;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
 
-void Asm::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, int at)
+void Disassembler::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, int at)
 {
 	// First entry
 	if (!table[at])
@@ -101,7 +101,7 @@ void Asm::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, int at)
 }
 
 
-void Asm::InsertInstInfo(InstInfo *info)
+void Disassembler::InsertInstInfo(InstInfo *info)
 {
 	// Obtain the table where to insert, the initial index, and
 	// the number of times we must insert the instruction.
@@ -131,7 +131,7 @@ void Asm::InsertInstInfo(InstInfo *info)
 }
 
 
-void Asm::FreeInstDecodeInfo(InstDecodeInfo *elem)
+void Disassembler::FreeInstDecodeInfo(InstDecodeInfo *elem)
 {
 	while (elem)
 	{
@@ -142,7 +142,7 @@ void Asm::FreeInstDecodeInfo(InstDecodeInfo *elem)
 }
 
 
-Asm::Asm() : comm::Asm("x86")
+Disassembler::Disassembler() : comm::Disassembler("x86")
 {
 	// Initialize instruction information list
 	memset(inst_info, 0, sizeof inst_info);
@@ -256,7 +256,7 @@ Asm::Asm() : comm::Asm("x86")
 }
 
 
-Asm::~Asm()
+Disassembler::~Disassembler()
 {
 	// Free instruction info tables
 	for (int i = 0; i < 0x100; i++)
@@ -267,19 +267,19 @@ Asm::~Asm()
 }
 
 
-Asm *Asm::getInstance()
+Disassembler *Disassembler::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 	
 	// Create instance
-	instance.reset(new Asm());
+	instance.reset(new Disassembler());
 	return instance.get();
 }
 
 
-void Asm::DisassembleBinary(const std::string &path, std::ostream &os) const
+void Disassembler::DisassembleBinary(const std::string &path, std::ostream &os) const
 {
 	// Traverse sections of ELF file
 	ELFReader::File file(path);

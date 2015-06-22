@@ -84,7 +84,7 @@ Emulator *Emulator::getInstance()
 Emulator::Emulator()
 {
 	// Disassemler
-	as = Asm::getInstance();
+	disassembler = Disassembler::getInstance();
 	
 	// GPU memories
 	video_memory = misc::new_unique<mem::Memory>();

@@ -29,7 +29,7 @@
 namespace comm
 {
 
-Asm::Asm(const std::string &name) :
+Disassembler::Disassembler(const std::string &name) :
 		name(name)
 {
 	// Register disassembler in architecture pool
@@ -38,7 +38,7 @@ Asm::Asm(const std::string &name) :
 }
 
 
-bool Asm::isToken(const std::string &fmt, const std::string &token,
+bool Disassembler::isToken(const std::string &fmt, const std::string &token,
 		int &length)
 {
 	// Token is not prefix
