@@ -18,7 +18,7 @@
  */
 
 #ifndef ARCH_ARM_EMU_EMU_H
-#define ARCH_ARM_EMU_EMU_H
+#define ARCH_ARM_EMULATOR_EMULATOR_H
 
 #include <pthread.h>
 #include <stdio.h>

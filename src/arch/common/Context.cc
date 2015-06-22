@@ -29,7 +29,7 @@ namespace comm
 int Context::id_counter = 1000;
 
 
-Context::Context(Emu *emu) :
+Context::Context(Emulator *emu) :
 		emu(emu)
 {
 	// Assign ID

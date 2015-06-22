@@ -101,7 +101,7 @@ int Driver::CallMemAlloc(comm::Context *context,
 	debug << misc::fmt("\tsize = %u\n", size);
 
 	// Allocate memory
-	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
 
 	// Allocate 4 more bytes of memory
@@ -145,7 +145,7 @@ int Driver::CallMemRead(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
 	mem::Memory* global_mem = kpl_emu->getGlobalMem();
 
 	// Arguments
@@ -193,7 +193,7 @@ int Driver::CallMemWrite(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
 	mem::Memory *global_mem = kpl_emu->getGlobalMem();
 
 	// Arguments
@@ -269,7 +269,7 @@ int Driver::CallLaunchKernel(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
 	mem::Memory* const_mem = kpl_emu->getConstMem();
 
 	// Arguments
@@ -380,7 +380,7 @@ int Driver::CallMemGetInfo(comm::Context *context,
 		unsigned args_ptr)
 {
 	// Get Emu instance and global memory
-	Kepler::Emu *kpl_emu = Kepler::Emu::getInstance();
+	Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
 
 	// Arguments
 	unsigned free;

@@ -29,13 +29,13 @@ namespace MIPS
 //
 
 // Debug files
-std::string Emu::loader_debug_file;
-std::string Emu::isa_debug_file;
-std::string Emu::context_debug_file;
-std::string Emu::syscall_debug_file;
+std::string Emulator::loader_debug_file;
+std::string Emulator::isa_debug_file;
+std::string Emulator::context_debug_file;
+std::string Emulator::syscall_debug_file;
 
 // Maximum number of instructions
-long long Emu::max_instructions;
+long long Emulator::max_instructions;
 
 
 
@@ -44,14 +44,14 @@ long long Emu::max_instructions;
 //
 
 // Emulator singleton
-std::unique_ptr<Emu> Emu::instance;
+std::unique_ptr<Emulator> Emulator::instance;
 
 
 // Debuggers
-misc::Debug Emu::context_debug;
-misc::Debug Emu::isa_debug;
-misc::Debug Emu::loader_debug;
-misc::Debug Emu::syscall_debug;
+misc::Debug Emulator::context_debug;
+misc::Debug Emulator::isa_debug;
+misc::Debug Emulator::loader_debug;
+misc::Debug Emulator::syscall_debug;
 
 
 
@@ -59,7 +59,7 @@ misc::Debug Emu::syscall_debug;
 // Functions
 //
 
-void Emu::RegisterOptions()
+void Emulator::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -93,7 +93,7 @@ void Emu::RegisterOptions()
 }
 
 
-void Emu::ProcessOptions()
+void Emulator::ProcessOptions()
 {
 	// Debuggers
 	context_debug.setPath(context_debug_file);
@@ -103,7 +103,7 @@ void Emu::ProcessOptions()
 }
 
 
-Emu::Emu() : comm::Emu("MIPS")
+Emulator::Emulator() : comm::Emulator("MIPS")
 {
 	// Initialize
 	pid = 100;
@@ -113,7 +113,7 @@ Emu::Emu() : comm::Emu("MIPS")
 	address_space_index = 0;
 }
 
-void Emu::AddContextToList(ContextListType type, Context *context)
+void Emulator::AddContextToList(ContextListType type, Context *context)
 {
 	// Nothing if already present
 	if (context->context_list_present[type])
@@ -126,7 +126,7 @@ void Emu::AddContextToList(ContextListType type, Context *context)
 	context->context_list_iter[type] = --iter;
 }
 
-void Emu::RemoveContextFromList(ContextListType type, Context *context)
+void Emulator::RemoveContextFromList(ContextListType type, Context *context)
 {
 	// Nothing if not present
 	if (!context->context_list_present[type])
@@ -138,7 +138,7 @@ void Emu::RemoveContextFromList(ContextListType type, Context *context)
 	context_list[type].erase(iter);
 }
 
-void Emu::UpdateContextInList(ContextListType type, Context *context,
+void Emulator::UpdateContextInList(ContextListType type, Context *context,
 			bool present)
 {
 	if (present && !context->context_list_present[type])
@@ -147,19 +147,19 @@ void Emu::UpdateContextInList(ContextListType type, Context *context,
 		RemoveContextFromList(type, context);
 }
 
-Emu *Emu::getInstance()
+Emulator *Emulator::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Emu());
+	instance.reset(new Emulator());
 	return instance.get();
 }
 
 
-Context *Emu::newContext()
+Context *Emulator::newContext()
 {
 	// Create context and add to context list
 	Context *context = new Context();
@@ -178,7 +178,7 @@ Context *Emu::newContext()
 }
 
 
-void Emu::LoadProgram(const std::vector<std::string> &args,
+void Emulator::LoadProgram(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,
 		const std::string &cwd,
 		const std::string &stdin_file_name,
@@ -195,7 +195,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 }
 
 
-void Emu::freeContext(Context *context)
+void Emulator::freeContext(Context *context)
 {
 	// Remove context from all context lists
 	for (int i = 0; i < ContextListCount; i++)
@@ -206,14 +206,14 @@ void Emu::freeContext(Context *context)
 	contexts.erase(context->contexts_iter);
 }
 
-void Emu::ProcessEventsSchedule()
+void Emulator::ProcessEventsSchedule()
 {
 	LockMutex();
 	process_events_force = true;
 	UnlockMutex();
 }
 
-void Emu::ProcessEvents()
+void Emulator::ProcessEvents()
 {
 	// Check if events need actually be checked.
 	LockMutex();
@@ -331,7 +331,7 @@ void Emu::ProcessEvents()
 }
 
 
-bool Emu::Run()
+bool Emulator::Run()
 {
 	// Stop if there is no more contexts
 	if (!contexts.size())

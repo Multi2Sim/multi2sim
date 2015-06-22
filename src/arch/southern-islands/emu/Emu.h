@@ -146,7 +146,7 @@ struct EmuMemPtr
 
 
 /// Southern Islands emulator.
-class Emu
+class Emulator
 {
 
 public:
@@ -261,11 +261,11 @@ private:
 	long long export_inst_count = 0;     
 
 	// Unique instance of Southern Islands Emulator
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// Private constructor. The only possible instance of the OpenCL Driver
 	// can be obtained with a call to getInstance()
-	Emu();
+	Emulator();
 
 public:
 	/// UAV Table
@@ -333,13 +333,13 @@ public:
 	/// Get the only instance of the Southern Islands emulator. If the
 	/// instance does not exist yet, it will be created, and will remain
 	/// allocated until the end of the execution.
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Dump emulator state
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump emulator state (equivalent to Dump())
-	friend std::ostream &operator<<(std::ostream &os, const Emu &emu)
+	friend std::ostream &operator<<(std::ostream &os, const Emulator &emu)
 	{
 		emu.Dump(os);
 		return os;

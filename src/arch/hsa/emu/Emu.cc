@@ -33,12 +33,12 @@ namespace HSA
 //
 
 // Simulation kind
-comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
+comm::Arch::SimKind Emulator::sim_kind = comm::Arch::SimFunctional;
 
 // Debug file
-std::string Emu::hsa_debug_loader_file;
-std::string Emu::hsa_debug_isa_file;
-std::string Emu::hsa_debug_aql_file;
+std::string Emulator::hsa_debug_loader_file;
+std::string Emulator::hsa_debug_isa_file;
+std::string Emulator::hsa_debug_aql_file;
 
 
 
@@ -48,12 +48,12 @@ std::string Emu::hsa_debug_aql_file;
 //
 
 // Debugger
-misc::Debug Emu::loader_debug;
-misc::Debug Emu::isa_debug;
-misc::Debug Emu::aql_debug;
+misc::Debug Emulator::loader_debug;
+misc::Debug Emulator::isa_debug;
+misc::Debug Emulator::aql_debug;
 
 // Singleton instance
-std::unique_ptr<Emu> Emu::instance;
+std::unique_ptr<Emulator> Emulator::instance;
 
 
 
@@ -62,7 +62,7 @@ std::unique_ptr<Emu> Emu::instance;
 // Functions
 //
 
-void Emu::RegisterOptions()
+void Emulator::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -93,7 +93,7 @@ void Emu::RegisterOptions()
 }
 
 
-void Emu::ProcessOptions()
+void Emulator::ProcessOptions()
 {
 	loader_debug.setPath(hsa_debug_loader_file);
 	isa_debug.setPath(hsa_debug_isa_file);
@@ -101,8 +101,7 @@ void Emu::ProcessOptions()
 }
 
 
-Emu::Emu() :
-		comm::Emu("hsa")
+Emulator::Emulator() : comm::Emulator("hsa")
 {
 	InstallComponents("");
 	memory = std::make_shared<mem::Memory>();
@@ -115,18 +114,18 @@ Emu::Emu() :
 }
 
 
-Emu *Emu::getInstance()
+Emulator *Emulator::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
-	instance.reset(new Emu());
+	instance.reset(new Emulator());
 	return instance.get();
 }
 
 
-void Emu::InstallComponents(const std::string& config_file = "")
+void Emulator::InstallComponents(const std::string& config_file = "")
 {
 	if (config_file != "")
 	{
@@ -138,7 +137,7 @@ void Emu::InstallComponents(const std::string& config_file = "")
 }
 
 
-void Emu::InstallDefaultComponents()
+void Emulator::InstallDefaultComponents()
 {
 	// Add a CPU device
 	auto cpu = Component::getDefaultCPUComponent(1);
@@ -153,7 +152,7 @@ void Emu::InstallDefaultComponents()
 }
 
 
-void Emu::DumpComponentList(std::ostream &os = std::cout) const
+void Emulator::DumpComponentList(std::ostream &os = std::cout) const
 {
 	os << "Components installed.\n";
 	for (auto it = components.begin(); it != components.end(); it++)
@@ -163,7 +162,7 @@ void Emu::DumpComponentList(std::ostream &os = std::cout) const
 }
 
 
-bool Emu::Run()
+bool Emulator::Run()
 {
 	// Stop if maxmum number of CPU instructions exceeded
 	// if(max_instructions && instructions >= max_instructions)
@@ -193,7 +192,7 @@ bool Emu::Run()
 }
 
 
-Signal *Emu::CreateSignal(unsigned long long init_value)
+Signal *Emulator::CreateSignal(unsigned long long init_value)
 {
 	auto signal = misc::new_unique<Signal>(init_value);
 	Signal *signal_ptr = signal.get();
@@ -202,7 +201,7 @@ Signal *Emu::CreateSignal(unsigned long long init_value)
 }
 
 
-void Emu::LoadProgram(const std::vector<std::string> &args,
+void Emulator::LoadProgram(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,
 		const std::string &cwd,
 		const std::string &stdin_file_name,

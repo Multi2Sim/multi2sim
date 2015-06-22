@@ -214,7 +214,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	InstBytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	Warp *warp = getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -429,7 +429,7 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 	InstBytesISCADD format = inst_bytes.iscadd;
 
 	// Get Warp
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -654,7 +654,7 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 void Thread::ExecuteInst_ISAD_B(Inst *inst)
 {
 	// Get Warp
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -783,7 +783,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1006,24 +1006,24 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 
-	Emu::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
-	Emu::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
 					"= %u\n",inst->getName(),this->id_in_warp);
-	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
 					,inst->getName(),src1);
-	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
 					,inst->getName(),src2);
-	Emu::isa_debug << misc::fmt("At instruction %s:\toutput: the result is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\toutput: the result is "
 					"= %d\n",inst->getName(),dst);
-	Emu::isa_debug << misc::fmt("\n");
+	Emulator::isa_debug << misc::fmt("\n");
 }
 
 
 void Thread::ExecuteInst_IADD_B(Inst *inst)
 {
 	// Get Warp
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1151,17 +1151,17 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetpc(warp->getPC() + warp->getInstSize());
 
-	Emu::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
-	Emu::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
 					"= %u\n",inst->getName(),this->id_in_warp);
-	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
 					,inst->getName(),src1);
-	Emu::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
+	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
 					,inst->getName(),src2);
-	Emu::isa_debug << misc::fmt("At instruction %s:\toutput: the result is "
+	Emulator::isa_debug << misc::fmt("At instruction %s:\toutput: the result is "
 					"= %d\n",inst->getName(),dst);
-	Emu::isa_debug << misc::fmt("\n");
+	Emulator::isa_debug << misc::fmt("\n");
 }
 
 
@@ -1172,7 +1172,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1685,7 +1685,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1827,7 +1827,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -2027,7 +2027,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	RegValue srcA, srcB, dst;
 
 	// Predicates and active masks
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -2145,7 +2145,7 @@ void Thread::ExecuteInst_ST(Inst *inst)
 
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -2337,7 +2337,7 @@ void Thread::ExecuteInst_FFMA(Inst *inst)
 void Thread::ExecuteInst_FMUL(Inst *inst)
 {
 	// Get Emu
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 
 	// Get Warp
 	Warp *warp = this->getWarp();
@@ -2434,7 +2434,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 void Thread::ExecuteInst_FADD(Inst *inst)
 {
 	// Get Emu
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 
 	// Get Warp
 	Warp *warp = this->getWarp();
@@ -2942,7 +2942,7 @@ void Thread::ExecuteInst_PLONGJMP(Inst *inst)
 void Thread::ExecuteInst_SSY(Inst *inst)
 {
 	// Get emulator
-    Emu *emu = Emu::getInstance();
+    Emulator *emu = Emulator::getInstance();
 
 	// Get warp
 	Warp *warp = this->getWarp();
@@ -3124,7 +3124,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emu* emu = Emu::getInstance();
+	Emulator* emu = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 

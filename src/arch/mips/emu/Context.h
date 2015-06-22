@@ -38,7 +38,7 @@ namespace MIPS
 {
 
 class Context;
-class Emu;
+class Emulator;
 
 /// Constant types used for context system calls to transfer the system call number
 const unsigned int __NR_Linux = 4000;
@@ -80,7 +80,7 @@ enum ContextListType
 class Context
 {
 	// Emulator it belongs to
-	Emu *emu;
+	Emulator *emu;
 
 	// Process ID
 	int pid;

@@ -34,7 +34,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 			Function *root_function)
 {
 	// Set global emulator object
-	emu = Emu::getInstance();
+	emu = Emulator::getInstance();
 	executable = root_function->getExecutable();
 
 	// Set work group
@@ -53,15 +53,15 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	status = WorkItemStatusActive;
 
 	// Set the private segment memory manager
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
 	if (getAbsoluteFlattenedId() == 0) {
-		if (Emu::isa_debug)
+		if (Emulator::isa_debug)
 		{
-			frame->Dump(Emu::isa_debug);
-			Emu::isa_debug << "\n";
+			frame->Dump(Emulator::isa_debug);
+			Emulator::isa_debug << "\n";
 		}
 	}
 
@@ -125,11 +125,11 @@ bool WorkItem::ReturnFunction()
 	// Dump stack frame information
 	StackFrame *callee_frame = stack.back().get();
 	if (getAbsoluteFlattenedId() == 0) {
-		if (Emu::isa_debug)
+		if (Emulator::isa_debug)
 		{
-			Emu::isa_debug << "Callee_frame: \n";
-			callee_frame->Dump(Emu::isa_debug);
-			Emu::isa_debug << "\n";
+			Emulator::isa_debug << "Callee_frame: \n";
+			callee_frame->Dump(Emulator::isa_debug);
+			Emulator::isa_debug << "\n";
 		}
 	}
 
@@ -155,11 +155,11 @@ bool WorkItem::ReturnFunction()
 		function->PassBackByValue(caller_frame, callee_frame, inst);
 
 		if (getAbsoluteFlattenedId() == 0) {
-			if (Emu::isa_debug)
+			if (Emulator::isa_debug)
 			{
-				Emu::isa_debug << "Caller frame \n";
-				caller_frame->Dump(Emu::isa_debug);
-				Emu::isa_debug << "\n";
+				Emulator::isa_debug << "Caller frame \n";
+				caller_frame->Dump(Emulator::isa_debug);
+				Emulator::isa_debug << "\n";
 			}
 		}
 
@@ -252,7 +252,7 @@ void WorkItem::ExecuteDirective()
 		// Log into debug isa
 		if (getAbsoluteFlattenedId() == 0) 
 		{
-			Emu::isa_debug << misc::fmt("Argument scope created "
+			Emulator::isa_debug << misc::fmt("Argument scope created "
 					"(size %d)\n", size);
 		}
 		break;
@@ -402,7 +402,7 @@ void WorkItem::DeclearVariable()
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, nullptr);
 		if (getAbsoluteFlattenedId() == 0) {
-			Emu::isa_debug << misc::fmt("Declaring variable %s with "
+			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
 					"size %d[%lld]\n", name.c_str(), size, dim);
 		}
 		break;
@@ -417,7 +417,7 @@ void WorkItem::DeclearVariable()
 		variable_scope->DeclearVariable(name, dir->getType(),
 				dim, segment);
 		if (getAbsoluteFlattenedId() == 0) {
-			Emu::isa_debug << misc::fmt("Declaring variable %s with "
+			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
 						"size %d[%lld]\n", name.c_str(),
 						size, dim);
 		}
@@ -434,7 +434,7 @@ void WorkItem::DeclearVariable()
 				dim, segment);
 		if (getAbsoluteFlattenedId() == 0) 
 		{
-			Emu::isa_debug << misc::fmt("Declaring variable %s with "
+			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
 					"size %d[%lld]\n", name.c_str(), size, dim);
 		}
 		break;
@@ -477,7 +477,7 @@ void WorkItem::DeclearVariable()
 				dir->getDim(), arg_segment);
 		if (getAbsoluteFlattenedId() == 0) 
 		{
-			Emu::isa_debug << misc::fmt("Declaring variable %s width"
+			Emulator::isa_debug << misc::fmt("Declaring variable %s width"
 					" size %d\n", name.c_str(), size);
 		}
 		break;
@@ -490,7 +490,7 @@ void WorkItem::DeclearVariable()
 	}
 	if (getAbsoluteFlattenedId() == 0) 
 	{
-		Emu::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
+		Emulator::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
 				AsmService::TypeToString(dir->getType()).c_str(),
 				name.c_str(), size);
 	}
@@ -517,10 +517,10 @@ bool WorkItem::Execute()
 	{
 		if (getAbsoluteFlattenedId() == 0) 
 		{
-			Emu::isa_debug << misc::fmt("WorkItem: %d\n",
+			Emulator::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
-			Emu::isa_debug << "Executing: ";
-			Emu::isa_debug << *inst;
+			Emulator::isa_debug << "Executing: ";
+			Emulator::isa_debug << *inst;
 		}
 
 		// Get the function according to the opcode and perform the inst
@@ -543,9 +543,9 @@ bool WorkItem::Execute()
 		stack_top = getStackTop();
 		if (getAbsoluteFlattenedId() == 0) 
 		{
-			if (Emu::isa_debug)
-				stack_top->Dump(Emu::isa_debug);
-			Emu::isa_debug << "\n";
+			if (Emulator::isa_debug)
+				stack_top->Dump(Emulator::isa_debug);
+			Emulator::isa_debug << "\n";
 		}
 
 	}

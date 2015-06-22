@@ -44,7 +44,7 @@ class ThreadBlock;
 class Thread;
 class Function;
 
-class Emu : public comm::Emu
+class Emulator : public comm::Emulator
 {
 	// Debugger file
 	static std::string isa_debug_file;
@@ -53,7 +53,7 @@ class Emu : public comm::Emu
 	static comm::Arch::SimKind sim_kind;
 
 	// Emu singleton instance
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// Disassembler
 	Asm *as;
@@ -95,7 +95,7 @@ class Emu : public comm::Emu
 	long long global_mem_inst_count = 0;
 
 	/// Constructor
-	Emu();
+	Emulator();
 
 public:
 
@@ -130,7 +130,7 @@ public:
 	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Get grid list size
 	unsigned getGridSize() { return grids.size(); }
@@ -191,7 +191,7 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump emulator state (equivalent to Dump())
-	friend std::ostream &operator<<(std::ostream &os, const Emu &emu)
+	friend std::ostream &operator<<(std::ostream &os, const Emulator &emu)
 	{
 		emu.Dump(os);
 		return os;

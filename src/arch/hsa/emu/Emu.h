@@ -55,7 +55,7 @@ public:
 
 
 /// HSA Emulator
-class Emu : public comm::Emu
+class Emulator : public comm::Emulator
 {
 	// Debugger files
 	static std::string hsa_debug_loader_file;
@@ -69,11 +69,11 @@ class Emu : public comm::Emu
 	static comm::Arch::SimKind sim_kind;
 
 	// Unique instance of HSA emulator
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// Private constructor. The only possible instance of the HSA emulator
 	// can be obtained with a call to getInstance()
-	Emu();
+	Emulator();
 
 	// Maps from a 64-bit identifier to component
 	std::map<unsigned long long, std::unique_ptr<Component>> components;
@@ -100,7 +100,7 @@ class Emu : public comm::Emu
 public:
 
 	/// Destructor
-	~Emu()
+	~Emulator()
 	{
 		// Guarantee everything in guest memory freed before freeing 
 		// the guest memory itself;
@@ -109,7 +109,7 @@ public:
 
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Install the components of the virtual machine 
 	/// Install the components according to the ini config file or install

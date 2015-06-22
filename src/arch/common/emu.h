@@ -18,7 +18,7 @@
  */
 
 #ifndef ARCH_COMMON_EMU_H
-#define ARCH_COMMON_EMU_H
+#define ARCH_COMMON_EMULATOR_H
 
 #include <lib/class/class.h>
 

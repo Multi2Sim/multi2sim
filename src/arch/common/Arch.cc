@@ -108,7 +108,7 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 		{
 			// Get the emulator. If none is available, skip this
 			// architecture.
-			Emu *emu = arch->getEmu();
+			Emulator *emu = arch->getEmu();
 			if (!emu)
 				continue;
 

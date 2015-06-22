@@ -36,7 +36,7 @@ Variable::~Variable()
 		}
 		else
 		{
-			mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+			mem::Manager *manager = Emulator::getInstance()->getMemoryManager();
 			manager->Free(address);
 		}
 	}
@@ -190,7 +190,7 @@ unsigned Variable::getFlatAddress() const
 
 char *Variable::getBuffer() const
 {
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	char *buffer = memory->getBuffer(getFlatAddress(), size,
 			mem::Memory::AccessWrite);
 	return buffer;

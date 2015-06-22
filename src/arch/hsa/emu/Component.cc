@@ -60,7 +60,7 @@ std::unique_ptr<Component> Component::getDefaultGPUComponent(unsigned long long 
 void Component::addQueue(std::unique_ptr<AQLQueue> queue)
 {
 	// TODO Generate better debug information
-	Emu::aql_debug << misc::fmt("Add a queue to component %lld\n", 
+	Emulator::aql_debug << misc::fmt("Add a queue to component %lld\n", 
 			agent_info.handler);
 	queue->Associate(this);
 	queues.emplace_back(std::move(queue));
@@ -109,13 +109,13 @@ bool Component::Execute()
 void Component::LaunchGrid(AQLDispatchPacket *packet)
 {
 	// Dump debug information
-	Emu::aql_debug << "Packet dispatched: \n" << *packet;
+	Emulator::aql_debug << "Packet dispatched: \n" << *packet;
 
 	// Create grid
 	auto grid = misc::new_unique<Grid>(this, packet);
-	Emu::aql_debug << "Grid formed and launched: \n";
-	if (Emu::aql_debug)
-		grid->Dump(Emu::aql_debug);
+	Emulator::aql_debug << "Grid formed and launched: \n";
+	if (Emulator::aql_debug)
+		grid->Dump(Emulator::aql_debug);
 
 	// Insert grid into list
 	this->grids.push_back(std::move(grid));

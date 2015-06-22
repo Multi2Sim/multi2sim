@@ -164,22 +164,22 @@ void LoadProgram(const std::vector<std::string> &args,
 	// Choose emulator based on ELF header
 	std::string exe = misc::getFullPath(args[0], cwd);
 	ELFReader::File elf_file(exe, false);
-	comm::Emu *emu;
+	comm::Emulator *emu;
 	switch (elf_file.getMachine())
 	{
 	case EM_386:
 
-		emu = x86::Emu::getInstance();
+		emu = x86::Emulator::getInstance();
 		break;
 
 	case EM_ARM:
 
-		emu = ARM::Emu::getInstance();
+		emu = ARM::Emulator::getInstance();
 		break;
 
 	case EM_MIPS:
 
-		emu = MIPS::Emu::getInstance();
+		emu = MIPS::Emulator::getInstance();
 		break;
 
 	default:
@@ -465,23 +465,23 @@ int MainProgram(int argc, char **argv)
 	RegisterOptions();
 	HSA::Asm::RegisterOptions();
 	HSA::Driver::RegisterOptions();
-	HSA::Emu::RegisterOptions();
+	HSA::Emulator::RegisterOptions();
 	Kepler::Asm::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
-	Kepler::Emu::RegisterOptions();
+	Kepler::Emulator::RegisterOptions();
 	mem::MMU::RegisterOptions();
 	mem::Manager::RegisterOptions();
 	MIPS::Asm::RegisterOptions();
-	MIPS::Emu::RegisterOptions();
+	MIPS::Emulator::RegisterOptions();
 	SI::Driver::RegisterOptions();
 	x86::Asm::RegisterOptions();
-	x86::Emu::RegisterOptions();
+	x86::Emulator::RegisterOptions();
 	x86::Timing::RegisterOptions();
 	mem::System::RegisterOptions();
 	dram::System::RegisterOptions();
 	net::System::RegisterOptions();
 	ARM::Asm::RegisterOptions();
-	ARM::Emu::RegisterOptions();
+	ARM::Emulator::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
 	// command-line option was not recognized.
@@ -492,23 +492,23 @@ int MainProgram(int argc, char **argv)
 	ProcessOptions();
 	HSA::Asm::ProcessOptions();
 	HSA::Driver::ProcessOptions();
-	HSA::Emu::ProcessOptions();
+	HSA::Emulator::ProcessOptions();
 	Kepler::Asm::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
-	Kepler::Emu::ProcessOptions();
+	Kepler::Emulator::ProcessOptions();
 	mem::MMU::ProcessOptions();
 	mem::Manager::ProcessOptions();
 	MIPS::Asm::ProcessOptions();
-	MIPS::Emu::ProcessOptions();
+	MIPS::Emulator::ProcessOptions();
 	SI::Driver::ProcessOptions();
 	x86::Asm::ProcessOptions();
-	x86::Emu::ProcessOptions();
+	x86::Emulator::ProcessOptions();
 	x86::Timing::ProcessOptions();
 	mem::System::ProcessOptions();
 	dram::System::ProcessOptions();
 	net::System::ProcessOptions();
 	ARM::Asm::ProcessOptions();
-	ARM::Emu::ProcessOptions();
+	ARM::Emulator::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers
 	// FIXME - This initialization should be lazy, meaning that a particular

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_COMMON_EMU_H
-#define ARCH_COMMON_EMU_H
+#ifndef ARCH_COMMON_EMULATOR_H
+#define ARCH_COMMON_EMULATOR_H
 
 #include <cstdlib>
 #include <string>
@@ -31,7 +31,7 @@
 namespace comm
 {
 
-class Emu
+class Emulator
 {
 	// Name of emulator
 	std::string name;
@@ -49,7 +49,7 @@ protected:
 
 public:
 	/// Constructor
-	Emu(const std::string &name);
+	Emulator(const std::string &name);
 
 	/// Return the emulator name
 	const std::string &getName() const { return name; }

@@ -1976,7 +1976,7 @@ void WorkItem::Inst_LD_Aux()
 		address += offset;
 
 		// Get buffer in host
-		char *host_buffer = Emu::getInstance()->getMemory()->getBuffer(
+		char *host_buffer = Emulator::getInstance()->getMemory()->getBuffer(
 				address, sizeof(T), mem::Memory::AccessRead);
 
 		// Move value from register or immediate into memory
@@ -2072,7 +2072,7 @@ void WorkItem::Inst_ST_Aux()
 		address += offset;
 
 		// Get buffer in host
-		char *host_buffer = Emu::getInstance()->getMemory()->getBuffer(
+		char *host_buffer = Emulator::getInstance()->getMemory()->getBuffer(
 				address, sizeof(T), mem::Memory::AccessWrite);
 
 		// Move value from register or immediate into memory
@@ -2384,8 +2384,8 @@ void WorkItem::ExecuteInst_CALL()
 	stack.push_back(std::move(new_frame));
 
 	// Dump backtrace information for debugging purpose
-	if (Emu::isa_debug)
-		Backtrace(Emu::isa_debug);
+	if (Emulator::isa_debug)
+		Backtrace(Emulator::isa_debug);
 
 }
 
@@ -2423,8 +2423,8 @@ void WorkItem::ExecuteInst_RET()
 {
 	// Return the function
 	ReturnFunction();
-	if (Emu::isa_debug)
-		Backtrace(Emu::isa_debug);
+	if (Emulator::isa_debug)
+		Backtrace(Emulator::isa_debug);
 }
 
 

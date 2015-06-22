@@ -38,7 +38,7 @@ WorkGroup::WorkGroup(Grid *grid,
 	this->group_id_z = group_id_z;
 
 	// Set the group segment memory manager
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	group_segment.reset(new SegmentManager(memory, group_segment_size));
 }
 

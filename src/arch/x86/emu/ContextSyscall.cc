@@ -2226,7 +2226,7 @@ int Context::ExecuteSyscall_readlink()
 	path_ptr = regs.getEbx();
 	buf = regs.getEcx();
 	bufsz = regs.getEdx();
-	Emu::syscall_debug << misc::fmt("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n",
+	Emulator::syscall_debug << misc::fmt("  path_ptr=0x%x, buf=0x%x, bufsz=%d\n",
 				path_ptr, buf, bufsz);
 
 	/* Read path */
@@ -2237,7 +2237,7 @@ int Context::ExecuteSyscall_readlink()
 
 	/* Get full path */
 	full_path = getFullPath(path);
-	Emu::syscall_debug << misc::fmt("  path='%s', full_path='%s'\n",
+	Emulator::syscall_debug << misc::fmt("  path='%s', full_path='%s'\n",
 				path.c_str(), full_path.c_str());
 
 	/* Special file '/proc/self/exe' intercepted */
@@ -2262,7 +2262,7 @@ int Context::ExecuteSyscall_readlink()
 	/* Copy name to guest memory. The string is not null-terminated. */
 	dest_size = std::min((unsigned int)dest_path.length(), bufsz);
 	memory->Write(buf, dest_size, dest_path.c_str());
-	Emu::syscall_debug << misc::fmt("  dest_path='%s'\n", dest_path.c_str());
+	Emulator::syscall_debug << misc::fmt("  dest_path='%s'\n", dest_path.c_str());
 
 	/* Return number of bytes copied */
 	return dest_size;
@@ -4916,7 +4916,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 	guest->ctime = host->st_ctime;
 	guest->ino = host->st_ino;
 
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	emu->syscall_debug << misc::fmt("  stat64 structure:\n");
 	emu->syscall_debug << misc::fmt("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
 		guest->dev, guest->ino, guest->mode, guest->nlink);

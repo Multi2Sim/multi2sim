@@ -221,7 +221,7 @@ int Driver::CallIterateAgents(comm::Context *context,
 			<unsigned long long>(12, memory, args_ptr));
 
 	// Get virtual machine setup
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	Component *component = emu->getNextComponent(0);
 
 	// No component to iterate anymore
@@ -325,7 +325,7 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 			getArgumentValue<unsigned long long>(4, memory, 
 					args_ptr);
 	// Try to find the agent
-	Component *component = Emu::getInstance()->getComponent(agent_handler);
+	Component *component = Emulator::getInstance()->getComponent(agent_handler);
 	if (component == nullptr)
 	{
 		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
@@ -550,7 +550,7 @@ int Driver::CallQueueCreate(comm::Context *context,
 				queue is not supported");
 
 	// Retrieve component
-	Component *component = Emu::getInstance()->getComponent(agent);
+	Component *component = Emulator::getInstance()->getComponent(agent);
 	if (component == nullptr)
 	{
 		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
@@ -1025,7 +1025,7 @@ int Driver::CallMemoryAllocate(comm::Context *context,
 		return 0;
 
 	// Allocate memory
-	mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+	mem::Manager *manager = Emulator::getInstance()->getMemoryManager();
 	unsigned address = manager->Allocate(size);
 
 	// Write back
@@ -1061,7 +1061,7 @@ int Driver::CallSignalCreate(comm::Context *context,
 			memory, args_ptr);
 
 	// Create signal
-	Signal *new_signal = Emu::getInstance()->CreateSignal(initial_value);
+	Signal *new_signal = Emulator::getInstance()->CreateSignal(initial_value);
 
 	// Write back
 	memory->Write(signal, 8, (char *)&new_signal);
@@ -1728,9 +1728,9 @@ int Driver::CallInitFromX86(comm::Context *context,
 	// This function is designed only to be called from the host.
 	// args_ptr is the process id of the context running the host
 	// program.
-	x86::Emu *x86_emu = x86::Emu::getInstance();
+	x86::Emulator *x86_emu = x86::Emulator::getInstance();
 	x86::Context *host_context = x86_emu->getContext(args_ptr);
-	Emu::getInstance()->setMemory(host_context->__getMemSharedPtr());
+	Emulator::getInstance()->setMemory(host_context->__getMemSharedPtr());
 
 	return 0;
 }
@@ -1753,7 +1753,7 @@ int Driver::CallNextAgent(comm::Context *context,
 		(8, memory, args_ptr);
 
 	// Get next component
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	Component *component = emu->getNextComponent(next_agent_id);
 
 	// If no more component,
@@ -1853,7 +1853,7 @@ int Driver::CallPrintString(comm::Context *context,
 
 	unsigned long long addr = getArgumentValue<unsigned long long>
 			(0, memory, args_ptr);
-	char *string = Emu::getInstance()->getMemory()->getBuffer(addr, 
+	char *string = Emulator::getInstance()->getMemory()->getBuffer(addr, 
 			2, mem::Memory::AccessWrite);
 					
 	std::cout << misc::fmt("%s", string);
@@ -1871,7 +1871,7 @@ int Driver::CallStringToU32(comm::Context *context,
 
 	unsigned long long addr = getArgumentValue<unsigned long long>
 			(4, memory, args_ptr);
-	char *buf = Emu::getInstance()->getMemory()->getBuffer(addr, 
+	char *buf = Emulator::getInstance()->getMemory()->getBuffer(addr, 
 			2, mem::Memory::AccessWrite);
 	std::string str(buf);
 	

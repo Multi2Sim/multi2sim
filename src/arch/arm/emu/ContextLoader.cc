@@ -136,14 +136,14 @@ void Context::LoadProgramHeaders()
 
 void Context::LoadELFSections(ELFReader::File *binary)
 {
-	Emu::loader_debug << "\nLoading ELF sections\n";
+	Emulator::loader_debug << "\nLoading ELF sections\n";
 	loader->bottom = 0xffffffff;
 	for (auto &section : binary->getSections())
 	{
 		// Debug
 		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
 		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
-		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
+		Emulator::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
 				"addr=0x%x, size=%u, flags=%s\n",
 				section->getName().c_str(), section->getOffset(),
 				section->getAddr(), section->getSize(),
@@ -339,7 +339,7 @@ void Context::LoadBinary()
 				O_CREAT | O_APPEND | O_TRUNC | O_WRONLY,
 				0660);
 		if (f < 0)
-			throw Emu::Error(misc::fmt("[%s] Cannot open standard "
+			throw Emulator::Error(misc::fmt("[%s] Cannot open standard "
 					"output", loader->stdout_file_name.c_str()));
 
 		// Replace file descriptors 1 and 2

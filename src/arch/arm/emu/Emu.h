@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_ARM_EMU_EMU_H
-#define ARCH_ARM_EMU_EMU_H
+#ifndef ARCH_ARM_EMULATOR_EMULATOR_H
+#define ARCH_ARM_EMULATOR_EMULATOR_H
 
 
 #include <pthread.h>
@@ -37,7 +37,7 @@ namespace ARM
 class Context;
 
 // ARM Emulator
-class Emu : public comm::Emu
+class Emulator : public comm::Emulator
 {
 	//
 	// Configuration options
@@ -50,7 +50,7 @@ class Emu : public comm::Emu
 	static std::string syscall_debug_file;
 
 	// Unique instance of the singleton
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// See setScheduleSignal()
 	bool schedule_signal;
@@ -68,15 +68,15 @@ class Emu : public comm::Emu
 	int address_space_index;
 
 	// Private constructor for singleton
-	Emu();
+	Emulator();
 
-	// Schedule next call to Emu::ProcessEvents(). The call will only be
+	// Schedule next call to ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
 	// accessed thread-safely locking the mutex.
 	bool process_events_force;
 
 	// Process ID to be assigned next. Process IDs are assigned in
-	// increasing order, using function Emu::getPid()
+	// increasing order, using function getPid()
 	int pid;
 
 	// Emulator mutex, used to access shared variables between main program
@@ -107,7 +107,7 @@ public:
 	};
 
 	/// Return unique instance of the ARM emulator singleton.
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Create a new context associated with the emulator. The context is
 	/// inserted in the main emulator context list. Its state is set to
