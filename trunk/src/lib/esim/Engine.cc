@@ -107,6 +107,10 @@ void Engine::Reset()
 	// Empty end frames
 	while (!end_frames.empty())
 		end_frames.pop();
+
+	// Reset frequency domains
+	frequency_domains.clear();
+	fastest_frequency = 0;
 }
 
 
@@ -296,7 +300,6 @@ FrequencyDomain *Engine::RegisterFrequencyDomain(const std::string &name,
 	// Return created frequency domain
 	return &frequency_domains.back();
 }
-
 
 void Engine::UpdateFastestFrequency()
 {
@@ -515,4 +518,5 @@ void Engine::ProcessAllEvents()
 
 
 }  // namespace esim
+
 
