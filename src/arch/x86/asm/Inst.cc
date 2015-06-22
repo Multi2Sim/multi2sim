@@ -123,7 +123,7 @@ static const unsigned inst_ea_scale_table[4] = { 1, 2, 4, 8 };
 
 Inst::Inst()
 {
-	as = Asm::getInstance();
+	disassembler = Disassembler::getInstance();
 	Clear();
 }
 
@@ -191,7 +191,7 @@ void Inst::Dump(std::ostream &os) const
 	assert(decoded);
 
 	// Get instruction information
-	const InstInfo *info = as->getInstInfo(opcode);
+	const InstInfo *info = disassembler->getInstInfo(opcode);
 	bool name_printed = false;
 	const char *fmt = info->fmt;
 	const char *fmt_first_arg = index(fmt, '_');
@@ -202,22 +202,22 @@ void Inst::Dump(std::ostream &os) const
 	{
 		// Check tokens
 		int length = 0;
-		if (comm::Asm::isToken(fmt, "r8", length))
+		if (comm::Disassembler::isToken(fmt, "r8", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAl);
 		}
-		else if (comm::Asm::isToken(fmt, "r16", length))
+		else if (comm::Disassembler::isToken(fmt, "r16", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegAx);
 		}
-		else if (comm::Asm::isToken(fmt, "r32", length))
+		else if (comm::Disassembler::isToken(fmt, "r32", length))
 		{
 			os << inst_reg_map.MapValue(modrm_reg
 					+ InstRegEax);
 		}
-		else if (comm::Asm::isToken(fmt, "rm8", length))
+		else if (comm::Disassembler::isToken(fmt, "rm8", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -228,7 +228,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "rm16", length))
+		else if (comm::Disassembler::isToken(fmt, "rm16", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -239,7 +239,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "rm32", length))
+		else if (comm::Disassembler::isToken(fmt, "rm32", length))
 		{
 			if (modrm_mod == 0x03)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -250,7 +250,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "r32m8", length))
+		else if (comm::Disassembler::isToken(fmt, "r32m8", length))
 		{
 			if (modrm_mod == 3)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -261,7 +261,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "r32m16", length))
+		else if (comm::Disassembler::isToken(fmt, "r32m16", length))
 		{
 			if (modrm_mod == 3)
 				os << inst_reg_map.MapValue(modrm_rm
@@ -272,101 +272,101 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "m", length))
+		else if (comm::Disassembler::isToken(fmt, "m", length))
 		{
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "imm8", length))
+		else if (comm::Disassembler::isToken(fmt, "imm8", length))
 		{
 			os << misc::fmt("0x%x", imm.b);
 		}
-		else if (comm::Asm::isToken(fmt, "imm16", length))
+		else if (comm::Disassembler::isToken(fmt, "imm16", length))
 		{
 			os << misc::fmt("0x%x", imm.w);
 		}
-		else if (comm::Asm::isToken(fmt, "imm32", length))
+		else if (comm::Disassembler::isToken(fmt, "imm32", length))
 		{
 			os << misc::fmt("0x%x", imm.d);
 		}
-		else if (comm::Asm::isToken(fmt, "rel8", length))
+		else if (comm::Disassembler::isToken(fmt, "rel8", length))
 		{
 			os << misc::fmt("%x", (char) imm.b + eip + size);
 		}
-		else if (comm::Asm::isToken(fmt, "rel16", length))
+		else if (comm::Disassembler::isToken(fmt, "rel16", length))
 		{
 			os << misc::fmt("%x", (short) imm.w + eip + size);
 		}
-		else if (comm::Asm::isToken(fmt, "rel32", length))
+		else if (comm::Disassembler::isToken(fmt, "rel32", length))
 		{
 			os << misc::fmt("%x", imm.d + eip + size);
 		}
-		else if (comm::Asm::isToken(fmt, "moffs8", length))
+		else if (comm::Disassembler::isToken(fmt, "moffs8", length))
 		{
 			DumpMoffsAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "moffs16", length))
+		else if (comm::Disassembler::isToken(fmt, "moffs16", length))
 		{
 			DumpMoffsAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "moffs32", length))
+		else if (comm::Disassembler::isToken(fmt, "moffs32", length))
 		{
 			DumpMoffsAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m8", length))
+		else if (comm::Disassembler::isToken(fmt, "m8", length))
 		{
 			os << "BYTE PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m16", length))
+		else if (comm::Disassembler::isToken(fmt, "m16", length))
 		{
 			os << "WORD PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m32", length))
+		else if (comm::Disassembler::isToken(fmt, "m32", length))
 		{
 			os << "DWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m64", length))
+		else if (comm::Disassembler::isToken(fmt, "m64", length))
 		{
 			os << "QWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m80", length))
+		else if (comm::Disassembler::isToken(fmt, "m80", length))
 		{
 			os << "TBYTE PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "m128", length))
+		else if (comm::Disassembler::isToken(fmt, "m128", length))
 		{
 			os << "XMMWORD PTR ";
 			DumpAddr(os);
 		}
-		else if (comm::Asm::isToken(fmt, "st0", length))
+		else if (comm::Disassembler::isToken(fmt, "st0", length))
 		{
 			os << "st";
 		}
-		else if (comm::Asm::isToken(fmt, "sti", length))
+		else if (comm::Disassembler::isToken(fmt, "sti", length))
 		{
 			os << misc::fmt("st(%d)", opindex);
 		}
-		else if (comm::Asm::isToken(fmt, "ir8", length))
+		else if (comm::Disassembler::isToken(fmt, "ir8", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegAl);
 		}
-		else if (comm::Asm::isToken(fmt, "ir16", length))
+		else if (comm::Disassembler::isToken(fmt, "ir16", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegAx);
 		}
-		else if (comm::Asm::isToken(fmt, "ir32", length))
+		else if (comm::Disassembler::isToken(fmt, "ir32", length))
 		{
 			os << inst_reg_map.MapValue(opindex + InstRegEax);
 		}
-		else if (comm::Asm::isToken(fmt, "sreg", length))
+		else if (comm::Disassembler::isToken(fmt, "sreg", length))
 		{
 			os << inst_reg_map.MapValue(reg + InstRegEs);
 		}
-		else if (comm::Asm::isToken(fmt, "xmmm32", length))
+		else if (comm::Disassembler::isToken(fmt, "xmmm32", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -376,7 +376,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "xmmm64", length))
+		else if (comm::Disassembler::isToken(fmt, "xmmm64", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -386,7 +386,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "xmmm128", length))
+		else if (comm::Disassembler::isToken(fmt, "xmmm128", length))
 		{
 			if (modrm_mod == 3)
 				os << "xmm" << (unsigned) modrm_rm;
@@ -396,7 +396,7 @@ void Inst::Dump(std::ostream &os) const
 				DumpAddr(os);
 			}
 		}
-		else if (comm::Asm::isToken(fmt, "xmm", length))
+		else if (comm::Disassembler::isToken(fmt, "xmm", length))
 		{
 			os << "xmm" << (unsigned) modrm_reg;
 		}
@@ -493,7 +493,7 @@ void Inst::Decode(const char *buffer, unsigned eip)
 	addr_size = 4;
 
 	// Prefixes
-	while (as->isPrefix(*buffer))
+	while (disassembler->isPrefix(*buffer))
 	{
 		switch ((unsigned char) *buffer)
 		{
@@ -546,7 +546,7 @@ void Inst::Decode(const char *buffer, unsigned eip)
 
 		default:
 			
-			throw Asm::Error(misc::fmt("Invalid prefix (0x%x)",
+			throw Disassembler::Error(misc::fmt("Invalid prefix (0x%x)",
 					(unsigned char) *buffer));
 
 		}
@@ -563,12 +563,12 @@ void Inst::Decode(const char *buffer, unsigned eip)
 	int index;
 	if (buf8 == 0x0f)
 	{
-		table = as->getDecTable0f();
+		table = disassembler->getDecTable0f();
 		index = * (unsigned char *) (buffer + 1);
 	}
 	else
 	{
-		table = as->getDecTable();
+		table = disassembler->getDecTable();
 		index = buf8;
 	}
 

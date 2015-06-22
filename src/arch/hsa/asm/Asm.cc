@@ -27,13 +27,13 @@ namespace HSA
 {
 
 // File to disassembler, set by user
-std::string Asm::path;
+std::string Disassembler::path;
 
 // Singleton instance
-std::unique_ptr<Asm> Asm::instance;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
 
-void Asm::RegisterOptions()
+void Disassembler::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -51,31 +51,31 @@ void Asm::RegisterOptions()
 }
 
 
-void Asm::ProcessOptions()
+void Disassembler::ProcessOptions()
 {
 	// Run hsa disassembler
 	if (!path.empty())
 	{
-		Asm *as = Asm::getInstance();
-		as->DisassembleBinary(path);
+		Disassembler *disassembler = Disassembler::getInstance();
+		disassembler->DisassembleBinary(path);
 		exit(0);
 	}
 }
 
 
-Asm *Asm::getInstance()
+Disassembler *Disassembler::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Asm());
+	instance.reset(new Disassembler());
 	return instance.get();
 }
 
 
-void Asm::DisassembleBinary(const std::string &path) const
+void Disassembler::DisassembleBinary(const std::string &path) const
 {
 	BrigFile brig_file;
 	brig_file.LoadFileByPath(path);

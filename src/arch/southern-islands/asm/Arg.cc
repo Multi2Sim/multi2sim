@@ -176,7 +176,7 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 
 	/* Check for 16 byte alignment */
 	if (((constant_offset - offset) < 16) && index)
-		throw Asm::Error(misc::fmt("16 byte alignment not maintained "
+		throw Disassembler::Error(misc::fmt("16 byte alignment not maintained "
 				"in argument: %s - Expected offset of %d or "
 				"higher",
 				getName().c_str(),
@@ -224,7 +224,7 @@ void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	}
 	else
 	{
-		throw Asm::Error("Invalid number of elements in argument " +
+		throw Disassembler::Error("Invalid number of elements in argument " +
 				getName());
 	}
 
@@ -258,7 +258,7 @@ void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 	
 	/* Check for 16 byte alignment */
 	if (((constant_offset - offset) < 16) && index)
-		throw Asm::Error(misc::fmt("16 byte alignment not maintained "
+		throw Disassembler::Error(misc::fmt("16 byte alignment not maintained "
 				"in argument: %s - Expected offset of %d or "
 				"higher",
 				getName().c_str(),
@@ -301,7 +301,7 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	}
 	else
 	{
-		throw Asm::Error("Invalid number of elements in argument "
+		throw Disassembler::Error("Invalid number of elements in argument "
 				+ getName());
 	}
 

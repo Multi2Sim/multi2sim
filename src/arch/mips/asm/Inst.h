@@ -26,7 +26,7 @@ namespace MIPS
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 
 
 enum InstOpcode
@@ -137,7 +137,7 @@ union InstBytes
 class Inst
 {
 	// Disassembler
-	Asm *as;
+	Disassembler *disassembler;
 
 	// Decoded instruction information
 	InstInfo *info;

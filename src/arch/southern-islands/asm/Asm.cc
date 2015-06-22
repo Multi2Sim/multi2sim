@@ -33,9 +33,9 @@ namespace SI
 {
 
 // Singleton                                                                     
-std::unique_ptr<Asm> Asm::instance;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
-Asm::Asm()
+Disassembler::Disassembler()
 {
 	InstInfo *info;
 	int i;
@@ -183,18 +183,18 @@ Asm::Asm()
 	}
 }
 
-Asm *Asm::getInstance()                                                          
+Disassembler *Disassembler::getInstance()                                                          
 {                                                                                
 	// Instance already exists                                               
 	if (instance.get())                                                      
 		return instance.get();                                           
 
 	// Create instance                                                       
-	instance.reset(new Asm());                                               
+	instance.reset(new Disassembler());                                               
 	return instance.get();                                                   
 } 
 
-void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
+void Disassembler::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 {
 	std::stringstream ss;
 
@@ -211,7 +211,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 	InstFormat format;
 	InstBytes *bytes;
 
-	Inst inst(this);
+	Inst inst;
 
 	// Read through instructions to find labels.
 	while (buffer < original_buffer + size)
@@ -311,7 +311,7 @@ void Asm::DisassembleBuffer(std::ostream& os, const char *buffer, int size)
 	}
 }
 
-void Asm::DisassembleBinary(std::string path)
+void Disassembler::DisassembleBinary(std::string path)
 {
 	// Load ELF file
 	ELFReader::File file(path);

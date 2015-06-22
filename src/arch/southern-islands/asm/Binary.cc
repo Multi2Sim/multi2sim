@@ -428,13 +428,13 @@ void Binary::ReadNote(BinaryDictEntry *dict_entry, std::istringstream& ss,
 	BinaryNoteHeader *header = (BinaryNoteHeader *) (buffer + ss.tellg());
 	ss.seekg(sizeof(BinaryNoteHeader), std::ios_base::cur);
 	if (!ss)
-		throw Asm::Error(name + ": Cannot decode note header");
+		throw Disassembler::Error(name + ": Cannot decode note header");
 	
 	// Read note description (payload)
 	const char *desc = buffer + ss.tellg();
 	ss.seekg(header->descsz, std::ios_base::cur);
 	if (!ss)
-		throw Asm::Error(name + ": Cannot decode note description");
+		throw Disassembler::Error(name + ": Cannot decode note description");
 
 	// Debug
 	const char *note_str = binary_note_map.MapValue(header->type);
@@ -762,7 +762,7 @@ void Binary::ReadDictionary()
 		ph = NULL;
 	}
 	if (!ph)
-		throw Asm::Error(name + ": No encoding dictionary");
+		throw Disassembler::Error(name + ": No encoding dictionary");
 	debug << "Encoding dictionary found in program header "
 			<< ph->getIndex() << "\n";
 	
@@ -826,7 +826,7 @@ void Binary::ReadDictionary()
 		}
 		else
 	 	{
-			throw Asm::Error(misc::fmt("Unknown machine number "
+			throw Disassembler::Error(misc::fmt("Unknown machine number "
 					"(%d)", dict_entry->header->d_machine));
 		}
 	}
@@ -873,7 +873,7 @@ void Binary::ReadSegments()
 			if (ph->getType() == PT_NOTE)
 			{
 				if (dict_entry->pt_note_segment)
-					throw Asm::Error("More than one "
+					throw Disassembler::Error("More than one "
 							"PT_NOTE segment");
 				dict_entry->pt_note_segment = ph;
 			}
@@ -882,7 +882,7 @@ void Binary::ReadSegments()
 			if (ph->getType() == PT_LOAD)
 			{
 				if (dict_entry->pt_load_segment)
-					throw Asm::Error("More than one "
+					throw Disassembler::Error("More than one "
 							"PT_LOAD segment");
 				dict_entry->pt_load_segment = ph;
 			}
@@ -890,9 +890,9 @@ void Binary::ReadSegments()
 
 		// Check that both PT_NOTE and PT_LOAD segments were found
 		if (!dict_entry->pt_note_segment)
-			throw Asm::Error("No PT_NOTE segment");
+			throw Disassembler::Error("No PT_NOTE segment");
 		if (!dict_entry->pt_load_segment)
-			throw Asm::Error("No PT_LOAD segment");
+			throw Disassembler::Error("No PT_LOAD segment");
 		debug << "  Dict. entry " << i
 				<< ": PT_NOTE segment: "
 				<< "offset = 0x" << std::hex
@@ -940,38 +940,38 @@ void Binary::ReadSections()
 			if (section->getName() == ".text")
 			{
 				if (dict_entry->text_section)
-					throw Asm::Error("Duplicated .text "
+					throw Disassembler::Error("Duplicated .text "
 							"section");
 				dict_entry->text_section = section;
 			}
 			else if (section->getName() == ".data")
 			{
 				if (dict_entry->data_section)
-					throw Asm::Error("Duplicated .data "
+					throw Disassembler::Error("Duplicated .data "
 							"section");
 				dict_entry->data_section = section;
 				if (section->getSize() != 4736)
-					throw Asm::Error("Section .data is not "
+					throw Disassembler::Error("Section .data is not "
 							"4736 bytes");
 				dict_entry->consts = (BinaryDictConsts *) section->getBuffer();
 			}
 			else if (section->getName() == ".symtab")
 			{
 				if (dict_entry->symtab_section)
-					throw Asm::Error("Duplicated .symtab "
+					throw Disassembler::Error("Duplicated .symtab "
 							"section");
 				dict_entry->symtab_section = section;
 			}
 			else if (section->getName() == ".strtab")
 			{
 				if (dict_entry->strtab_section)
-					throw Asm::Error("Duplicated .strtab "
+					throw Disassembler::Error("Duplicated .strtab "
 							"section");
 				dict_entry->strtab_section = section;
 			}
 			else
 			{
-				throw Asm::Error("Unrecognized section: " +
+				throw Disassembler::Error("Unrecognized section: " +
 						section->getName());
 			}
 		}
@@ -981,7 +981,7 @@ void Binary::ReadSections()
 				|| !dict_entry->data_section
 				|| !dict_entry->symtab_section
 				|| !dict_entry->strtab_section)
-			throw Asm::Error("One of these sections not found: "
+			throw Disassembler::Error("One of these sections not found: "
 					".text .data .symtab .strtab");
 	}
 }
@@ -998,7 +998,7 @@ Binary::Binary(const char *buffer, unsigned int size, std::string name)
 	si_dict_entry = NULL;
 	ReadDictionary();
 	if (!si_dict_entry)
-		throw Asm::Error(name +
+		throw Disassembler::Error(name +
 	": No encoding dictionary entry for Southern Islands.\n\n"
 	"\tThe OpenCL kernel binary that your application is trying to load "
 	"does not contain Southern Islands assembly code. Please make " 

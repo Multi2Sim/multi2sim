@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_ARM_ASM_ASM_H
-#define ARCH_ARM_ASM_ASM_H
+#ifndef ARCH_ARM_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_ARM_DISASSEMBLER_DISASSEMBLER_H
 
 
 #include <iostream>
@@ -35,86 +35,28 @@
 namespace ARM
 {
 
-/// Disassembly Mode 
-enum AsmDisassemblyMode
-{
-	AsmDisassemblyModeArm = 1,
-	AsmDisassemblyModeThumb
-};
-
-
-/// Shift operators 
-enum AsmShiftOperator
-{
-	AsmShiftOperatorLsl = 0,
-	AsmShiftOperatorLsr,
-	AsmShiftOperatorAsr,
-	AsmShiftOperatorRor
-};
-
-
-/// Condition Fields 
-enum AsmConditionCodes
-{
-	AsmConditionCodesEQ = 0, // Equal 
-	AsmConditionCodesNE,	// Not Equal 
-	AsmConditionCodesCS,	// Unsigned higher 
-	AsmConditionCodesCC,	// Unsigned Lower 
-	AsmConditionCodesMI,	// Negative 
-	AsmConditionCodesPL,	// Positive or Zero 
-	AsmConditionCodesVS,	// Overflow 
-	AsmConditionCodesVC,	// No Overflow 
-	AsmConditionCodesHI,	// Unsigned Higher 
-	AsmConditionCodesLS,	// Unsigned Lower 
-	AsmConditionCodesGE,	// Greater or Equal 
-	AsmConditionCodesLT,	// Less Than 
-	AsmConditionCodesGT,	// Greater than 
-	AsmConditionCodesLE,	// Less than or equal 
-	AsmConditionCodesAL	// Always 
-};
-
-
-/// User register
-enum AsmUserRegisters
-{
-	AsmUserRegistersR0 = 0,
-	AsmUserRegistersR1,
-	AsmUserRegistersR2,
-	AsmUserRegistersR3,
-	AsmUserRegistersR4,
-	AsmUserRegistersR5,
-	AsmUserRegistersR6,
-	AsmUserRegistersR7,
-	AsmUserRegistersR8,
-	AsmUserRegistersR9,
-	AsmUserRegistersR10,
-	AsmUserRegistersR11,
-	AsmUserRegistersR12,
-	AsmUserRegistersR13,	// Stack Pointer sp 
-	AsmUserRegistersR14,	// Link register lr 
-	AsmUserRegistersR15	// Program Counter pc 
-};
-
-
-/// PSR register
-enum AsmPsrRegisters
-{
-	AsmPsrRegistersCPSR = 0,
-	AsmPsrRegistersSPSR
-};
-
-
 /// ARM disassembler
-class Asm : public comm::Asm
+class Disassembler : public comm::Disassembler
 {
+public:
+	
+	/// Disassembly Mode
+	enum DisassemblyMode
+	{
+		DisassemblyModeArm = 1,
+		DisassemblyModeThumb
+	};
+
+private:
+
 	// File to disassemble
 	static std::string path;
 
 	// Unique instance of the singleton
-	static std::unique_ptr<Asm> instance;
+	static std::unique_ptr<Disassembler> instance;
 
 	// Private constructor for singleton
-	Asm();
+	Disassembler();
 
 public:
 
@@ -257,10 +199,10 @@ public:
 	InstThumb32Info *dec_table_thumb32_mov1;
 
 	/// Return an instance of the singleton
-	static Asm *getInstance();
+	static Disassembler *getInstance();
 
 	/// Destructor
-	~Asm();
+	~Disassembler();
 
 	/// Thumb Disassembler Functions
 	int TestThumb32(const char *inst_ptr);
@@ -276,17 +218,27 @@ public:
 		int op4 , int op5 , int op6, InstThumb16Opcode inst_name);
 
 	/// ELF file processing function
-	void ElfSymbolFunc(const ELFReader::File &file, std::ostream &os,
-		unsigned int inst_addr, AsmDisassemblyMode disasm_mode);
-	unsigned int ElfDumpWordSymbol(const ELFReader::File &file, std::ostream &os,
-			unsigned int inst_addr, unsigned int *inst_ptr);
-	unsigned int ElfDumpThumbWordSymbol(const ELFReader::File &file, std::ostream &os,
-			unsigned int inst_addr, unsigned int *inst_ptr);
+	void ElfSymbolFunc(const ELFReader::File &file,
+			std::ostream &os,
+			unsigned int inst_addr,
+			DisassemblyMode disasm_mode);
+
+	unsigned int ElfDumpWordSymbol(const ELFReader::File &file,
+			std::ostream &os,
+			unsigned int inst_addr,
+			unsigned int *inst_ptr);
+
+	unsigned int ElfDumpThumbWordSymbol(const ELFReader::File &file,
+			std::ostream &os,
+			unsigned int inst_addr,
+			unsigned int *inst_ptr);
+
 	void ElfSymbolListCreate(const ELFReader::File &file,
 			std::vector<ELFReader::Symbol*> &symbol_list);
 
 	/// Disasseble Mode
-	AsmDisassemblyMode DissassembleMode(const std::vector<ELFReader::Symbol*> &symbol_list,
+	DisassemblyMode DissassembleMode(
+			const std::vector<ELFReader::Symbol*> &symbol_list,
 			unsigned int addr);
 
 	/// Disassembler

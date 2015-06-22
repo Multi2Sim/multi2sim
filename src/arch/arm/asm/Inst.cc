@@ -36,7 +36,7 @@ namespace ARM
 Inst::Inst()
 {
 	// Initialize
-	this->as = Asm::getInstance();
+	this->disassembler = Disassembler::getInstance();
 	addr = 0;
 	info = NULL;
 	info_16 = NULL;
@@ -91,22 +91,22 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (AsmShiftOperatorLsl):
+			case (ShiftOperatorLsl):
 				os << misc::fmt("[r%d, r%d, lsl #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorLsr):
+			case (ShiftOperatorLsr):
 				os << misc::fmt("[r%d, r%d, lsr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorAsr):
+			case (ShiftOperatorAsr):
 				os << misc::fmt("[r%d, r%d, asr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorRor):
+			case (ShiftOperatorRor):
 				os << misc::fmt("[r%d, r%d, ror #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
@@ -116,22 +116,22 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (AsmShiftOperatorLsl):
+			case (ShiftOperatorLsl):
 				os << misc::fmt("[r%d, -r%d, lsl #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorLsr):
+			case (ShiftOperatorLsr):
 				os << misc::fmt("[r%d, -r%d, lsr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorAsr):
+			case (ShiftOperatorAsr):
 				os << misc::fmt("[r%d, -r%d, asr #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
 
-			case (AsmShiftOperatorRor):
+			case (ShiftOperatorRor):
 				os << misc::fmt("[r%d, -r%d, ror #%d]",
 					rn, rm, ((shift >> 3) & 0x0000001f));
 			break;
@@ -285,16 +285,16 @@ void Inst::DumpRd(std::ostream &os)
 
 	switch (rd)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -355,7 +355,7 @@ void Inst::DumpRn(std::ostream &os)
 
 	switch (rn)
 	{
-	case (AsmUserRegistersR12):
+	case (UserRegistersR12):
 
 		if (cat == InstCategoryVfp)
 		{
@@ -368,7 +368,7 @@ void Inst::DumpRn(std::ostream &os)
 			os << misc::fmt("ip");
 		break;
 
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		if (cat != InstCategoryBdtr)
 		{
@@ -380,12 +380,12 @@ void Inst::DumpRn(std::ostream &os)
 		}
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -439,17 +439,17 @@ void Inst::DumpRm(std::ostream &os)
 
 	switch (rm)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -503,17 +503,17 @@ void Inst::DumpRs(std::ostream &os)
 
 	switch (rs)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -583,22 +583,22 @@ void Inst::DumpOp2(std::ostream &os)
 			rs = (shift >> 4);
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (AsmShiftOperatorLsl):
+			case (ShiftOperatorLsl):
 
 				os << misc::fmt("r%d , lsl r%d", rm, rs);
 				break;
 
-			case (AsmShiftOperatorLsr):
+			case (ShiftOperatorLsr):
 
 				os << misc::fmt("r%d , lsr r%d", rm, rs);
 				break;
 
-			case (AsmShiftOperatorAsr):
+			case (ShiftOperatorAsr):
 
 				os << misc::fmt("r%d , asr r%d", rm, rs);
 				break;
 
-			case (AsmShiftOperatorRor):
+			case (ShiftOperatorRor):
 
 				os << misc::fmt("r%d , ror r%d", rm, rs);
 				break;
@@ -609,25 +609,25 @@ void Inst::DumpOp2(std::ostream &os)
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case (AsmShiftOperatorLsl):
+			case (ShiftOperatorLsl):
 
 				os << misc::fmt("r%d , LSL #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 				break;
 
-			case (AsmShiftOperatorLsr):
+			case (ShiftOperatorLsr):
 
 				os << misc::fmt("r%d , LSR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 				break;
 
-			case (AsmShiftOperatorAsr):
+			case (ShiftOperatorAsr):
 
 				os << misc::fmt("r%d , ASR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
 				break;
 
-			case (AsmShiftOperatorRor):
+			case (ShiftOperatorRor):
 
 				os << misc::fmt("r%d , ROR #%d   ;0x%x",
 					rm, ((shift >> 3) & 0x0000001f),((shift >> 3) & 0x0000001f));
@@ -696,77 +696,77 @@ void Inst::DumpCond(std::ostream &os)
 
 	switch (cond)
 	{
-	case (AsmConditionCodesEQ):
+	case (ConditionCodesEQ):
 
 		os << misc::fmt("eq");
 		break;
 
-	case (AsmConditionCodesNE):
+	case (ConditionCodesNE):
 
 		os << misc::fmt("ne");
 		break;
 
-	case (AsmConditionCodesCS):
+	case (ConditionCodesCS):
 
 		os << misc::fmt("cs");
 		break;
 
-	case (AsmConditionCodesCC):
+	case (ConditionCodesCC):
 
 		os << misc::fmt("cc");
 		break;
 
-	case (AsmConditionCodesMI):
+	case (ConditionCodesMI):
 
 		os << misc::fmt("mi");
 		break;
 
-	case (AsmConditionCodesPL):
+	case (ConditionCodesPL):
 
 		os << misc::fmt("pl");
 		break;
 
-	case (AsmConditionCodesVS):
+	case (ConditionCodesVS):
 
 		os << misc::fmt("vs");
 		break;
 
-	case (AsmConditionCodesVC):
+	case (ConditionCodesVC):
 
 		os << misc::fmt("vc");
 		break;
 
-	case (AsmConditionCodesHI):
+	case (ConditionCodesHI):
 
 		os << misc::fmt("hi");
 		break;
 
-	case (AsmConditionCodesLS):
+	case (ConditionCodesLS):
 
 		os << misc::fmt("ls");
 		break;
 
-	case (AsmConditionCodesGE):
+	case (ConditionCodesGE):
 
 		os << misc::fmt("ge");
 		break;
 
-	case (AsmConditionCodesLT):
+	case (ConditionCodesLT):
 
 		os << misc::fmt("lt");
 		break;
 
-	case (AsmConditionCodesGT):
+	case (ConditionCodesGT):
 
 		os << misc::fmt("gt");
 		break;
 
-	case (AsmConditionCodesLE):
+	case (ConditionCodesLE):
 
 		os << misc::fmt("le");
 		break;
 
-	case (AsmConditionCodesAL):
+	case (ConditionCodesAL):
 
 		os << misc::fmt(" ");
 		break;
@@ -907,12 +907,12 @@ void Inst::DumpPsr(std::ostream &os)
 
 	switch (psr)
 	{
-	case (AsmPsrRegistersCPSR):
+	case (PsrRegistersCPSR):
 
 		os << misc::fmt("CPSR");
 		break;
 
-	case (AsmPsrRegistersSPSR):
+	case (PsrRegistersSPSR):
 
 		os << misc::fmt("SPSR");
 		break;
@@ -974,17 +974,17 @@ void Inst::DumpOp2Psr(std::ostream &os)
 		rm = (op2_psr & 0x0000000f);
 		switch (rm)
 		{
-		case (AsmUserRegistersR13):
+		case (UserRegistersR13):
 
 			os << misc::fmt("sp");
 			break;
 
-		case (AsmUserRegistersR14):
+		case (UserRegistersR14):
 
 			os << misc::fmt("lr");
 			break;
 
-		case (AsmUserRegistersR15):
+		case (UserRegistersR15):
 
 			os << misc::fmt("pc");
 			break;
@@ -1473,17 +1473,17 @@ void Inst::DumpRt(std::ostream &os)
 
 	switch (rt)
 		{
-		case (AsmUserRegistersR13):
+		case (UserRegistersR13):
 
 			os << misc::fmt("sp");
 			break;
 
-		case (AsmUserRegistersR14):
+		case (UserRegistersR14):
 
 			os << misc::fmt("lr");
 			break;
 
-		case (AsmUserRegistersR15):
+		case (UserRegistersR15):
 
 			os << misc::fmt("pc");
 			break;
@@ -1527,55 +1527,55 @@ void Inst::Dump(std::ostream &os)
 		}
 
 		++fmt_str;
-		if (comm::Asm::isToken(fmt_str, "rd", token_len))
+		if (comm::Disassembler::isToken(fmt_str, "rd", token_len))
 			DumpRd(os);
-		else if (comm::Asm::isToken(fmt_str, "rn", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rn", token_len))
 			DumpRn(os);
-		else if (comm::Asm::isToken(fmt_str, "rm", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rm", token_len))
 			DumpRm(os);
-		else if (comm::Asm::isToken(fmt_str, "rs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rs", token_len))
 			DumpRs(os);
-		else if (comm::Asm::isToken(fmt_str, "rt", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rt", token_len))
 			DumpRt(os);
-		else if (comm::Asm::isToken(fmt_str, "op2", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "op2", token_len))
 			DumpOp2(os);
-		else if (comm::Asm::isToken(fmt_str, "cond", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "cond", token_len))
 			DumpCond(os);
-		else if (comm::Asm::isToken(fmt_str, "rdlo", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rdlo", token_len))
 			DumpRdlo(os);
-		else if (comm::Asm::isToken(fmt_str, "rdhi", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rdhi", token_len))
 			DumpRdhi(os);
-		else if (comm::Asm::isToken(fmt_str, "psr", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "psr", token_len))
 			DumpPsr(os);
-		else if (comm::Asm::isToken(fmt_str, "op2psr", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "op2psr", token_len))
 			DumpOp2Psr(os);
-		else if (comm::Asm::isToken(fmt_str, "amode3", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "amode3", token_len))
 			DumpAMode3(os);
-		else if (comm::Asm::isToken(fmt_str, "amode2", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "amode2", token_len))
 			DumpAMode2(os);
-		else if (comm::Asm::isToken(fmt_str, "idx", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "idx", token_len))
 			DumpIdx(os);
-		else if (comm::Asm::isToken(fmt_str, "baddr", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "baddr", token_len))
 			DumpBaddr(os);
-		else if (comm::Asm::isToken(fmt_str, "regs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "regs", token_len))
 			DumpRegs(os);
-		else if (comm::Asm::isToken(fmt_str, "immd24", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd24", token_len))
 			DumpImmd24(os);
-		else if (comm::Asm::isToken(fmt_str, "immd16", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd16", token_len))
 			DumpImmd16(os);
-		else if (comm::Asm::isToken(fmt_str, "copr", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "copr", token_len))
 			DumpCopr(os);
-		else if (comm::Asm::isToken(fmt_str, "amode5", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "amode5", token_len))
 			DumpAMode5(os);
-		else if (comm::Asm::isToken(fmt_str, "vfp1stmia", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "vfp1stmia", token_len))
 			DumpVfp1stm(os);
-		else if (comm::Asm::isToken(fmt_str, "vfp1ldmia", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "vfp1ldmia", token_len))
 			DumpVfp1ldm(os);
-		else if (comm::Asm::isToken(fmt_str, "vfpregs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "vfpregs", token_len))
 			DumpVfpRegs(os);
-		else if (comm::Asm::isToken(fmt_str, "freg", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "freg", token_len))
 			DumpFreg(os);
-		else if (comm::Asm::isToken(fmt_str, "fp", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "fp", token_len))
 			DumpFp(os);
 
 		else
@@ -1631,17 +1631,17 @@ void Inst::Thumb16DumpRD(std::ostream &os)
 
 	switch (rd)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -1696,17 +1696,17 @@ void Inst::Thumb16DumpRM(std::ostream &os)
 
 	switch (rm)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -1759,16 +1759,16 @@ void Inst::Thumb16DumpRN(std::ostream &os)
 
 	switch (rn)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2002,77 +2002,77 @@ void Inst::Thumb16DumpCOND(std::ostream &os)
 
 	switch (cond)
 	{
-	case (AsmConditionCodesEQ):
+	case (ConditionCodesEQ):
 
 		os << misc::fmt("eq");
 		break;
 
-	case (AsmConditionCodesNE):
+	case (ConditionCodesNE):
 
 		os << misc::fmt("ne");
 		break;
 
-	case (AsmConditionCodesCS):
+	case (ConditionCodesCS):
 
 		os << misc::fmt("cs");
 		break;
 
-	case (AsmConditionCodesCC):
+	case (ConditionCodesCC):
 
 		os << misc::fmt("cc");
 		break;
 
-	case (AsmConditionCodesMI):
+	case (ConditionCodesMI):
 
 		os << misc::fmt("mi");
 		break;
 
-	case (AsmConditionCodesPL):
+	case (ConditionCodesPL):
 
 		os << misc::fmt("pl");
 		break;
 
-	case (AsmConditionCodesVS):
+	case (ConditionCodesVS):
 
 		os << misc::fmt("vs");
 		break;
 
-	case (AsmConditionCodesVC):
+	case (ConditionCodesVC):
 
 		os << misc::fmt("vc");
 		break;
 
-	case (AsmConditionCodesHI):
+	case (ConditionCodesHI):
 
 		os << misc::fmt("hi");
 		break;
 
-	case (AsmConditionCodesLS):
+	case (ConditionCodesLS):
 
 		os << misc::fmt("ls");
 		break;
 
-	case (AsmConditionCodesGE):
+	case (ConditionCodesGE):
 
 		os << misc::fmt("ge");
 		break;
 
-	case (AsmConditionCodesLT):
+	case (ConditionCodesLT):
 
 		os << misc::fmt("lt");
 		break;
 
-	case (AsmConditionCodesGT):
+	case (ConditionCodesGT):
 
 		os << misc::fmt("gt");
 		break;
 
-	case (AsmConditionCodesLE):
+	case (ConditionCodesLE):
 
 		os << misc::fmt("le");
 		break;
 
-	case (AsmConditionCodesAL):
+	case (ConditionCodesAL):
 
 		os << misc::fmt(" ");
 		break;
@@ -2194,23 +2194,23 @@ void Inst::Thumb16Dump(std::ostream &os)
 		}
 
 		++fmt_str;
-		if (comm::Asm::isToken(fmt_str, "rd", token_len))
+		if (comm::Disassembler::isToken(fmt_str, "rd", token_len))
 			Thumb16DumpRD(os);
-		else if (comm::Asm::isToken(fmt_str, "rm", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rm", token_len))
 			Thumb16DumpRM(os);
-		else if (comm::Asm::isToken(fmt_str, "rn", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rn", token_len))
 			Thumb16DumpRN(os);
-		else if (comm::Asm::isToken(fmt_str, "immd8", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd8", token_len))
 			Thumb16DumpIMMD8(os);
-		else if (comm::Asm::isToken(fmt_str, "immd5", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd5", token_len))
 			Thumb16DumpIMMD5(os);
-		else if (comm::Asm::isToken(fmt_str, "immd3", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd3", token_len))
 			Thumb16DumpIMMD3(os);
-		else if (comm::Asm::isToken(fmt_str, "cond", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "cond", token_len))
 			Thumb16DumpCOND(os);
-		else if (comm::Asm::isToken(fmt_str, "regs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "regs", token_len))
 			Thumb16DumpREGS(os);
-		else if (comm::Asm::isToken(fmt_str, "x", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "x", token_len))
 			Thumb16DumpItEqX(os);
 		else
 			throw misc::Panic(misc::fmt("%s: token not recognized\n", fmt_str));
@@ -2262,16 +2262,16 @@ void Inst::Thumb32DumpRD(std::ostream &os)
 
 	switch (rd)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2326,17 +2326,17 @@ void Inst::Thumb32DumpRN(std::ostream &os)
 
 	switch (rn)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2391,17 +2391,17 @@ void Inst::Thumb32DumpRM(std::ostream &os)
 
 	switch (rm)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2429,17 +2429,17 @@ void Inst::Thumb32DumpRT(std::ostream &os)
 
 	switch (rt)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2466,17 +2466,17 @@ void Inst::Thumb32DumpRT2(std::ostream &os)
 
 	switch (rt2)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2502,17 +2502,17 @@ void Inst::Thumb32DumpRA(std::ostream &os)
 
 	switch (ra)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2538,17 +2538,17 @@ void Inst::Thumb32DumpRDLO(std::ostream &os)
 
 	switch (rdlo)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2574,17 +2574,17 @@ void Inst::Thumb32DumpRDHI(std::ostream &os)
 
 	switch (rdhi)
 	{
-	case (AsmUserRegistersR13):
+	case (UserRegistersR13):
 
 		os << misc::fmt("sp");
 		break;
 
-	case (AsmUserRegistersR14):
+	case (UserRegistersR14):
 
 		os << misc::fmt("lr");
 		break;
 
-	case (AsmUserRegistersR15):
+	case (UserRegistersR15):
 
 		os << misc::fmt("pc");
 		break;
@@ -2686,22 +2686,22 @@ void Inst::Thumb32DumpSHFTREG(std::ostream &os)
 	{
 		switch(type)
 		{
-		case (AsmShiftOperatorLsl):
+		case (ShiftOperatorLsl):
 
 			os << misc::fmt("{lsl #%d}", shift);
 			break;
 
-		case (AsmShiftOperatorLsr):
+		case (ShiftOperatorLsr):
 
 			os << misc::fmt("{lsr #%d}", shift);
 			break;
 
-		case (AsmShiftOperatorAsr):
+		case (ShiftOperatorAsr):
 
 			os << misc::fmt("{asr #%d}", shift);
 			break;
 
-		case (AsmShiftOperatorRor):
+		case (ShiftOperatorRor):
 
 			os << misc::fmt("{ror #%d}", shift);
 			break;
@@ -2897,77 +2897,77 @@ void Inst::Thumb32DumpCOND(std::ostream &os)
 
 	switch (cond)
 	{
-	case (AsmConditionCodesEQ):
+	case (ConditionCodesEQ):
 
 		os << misc::fmt("eq");
 		break;
 
-	case (AsmConditionCodesNE):
+	case (ConditionCodesNE):
 
 		os << misc::fmt("ne");
 		break;
 
-	case (AsmConditionCodesCS):
+	case (ConditionCodesCS):
 
 		os << misc::fmt("cs");
 		break;
 
-	case (AsmConditionCodesCC):
+	case (ConditionCodesCC):
 
 		os << misc::fmt("cc");
 		break;
 
-	case (AsmConditionCodesMI):
+	case (ConditionCodesMI):
 
 		os << misc::fmt("mi");
 		break;
 
-	case (AsmConditionCodesPL):
+	case (ConditionCodesPL):
 
 		os << misc::fmt("pl");
 		break;
 
-	case (AsmConditionCodesVS):
+	case (ConditionCodesVS):
 
 		os << misc::fmt("vs");
 		break;
 
-	case (AsmConditionCodesVC):
+	case (ConditionCodesVC):
 
 		os << misc::fmt("vc");
 		break;
 
-	case (AsmConditionCodesHI):
+	case (ConditionCodesHI):
 
 		os << misc::fmt("hi");
 		break;
 
-	case (AsmConditionCodesLS):
+	case (ConditionCodesLS):
 
 		os << misc::fmt("ls");
 		break;
 
-	case (AsmConditionCodesGE):
+	case (ConditionCodesGE):
 
 		os << misc::fmt("ge");
 		break;
 
-	case (AsmConditionCodesLT):
+	case (ConditionCodesLT):
 
 		os << misc::fmt("lt");
 		break;
 
-	case (AsmConditionCodesGT):
+	case (ConditionCodesGT):
 
 		os << misc::fmt("gt");
 		break;
 
-	case (AsmConditionCodesLE):
+	case (ConditionCodesLE):
 
 		os << misc::fmt("le");
 		break;
 
-	case (AsmConditionCodesAL):
+	case (ConditionCodesAL):
 
 		os << misc::fmt(" ");
 		break;
@@ -3122,47 +3122,47 @@ void Inst::Thumb32Dump(std::ostream &os)
 
 
 		++fmt_str;
-		if (comm::Asm::isToken(fmt_str, "rd", token_len))
+		if (comm::Disassembler::isToken(fmt_str, "rd", token_len))
 			Thumb32DumpRD(os);
-		else if (comm::Asm::isToken(fmt_str, "rn", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rn", token_len))
 			Thumb32DumpRN(os);
-		else if (comm::Asm::isToken(fmt_str, "rm", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rm", token_len))
 			Thumb32DumpRM(os);
-		else if (comm::Asm::isToken(fmt_str, "rt", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rt", token_len))
 			Thumb32DumpRT(os);
-		else if (comm::Asm::isToken(fmt_str, "rt2", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rt2", token_len))
 			Thumb32DumpRT2(os);
-		else if (comm::Asm::isToken(fmt_str, "ra", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "ra", token_len))
 			Thumb32DumpRA(os);
-		else if (comm::Asm::isToken(fmt_str, "rdlo", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rdlo", token_len))
 			Thumb32DumpRDLO(os);
-		else if (comm::Asm::isToken(fmt_str, "rdhi", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rdhi", token_len))
 			Thumb32DumpRDHI(os);
-		else if (comm::Asm::isToken(fmt_str, "imm12", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "imm12", token_len))
 			Thumb32DumpIMM12(os);
-		else if (comm::Asm::isToken(fmt_str, "imm8", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "imm8", token_len))
 			Thumb32DumpIMM12(os);
-		else if (comm::Asm::isToken(fmt_str, "imm2", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "imm2", token_len))
 			Thumb32DumpIMM2(os);
-		else if (comm::Asm::isToken(fmt_str, "immd8", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd8", token_len))
 			Thumb32DumpIMMD8(os);
-		else if (comm::Asm::isToken(fmt_str, "immd12", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd12", token_len))
 			Thumb32DumpIMMD12(os);
-		else if (comm::Asm::isToken(fmt_str, "immd16", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "immd16", token_len))
 			Thumb32DumpIMMD16(os);
-		else if (comm::Asm::isToken(fmt_str, "addr", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "addr", token_len))
 			Thumb32DumpADDR(os);
-		else if (comm::Asm::isToken(fmt_str, "regs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "regs", token_len))
 			Thumb32dumpREGS(os);
-		else if (comm::Asm::isToken(fmt_str, "shft", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "shft", token_len))
 			Thumb32DumpSHFTREG(os);
-		else if (comm::Asm::isToken(fmt_str, "S", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "S", token_len))
 			Thumb32DumpS(os);
-		else if (comm::Asm::isToken(fmt_str, "lsb", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "lsb", token_len))
 			Thumb32DumpLSB(os);
-		else if (comm::Asm::isToken(fmt_str, "wid", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "wid", token_len))
 			Thumb32DumpWID(os);
-		else if (comm::Asm::isToken(fmt_str, "cond", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "cond", token_len))
 			Thumb32DumpCOND(os);
 		else
 			throw misc::Panic(misc::fmt("%s: token not recognized\n", fmt_str));
@@ -3178,7 +3178,7 @@ void Inst::Thumb32InstTableDecode()
 	struct InstThumb32Info *current_table;
 
 	// We initially start with the first table mips_asm_table, with the opcode field as argument 
-	current_table = as->dec_table_thumb32_asm;
+	current_table = disassembler->dec_table_thumb32_asm;
 	int current_table_low = 27;
 	int current_table_high = 28;
 	unsigned int thumb32_table_arg;
@@ -3212,7 +3212,7 @@ void Inst::Thumb16InstTableDecode()
 	struct InstThumb16Info *current_table;
 
 	// We initially start with the first table mips_asm_table, with the opcode field as argument 
-	current_table = as->dec_table_thumb16_asm;
+	current_table = disassembler->dec_table_thumb16_asm;
 	int current_table_low = 14;
 	int current_table_high = 15;
 	unsigned int thumb16_table_arg;
@@ -3255,7 +3255,7 @@ void Inst::Decode(unsigned int addr, const char *buf)
 	this->dword.word = *as_word;
 	arg1 = ((as_char[3] & 0x0f) << 4) | ((as_char[2] & 0xf0) >> 4);
 	arg2 = ((as_char[0] & 0xf0) >> 4);
-	this->info = &as->inst_info[arg1 * 16 + arg2];
+	this->info = &disassembler->inst_info[arg1 * 16 + arg2];
 }
 
 

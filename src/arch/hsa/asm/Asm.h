@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_ASM_ASM_H
-#define ARCH_HSA_ASM_ASM_H
+#ifndef ARCH_HSA_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_HSA_DISASSEMBLER_DISASSEMBLER_H
  
 #include <arch/common/Asm.h>
 #include <lib/cpp/CommandLine.h>
@@ -27,7 +27,7 @@ namespace HSA
 {
 
 /// HSA disassembler singleton
-class Asm : public comm::Asm
+class Disassembler : public comm::Disassembler
 {
 	// File to disassemble
 	static std::string path;
@@ -35,7 +35,7 @@ class Asm : public comm::Asm
 protected:
 	
 	// Instance of the singleton
-	static std::unique_ptr<Asm> instance;
+	static std::unique_ptr<Disassembler> instance;
 
 	// Indent of current line
 	int indent = 0;
@@ -44,12 +44,12 @@ protected:
 	bool doIndent = true;
 
 	// Private constructor for singleton
-	Asm() : comm::Asm("HSA") { }
+	Disassembler() : comm::Disassembler("HSA") { }
 
 public:
 
 	/// Returns the pointer to the only instance of has disassembler
-	static Asm *getInstance();
+	static Disassembler *getInstance();
 
 	/// Disassemble the Brig file into HSAIL format
 	void DisassembleBinary(const std::string &path) const;

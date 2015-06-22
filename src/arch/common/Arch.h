@@ -31,7 +31,7 @@ namespace comm
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 class Emulator;
 class Timing;
 
@@ -59,7 +59,7 @@ private:
 	std::string name;
 
 	// Disassembler
-	Asm *as = nullptr;
+	Disassembler *disassembler = nullptr;
 
 	// Emulator
 	Emulator *emulator = nullptr;
@@ -88,7 +88,7 @@ public:
 	const std::string &getName() const { return name; }
 
 	/// Return the associated disassembler
-	Asm *getAsm() const { return as; }
+	Disassembler *getAsm() const { return disassembler; }
 
 	/// Return the associated emulator
 	Emulator *getEmulator() const { return emulator; }
@@ -98,10 +98,10 @@ public:
 
 	/// Associate a disassembler. This function should only be invoked
 	/// internally by ArchPool::RegisterDisassembler()
-	void setAsm(Asm *as)
+	void setDisassembler(Disassembler *disassembler)
 	{
-		assert(!this->as);
-		this->as = as;
+		assert(!this->disassembler);
+		this->disassembler = disassembler;
 	}
 
 	/// Associate an emulator. This function should only be invoked
@@ -167,10 +167,11 @@ public:
 	/// Register a disassembler for the architecture with the given name.
 	/// For a given architecture, this function should be invoked at most
 	/// once.
-	void RegisterDisassembler(const std::string &name, Asm *as)
+	void RegisterDisassembler(const std::string &name,
+			Disassembler *disassembler)
 	{
 		Arch *arch = Register(name);
-		arch->setAsm(as);
+		arch->setDisassembler(disassembler);
 	}
 
 	/// Register an emulator for the architecture with the given name. For

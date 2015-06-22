@@ -152,7 +152,7 @@ class Context
 	int uniqueid;
 
 	// Southern Islands disassembler
-	SI::Asm as;
+	SI::Disassembler as;
 
 	// Intance of singleton
 	static std::unique_ptr<Context> instance;

@@ -463,24 +463,24 @@ int MainProgram(int argc, char **argv)
 {
 	// Read command line
 	RegisterOptions();
-	HSA::Asm::RegisterOptions();
+	HSA::Disassembler::RegisterOptions();
 	HSA::Driver::RegisterOptions();
 	HSA::Emulator::RegisterOptions();
-	Kepler::Asm::RegisterOptions();
+	Kepler::Disassembler::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emulator::RegisterOptions();
 	mem::MMU::RegisterOptions();
 	mem::Manager::RegisterOptions();
-	MIPS::Asm::RegisterOptions();
+	MIPS::Disassembler::RegisterOptions();
 	MIPS::Emulator::RegisterOptions();
 	SI::Driver::RegisterOptions();
-	x86::Asm::RegisterOptions();
+	x86::Disassembler::RegisterOptions();
 	x86::Emulator::RegisterOptions();
 	x86::Timing::RegisterOptions();
 	mem::System::RegisterOptions();
 	dram::System::RegisterOptions();
 	net::System::RegisterOptions();
-	ARM::Asm::RegisterOptions();
+	ARM::Disassembler::RegisterOptions();
 	ARM::Emulator::RegisterOptions();
 
 	// Process command line. Return to C version of Multi2Sim if a
@@ -490,24 +490,24 @@ int MainProgram(int argc, char **argv)
 	
 	// Process command line
 	ProcessOptions();
-	HSA::Asm::ProcessOptions();
+	HSA::Disassembler::ProcessOptions();
 	HSA::Driver::ProcessOptions();
 	HSA::Emulator::ProcessOptions();
-	Kepler::Asm::ProcessOptions();
+	Kepler::Disassembler::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emulator::ProcessOptions();
 	mem::MMU::ProcessOptions();
 	mem::Manager::ProcessOptions();
-	MIPS::Asm::ProcessOptions();
+	MIPS::Disassembler::ProcessOptions();
 	MIPS::Emulator::ProcessOptions();
 	SI::Driver::ProcessOptions();
-	x86::Asm::ProcessOptions();
+	x86::Disassembler::ProcessOptions();
 	x86::Emulator::ProcessOptions();
 	x86::Timing::ProcessOptions();
 	mem::System::ProcessOptions();
 	dram::System::ProcessOptions();
 	net::System::ProcessOptions();
-	ARM::Asm::ProcessOptions();
+	ARM::Disassembler::ProcessOptions();
 	ARM::Emulator::ProcessOptions();
 
 	// Register architectures, runtimes, and drivers

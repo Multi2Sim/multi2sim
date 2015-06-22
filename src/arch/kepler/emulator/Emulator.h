@@ -37,7 +37,7 @@
 namespace Kepler
 {
 
-class Asm;
+class Disassembler;
 class Grid;
 class CUDADriver;
 class ThreadBlock;
@@ -56,7 +56,7 @@ class Emulator : public comm::Emulator
 	static std::unique_ptr<Emulator> instance;
 
 	// Disassembler
-	Asm *as;
+	Disassembler *disassembler;
 
 	// List of Grids created by the guest application
 	std::vector<std::unique_ptr<Grid>> grids;
@@ -136,7 +136,7 @@ public:
 	unsigned getGridSize() { return grids.size(); }
 
 	/// Get the assambler
-	Asm *getAsm() const { return as;}
+	Disassembler *getAsm() const { return disassembler;}
 
 	/// Get global memory top
 	unsigned getGlobalMemTop() const { return global_mem_top; }
