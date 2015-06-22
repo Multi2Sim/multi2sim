@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/disassembler/Arg.h>
 #include <arch/southern-islands/driver/Kernel.h>
 #include <src/lib/cpp/Misc.h>
 

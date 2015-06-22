@@ -26,7 +26,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <arch/southern-islands/asm/Asm.h>
+#include <arch/southern-islands/disassembler/Disassembler.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/ELFWriter.h>
 

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 #include <lib/cpp/Misc.h>
 
 #include "Symbol.h"

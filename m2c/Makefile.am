@@ -31,7 +31,7 @@ LDADD = \
 	$(top_builddir)/m2c/preprocessor/libpreprocessor.a \
 	$(top_builddir)/m2c/si2bin/libsi2bin.a \
 	$(top_builddir)/m2c/common/libcommon.a \
-	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
+	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
 	$(top_builddir)/src/arch/common/libcommon.a \
 	$(top_builddir)/src/lib/class/libclass.a \
 	$(top_builddir)/src/lib/util/libutil.a \

@@ -33,7 +33,7 @@ Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
 	nullptr  // For InstOpcodeNone
 #define DEFINST(name, _fmt_str, _op0, _op1, _op2, _op3) \
 		 , &Context::ExecuteInst_##name
-#include <arch/mips/asm/Inst.def>
+#include <arch/mips/disassembler/Inst.def>
 #undef DEFINST
 };
 

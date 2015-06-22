@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include <arch/hsa/asm/BrigCodeEntry.h>
+#include <arch/hsa/disassembler/BrigCodeEntry.h>
 
 #include "VariableScope.h"
 #include "Variable.h"

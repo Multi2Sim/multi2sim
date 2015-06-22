@@ -20,7 +20,7 @@
 #ifndef M2C_SI2BIN_ARGUMENT_H
 #define M2C_SI2BIN_ARGUMENT_H
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <m2c/common/Argument.h>

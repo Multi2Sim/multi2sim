@@ -19,13 +19,14 @@
 
 #include <cstring>
 
+#include <arch/hsa/disassembler/AsmService.h>
 #include <arch/hsa/emulator/Emulator.h>
 #include <arch/hsa/emulator/StackFrame.h>
 #include <arch/hsa/emulator/WorkItem.h>
-#include <arch/hsa/asm/AsmService.h>
 
 #include "Driver.h"
 #include "HsaExecutable.h"
+
 
 namespace HSA
 {

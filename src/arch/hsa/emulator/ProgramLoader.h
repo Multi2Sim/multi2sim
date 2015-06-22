@@ -23,7 +23,7 @@
 #include <string>
 #include <memory>
 
-#include <arch/hsa/asm/BrigFile.h>
+#include <arch/hsa/disassembler/BrigFile.h>
 #include <arch/common/FileTable.h>
 
 #include "Function.h"

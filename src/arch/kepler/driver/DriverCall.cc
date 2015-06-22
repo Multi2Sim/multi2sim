@@ -20,7 +20,7 @@
 
 #include <memory>
 
-#include <arch/kepler/asm/Asm.h>
+#include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/emulator/Emulator.h>
 #include <arch/kepler/emulator/Grid.h>
 #include <lib/cpp/String.h>

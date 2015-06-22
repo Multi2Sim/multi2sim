@@ -19,7 +19,7 @@
 
 #include <cassert>
 
-#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/disassembler/Arg.h>
 #include <arch/southern-islands/emulator/Emulator.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>

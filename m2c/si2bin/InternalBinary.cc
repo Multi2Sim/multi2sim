@@ -17,14 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-
 #include <memory>
 
-#include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/disassembler/Binary.h>
 #include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>
 
 #include "InternalBinary.h"
+
 
 namespace si2bin
 {

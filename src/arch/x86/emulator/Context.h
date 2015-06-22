@@ -555,7 +555,7 @@ private:
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void ExecuteInst_##name();
-#include <arch/x86/asm/Inst.def>
+#include <arch/x86/disassembler/Inst.def>
 #undef DEFINST
 
 	// Table of functions

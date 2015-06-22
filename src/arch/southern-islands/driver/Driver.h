@@ -21,7 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_DRIVER_DRIVER_H
 
 #include <arch/common/Driver.h>
-#include <arch/southern-islands/asm/Asm.h>
+#include <arch/southern-islands/disassembler/Disassembler.h>
 #include <arch/southern-islands/emulator/NDRange.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
