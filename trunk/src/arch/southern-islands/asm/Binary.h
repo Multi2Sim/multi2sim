@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_SOUTHERN_ISLANDS_ASM_BINARY_H
-#define ARCH_SOUTHERN_ISLANDS_ASM_BINARY_H
+#ifndef ARCH_SOUTHERN_ISLANDS_DISASSEMBLER_BINARY_H
+#define ARCH_SOUTHERN_ISLANDS_DISASSEMBLER_BINARY_H
 
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
@@ -212,5 +212,5 @@ public:
 }  // namespace SI
 
 
-#endif  // ARCH_SOUTHERN_ISLANDS_ASM_BINARY_H
+#endif
 

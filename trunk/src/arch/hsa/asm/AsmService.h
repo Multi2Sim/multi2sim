@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_ASM_ASMSERVICE_H
-#define ARCH_HSA_ASM_ASMSERVICE_H
+#ifndef ARCH_HSA_DISASSEMBLER_ASMSERVICE_H
+#define ARCH_HSA_DISASSEMBLER_ASMSERVICE_H
 
 #include <map>
 

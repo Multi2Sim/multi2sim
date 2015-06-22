@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef HSA_ASM_BRIGSECTION_H
-#define HSA_ASM_BRIGSECTION_H
+#ifndef ARCH_HSA_DISASSEMBLER_BRIGSECTION_H
+#define ARCH_HSA_DISASSEMBLER_BRIGSECTION_H
  
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>

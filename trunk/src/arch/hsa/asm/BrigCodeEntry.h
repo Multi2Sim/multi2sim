@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_ASM_BRIGCODEENTRY_H
-#define ARCH_HSA_ASM_BRIGCODEENTRY_H
+#ifndef ARCH_HSA_DISASSEMBLER_BRIGCODEENTRY_H
+#define ARCH_HSA_DISASSEMBLER_BRIGCODEENTRY_H
 
 #include <iostream>
 #include <memory>
