@@ -23,7 +23,7 @@
 #include <pthread.h>
 
 #include <arch/common/Arch.h>
-#include <arch/common/Emu.h>
+#include <arch/common/Emulator.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>

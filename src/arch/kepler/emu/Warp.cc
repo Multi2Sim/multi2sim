@@ -113,7 +113,7 @@ void Warp::Dump(std::ostream &os) const
 void Warp::Execute()
 {
 	// Get emu instance
-	Emulator *emu = Emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 
 	// Instruction binary
 	InstBytes inst_bytes;
@@ -179,7 +179,7 @@ void Warp::Execute()
 
     inst_count++;					//other counter?
     emu_inst_count++;
-    emu->incAluInstCount();
+    emulator->incAluInstCount();
     pc = this->target_pc;
 
     if(pc >= inst_buffer_size - 8)

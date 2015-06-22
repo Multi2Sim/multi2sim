@@ -35,10 +35,10 @@ ObjectPool::ObjectPool()
 {
 	// Get disassembler and emulator singletons
 	as = Asm::getInstance();
-	emu = Emulator::getInstance();
+	emulator = Emulator::getInstance();
 
 	// Allocate NDRange
-	ndrange = misc::new_unique<NDRange>(emu);
+	ndrange = misc::new_unique<NDRange>(emulator);
 	
 	// Set local size, global size, and work dimension
 	int work_dim = 1;

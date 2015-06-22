@@ -62,7 +62,7 @@ private:
 	Asm *as = nullptr;
 
 	// Emulator
-	Emulator *emu = nullptr;
+	Emulator *emulator = nullptr;
 
 	// Timing simulator
 	Timing *timing = nullptr;
@@ -91,7 +91,7 @@ public:
 	Asm *getAsm() const { return as; }
 
 	/// Return the associated emulator
-	Emulator *getEmu() const { return emu; }
+	Emulator *getEmulator() const { return emulator; }
 
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
@@ -106,10 +106,10 @@ public:
 
 	/// Associate an emulator. This function should only be invoked
 	/// internally by ArchPool::RegisterEmulator()
-	void setEmu(Emulator *emu)
+	void setEmulator(Emulator *emulator)
 	{
-		assert(!this->emu);
-		this->emu = emu;
+		assert(!this->emulator);
+		this->emulator = emulator;
 	}
 
 	/// Associate a timing simulator. This function should only be invoked
@@ -175,10 +175,10 @@ public:
 
 	/// Register an emulator for the architecture with the given name. For
 	/// a given architecture, this function should be invoked at most once.
-	void RegisterEmulator(const std::string &name, Emulator *emu)
+	void RegisterEmulator(const std::string &name, Emulator *emulator)
 	{
 		Arch *arch = Register(name);
-		arch->setEmu(emu);
+		arch->setEmulator(emulator);
 	}
 
 	/// Register a timing simulator for the architecture with the given

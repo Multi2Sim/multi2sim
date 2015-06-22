@@ -320,7 +320,7 @@ void Context::ExecuteInst_CMPS_reg()
 		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryReg);
 		IsaRegLoad(inst.getBytes()->dpr.op1_reg, rn_val);
 		result = rn_val - operand2;
-		emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+		emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 		op2 = (-1 * operand2);
 
@@ -502,7 +502,7 @@ void Context::ExecuteInst_BIC_reg()
 		if(!(inst.getBytes()->dpr.s_cond))
 		{
 			rd_val = (rn_val) & (~(operand2)) ;
-			emu->isa_debug << misc::fmt("  r%d = r%d & (~%d)\n", inst.getBytes()->dpr.dst_reg,
+			emulator->isa_debug << misc::fmt("  r%d = r%d & (~%d)\n", inst.getBytes()->dpr.dst_reg,
 				inst.getBytes()->dpr.op1_reg, operand2);
 			IsaRegStore(inst.getBytes()->dpr.dst_reg, rd_val);
 		}
@@ -893,7 +893,7 @@ void Context::ExecuteInst_CMPS_imm()
 		operand2 = IsaGetOp2(inst.getBytes()->dpr.op2, ContextOp2CatecoryImmd);
 		IsaRegLoad(inst.getBytes()->dpr.op1_reg, rn_val);
 		result = rn_val - operand2;
-		emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+		emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 		op2 = (-1 * operand2);
 
@@ -915,7 +915,7 @@ void Context::ExecuteInst_CMPS_imm()
 			    : "eax"
 		);
 
-		emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+		emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 		if(flags & 0x00000001)
 		{
 			regs.getCPSR().C = 1;
@@ -962,7 +962,7 @@ void Context::ExecuteInst_CMNS_imm()
 		IsaRegLoad(inst.getBytes()->dpr.op1_reg, rn_val);
 
 		result = rn_val + operand2;
-		emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+		emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 		op2 = operand2;
 		regs.getCPSR().z = 0;
@@ -1055,7 +1055,7 @@ void Context::ExecuteInst_BIC_imm()
 		if(!(inst.getBytes()->dpr.s_cond))
 		{
 			rd_val = (rn_val) & (~(operand2)) ;
-			emu->isa_debug << misc::fmt("  r%d = r%d & (~%d)\n", inst.getBytes()->dpr.dst_reg,
+			emulator->isa_debug << misc::fmt("  r%d = r%d & (~%d)\n", inst.getBytes()->dpr.dst_reg,
 				inst.getBytes()->dpr.op1_reg, operand2);
 			IsaRegStore(inst.getBytes()->dpr.dst_reg, rd_val);
 		}
@@ -1216,13 +1216,13 @@ void Context::ExecuteInst_UMULL()
 	IsaRegLoad(inst.getBytes()->mult_ln.op1_rs, rs_val);
 	IsaRegLoad(inst.getBytes()->mult.op0_rm, rm_val);
 
-	emu->isa_debug << misc::fmt("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
+	emulator->isa_debug << misc::fmt("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
 
 	rs =(unsigned int)rs_val;
 	rm =(unsigned int)rm_val;
 
 	result = (unsigned long long)rm*rs;
-	emu->isa_debug << misc::fmt("  result = 0x%llx\n", result);
+	emulator->isa_debug << misc::fmt("  result = 0x%llx\n", result);
 
 	rdhi = (0xffffffff00000000 & result) >> 32;
 	rdlo = 0x00000000ffffffff & result;
@@ -1252,7 +1252,7 @@ void Context::ExecuteInst_UMLAL()
 	// Get Rn and Rm
 	IsaRegLoad(inst.getBytes()->mult_ln.op1_rs, rs_val);
 	IsaRegLoad(inst.getBytes()->mult.op0_rm, rm_val);
-	emu->isa_debug << misc::fmt("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
+	emulator->isa_debug << misc::fmt("  rm_val: 0x%x, rs_val: 0x%x\n", rm_val,rs_val);
 
 	// Perform operation of instruction
 	unsigned int rs =(unsigned int)rs_val;
@@ -1261,7 +1261,7 @@ void Context::ExecuteInst_UMLAL()
 	unsigned long long result_lo = inst.getBytes()->mult_ln.dst_lo;
 	result = result_hi << 32 | result_lo;
 	result += (unsigned long long)rm*rs;
-	emu->isa_debug << misc::fmt("  result = 0x%llx\n", result);
+	emulator->isa_debug << misc::fmt("  result = 0x%llx\n", result);
 
 	// Store result to Rd
 	unsigned int rdhi = (0xffffffff00000000 & result) >> 32;
@@ -1591,7 +1591,7 @@ void Context::ExecuteInst_CLZ_reg()
 			break;
 		}
 	}
-	emu->isa_debug << misc::fmt("  leading zero count = %d\n", zero_ct);
+	emulator->isa_debug << misc::fmt("  leading zero count = %d\n", zero_ct);
 	IsaRegStore(inst.getBytes()->hfwrd_reg.dst_rd, zero_ct);
 }
 

@@ -180,7 +180,7 @@ void Context::ExecuteInstThumb16_CMP_imm()
 
 	// Calculate the result of subtracting rn_val by operand 2
 	int result = rn_val - operand2;
-	emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+	emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 	// Get the negative value of operand 2
 	int op2 = (-1 * operand2);
@@ -206,7 +206,7 @@ void Context::ExecuteInstThumb16_CMP_imm()
 	);
 
 	// Update the CPSR based on the flag
-	emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+	emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 	if (flags & 0x00000001)
 	{
 		regs.getCPSR().C = 1;
@@ -485,7 +485,7 @@ void Context::ExecuteInstThumb16_CMP_reg1()
 
 	// Subtrace rn_val by rm_val to get a local result
 	int result = rn_val - rm_val;
-	emu->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
+	emulator->isa_debug << misc::fmt("  result = %d ; 0x%x\n", result, result);
 
 	// Get the negative value of operand 2
 	int op2 = (-1 * rm_val);
@@ -509,7 +509,7 @@ void Context::ExecuteInstThumb16_CMP_reg1()
 		  : "m" (op2), "m" (rn_val), "m" (rd_val), "g" (flags)
 		    : "eax"
 	);
-	emu->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
+	emulator->isa_debug << misc::fmt("  flags = 0x%lx\n", flags);
 
 	// Update the CPSR flag
 	if (flags & 0x00000001)
@@ -691,12 +691,12 @@ void Context::ExecuteInstThumb16_LDR_lit1()
 	unsigned int immd32 = inst.getThumb16Bytes()->pcldr_ins.immd_8 << 2;
 
 	// Get the offset according to Program Counter
-	emu->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
+	emulator->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
 	if ((regs.getPC() - 2) % 4 == 2)
 		offset = (regs.getPC() - 2) + 2;
 	else
 		offset = regs.getPC() - 2;
-	emu->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
+	emulator->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
 
 	// Calculate the address and load the value from memory
 	// And store it to register rd
@@ -716,12 +716,12 @@ void Context::ExecuteInstThumb16_LDR_lit2()
 	unsigned int immd32 = inst.getThumb16Bytes()->pcldr_ins.immd_8 << 2;
 
 	// Get the offset according to Program Counter
-	emu->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
+	emulator->isa_debug << misc::fmt("  pc  = 0x%x; \n", regs.getPC());
 	if ((regs.getPC() - 2) % 4 == 2)
 		offset = (regs.getPC() - 2) + 2;
 	else
 		offset = regs.getPC() - 2;
-	emu->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
+	emulator->isa_debug << misc::fmt("  offset  = 0x%x; \n", offset);
 
 	// Calculate the address and load the value from memory
 	// And store it to register rd
@@ -949,7 +949,7 @@ void Context::ExecuteInstThumb16_STR_immd5()
 	// Load register rd to local variable
 	IsaRegLoad(inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd,
 			rd_val);
-	emu->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
 		inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd, rd_val, addr);
 
 	// Store the rd_val to the specific address of memory
@@ -975,7 +975,7 @@ void Context::ExecuteInstThumb16_LDR_immd5()
 	// Load from memory according to the specific address
 	// And store it to the register rd
 	memory->Read(addr, 4, (char *)buf);
-	emu->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
 		inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd, rd_val, addr);
 	IsaRegStore(inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd, rd_val);
 }
@@ -1005,7 +1005,7 @@ void Context::ExecuteInstThumb16_LDRB_immd3()
 	// And store it to the register rd
 	memory->Read(addr, 1, (char *)buf);
 	rd_val = rd_val & 0x000000ff;
-	emu->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
 		inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd, rd_val, addr);
 	IsaRegStore(inst.getThumb16Bytes()->ldstr_immd_ins.reg_rd, rd_val);
 }
@@ -1039,7 +1039,7 @@ void Context::ExecuteInstThumb16_STR_imm6()
 	// Store the value from register rd to the memory according to the 
 	// Calculated memory
 	unsigned int addr = sp_val + immd8;
-	emu->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) => [0x%x]\n",
 		inst.getThumb16Bytes()->sp_immd_ins.reg_rd, rn_val, addr);
 	memory->Write(addr, 4, (char *)buf);
 }
@@ -1061,7 +1061,7 @@ void Context::ExecuteInstThumb16_LDR_imm6()
 
 	// Load from memory according to the specific address
 	// And store it to the register rd
-	emu->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
+	emulator->isa_debug << misc::fmt(" r%d (0x%x) <= [0x%x]\n",
 		inst.getThumb16Bytes()->sp_immd_ins.reg_rd, rn_val, addr);
 	memory->Read(addr, 4, (char *)buf);
 	IsaRegStore(inst.getThumb16Bytes()->sp_immd_ins.reg_rd,
@@ -1124,13 +1124,13 @@ void Context::ExecuteInstThumb16_B_0()
 	int cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	int immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	int addr = regs.getPC() + immd;
 
 	// Set the PC accordingly
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 }
@@ -1141,13 +1141,13 @@ void Context::ExecuteInstThumb16_B_1()
 	int cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	int immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	int addr = regs.getPC() + immd;
 
 	// Set the PC accordingly
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 }
@@ -1161,12 +1161,12 @@ void Context::ExecuteInstThumb16_B_2()
 	cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	addr = regs.getPC() + immd;
 
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 
@@ -1206,12 +1206,12 @@ void Context::ExecuteInstThumb16_B_8()
 	cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	addr = regs.getPC() + immd;
 
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 
@@ -1226,12 +1226,12 @@ void Context::ExecuteInstThumb16_B_9()
 	cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	addr = regs.getPC() + immd;
 
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 
@@ -1251,12 +1251,12 @@ void Context::ExecuteInstThumb16_B_11()
 	cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	addr = regs.getPC() + immd;
 
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 
@@ -1276,12 +1276,12 @@ void Context::ExecuteInstThumb16_B_13()
 	cond = inst.getThumb16Bytes()->cond_br_ins.cond;
 	immd = inst.getThumb16Bytes()->cond_br_ins.s_offset << 1;
 	immd = misc::SignExtend32(immd, 9);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 	addr = regs.getPC() + immd;
 
 	if (IsaThumbCheckCond(cond))
 	{
-		emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 		regs.setPC(addr + 2);
 	}
 
@@ -1300,11 +1300,11 @@ void Context::ExecuteInstThumb16_B_15()
 
 	immd = inst.getThumb16Bytes()->br_ins.immd11 << 1;
 	immd = misc::SignExtend32(immd, 12);
-	emu->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
+	emulator->isa_debug << misc::fmt("  Offset = %x (%d)\n", immd, immd);
 
 	addr = regs.getPC() + immd;
 
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %x\n", addr, regs.getPC());
 	regs.setPC(addr + 2);
 
 }
@@ -1455,7 +1455,7 @@ void Context::ExecuteInstThumb16_PUSH_0()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1486,7 +1486,7 @@ void Context::ExecuteInstThumb16_PUSH_1()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1548,7 +1548,7 @@ void Context::ExecuteInstThumb16_PUSH_8()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1589,7 +1589,7 @@ void Context::ExecuteInstThumb16_PUSH_11()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1621,7 +1621,7 @@ void Context::ExecuteInstThumb16_PUSH_12()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1662,7 +1662,7 @@ void Context::ExecuteInstThumb16_PUSH_15()
 		{
 			IsaRegLoad(misc::LogBase2(i), reg_val);
 			memory->Write(wrt_val, 4, (char *)buf);
-			emu->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
+			emulator->isa_debug << misc::fmt("  push r%d => 0x%x\n",misc::LogBase2(i),wrt_val);
 			wrt_val += 4;
 		}
 	}
@@ -1698,7 +1698,7 @@ void Context::ExecuteInstThumb16_POP_0()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -1708,7 +1708,7 @@ void Context::ExecuteInstThumb16_POP_0()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -1748,7 +1748,7 @@ void Context::ExecuteInstThumb16_POP_1()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -1758,7 +1758,7 @@ void Context::ExecuteInstThumb16_POP_1()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -1843,7 +1843,7 @@ void Context::ExecuteInstThumb16_POP_11()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -1853,7 +1853,7 @@ void Context::ExecuteInstThumb16_POP_11()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -1892,7 +1892,7 @@ void Context::ExecuteInstThumb16_POP_12()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -1902,7 +1902,7 @@ void Context::ExecuteInstThumb16_POP_12()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -1952,7 +1952,7 @@ void Context::ExecuteInstThumb16_POP_15()
 			{
 				memory->Read(wrt_val, 4, (char *)buf);
 				IsaRegStore(misc::LogBase2(i), reg_val);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 			}
 			else
@@ -1962,7 +1962,7 @@ void Context::ExecuteInstThumb16_POP_15()
 					reg_val = reg_val - 1;
 
 				IsaRegStore(misc::LogBase2(i), reg_val - 2);
-				emu->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
+				emulator->isa_debug << misc::fmt("  pop r%d <= 0x%x\n",misc::LogBase2(i),wrt_val);
 				wrt_val += 4;
 
 			}
@@ -1981,10 +1981,10 @@ void Context::ExecuteInstThumb16_CBZ_8()
 	int inst_addr;
 
 
-	emu->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
+	emulator->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
 	immd5 = inst.getThumb16Bytes()->cbnz_ins.immd_5;
 	inst_addr = inst.getAddress();
-	emu->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
+	emulator->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
 	if ((inst_addr + 2) % 4)
 		immd5 = (inst_addr + 4) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 	else
@@ -1997,7 +1997,7 @@ void Context::ExecuteInstThumb16_CBZ_8()
 	else
 		immd5 = (regs.getPC() - 2) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 */
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
 		immd5, regs.getPC());
 
 	IsaRegLoad(inst.getThumb16Bytes()->cbnz_ins.reg_rn, rn_val);
@@ -2007,7 +2007,7 @@ void Context::ExecuteInstThumb16_CBZ_8()
 //			regs.getPC() = immd5 + 4;
 //		else
 			regs.setPC(immd5 + 2);
-		emu->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
 	}
 }
 
@@ -2018,10 +2018,10 @@ void Context::ExecuteInstThumb16_CBZ_9()
 	int inst_addr;
 
 
-	emu->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
+	emulator->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
 	immd5 = inst.getThumb16Bytes()->cbnz_ins.immd_5;
 	inst_addr = inst.getAddress();
-	emu->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
+	emulator->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
 	if ((inst_addr + 2) % 4)
 		immd5 = (inst_addr + 4) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 	else
@@ -2034,7 +2034,7 @@ void Context::ExecuteInstThumb16_CBZ_9()
 	else
 		immd5 = (regs.getPC() - 2) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 */
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
 		immd5, regs.getPC());
 
 	IsaRegLoad(inst.getThumb16Bytes()->cbnz_ins.reg_rn, rn_val);
@@ -2044,7 +2044,7 @@ void Context::ExecuteInstThumb16_CBZ_9()
 //			regs.getPC() = immd5 + 4;
 //		else
 			regs.setPC(immd5 + 2);
-		emu->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
 	}
 
 }
@@ -2066,10 +2066,10 @@ void Context::ExecuteInstThumb16_CBZ_12()
 	int inst_addr;
 
 
-	emu->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
+	emulator->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
 	immd5 = inst.getThumb16Bytes()->cbnz_ins.immd_5;
 	inst_addr = inst.getAddress();
-	emu->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
+	emulator->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
 	if ((inst_addr + 2) % 4)
 		immd5 = (inst_addr + 4) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 	else
@@ -2082,7 +2082,7 @@ void Context::ExecuteInstThumb16_CBZ_12()
 	else
 		immd5 = (regs.getPC() - 2) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 */
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
 		immd5, regs.getPC());
 
 	IsaRegLoad(inst.getThumb16Bytes()->cbnz_ins.reg_rn, rn_val);
@@ -2092,7 +2092,7 @@ void Context::ExecuteInstThumb16_CBZ_12()
 //			regs.getPC() = immd5 + 4;
 //		else
 			regs.setPC(immd5 + 2);
-		emu->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
 	}
 
 }
@@ -2104,10 +2104,10 @@ void Context::ExecuteInstThumb16_CBZ_13()
 	int inst_addr;
 
 
-	emu->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
+	emulator->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
 	immd5 = inst.getThumb16Bytes()->cbnz_ins.immd_5;
 	inst_addr = inst.getAddress();
-	emu->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
+	emulator->isa_debug << misc::fmt("  Inst addr <= 0x%x\n", inst_addr);
 	if ((inst_addr + 2) % 4)
 		immd5 = (inst_addr + 4) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 	else
@@ -2120,7 +2120,7 @@ void Context::ExecuteInstThumb16_CBZ_13()
 	else
 		immd5 = (regs.getPC() - 2) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 */
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
 		immd5, regs.getPC());
 
 	IsaRegLoad(inst.getThumb16Bytes()->cbnz_ins.reg_rn, rn_val);
@@ -2130,7 +2130,7 @@ void Context::ExecuteInstThumb16_CBZ_13()
 //			regs.getPC() = immd5 + 4;
 //		else
 			regs.setPC(immd5 + 2);
-		emu->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
 	}
 
 }
@@ -2251,20 +2251,20 @@ void Context::ExecuteInstThumb16_CBNZ_412()
 	int rn_val;
 
 
-	emu->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
+	emulator->isa_debug << misc::fmt(" PC : 0x%x\n", regs.getPC());
 	immd5 = inst.getThumb16Bytes()->cbnz_ins.immd_5;
 	if ((regs.getPC() - 2) % 4)
 		immd5 = (regs.getPC()) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 	else
 		immd5 = (regs.getPC() - 2) + ((inst.getThumb16Bytes()->cbnz_ins.i_ext << 6) | (immd5 << 1));
 
-	emu->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
+	emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, Before Branch pc <= 0x%x\n",
 		immd5, regs.getPC());
 	IsaRegLoad(inst.getThumb16Bytes()->cbnz_ins.reg_rn, rn_val);
 	if (rn_val != 0)
 	{
 		regs.setPC(immd5 + 2);
-		emu->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
+		emulator->isa_debug << misc::fmt("  After Branch pc <= 0x%x\n", regs.getPC());
 	}
 }
 
