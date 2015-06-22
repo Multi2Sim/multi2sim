@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 
 namespace SI
 {

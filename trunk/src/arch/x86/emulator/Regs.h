@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include <arch/x86/asm/Inst.h>
+#include <arch/x86/disassembler/Inst.h>
 #include <lib/cpp/Misc.h>
 
 #include "Extended.h"

@@ -17,11 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/hsa/asm/AsmService.h>
-//#include <arch/hsa/driver/Driver.h>
+#include <arch/hsa/disassembler/AsmService.h>
 
 #include "WorkItem.h"
 #include "SegmentManager.h"
+
 
 namespace HSA
 {

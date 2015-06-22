@@ -982,33 +982,33 @@ AC_CONFIG_FILES([
 		src/arch/common/Makefile
 
 		src/arch/arm/Makefile
-		src/arch/arm/asm/Makefile
+		src/arch/arm/disassembler/Makefile
 		src/arch/arm/emulator/Makefile
 		src/arch/arm/timing/Makefile
 
 		src/arch/hsa/Makefile
-		src/arch/hsa/asm/Makefile
+		src/arch/hsa/disassembler/Makefile
 		src/arch/hsa/driver/Makefile
 		src/arch/hsa/emulator/Makefile
 
 		src/arch/kepler/Makefile
-		src/arch/kepler/asm/Makefile
+		src/arch/kepler/disassembler/Makefile
 		src/arch/kepler/driver/Makefile
 		src/arch/kepler/emulator/Makefile
 
 		src/arch/mips/Makefile
-		src/arch/mips/asm/Makefile
+		src/arch/mips/disassembler/Makefile
 		src/arch/mips/emulator/Makefile
 		src/arch/mips/timing/Makefile
 
 		src/arch/southern-islands/Makefile
-		src/arch/southern-islands/asm/Makefile
+		src/arch/southern-islands/disassembler/Makefile
 		src/arch/southern-islands/driver/Makefile
 		src/arch/southern-islands/emulator/Makefile
 		src/arch/southern-islands/timing/Makefile
 
 		src/arch/x86/Makefile
-		src/arch/x86/asm/Makefile
+		src/arch/x86/disassembler/Makefile
 		src/arch/x86/emulator/Makefile
 		src/arch/x86/timing/Makefile
 

@@ -24,8 +24,8 @@
 #include <memory>
 #include <string>
 
-#include <src/arch/southern-islands/asm/Arg.h>
-#include <src/arch/southern-islands/asm/Binary.h>
+#include <src/arch/southern-islands/disassembler/Arg.h>
+#include <src/arch/southern-islands/disassembler/Binary.h>
 
 namespace SI
 {

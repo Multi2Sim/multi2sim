@@ -33,7 +33,7 @@ Context::ExecuteInstThumb16Fn Context::execute_inst_thumb16_fn[InstThumb16Opcode
 	nullptr  // For InstThumb16OpcodeNone
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 		 , &Context::ExecuteInstThumb16_##_name
-#include <arch/arm/asm/InstThumb.def>
+#include <arch/arm/disassembler/InstThumb.def>
 #undef DEFINST
 };
 

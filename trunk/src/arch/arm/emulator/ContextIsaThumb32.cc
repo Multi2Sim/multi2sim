@@ -33,7 +33,7 @@ Context::ExecuteInstThumb32Fn Context::execute_inst_thumb32_fn[InstThumb32Opcode
 	nullptr  // For InstThumb32OpcodeNone
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 		 , &Context::ExecuteInstThumb32_##_name
-#include <arch/arm/asm/InstThumb32.def>
+#include <arch/arm/disassembler/InstThumb32.def>
 #undef DEFINST
 };
 

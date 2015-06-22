@@ -18,9 +18,10 @@
  */
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
-#include <arch/hsa/asm/BrigFile.h>
+#include <arch/hsa/disassembler/BrigFile.h>
 
 #include "HsaProgram.h"
+
 
 namespace HSA
 {

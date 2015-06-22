@@ -20,8 +20,8 @@
 #ifndef ARCH_KEPLER_EMU_THREAD_H
 #define ARCH_KEPLER_EMU_THREAD_H
 
-#include <arch/kepler/asm/Asm.h>
-#include <arch/kepler/asm/Inst.h>
+#include <arch/kepler/disassembler/Disassembler.h>
+#include <arch/kepler/disassembler/Inst.h>
 
 #include "Grid.h"
 #include "Register.h"
@@ -93,7 +93,7 @@ private:
 	// instruction. For example:
 #define DEFINST(_name, _fmt_str, ...) \
 		void	ExecuteInst_##_name(Inst *inst);
-#include <arch/kepler/asm/Inst.def>
+#include <arch/kepler/disassembler/Inst.def>
 #undef DEFINST
 
 	// The special instruction appearing every 64 instructions

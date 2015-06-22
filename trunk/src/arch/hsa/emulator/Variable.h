@@ -20,7 +20,8 @@
 #ifndef ARCH_HSA_EMULATOR_VARIABLE_H
 #define ARCH_HSA_EMULATOR_VARIABLE_H
 
-#include <arch/hsa/asm/Brig.h>
+#include <arch/hsa/disassembler/Brig.h>
+
 
 namespace HSA
 {

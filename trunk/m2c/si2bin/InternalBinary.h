@@ -27,7 +27,7 @@
 
 #include <lib/cpp/ELFWriter.h>
 
-#include <src/arch/southern-islands/asm/Binary.h>
+#include <src/arch/southern-islands/disassembler/Binary.h>
 
 namespace si2bin
 {

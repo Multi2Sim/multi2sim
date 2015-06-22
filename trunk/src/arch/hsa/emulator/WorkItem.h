@@ -22,10 +22,10 @@
 
 #include <memory>
 
-#include <arch/hsa/asm/BrigCodeEntry.h>
-#include <arch/hsa/asm/BrigDataEntry.h>
-#include <arch/hsa/asm/BrigOperandEntry.h>
-#include <arch/hsa/asm/BrigImmed.h>
+#include <arch/hsa/disassembler/BrigCodeEntry.h>
+#include <arch/hsa/disassembler/BrigDataEntry.h>
+#include <arch/hsa/disassembler/BrigOperandEntry.h>
+#include <arch/hsa/disassembler/BrigImmed.h>
 
 #include "Emulator.h"
 #include "Function.h"
@@ -47,7 +47,7 @@ enum InstOpcode
 {
 #define DEFINST(name, opcode, opstr) \
 	INST_##name,
-#include <arch/hsa/asm/Inst.def>
+#include <arch/hsa/disassembler/Inst.def>
 #undef DEFINST
 	// Max
 	InstOpcodeCount
@@ -105,7 +105,7 @@ private:
  	// expanded into a function prototype.
 #define DEFINST(name, opcode, opstr) \
  		void ExecuteInst_##name();
-#include <arch/hsa/asm/Inst.def>
+#include <arch/hsa/disassembler/Inst.def>
 #undef DEFINST
 
  	// Unsupported opcode

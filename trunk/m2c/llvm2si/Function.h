@@ -24,7 +24,7 @@
 #include <memory>
 #include <list>
 
-#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/disassembler/Arg.h>
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Type.h>

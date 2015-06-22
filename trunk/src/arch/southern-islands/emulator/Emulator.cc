@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/asm/Asm.h>
+#include <arch/southern-islands/disassembler/Disassembler.h>
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkItem.h>

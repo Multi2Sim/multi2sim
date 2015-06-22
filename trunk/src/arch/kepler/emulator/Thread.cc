@@ -40,7 +40,7 @@ Thread::Thread(Warp *warp, int id)
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \
 		inst_func[INST_##_name] = &Thread::ExecuteInst_##_name;
-#include <arch/kepler/asm/Inst.def>
+#include <arch/kepler/disassembler/Inst.def>
 #undef DEFINST
 
 	// Initialize  general purpose registers

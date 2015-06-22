@@ -23,7 +23,7 @@
 #include <list>
 #include <memory>
 
-#include <arch/southern-islands/asm/Binary.h>
+#include <arch/southern-islands/disassembler/Binary.h>
 #include <memory/Memory.h>
 
 #include "Emulator.h"

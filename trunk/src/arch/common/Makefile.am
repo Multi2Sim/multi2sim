@@ -5,14 +5,14 @@ libcommon_a_SOURCES = \
 	Arch.cc \
 	Arch.h \
 	\
-	Asm.cc \
-	Asm.h \
-	\
 	CallStack.cc \
 	CallStack.h \
 	\
 	Context.cc \
 	Context.h \
+	\
+	Disassembler.cc \
+	Disassembler.h \
 	\
 	Driver.cc \
 	Driver.h \

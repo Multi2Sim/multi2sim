@@ -23,11 +23,11 @@
 
 #include <pthread.h>
 
+#include <arch/arm/disassembler/Inst.h>
 #include <arch/common/Arch.h>
 #include <arch/common/Emulator.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
-#include <arch/arm/asm/Inst.h>
 
 #include "Context.h"
 
