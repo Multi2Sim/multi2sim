@@ -26,7 +26,7 @@
 namespace comm
 {
 
-Emu::Emu(const std::string &name) :
+Emulator::Emulator(const std::string &name) :
 		name(name),
 		timer(name)
 {
@@ -39,7 +39,7 @@ Emu::Emu(const std::string &name) :
 }
 
 	
-void Emu::DumpSummary(std::ostream &os) const
+void Emulator::DumpSummary(std::ostream &os) const
 {
 	double time_in_sec = (double) timer.getValue() / 1.0e6;
 	double inst_per_sec = time_in_sec > 0.0 ? (double) instructions

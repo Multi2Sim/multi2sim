@@ -35,7 +35,7 @@ void Context::RunSignalHandler(int sig)
 {
 	// Debug
 	assert(misc::inRange(sig, 1, 64));
-	Emu::syscall_debug << getName() << " executes signal "
+	Emulator::syscall_debug << getName() << " executes signal "
 			"handler for signal " << sig << '\n';
 
 	// Signal SIGCHLD ignored if no signal handler installed
@@ -53,7 +53,7 @@ void Context::RunSignalHandler(int sig)
 			mem::Memory::PageSize, mem::Memory::PageSize));
 	memory->Map(signal_mask_table.getRetCodePtr(), mem::Memory::PageSize,
 			mem::Memory::AccessExec | mem::Memory::AccessInit);
-	Emu::syscall_debug << "  return code of signal handler allocated at "
+	Emulator::syscall_debug << "  return code of signal handler allocated at "
 			<< misc::fmt("0x%x\n",
 			signal_mask_table.getRetCodePtr());
 	memory->Init(signal_mask_table.getRetCodePtr(), sizeof signal_ret_code,
@@ -115,7 +115,7 @@ void Context::ReturnFromSignalHandler()
 
 	// Free signal frame
 	memory->Unmap(signal_mask_table.getRetCodePtr(), mem::Memory::PageSize);
-	Emu::syscall_debug << "  signal handler return code at " <<
+	Emulator::syscall_debug << "  signal handler return code at " <<
 			misc::fmt("0x%x", signal_mask_table.getRetCodePtr())
 			<< " deallocated\n";
 

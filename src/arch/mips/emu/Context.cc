@@ -123,7 +123,7 @@ std::string Context::OpenProcSelfMaps()
 Context::Context()
 {
 	// Save emulator instance
-	emu = Emu::getInstance();
+	emu = Emulator::getInstance();
 
 	// Initialize
 	pid = emu->getPid();

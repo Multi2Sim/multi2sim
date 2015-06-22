@@ -145,14 +145,14 @@ static misc::StringMap section_flags_map =
 
 void Context::LoadELFSections(ELFReader::File *binary)
 {
-	Emu::loader_debug << "\nLoading ELF sections\n";
+	Emulator::loader_debug << "\nLoading ELF sections\n";
 	loader->bottom = 0xffffffff;
 	for (auto &section : binary->getSections())
 	{
 		// Debug
 		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
 		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
-		Emu::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
+		Emulator::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
 				"addr=0x%x, size=%u, flags=%s\n",
 				section->getName().c_str(), section->getOffset(),
 				section->getAddr(), section->getSize(),

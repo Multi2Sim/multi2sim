@@ -44,7 +44,7 @@ namespace x86
 
 // Forward declarations
 class Context;
-class Emu;
+class Emulator;
 
 
 // Assembly code used before and after instruction emulation when the host flags
@@ -154,7 +154,7 @@ private:
 	static unsigned char host_fpenv[28];
 
 	// Emulator that it belongs to
-	Emu *emu;
+	Emulator *emu;
 
 	// Virtual memory address space index
 	int address_space_index;

@@ -35,7 +35,7 @@ ObjectPool::ObjectPool()
 {
 	// Get disassembler and emulator singletons
 	as = Asm::getInstance();
-	emu = Emu::getInstance();
+	emu = Emulator::getInstance();
 
 	// Allocate NDRange
 	ndrange = misc::new_unique<NDRange>(emu);

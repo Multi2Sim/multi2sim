@@ -40,7 +40,7 @@ namespace ARM
 {
 
 class Context;
-class Emu;
+class Emulator;
 
 #define ARM_SET_TLS 0xF0005
 #define ARM_EXIT_GROUP 248
@@ -114,7 +114,7 @@ enum ContextOp2Catecory
 class Context
 {
 	// Emulator it belongs to
-	Emu *emu;
+	Emulator *emu;
 
 	// Process ID
 	int pid;

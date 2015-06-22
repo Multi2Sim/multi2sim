@@ -52,7 +52,7 @@ public:
 
 
 /// x86 emulator
-class Emu : public comm::Emu
+class Emulator : public comm::Emulator
 {
 	//
 	// Configuration options
@@ -81,7 +81,7 @@ class Emu : public comm::Emu
 	//
 
 	// Unique instance of singleton
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// Primary list of contexts
 	std::list<std::unique_ptr<Context>> contexts;
@@ -94,7 +94,7 @@ class Emu : public comm::Emu
 	bool schedule_signal = false;
 
 	// Private constructor for singleton
-	Emu() : comm::Emu("x86") { }
+	Emulator() : comm::Emulator("x86") { }
 	
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
@@ -122,7 +122,7 @@ class Emu : public comm::Emu
 public:
 
 	/// Get instance of singleton
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Create a new context associated with the emulator. The context is
 	/// inserted in the main emulator context list. Its state is set to

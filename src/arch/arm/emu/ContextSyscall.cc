@@ -1038,7 +1038,7 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 	guest->ctime = host->st_ctime;
 	guest->ino = host->st_ino;
 
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	emu->syscall_debug << misc::fmt("  stat64 structure:\n");
 	emu->syscall_debug << misc::fmt("    dev=%lld, ino=%lld, mode=%d, nlink=%d\n",
 		guest->dev, guest->ino, guest->mode, guest->nlink);

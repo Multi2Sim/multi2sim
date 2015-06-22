@@ -37,7 +37,7 @@
 namespace HSA
 {
 
-class Emu;
+class Emulator;
 class WorkGroup;
 class ProgramLoader;
 class HsaExecutable;
@@ -68,7 +68,7 @@ public:
 private:
 
  	// Emulator that is belongs to 
- 	Emu *emu;
+ 	Emulator *emu;
 
  	// Executable
  	HsaExecutable *executable;

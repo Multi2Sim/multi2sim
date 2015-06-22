@@ -55,7 +55,7 @@ unsigned VariableScope::DeclearVariable(const std::string &name,
 	}
 	else
 	{
-		mem::Manager *manager = Emu::getInstance()->getMemoryManager();
+		mem::Manager *manager = Emulator::getInstance()->getMemoryManager();
 		address = manager->Allocate(size * dim, 1);
 	}
 

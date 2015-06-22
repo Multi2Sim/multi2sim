@@ -32,7 +32,7 @@
 // Forward declarations
 namespace SI
 {
-	class Emu;
+	class Emulator;
 	class Arg;
 	class WorkGroup;
 	class Kernel;
@@ -81,7 +81,7 @@ private:
 	};
 
 	// Southern Islands emulator
-	Emu *emu = nullptr;
+	Emulator *emu = nullptr;
 
 	// Unique ND-range ID
 	int id = 0;
@@ -147,19 +147,19 @@ private:
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned const_buf_table = 0;
-	TableEntry const_buf_table_entries[Emu::MaxNumConstBufs];
+	TableEntry const_buf_table_entries[Emulator::MaxNumConstBufs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned resource_table = 0;
-	TableEntry resource_table_entries[Emu::MaxNumResources];
+	TableEntry resource_table_entries[Emulator::MaxNumResources];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned uav_table = 0;
-	TableEntry uav_table_entries[Emu::MaxNumUAVs];
+	TableEntry uav_table_entries[Emulator::MaxNumUAVs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned vertex_buffer_table = 0;
-	TableEntry vertex_buffer_table_entries[Emu::MaxNumVertexBuffers];
+	TableEntry vertex_buffer_table_entries[Emulator::MaxNumVertexBuffers];
 
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
@@ -168,7 +168,7 @@ private:
 public:
 
 	/// Constructor
-	NDRange(Emu *emu);
+	NDRange(Emulator *emu);
 
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
@@ -283,19 +283,19 @@ public:
 	int getAddressSpaceIndex() const { return address_space_index; }
 
 	/// Get emu it belongs to
-	Emu *getEmu() const { return emu; }
+	Emulator *getEmu() const { return emu; }
 
 	/// Get constant buffer entry from constant buffer table at index
 	TableEntry *getConstBuffer(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= Emu::MaxNumConstBufs);
+		assert(idx >= 0 && idx <= Emulator::MaxNumConstBufs);
 		return &const_buf_table_entries[idx];
 	}
 
 	/// Get constant buffer address in global memory
 	unsigned getConstBufferAddr(unsigned idx) const
 	{
-		assert(idx >= 0 && idx <= Emu::MaxNumConstBufs);
+		assert(idx >= 0 && idx <= Emulator::MaxNumConstBufs);
 		if (idx == 0)
 			return cb0;
 		else
@@ -305,7 +305,7 @@ public:
 	/// Get uav entry from uav table at index
 	TableEntry *getUAV(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= Emu::MaxNumUAVs);
+		assert(idx >= 0 && idx <= Emulator::MaxNumUAVs);
 		return &uav_table_entries[idx];
 	}
 

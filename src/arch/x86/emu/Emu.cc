@@ -32,20 +32,20 @@ namespace x86
 //
 
 // Debug files
-std::string Emu::call_debug_file;
-std::string Emu::context_debug_file;
-std::string Emu::cuda_debug_file;
-std::string Emu::glut_debug_file;
-std::string Emu::isa_debug_file;
-std::string Emu::loader_debug_file;
-std::string Emu::opencl_debug_file;
-std::string Emu::opengl_debug_file;
-std::string Emu::syscall_debug_file;
+std::string Emulator::call_debug_file;
+std::string Emulator::context_debug_file;
+std::string Emulator::cuda_debug_file;
+std::string Emulator::glut_debug_file;
+std::string Emulator::isa_debug_file;
+std::string Emulator::loader_debug_file;
+std::string Emulator::opencl_debug_file;
+std::string Emulator::opengl_debug_file;
+std::string Emulator::syscall_debug_file;
 
 // Maximum number of instructions
-long long Emu::max_instructions;
+long long Emulator::max_instructions;
 
-bool Emu::process_prefetch_hints = false;
+bool Emulator::process_prefetch_hints = false;
 
 
 
@@ -54,18 +54,18 @@ bool Emu::process_prefetch_hints = false;
 //
 
 // Emulator singleton
-std::unique_ptr<Emu> Emu::instance;
+std::unique_ptr<Emulator> Emulator::instance;
 
 // Debuggers
-misc::Debug Emu::call_debug;
-misc::Debug Emu::context_debug;
-misc::Debug Emu::cuda_debug;
-misc::Debug Emu::glut_debug;
-misc::Debug Emu::isa_debug;
-misc::Debug Emu::loader_debug;
-misc::Debug Emu::opencl_debug;
-misc::Debug Emu::opengl_debug;
-misc::Debug Emu::syscall_debug;
+misc::Debug Emulator::call_debug;
+misc::Debug Emulator::context_debug;
+misc::Debug Emulator::cuda_debug;
+misc::Debug Emulator::glut_debug;
+misc::Debug Emulator::isa_debug;
+misc::Debug Emulator::loader_debug;
+misc::Debug Emulator::opencl_debug;
+misc::Debug Emulator::opengl_debug;
+misc::Debug Emulator::syscall_debug;
 
 
 
@@ -73,7 +73,7 @@ misc::Debug Emu::syscall_debug;
 // Functions
 //
 
-void Emu::RegisterOptions()
+void Emulator::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -147,7 +147,7 @@ void Emu::RegisterOptions()
 }
 
 
-void Emu::ProcessOptions()
+void Emulator::ProcessOptions()
 {
 	// Debuggers
 	call_debug.setPath(call_debug_file);
@@ -162,7 +162,7 @@ void Emu::ProcessOptions()
 }
 
 
-void Emu::AddContextToList(Context::ListType type, Context *context)
+void Emulator::AddContextToList(Context::ListType type, Context *context)
 {
 	// Nothing if already present
 	if (context->context_list_present[type])
@@ -176,7 +176,7 @@ void Emu::AddContextToList(Context::ListType type, Context *context)
 }
 
 	
-void Emu::RemoveContextFromList(Context::ListType type, Context *context)
+void Emulator::RemoveContextFromList(Context::ListType type, Context *context)
 {
 	// Nothing if not present
 	if (!context->context_list_present[type])
@@ -189,7 +189,7 @@ void Emu::RemoveContextFromList(Context::ListType type, Context *context)
 }
 	
 
-void Emu::UpdateContextInList(Context::ListType type, Context *context,
+void Emulator::UpdateContextInList(Context::ListType type, Context *context,
 			bool present)
 {
 	if (present && !context->context_list_present[type])
@@ -203,19 +203,19 @@ void Emu::UpdateContextInList(Context::ListType type, Context *context,
 }
 
 
-Emu *Emu::getInstance()
+Emulator *Emulator::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Emu());
+	instance.reset(new Emulator());
 	return instance.get();
 }
 
 
-Context *Emu::newContext()
+Context *Emulator::newContext()
 {
 	// Create context and add to context list
 	Context *context = new Context();
@@ -234,7 +234,7 @@ Context *Emu::newContext()
 }
 
 
-Context *Emu::getContext(int pid)
+Context *Emulator::getContext(int pid)
 {
 	// Find context
 	for (auto &context : contexts)
@@ -246,7 +246,7 @@ Context *Emu::getContext(int pid)
 }
 
 
-void Emu::LoadProgram(const std::vector<std::string> &args,
+void Emulator::LoadProgram(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,
 		const std::string &cwd,
 		const std::string &stdin_file_name,
@@ -262,7 +262,7 @@ void Emu::LoadProgram(const std::vector<std::string> &args,
 }
 
 
-void Emu::freeContext(Context *context)
+void Emulator::freeContext(Context *context)
 {
 	// Remove context from all context lists
 	for (int i = 0; i < Context::ListCount; i++)
@@ -274,14 +274,14 @@ void Emu::freeContext(Context *context)
 }
 
 
-void Emu::ProcessEventsSchedule()
+void Emulator::ProcessEventsSchedule()
 {
 	LockMutex();
 	process_events_force = true;
 	UnlockMutex();
 }
 
-void Emu::ProcessEvents()
+void Emulator::ProcessEvents()
 {
 	// Check if events need actually be checked.
 	LockMutex();
@@ -402,7 +402,7 @@ void Emu::ProcessEvents()
 }
 
 
-bool Emu::Run()
+bool Emulator::Run()
 {
 	// Stop if there is no more contexts
 	if (!contexts.size())

@@ -152,7 +152,7 @@ Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *progr
 NDRange *Driver::AddNDRange()
 {
 	// Create new ndrange and insert it to ndrange list
-	ndranges.emplace_back(misc::new_unique<NDRange>(SI::Emu::getInstance()));
+	ndranges.emplace_back(misc::new_unique<NDRange>(SI::Emulator::getInstance()));
 
 	// Return
 	return ndranges.back().get();

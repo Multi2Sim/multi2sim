@@ -32,7 +32,7 @@ namespace comm
 
 // Forward declarations
 class Asm;
-class Emu;
+class Emulator;
 class Timing;
 
 /// Class representing one of the supported architectures on Multi2Sim (x86,
@@ -62,7 +62,7 @@ private:
 	Asm *as = nullptr;
 
 	// Emulator
-	Emu *emu = nullptr;
+	Emulator *emu = nullptr;
 
 	// Timing simulator
 	Timing *timing = nullptr;
@@ -91,7 +91,7 @@ public:
 	Asm *getAsm() const { return as; }
 
 	/// Return the associated emulator
-	Emu *getEmu() const { return emu; }
+	Emulator *getEmu() const { return emu; }
 
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
@@ -106,7 +106,7 @@ public:
 
 	/// Associate an emulator. This function should only be invoked
 	/// internally by ArchPool::RegisterEmulator()
-	void setEmu(Emu *emu)
+	void setEmu(Emulator *emu)
 	{
 		assert(!this->emu);
 		this->emu = emu;
@@ -175,7 +175,7 @@ public:
 
 	/// Register an emulator for the architecture with the given name. For
 	/// a given architecture, this function should be invoked at most once.
-	void RegisterEmulator(const std::string &name, Emu *emu)
+	void RegisterEmulator(const std::string &name, Emulator *emu)
 	{
 		Arch *arch = Register(name);
 		arch->setEmu(emu);

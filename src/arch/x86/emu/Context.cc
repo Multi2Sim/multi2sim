@@ -102,9 +102,9 @@ void Context::UpdateState(unsigned state)
 	emu->UpdateContextInList(ListSuspended, this, this->state & StateSuspended);
 
 	// Dump new state (ignore ContextSpecMode state, it's too frequent)
-	if (Emu::context_debug && (diff & ~StateSpecMode))
+	if (Emulator::context_debug && (diff & ~StateSpecMode))
 	{
-		Emu::context_debug << misc::fmt(
+		Emulator::context_debug << misc::fmt(
 				"[%s] Instruction %lld: Changed state to %s\n",
 				getName().c_str(),
 				emu->getInstructions(),
@@ -318,8 +318,8 @@ std::string Context::OpenProcCPUInfo()
 //
 
 Context::Context() :
-		comm::Context(Emu::getInstance()),
-		emu(Emu::getInstance())
+		comm::Context(Emulator::getInstance()),
+		emu(Emulator::getInstance())
 {
 	// Micro-instructions
 	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;

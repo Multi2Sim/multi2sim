@@ -159,7 +159,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				}
 				else 
 				{
-					throw Emu::Error(misc::fmt("Invalid "
+					throw Emulator::Error(misc::fmt("Invalid "
 							"work-item ID (%d)",
 							work_item->
 							getIdInWavefront()));

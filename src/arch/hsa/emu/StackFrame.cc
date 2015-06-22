@@ -45,7 +45,7 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 	variable_scope.reset(new VariableScope());
 
 	// Initialize function argument segment
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	func_arg_segment.reset(new SegmentManager(memory,
 			function->getArgumentSize()));
 }
@@ -75,7 +75,7 @@ void StackFrame::setPc(std::unique_ptr<BrigCodeEntry> pc)
 void StackFrame::StartArgumentScope(unsigned size)
 {
 	argument_scope.reset(new VariableScope());
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	arg_segment.reset(new SegmentManager(memory, size));
 };
 

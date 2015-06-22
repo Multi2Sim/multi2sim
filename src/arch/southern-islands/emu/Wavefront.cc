@@ -143,7 +143,7 @@ void Wavefront::Execute()
 	// Get current work-group
 	WorkGroup *work_group = this->work_group;
 	NDRange *ndrange = work_group->getNDRange();
-	Emu *emu = ndrange->getEmu();
+	Emulator *emu = ndrange->getEmu();
 	WorkItem *work_item = NULL;
 	std::unique_ptr<Inst> inst(new Inst(Asm::getInstance()));
 
@@ -196,7 +196,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -211,7 +211,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 		
 		break;
 	}
@@ -234,7 +234,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -249,7 +249,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -264,7 +264,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -280,7 +280,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, inst.get());
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -302,7 +302,7 @@ void Wavefront::Execute()
 				work_item->Execute(opcode, inst.get());
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -355,7 +355,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -378,7 +378,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -401,7 +401,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -424,7 +424,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -447,7 +447,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
  	
 		break;
 	}
@@ -488,7 +488,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -511,7 +511,7 @@ void Wavefront::Execute()
 		}
 		else
 		{
-			throw Emu::Error("Invalid MTBUF opcode");
+			throw Emulator::Error("Invalid MTBUF opcode");
 		}
 	
 		// Execute the instruction
@@ -526,7 +526,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -570,7 +570,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 	}
@@ -596,7 +596,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emu::debug << "\n";
+		Emulator::debug << "\n";
 
 		break;
 
@@ -654,17 +654,17 @@ void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs,
 {
 	EmuBufferDesc buf_desc;
 	NDRange *ndrange = work_group->getNDRange();
-	Emu *emu = ndrange->getEmu();
+	Emulator *emu = ndrange->getEmu();
 
 	unsigned buf_desc_addr;
 
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
-	assert(cb < (int)Emu::MaxNumConstBufs);
+	assert(cb < (int)Emulator::MaxNumConstBufs);
 	assert(ndrange->getConstBuffer(cb)->valid);
 
 	buf_desc_addr = ndrange->getConstBufferTableAddr() +
-		cb*Emu::ConstBufTableEntrySize;
+		cb*Emulator::ConstBufTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
@@ -697,17 +697,17 @@ void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
 {
 	EmuBufferDesc buf_desc;
 	NDRange *ndrange = work_group->getNDRange();
-	Emu *emu = ndrange->getEmu();
+	Emulator *emu = ndrange->getEmu();
 
 	unsigned buf_desc_addr;
 
 	assert(num_regs == 4);
 	assert(sizeof(buf_desc) == 16);
-	assert(uav < (int)Emu::MaxNumUAVs);
+	assert(uav < (int)Emulator::MaxNumUAVs);
 	assert(ndrange->getUAV(uav)->valid);
 
 	buf_desc_addr = ndrange->getUAVTableAddr() +
-		uav*Emu::UAVTableEntrySize;
+		uav*Emulator::UAVTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
