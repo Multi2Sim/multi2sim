@@ -192,7 +192,7 @@ public:
 	/// Get ndrange by its Id
 	NDRange *getNDRangeById(unsigned id)
 	{
-		assert(id < ndranges.size());
+		assert(id >= 0 && id < ndranges.size());
 		return ndranges[id].get();
 	}
 };
