@@ -2,43 +2,20 @@ lib_LIBRARIES = libemu.a
 
 libemu_a_SOURCES = \
 	\
-	emu.h \
-	emu.c \
-	\
 	Emu.cc \
 	Emu.h  \
 	\
-	context.c \
-	context.h \
-	\
 	Context.cc \
 	Context.h \
-	file.c \
-	file.h \
-	\
-	regs.c \
-	regs.h \
+	ContextIsa.cc \
+	ContextLoader.cc \
+	ContextSignal.cc \
 	\
 	Regs.cc \
 	Regs.h \
 	\
-	syscall.c \
-	syscall.dat \
-	syscall.h \
-	Syscall.cc \
-	\
-	machine.c \
-	machine.h \
-	ContextIsa.cc \
-	\
-	isa.c \
-	isa.h \
-	\
-	ContextLoader.cc \
-	ContextSignal.cc \
-	\
-	Signal.h \
-	Signal.cc 
+	Signal.cc \
+	Signal.h
 
 	
 AM_CPPFLAGS = @M2S_INCLUDES@

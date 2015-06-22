@@ -18,7 +18,6 @@
  */
 
 
-#include <driver/cuda/function.h>
 #include <lib/util/debug.h>
 #include <lib/util/list.h>
 

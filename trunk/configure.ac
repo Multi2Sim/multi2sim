@@ -960,17 +960,12 @@ AC_CONFIG_FILES([
 		runtime/Makefile
 		runtime/cuda/Makefile
 		runtime/hsa/Makefile
-		runtime/glew/Makefile
-		runtime/glu/Makefile
-		runtime/glut/Makefile
 		runtime/opencl/Makefile
-		runtime/opengl/Makefile
 		runtime/include/Makefile
 
 		src/Makefile
 
 		src/arch/Makefile
-		src/driver/Makefile
 		src/lib/Makefile
 		src/memory/Makefile
 		src/network/Makefile
@@ -978,7 +973,6 @@ AC_CONFIG_FILES([
 
 		src/visual/Makefile
 		src/visual/common/Makefile
-		src/visual/evergreen/Makefile
 		src/visual/memory/Makefile
 		src/visual/network/Makefile
 		src/visual/southern-islands/Makefile
@@ -990,16 +984,6 @@ AC_CONFIG_FILES([
 		src/arch/arm/asm/Makefile
 		src/arch/arm/emu/Makefile
 		src/arch/arm/timing/Makefile
-
-		src/arch/evergreen/Makefile
-		src/arch/evergreen/asm/Makefile
-		src/arch/evergreen/emu/Makefile
-		src/arch/evergreen/timing/Makefile
-
-		src/arch/fermi/Makefile
-		src/arch/fermi/asm/Makefile
-		src/arch/fermi/emu/Makefile
-		src/arch/fermi/timing/Makefile
 
 		src/arch/hsa/Makefile
 		src/arch/hsa/asm/Makefile
@@ -1027,17 +1011,6 @@ AC_CONFIG_FILES([
 		src/arch/x86/emu/Makefile
 		src/arch/x86/timing/Makefile
 
-		src/driver/common/Makefile
-		src/driver/cuda/Makefile
-		src/driver/glu/Makefile
-		src/driver/glut/Makefile
-		src/driver/glew/Makefile
-		src/driver/opencl/Makefile
-		src/driver/opencl-old/Makefile
-		src/driver/opencl-old/evergreen/Makefile
-		src/driver/opengl/Makefile
-		src/driver/opengl/southern-islands/Makefile
-
 		src/lib/class/Makefile
 		src/lib/cpp/Makefile
 		src/lib/esim/Makefile
@@ -1049,7 +1022,6 @@ AC_CONFIG_FILES([
 		m2c/amd/Makefile
 		m2c/common/Makefile
 		m2c/cl2llvm/Makefile
-		m2c/frm2bin/Makefile
 		m2c/gl/Makefile
 		m2c/llvm2si/Makefile
 		m2c/llvm2si/passes/Makefile
