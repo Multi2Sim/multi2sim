@@ -37,7 +37,7 @@ namespace SI
 class ObjectPool 
 {
 	// Disassembler
-	Asm *as = nullptr;
+	Disassembler *as = nullptr;
 
 	// Emulator
 	Emulator *emulator = nullptr;

@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MIPS_ASM_ASM_H
-#define MIPS_ASM_ASM_H
+#ifndef ARCH_MIPS_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_MIPS_DISASSEMBLER_DISASSEMBLER_H
 
 #include <memory>
 
@@ -32,16 +32,16 @@ namespace MIPS
 {
 
 
-class Asm : public comm::Asm
+class Disassembler : public comm::Disassembler
 {
 	// File to disassemble
 	static std::string path;
 
 	// Unique instance of the singleton
-	static std::unique_ptr<Asm> instance;
+	static std::unique_ptr<Disassembler> instance;
 
 	// Private constructor for singleton
-	Asm();
+	Disassembler();
 
 public:
 
@@ -90,10 +90,10 @@ public:
 	
 	
 	/// Return an instance of the singleton
-	static Asm *getInstance();
+	static Disassembler *getInstance();
 
 	/// Destructor
-	~Asm();
+	~Disassembler();
 	
 	/// Disassemble binary file given a path
 	void DisassembleBinary(const std::string &path);

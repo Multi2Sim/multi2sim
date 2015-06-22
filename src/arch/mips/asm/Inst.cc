@@ -76,7 +76,7 @@ static const char *inst_reg_name[MIPS_INST_REG_COUNT] =
 
 Inst::Inst()
 {
-	this->as = Asm::getInstance();
+	this->disassembler = Disassembler::getInstance();
 	bytes.word = 0;
 	addr = 0;
 	target = 0;
@@ -101,7 +101,7 @@ void Inst::Decode(unsigned addr, const char *buf)
 
 	/* We start with the first table mips_asm_table, with the
 	 * opcode field as argument */
-	current_table = as->dec_table;
+	current_table = disassembler->dec_table;
 	current_table_low = 26;
 	current_table_high = 31;
 	loop_iteration = 0;
@@ -123,7 +123,7 @@ void Inst::Decode(unsigned addr, const char *buf)
 		}
 		else if (loop_iteration > 4)
 		{
-			throw Asm::Error(misc::fmt("Invalid instruction at "
+			throw Disassembler::Error(misc::fmt("Invalid instruction at "
 					"0x%x", addr));
 		}
 		else
@@ -156,11 +156,11 @@ void Inst::DumpRd(std::ostream &os) const
 
 	rd = bytes.standard.rd;
 
-	if (comm::Asm::isToken(info->name, "RDHWR", token_len))
+	if (comm::Disassembler::isToken(info->name, "RDHWR", token_len))
 	{
 		os << '$' << rd;
 	}
-	else if (comm::Asm::isToken(info->name, "JALR", token_len))
+	else if (comm::Disassembler::isToken(info->name, "JALR", token_len))
 	{
 		if (rd != 31)
 			os << ',' << inst_reg_name[rd];
@@ -252,8 +252,8 @@ void Inst::DumpPos(std::ostream &os) const
 void Inst::DumpFs(std::ostream &os) const
 {
 	unsigned fs = bytes.standard.rd;
-	if ((comm::Asm::isToken(info->name, "CFC1")) ||
-			(comm::Asm::isToken(info->name, "CTC1")))
+	if ((comm::Disassembler::isToken(info->name, "CFC1")) ||
+			(comm::Disassembler::isToken(info->name, "CTC1")))
 		os << '$' << fs;
 	else
 		os << "$f" << fs;
@@ -265,9 +265,9 @@ void Inst::DumpSize(std::ostream &os) const
 	unsigned pos = bytes.standard.sa;
 	unsigned size = bytes.standard.rd;
 
-	if (comm::Asm::isToken(info->name, "INS"))
+	if (comm::Disassembler::isToken(info->name, "INS"))
 		size = size + 1 - pos;
-	else if (comm::Asm::isToken(info->name, "EXT"))
+	else if (comm::Disassembler::isToken(info->name, "EXT"))
 		size++;
 	os << misc::fmt("0x%x", size);
 }
@@ -324,7 +324,7 @@ void Inst::Dump(std::ostream &os)
 		//
 
 		// SLL ZERO, ZERO, ZERO => NOP
-		if (comm::Asm::isToken(fmt_str, "sll", token_len))
+		if (comm::Disassembler::isToken(fmt_str, "sll", token_len))
 		{
 			if ((rd | rt | sa) == 0)
 			{
@@ -333,7 +333,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ADDU RD, RS, ZERO => MOVE RD, RS
-		else if (comm::Asm::isToken(fmt_str, "addu", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "addu", token_len))
 		{
 			if (rt == 0)
 			{
@@ -345,7 +345,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// BGEZAL ZERO, OFFSET => BAL OFFSET
-		else if (comm::Asm::isToken(fmt_str, "bgezal", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "bgezal", token_len))
 		{
 			if (rs == 0)
 			{
@@ -356,7 +356,7 @@ void Inst::Dump(std::ostream &os)
 		}
 		// BEQ ZERO, ZERO, OFFSET => B OFFSET
 		// BEQ RS, ZERO, OFFSET => BEQZ RS, OFFSET
-		else if (comm::Asm::isToken(fmt_str, "beq", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "beq", token_len))
 		{
 			if ((rs | rt) == 0)
 			{
@@ -374,7 +374,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ADDIU RT, ZERO, IMM => LI RT, IMM
-		else if (comm::Asm::isToken(fmt_str, "addiu",
+		else if (comm::Disassembler::isToken(fmt_str, "addiu",
 				token_len))
 		{
 			if (rs == 0)
@@ -387,7 +387,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// ORI RT, ZERO, IMM => LI RT, IMM
-		else if (comm::Asm::isToken(fmt_str, "ori", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "ori", token_len))
 		{
 			if (rs == 0)
 			{
@@ -399,7 +399,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// BNE RS, ZERO, OFFSET => BNEZ RS, OFFSET
-		else if (comm::Asm::isToken(fmt_str, "bne", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "bne", token_len))
 		{
 			if (rt == 0)
 			{
@@ -411,7 +411,7 @@ void Inst::Dump(std::ostream &os)
 			}
 		}
 		// SUBU RD, ZERO, RT => NEGU RD, RT
-		else if (comm::Asm::isToken(fmt_str, "subu", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "subu", token_len))
 		{
 			if (rs == 0)
 			{
@@ -438,47 +438,47 @@ void Inst::Dump(std::ostream &os)
 			os << '\t';
 		first_token = false;
 		++fmt_str;
-		if (comm::Asm::isToken(fmt_str, "sa", token_len))
+		if (comm::Disassembler::isToken(fmt_str, "sa", token_len))
 			DumpSa(os);
-		else if (comm::Asm::isToken(fmt_str, "rd", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rd", token_len))
 			DumpRd(os);
-		else if (comm::Asm::isToken(fmt_str, "rt", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rt", token_len))
 			DumpRt(os);
-		else if (comm::Asm::isToken(fmt_str, "rs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "rs", token_len))
 			DumpRs(os);
-		else if (comm::Asm::isToken(fmt_str, "target",
+		else if (comm::Disassembler::isToken(fmt_str, "target",
 				token_len))
 			DumpTarget(os);
-		else if (comm::Asm::isToken(fmt_str, "offset",
+		else if (comm::Disassembler::isToken(fmt_str, "offset",
 				token_len))
 			DumpOffset(os);
-		else if (comm::Asm::isToken(fmt_str, "offsetbr",
+		else if (comm::Disassembler::isToken(fmt_str, "offsetbr",
 				token_len))
 			DumpOffsetbr(os);
-		else if (comm::Asm::isToken(fmt_str, "Imm", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "Imm", token_len))
 			DumpImm(os);
-		else if (comm::Asm::isToken(fmt_str, "Immhex",
+		else if (comm::Disassembler::isToken(fmt_str, "Immhex",
 				token_len))
 			DumpImmhex(os);
-		else if (comm::Asm::isToken(fmt_str, "base", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "base", token_len))
 			DumpBase(os);
-		else if (comm::Asm::isToken(fmt_str, "sel", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "sel", token_len))
 			DumpSel(os);
-		else if (comm::Asm::isToken(fmt_str, "cc", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "cc", token_len))
 			DumpCc(os);
-		else if (comm::Asm::isToken(fmt_str, "pos", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "pos", token_len))
 			DumpPos(os);
-		else if (comm::Asm::isToken(fmt_str, "size", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "size", token_len))
 			DumpSize(os);
-		else if (comm::Asm::isToken(fmt_str, "fs", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "fs", token_len))
 			DumpFs(os);
-		else if (comm::Asm::isToken(fmt_str, "ft", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "ft", token_len))
 			DumpFt(os);
-		else if (comm::Asm::isToken(fmt_str, "fd", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "fd", token_len))
 			DumpFd(os);
-		else if (comm::Asm::isToken(fmt_str, "code", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "code", token_len))
 			DumpCode(os);
-		else if (comm::Asm::isToken(fmt_str, "hint", token_len))
+		else if (comm::Disassembler::isToken(fmt_str, "hint", token_len))
 			DumpHint(os);
 		else
 			throw misc::Panic(misc::fmt("%s: Unrecognized "

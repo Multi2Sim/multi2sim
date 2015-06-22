@@ -28,7 +28,7 @@
 namespace x86
 {
 
-class Asm;
+class Disassembler;
 
 
 
@@ -162,7 +162,7 @@ struct InstDecodeInfo
 class Inst
 {
 	// X86 assembler used to decode instruction
-	const Asm *as;
+	const Disassembler *disassembler;
 
 	// Flag indicating if instruction has been decoded
 	bool decoded;

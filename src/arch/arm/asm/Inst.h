@@ -26,7 +26,7 @@ namespace ARM
 {
 
 // Forward declarations
-class Asm;
+class Disassembler;
 
 
 struct InstBytesDpr
@@ -910,8 +910,72 @@ struct InstThumb32Info
 /// ARM instruction
 class Inst
 {
+public:
+
+	/// Shift operators
+	enum ShiftOperator
+	{
+		ShiftOperatorLsl = 0,
+		ShiftOperatorLsr,
+		ShiftOperatorAsr,
+		ShiftOperatorRor
+	};
+
+
+	/// Condition Fields
+	enum ConditionCodes
+	{
+		ConditionCodesEQ = 0, // Equal
+		ConditionCodesNE,	// Not Equal
+		ConditionCodesCS,	// Unsigned higher
+		ConditionCodesCC,	// Unsigned Lower
+		ConditionCodesMI,	// Negative
+		ConditionCodesPL,	// Positive or Zero
+		ConditionCodesVS,	// Overflow
+		ConditionCodesVC,	// No Overflow
+		ConditionCodesHI,	// Unsigned Higher
+		ConditionCodesLS,	// Unsigned Lower
+		ConditionCodesGE,	// Greater or Equal
+		ConditionCodesLT,	// Less Than
+		ConditionCodesGT,	// Greater than
+		ConditionCodesLE,	// Less than or equal
+		ConditionCodesAL	// Always
+	};
+
+
+	/// User register
+	enum UserRegisters
+	{
+		UserRegistersR0 = 0,
+		UserRegistersR1,
+		UserRegistersR2,
+		UserRegistersR3,
+		UserRegistersR4,
+		UserRegistersR5,
+		UserRegistersR6,
+		UserRegistersR7,
+		UserRegistersR8,
+		UserRegistersR9,
+		UserRegistersR10,
+		UserRegistersR11,
+		UserRegistersR12,
+		UserRegistersR13,	// Stack Pointer sp
+		UserRegistersR14,	// Link register lr
+		UserRegistersR15	// Program Counter pc
+	};
+
+
+	/// PSR register
+	enum PsrRegisters
+	{
+		PsrRegistersCPSR = 0,
+		PsrRegistersSPSR
+	};
+
+private:
+
 	// Disassembler
-	Asm *as; 
+	Disassembler *disassembler; 
 
 	// Instruction address
 	unsigned int addr;

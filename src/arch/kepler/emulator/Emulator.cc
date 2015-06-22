@@ -67,18 +67,18 @@ Emulator *Emulator::getInstance()
 
 Emulator::Emulator() : comm::Emulator("kpl")
 {
-    // Initialize disassembler
-	this->as = as->getInstance();
+	// Initialize disassembler
+	disassembler = Disassembler::getInstance();
 
 	// Global memory initialization
-	global_mem.reset(new mem::Memory());
+	global_mem = misc::new_unique<mem::Memory>();
 	global_mem->setSafe(false);
 	global_mem_top = 0;
 	global_mem_total_size = 1 << 30; /* 2GB */
 	global_mem_free_size = this->global_mem_total_size;
 
 	// Constant memory initialization
-    const_mem.reset(new mem::Memory());
+	const_mem = misc::new_unique<mem::Memory>();
 	const_mem->setSafe(false);
 
 	emu_max_inst = 0xffffffff;

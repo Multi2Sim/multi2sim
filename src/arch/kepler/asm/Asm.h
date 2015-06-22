@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA 
  */
 
-#ifndef ARCH_KEPLER_ASM_ASM_H
-#define ARCH_KEPLER_ASM_ASM_H
+#ifndef ARCH_KEPLER_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_KEPLER_DISASSEMBLER_DISASSEMBLER_H
 
 
 #include <memory>
@@ -32,7 +32,7 @@
 namespace Kepler
 {
 
-class Asm : public comm::Asm
+class Disassembler : public comm::Disassembler
 {
 	// Instruction information
 	InstInfo inst_info[InstOpcodeCount];
@@ -115,7 +115,7 @@ class Asm : public comm::Asm
 	InstDecodeInfo dec_table_c_b_e_b_a_a[16];
 
 	// Global instance of the Kepler disassembler
-	static std::unique_ptr<Asm> as;
+	static std::unique_ptr<Disassembler> instance;
 
 	// The path of cubin file disassembler gets from command line
 	static std::string path;
@@ -140,12 +140,12 @@ class Asm : public comm::Asm
 			const char *fmt_str, int argc, int argv[]);
 
 	// Private constructor for singleton
-	Asm();
+	Disassembler();
 
 public:
 
 	/// Return instance of the singleton
-	static Asm *getInstance();
+	static Disassembler *getInstance();
 
 	/// Return a pointer to the decoding table, which will be indexed by
 	/// instruction bits for instruction decoding purposes.

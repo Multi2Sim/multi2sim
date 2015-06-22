@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_ASM_ASM_H
-#define ARCH_X86_ASM_ASM_H
+#ifndef ARCH_X86_DISASSEMBLER_DISASSEMBLER_H
+#define ARCH_X86_DISASSEMBLER_DISASSEMBLER_H
 
 #include <cassert>
 
@@ -33,7 +33,7 @@ namespace x86
 {
 
 
-class Asm : public comm::Asm
+class Disassembler : public comm::Disassembler
 {
 	// Disassemble a file
 	static std::string path;
@@ -54,7 +54,7 @@ class Asm : public comm::Asm
 	static const int ID = 0x8000;
 
 	// Unique instance of x86 disassembler
-	static std::unique_ptr<Asm> instance;
+	static std::unique_ptr<Disassembler> instance;
 
 	// Instruction information
 	InstInfo inst_info[InstOpcodeCount];
@@ -75,7 +75,7 @@ class Asm : public comm::Asm
 	void FreeInstDecodeInfo(InstDecodeInfo *elem);
 
 	// Private constructor for singleton
-	Asm();
+	Disassembler();
 
 public:
 
@@ -97,10 +97,10 @@ public:
 	static void ProcessOptions();
 
 	/// Destructor
-	~Asm();
+	~Disassembler();
 
 	/// Get instance of singleton
-	static Asm *getInstance();
+	static Disassembler *getInstance();
 
 	/// Get instruction information for a given opcode
 	const InstInfo *getInstInfo(InstOpcode opcode) const

@@ -122,12 +122,12 @@ static const int AsmOpcode_C_B_E_B_B = 1;
 static const int AsmOpcode_C_B_E_B_A_A = 1;
 
 
-std::unique_ptr<Asm> Asm::as;
+std::unique_ptr<Disassembler> Disassembler::instance;
 
-std:: string Asm::path;
+std:: string Disassembler::path;
 
 
-void Asm::RegisterOptions()
+void Disassembler::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -146,18 +146,18 @@ void Asm::RegisterOptions()
 }
 
 
-void Asm::ProcessOptions()
+void Disassembler::ProcessOptions()
 {
 	// Run kepler disassembler
 	if (!path.empty())
 	{
-		Asm *as = Asm::getInstance();
-		as->DisassembleBinary(path);
+		Disassembler *disassembler = Disassembler::getInstance();
+		disassembler->DisassembleBinary(path);
 		exit(0);
 	}
 }
 
-void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
+void Disassembler::InitTableWithArray(InstOpcode opcode, const char *name,
 		const char *fmt_str, int argc, int argv[])
 {
 	// Initialize instruction info table
@@ -192,16 +192,16 @@ void Asm::InitTableWithArray(InstOpcode opcode, const char *name,
 }
 
 
-Asm *Asm::getInstance()
+Disassembler *Disassembler::getInstance()
 {
-	if (as)
-		return as.get();
-	as.reset(new Asm());
-	return as.get();
+	if (instance)
+		return instance.get();
+	instance.reset(new Disassembler());
+	return instance.get();
 }
 
 
-Asm::Asm() : comm::Asm("Kepler")
+Disassembler::Disassembler() : comm::Disassembler("Kepler")
 {
 	// Initiate values for the 'next_table', 'next_table_low' and
 	// 'next_table_high' fields of the tables
@@ -470,7 +470,7 @@ Asm::Asm() : comm::Asm("Kepler")
 }
 
 
-void Asm::DisassembleBinary(const std::string &path) const
+void Disassembler::DisassembleBinary(const std::string &path) const
 {
 	// Initializations
 	ELFReader::File f(path);

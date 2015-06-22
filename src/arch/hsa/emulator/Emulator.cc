@@ -106,7 +106,7 @@ Emulator::Emulator() : comm::Emulator("hsa")
 	InstallComponents("");
 	memory = std::make_shared<mem::Memory>();
 	manager.reset(new mem::Manager(memory.get()));
-	Asm::getInstance()->DisableIndentation();
+	Disassembler::getInstance()->DisableIndentation();
 	if (loader_debug)
 	{
 		DumpComponentList(loader_debug);

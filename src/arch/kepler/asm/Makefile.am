@@ -7,10 +7,7 @@ libasm_a_SOURCES = \
 	\
 	Inst.cc \
 	Inst.def \
-	Inst.h \
-	\
-	Wrapper.cc \
-	Wrapper.h
+	Inst.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 
