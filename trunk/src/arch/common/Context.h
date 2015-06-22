@@ -27,7 +27,7 @@ namespace comm
 {
 
 // Forward declaration
-class Emu;
+class Emulator;
 
 
 /// Class capturing basic functionality for a CPU context (i.e., a simulated
@@ -45,12 +45,12 @@ class Context
 	std::string name;
 
 	// Associated emulator, initialized in constructor
-	Emu *emu;
+	Emulator *emu;
 
 public:
 
 	/// Constructor
-	Context(Emu *emu);
+	Context(Emulator *emu);
 
 	/// Return a unique integer identifier for this context. Identifiers
 	/// are assigned to contexts starting at 1000, and in common for all

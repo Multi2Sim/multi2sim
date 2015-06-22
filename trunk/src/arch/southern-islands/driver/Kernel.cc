@@ -107,7 +107,7 @@ void Kernel::LoadMetaDataV3()
 	{
 		// Read the next line
 		std::getline(metadata_stream, line);
-		x86::Emu::opencl_debug << misc::fmt("\t%s\n", line.c_str());
+		x86::Emulator::opencl_debug << misc::fmt("\t%s\n", line.c_str());
 		misc::StringTokenize(line, token_list, ";:");
 
 		// Stop when ARGEND is found or line is empty
@@ -162,7 +162,7 @@ void Kernel::LoadMetaDataV3()
 				constant_buffer_num, constant_offset));
 
 			// Debug
-			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - value stored in "
+			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -259,7 +259,7 @@ void Kernel::LoadMetaDataV3()
 				access_type));
 			
 			// Debug
-			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - Pointer stored in "
+			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -320,7 +320,7 @@ void Kernel::LoadMetaDataV3()
 				uav, constant_buffer_num, constant_offset));
 
 			// Debug
-			x86::Emu::opencl_debug << misc::fmt("\targument '%s' - Image stored in "
+			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - Image stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -590,8 +590,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	assert(sizeof(struct EmuBufferDesc) == 16);
 	memset(buffer_desc, 0, sizeof(EmuBufferDesc));
 
-	num_format = Emu::BufDescNumFmtInvalid;
-	data_format = Emu::BufDescDataFmtInvalid;
+	num_format = Emulator::BufDescNumFmtInvalid;
+	data_format = Emulator::BufDescDataFmtInvalid;
 
 	switch (data_type)
 	{
@@ -599,19 +599,19 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt8:
 	case ArgDataTypeUInt8:
 
-		num_format = Emu::BufDescNumFmtSint;
+		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = Emu::BufDescDataFmt8;
+			data_format = Emulator::BufDescDataFmt8;
 			break;
 
 		case 2:
-			data_format = Emu::BufDescDataFmt8_8;
+			data_format = Emulator::BufDescDataFmt8_8;
 			break;
 
 		case 4:
-			data_format = Emu::BufDescDataFmt8_8_8_8;
+			data_format = Emulator::BufDescDataFmt8_8_8_8;
 			break;
 
 		default:
@@ -625,20 +625,20 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt16:
 	case ArgDataTypeUInt16:
 
-		num_format = Emu::BufDescNumFmtSint;
+		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 
 		case 1:
-			data_format = Emu::BufDescDataFmt16;
+			data_format = Emulator::BufDescDataFmt16;
 			break;
 
 		case 2:
-			data_format = Emu::BufDescDataFmt16_16;
+			data_format = Emulator::BufDescDataFmt16_16;
 			break;
 
 		case 4:
-			data_format = Emu::BufDescDataFmt16_16_16_16;
+			data_format = Emulator::BufDescDataFmt16_16_16_16;
 			break;
 
 		default:
@@ -652,24 +652,24 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	case ArgDataTypeInt32:
 	case ArgDataTypeUInt32:
 
-		num_format = Emu::BufDescNumFmtSint;
+		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
 		{
 
 		case 1:
-			data_format = Emu::BufDescDataFmt32;
+			data_format = Emulator::BufDescDataFmt32;
 			break;
 
 		case 2:
-			data_format = Emu::BufDescDataFmt32_32;
+			data_format = Emulator::BufDescDataFmt32_32;
 			break;
 
 		case 3:
-			data_format = Emu::BufDescDataFmt32_32_32;
+			data_format = Emulator::BufDescDataFmt32_32_32;
 			break;
 
 		case 4:
-			data_format = Emu::BufDescDataFmt32_32_32_32;
+			data_format = Emulator::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -682,23 +682,23 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 	case ArgDataTypeFloat:
 
-		num_format = Emu::BufDescNumFmtFloat;
+		num_format = Emulator::BufDescNumFmtFloat;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = Emu::BufDescDataFmt32;
+			data_format = Emulator::BufDescDataFmt32;
 			break;
 
 		case 2:
-			data_format = Emu::BufDescDataFmt32_32;
+			data_format = Emulator::BufDescDataFmt32_32;
 			break;
 
 		case 3:
-			data_format = Emu::BufDescDataFmt32_32_32;
+			data_format = Emulator::BufDescDataFmt32_32_32;
 			break;
 
 		case 4:
-			data_format = Emu::BufDescDataFmt32_32_32_32;
+			data_format = Emulator::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -711,15 +711,15 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 
 	case ArgDataTypeDouble:
 
-		num_format = Emu::BufDescNumFmtFloat;
+		num_format = Emulator::BufDescNumFmtFloat;
 		switch (num_elems)
 		{
 		case 1:
-			data_format = Emu::BufDescDataFmt32_32;
+			data_format = Emulator::BufDescDataFmt32_32;
 			break;
 
 		case 2:
-			data_format = Emu::BufDescDataFmt32_32_32_32;
+			data_format = Emulator::BufDescDataFmt32_32_32_32;
 			break;
 
 		default:
@@ -731,8 +731,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		break;
 	case ArgDataTypeStruct:
 
-		num_format = Emu::BufDescNumFmtUint;
-		data_format = Emu::BufDescDataFmt8;
+		num_format = Emulator::BufDescNumFmtUint;
+		data_format = Emulator::BufDescDataFmt8;
 		elem_size = 1;
 		break;
 
@@ -741,8 +741,8 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 		throw Driver::Error(misc::fmt("Invalid data type for buffer "
 				"(%d)", data_type));
 	}
-	assert(num_format != Emu::BufDescNumFmtInvalid);
-	assert(data_format != Emu::BufDescDataFmtInvalid);
+	assert(num_format != Emulator::BufDescNumFmtInvalid);
+	assert(data_format != Emulator::BufDescDataFmtInvalid);
 
 	buffer_desc->base_addr = base_addr;
 	buffer_desc->num_format = num_format;
@@ -770,11 +770,11 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 				"\tELF symbol 'OpenCL_%s_xxx missing'\n%s",
 				name.c_str(), OpenCLErrSIKernelSymbol));
 
-	x86::Emu::opencl_debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
+	x86::Emulator::opencl_debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
-	x86::Emu::opencl_debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
+	x86::Emulator::opencl_debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
 			(unsigned)header_symbol->getValue(), (unsigned)header_symbol->getSize());
-	x86::Emu::opencl_debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
+	x86::Emulator::opencl_debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
 			(unsigned)kernel_symbol->getValue(), (unsigned)kernel_symbol->getSize());
 
 	// Create and parse kernel binary (internal ELF).
@@ -792,11 +792,11 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 {
 	// Get emulator instance and video_memory               
-	Emu *emu = SI::Emu::getInstance();
+	Emulator *emu = SI::Emulator::getInstance();
 	mem::Memory *video_memory = emu->getVideoMemory();
 
-	unsigned size_of_tables = Emu::ConstBufTableSize +
-		Emu::ResourceTableSize + Emu::UAVTableSize;
+	unsigned size_of_tables = Emulator::ConstBufTableSize +
+		Emulator::ResourceTableSize + Emulator::UAVTableSize;
 
 	// if (gpu_mmu)
 	// {
@@ -813,21 +813,21 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);             
 
 	// Debug print out
-	x86::Emu::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
+	x86::Emulator::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
 		emu->getVideoMemoryTop());
 
 	// Set constant buffer table address                                     
 	ndrange->setConstBufferTable(emu->getVideoMemoryTop());                  
-	emu->incVideoMemoryTop(Emu::ConstBufTableSize);                       
+	emu->incVideoMemoryTop(Emulator::ConstBufTableSize);                       
 
 	// Set resource table address                                            
 	ndrange->setResourceTable(emu->getVideoMemoryTop());                     
-	emu->incVideoMemoryTop(Emu::ResourceTableSize);                       
+	emu->incVideoMemoryTop(Emulator::ResourceTableSize);                       
 
 	// Set uav table address                                                 
 	ndrange->setUAVTable(emu->getVideoMemoryTop());                          
-	emu->incVideoMemoryTop(Emu::UAVTableSize); 
+	emu->incVideoMemoryTop(Emulator::UAVTableSize); 
 	
 	// Return
 	return;
@@ -836,21 +836,21 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 void Kernel::CreateNDRangeConstantBuffers(NDRange *ndrange)                                            
 {                                                                                
 	// Get emulator instance and video_memory                                
-	SI::Emu *emu = SI::Emu::getInstance();                                
+	SI::Emulator *emu = SI::Emulator::getInstance();                                
 	mem::Memory *video_memory = emu->getVideoMemory();                       
 
 	// Map new pages                                                         
-	video_memory->Map(emu->getVideoMemoryTop(), Emu::TotalConstBufSize,      
+	video_memory->Map(emu->getVideoMemoryTop(), Emulator::TotalConstBufSize,      
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);     
 
 	// TODO - setup for timing simulator                                     
 
 	// Set constant buffer addresses                                         
 	ndrange->setCB0(emu->getVideoMemoryTop());                                 
-	ndrange->setCB1(emu->getVideoMemoryTop() + Emu::ConstBuf0Size);            
+	ndrange->setCB1(emu->getVideoMemoryTop() + Emulator::ConstBuf0Size);            
 
 	// Increment video memory pointer                                        
-	emu->incVideoMemoryTop(Emu::TotalConstBufSize);                       
+	emu->incVideoMemoryTop(Emulator::TotalConstBufSize);                       
 }  
 
 
@@ -880,7 +880,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg->getName().c_str()));
 
 		// Debug
-		x86::Emu::opencl_debug << misc::fmt("\targ[%d] = %s ",
+		x86::Emulator::opencl_debug << misc::fmt("\targ[%d] = %s ",
 				index, arg->getName().c_str());
 
 		// Process argument depending on its type
@@ -917,7 +917,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg_ptr->getConstantOffset(),
 					ndrange->getLocalMemTopPtr(), 4);
 
-				x86::Emu::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
+				x86::Emulator::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
 					ndrange->getLocalMemTop());
 
 				ndrange->incLocalMemTop(arg_ptr->getSize());
@@ -927,7 +927,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			// UAV
 			case ArgScopeUAV:
 			{
-				x86::Emu::opencl_debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
+				x86::Emulator::opencl_debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
 
 				// Create descriptor for argument
 				CreateBufferDesc(
@@ -1001,7 +1001,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		}
 
 		// Debug
-		x86::Emu::opencl_debug << "\n";
+		x86::Emulator::opencl_debug << "\n";
 
 		// Next
 		index++;
@@ -1009,7 +1009,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	// Add program-wide constant buffers to the ND-range.
 	// Program-wide constant buffers start at number 2.
-	for (unsigned i = 2; i < Emu::MaxNumConstBufs; i++)
+	for (unsigned i = 2; i < Emulator::MaxNumConstBufs; i++)
 	{
 		// Assert that program is valid
 		Program *program = getProgram();
@@ -1054,13 +1054,13 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	float f;
 
 	// Constant buffer 0
-	CreateBufferDesc(ndrange->getConstBufferAddr(0), Emu::ConstBuf0Size,
+	CreateBufferDesc(ndrange->getConstBufferAddr(0), Emulator::ConstBuf0Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
 
 	// Constant buffer 1
-	CreateBufferDesc(ndrange->getConstBufferAddr(1), Emu::ConstBuf1Size,
+	CreateBufferDesc(ndrange->getConstBufferAddr(1), Emulator::ConstBuf1Size,
 		1, ArgDataTypeInt32, &buffer_desc);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 1);

@@ -207,8 +207,8 @@ void HsaExecutable::parseFunction(BrigFile *file,
 	function->setFirstEntry(std::move(first_entry));
 	function->setFunctionDirective(std::move(entry));
 
-	if (Emu::loader_debug)
-		function->Dump(Emu::loader_debug);
+	if (Emulator::loader_debug)
+		function->Dump(Emulator::loader_debug);
 
 	function_table.insert(std::make_pair(name, std::move(function)));
 }
@@ -216,7 +216,7 @@ void HsaExecutable::parseFunction(BrigFile *file,
 
 unsigned int HsaExecutable::loadFunctions(BrigFile *file)
 {
-	Emu::loader_debug << misc::fmt("Preprocessing brig file: %s\n",
+	Emulator::loader_debug << misc::fmt("Preprocessing brig file: %s\n",
 			file->getPath().c_str());
 
 	unsigned int num_functions = 0;

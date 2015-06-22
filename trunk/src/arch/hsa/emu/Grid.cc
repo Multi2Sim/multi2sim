@@ -62,7 +62,7 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 	kernel_args = packet->getKernargAddress();
 
 	// Create kernel argument
-	mem::Memory *memory = Emu::getInstance()->getMemory();
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	kernarg_segment.reset(new SegmentManager(memory,
 			root_function->getArgumentSize()));
 	kernel_arguments.reset(new VariableScope());

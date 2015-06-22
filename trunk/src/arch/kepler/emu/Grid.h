@@ -35,7 +35,7 @@
 namespace Kepler
 {
 
-class Emu;
+class Emulator;
 class ThreadBlock;
 
 enum GridState
@@ -49,7 +49,7 @@ enum GridState
 class Grid
 {
 	// Emulator
-	Emu *emu;
+	Emulator *emu;
 
 	// ID
 	int id;

@@ -32,56 +32,56 @@ namespace SI
 {
 
 // UAV Table
-const unsigned Emu::MaxNumUAVs;
-const unsigned Emu::UAVTableEntrySize = 32;
-const unsigned Emu::UAVTableSize = MaxNumUAVs * UAVTableEntrySize;
+const unsigned Emulator::MaxNumUAVs;
+const unsigned Emulator::UAVTableEntrySize = 32;
+const unsigned Emulator::UAVTableSize = MaxNumUAVs * UAVTableEntrySize;
 
 /// Vertex buffer table
-const unsigned Emu::MaxNumVertexBuffers;
-const unsigned Emu::VertexBufferTableEntrySize = 32;
-const unsigned Emu::VertexBufferTableSize = 
-	Emu::MaxNumVertexBuffers * Emu::VertexBufferTableEntrySize;
+const unsigned Emulator::MaxNumVertexBuffers;
+const unsigned Emulator::VertexBufferTableEntrySize = 32;
+const unsigned Emulator::VertexBufferTableSize = 
+	Emulator::MaxNumVertexBuffers * Emulator::VertexBufferTableEntrySize;
 
 /// Constant buffer table
-const unsigned Emu::MaxNumConstBufs;
-const unsigned Emu::ConstBufTableEntrySize = 16;
-const unsigned Emu::ConstBufTableSize = Emu::MaxNumConstBufs * 
-		Emu::ConstBufTableEntrySize;
+const unsigned Emulator::MaxNumConstBufs;
+const unsigned Emulator::ConstBufTableEntrySize = 16;
+const unsigned Emulator::ConstBufTableSize = Emulator::MaxNumConstBufs * 
+		Emulator::ConstBufTableEntrySize;
 
 /// Resource table
-const unsigned Emu::MaxNumResources;
-const unsigned Emu::ResourceTableEntrySize = 32;
-const unsigned Emu::ResourceTableSize = Emu::MaxNumResources * 
-		Emu::ResourceTableEntrySize;
+const unsigned Emulator::MaxNumResources;
+const unsigned Emulator::ResourceTableEntrySize = 32;
+const unsigned Emulator::ResourceTableSize = Emulator::MaxNumResources * 
+		Emulator::ResourceTableEntrySize;
 
-const unsigned Emu::TotalTableSize = Emu::UAVTableSize + 
-		Emu::ConstBufTableSize + Emu::ResourceTableSize + 
-		Emu::VertexBufferTableSize;
+const unsigned Emulator::TotalTableSize = Emulator::UAVTableSize + 
+		Emulator::ConstBufTableSize + Emulator::ResourceTableSize + 
+		Emulator::VertexBufferTableSize;
 
 /// Constant buffers
-const unsigned Emu::ConstBuf0Size = 160;  // Defined in Metadata.pdf
-const unsigned Emu::ConstBuf1Size = 1024; // FIXME
+const unsigned Emulator::ConstBuf0Size = 160;  // Defined in Metadata.pdf
+const unsigned Emulator::ConstBuf1Size = 1024; // FIXME
 	
-const unsigned Emu::TotalConstBufSize = Emu::ConstBuf0Size + Emu::ConstBuf1Size;
+const unsigned Emulator::TotalConstBufSize = Emulator::ConstBuf0Size + Emulator::ConstBuf1Size;
 
 // Singleton
-std::unique_ptr<Emu> Emu::instance;
+std::unique_ptr<Emulator> Emulator::instance;
 
 // Debugger
-misc::Debug Emu::debug;
+misc::Debug Emulator::debug;
 
-Emu *Emu::getInstance()
+Emulator *Emulator::getInstance()
 {
 	// Instance already exists
 	if (instance.get())
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Emu());
+	instance.reset(new Emulator());
 	return instance.get();	
 }
 
-Emu::Emu()
+Emulator::Emulator()
 {
 	// Disassemler
 	as = Asm::getInstance();
@@ -94,7 +94,7 @@ Emu::Emu()
 	global_memory = video_memory.get();
 }
 
-void Emu::Dump(std::ostream &os) const
+void Emulator::Dump(std::ostream &os) const
 {
 	// FIXME: basic statistics, such as instructions, time...
 
@@ -109,7 +109,7 @@ void Emu::Dump(std::ostream &os) const
 	os << "VectorMemInstructions = " << vector_mem_inst_count << std::endl;
 }
 
-void Emu::Run()
+void Emulator::Run()
 {
 #if 0
 	// For efficiency when no Southern Islands emulation is selected, 
@@ -150,7 +150,7 @@ void Emu::Run()
 
 
 /// Initialize a buffer description of type EmuBufferDesc
-void Emu::createBufferDesc(unsigned base_addr, unsigned size,
+void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		int num_elems, ArgDataType data_type, 
 		EmuBufferDesc *buffer_desc)
 {

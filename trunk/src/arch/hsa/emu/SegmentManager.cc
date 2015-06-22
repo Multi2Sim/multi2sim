@@ -33,7 +33,7 @@ SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
 	{
 		// Request the memory of certain size from the main memory manager
 		mem::Manager *main_manager = 
-				Emu::getInstance()->getMemoryManager();
+				Emulator::getInstance()->getMemoryManager();
 		base_address = main_manager->Allocate(this->size);
 
 		// Create a hole for the entire segment
@@ -76,7 +76,7 @@ SegmentManager::~SegmentManager()
 		return;
 
 	// Clear the memory occupied by the segment
-	mem::Manager *main_manager = Emu::getInstance()->getMemoryManager();
+	mem::Manager *main_manager = Emulator::getInstance()->getMemoryManager();
 	main_manager->Free(base_address);
 }
 

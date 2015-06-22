@@ -10,12 +10,15 @@ libemu_a_SOURCES = \
 	ContextIsa.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
+	ContextSyscall.cc \
 	\
 	Regs.cc \
 	Regs.h \
 	\
 	Signal.cc \
-	Signal.h
+	Signal.h \
+	\
+	syscall.dat
 
 	
 AM_CPPFLAGS = @M2S_INCLUDES@

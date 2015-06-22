@@ -41,10 +41,10 @@ namespace Kepler
 //
 
 // Debugger file
-std::string Emu::isa_debug_file;
+std::string Emulator::isa_debug_file;
 
 // Simulation kind
-comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
+comm::Arch::SimKind Emulator::sim_kind = comm::Arch::SimFunctional;
 
 
 
@@ -53,19 +53,19 @@ comm::Arch::SimKind Emu::sim_kind = comm::Arch::SimFunctional;
 //
 
 // Debugger
-misc::Debug Emu::isa_debug;
+misc::Debug Emulator::isa_debug;
 
-std::unique_ptr<Emu> Emu::instance;
+std::unique_ptr<Emulator> Emulator::instance;
 
-Emu *Emu::getInstance()
+Emulator *Emulator::getInstance()
 {
 	if (instance)
 		return instance.get();
-	instance.reset(new Emu());
+	instance.reset(new Emulator());
 	return instance.get();
 }
 
-Emu::Emu() : comm::Emu("kpl")
+Emulator::Emulator() : comm::Emulator("kpl")
 {
     // Initialize disassembler
 	this->as = as->getInstance();
@@ -86,21 +86,21 @@ Emu::Emu() : comm::Emu("kpl")
 	emu_max_functions = 0xffffffff;
 }
 
-void Emu::Dump(std::ostream &os) const
+void Emulator::Dump(std::ostream &os) const
 {
 	std::cout <<"\n[ Kepler ]\nInstructions = "
 			<< alu_inst_count << std::endl;
 }
 
 
-void Emu::DumpSummary(std::ostream &os)
+void Emulator::DumpSummary(std::ostream &os)
 {
 	// Call parent
 	Dump();
 }
 
 
-bool Emu::Run()
+bool Emulator::Run()
 {
 
 	Grid *grid;
@@ -159,35 +159,35 @@ bool Emu::Run()
 	return true;
 }
 
-void Emu::ReadConstMem(unsigned addr, unsigned size, char *buf)
+void Emulator::ReadConstMem(unsigned addr, unsigned size, char *buf)
 {
 	const_mem->Read(addr, size, buf);
 }
 
-void Emu::ReadGlobalMem(unsigned addr, unsigned size, char *buf)
+void Emulator::ReadGlobalMem(unsigned addr, unsigned size, char *buf)
 {
 	global_mem->Read(addr, size, buf);
 }
 
-void Emu::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
+void Emulator::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
 {
 	global_mem->Write(addr, size, buf);
 }
 
 
-void Emu::WriteConstMem(unsigned addr, unsigned size, const char *buf)
+void Emulator::WriteConstMem(unsigned addr, unsigned size, const char *buf)
 {
 	const_mem->Write(addr, size, buf);
 }
 
 
-void Emu::PushPendingGrid(Grid *grid)
+void Emulator::PushPendingGrid(Grid *grid)
 {
 	pending_grids.push_back(grid);
 }
 
 
-Grid *Emu::addGrid(Function *function)
+Grid *Emulator::addGrid(Function *function)
 {
 	// Create the grid and add it to the grid list
 	grids.emplace_back(new Grid(function));
@@ -195,7 +195,7 @@ Grid *Emu::addGrid(Function *function)
 }
 
 
-void Emu::RegisterOptions()
+void Emulator::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -215,7 +215,7 @@ void Emu::RegisterOptions()
 }
 
 
-void Emu::ProcessOptions()
+void Emulator::ProcessOptions()
 {
 	isa_debug.setPath(isa_debug_file);
 	isa_debug.setPrefix("[Kepler emulator]");

@@ -35,7 +35,7 @@ namespace MIPS
 class Context;
 
 // MIPS Emulator
-class Emu : public comm::Emu
+class Emulator : public comm::Emulator
 {
 	//
 	// Configuration options
@@ -48,7 +48,7 @@ class Emu : public comm::Emu
 	static std::string syscall_debug_file;
 
 	// Unique instance of the singleton
-	static std::unique_ptr<Emu> instance;
+	static std::unique_ptr<Emulator> instance;
 
 	// See setScheduleSignal()
 	bool schedule_signal;
@@ -66,7 +66,7 @@ class Emu : public comm::Emu
 	int address_space_index;
 
 	// Private constructor for singleton
-	Emu();
+	Emulator();
 
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
@@ -105,7 +105,7 @@ public:
 	};
 
 	/// Return unique instance of the MIPS emulator singleton.
-	static Emu *getInstance();
+	static Emulator *getInstance();
 
 	/// Create a new context associated with the emulator. The context is
 	/// inserted in the main emulator context list. Its state is set to

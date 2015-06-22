@@ -32,7 +32,7 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	static unsigned int process_queue_id = 0;
 
 	// Allocate queue fields in quest memory
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	mem::Manager *manager = emu->getMemoryManager();
 	mem::Memory *mem = emu->getMemory();
 	fields_address = manager->Allocate(
@@ -49,7 +49,7 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	// Set default type and feature
 	fields->queue_type = type;
 	fields->queue_features = 1;
-	fields->doorbell_signal = (unsigned long long)Emu::getInstance()->
+	fields->doorbell_signal = (unsigned long long)Emulator::getInstance()->
 			CreateSignal(0);
 	fields->service_queue = 0;
 	fields->id = process_queue_id++;
@@ -71,7 +71,7 @@ AQLQueue::~AQLQueue()
 	// Two things to be done in destructor
 	// 1. Free the memory allocated for the packets buffer
 	// 2. Free the memory allocated for the queue fields
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	mem::Manager *manager = emu->getMemoryManager();
 	manager->Free(fields->base_address);
 	manager->Free(fields_address);
@@ -116,7 +116,7 @@ AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)
 	unsigned long long address = IndexToAddress(index);
 
 	// Get the memory object
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 	mem::Memory *memory = emu->getMemory();
 
 	// Returns the buffer in real memory space

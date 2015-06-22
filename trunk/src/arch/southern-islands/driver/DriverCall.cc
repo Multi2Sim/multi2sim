@@ -66,7 +66,7 @@ int Driver::CallMemAlloc(comm::Context *context,
 	debug << misc::fmt("\tsize = %u\n", size);
 
 	// Map new pages 
-	SI::Emu *si_emu = SI::Emu::getInstance();	
+	SI::Emulator *si_emu = SI::Emulator::getInstance();	
 	mem::Memory *video_mem = si_emu->getVideoMemory();
 	video_mem->Map(si_emu->getVideoMemoryTop(), size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
@@ -117,7 +117,7 @@ int Driver::CallMemWrite(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	SI::Emu *si_emu = SI::Emu::getInstance();
+	SI::Emulator *si_emu = SI::Emulator::getInstance();
 	mem::Memory *video_mem = si_emu->getVideoMemory();
 
 	// Arguments 
@@ -523,7 +523,7 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 
 	// Initialize address space ID.  Our current SVM implementation sets
 	// the ndrange ASID to the CPU context's ASID 
-	ndrange->setAddressSpaceIndex(x86::Emu::getInstance()->getAddressSpaceIndex());
+	ndrange->setAddressSpaceIndex(x86::Emulator::getInstance()->getAddressSpaceIndex());
 	debug << misc::fmt("\tndrange address space index = %d\n", 
 		ndrange->getAddressSpaceIndex());
 

@@ -113,7 +113,7 @@ void Warp::Dump(std::ostream &os) const
 void Warp::Execute()
 {
 	// Get emu instance
-	Emu *emu = Emu::getInstance();
+	Emulator *emu = Emulator::getInstance();
 
 	// Instruction binary
 	InstBytes inst_bytes;
