@@ -24,8 +24,8 @@
 #include <string>
 
 #include <memory/Module.h>
-#include <arch/x86/emu/UInst.h>
-#include <arch/x86/emu/Context.h>
+#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Context.h>
 
 #include "Uop.h"
 #include "BranchPredictor.h"

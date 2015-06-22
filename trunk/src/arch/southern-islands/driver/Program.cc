@@ -18,11 +18,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/Emu.h>
-#include <arch/southern-islands/emu/Emu.h>
+#include <arch/southern-islands/emulator/Emulator.h>
 #include <lib/cpp/String.h>
 
 #include "Program.h"
+
 
 #define __UNIMPLEMENTED__ misc::fatal("%s: unimplemented function", \
 		__FUNCTION__);

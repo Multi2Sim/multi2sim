@@ -20,8 +20,7 @@
 #include <cassert>
 
 #include <arch/southern-islands/asm/Arg.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/x86/emu/Emu.h>
+#include <arch/southern-islands/emulator/Emulator.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -523,9 +522,13 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 
 	// Initialize address space ID.  Our current SVM implementation sets
 	// the ndrange ASID to the CPU context's ASID 
+	// FIXME - Tushar, please fix
+	misc::Warning("Address space should be retreived from comm::Context");
+	/*
 	ndrange->setAddressSpaceIndex(x86::Emulator::getInstance()->getAddressSpaceIndex());
 	debug << misc::fmt("\tndrange address space index = %d\n", 
 		ndrange->getAddressSpaceIndex());
+	*/
 
 	// Initialize from kernel binary encoding dictionary
 	ndrange->InitializeFromKernel(kernel);

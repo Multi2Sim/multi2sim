@@ -23,9 +23,9 @@
 #include <arch/hsa/asm/BrigFile.h>
 #include <arch/hsa/asm/BrigCodeEntry.h>
 #include <arch/hsa/asm/BrigOperandEntry.h>
-#include <arch/hsa/emu/Variable.h>
-#include <arch/hsa/emu/Function.h>
-#include <arch/hsa/emu/Emu.h>
+#include <arch/hsa/emulator/Variable.h>
+#include <arch/hsa/emulator/Function.h>
+#include <arch/hsa/emulator/Emulator.h>
 
 #include "HsaProgram.h"
 #include "HsaExecutable.h"

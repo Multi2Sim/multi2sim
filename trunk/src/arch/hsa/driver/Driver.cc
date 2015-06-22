@@ -19,9 +19,9 @@
 
 #include <cstring>
 
-#include <arch/hsa/emu/Emu.h>
-#include <arch/hsa/emu/StackFrame.h>
-#include <arch/hsa/emu/WorkItem.h>
+#include <arch/hsa/emulator/Emulator.h>
+#include <arch/hsa/emulator/StackFrame.h>
+#include <arch/hsa/emulator/WorkItem.h>
 #include <arch/hsa/asm/AsmService.h>
 
 #include "Driver.h"

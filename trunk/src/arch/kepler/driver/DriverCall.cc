@@ -18,10 +18,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include<memory>
-#include <arch/kepler/emu/Emu.h>
+#include <memory>
+
 #include <arch/kepler/asm/Asm.h>
-#include <arch/kepler/emu/Grid.h>
+#include <arch/kepler/emulator/Emulator.h>
+#include <arch/kepler/emulator/Grid.h>
 #include <lib/cpp/String.h>
 #include <lib/util/string.h>
 #include <memory/Memory.h>
