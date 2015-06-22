@@ -86,7 +86,7 @@ unsigned char Context::LoadRm8()
 		return regs.Read(inst.getModRmRm() + InstRegAl);
 
 	MemoryRead(getEffectiveAddress(), 1, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -98,7 +98,7 @@ unsigned short Context::LoadRm16()
 		return regs.Read(inst.getModRmRm() + InstRegAx);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -110,7 +110,7 @@ unsigned int Context::LoadRm32()
 		return regs.Read(inst.getModRmRm() + InstRegEax);
 
 	MemoryRead(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -122,7 +122,7 @@ unsigned short Context::LoadR32M16()
 		return regs.Read(inst.getModRmRm() + InstRegEax);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
 	return value;
 }
 
@@ -131,7 +131,7 @@ unsigned long long Context::LoadM64()
 	unsigned long long value;
 
 	MemoryRead(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=0x%llx", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=0x%llx", last_effective_address, value);
 	return value;
 }
 
@@ -143,7 +143,7 @@ void Context::StoreRm8(unsigned char value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 1, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreRm16(unsigned short value)
@@ -154,7 +154,7 @@ void Context::StoreRm16(unsigned short value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 2, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreRm32(unsigned int value)
@@ -165,13 +165,13 @@ void Context::StoreRm32(unsigned int value)
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x] <- 0x%x", last_effective_address, value);
 }
 
 void Context::StoreM64(unsigned long long value)
 {
 	MemoryWrite(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x] <- 0x%llx", last_effective_address, value);
+	emulator->isa_debug << misc::fmt("  [0x%x] <- 0x%llx", last_effective_address, value);
 }
 
 unsigned Context::getLinearAddress(unsigned offset)
@@ -252,8 +252,8 @@ void Context::LoadFpu(int index, unsigned char *value)
 		throw Error("Invalid FPU stack entry");
 
 	memcpy(value, regs.getFpuValue(eff_index), 10);
-	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(%d)=%g", index,
+	if (emulator->isa_debug)
+		emulator->isa_debug << misc::fmt("  st(%d)=%g", index,
 				Extended::ExtendedToDouble(value));
 }
 
@@ -271,8 +271,8 @@ void Context::StoreFpu(int index, unsigned char *value)
 
 	// Store value
 	memcpy(regs.getFpuValue(index), value, 10);
-	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(%d)<=%g", index,
+	if (emulator->isa_debug)
+		emulator->isa_debug << misc::fmt("  st(%d)<=%g", index,
 				Extended::ExtendedToDouble(value));
 }
 
@@ -280,8 +280,8 @@ void Context::StoreFpu(int index, unsigned char *value)
 void Context::PushFpu(unsigned char *value)
 {
 	// Debug
-	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(0)<=%g (pushed)",
+	if (emulator->isa_debug)
+		emulator->isa_debug << misc::fmt("  st(0)<=%g (pushed)",
 				Extended::ExtendedToDouble(value));
 
 	// Get stack top
@@ -305,8 +305,8 @@ void Context::PopFpu(unsigned char *value)
 		memcpy(value, regs.getFpuValue(regs.getFpuTop()), 10);
 	
 	// Debug
-	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("  st(0)=%g (popped)",
+	if (emulator->isa_debug)
+		emulator->isa_debug << misc::fmt("  st(0)=%g (popped)",
 				Extended::ExtendedToDouble(regs.
 				getFpuValue(regs.getFpuTop())));
 
@@ -320,7 +320,7 @@ double Context::LoadDouble()
 {
 	double value;
 	MemoryRead(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(), value);
+	emulator->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(), value);
 	return value;
 }
 
@@ -340,7 +340,7 @@ void Context::StoreExtended(unsigned char *value)
 void Context::StoreDouble(double value)
 {
 	MemoryWrite(getEffectiveAddress(), 8, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(), value);
+	emulator->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(), value);
 }
 
 
@@ -349,7 +349,7 @@ float Context::LoadFloat()
 	float value;
 
 	MemoryRead(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(),
+	emulator->isa_debug << misc::fmt("  [0x%x]=%g", getEffectiveAddress(),
 			(double) value);
 
 	return value;
@@ -359,7 +359,7 @@ float Context::LoadFloat()
 void Context::StoreFloat(float value)
 {
 	MemoryWrite(getEffectiveAddress(), 4, &value);
-	emu->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(),
+	emulator->isa_debug << misc::fmt("  [0x%x]<=%g", getEffectiveAddress(),
 			(double) value);
 }
 

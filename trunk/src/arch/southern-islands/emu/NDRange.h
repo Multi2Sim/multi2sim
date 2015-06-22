@@ -81,7 +81,7 @@ private:
 	};
 
 	// Southern Islands emulator
-	Emulator *emu = nullptr;
+	Emulator *emulator = nullptr;
 
 	// Unique ND-range ID
 	int id = 0;
@@ -168,7 +168,7 @@ private:
 public:
 
 	/// Constructor
-	NDRange(Emulator *emu);
+	NDRange(Emulator *emulator);
 
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
@@ -283,7 +283,7 @@ public:
 	int getAddressSpaceIndex() const { return address_space_index; }
 
 	/// Get emu it belongs to
-	Emulator *getEmu() const { return emu; }
+	Emulator *getEmulator() const { return emulator; }
 
 	/// Get constant buffer entry from constant buffer table at index
 	TableEntry *getConstBuffer(unsigned idx)

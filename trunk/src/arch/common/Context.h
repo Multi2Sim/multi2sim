@@ -45,12 +45,12 @@ class Context
 	std::string name;
 
 	// Associated emulator, initialized in constructor
-	Emulator *emu;
+	Emulator *emulator;
 
 public:
 
 	/// Constructor
-	Context(Emulator *emu);
+	Context(Emulator *emulator);
 
 	/// Return a unique integer identifier for this context. Identifiers
 	/// are assigned to contexts starting at 1000, and in common for all

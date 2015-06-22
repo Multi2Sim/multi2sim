@@ -322,7 +322,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	}
 
 	// Statistics 
-	ndrange->getEmu()->incWorkGroupCount();
+	ndrange->getEmulator()->incWorkGroupCount();
 }
 	
 }  // namespace SI

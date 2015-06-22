@@ -75,7 +75,7 @@ void Context::UpdateState(unsigned state)
 	// states other than 'ContextSpecMode', a reschedule is marked. */
 	unsigned diff = this->state ^ state;
 	if (diff & ~StateSpecMode)
-		emu->setScheduleSignal();
+		emulator->setScheduleSignal();
 	
 	// Update state
 	this->state = state;
@@ -96,10 +96,10 @@ void Context::UpdateState(unsigned state)
 		this->state &= ~StateRunning;
 	
 	// Update presence of context in emulator lists depending on its state
-	emu->UpdateContextInList(ListRunning, this, this->state & StateRunning);
-	emu->UpdateContextInList(ListZombie, this, this->state & StateZombie);
-	emu->UpdateContextInList(ListFinished, this, this->state & StateFinished);
-	emu->UpdateContextInList(ListSuspended, this, this->state & StateSuspended);
+	emulator->UpdateContextInList(ListRunning, this, this->state & StateRunning);
+	emulator->UpdateContextInList(ListZombie, this, this->state & StateZombie);
+	emulator->UpdateContextInList(ListFinished, this, this->state & StateFinished);
+	emulator->UpdateContextInList(ListSuspended, this, this->state & StateSuspended);
 
 	// Dump new state (ignore ContextSpecMode state, it's too frequent)
 	if (Emulator::context_debug && (diff & ~StateSpecMode))
@@ -107,16 +107,16 @@ void Context::UpdateState(unsigned state)
 		Emulator::context_debug << misc::fmt(
 				"[%s] Instruction %lld: Changed state to %s\n",
 				getName().c_str(),
-				emu->getInstructions(),
+				emulator->getInstructions(),
 				StateMap.MapFlags(this->state).c_str());
 	}
 
 	// Resume or pause timer depending on whether there are any contexts
 	// currently running.
-	if (emu->getContextList(ListRunning).size())
-		emu->StartTimer();
+	if (emulator->getContextList(ListRunning).size())
+		emulator->StartTimer();
 	else
-		emu->StopTimer();
+		emulator->StopTimer();
 }
 
 
@@ -129,7 +129,7 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 	while (count)
 	{
 		wakeup_context = nullptr;
-		for (Context *context : emu->getContextList(ListSuspended))
+		for (Context *context : emulator->getContextList(ListSuspended))
 		{
 			if (!context->getState(StateFutex) || context->wakeup_futex != futex)
 				continue;
@@ -145,7 +145,7 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 			// Wake up context
 			wakeup_context->clearState(StateFutex);
 			wakeup_context->clearState(StateSuspended);
-			emu->syscall_debug << misc::fmt("  futex 0x%x: thread %d woken up\n",
+			emulator->syscall_debug << misc::fmt("  futex 0x%x: thread %d woken up\n",
 					futex, wakeup_context->getId());
 			wakeup_count++;
 			count--;
@@ -182,7 +182,7 @@ void Context::ExitRobustList()
 	if (!lock_entry)
 		return;
 
-	emu->syscall_debug << misc::fmt("[%s] Processing robust futex list\n",
+	emulator->syscall_debug << misc::fmt("[%s] Processing robust futex list\n",
 			getName().c_str());
 	for (;;)
 	{
@@ -191,7 +191,7 @@ void Context::ExitRobustList()
 		memory->Read(lock_entry + 4, 4, (char *) &offset);
 		memory->Read(lock_entry + offset, 4, (char *) &lock_word);
 
-		emu->syscall_debug << misc::fmt("  lock_entry=0x%x: "
+		emulator->syscall_debug << misc::fmt("  lock_entry=0x%x: "
 				"offset=%d, lock_word=0x%x\n",
 				lock_entry, offset, lock_word);
 
@@ -319,20 +319,20 @@ std::string Context::OpenProcCPUInfo()
 
 Context::Context() :
 		comm::Context(Emulator::getInstance()),
-		emu(Emulator::getInstance())
+		emulator(Emulator::getInstance())
 {
 	// Micro-instructions
 	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
 
 	// Debug
-	emu->context_debug << "Context " << getId() << " created\n";
+	emulator->context_debug << "Context " << getId() << " created\n";
 }
 
 
 Context::~Context()
 {
 	// Debug
-	emu->context_debug << "Context " << getId() << " destroyed\n";
+	emulator->context_debug << "Context " << getId() << " destroyed\n";
 }
 
 
@@ -355,7 +355,7 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory.reset(new mem::Memory());
-	address_space_index = emu->getAddressSpaceIndex();
+	address_space_index = emulator->getAddressSpaceIndex();
 
 	// Create signal handler table
 	signal_handler_table.reset(new SignalHandlerTable());
@@ -426,7 +426,7 @@ void Context::Fork(Context *parent)
 	regs = parent->regs;
 
 	// Memory
-	address_space_index = emu->getAddressSpaceIndex();
+	address_space_index = emulator->getAddressSpaceIndex();
 	memory.reset(new mem::Memory());
 	memory->Clone(*parent->memory);
 	
@@ -585,10 +585,10 @@ void Context::HostThreadSuspend()
 	}
 
 	// Event occurred - thread finishes
-	emu->LockMutex();
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->LockMutex();
+	emulator->ProcessEventsScheduleUnsafe();
 	host_thread_suspend_active = false;
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -602,15 +602,15 @@ void Context::HostThreadSuspendCancelUnsafe()
 					getName().c_str()));
 		host_thread_suspend_active = false;
 	}
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->ProcessEventsScheduleUnsafe();
 }
 	
 
 void Context::HostThreadSuspendCancel()
 {
-	emu->LockMutex();
+	emulator->LockMutex();
 	HostThreadSuspendCancelUnsafe();
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -631,7 +631,7 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 	setState(StateSuspended);
 	setState(StateCallback);
 	setState(wakeup_state);
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -640,7 +640,7 @@ void Context::Suspend()
 	// Suspend context
 	assert(!getState(StateSuspended));
 	setState(StateSuspended);
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -692,15 +692,15 @@ void Context::HostThreadTimerCancelUnsafe()
 				"host thread",
 				getName().c_str()));
 	host_thread_timer_active = false;
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->ProcessEventsScheduleUnsafe();
 }
 
 
 void Context::HostThreadTimerCancel()
 {
-	emu->LockMutex();
+	emulator->LockMutex();
 	HostThreadTimerCancelUnsafe();
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -759,9 +759,9 @@ void Context::Execute()
 	last_effective_address = 0;
 
 	// Debug
-	if (emu->isa_debug)
-		emu->isa_debug << misc::fmt("%d %8lld %x: ", getId(),
-				emu->getInstructions(), current_eip)
+	if (emulator->isa_debug)
+		emulator->isa_debug << misc::fmt("%d %8lld %x: ", getId(),
+				emulator->getInstructions(), current_eip)
 				<< inst
 				<< misc::fmt("  (%d bytes)",
 						inst.getSize());
@@ -808,12 +808,12 @@ void Context::Execute()
 	}
 	
 	// Debug
-	emu->isa_debug << '\n';
-	if (emu->call_debug)
+	emulator->isa_debug << '\n';
+	if (emulator->call_debug)
 		DebugCallInst();
 
 	// Stats
-	emu->incInstructions();
+	emulator->incInstructions();
 }
 
 
@@ -832,7 +832,7 @@ void Context::FinishGroup(int exit_code)
 		return;
 
 	// Finish all contexts in the group
-	for (auto &context : emu->getContexts())
+	for (auto &context : emulator->getContexts())
 	{
 		if (context->group_parent != this && context.get() != this)
 			continue;
@@ -854,7 +854,7 @@ void Context::FinishGroup(int exit_code)
 	}
 
 	// Process events
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -871,7 +871,7 @@ void Context::Finish(int exit_code)
 	// From now on, all children have lost their parent. If a child is
 	// already zombie, finish it, since its parent won't be able to waitpid it
 	// anymore.
-	for (auto &context : emu->getContexts())
+	for (auto &context : emulator->getContexts())
 	{
 		if (context->parent == this)
 		{
@@ -884,10 +884,10 @@ void Context::Finish(int exit_code)
 	// Send finish signal to parent
 	if (exit_signal && parent)
 	{
-		emu->syscall_debug << misc::fmt("  sending signal %d to pid %d\n",
+		emulator->syscall_debug << misc::fmt("  sending signal %d to pid %d\n",
 				exit_signal, parent->getId());
 		parent->signal_mask_table.getPending().Add(exit_signal);
-		emu->ProcessEventsSchedule();
+		emulator->ProcessEventsSchedule();
 	}
 
 	// If clear_child_tid was set, a futex() call must be performed on
@@ -907,13 +907,13 @@ void Context::Finish(int exit_code)
 	// Finish context26
 	setState(parent ? StateZombie : StateFinished);
 	this->exit_code = exit_code;
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
 Context *Context::getZombie(int pid)
 {
-	for (Context *context : emu->getContextList(ListZombie))
+	for (Context *context : emulator->getContextList(ListZombie))
 	{
 		if (context->parent != this)
 			continue;

@@ -32,10 +32,10 @@ using namespace misc;
 namespace SI
 {
 
-NDRange::NDRange(Emulator *emu) : emu(emu)
+NDRange::NDRange(Emulator *emulator) : emulator(emulator)
 {
-	id = emu->getNewNDRangeID();
-	address_space_index = emu->getNewNDRangeID();
+	id = emulator->getNewNDRangeID();
+	address_space_index = emulator->getNewNDRangeID();
 	instruction_memory = misc::new_unique<mem::Memory>();
 }
 
@@ -155,7 +155,7 @@ void NDRange::ConstantBufferWrite(int const_buffer_num,
 		const_buffer_num * Emulator::ConstBufTableEntrySize;
 
 	// Read in buffer description
-	emu->getGlobalMemory()->Read(addr, (unsigned) sizeof(EmuBufferDesc), 
+	emulator->getGlobalMemory()->Read(addr, (unsigned) sizeof(EmuBufferDesc), 
 		(char *) &buffer_desc);
 
 	// Calculate new address
@@ -163,7 +163,7 @@ void NDRange::ConstantBufferWrite(int const_buffer_num,
 	addr += offset;
 
 	// Write 
-	emu->getGlobalMemory()->Write(addr, size, (const char *) pvalue);
+	emulator->getGlobalMemory()->Write(addr, size, (const char *) pvalue);
 }
 
 void NDRange::ConstantBufferRead(int const_buffer_num,
@@ -186,7 +186,7 @@ void NDRange::ConstantBufferRead(int const_buffer_num,
 		const_buffer_num*Emulator::ConstBufTableEntrySize;
 
 	// Read in buffer description
-	emu->getGlobalMemory()->Read(addr, sizeof(EmuBufferDesc), 
+	emulator->getGlobalMemory()->Read(addr, sizeof(EmuBufferDesc), 
 		(char *)&buffer_desc);
 
 	// Calculate new address
@@ -194,7 +194,7 @@ void NDRange::ConstantBufferRead(int const_buffer_num,
 	addr += offset;
 
 	// Read 
-	emu->getGlobalMemory()->Read(addr, size, (char *) pvalue);
+	emulator->getGlobalMemory()->Read(addr, size, (char *) pvalue);
 }
 
 void NDRange::InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav)
@@ -205,7 +205,7 @@ void NDRange::InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav)
 	// Write the buffer resource descriptor into the UAV table
 	unsigned addr = uav_table + uav*Emulator::UAVTableEntrySize;
 
-	emu->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc),
+	emulator->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc),
 		(char *)buffer_desc);
 
 	uav_table_entries[uav].valid = 1;
@@ -223,7 +223,7 @@ void NDRange::InsertBufferIntoVertexBufferTable(EmuBufferDesc *buffer_desc,
 	// Write the buffer resource descriptor into the Vertex Buffer table
 	unsigned addr = vertex_buffer_table + vertex_buffer*Emulator::VertexBufferTableEntrySize;
 
-	emu->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc),
+	emulator->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc),
 		(char *)buffer_desc);
 
 	vertex_buffer_table_entries[vertex_buffer].valid = 1;
@@ -241,7 +241,7 @@ void NDRange::InsertBufferIntoConstantBufferTable(EmuBufferDesc *buffer_desc,
 	// Write the buffer resource descriptor into the constant buffer table
 	unsigned addr = const_buf_table + const_buffer_num*Emulator::ConstBufTableEntrySize;
 
-	emu->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc), 
+	emulator->getGlobalMemory()->Write(addr, (unsigned)sizeof(*buffer_desc), 
 		(char *)buffer_desc);
 
 	const_buf_table_entries[const_buffer_num].valid = 1;
@@ -258,7 +258,7 @@ void NDRange::ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav)
 	// Write the buffer resource descriptor into the UAV table
 	unsigned addr = uav_table + uav*Emulator::UAVTableEntrySize;
 
-	emu->getGlobalMemory()->Write(addr, (unsigned)sizeof(*image_desc), 
+	emulator->getGlobalMemory()->Write(addr, (unsigned)sizeof(*image_desc), 
 		(char *)image_desc);
 
 	uav_table_entries[uav].valid = 1;

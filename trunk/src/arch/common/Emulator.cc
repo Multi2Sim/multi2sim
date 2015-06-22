@@ -18,7 +18,7 @@
  */
 
 #include "Arch.h"
-#include "Emu.h"
+#include "Emulator.h"
 
 #include <lib/cpp/String.h>
 
@@ -33,7 +33,7 @@ Emulator::Emulator(const std::string &name) :
 	// Obtain event-driven simulator engine
 	esim = esim::Engine::getInstance();
 
-	// Register emulator in architecture pool
+	// Register emulatorlator in architecture pool
 	ArchPool *arch_pool = ArchPool::getInstance();
 	arch_pool->RegisterEmulator(name, this);
 }

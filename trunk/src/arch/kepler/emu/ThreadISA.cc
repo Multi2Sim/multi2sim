@@ -214,7 +214,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	InstBytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
-	Emulator *emu = Emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 	Warp *warp = getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -268,7 +268,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 		}
 		else if (format.op2 == 0)
 		{
-			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
 		}
 		//else
 		//	src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
@@ -654,7 +654,7 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 void Thread::ExecuteInst_ISAD_B(Inst *inst)
 {
 	// Get Warp
-	Emulator* emu = Emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -710,7 +710,7 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 		if (format.op2 == 1) // src2 is const src3 is register
 		{
 			unsigned src3_id;
-			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
 			src3_id = format.src3;
 			src3 = this->ReadGPR(src3_id);
 		}
@@ -719,7 +719,7 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 			unsigned src2_id;
 			src2_id = format.src3;
 			src2 = this->ReadGPR(src2_id);
-			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src3);
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src3);
 		}
 		else if (format.op2 == 3) // both src2 src3 register
 		{
@@ -783,7 +783,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -826,7 +826,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 		if (format.srcB_mod == 0)
 		{
 			src_id = format.srcB;
-			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+			emulator->ReadConstMem(src_id << 2, 4, (char*)&srcB);
 		}
 		else if (format.srcB_mod == 1)
 		{
@@ -1023,7 +1023,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 void Thread::ExecuteInst_IADD_B(Inst *inst)
 {
 	// Get Warp
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1074,7 +1074,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 
 		// Read src2 value Check it
 		if (format.op2 == 0) // constant mode
-			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
 		else if ((format.op0 == 1) && (format.op2 == 1)) // IMM20
 			src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 
@@ -1172,7 +1172,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1222,7 +1222,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		srcB_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
-			emu->ReadConstMem(srcB_id << 2, 4, (char*)&srcB);
+			emulator->ReadConstMem(srcB_id << 2, 4, (char*)&srcB);
 		}
 		else if (format.srcB_mod == 1)
 			srcB = this->ReadGPR(srcB_id);
@@ -1306,7 +1306,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	//Emu* emu = Emu::getInstance();
+	//emulator* emulator = emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1444,7 +1444,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
 
-	//Emu* emu = Emu::getInstance();
+	//emulator* emulator = emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1685,7 +1685,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1724,7 +1724,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 		src_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
-			emu->ReadConstMem(src_id << 2, 4, (char*)&src);
+			emulator->ReadConstMem(src_id << 2, 4, (char*)&src);
 		}
 		else if (format.srcB_mod == 1)
 			src = this->ReadGPR(src_id);
@@ -1827,7 +1827,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	// Inst bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -1875,11 +1875,11 @@ void Thread::ExecuteInst_LD(Inst *inst)
 		data_type = (format.op1 >> 2) & 0x7;
 
 		// Execute
-		emu->ReadGlobalMem(addr, 4, (char*)dst);
+		emulator->ReadGlobalMem(addr, 4, (char*)dst);
 		if (data_type > 4)
-			emu->ReadGlobalMem(addr + 4, 4, (char*)&dst[1]);
+			emulator->ReadGlobalMem(addr + 4, 4, (char*)&dst[1]);
 		if (data_type > 5)										//Really? FIXME
-			emu->ReadGlobalMem(addr + 8, 8, (char*)&dst[2]);
+			emulator->ReadGlobalMem(addr + 8, 8, (char*)&dst[2]);
 
 		/* Write */
 		dst_id = format.dst;
@@ -2027,7 +2027,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	RegValue srcA, srcB, dst;
 
 	// Predicates and active masks
-	Emulator *emu = Emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -2073,7 +2073,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 			// Caculate mem_addr and read const mem
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
-			emu->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
+			emulator->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
 
 			// Execute
 			dst.u32 = srcB.u32;
@@ -2099,7 +2099,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
 
 			// Read the lower 32 bits
-			emu->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
+			emulator->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
 
 			// Execute
 			dst.u32 = srcB.u32;
@@ -2109,7 +2109,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 			this->WriteGPR(dst_id, dst.u32);
 
 			// Read the upper 32 bits
-			emu->ReadConstMem(mem_addr + 4, 4, (char*)&srcB.u32);
+			emulator->ReadConstMem(mem_addr + 4, 4, (char*)&srcB.u32);
 
 			// Execute the upper 32 bits
 			dst.u32 = srcB.u32;
@@ -2145,7 +2145,7 @@ void Thread::ExecuteInst_ST(Inst *inst)
 
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
 	Warp* warp = this->getWarp();
@@ -2202,11 +2202,11 @@ void Thread::ExecuteInst_ST(Inst *inst)
 
 		// Execute
 		// Write
-		emu->WriteGlobalMem(addr, 4, (char*)src);
+		emulator->WriteGlobalMem(addr, 4, (char*)src);
 		if (data_type > 4)
-			emu->WriteGlobalMem(addr + 4, 4, (char*)&src[1]);
+			emulator->WriteGlobalMem(addr + 4, 4, (char*)&src[1]);
 		if (data_type > 5)										//Really? FIXME
-			emu->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
+			emulator->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2336,8 +2336,8 @@ void Thread::ExecuteInst_FFMA(Inst *inst)
 
 void Thread::ExecuteInst_FMUL(Inst *inst)
 {
-	// Get Emu
-	Emulator* emu = Emulator::getInstance();
+	// Get emulator
+	Emulator* emulator = Emulator::getInstance();
 
 	// Get Warp
 	Warp *warp = this->getWarp();
@@ -2403,7 +2403,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 
 		if (format.srcB_mod == 0)
 		{
-			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
+			emulator->ReadConstMem(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
 			src2 = ReadFloatGPR(src_id);
@@ -2433,8 +2433,8 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 
 void Thread::ExecuteInst_FADD(Inst *inst)
 {
-	// Get Emu
-	Emulator* emu = Emulator::getInstance();
+	// Get emulator
+	Emulator* emulator = Emulator::getInstance();
 
 	// Get Warp
 	Warp *warp = this->getWarp();
@@ -2500,7 +2500,7 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 
 		if (format.srcB_mod == 0)
 		{
-			emu->ReadConstMem(src_id << 2, 4, (char*)&src2);
+			emulator->ReadConstMem(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
 			src2 = ReadFloatGPR(src_id);
@@ -2607,9 +2607,9 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 		/* Read */
 		src_id = format.srcB & 0xff;
 		if (src_id == SR_CLOCKLO)	//No cycle count for now
-			;//src = this->grid->emu->inst_count & 0xffffffff;
+			;//src = this->grid->emulator->inst_count & 0xffffffff;
 		else if (src_id == SR_CLOCKHI)
-			;//src = (this->grid->emu->inst_count >> 32) & 0xffffffff;
+			;//src = (this->grid->emulator->inst_count >> 32) & 0xffffffff;
 		else if (format.srcB_mod == 1)
 			src = this->ReadSR(src_id);
 
@@ -2942,7 +2942,7 @@ void Thread::ExecuteInst_PLONGJMP(Inst *inst)
 void Thread::ExecuteInst_SSY(Inst *inst)
 {
 	// Get emulator
-    Emulator *emu = Emulator::getInstance();
+    Emulator *emulator = Emulator::getInstance();
 
 	// Get warp
 	Warp *warp = this->getWarp();
@@ -2990,7 +2990,7 @@ void Thread::ExecuteInst_SSY(Inst *inst)
         {
 			// check this
 			if (isconstmem == 1)
-              	emu->ReadConstMem(offset << 2,4, (char*) &address);
+              	emulator->ReadConstMem(offset << 2,4, (char*) &address);
         }
 
 		stack->push(address,
@@ -3033,7 +3033,7 @@ void Thread::ExecuteInst_PBK(Inst *inst)
         //Check this
         if (format.constant)
         {
-                //emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+                //emulator->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
         		throw misc::Panic("getting address from constant memory is "
         				"not supported.\n");
         }
@@ -3090,7 +3090,7 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
         //Check this
         if (format.constant)
         {
-                //emu->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
+                //emulator->ReadConstMem(format.offset << 2, sizeof(address), (char*) &address);
         		throw misc::Panic("getting address from constant memory is "
         				"not supported.\n");
 
@@ -3124,7 +3124,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Emulator* emu = Emulator::getInstance();
+	Emulator* emulator = Emulator::getInstance();
 	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -3170,7 +3170,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 		if (format.srcB_mod == 1)
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
 		else
-			emu->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+			emulator->ReadConstMem(src_id << 2, 4, (char*)&srcB);
 
 		// Execute
 		// FIXME not fully verified, but logic is supposed to be correct.

@@ -1073,7 +1073,7 @@ void Context::ExecuteInst_int_imm8()
 	// Debug
 	int code = regs.getEax();
 	if (misc::inRange(code, 0, SyscallCodeCount))
-		emu->isa_debug << " syscall '" << syscall_name[code] << "'";
+		emulator->isa_debug << " syscall '" << syscall_name[code] << "'";
 
 	// Do system call if not in speculative mode
 	spec_mode = getState(StateSpecMode);

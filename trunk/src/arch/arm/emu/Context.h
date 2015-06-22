@@ -114,7 +114,7 @@ enum ContextOp2Catecory
 class Context
 {
 	// Emulator it belongs to
-	Emulator *emu;
+	Emulator *emulator;
 
 	// Process ID
 	int pid;
@@ -633,7 +633,7 @@ public:
 	~Context();
 
 	/// Load a program on the context. The meaning of each argument is
-	/// identical to the prototype of comm::Emu::Load().
+	/// identical to the prototype of comm::Emulator::Load().
 	void Load(const std::vector<std::string> &args,
 			const std::vector<std::string> &env,
 			const std::string &cwd,

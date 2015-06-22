@@ -164,22 +164,22 @@ void LoadProgram(const std::vector<std::string> &args,
 	// Choose emulator based on ELF header
 	std::string exe = misc::getFullPath(args[0], cwd);
 	ELFReader::File elf_file(exe, false);
-	comm::Emulator *emu;
+	comm::Emulator *emulator;
 	switch (elf_file.getMachine())
 	{
 	case EM_386:
 
-		emu = x86::Emulator::getInstance();
+		emulator = x86::Emulator::getInstance();
 		break;
 
 	case EM_ARM:
 
-		emu = ARM::Emulator::getInstance();
+		emulator = ARM::Emulator::getInstance();
 		break;
 
 	case EM_MIPS:
 
-		emu = MIPS::Emulator::getInstance();
+		emulator = MIPS::Emulator::getInstance();
 		break;
 
 	default:
@@ -187,7 +187,7 @@ void LoadProgram(const std::vector<std::string> &args,
 	}
 
 	// Load the program in selected emulator
-	emu->LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
+	emulator->LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
 }
 
 

@@ -708,7 +708,7 @@ void Context::ExecuteInst_JR()
 	MipsIsaBranch(regs.getGPR(rs));
 
 	// Debug
-	emu->isa_debug << misc::fmt("jump to reg[%d]=0x%x",
+	emulator->isa_debug << misc::fmt("jump to reg[%d]=0x%x",
 			rs, regs.getCoprocessor0GPR(rs));
 }
 

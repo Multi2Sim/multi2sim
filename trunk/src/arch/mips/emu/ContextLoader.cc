@@ -44,7 +44,7 @@ static misc::StringMap section_flags_map =
 void Context::LoadInterp()
 {
 	// Debug
-	emu->loader_debug << misc::fmt("\nLoading program interpreter '%s'\n",
+	emulator->loader_debug << misc::fmt("\nLoading program interpreter '%s'\n",
 			loader->interp.c_str());
 
 	// Load section from program interpreter
@@ -53,7 +53,7 @@ void Context::LoadInterp()
 
 	// Change program entry to the one specified by the interpreter
 	loader->interp_prog_entry = binary.getEntry();
-	emu->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
+	emulator->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
 			loader->interp_prog_entry);
 }
 
@@ -74,7 +74,7 @@ misc::StringMap Context::program_header_type_map =
 void Context::LoadProgramHeaders()
 {
 	// Debug
-	emu->loader_debug << "\nLoading program headers\n";
+	emulator->loader_debug << "\nLoading program headers\n";
 	ELFReader::File *binary = loader->binary.get();
 
 	// Load program header table from ELF
@@ -91,7 +91,7 @@ void Context::LoadProgramHeaders()
 	for (auto &program_header : binary->getProgramHeaders())
 		if (program_header->getType() == PT_PHDR)
 			phdt_base = program_header->getVaddr();
-	emu->loader_debug << misc::fmt("  virtual address for program header "
+	emulator->loader_debug << misc::fmt("  virtual address for program header "
 			"table: 0x%x\n", phdt_base);
 
 	// Allocate memory for program headers
@@ -108,7 +108,7 @@ void Context::LoadProgramHeaders()
 				program_header->getRawInfo());
 
 		// Debug
-		emu->loader_debug << misc::fmt("  header loaded at 0x%x\n", address)
+		emulator->loader_debug << misc::fmt("  header loaded at 0x%x\n", address)
 		<< misc::fmt("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
 				program_header_type_map.MapValue(program_header->getType()),
 				program_header->getOffset(),
@@ -210,7 +210,7 @@ unsigned Context::LoadAV(unsigned where)
 {
 	// Debug
 	unsigned sp = where;
-	emu->loader_debug << misc::fmt("Loading auxiliary vector at 0x%x\n", where);
+	emulator->loader_debug << misc::fmt("Loading auxiliary vector at 0x%x\n", where);
 
 	// Program headers
 	LoadAVEntry(sp, 3, loader->phdt_base);  // AT_PHDR
@@ -253,14 +253,14 @@ void Context::LoadStack()
 	loader->stack_top = LoaderStackBase - LoaderStackSize;
 	memory->Map(loader->stack_top, loader->stack_size,
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);
-	emu->loader_debug << misc::fmt("mapping region for stack from 0x%x to 0x%x\n",
+	emulator->loader_debug << misc::fmt("mapping region for stack from 0x%x to 0x%x\n",
 			loader->stack_top, loader->stack_base - 1);
 
 	// Load arguments and environment variables
 	loader->environ_base = LoaderStackBase - LoaderMaxEnviron;
 	unsigned sp = loader->environ_base;
 	int argc = loader->args.size();
-	emu->loader_debug << misc::fmt("  saved 'argc=%d' at 0x%x\n", argc, sp);
+	emulator->loader_debug << misc::fmt("  saved 'argc=%d' at 0x%x\n", argc, sp);
 	memory->Write(sp, 4, (char *) &argc);
 	sp += 4;
 	unsigned argvp = sp;
@@ -274,13 +274,13 @@ void Context::LoadStack()
 	sp += LoadAV(sp);
 
 	// Write arguments into stack
-	emu->loader_debug << "\nArguments:\n";
+	emulator->loader_debug << "\nArguments:\n";
 	for (int i = 0; i < argc; i++)
 	{
 		std::string str = loader->args[i];
 		memory->Write(argvp + i * 4, 4, (char *) &sp);
 		memory->WriteString(sp, str);
-		emu->loader_debug << misc::fmt("  argument %d at 0x%x: '%s'\n",
+		emulator->loader_debug << misc::fmt("  argument %d at 0x%x: '%s'\n",
 				i, sp, str.c_str());
 		sp += str.length() + 1;
 	}
@@ -288,13 +288,13 @@ void Context::LoadStack()
 	memory->Write(argvp + argc * 4, 4, (char *) &zero);
 
 	// Write environment variables
-	emu->loader_debug << "\nEnvironment variables:\n";
+	emulator->loader_debug << "\nEnvironment variables:\n";
 	for (unsigned i = 0; i < loader->env.size(); i++)
 	{
 		std::string str = loader->env[i];
 		memory->Write(envp + i * 4, 4, (char *) &sp);
 		memory->WriteString(sp, str);
-		emu->loader_debug << misc::fmt("  env var %d at 0x%x: '%s'\n",
+		emulator->loader_debug << misc::fmt("  env var %d at 0x%x: '%s'\n",
 				i, sp, str.c_str());
 		sp += str.length() + 1;
 	}
@@ -397,7 +397,7 @@ void Context::LoadBinary()
 	n_next_ip = next_ip + 4;
 
 	//Debug
-	emu->loader_debug << misc::fmt("Program entry is 0x%x\n", regs.getPC())
+	emulator->loader_debug << misc::fmt("Program entry is 0x%x\n", regs.getPC())
 			<< misc::fmt("Initial stack pointer is 0x%x\n", regs.getSP())
 			<< misc::fmt("Heap start set to 0x%x\n", memory->getHeapBreak());
 }

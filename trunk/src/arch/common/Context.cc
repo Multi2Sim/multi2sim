@@ -20,7 +20,7 @@
 #include <lib/cpp/String.h>
 
 #include "Context.h"
-#include "Emu.h"
+#include "Emulator.h"
 
 
 namespace comm
@@ -29,15 +29,15 @@ namespace comm
 int Context::id_counter = 1000;
 
 
-Context::Context(Emulator *emu) :
-		emu(emu)
+Context::Context(Emulator *emulator) :
+		emulator(emulator)
 {
 	// Assign ID
 	id = id_counter++;
 
 	// Compute name
 	name = misc::fmt("%s context %d",
-			emu->getName().c_str(),
+			emulator->getName().c_str(),
 			id);
 }
 

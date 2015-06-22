@@ -792,8 +792,8 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 {
 	// Get emulator instance and video_memory               
-	Emulator *emu = SI::Emulator::getInstance();
-	mem::Memory *video_memory = emu->getVideoMemory();
+	Emulator *emulator = SI::Emulator::getInstance();
+	mem::Memory *video_memory = emulator->getVideoMemory();
 
 	unsigned size_of_tables = Emulator::ConstBufTableSize +
 		Emulator::ResourceTableSize + Emulator::UAVTableSize;
@@ -809,25 +809,25 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 	// }
 
 	// Allocate space in video memory for tables                             
-	video_memory->Map(emu->getVideoMemoryTop(), size_of_tables,              
+	video_memory->Map(emulator->getVideoMemoryTop(), size_of_tables,              
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);             
 
 	// Debug print out
 	x86::Emulator::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
-		emu->getVideoMemoryTop());
+		emulator->getVideoMemoryTop());
 
 	// Set constant buffer table address                                     
-	ndrange->setConstBufferTable(emu->getVideoMemoryTop());                  
-	emu->incVideoMemoryTop(Emulator::ConstBufTableSize);                       
+	ndrange->setConstBufferTable(emulator->getVideoMemoryTop());                  
+	emulator->incVideoMemoryTop(Emulator::ConstBufTableSize);                       
 
 	// Set resource table address                                            
-	ndrange->setResourceTable(emu->getVideoMemoryTop());                     
-	emu->incVideoMemoryTop(Emulator::ResourceTableSize);                       
+	ndrange->setResourceTable(emulator->getVideoMemoryTop());                     
+	emulator->incVideoMemoryTop(Emulator::ResourceTableSize);                       
 
 	// Set uav table address                                                 
-	ndrange->setUAVTable(emu->getVideoMemoryTop());                          
-	emu->incVideoMemoryTop(Emulator::UAVTableSize); 
+	ndrange->setUAVTable(emulator->getVideoMemoryTop());                          
+	emulator->incVideoMemoryTop(Emulator::UAVTableSize); 
 	
 	// Return
 	return;
@@ -836,21 +836,21 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 void Kernel::CreateNDRangeConstantBuffers(NDRange *ndrange)                                            
 {                                                                                
 	// Get emulator instance and video_memory                                
-	SI::Emulator *emu = SI::Emulator::getInstance();                                
-	mem::Memory *video_memory = emu->getVideoMemory();                       
+	SI::Emulator *emulator = SI::Emulator::getInstance();                                
+	mem::Memory *video_memory = emulator->getVideoMemory();                       
 
 	// Map new pages                                                         
-	video_memory->Map(emu->getVideoMemoryTop(), Emulator::TotalConstBufSize,      
+	video_memory->Map(emulator->getVideoMemoryTop(), Emulator::TotalConstBufSize,      
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);     
 
 	// TODO - setup for timing simulator                                     
 
 	// Set constant buffer addresses                                         
-	ndrange->setCB0(emu->getVideoMemoryTop());                                 
-	ndrange->setCB1(emu->getVideoMemoryTop() + Emulator::ConstBuf0Size);            
+	ndrange->setCB0(emulator->getVideoMemoryTop());                                 
+	ndrange->setCB1(emulator->getVideoMemoryTop() + Emulator::ConstBuf0Size);            
 
 	// Increment video memory pointer                                        
-	emu->incVideoMemoryTop(Emulator::TotalConstBufSize);                       
+	emulator->incVideoMemoryTop(Emulator::TotalConstBufSize);                       
 }  
 
 

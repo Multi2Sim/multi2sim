@@ -34,7 +34,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 			Function *root_function)
 {
 	// Set global emulator object
-	emu = Emulator::getInstance();
+	emulator = Emulator::getInstance();
 	executable = root_function->getExecutable();
 
 	// Set work group

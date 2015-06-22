@@ -20,7 +20,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "Arch.h"
-#include "Emu.h"
+#include "Emulator.h"
 #include "Timing.h"
 
 
@@ -92,10 +92,10 @@ std::string ArchPool::getArchNames()
 }
 
 
-void ArchPool::Run(int &num_emu_active, int &num_timing_active)
+void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
 {
 	// Reset active counters
-	num_emu_active = 0;
+	num_emulator_active = 0;
 	num_timing_active = 0;
 
 	// Run one iteration for each architecture
@@ -106,20 +106,20 @@ void ArchPool::Run(int &num_emu_active, int &num_timing_active)
 
 		case Arch::SimFunctional:
 		{
-			// Get the emulator. If none is available, skip this
+			// Get the emulatorlator. If none is available, skip this
 			// architecture.
-			Emulator *emu = arch->getEmu();
-			if (!emu)
+			Emulator *emulator = arch->getEmulator();
+			if (!emulator)
 				continue;
 
 			// Run
-			bool active = emu->Run();
+			bool active = emulator->Run();
 			arch->setActive(active);
                            
-			// Increase number of active emulations if the architecture
-			// actually performed a useful emulation iteration.
+			// Increase number of active emulatorlations if the architecture
+			// actually performed a useful emulatorlation iteration.
 			if (active)
-				num_emu_active++;
+				num_emulator_active++;
 
 			// Done
 			break;

@@ -39,7 +39,7 @@ void Context::UpdateState(unsigned state)
 	// states other than 'ContextSpecMode', a reschedule is marked. */
 	unsigned diff = this->state ^ state;
 	if (diff & ~ContextSpecMode)
-		emu->setScheduleSignal();
+		emulator->setScheduleSignal();
 
 	// Update state
 	this->state = state;
@@ -60,10 +60,10 @@ void Context::UpdateState(unsigned state)
 		this->state &= ~ContextRunning;
 
 	// Update presence of context in emulator lists depending on its state
-	emu->UpdateContextInList(ContextListRunning, this, this->state & ContextRunning);
-	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
-	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
-	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
+	emulator->UpdateContextInList(ContextListRunning, this, this->state & ContextRunning);
+	emulator->UpdateContextInList(ContextListZombie, this, this->state & ContextZombie);
+	emulator->UpdateContextInList(ContextListFinished, this, this->state & ContextFinished);
+	emulator->UpdateContextInList(ContextListSuspended, this, this->state & ContextSuspended);
 }
 
 std::string Context::OpenProcSelfMaps()
@@ -123,10 +123,10 @@ std::string Context::OpenProcSelfMaps()
 Context::Context()
 {
 	// Save emulator instance
-	emu = Emulator::getInstance();
+	emulator = Emulator::getInstance();
 
 	// Initialize
-	pid = emu->getPid();
+	pid = emulator->getPid();
 	sched_policy = SCHED_RR;
 	sched_priority = 1;  // Lowest priority
 
@@ -142,7 +142,7 @@ Context::Context()
 Context::~Context()
 {
 	// Debug
-	emu->context_debug << "Context " << pid << " destroyed\n";
+	emulator->context_debug << "Context " << pid << " destroyed\n";
 }
 
 
@@ -166,7 +166,7 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory.reset(new mem::Memory());
-	address_space_index = emu->getAddressSpaceIndex();
+	address_space_index = emulator->getAddressSpaceIndex();
 
 	// Create signal handler table
 	signal_handler_table.reset(new SignalHandlerTable());
@@ -291,10 +291,10 @@ void Context::HostThreadSuspend()
 	}
 
 	// Event occurred - thread finishes
-	emu->LockMutex();
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->LockMutex();
+	emulator->ProcessEventsScheduleUnsafe();
 	host_thread_suspend_active = false;
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -307,15 +307,15 @@ void Context::HostThreadSuspendCancelUnsafe()
 					"canceling host thread", pid));
 		host_thread_suspend_active = false;
 	}
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->ProcessEventsScheduleUnsafe();
 }
 
 
 void Context::HostThreadSuspendCancel()
 {
-	emu->LockMutex();
+	emulator->LockMutex();
 	HostThreadSuspendCancelUnsafe();
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -337,7 +337,7 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 	setState(ContextSuspended);
 	setState(ContextCallback);
 	setState(wakeup_state);
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -409,17 +409,17 @@ void Context::Execute()
 	inst.Decode(regs.getPC(), buffer_ptr);
 
 	// Debug
-	if (emu->isa_debug)
+	if (emulator->isa_debug)
 	{
 		ELFReader::Symbol *symbol = (loader->binary)->getSymbolByAddress(regs.getPC());
 		std::string symbol_string = symbol->getName();
 		if ((regs.getPC() - previous_ip) != 4)
-			emu->isa_debug << misc::fmt("\nIN %s\n", symbol_string.c_str());
+			emulator->isa_debug << misc::fmt("\nIN %s\n", symbol_string.c_str());
 
-		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-				emu->getInstructions(), regs.getPC());
-		inst.Dump(emu->isa_debug.operator std::ostream &());
-		emu->isa_debug << misc::fmt("\n");
+		emulator->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+				emulator->getInstructions(), regs.getPC());
+		inst.Dump(emulator->isa_debug.operator std::ostream &());
+		emulator->isa_debug << misc::fmt("\n");
 	}
 
 	// Set last, current, and target instruction addresses
@@ -438,7 +438,7 @@ void Context::Execute()
 	}
 
 	// Stats
-	emu->incInstructions();
+	emulator->incInstructions();
 }
 
 
@@ -457,7 +457,7 @@ void Context::FinishGroup(int exit_code)
 		return;
 
 	// Finish all contexts in the group
-	for (auto &context : emu->getContexts())
+	for (auto &context : emulator->getContexts())
 	{
 		if (context->group_parent != this && context.get() != this)
 			continue;
@@ -470,7 +470,7 @@ void Context::FinishGroup(int exit_code)
 	}
 
 	// Process events
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -483,7 +483,7 @@ void Context::Finish(int exit_code)
 	// Finish context
 	setState(parent ? ContextZombie : ContextFinished);
 	this->exit_code = exit_code;
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 }  // namespace MIPS

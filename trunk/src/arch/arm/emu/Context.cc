@@ -38,7 +38,7 @@ void Context::UpdateState(unsigned state)
 	// states other than 'ContextSpecMode', a reschedule is marked. */
 	unsigned diff = this->state ^ state;
 	if (diff & ~ContextStateSpecMode)
-		emu->setScheduleSignal();
+		emulator->setScheduleSignal();
 
 	// Update state
 	this->state = state;
@@ -57,11 +57,11 @@ void Context::UpdateState(unsigned state)
 		this->state &= ~ContextStateRunning;
 
 	// Update presence of context in emulator lists depending on its state
-	emu->UpdateContextInList(ContextListRunning, this, this->state & ContextStateRunning);
-	emu->UpdateContextInList(ContextListZombie, this, this->state & ContextStateZombie);
-	emu->UpdateContextInList(ContextListFinished, this, this->state & ContextStateFinished);
-	emu->UpdateContextInList(ContextListSuspended, this, this->state & ContextStateSuspended);
-	emu->UpdateContextInList(ContextListAlloc, this, this->state & ContextListAlloc);
+	emulator->UpdateContextInList(ContextListRunning, this, this->state & ContextStateRunning);
+	emulator->UpdateContextInList(ContextListZombie, this, this->state & ContextStateZombie);
+	emulator->UpdateContextInList(ContextListFinished, this, this->state & ContextStateFinished);
+	emulator->UpdateContextInList(ContextListSuspended, this, this->state & ContextStateSuspended);
+	emulator->UpdateContextInList(ContextListAlloc, this, this->state & ContextListAlloc);
 }
 
 
@@ -123,13 +123,13 @@ std::string Context::OpenProcSelfMaps()
 Context::Context()
 {
 	// Save emulator instance
-	emu = Emulator::getInstance();
+	emulator = Emulator::getInstance();
 
 	// Initialize
 	state = 0;
 	glibc_segment_base = 0;
 	glibc_segment_limit = 0;
-	pid = emu->getPid();
+	pid = emulator->getPid();
 	parent = nullptr;
 	group_parent = nullptr;
 	exit_signal = 0;
@@ -149,14 +149,14 @@ Context::Context()
 		context_list_present[i] = false;
 
 	// Debug
-	emu->context_debug << "Context " << pid << " created\n";
+	emulator->context_debug << "Context " << pid << " created\n";
 }
 
 
 Context::~Context()
 {
 	// Debug
-	emu->context_debug << "Context " << pid << " destroyed\n";
+	emulator->context_debug << "Context " << pid << " destroyed\n";
 }
 
 
@@ -180,7 +180,7 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory.reset(new mem::Memory());
-	address_space_index = emu->getAddressSpaceIndex();
+	address_space_index = emulator->getAddressSpaceIndex();
 
 	// Create signal handler table
 	//FIXME signal_handler_table.reset(new SignalHandlerTable());
@@ -313,10 +313,10 @@ void Context::HostThreadSuspend()
 	}
 
 	// Event occurred - thread finishes
-	emu->LockMutex();
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->LockMutex();
+	emulator->ProcessEventsScheduleUnsafe();
 	host_thread_suspend_active = false;
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -329,15 +329,15 @@ void Context::HostThreadSuspendCancelUnsafe()
 					"canceling host thread", pid));
 		host_thread_suspend_active = false;
 	}
-	emu->ProcessEventsScheduleUnsafe();
+	emulator->ProcessEventsScheduleUnsafe();
 }
 
 
 void Context::HostThreadSuspendCancel()
 {
-	emu->LockMutex();
+	emulator->LockMutex();
 	HostThreadSuspendCancelUnsafe();
-	emu->UnlockMutex();
+	emulator->UnlockMutex();
 }
 
 
@@ -359,7 +359,7 @@ void Context::Suspend(CanWakeupFn can_wakeup_fn, WakeupFn wakeup_fn,
 	setState(ContextStateSuspended);
 	setState(ContextStateCallback);
 	setState(wakeup_state);
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -506,12 +506,12 @@ void Context::Execute()
 	}
 
 	// Stats
-	emu->incInstructions();
+	emulator->incInstructions();
 
-	if (emu->getInstructions() % 10 == 0)
+	if (emulator->getInstructions() % 10 == 0)
 	{
-		emu->isa_debug << misc::fmt("Register Debug Dump\n");
-		emu->isa_debug << misc::fmt(
+		emulator->isa_debug << misc::fmt("Register Debug Dump\n");
+		emulator->isa_debug << misc::fmt(
 			"r0 = 0x%x\n"
 			"r1 = 0x%x\n"
 			"r2 = 0x%x\n"
@@ -545,11 +545,11 @@ void Context::Execute()
 	char *stack_value;
 	if (false)
 	{
-		emu->isa_debug << misc::fmt("Stack Dump\n");
+		emulator->isa_debug << misc::fmt("Stack Dump\n");
 		for(unsigned int i = 0; i < 64; i = i + 4)
 		{
 			stack_value = memory->getBuffer(regs.getSP() + i, 4, mem::Memory::AccessRead);
-			emu->isa_debug << misc::fmt("[0x%x]: 0x%x\n", regs.getSP() + i, *((int *)stack_value));
+			emulator->isa_debug << misc::fmt("[0x%x]: 0x%x\n", regs.getSP() + i, *((int *)stack_value));
 		}
 	}
 }
@@ -583,25 +583,25 @@ void Context::ExecuteInst()
 	target_ip = 0;
 
 	// Debug
-	if (emu->isa_debug)
+	if (emulator->isa_debug)
 	{
-		emu->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-				emu->getInstructions(), current_ip);
+		emulator->isa_debug << misc::fmt("%d %8lld %x: ", pid,
+				emulator->getInstructions(), current_ip);
 		if (regs.getCPSR().thumb != 0)
 		{
 			if(getInstType() == ContextInstTypeThumb32)
 			{
-				inst.Thumb32Dump(emu->isa_debug.operator std::ostream &());
+				inst.Thumb32Dump(emulator->isa_debug.operator std::ostream &());
 			}
 			else if (getInstType() == ContextInstTypeThumb16)
 			{
-				inst.Thumb16Dump(emu->isa_debug.operator std::ostream &());
+				inst.Thumb16Dump(emulator->isa_debug.operator std::ostream &());
 			}
 		}
 		else
 		{
-			inst.Dump(emu->isa_debug.operator std::ostream &());
-			emu->isa_debug << misc::fmt("  (%d bytes)", 4);
+			inst.Dump(emulator->isa_debug.operator std::ostream &());
+			emulator->isa_debug << misc::fmt("  (%d bytes)", 4);
 		}
 		//emu->isa_debug << misc::fmt("\n");
 	}
@@ -644,7 +644,7 @@ void Context::ExecuteInst()
 	}
 
 	// debug
-	emu->isa_debug << misc::fmt("\n");
+	emulator->isa_debug << misc::fmt("\n");
 }
 
 
@@ -663,7 +663,7 @@ void Context::FinishGroup(int exit_code)
 		return;
 
 	// Finish all contexts in the group
-	for (auto &context : emu->getContexts())
+	for (auto &context : emulator->getContexts())
 	{
 		if (context->group_parent != this && context.get() != this)
 			continue;
@@ -676,7 +676,7 @@ void Context::FinishGroup(int exit_code)
 	}
 
 	// Process events
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -689,7 +689,7 @@ void Context::Finish(int exit_code)
 	// Finish context
 	setState(parent ? ContextStateZombie : ContextStateFinished);
 	this->exit_code = exit_code;
-	emu->ProcessEventsSchedule();
+	emulator->ProcessEventsSchedule();
 }
 
 
@@ -746,7 +746,7 @@ unsigned int Context::CheckKuserHelper()
 	{
 	case 0xffff0fe0 + 4:
 
-		emu->isa_debug <<
+		emulator->isa_debug <<
 			misc::fmt("  TLS Helper handled\n Helper location : 0x%x\n pc restored at : 0x%x\n\n",
 				regs.getPC(), regs.getLR());
 		ret_val = 0xffff0fe0;
@@ -754,7 +754,7 @@ unsigned int Context::CheckKuserHelper()
 
 	case 0xffff0fc0 + 4:
 
-		emu->isa_debug <<
+		emulator->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
 				regs.getPC(), regs.getLR());
 		ret_val = 0xffff0fc0;
@@ -762,7 +762,7 @@ unsigned int Context::CheckKuserHelper()
 
 	case 0xffff0fa0 + 4:
 
-		emu->isa_debug <<
+		emulator->isa_debug <<
 			misc::fmt("  Fault handled\n Fault location : 0x%x\n pc restored at : 0x%x\n\n",
 				regs.getPC(), regs.getLR());
 		ret_val = 0xffff0fa0;

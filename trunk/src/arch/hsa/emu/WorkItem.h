@@ -68,7 +68,7 @@ public:
 private:
 
  	// Emulator that is belongs to 
- 	Emulator *emu;
+ 	Emulator *emulator;
 
  	// Executable
  	HsaExecutable *executable;

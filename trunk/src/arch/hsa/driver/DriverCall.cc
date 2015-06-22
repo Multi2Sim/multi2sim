@@ -221,8 +221,8 @@ int Driver::CallIterateAgents(comm::Context *context,
 			<unsigned long long>(12, memory, args_ptr));
 
 	// Get virtual machine setup
-	Emulator *emu = Emulator::getInstance();
-	Component *component = emu->getNextComponent(0);
+	Emulator *emulator = Emulator::getInstance();
+	Component *component = emulator->getNextComponent(0);
 
 	// No component to iterate anymore
 	if (!component){
@@ -1753,8 +1753,8 @@ int Driver::CallNextAgent(comm::Context *context,
 		(8, memory, args_ptr);
 
 	// Get next component
-	Emulator *emu = Emulator::getInstance();
-	Component *component = emu->getNextComponent(next_agent_id);
+	Emulator *emulator = Emulator::getInstance();
+	Component *component = emulator->getNextComponent(next_agent_id);
 
 	// If no more component,
 	if (!component)
