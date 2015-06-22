@@ -22,7 +22,8 @@
 
 #include "HsaProgram.h"
 
-#include <arch/hsa/asm/BrigFile.h>
+#include <arch/hsa/disassembler/BrigFile.h>
+
 
 namespace HSA
 {

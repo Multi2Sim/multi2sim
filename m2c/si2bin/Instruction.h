@@ -25,7 +25,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 #include <src/lib/cpp/Bitmap.h>
 #include <src/lib/cpp/Misc.h>
 #include <m2c/common/Instruction.h>

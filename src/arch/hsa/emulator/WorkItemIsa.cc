@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include <arch/hsa/asm/AsmService.h>
+#include <arch/hsa/disassembler/AsmService.h>
 #include <arch/hsa/driver/HsaExecutable.h>
 
 #include "WorkItem.h"
@@ -32,7 +32,7 @@ WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 {
 #define DEFINST(name, opcode, opstr) \
 		&WorkItem::ExecuteInst_##name ,
-#include <arch/hsa/asm/Inst.def>
+#include <arch/hsa/disassembler/Inst.def>
 #undef DEFINST
 	&WorkItem::ExecuteInst_unsupported
 };

@@ -20,9 +20,9 @@
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 #include <lib/cpp/Error.h>
-#include <arch/hsa/asm/BrigFile.h>
-#include <arch/hsa/asm/BrigCodeEntry.h>
-#include <arch/hsa/asm/BrigOperandEntry.h>
+#include <arch/hsa/disassembler/BrigFile.h>
+#include <arch/hsa/disassembler/BrigCodeEntry.h>
+#include <arch/hsa/disassembler/BrigOperandEntry.h>
 #include <arch/hsa/emulator/Variable.h>
 #include <arch/hsa/emulator/Function.h>
 #include <arch/hsa/emulator/Emulator.h>
@@ -30,6 +30,7 @@
 #include "HsaProgram.h"
 #include "HsaExecutable.h"
 #include "HsaExecutableSymbol.h"
+
 
 namespace HSA
 {

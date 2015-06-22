@@ -20,7 +20,7 @@
 #include <cmath>
 #include <iostream>
 
-#include <arch/kepler/asm/Inst.h>
+#include <arch/kepler/disassembler/Inst.h>
 #include <lib/cpp/Bitmap.h>
 #include <lib/util/bit-map.h>
 #include <lib/util/debug.h>

@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include <arch/hsa/asm/AsmService.h>
+#include <arch/hsa/disassembler/AsmService.h>
 #include <arch/hsa/driver/HsaExecutable.h>
 #include <arch/hsa/driver/HsaExecutableSymbol.h>
 

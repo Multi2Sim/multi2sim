@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 #include <memory/Memory.h>
 
 #include "Emulator.h"
@@ -116,7 +116,7 @@ private:
 	// instruction. For example: ISA_s_mov_b32_Impl(Inst *inst)
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
 	void ISA_##_name##_Impl(Inst *inst);
-#include <arch/southern-islands/asm/Inst.def>
+#include <arch/southern-islands/disassembler/Inst.def>
 #undef DEFINST
 
 	// Instruction execution table 

@@ -20,9 +20,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include <arch/hsa/asm/Brig.h>
-#include <arch/hsa/asm/AsmService.h>
-#include <arch/hsa/asm/BrigOperandEntry.h>
+#include <arch/hsa/disassembler/Brig.h>
+#include <arch/hsa/disassembler/AsmService.h>
+#include <arch/hsa/disassembler/BrigOperandEntry.h>
 
 #include "AQLQueue.h"
 #include "Emulator.h"

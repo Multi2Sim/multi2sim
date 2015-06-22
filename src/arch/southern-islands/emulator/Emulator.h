@@ -24,7 +24,7 @@
 #include <list>
 #include <memory>
 
-#include <arch/southern-islands/asm/Arg.h>
+#include <arch/southern-islands/disassembler/Arg.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <memory/Memory.h>

@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include <arch/x86/asm/Inst.h>
+#include <arch/x86/disassembler/Inst.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 

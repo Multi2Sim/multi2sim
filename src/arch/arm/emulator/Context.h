@@ -25,8 +25,8 @@
 #include <vector>
 
 #include <arch/common/CallStack.h>
-#include <arch/arm/asm/Inst.h>
-#include <arch/arm/asm/Asm.h>
+#include <arch/arm/disassembler/Inst.h>
+#include <arch/arm/disassembler/Disassembler.h>
 #include <lib/cpp/ELFReader.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
@@ -382,7 +382,7 @@ class Context
 	// is expanded to
 	//	void ExecuteInst_AND_reg();
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) void ExecuteInst_##_name();
-#include <arch/arm/asm/Inst.def>
+#include <arch/arm/disassembler/Inst.def>
 #undef DEFINST
 
 	// Table of functions
@@ -402,7 +402,7 @@ class Context
 	//	void ExecuteInstThumb16_LSL_imm();
 #define DEFINST(_name, _fmt_str, _cat, _op1, _op2, _op3, _op4, _op5, _op6) \
 	void ExecuteInstThumb16_##_name();
-#include <arch/arm/asm/InstThumb.def>
+#include <arch/arm/disassembler/InstThumb.def>
 #undef DEFINST
 
 	// Table of functions
@@ -423,7 +423,7 @@ class Context
 
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 	void ExecuteInstThumb32_##_name();
-#include <arch/arm/asm/InstThumb32.def>
+#include <arch/arm/disassembler/InstThumb32.def>
 #undef DEFINST
 
 	// Table of functions

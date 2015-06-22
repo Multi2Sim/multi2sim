@@ -20,7 +20,7 @@
 #include <cstring>
 
 #include <lib/cpp/Misc.h>
-#include <arch/hsa/asm/Asm.h>
+#include <arch/hsa/disassembler/Disassembler.h>
 
 #include "Emulator.h"
 #include "AQLQueue.h"

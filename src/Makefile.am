@@ -18,28 +18,28 @@ AM_CPPFLAGS = @M2S_INCLUDES@
 LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emulator/libemulator.a \
-	$(top_builddir)/src/arch/x86/asm/libasm.a \
+	$(top_builddir)/src/arch/x86/disassembler/libdisassembler.a \
 	\
 	$(top_builddir)/src/arch/arm/timing/libtiming.a \
 	$(top_builddir)/src/arch/arm/emulator/libemulator.a \
-	$(top_builddir)/src/arch/arm/asm/libasm.a \
+	$(top_builddir)/src/arch/arm/disassembler/libdisassembler.a \
 	\
-	$(top_builddir)/src/arch/hsa/asm/libasm.a \
+	$(top_builddir)/src/arch/hsa/disassembler/libdisassembler.a \
 	$(top_builddir)/src/arch/hsa/driver/libdriver.a \
 	$(top_builddir)/src/arch/hsa/emulator/libemulator.a \
 	\
 	$(top_builddir)/src/arch/kepler/driver/libdriver.a \
 	$(top_builddir)/src/arch/kepler/emulator/libemulator.a \
-	$(top_builddir)/src/arch/kepler/asm/libasm.a \
+	$(top_builddir)/src/arch/kepler/disassembler/libdisassembler.a \
 	\
 	$(top_builddir)/src/arch/mips/timing/libtiming.a \
 	$(top_builddir)/src/arch/mips/emulator/libemulator.a \
-	$(top_builddir)/src/arch/mips/asm/libasm.a \
+	$(top_builddir)/src/arch/mips/disassembler/libdisassembler.a \
 	\
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
 	$(top_builddir)/src/arch/southern-islands/driver/libdriver.a \
 	$(top_builddir)/src/arch/southern-islands/emulator/libemulator.a \
-	$(top_builddir)/src/arch/southern-islands/asm/libasm.a \
+	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
 	\
 	$(top_builddir)/src/arch/common/libcommon.a \
 	\

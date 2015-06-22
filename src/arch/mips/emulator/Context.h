@@ -24,7 +24,7 @@
 #include <vector>
 
 #include <arch/common/CallStack.h>
-#include <arch/mips/asm/Inst.h>
+#include <arch/mips/disassembler/Inst.h>
 #include <lib/cpp/ELFReader.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
@@ -324,7 +324,7 @@ class Context
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) void ExecuteInst_##_name();
-#include <arch/mips/asm/Inst.def>
+#include <arch/mips/disassembler/Inst.def>
 #undef DEFINST
 
 	// Table of functions

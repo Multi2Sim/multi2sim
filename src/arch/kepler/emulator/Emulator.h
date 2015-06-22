@@ -27,7 +27,7 @@
 
 #include <arch/common/Arch.h>
 #include <arch/common/Emulator.h>
-#include <arch/kepler/asm/Asm.h>
+#include <arch/kepler/disassembler/Disassembler.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
