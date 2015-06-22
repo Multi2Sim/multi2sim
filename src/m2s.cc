@@ -42,8 +42,6 @@
 #include <arch/arm/asm/Asm.h>
 #include <arch/arm/emu/Emu.h>
 #include <dram/System.h>
-#include <driver/opencl/OpenCLDriver.h>
-#include <driver/opengl/OpenGLDriver.h>
 #include <memory/MMU.h>
 #include <memory/Manager.h>
 #include <memory/System.h>

@@ -77,17 +77,6 @@ enum opencl_runtime_type_t
 /* System call code to communicate with Multi2Sim */
 #define OPENCL_SYSCALL_CODE  329
 
-/* Function code to pass as a first argument of a system call */
-enum opencl_abi_call_t
-{
-	opencl_abi_invalid,
-#define OPENCL_ABI_CALL(space, name, code) space##name = code,
-#include "../../src/driver/opencl/ABI.dat"
-#undef OPENCL_ABI_CALL
-	opencl_abi_call_count
-};
-
-
 
 
 

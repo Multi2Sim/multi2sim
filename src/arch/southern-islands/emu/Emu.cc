@@ -21,13 +21,12 @@
 #include <arch/southern-islands/emu/WorkGroup.h>
 #include <arch/southern-islands/emu/Wavefront.h>
 #include <arch/southern-islands/emu/WorkItem.h>
-#include <driver/opencl/OpenCLDriver.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 
-
 #include "Emu.h"
 #include "NDRange.h"
+
 
 namespace SI
 {
@@ -112,6 +111,7 @@ void Emu::Dump(std::ostream &os) const
 
 void Emu::Run()
 {
+#if 0
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (opencl_driver->isNDRangeListEmpty())
@@ -141,21 +141,13 @@ void Emu::Run()
 			workgroup.reset();
 		}
 
-#ifdef HAVE_OPENGL
-		// Notify corresponding driver
-		if ((*ndr_i)->getStage() == NDRange::StageCompute)
-		{
-			// Let OpenCL driver know that all work-groups from this nd-range
-			// have been run
-//			opencl_driver->RequestWork((*ndr_i).get());
-		}
-#else
 		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
 		// opencl_driver->RequestWork((*ndr_i).get());
-#endif
 	}
+#endif
 }
+
 
 /// Initialize a buffer description of type EmuBufferDesc
 void Emu::createBufferDesc(unsigned base_addr, unsigned size,

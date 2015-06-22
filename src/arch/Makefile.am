@@ -1,8 +1,6 @@
 SUBDIRS = \
 	arm \
 	common \
-	evergreen \
-	fermi \
 	hsa \
 	kepler \
 	mips \

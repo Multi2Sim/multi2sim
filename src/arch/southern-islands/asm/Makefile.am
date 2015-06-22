@@ -2,9 +2,6 @@ lib_LIBRARIES = libasm.a
 
 libasm_a_SOURCES = \
 	\
-	arg.c \
-	arg.h \
-	\
 	Arg.cc \
 	Arg.h \
 	\
@@ -14,24 +11,9 @@ libasm_a_SOURCES = \
 	Binary.cc \
 	Binary.h \
 	\
-	fetch-shader.c \
-	fetch-shader.h \
-	\
 	Inst.cc \
 	Inst.def \
-	Inst.h \
-	\
-	Input.cc \
-	Input.h \
-	\
-	input.c \
-	input.h \
-	\
-	ShaderBinary.cc \
-	ShaderBinary.h \
-	\
-	Wrapper.cc \
-	Wrapper.h
+	Inst.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

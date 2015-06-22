@@ -20,7 +20,6 @@
 #ifndef ARCH_KEPLER_EMU_GRID_H
 #define ARCH_KEPLER_EMU_GRID_H
 
-#ifdef __cplusplus
 #include <iostream>
 #include <list>
 #include <memory>
@@ -31,6 +30,7 @@
 
 #include "Emu.h"
 #include "ThreadBlock.h"
+
 
 namespace Kepler
 {
@@ -196,6 +196,6 @@ public:
 };
 
 }   //namespace
-#endif
+
 #endif
 

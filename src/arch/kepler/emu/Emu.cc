@@ -23,7 +23,6 @@
 
 #include <arch/common/Arch.h>
 #include <lib/cpp/CommandLine.h>
-#include <driver/cuda/function.h>
 #include <lib/mhandle/mhandle.h>
 #include <lib/util/misc.h>
 #include <memory/Memory.h>
@@ -33,6 +32,7 @@
 #include "Thread.h"
 #include "Warp.h"
 #include "ThreadBlock.h"
+
 
 namespace Kepler
 {
