@@ -1,5 +1,5 @@
 SUBDIRS = \
 	asm \
 	driver \
-	emu \
+	emulator \
 	timing

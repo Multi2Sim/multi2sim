@@ -22,10 +22,10 @@
 
 #include <string>
 
+#include <arch/x86/emulator/UInst.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 
-#include <arch/x86/emu/UInst.h>
 
 namespace x86
 {

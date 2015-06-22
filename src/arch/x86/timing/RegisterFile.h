@@ -21,9 +21,10 @@
 #define ARCH_X86_TIMING_REGISTER_FILE_H
 
 #include <lib/cpp/IniFile.h>
-#include <arch/x86/emu/UInst.h>
+#include <arch/x86/emulator/UInst.h>
 
 #include "Uop.h"
+
 
 namespace x86
 {

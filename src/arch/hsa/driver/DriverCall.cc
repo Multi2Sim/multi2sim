@@ -21,18 +21,19 @@
 	throw misc::Panic(misc::fmt("Unimplemented driver function %s\n", \
 	__FUNCTION__));
 
-#include <arch/x86/emu/Context.h>
-#include <arch/x86/emu/Emu.h>
-#include <arch/hsa/emu/Emu.h>
-#include <arch/hsa/emu/Component.h>
-#include <arch/hsa/emu/WorkItem.h>
-#include <arch/hsa/emu/StackFrame.h>
-#include <arch/hsa/emu/ProgramLoader.h>
+#include <arch/x86/emulator/Context.h>
+#include <arch/x86/emulator/Emulator.h>
+#include <arch/hsa/emulator/Emulator.h>
+#include <arch/hsa/emulator/Component.h>
+#include <arch/hsa/emulator/WorkItem.h>
+#include <arch/hsa/emulator/StackFrame.h>
+#include <arch/hsa/emulator/ProgramLoader.h>
 
 #include "HsaProgram.h"
 #include "HsaExecutable.h"
 #include "HsaExecutableSymbol.h"
 #include "Driver.h"
+
 
 namespace HSA
 {

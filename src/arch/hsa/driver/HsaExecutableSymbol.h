@@ -22,9 +22,10 @@
 
 #include <string>
 
-#include <arch/hsa/emu/Function.h>
+#include <arch/hsa/emulator/Function.h>
 
 #include "HsaExecutable.h"
+
 
 namespace HSA
 {

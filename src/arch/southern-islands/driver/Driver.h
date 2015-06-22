@@ -22,7 +22,7 @@
 
 #include <arch/common/Driver.h>
 #include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/emu/NDRange.h>
+#include <arch/southern-islands/emulator/NDRange.h>
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Debug.h>
 

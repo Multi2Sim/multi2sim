@@ -1,4 +1,4 @@
 SUBDIRS = \
 	asm \
 	driver \
-	emu
+	emulator
