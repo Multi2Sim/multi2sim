@@ -24,7 +24,7 @@
 #include <list>
 #include <string>
 
-#include <arch/x86/emu/UInst.h>
+#include <arch/x86/emulator/UInst.h>
 
 #include "Thread.h"
 #include "FunctionalUnit.h"

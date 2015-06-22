@@ -17,9 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/x86/emu/Emu.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/NDRange.h>
+#include <arch/southern-islands/emulator/Emulator.h>
+#include <arch/southern-islands/emulator/NDRange.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <string.h>
@@ -107,7 +106,7 @@ void Kernel::LoadMetaDataV3()
 	{
 		// Read the next line
 		std::getline(metadata_stream, line);
-		x86::Emulator::opencl_debug << misc::fmt("\t%s\n", line.c_str());
+		Driver::debug << misc::fmt("\t%s\n", line.c_str());
 		misc::StringTokenize(line, token_list, ";:");
 
 		// Stop when ARGEND is found or line is empty
@@ -162,7 +161,7 @@ void Kernel::LoadMetaDataV3()
 				constant_buffer_num, constant_offset));
 
 			// Debug
-			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - value stored in "
+			Driver::debug << misc::fmt("\targument '%s' - value stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -259,7 +258,7 @@ void Kernel::LoadMetaDataV3()
 				access_type));
 			
 			// Debug
-			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - Pointer stored in "
+			Driver::debug << misc::fmt("\targument '%s' - Pointer stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -320,7 +319,7 @@ void Kernel::LoadMetaDataV3()
 				uav, constant_buffer_num, constant_offset));
 
 			// Debug
-			x86::Emulator::opencl_debug << misc::fmt("\targument '%s' - Image stored in "
+			Driver::debug << misc::fmt("\targument '%s' - Image stored in "
 				"constant buffer %d at offset %d\n",
 				name.c_str(), constant_buffer_num,
 				constant_offset);
@@ -770,11 +769,11 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 				"\tELF symbol 'OpenCL_%s_xxx missing'\n%s",
 				name.c_str(), OpenCLErrSIKernelSymbol));
 
-	x86::Emulator::opencl_debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
+	Driver::debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
 			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
-	x86::Emulator::opencl_debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
+	Driver::debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
 			(unsigned)header_symbol->getValue(), (unsigned)header_symbol->getSize());
-	x86::Emulator::opencl_debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
+	Driver::debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
 			(unsigned)kernel_symbol->getValue(), (unsigned)kernel_symbol->getSize());
 
 	// Create and parse kernel binary (internal ELF).
@@ -813,7 +812,7 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);             
 
 	// Debug print out
-	x86::Emulator::opencl_debug << misc::fmt("\t%u bytes of device memory allocated at "
+	Driver::debug << misc::fmt("\t%u bytes of device memory allocated at "
 		"0x%x for SI internal tables\n", size_of_tables,
 		emulator->getVideoMemoryTop());
 
@@ -880,7 +879,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg->getName().c_str()));
 
 		// Debug
-		x86::Emulator::opencl_debug << misc::fmt("\targ[%d] = %s ",
+		Driver::debug << misc::fmt("\targ[%d] = %s ",
 				index, arg->getName().c_str());
 
 		// Process argument depending on its type
@@ -917,7 +916,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg_ptr->getConstantOffset(),
 					ndrange->getLocalMemTopPtr(), 4);
 
-				x86::Emulator::opencl_debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
+				Driver::debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
 					ndrange->getLocalMemTop());
 
 				ndrange->incLocalMemTop(arg_ptr->getSize());
@@ -927,7 +926,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			// UAV
 			case ArgScopeUAV:
 			{
-				x86::Emulator::opencl_debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
+				Driver::debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
 
 				// Create descriptor for argument
 				CreateBufferDesc(
@@ -1001,7 +1000,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		}
 
 		// Debug
-		x86::Emulator::opencl_debug << "\n";
+		Driver::debug << "\n";
 
 		// Next
 		index++;

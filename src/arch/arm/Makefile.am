@@ -1,4 +1,4 @@
 SUBDIRS = \
 	asm \
-	emu \
+	emulator \
 	timing

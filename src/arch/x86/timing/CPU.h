@@ -24,12 +24,13 @@
 #include <list>
 
 #include <memory/MMU.h>
-#include <arch/x86/emu/UInst.h>
-#include <arch/x86/emu/Emu.h>
+#include <arch/x86/emulator/Emulator.h>
+#include <arch/x86/emulator/UInst.h>
 
 #include "Core.h"
 #include "Thread.h"
 #include "Uop.h"
+
 
 namespace x86
 {
