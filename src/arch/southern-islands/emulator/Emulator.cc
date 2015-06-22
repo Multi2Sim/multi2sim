@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/disassembler/Disassembler.h>
+#include <arch/southern-islands/driver/Driver.h>
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkItem.h>
@@ -111,41 +112,43 @@ void Emulator::Dump(std::ostream &os) const
 
 void Emulator::Run()
 {
-#if 0
+	// Get SI Driver
+	Driver *driver = Driver::getInstance();
+
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
-	if (opencl_driver->isNDRangeListEmpty())
+	if (!(driver->getNumNDRanges()))
 		return;
 
 	// NDRange list is shared by CL/GL driver
-	for (auto ndr_i = opencl_driver->getNDRangeBegin(); 
-		ndr_i < opencl_driver->getNDRangeEnd(); ++ndr_i)
+	for (int i = 0; i < driver->getNumNDRanges(); i++)
 	{
+		// Get NDRange
+		NDRange *ndrange = driver->getNDRangeById(i);
+		
 		// Move waiting work groups to running work groups 
-		(*ndr_i)->WaitingToRunning();
+		ndrange->WaitingToRunning();
 
 		// If there's no work groups to run, go to next nd-range 
-		if ((*ndr_i)->isRunningWorkGroupsEmpty())
+		if (ndrange->isRunningWorkGroupsEmpty())
 			continue;
 
 		// Iterate over running work groups
-		for (auto wg_i = (*ndr_i)->RunningWorkGroupBegin(), 
-			wg_e = (*ndr_i)->RunningWorkGroupEnd(); wg_i != wg_e; ++wg_i)
+		for (auto wg_i = ndrange->RunningWorkGroupBegin(), 
+			wg_e = ndrange->RunningWorkGroupEnd(); 
+			wg_i != wg_e; ++wg_i)
 		{
-			std::unique_ptr<WorkGroup> workgroup(new WorkGroup((*ndr_i).get(), (*wg_i)));
+			auto workgroup = misc::new_unique<WorkGroup>(ndrange, (*wg_i));
 
 			for (auto wf_i = workgroup->WavefrontsBegin(), 
 				wf_e = workgroup->WavefrontsEnd(); wf_i != wf_e; ++wf_i)
 				(*wf_i)->Execute();
-
-			workgroup.reset();
 		}
 
 		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
 		// opencl_driver->RequestWork((*ndr_i).get());
 	}
-#endif
 }
 
 

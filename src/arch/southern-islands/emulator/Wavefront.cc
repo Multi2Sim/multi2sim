@@ -147,7 +147,8 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
-	auto inst = misc::new_unique<Inst>();
+	//auto inst = misc::new_unique<Inst>();
+	Inst inst;
 
 	// Reset instruction flags
 	vector_mem_write = 0;
@@ -169,13 +170,13 @@ void Wavefront::Execute()
 	char *inst_buffer = ndrange->getInstructionBuffer();
 	ndrange->getInstructionMemory()->Read(
 			inst_addr, inst_size, inst_buffer);
-	inst->Decode(inst_buffer, pc);
+	inst.Decode(inst_buffer, pc);
 
-	this->inst_size = inst->getSize();
-	InstOpcode opcode = inst->getOpcode();
-	InstFormat format = inst->getFormat();
-	InstBytes *bytes = inst->getBytes();
-	int op = inst->getOp();
+	this->inst_size = inst.getSize();
+	InstOpcode opcode = inst.getOpcode();
+	InstFormat format = inst.getFormat();
+	InstBytes *bytes = inst.getBytes();
+	int op = inst.getOp();
 
 	// Dump instruction string when debugging
 	switch (format)
@@ -190,7 +191,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 
@@ -205,7 +206,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 		
@@ -228,7 +229,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 
@@ -243,7 +244,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 
@@ -258,7 +259,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 
@@ -274,7 +275,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, inst.get());
+		work_item->Execute(opcode, &inst);
 
 		Emulator::debug << "\n";
 
@@ -295,7 +296,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 		}
 
 		Emulator::debug << "\n";
@@ -320,7 +321,7 @@ void Wavefront::Execute()
 			if (work_item->ReadSReg(Inst::RegisterExec) == 0 && 
 				work_item->ReadSReg(Inst::RegisterExec + 1) == 0)
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 			else 
 			{
@@ -331,7 +332,7 @@ void Wavefront::Execute()
 					if (isWorkItemActive(work_item->getIdInWavefront()))
 					if (isWorkItemActive(work_item->getIdInWavefront()))
 					{
-						work_item->Execute(opcode, inst.get());
+						work_item->Execute(opcode, &inst);
 					}
 				}
 			}
@@ -346,7 +347,7 @@ void Wavefront::Execute()
 				if (isWorkItemActive(work_item->getIdInWavefront()))
 				if (isWorkItemActive(work_item->getIdInWavefront()))
 				{
-					work_item->Execute(opcode, inst.get());
+					work_item->Execute(opcode, &inst);
 				}
 			}
 		}
@@ -370,7 +371,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -393,7 +394,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -416,7 +417,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -439,7 +440,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -480,7 +481,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -518,7 +519,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -562,7 +563,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
@@ -588,7 +589,7 @@ void Wavefront::Execute()
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, inst.get());
+				work_item->Execute(opcode, &inst);
 			}
 		}
 
