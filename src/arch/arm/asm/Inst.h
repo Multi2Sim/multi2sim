@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_ARM_ASM_INST_H
-#define ARCH_ARM_ASM_INST_H
+#ifndef ARCH_ARM_DISASSEMBLER_INST_H
+#define ARCH_ARM_DISASSEMBLER_INST_H
 
 #include <iostream>
 

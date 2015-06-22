@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef MIPS_ASM_INST_H
-#define MIPS_ASM_INST_H
+#ifndef ARCH_MIPS_DISASSEMBLER_INST_H
+#define ARCH_MIPS_DISASSEMBLER_INST_H
 
 #include <iostream>
 
@@ -205,5 +205,5 @@ public:
 
 } // namespace MIPS
 
-#endif  // MIPS_ASM_INST_H
+#endif
 
