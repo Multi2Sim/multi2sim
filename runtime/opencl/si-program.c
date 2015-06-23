@@ -24,6 +24,7 @@
 #include "elf-format.h"
 #include "mhandle.h"
 #include "si-device.h"
+#include "si-kernel.h"
 #include "si-program.h"
 
 
