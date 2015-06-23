@@ -65,6 +65,9 @@ TEST(TestEngine, should_be_able_to_schedule_event)
 	cycle_after = engine->getCycle();
 	EXPECT_EQ(11, cycle_after - cycle_before);
 	EXPECT_TRUE(handler_called_0);
+	
+	// Finalize
+	Engine::Destroy();
 }
 
 
@@ -96,9 +99,6 @@ TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
 
-	// Reset engine
-	engine->Reset();
-
 	//Set up frequency domain
 	FrequencyDomain domain("Test frequency domain", 2e3);
 	Event event("test event", testHandler_1, &domain);
@@ -112,6 +112,9 @@ TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
 
 	// Assertions
 	EXPECT_EQ(1, frame->counter);
+
+	// Finalize
+	Engine::Destroy();
 }
 
 
@@ -151,9 +154,6 @@ TEST(TestEngine, test_frequency_domains)
 {
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
-
-	// Reset engine
-	engine->Reset();
 
 	// Set up fast frequency domain
 	FrequencyDomain *fast_domain = engine->RegisterFrequencyDomain(
@@ -198,6 +198,9 @@ TEST(TestEngine, test_frequency_domains)
 
 	//Check that handler has been called
 	EXPECT_TRUE(handler_called_2_1);
+
+	// Finalize
+	Engine::Destroy();
 }
 
 }

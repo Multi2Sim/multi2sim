@@ -22,7 +22,7 @@
 #include <vector>
 
 #include <lib/cpp/IniFile.h>
-#include <arch/x86/emu/UInst.h>
+#include <arch/x86/emulator/UInst.h>
 #include <arch/x86/timing/BranchPredictor.h>
 #include <arch/x86/timing/Uop.h>
 
