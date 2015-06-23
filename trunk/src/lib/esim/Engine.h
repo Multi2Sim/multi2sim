@@ -148,16 +148,15 @@ public:
 	/// Obtain the instance of the event-driven simulator singleton.
 	static Engine *getInstance();
 
+	/// Destroy the singleton if allocated.
+	static void Destroy() { instance = nullptr; }
+
 	/// Force end of simulation with a specific reason.
 	void Finish(const std::string &why)
 	{
 		finish = true;
 		finish_why = why;
 	}
-
-	/// Return the event-driven simulation engine to its initial state,
-	/// with no pending events and the current time being 0.
-	void Reset();
 
 	/// Return whether the simulation finished
 	bool hasFinished() { return finish; }
