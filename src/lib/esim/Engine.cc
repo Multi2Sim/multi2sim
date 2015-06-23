@@ -85,35 +85,6 @@ void Engine::SignalHandler(int signum)
 }
 
 
-void Engine::Reset()
-{
-	// Debug
-	debug << "Engine reset\n";
-
-	// Reset it
-	finish = false;
-	finish_why = "";
-	signal_received = false;
-	timer.Reset();
-	locked = false;
-	current_time = 0;
-	current_frame = nullptr;
-	max_inflight_events_warning = false;
-
-	// Empty event heap
-	while (!heap.empty())
-		heap.pop();
-
-	// Empty end frames
-	while (!end_frames.empty())
-		end_frames.pop();
-
-	// Reset frequency domains
-	frequency_domains.clear();
-	fastest_frequency = 0;
-}
-
-
 bool Engine::Drain(int max_events)
 {
 	// Keep track of the number of extracted events
