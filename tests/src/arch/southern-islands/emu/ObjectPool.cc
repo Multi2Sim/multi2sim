@@ -17,13 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/WorkItem.h>
-#include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/asm/Inst.h>
+#include <lib/cpp/Misc.h>
 #include <gtest/gtest.h>
 
 #include "ObjectPool.h"
@@ -56,7 +50,7 @@ ObjectPool::ObjectPool()
 	work_item->setWorkGroup(work_group.get());
 
 	// Create a new Instruction
-	inst = misc::new_unique<Inst>(as);
+	inst = misc::new_unique<Inst>();
 }
 
 
