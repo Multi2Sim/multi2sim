@@ -23,6 +23,7 @@
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Event.h>
+#include <lib/esim/Queue.h>
 
 
 namespace esim
@@ -40,30 +41,52 @@ void testHandler_0(Event *event, Frame *frame)
 	handler_called_0 = true;
 }
 
-TEST(TestEngine, should_be_able_to_schedule_event)
+// Tests the ability to schedule an event and execute it at the correct time
+TEST(TestEngine, test_schedule_event)
 {
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
-	FrequencyDomain domain("Test frequency domain", 2e3);
-	Event event("test event", testHandler_0, &domain);
-	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
+	
+	// Set up frequency domain
+	FrequencyDomain *domain = engine->RegisterFrequencyDomain(
+			"Test frequency domain", 2e3);
+	
+	// Register event
+	Event *event = engine->RegisterEvent(
+			"test event", testHandler_0, domain);
 
-	// Schedule next event in next 10 events
-	engine->Next(&event, 10, 0);
-
-	// Process events should go to next cycle, and the scheduled
-	// event should not be triggered
+	// Schedule event for 10 cycles from now
+	engine->Next(event, 10, 0);
+	
+	// Get current cycle before
 	long long cycle_before = engine->getCycle();
+	
+	// Run simulation for 1 cycle
 	engine->ProcessEvents();
+	
+	// Get current cycle after
 	long long cycle_after = engine->getCycle();
+	
+	// Check that only 1 cycle was executed	
 	EXPECT_EQ(1, cycle_after - cycle_before);
+	
+	// Check that handler was not called
 	EXPECT_FALSE(handler_called_0);
+	
+	// Get current cycle before 
+	cycle_before = engine->getCycle();	
 
-	// Skip for 10 cycles, the handler should be invoked
+	// Run simulation for 10 cycles
 	for (int i = 0; i < 10; i++)
 		engine->ProcessEvents();
+	
+	// Get current cycle after
 	cycle_after = engine->getCycle();
-	EXPECT_EQ(11, cycle_after - cycle_before);
+	
+	// Check that 10 cycles were executed
+	EXPECT_EQ(10, cycle_after - cycle_before);
+
+	// Check that handler was called
 	EXPECT_TRUE(handler_called_0);
 	
 	// Finalize
@@ -91,7 +114,8 @@ void testHandler_1(Event *event, Frame *frame)
 	data->counter++;
 }
 
-TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
+// Tests the ability to schedule an event in an event frame
+TEST(TestEngine, test_event_frame)
 {
 	// Set frame
 	auto frame = misc::new_shared<DummyFrame_1>();
@@ -99,18 +123,21 @@ TEST(TestEngine, should_able_to_schedule_event_with_event_frame)
 	// Set up esim engine
 	Engine *engine = Engine::getInstance();
 
-	//Set up frequency domain
-	FrequencyDomain domain("Test frequency domain", 2e3);
-	Event event("test event", testHandler_1, &domain);
-	engine->RegisterFrequencyDomain("Test frequency domain", 2e3);
+	// Set up frequency domain
+	FrequencyDomain *domain = engine->RegisterFrequencyDomain(
+			"Test frequency domain", 2e3);
+	
+	// Register event
+	Event *event = engine->RegisterEvent(
+			"test event", testHandler_1, domain);
 
-	// Schedule next event
-	engine->Schedule(&event, frame, 0);
+	// Schedule next event for 0 cycles from now
+	engine->Call(event, frame, nullptr, 0, 0);
 
-	// Process event
+	// Run simulation for 1 cycle
 	engine->ProcessEvents();
 
-	// Assertions
+	// Check that handler was executed
 	EXPECT_EQ(1, frame->counter);
 
 	// Finalize
@@ -132,7 +159,6 @@ bool handler_called_2_1 = false;
 void testHandler_2_0(Event *fast_event, Frame *frame)
 {
 	handler_called_2_0 = true;
-	std::cout << "Handler_2_0 called\n";
 }
 
 // Initialize event handler
@@ -145,9 +171,9 @@ void testHandler_2_1(Event *slow_event, Frame *frame)
 //
 // Cycle Distribution
 //
-// fast_domain   --    --    --    --    --
+// fast_domain   --    --    --    --    --	(1GHz)
 //
-// slow_domain       --        --        --
+// slow_domain       --        --        --     (600MHz)
 //
 //
 TEST(TestEngine, test_frequency_domains)
@@ -164,18 +190,18 @@ TEST(TestEngine, test_frequency_domains)
 			"Slow frequency domain", 600);
 
 	// Set up event
-	Event fast_event("fast event", testHandler_2_0, fast_domain);
+	Event *fast_event = engine->RegisterEvent("fast event", testHandler_2_0, fast_domain);
 
 	// Set up event
-	Event slow_event("slow event", testHandler_2_1, slow_domain);
+	Event *slow_event = engine->RegisterEvent("slow event", testHandler_2_1, slow_domain);
 
 	// Schedule fast event for 100 fast cycles from now
-	engine->Next(&fast_event, 100, 0);
+	engine->Next(fast_event, 100, 0);
 
 	// Schedule slow event for 100 slow cycles from now
-	engine->Next(&slow_event, 100, 0);
+	engine->Next(slow_event, 100, 0);
 
-	// Run simulation
+	// Run simulation for 100 cycles
 	for (int i = 0; i < 101; i++)
 	{
 		// Check that handler has not been called
@@ -184,7 +210,7 @@ TEST(TestEngine, test_frequency_domains)
 		engine->ProcessEvents();
 	}
 
-	// Continue simulation
+	// Continue simulation for 66 cycles
 	for (int i = 0; i < 67; i++)
 	{
 		// Check that handler has been called
@@ -198,6 +224,124 @@ TEST(TestEngine, test_frequency_domains)
 
 	//Check that handler has been called
 	EXPECT_TRUE(handler_called_2_1);
+
+	// Finalize
+	Engine::Destroy();
+}
+
+
+
+
+//
+// Test 3
+//
+
+// Create queue
+Queue q_3;
+
+// Create dummy frame
+class DummyFrame_3_0 : public Frame{};
+
+// Create dummy frame
+class DummyFrame_3_1 : public Frame{};
+
+// Set up handler variables
+bool handler_called_3_1 = false;
+bool handler_called_3_3 = false;
+
+// Initialize event handler
+void testHandler_3_1(Event *event, Frame *frame)
+{
+	handler_called_3_1 = true;
+	EXPECT_FALSE(handler_called_3_3);
+}
+
+// Initialize event handler
+void testHandler_3_0(Event *event, Frame *frame)
+{
+	// Get instance of engine
+	Engine *engine = Engine::getInstance();
+	
+	// Set up frequency domain
+	FrequencyDomain *domain = engine->RegisterFrequencyDomain(
+				"frequency domain", 1000);
+
+	// Register event
+	Event *event4 = engine->RegisterEvent("event 4", testHandler_3_1, domain);
+
+	// Add event to the queue
+	q_3.Wait(event4);
+}
+
+// Initialize event handler
+void testHandler_3_3(Event *event, Frame *frame)
+{
+	handler_called_3_3 = true;
+}
+
+// Initialize event handler
+void testHandler_3_2(Event *event, Frame *frame)
+{
+	// Get instance of engine
+	Engine *engine = Engine::getInstance();
+
+	// Set up frequency domain
+	FrequencyDomain *domain = engine->RegisterFrequencyDomain(
+				"frequency domain", 1000);
+
+	// Register event
+	Event *event3 = engine->RegisterEvent("event 3", testHandler_3_3, domain);
+
+	// Add event to the queue
+	q_3.Wait(event3);
+}
+
+TEST(TestEngine, test_event_queue)
+{
+	// Set up esim engine
+	Engine *engine = Engine::getInstance();
+
+	// Set up fast frequency domain
+	FrequencyDomain *domain = engine->RegisterFrequencyDomain(
+				"frequency domain", 1000);
+
+	// Set up event
+	Event *event1 = engine->RegisterEvent("event 1", testHandler_3_0, domain);
+
+	// Set up event
+	Event *event2 = engine->RegisterEvent("event 2", testHandler_3_2, domain);
+
+	// Set frame
+	auto frame_3_0 = misc::new_shared<DummyFrame_3_0>();
+
+	// Set frame
+	auto frame_3_1 = misc::new_shared<DummyFrame_3_1>();
+
+	// Schedule event for 5 cycles from now
+	engine->Call(event1, frame_3_0, nullptr, 5, 0);
+
+	// Schedule slow event 10 cycles from now
+	engine->Call(event2, frame_3_1, nullptr, 10, 0);
+
+	// Run simulation for 10 cycles
+	for (int i = 0; i < 11; i++)
+		engine->ProcessEvents();
+
+	// Check that the handler has not been called
+	EXPECT_FALSE(handler_called_3_1);
+	EXPECT_FALSE(handler_called_3_3);
+
+	// Wakeup all events in queue
+	q_3.WakeupAll();
+
+	// Run simulation for 1 cycle
+	engine->ProcessEvents();
+	
+	// Check that handler has been called
+	EXPECT_TRUE(handler_called_3_1);
+	
+	//Check that handler has been called
+	EXPECT_TRUE(handler_called_3_3);
 
 	// Finalize
 	Engine::Destroy();
