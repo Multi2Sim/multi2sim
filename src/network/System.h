@@ -149,6 +149,11 @@ public:
 	/// Get instance of singleton
 	static System *getInstance();
 
+	/// Destroy the singleton if allocated.
+	static void Destroy() { instance = nullptr; }
+
+
+
 
 
 	//
