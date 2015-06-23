@@ -433,7 +433,7 @@ void opencl_si_ndrange_run_partial(struct opencl_si_ndrange_t *ndrange,
 
 	unsigned args[3] = { ndrange->id, work_group_start, work_group_count};
 	ioctl(opencl_si_device->fd, 
-		SINDRangeSendWorkGoups, 
+		SINDRangeSendWorkGroups, 
 		args);
 }
 

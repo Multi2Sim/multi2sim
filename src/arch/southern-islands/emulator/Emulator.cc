@@ -117,7 +117,7 @@ void Emulator::Run()
 
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
-	if (!(driver->getNumNDRanges()))
+	if (!driver->getNumNDRanges())
 		return;
 
 	// NDRange list is shared by CL/GL driver

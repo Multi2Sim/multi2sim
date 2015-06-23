@@ -28,6 +28,18 @@ struct opencl_si_device_t;
 struct opencl_si_program_t;
 
 
+/* List of ABI calls */                                               
+enum si_call_t                                                           
+{                                                                                
+        SIInvalid = 0,                                                  
+	#define DEFCALL(name, code) SI##name = code,                    
+	#include "Driver.def"
+	#undef DEFCALL                                                           
+	SICallCount                                                    
+};  
+
+
+
 /*
  * Southern Islands Kernel Argument
  */
