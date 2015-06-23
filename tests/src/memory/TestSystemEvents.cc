@@ -420,7 +420,7 @@ const std::string net_config_1 =
 		"\n"
 		"[ Network.net-0.Node.s0 ]\n"
 		"Type = Switch\n"
-		"/n"
+		"\n"
 		"[ Network.net-1.Node.s0 ]\n"
 		"Type = Switch\n"
 		"\n"
@@ -631,6 +631,9 @@ TEST(TestSystemEvents, config_0_evict_0)
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
 		EXPECT_EQ(node->getReceivedBytes(), 272);
+		
+		// Finalize
+		net::System::Destroy();
 	}
 	catch (misc::Exception &e)
 	{
@@ -642,7 +645,7 @@ TEST(TestSystemEvents, config_0_evict_0)
 TEST(TestSystemEvents, config_0_evict_1)
 {
 	try
-	{
+	{	
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
