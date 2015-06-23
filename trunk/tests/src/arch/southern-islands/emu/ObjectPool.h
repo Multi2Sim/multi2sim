@@ -20,13 +20,13 @@
 #ifndef SRC_ARCH_SOUTHERN_ISLANDS_EMU_OBJECTPOOL_H                                          
 #define SRC_ARCH_SOUTHERN_ISLANDS_EMU_OBJECTPOOL_H
 
-#include <arch/southern-islands/emu/NDRange.h>
-#include <arch/southern-islands/emu/Emu.h>
-#include <arch/southern-islands/emu/Wavefront.h>
-#include <arch/southern-islands/emu/WorkGroup.h>
-#include <arch/southern-islands/emu/WorkItem.h>
-#include <arch/southern-islands/asm/Asm.h>
-#include <arch/southern-islands/asm/Inst.h>
+#include <arch/southern-islands/emulator/NDRange.h>
+#include <arch/southern-islands/emulator/Emulator.h>
+#include <arch/southern-islands/emulator/Wavefront.h>
+#include <arch/southern-islands/emulator/WorkGroup.h>
+#include <arch/southern-islands/emulator/WorkItem.h>
+#include <arch/southern-islands/disassembler/Disassembler.h>
+#include <arch/southern-islands/disassembler/Inst.h>
 #include <gtest/gtest.h>
 
 namespace SI
