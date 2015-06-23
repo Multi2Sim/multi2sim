@@ -138,13 +138,6 @@ int Driver::CallMemWrite(comm::Context *context,
 	// Read memory from host to device
 	auto buffer = misc::new_unique_array<char>(size);
 
-	std::cout<<"\n\n";
-
-	for (unsigned i = 0; i < size; i++)
-		std::cout<<buffer.get()[i]<<" ";
-
-	std::cout<<"\n\n";
-
 	memory->Write(host_ptr, size, buffer.get());
 	video_mem->Read(device_ptr, size, buffer.get());
 
