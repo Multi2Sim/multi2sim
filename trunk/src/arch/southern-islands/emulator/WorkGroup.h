@@ -21,17 +21,19 @@
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_GROUP_H
 
 #include <cassert>
+#include <list>
 #include <memory>
 #include <vector>
 
 #include <memory/Memory.h>
 
+#include "Wavefront.h"
+#include "WorkItem.h"
+
 
 namespace SI
 {
 
-class Wavefront;
-class WorkItem;
 class NDRange;
 
 
@@ -67,10 +69,10 @@ class WorkGroup
 	// Number of wavefronts that have completed timing simulation
 	unsigned wavefronts_completed_timing = 0;
 
-	// Bool indicating whether the work-group has finished emulation
+	// Flag indicating whether the work-group has finished emulation
 	bool finished_emu;
 
-	// Bool indicating whether the work-group has finished timing simulation
+	// Flag indicating whether the work-group has finished timing simulation
 	bool finished_timing;
 
 	// ND-Range that the work-group belongs to
@@ -86,7 +88,7 @@ class WorkGroup
 	std::vector<std::unique_ptr<Wavefront>> wavefronts;
 
 	// Local memory
-	std::unique_ptr<mem::Memory> lds;
+	mem::Memory local_memory;
 
 	// Additional work-group data
 	std::unique_ptr<WorkGroupData> data;
@@ -128,6 +130,9 @@ public:
 		return os;
 	}
 
+	/// Position of this work-group in the ND-Range's list of work-groups.
+	/// This field is managed internally by the ND-Range.
+	std::list<std::unique_ptr<WorkGroup>>::iterator work_groups_iterator;
 
 
 

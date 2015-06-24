@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Emulator.h"
 #include "NDRange.h"
 #include "WorkGroup.h"
 #include "Wavefront.h"
 #include "WorkItem.h"
 
-
-using namespace misc;
 
 namespace SI
 {
@@ -37,13 +36,13 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	// Initialize
 	this->id = id;
 	this->ndrange = ndrange;
+	
+	// Initially, the work-group's position in the ND-Range's list of
+	// work-groups is invalid.
+	work_groups_iterator = ndrange->getWorkGroupsEnd();
 
-	// Create LDS module
-	this->lds.reset(new mem::Memory());
-	this->lds->setSafe(false);
-
-	// Create WorkgroupData for timing simulation
-	this->data.reset(new WorkGroupData());
+	// Initialize local memory
+	local_memory.setSafe(false);
 
 	// Emulator instance
 	Emulator *emulator = Emulator::getInstance();
@@ -68,17 +67,21 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	// Allocate wavefronts and work-items
 	for (unsigned i = 0; i < wavefronts_per_group; ++i)
 	{
-		this->wavefronts.emplace_back(misc::new_unique<Wavefront>(
-				this, id * wavefronts_per_group + i));
+		// Create wavefront
+		wavefronts.emplace_back(misc::new_unique<Wavefront>(
+				this,
+				id * wavefronts_per_group + i));
+
+		// Create work-items
 		for (unsigned j = 0; j < WorkGroup::WavefrontSize; ++j)
 		{
 			unsigned work_item_id = i * wavefronts_per_group + j;
-			this->work_items.emplace_back(
-					misc::new_unique<WorkItem>(
-					wavefronts[i].get(), work_item_id));
+			work_items.emplace_back(misc::new_unique<WorkItem>(
+					wavefronts[i].get(),
+					work_item_id));
 			
 			// Set work item properties
-			WorkItem *work_item = this->work_items.back().get();
+			WorkItem *work_item = work_items.back().get();
 			work_item->setWorkGroup(this);
 			work_item->setGlobalMemory(emulator->getGlobalMemory());
 		}
@@ -191,29 +194,32 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 
 		// Save work-group IDs in scalar registers 
 		case NDRange::StageCompute:
+
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 
-				wavefront->getWorkgroup()->getId3D(0));
+				wavefront->getWorkGroup()->getId3D(0));
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 1, 
-				wavefront->getWorkgroup()->getId3D(1));
+				wavefront->getWorkGroup()->getId3D(1));
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 2, 
-				wavefront->getWorkgroup()->getId3D(2));
+				wavefront->getWorkGroup()->getId3D(2));
 			break;
 
 
 		// Currently hard coded as LDS is exclusive to each primitive.
 		// Primitives should share LDS module and use different offset
 		case NDRange::StagePixelShader:
+
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 0x0); 
 			break;
 
 		default:
+
 			// Save work-group IDs in scalar registers 
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg(), 
-				wavefront->getWorkgroup()->getId3D(0));
+				wavefront->getWorkGroup()->getId3D(0));
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 1, 
-				wavefront->getWorkgroup()->getId3D(1));
+				wavefront->getWorkGroup()->getId3D(1));
 			wavefront->setSregUint(ndrange->getWorkgroupIdSreg() + 2, 
-				wavefront->getWorkgroup()->getId3D(2));
+				wavefront->getWorkGroup()->getId3D(2));
 			break;
 		}
 
@@ -225,7 +231,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			// Store work-item IDs in vector registers 
 			work_item = (*wi_i).get();
 
-			switch(ndrange->getStage())
+			switch (ndrange->getStage())
 			{
 
 			// OpenCL convention 

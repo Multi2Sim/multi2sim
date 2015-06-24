@@ -26,6 +26,8 @@
 
 #include <src/arch/southern-islands/disassembler/Arg.h>
 #include <src/arch/southern-islands/disassembler/Binary.h>
+#include <src/arch/southern-islands/emulator/WorkItem.h>
+
 
 namespace SI
 {
@@ -33,7 +35,6 @@ namespace SI
 // Forward declaration
 class NDRange;
 class Program;
-struct EmuBufferDesc;
 
 class Kernel
 {
@@ -80,11 +81,12 @@ class Kernel
 	void LoadMetaData();
 
 	// Create buffer description
-	void CreateBufferDesc(unsigned base_addr, 
+	void CreateBufferDescriptor(
+			unsigned base_addr, 
 			unsigned size, 
 			int num_elems,
 			ArgDataType data_type,
-			EmuBufferDesc *buffer_desc);
+			WorkItem::BufferDescriptor *buffer_descriptor);
 
 public:
 	Kernel(int id, const std::string &name, Program *program);

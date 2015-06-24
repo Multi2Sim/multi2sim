@@ -32,39 +32,6 @@
 namespace SI
 {
 
-// UAV Table
-const unsigned Emulator::MaxNumUAVs;
-const unsigned Emulator::UAVTableEntrySize = 32;
-const unsigned Emulator::UAVTableSize = MaxNumUAVs * UAVTableEntrySize;
-
-/// Vertex buffer table
-const unsigned Emulator::MaxNumVertexBuffers;
-const unsigned Emulator::VertexBufferTableEntrySize = 32;
-const unsigned Emulator::VertexBufferTableSize = 
-	Emulator::MaxNumVertexBuffers * Emulator::VertexBufferTableEntrySize;
-
-/// Constant buffer table
-const unsigned Emulator::MaxNumConstBufs;
-const unsigned Emulator::ConstBufTableEntrySize = 16;
-const unsigned Emulator::ConstBufTableSize = Emulator::MaxNumConstBufs * 
-		Emulator::ConstBufTableEntrySize;
-
-/// Resource table
-const unsigned Emulator::MaxNumResources;
-const unsigned Emulator::ResourceTableEntrySize = 32;
-const unsigned Emulator::ResourceTableSize = Emulator::MaxNumResources * 
-		Emulator::ResourceTableEntrySize;
-
-const unsigned Emulator::TotalTableSize = Emulator::UAVTableSize + 
-		Emulator::ConstBufTableSize + Emulator::ResourceTableSize + 
-		Emulator::VertexBufferTableSize;
-
-/// Constant buffers
-const unsigned Emulator::ConstBuf0Size = 160;  // Defined in Metadata.pdf
-const unsigned Emulator::ConstBuf1Size = 1024; // FIXME
-	
-const unsigned Emulator::TotalConstBufSize = Emulator::ConstBuf0Size + Emulator::ConstBuf1Size;
-
 std::unique_ptr<Emulator> Emulator::instance;
 
 misc::Debug Emulator::debug;
@@ -161,14 +128,14 @@ bool Emulator::Run()
 
 void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		int num_elems, ArgDataType data_type, 
-		EmuBufferDesc *buffer_desc)
+		WorkItem::BufferDescriptor *buffer_descriptor)
 {
 	int num_format;                                                          
 	int data_format;                                                         
 	int elem_size;                                                           
 
 	// Check size of buffer descriptor
-	assert(sizeof(EmuBufferDesc) == 16);                           
+	assert(sizeof(WorkItem::BufferDescriptor) == 16);                           
 
 	// Initialize num_format and data_format
 	num_format = BufDescNumFmtInvalid;
@@ -343,12 +310,12 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 	assert(data_format != BufDescDataFmtInvalid);                     
 
 	// Set fields of buffer description
-	buffer_desc->base_addr = base_addr;                                      
-	buffer_desc->num_format = num_format;                                    
-	buffer_desc->data_format = data_format;                                  
+	buffer_descriptor->base_addr = base_addr;                                      
+	buffer_descriptor->num_format = num_format;                                    
+	buffer_descriptor->data_format = data_format;                                  
 	assert(!(size % elem_size));                                             
-	buffer_desc->elem_size = elem_size;                                      
-	buffer_desc->num_records = size/elem_size;                               
+	buffer_descriptor->elem_size = elem_size;                                      
+	buffer_descriptor->num_records = size/elem_size;                               
 
 	// Return
 	return;   
@@ -363,6 +330,28 @@ void Emulator::RegisterOptions()
 void Emulator::ProcessOptions()
 {
 }
+	
+	
+NDRange *Emulator::addNDRange()
+{
+	// Create ND-range and add it to the list of ND-ranges
+	auto it = ndranges.emplace(ndranges.end(), misc::new_unique<NDRange>());
+	NDRange *ndrange = ndranges.back().get();
+
+	// Save iterator to the position in the ND-range list
+	ndrange->ndranges_iterator = it;
+
+	// Return created ND-range
+	return ndrange;
+}
+
+
+void Emulator::RemoveNDRange(NDRange *ndrange)
+{
+	assert(ndrange->ndranges_iterator != ndranges.end());
+	ndranges.erase(ndrange->ndranges_iterator);
+}
+
 
 }
 
