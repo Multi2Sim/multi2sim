@@ -2,6 +2,9 @@ lib_LIBRARIES = libtiming.a
 
 libtiming_a_SOURCES = \
 	\
+	Gpu.cc \
+	Gpu.h \
+	\
 	Timing.cc \
 	Timing.h
 
