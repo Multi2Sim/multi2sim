@@ -58,7 +58,7 @@ class System
 	// Error messages
 	//
 
-    static const char *err_config_note;
+	static const char *err_config_note;
 
 
 
@@ -93,7 +93,7 @@ class System
 	static std::unique_ptr<System> instance;
 
 	// General frequency if not specified in the network section
-	static int system_frequency;
+	static int frequency; 
 	
 	/// Message size in stand alone network
 	static int message_size;

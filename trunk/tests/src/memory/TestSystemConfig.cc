@@ -30,6 +30,15 @@
 namespace mem
 {
 
+static void Cleanup()
+{
+	esim::Engine::Destroy();
+
+	net::System::Destroy();
+
+	System::Destroy();
+}
+
 TEST(TestSystemConfiguration, section_general_frequency)
 {
 	// Setup configuration file
@@ -86,6 +95,8 @@ TEST(TestSystemConfiguration, section_module_type)
 	std::string actual_str;
 	try
 	{
+		Cleanup();
+
 		memory_system->ReadConfiguration(&ini_file);
 	}
 	catch (misc::Error &actual_error)

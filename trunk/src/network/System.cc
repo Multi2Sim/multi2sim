@@ -49,7 +49,7 @@ bool System::stand_alone = false;
 
 bool System::help = false;
 
-int System::system_frequency = 1000;
+int System::frequency = 1000;
 
 std::unique_ptr<System> System::instance;
 
@@ -61,7 +61,7 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new System);
+	instance = misc::new_unique<System>();
 	return instance.get();
 }
 
@@ -162,13 +162,14 @@ void System::ProcessOptions()
 	// Get the system
 	System *net_system = System::getInstance();
 
-	// Debugger
+	// Network help
 	if (help)
 	{
 		std::cerr << help_message;
 		exit(1);
 	}
 
+	// Debugger
 	if (!debug_file.empty())
 		debug.setPath(debug_file);
 

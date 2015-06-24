@@ -115,11 +115,9 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Default Frequency
 	std::string section = "General";
-	fprintf(stderr, "we are here\n");
-	system_frequency = ini_file->ReadInt(section, "Frequency",
-			system_frequency);
-	fprintf(stderr, "we are here and %d\n", system_frequency);
-	if (!esim::Engine::isValidFrequency(system_frequency))
+	frequency = ini_file->ReadInt(section, "Frequency",
+			frequency);
+	if (!esim::Engine::isValidFrequency(frequency))
 	{
 		throw Error(misc::fmt("%s: The value for 'Frequency' "
 				"must be between 1MHz and 1000GHz.\n%s",
@@ -130,7 +128,7 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 	// Register frequency domain
 	esim::Engine *esim = esim::Engine::getInstance();
 	frequency_domain = esim->RegisterFrequencyDomain("network", 
-			system_frequency);
+			frequency);
 
 	// First configuration look-up is for networks
 	for (int i = 0; i < ini_file->getNumSections(); i++)
