@@ -685,7 +685,7 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 	debug << misc::fmt("\tndrange %d\n", ndrange_id);                             
 
 	assert(work_group_count <= MaxWorkGroupBufferSize - 
-			ndrange->getWaitingWorkgroupsCount());
+			ndrange->getNumWaitingWorkgroups());
 
 	debug << misc::fmt("\treceiving %d work groups: (%d) through (%d)\n",          
 			work_group_count, work_group_start,                              
@@ -730,8 +730,8 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 
 	// If no work-groups are left in the queues, remove the nd-range         
 	// from the driver list                                           
-	if (!(ndrange->getRunningWorkgroupsCount()) &&                         
-			!(ndrange->getWaitingWorkgroupsCount()))                       
+	if (!(ndrange->getNumRunningWorkgroups()) &&                         
+			!(ndrange->getNumWaitingWorkgroups()))                       
 	{                                                                        
 		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);            
 	}                                                                        

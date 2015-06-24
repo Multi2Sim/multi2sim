@@ -31,12 +31,14 @@
 namespace SI
 {
 
-NDRange::NDRange(Emulator *emulator) : emulator(emulator)
+NDRange::NDRange()
 {
+	emulator = Emulator::getInstance();
 	id = emulator->getNewNDRangeID();
 	address_space_index = emulator->getNewNDRangeID();
 	instruction_memory = misc::new_unique<mem::Memory>();
 }
+
 
 void NDRange::SetupSize(unsigned *global_size, unsigned *local_size,
 	int work_dim)
