@@ -30,8 +30,17 @@
 namespace net
 {
 
+static void Cleanup()
+{
+	esim::Engine::Destroy();
+
+	System::Destroy();
+}
+
 TEST(TestSystemConfiguration, section_general_frequency)
 {
+	// cleanup singleton instance
+	Cleanup();
 	// Setup configuration file
 	std::string config = 
 		"[ General ]\n"
@@ -43,7 +52,7 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	
 	// Set up network instance
 	System *network_system = System::getInstance();
-	EXPECT_TRUE (network_system != nullptr);
+	EXPECT_TRUE(network_system != nullptr);
 
 	// Expected string
 	std::string expected_str = misc::fmt(".*%s: The value for 'Frequency' "
@@ -56,19 +65,21 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	{
 		network_system->ParseConfiguration(&ini_file);
 	}
-	catch(misc::Error &error)
+	catch (misc::Error &error)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, expected_str.c_str());
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, 
+		expected_str.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
 {
+	// cleanup singleton instance
+	Cleanup();
+	
 	// Setup configuration file
 	std::string config2 =
-		"[ General ]\n"
-		"Frequency = 1000\n"
 		"[ Network.test ]\n"
 		"DefaultInputBufferSize = -1";
 
@@ -78,7 +89,7 @@ TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
 
 	// Set up network instance
 	System *system = System::getInstance();
-	EXPECT_TRUE (system != nullptr);
+	EXPECT_TRUE(system != nullptr);
 
 	// Expected string
 	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
@@ -90,11 +101,12 @@ TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
 	{
 		system->ParseConfiguration(&ini_file);
 	}
-	catch(misc::Error &error)
+	catch (misc::Error &error)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, expected_str.c_str());
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, 
+		expected_str.c_str());
 }
 
 }
