@@ -937,6 +937,9 @@ public:
 
 	/// Get Target EIP
 	int getTargetEip() { return target_eip; }
+	
+	/// Return the address space index of the context
+	int getAddressSpaceIndex() { return address_space_index; }
 };
 
 }  // namespace x86

@@ -21,6 +21,7 @@
 
 #include <arch/southern-islands/disassembler/Arg.h>
 #include <arch/southern-islands/emulator/Emulator.h>
+#include <arch/x86/emulator/Context.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -93,7 +94,41 @@ int Driver::CallMemRead(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	return 0;
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	mem::Memory *video_memory = emulator->getVideoMemory();
+
+	// Arguments 
+	unsigned host_ptr;
+	unsigned device_ptr;
+	unsigned size;
+	
+	// Check for fused memory
+	if (fused)                                                       
+		throw Error(misc::fmt("%s: GPU is set as a fused device, "
+				"so the x86 memory operations should be used", 
+				__FUNCTION__));       
+
+	// Read Arguments	
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &host_ptr);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &device_ptr);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &size);
+
+	// Debug                                                          
+	debug << misc::fmt("\thost_ptr = 0x%x, device_ptr = 0x%x, "
+			"size = %d bytes\n", host_ptr, device_ptr, size);                             
+
+	// Check memory range
+	if (device_ptr + size > emulator->getVideoMemoryTop())
+		throw Error(misc::fmt("%s: accessing device memory not "
+				"allocated", __FUNCTION__));                                   
+
+	// Read memory from host to device
+	auto buffer = misc::new_unique_array<char>(size);
+	video_memory->Read(device_ptr, size, buffer.get());
+	memory->Write(host_ptr, size, buffer.get());
+	
+	// Return                                                         
+	return 0; 
 }
 
 
@@ -116,8 +151,8 @@ int Driver::CallMemWrite(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	SI::Emulator *si_emu = SI::Emulator::getInstance();
-	mem::Memory *video_mem = si_emu->getVideoMemory();
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	mem::Memory *video_memory = emulator->getVideoMemory();
 
 	// Arguments 
 	unsigned device_ptr;
@@ -131,15 +166,14 @@ int Driver::CallMemWrite(comm::Context *context,
 	debug << misc::fmt("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
 			device_ptr, host_ptr, size);
 
-	/* Check memory range */
-	if (device_ptr + size > si_emu->getVideoMemoryTop())
-		throw Error("Device not allocated");
+	// Check memory range
+	if (device_ptr + size > emulator->getVideoMemoryTop())
+		throw Error(misc::fmt("Device not allocated"));
 
 	// Read memory from host to device
 	auto buffer = misc::new_unique_array<char>(size);
-
-	memory->Write(host_ptr, size, buffer.get());
-	video_mem->Read(device_ptr, size, buffer.get());
+	memory->Read(host_ptr, size, buffer.get());
+	video_memory->Write(device_ptr, size, buffer.get());
 
 	// Return
 	return 0;
@@ -153,20 +187,63 @@ int Driver::CallMemCopy(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
-	return 0;
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	mem::Memory *video_memory = emulator->getVideoMemory();
+	
+	// Arguments
+	unsigned int dest_ptr;                                                   
+	unsigned int src_ptr;                                                    
+	unsigned int size;                                                       
+
+	// Check for fused memory
+	if (fused)                                                                                                                            
+		throw Error(misc::fmt("%s: GPU is set as a fused device, "
+				"so the x86 memory operations should be used", 
+				__FUNCTION__));
+
+	// Read Arguments	
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &dest_ptr);
+	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &src_ptr);
+	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &size);
+
+	// Debug                                                          
+	debug << misc::fmt("\tdest_ptr = 0x%x, src_ptr = 0x%x, "
+			"size = %d bytes\n", dest_ptr, src_ptr, size);                             
+
+	// Check memory range
+	if (src_ptr + size > emulator->getVideoMemoryTop() || 
+			dest_ptr + size > emulator->getVideoMemoryTop())
+		throw Error(misc::fmt("%s: accessing device memory not "
+				"allocated", __FUNCTION__));                                   
+
+	// Read memory from host to device
+	auto buffer = misc::new_unique_array<char>(size);
+	video_memory->Read(src_ptr, size, buffer.get());
+	video_memory->Write(dest_ptr, size, buffer.get());
+
+	// Return
+	return 0;  
 }
 
 
-// ABI Call 'MemFree'
-//
-// ...
+// ABI Call 'MemF// ...
 int Driver::CallMemFree(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	throw misc::Panic("ABI call not implemented");
-	return 0;
+	unsigned int device_ptr;                                                 
+
+	// Read Arguments	
+	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
+	
+	// debug
+	debug << misc::fmt("\tdevice_ptr = %u\n", device_ptr);                         
+
+	// For now, this call is ignored. No deallocation of global memory can   
+	// happen.
+
+	// Return device pointer                                           
+	return device_ptr; 
 }
 
 
@@ -471,6 +548,9 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Cast context as an x86 context
+	x86::Context *x86_context = dynamic_cast<x86::Context *>(context);
+
 	// Arugments
 	int kernel_id;
 	int work_dim;
@@ -519,17 +599,14 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 
 	// Create ND-Range
 	NDRange *ndrange = AddNDRange();
-	//debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
+	debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
 
 	// Initialize address space ID.  Our current SVM implementation sets
 	// the ndrange ASID to the CPU context's ASID 
-	// FIXME - Tushar, please fix
-	misc::Warning("Address space should be retreived from comm::Context");
-	/*
-	ndrange->setAddressSpaceIndex(x86::Emulator::getInstance()->getAddressSpaceIndex());
+	ndrange->setAddressSpaceIndex(x86_context->getAddressSpaceIndex());
+	
 	debug << misc::fmt("\tndrange address space index = %d\n", 
 		ndrange->getAddressSpaceIndex());
-	*/
 
 	// Initialize from kernel binary encoding dictionary
 	ndrange->InitializeFromKernel(kernel);
