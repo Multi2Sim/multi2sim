@@ -26,24 +26,21 @@
 #include <arch/southern-islands/disassembler/Binary.h>
 #include <memory/Memory.h>
 
-#include "Emulator.h"
+#include "WorkGroup.h"
+#include "WorkItem.h"
 
 
 // Forward declarations
 namespace SI
 {
-	class Emulator;
-	class Arg;
-	class WorkGroup;
-	class Kernel;
 
-	struct BinaryUserElement;
-	struct EmuBufferDesc;
-	struct ImageDesc;	
-}
+// Forward declarations
+class Emulator;
+class Arg;
+class WorkGroup;
+class Kernel;
+struct BinaryUserElement;
 
-namespace SI
-{
 
 /// This class represents an OpenCL NDRange. The NDRange is an index space
 /// which can be one, two, or three dimensions.
@@ -62,6 +59,45 @@ public:
 		StageGeometryShader,
 		StagePixelShader
 	};
+
+
+	
+	
+	
+	//
+	// Static fields
+	//
+
+	/// UAV Table
+	static const int MaxNumUAVs = 16;
+	static const int UAVTableEntrySize = 32;
+	static const int UAVTableSize = MaxNumUAVs * UAVTableEntrySize;
+
+	/// Vertex buffer table
+	static const int MaxNumVertexBuffers = 16;
+	static const int VertexBufferTableEntrySize = 32;
+	static const int VertexBufferTableSize = MaxNumVertexBuffers * VertexBufferTableEntrySize;
+
+	/// Constant buffer table
+	static const int MaxNumConstBufs = 16;
+	static const int ConstBufTableEntrySize = 16;
+	static const int ConstBufTableSize = MaxNumConstBufs * ConstBufTableEntrySize;
+
+	/// Resource table
+	static const int MaxNumResources = 16;
+	static const int ResourceTableEntrySize = 32;
+	static const int ResourceTableSize = MaxNumResources * ResourceTableEntrySize;
+
+	static const int TotalTableSize = UAVTableSize
+			+ ConstBufTableSize
+			+ ResourceTableSize
+			+ VertexBufferTableSize;
+	
+	/// Constant buffers
+	static const int ConstBuf0Size = 160;
+	static const int ConstBuf1Size = 1024;
+
+	static const int TotalConstBufSize = ConstBuf0Size + ConstBuf1Size;
 
 private:
 
@@ -88,6 +124,9 @@ private:
 
 	// Stage that the ND-range operates on
 	Stage stage = StageCompute;
+
+	// Work-groups allocated for this ND-Range
+	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
 	// Work-group lists, IDs only
 	std::list<long> waiting_work_groups;
@@ -126,9 +165,6 @@ private:
 	// kernel function.
 	int local_mem_top = 0;
 
-	// Each ND-Range has its own address space
-	int address_space_index = 0;
-
 	// If true, it indicates that a flush of the caches is being performed,
 	// evicting data modified by this kernel
 	bool flushing = false;
@@ -142,25 +178,34 @@ private:
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned const_buf_table = 0;
-	TableEntry const_buf_table_entries[Emulator::MaxNumConstBufs];
+	TableEntry const_buf_table_entries[MaxNumConstBufs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned resource_table = 0;
-	TableEntry resource_table_entries[Emulator::MaxNumResources];
+	TableEntry resource_table_entries[MaxNumResources];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned uav_table = 0;
-	TableEntry uav_table_entries[Emulator::MaxNumUAVs];
+	TableEntry uav_table_entries[MaxNumUAVs];
 
 	// Addresses and entries of tables that reside in global memory
 	unsigned vertex_buffer_table = 0;
-	TableEntry vertex_buffer_table_entries[Emulator::MaxNumVertexBuffers];
+	TableEntry vertex_buffer_table_entries[MaxNumVertexBuffers];
 
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
 	unsigned cb1 = 0;
 
 public:
+
+	//
+	// Class members
+	//
+
+	/// Iterator indicating the position of this ND-range in the emulator's
+	/// list of allocated ND-ranges. This field is managed internally by the
+	/// emulator.
+	std::list<std::unique_ptr<NDRange>>::iterator ndranges_iterator;
 
 	/// Constructor
 	NDRange();
@@ -176,13 +221,6 @@ public:
 		ndrange.Dump(os);
 		return os;
 	}
-
-
-
-
-	//
-	// Getters
-	//
 
 	/// Get work dim
 	unsigned getWorkDim() const { return work_dim; }
@@ -238,6 +276,31 @@ public:
 		return &group_count3[dim];
 	}
 
+	/// Return the number of work-groups currently allocated in the
+	/// ND-Range list of work-groups.
+	int getNumWorkGroups() const { return work_groups.size(); }
+
+	/// Return an iterator to the first work-group in the ND-Range list of
+	/// work-groups.
+	std::list<std::unique_ptr<WorkGroup>>::iterator getWorkGroupsBegin()
+	{
+		return work_groups.begin();
+	}
+
+	/// Return a past-the-end iterator to the ND-Range list of work-groups.
+	std::list<std::unique_ptr<WorkGroup>>::iterator getWorkGroupsEnd()
+	{
+		return work_groups.end();
+	}
+
+	/// Create a new work-group with the given identifier and keep ownership
+	/// of it in the list of work-groups.
+	WorkGroup *addWorkGroup(int id);
+
+	/// Remove a work-group from the list of work-groups and free it. All
+	/// references to this work-group will be invalidates after this call.
+	void RemoveWorkGroup(WorkGroup *work_group);
+
 	/// Get stage of NDRange
 	Stage getStage() const { return stage; }
 
@@ -278,23 +341,20 @@ public:
 		return &user_elements[idx];
 	}
 
-	/// Get address_space_index
-	int getAddressSpaceIndex() const { return address_space_index; }
-
 	/// Get emu it belongs to
 	Emulator *getEmulator() const { return emulator; }
 
 	/// Get constant buffer entry from constant buffer table at index
 	TableEntry *getConstBuffer(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= Emulator::MaxNumConstBufs);
+		assert(idx >= 0 && idx <= MaxNumConstBufs);
 		return &const_buf_table_entries[idx];
 	}
 
 	/// Get constant buffer address in global memory
 	unsigned getConstBufferAddr(unsigned idx) const
 	{
-		assert(idx >= 0 && idx <= Emulator::MaxNumConstBufs);
+		assert(idx >= 0 && idx <= MaxNumConstBufs);
 		if (idx == 0)
 			return cb0;
 		else
@@ -304,7 +364,7 @@ public:
 	/// Get uav entry from uav table at index
 	TableEntry *getUAV(unsigned idx)
 	{
-		assert(idx >= 0 && idx <= Emulator::MaxNumUAVs);
+		assert(idx >= 0 && idx <= MaxNumUAVs);
 		return &uav_table_entries[idx];
 	}
 
@@ -334,16 +394,6 @@ public:
 	{ 
 		return running_work_groups.end();
 	}
-
-
-
-
-	//
-	// Setters
-	//
-
-	/// Set address_space_index
-	void setAddressSpaceIndex(int value) { address_space_index = value; }
 
 	/// Set local_mem_top
 	void setLocalMemTop(int value) { local_mem_top = value; }
@@ -426,29 +476,43 @@ public:
 
 	/// Insert a buffer descriptor into UAV(universal access view) table
 	///
-	/// \param buffer_desc Buffer descriptor
-	/// \param uav Index in UAV table
-	void InsertBufferIntoUAVTable(EmuBufferDesc *buffer_desc, unsigned uav);
+	/// \param buffer_desc
+	///	Buffer descriptor
+	///
+	/// \param uav
+	///	Index in UAV table
+	///
+	void InsertBufferIntoUAVTable(
+			WorkItem::BufferDescriptor *buffer_descriptor,
+			unsigned uav);
 
 	/// Insert a buffer descriptor into vertex buffer table
 	///
 	/// \param buffer_desc Buffer descriptor
 	/// \param vertex_buffer Index in vertex buffer table
-	void InsertBufferIntoVertexBufferTable(EmuBufferDesc *buffer_desc,
+	void InsertBufferIntoVertexBufferTable(
+			WorkItem::BufferDescriptor *buffer_descriptor,
 			unsigned vertex_buffer);
 
 	/// Insert a buffer descriptor into constant buffer table
 	///
 	/// \param buffer_desc Buffer descriptor
 	/// \param const_buffer_num Number of contant buffer, 0 or 1
-	void InsertBufferIntoConstantBufferTable(EmuBufferDesc *buffer_desc,
+	void InsertBufferIntoConstantBufferTable(
+			WorkItem::BufferDescriptor *buffer_descriptor,
 			unsigned const_buffer_num);
 
 	/// Insert a image descriptor into UAV(universal access view) table
 	///
-	/// \param image_desc Image descriptor
-	/// \param uav Index in UAV table
-	void ImageIntoUAVTable(EmuImageDesc *image_desc, unsigned uav);
+	/// \param image_descriptor
+	///	Image descriptor
+	///
+	/// \param uav
+	///	Index in UAV table
+	///
+	void ImageIntoUAVTable(
+			WorkItem::ImageDescriptor *image_descriptor,
+			unsigned uav);
 
 	/// Move workgroups in waiting list to running list
 	void WaitingToRunning();	

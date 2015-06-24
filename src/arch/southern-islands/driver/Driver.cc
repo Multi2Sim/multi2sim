@@ -19,6 +19,8 @@
 
 #include <lib/cpp/Misc.h>
 
+#include <arch/southern-islands/emulator/NDRange.h>
+
 #include "Driver.h"
 
 
@@ -28,7 +30,7 @@ namespace SI
 // Forward declarations                                                          
 class Disassembler; 
 
-// Initialize table of ABI call names
+
 const char *Driver::call_name[CallCodeCount] =
 {
 	"Invalid",  // For code 0
@@ -38,7 +40,6 @@ const char *Driver::call_name[CallCodeCount] =
 };
 
 
-// Initialize table of ABI call functions
 const Driver::CallFn Driver::call_fn[CallCodeCount] =
 {
 	nullptr,  // For code 0
@@ -48,16 +49,12 @@ const Driver::CallFn Driver::call_fn[CallCodeCount] =
 };
 
 
-// Debug file name, as set by user
 std::string Driver::debug_file;
 
-// Binary file name, as set by user
 std::string Driver::binary_file;
 
-// Singleton instance
 std::unique_ptr<Driver> Driver::instance;
 
-// Debugger
 misc::Debug Driver::debug;
 
 
@@ -131,6 +128,7 @@ void Driver::ProcessOptions()
 	} 
 }
 
+
 Program *Driver::AddProgram(int program_id)
 {
 	// Create new program and insert it to program list
@@ -139,6 +137,7 @@ Program *Driver::AddProgram(int program_id)
 	// Return
 	return programs.back().get();
 }
+
 
 Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *program)
 {
@@ -149,6 +148,7 @@ Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *progr
 	return kernels.back().get();
 }
 
+
 NDRange *Driver::AddNDRange()
 {
 	// Create new ndrange and insert it to ndrange list
@@ -157,6 +157,7 @@ NDRange *Driver::AddNDRange()
 	// Return
 	return ndranges.back().get();
 }
+
 
 void Driver::RemoveNDRange(unsigned id)
 {

@@ -72,6 +72,7 @@ unsigned Wavefront::getSregUint(int sreg) const
 	return value;
 }
 
+
 void Wavefront::setSregUint(int sreg, unsigned int value)
 {
 	assert(sreg >= 0);
@@ -103,6 +104,7 @@ void Wavefront::setSregUint(int sreg, unsigned int value)
 	work_group->incSregWriteCount();
 
 }
+
 
 Wavefront::Wavefront(WorkGroup *work_group, int id)
 {
@@ -625,7 +627,8 @@ void Wavefront::Execute()
 		}
 	}
 }
-	
+
+
 bool Wavefront::isWorkItemActive(int id_in_wavefront)
 {
 	int mask = 1;
@@ -643,97 +646,100 @@ bool Wavefront::isWorkItemActive(int id_in_wavefront)
 	}	
 }
 
+
 void Wavefront::setSReg(int sreg, unsigned value)
 {
 	assert(sreg > 0 && sreg < 104);
 	this->sreg[sreg].as_uint = value;
 }
 
+
 void Wavefront::setSRegWithConstantBuffer(int first_reg, int num_regs, 
 	int cb)
 {
-	EmuBufferDesc buf_desc;
+	WorkItem::BufferDescriptor buffer_descriptor;
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 
 	unsigned buf_desc_addr;
 
 	assert(num_regs == 4);
-	assert(sizeof(buf_desc) == 16);
-	assert(cb < (int)Emulator::MaxNumConstBufs);
+	assert(sizeof(buffer_descriptor) == 16);
+	assert(cb < (int) NDRange::MaxNumConstBufs);
 	assert(ndrange->getConstBuffer(cb)->valid);
 
 	buf_desc_addr = ndrange->getConstBufferTableAddr() +
-		cb*Emulator::ConstBufTableEntrySize;
+		cb * NDRange::ConstBufTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
-		(char *)&buf_desc);
+	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buffer_descriptor),
+		(char *)&buffer_descriptor);
 
 	// Store the descriptor in 4 scalar registers 
-	setSregUint(first_reg, ((unsigned *)&buf_desc)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&buf_desc)[1]);
-	setSregUint(first_reg + 2, ((unsigned *)&buf_desc)[2]);
-	setSregUint(first_reg + 3, ((unsigned *)&buf_desc)[3]);
+	setSregUint(first_reg, ((unsigned *)&buffer_descriptor)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&buffer_descriptor)[1]);
+	setSregUint(first_reg + 2, ((unsigned *)&buffer_descriptor)[2]);
+	setSregUint(first_reg + 3, ((unsigned *)&buffer_descriptor)[3]);
 }
+
 
 void Wavefront::setSRegWithConstantBufferTable(int first_reg, int num_regs)
 {
 	NDRange *ndrange = work_group->getNDRange();
-	EmuMemPtr mem_ptr;
+	WorkItem::MemoryPointer memory_pointer;
 
 	assert(num_regs == 2);
-	assert(sizeof(mem_ptr) == 8);
+	assert(sizeof(memory_pointer) == 8);
 
-	mem_ptr.addr = (unsigned int)ndrange->getConstBufferTableAddr();
+	memory_pointer.addr = (unsigned int)ndrange->getConstBufferTableAddr();
 
-	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
+	setSregUint(first_reg, ((unsigned *)&memory_pointer)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&memory_pointer)[1]);
 }
 
 
 void Wavefront::setSRegWithUAV(int first_reg, int num_regs, int uav)
 {
-	EmuBufferDesc buf_desc;
+	WorkItem::BufferDescriptor buffer_descriptor;
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 
 	unsigned buf_desc_addr;
 
 	assert(num_regs == 4);
-	assert(sizeof(buf_desc) == 16);
-	assert(uav < (int)Emulator::MaxNumUAVs);
+	assert(sizeof(buffer_descriptor) == 16);
+	assert(uav < (int) NDRange::MaxNumUAVs);
 	assert(ndrange->getUAV(uav)->valid);
 
 	buf_desc_addr = ndrange->getUAVTableAddr() +
-		uav*Emulator::UAVTableEntrySize;
+		uav * NDRange::UAVTableEntrySize;
 
 	// Read a descriptor from the constant buffer table (located 
 	// in global memory) 
-	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buf_desc),
-		(char *)&buf_desc);
+	emulator->getGlobalMemory()->Read(buf_desc_addr, sizeof(buffer_descriptor),
+		(char *)&buffer_descriptor);
 
 	// Store the descriptor in 4 scalar registers 
-	setSregUint(first_reg, ((unsigned *)&buf_desc)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&buf_desc)[1]);
-	setSregUint(first_reg + 2, ((unsigned *)&buf_desc)[2]);
-	setSregUint(first_reg + 3, ((unsigned *)&buf_desc)[3]);
+	setSregUint(first_reg, ((unsigned *)&buffer_descriptor)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&buffer_descriptor)[1]);
+	setSregUint(first_reg + 2, ((unsigned *)&buffer_descriptor)[2]);
+	setSregUint(first_reg + 3, ((unsigned *)&buffer_descriptor)[3]);
 }
 
 
 void Wavefront::setSRegWithUAVTable(int first_reg, int num_regs)
 {
 	NDRange *ndrange = work_group->getNDRange();
-	EmuMemPtr mem_ptr;
+	WorkItem::MemoryPointer memory_pointer;
 
 	assert(num_regs == 2);
-	assert(sizeof(mem_ptr) == 8);
+	assert(sizeof(memory_pointer) == 8);
 
-	mem_ptr.addr = (unsigned int)ndrange->getUAVTableAddr();
+	memory_pointer.addr = (unsigned int)ndrange->getUAVTableAddr();
 
-	setSregUint(first_reg, ((unsigned *)&mem_ptr)[0]);
-	setSregUint(first_reg + 1, ((unsigned *)&mem_ptr)[1]);
+	setSregUint(first_reg, ((unsigned *)&memory_pointer)[0]);
+	setSregUint(first_reg + 1, ((unsigned *)&memory_pointer)[1]);
 }
 
 

@@ -577,17 +577,19 @@ void Kernel::LoadMetaData()
 
 }
 
-void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
-	ArgDataType data_type,
-	EmuBufferDesc *buffer_desc)
+void Kernel::CreateBufferDescriptor(unsigned base_addr,
+		unsigned size,
+		int num_elems,
+		ArgDataType data_type,
+		WorkItem::BufferDescriptor *buffer_descriptor)
 {
 	int num_format;
 	int data_format;
 	int elem_size;
 
 	// Zero-out the buffer resource descriptor
-	assert(sizeof(struct EmuBufferDesc) == 16);
-	memset(buffer_desc, 0, sizeof(EmuBufferDesc));
+	assert(sizeof(struct WorkItem::BufferDescriptor) == 16);
+	memset(buffer_descriptor, 0, sizeof(WorkItem::BufferDescriptor));
 
 	num_format = Emulator::BufDescNumFmtInvalid;
 	data_format = Emulator::BufDescDataFmtInvalid;
@@ -743,12 +745,12 @@ void Kernel::CreateBufferDesc(unsigned base_addr, unsigned size, int num_elems,
 	assert(num_format != Emulator::BufDescNumFmtInvalid);
 	assert(data_format != Emulator::BufDescDataFmtInvalid);
 
-	buffer_desc->base_addr = base_addr;
-	buffer_desc->num_format = num_format;
-	buffer_desc->data_format = data_format;
+	buffer_descriptor->base_addr = base_addr;
+	buffer_descriptor->num_format = num_format;
+	buffer_descriptor->data_format = data_format;
 	assert(!(size % elem_size));
-	buffer_desc->elem_size = elem_size;
-	buffer_desc->num_records = size/elem_size;
+	buffer_descriptor->elem_size = elem_size;
+	buffer_descriptor->num_records = size/elem_size;
 
 	return;
 
@@ -794,8 +796,8 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 	Emulator *emulator = SI::Emulator::getInstance();
 	mem::Memory *video_memory = emulator->getVideoMemory();
 
-	unsigned size_of_tables = Emulator::ConstBufTableSize +
-		Emulator::ResourceTableSize + Emulator::UAVTableSize;
+	unsigned size_of_tables = NDRange::ConstBufTableSize +
+			NDRange::ResourceTableSize + NDRange::UAVTableSize;
 
 	// if (gpu_mmu)
 	// {
@@ -818,15 +820,15 @@ void Kernel::CreateNDRangeTables(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	// Set constant buffer table address                                     
 	ndrange->setConstBufferTable(emulator->getVideoMemoryTop());                  
-	emulator->incVideoMemoryTop(Emulator::ConstBufTableSize);                       
+	emulator->incVideoMemoryTop(NDRange::ConstBufTableSize);                       
 
 	// Set resource table address                                            
 	ndrange->setResourceTable(emulator->getVideoMemoryTop());                     
-	emulator->incVideoMemoryTop(Emulator::ResourceTableSize);                       
+	emulator->incVideoMemoryTop(NDRange::ResourceTableSize);                       
 
 	// Set uav table address                                                 
 	ndrange->setUAVTable(emulator->getVideoMemoryTop());                          
-	emulator->incVideoMemoryTop(Emulator::UAVTableSize); 
+	emulator->incVideoMemoryTop(NDRange::UAVTableSize); 
 	
 	// Return
 	return;
@@ -839,23 +841,23 @@ void Kernel::CreateNDRangeConstantBuffers(NDRange *ndrange)
 	mem::Memory *video_memory = emulator->getVideoMemory();                       
 
 	// Map new pages                                                         
-	video_memory->Map(emulator->getVideoMemoryTop(), Emulator::TotalConstBufSize,      
+	video_memory->Map(emulator->getVideoMemoryTop(), NDRange::TotalConstBufSize,      
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);     
 
 	// TODO - setup for timing simulator                                     
 
 	// Set constant buffer addresses                                         
 	ndrange->setCB0(emulator->getVideoMemoryTop());                                 
-	ndrange->setCB1(emulator->getVideoMemoryTop() + Emulator::ConstBuf0Size);            
+	ndrange->setCB1(emulator->getVideoMemoryTop() + NDRange::ConstBuf0Size);            
 
 	// Increment video memory pointer                                        
-	emulator->incVideoMemoryTop(Emulator::TotalConstBufSize);                       
+	emulator->incVideoMemoryTop(NDRange::TotalConstBufSize);                       
 }  
 
 
 void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 {
-	EmuBufferDesc buffer_desc;
+	WorkItem::BufferDescriptor buffer_descriptor;
 	int zero = 0;
 
 	// Initial top of local memory is determined by the static local memory
@@ -929,15 +931,15 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 				Driver::debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
 
 				// Create descriptor for argument
-				CreateBufferDesc(
+				CreateBufferDescriptor(
 					arg_ptr->getDevicePtr(),
 					arg_ptr->getSize(),
 					arg_ptr->getNumElems(),
-					arg_ptr->getDataType(), &buffer_desc);
+					arg_ptr->getDataType(), &buffer_descriptor);
 
 				// Add to UAV table
 				ndrange->InsertBufferIntoUAVTable(
-					&buffer_desc,
+					&buffer_descriptor,
 					arg_ptr->getBufferNum());
 
 				// Write 0 to CB1
@@ -952,19 +954,19 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			// Hardware constant memory
 			case ArgScopeHwConstant:
 			{
-				CreateBufferDesc(
+				CreateBufferDescriptor(
 					arg_ptr->getDevicePtr(),
 					arg_ptr->getSize(),
 					arg_ptr->getNumElems(),
-					arg_ptr->getDataType(), &buffer_desc);
+					arg_ptr->getDataType(), &buffer_descriptor);
 
 				// Data stored in hw constant memory
 				// uses a 4-byte stride
-				buffer_desc.stride = 4;
+				buffer_descriptor.stride = 4;
 
 				// Add to Constant Buffer table
 				ndrange->InsertBufferIntoConstantBufferTable(
-					&buffer_desc,
+					&buffer_descriptor,
 					arg_ptr->getBufferNum());
 
 				// Write 0 to CB1
@@ -1008,7 +1010,7 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 	// Add program-wide constant buffers to the ND-range.
 	// Program-wide constant buffers start at number 2.
-	for (unsigned i = 2; i < Emulator::MaxNumConstBufs; i++)
+	for (unsigned i = 2; i < NDRange::MaxNumConstBufs; i++)
 	{
 		// Assert that program is valid
 		Program *program = getProgram();
@@ -1027,15 +1029,15 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		// 	constant_buffer->getSize(),
 		// 	4,
 		// 	ArgFloat,
-		// 	&buffer_desc);
+		// 	&buffer_descriptor);
 
 		// Data stored in hw constant memory
 		// uses a 16-byte stride
-		// buffer_desc.stride = 16; // XXX Use or don't use?
+		// buffer_descriptor.stride = 16; // XXX Use or don't use?
 
 		// Add to Constant Buffer table
 		ndrange->InsertBufferIntoConstantBufferTable(
-			&buffer_desc, index);
+			&buffer_descriptor, index);
 	}
 }
 
@@ -1048,21 +1050,23 @@ void Kernel::DebugNDRangeState(NDRange *ndrange)
 
 void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 {
-	EmuBufferDesc buffer_desc;
+	WorkItem::BufferDescriptor buffer_descriptor;
 	unsigned zero = 0;
 	float f;
 
 	// Constant buffer 0
-	CreateBufferDesc(ndrange->getConstBufferAddr(0), Emulator::ConstBuf0Size,
-		1, ArgDataTypeInt32, &buffer_desc);
+	CreateBufferDescriptor(ndrange->getConstBufferAddr(0),
+			NDRange::ConstBuf0Size,
+			1, ArgDataTypeInt32, &buffer_descriptor);
 
-	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 0);
+	ndrange->InsertBufferIntoConstantBufferTable(&buffer_descriptor, 0);
 
 	// Constant buffer 1
-	CreateBufferDesc(ndrange->getConstBufferAddr(1), Emulator::ConstBuf1Size,
-		1, ArgDataTypeInt32, &buffer_desc);
+	CreateBufferDescriptor(ndrange->getConstBufferAddr(1),
+			NDRange::ConstBuf1Size,
+			1, ArgDataTypeInt32, &buffer_descriptor);
 
-	ndrange->InsertBufferIntoConstantBufferTable(&buffer_desc, 1);
+	ndrange->InsertBufferIntoConstantBufferTable(&buffer_descriptor, 1);
 
 	// Initialize constant buffer 0
 
