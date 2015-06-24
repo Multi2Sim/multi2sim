@@ -99,6 +99,9 @@ public:
 	/// allocated until the end of the execution.                            
 	static Disassembler *getInstance(); 
 
+	/// Destroy the disassembler singleton if allocated
+	static void Destroy () { instance = nullptr; }
+	
 	// Disassemblers
 	void DisassembleBinary(std::string path);
 

@@ -134,9 +134,13 @@ Wavefront::Wavefront(WorkGroup *work_group, int id)
 	// 	self->work_items[work_item_id]->id_in_wavefront = work_item_id;
 	// }
 
+	// Get emulator instance
+	Emulator *emulator = Emulator::getInstance();
+
 	// Create scalar work item
 	this->scalar_work_item.reset(new WorkItem(this, 0));
 	scalar_work_item->setWorkGroup(this->work_group);
+	scalar_work_item->setGlobalMemory(emulator->getGlobalMemory());
 }
 
 
@@ -147,7 +151,6 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
-	//auto inst = misc::new_unique<Inst>();
 	Inst inst;
 
 	// Reset instruction flags
