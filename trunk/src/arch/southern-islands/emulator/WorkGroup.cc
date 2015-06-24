@@ -169,7 +169,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	}
 
 	// Intialize wavefront state 
-	for (auto wf_i = WavefrontsBegin(), wf_e = WavefrontsEnd();
+	for (auto wf_i = getWavefrontsBegin(), wf_e = getWavefrontsEnd();
 			wf_i != wf_e;
 			++wf_i)
 	{
@@ -209,8 +209,10 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			break;
 		}
 
-		for (auto wi_i = wavefront->WorkItemsBegin(),
-				wi_e = wavefront->WorkItemsEnd(); wi_i != wi_e; ++wi_i)
+		for (auto wi_i = wavefront->getWorkItemsBegin(),
+				wi_e = wavefront->getWorkItemsEnd();
+				wi_i != wi_e;
+				++wi_i)
 		{
 			// Store work-item IDs in vector registers 
 			work_item = (*wi_i).get();

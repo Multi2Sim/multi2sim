@@ -244,12 +244,6 @@ Timing *Timing::getInstance()
 }
 
 
-bool Timing::Run()
-{
-	return false;
-}
-
-
 void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 {
 	// Cache geometry for vector L1
@@ -672,6 +666,104 @@ void Timing::ProcessOptions()
 
 void Timing::ParseConfiguration(misc::IniFile *ini_file)
 {
+}
+
+
+bool Timing::Run()
+{
+/*
+	// Get SI Driver
+	Driver *driver = Driver::getInstance();
+
+	// For efficiency when no Southern Islands emulation is selected, 
+	// exit here if the list of existing ND-Ranges is empty. 
+	if (!driver->getNumNDRanges())
+		return false;
+
+	// Add any available work groups to the waiting list
+
+	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
+	{
+		ndrange = list_get(opencl_driver->si_ndrange_list, 
+			ndrange_index);
+
+		if (!list_count(ndrange->waiting_work_groups))
+			continue;
+
+		LIST_FOR_EACH(ndrange->waiting_work_groups, wg_index)
+		{
+			work_group_id = (long) list_dequeue(
+				ndrange->waiting_work_groups);
+			list_enqueue(ndrange->running_work_groups,
+				(void *) work_group_id);
+
+			// Instantiate the work group
+			work_group = new(SIWorkGroup, work_group_id, ndrange);
+
+			list_add(gpu->waiting_work_groups, work_group);
+		}
+	}
+
+	// Allocate work-groups to compute units
+	while (list_count(gpu->available_compute_units) && 
+		list_count(gpu->waiting_work_groups))
+	{
+		work_group = (SIWorkGroup*) list_dequeue(
+			gpu->waiting_work_groups);
+
+		list_enqueue(gpu->running_work_groups, work_group);
+
+		SIComputeUnitMapWorkGroup(
+			list_dequeue(gpu->available_compute_units),
+			work_group);
+
+		// Let the driver when all work groups have been scheduled
+		if (opencl_driver && 
+			!list_count(gpu->waiting_work_groups))
+		{
+			OpenclDriverRequestWork(opencl_driver, ndrange);
+		}
+	}
+
+	// One more cycle
+	asTiming(self)->cycle++;
+
+	// Stop if maximum number of GPU cycles exceeded
+	if (si_emu_max_cycles && asTiming(self)->cycle >=
+			si_emu_max_cycles)
+		esim_finish = esim_finish_si_max_cycles;
+
+	// Stop if maximum number of GPU instructions exceeded
+	if (si_emu_max_inst && asEmu(emu)->instructions >=
+			si_emu_max_inst)
+		esim_finish = esim_finish_si_max_inst;
+
+	// Stop if there was a simulation stall
+	if (gpu->last_complete_cycle && 
+		(asTiming(self)->cycle-gpu->last_complete_cycle) > 1000000)
+	{
+		warning("Southern Islands GPU simulation stalled.\n%s", 
+			si_err_stall);
+		esim_finish = esim_finish_stall;
+	}
+
+	// Stop if any reason met
+	if (esim_finish)
+		return TRUE;
+
+	// Run one loop iteration on each busy compute unit
+	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
+	{
+		compute_unit = gpu->compute_units[compute_unit_id];
+
+		// Run one cycle
+		SIComputeUnitRun(compute_unit);
+	}
+
+	// Still running
+	return TRUE;
+*/
+	return false;
 }
 
 }

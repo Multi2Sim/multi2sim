@@ -142,8 +142,10 @@ bool Emulator::Run()
 		{
 			auto workgroup = misc::new_unique<WorkGroup>(ndrange, (*wg_i));
 
-			for (auto wf_i = workgroup->WavefrontsBegin(), 
-				wf_e = workgroup->WavefrontsEnd(); wf_i != wf_e; ++wf_i)
+			for (auto wf_i = workgroup->getWavefrontsBegin(), 
+					wf_e = workgroup->getWavefrontsEnd();
+					wf_i != wf_e;
+					++wf_i)
 				(*wf_i)->Execute();
 		}
 
