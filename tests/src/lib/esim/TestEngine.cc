@@ -29,6 +29,9 @@
 namespace esim
 {
 
+// Cleanup pointer to singleton instance
+static void Cleanup() { Engine::Destroy(); }
+
 ///
 /// Test 0
 ///
@@ -90,9 +93,6 @@ TEST(TestEngine, test_schedule_event)
 	
 		// Check that handler was called
 		EXPECT_TRUE(handler_called_0);
-
-		// Finalize
-		Engine::Destroy();
 	}
 
 	catch (misc::Exception &e)
@@ -128,6 +128,9 @@ TEST(TestEngine, test_event_frame)
 {
 	try
 	{
+		// Cleanup pointers to singleton instances
+		Cleanup();
+
 		// Set frame
 		auto frame = misc::new_shared<DummyFrame_1>();
 
@@ -197,6 +200,9 @@ TEST(TestEngine, test_frequency_domains)
 {
 	try
 	{
+		// Cleanup pointers to singleton instances
+		Cleanup();
+
 		// Set up esim engine
 		Engine *engine = Engine::getInstance();
 
@@ -321,10 +327,14 @@ void testHandler_3_2(Event *event, Frame *frame)
 	q_3.Wait(event4);
 }
 
+// Tests to see if events in the queue are executed correctly
 TEST(TestEngine, test_event_queue)
 {
 	try
 	{
+		// Cleanup pointers to singleton instances
+		Cleanup();
+
 		// Set up esim engine
 		Engine *engine = Engine::getInstance();
 
@@ -447,10 +457,15 @@ void testHandler_4_2(Event *event, Frame *frame)
 	q_4.Wait(event3, true);
 }
 
+// Tests to see if the events in the queue are executed properly with
+// one event being a priority
 TEST(TestEngine, test_event_queue_priority)
 {
 	try
 	{
+		// Cleanup pointers to singleton instances
+		Cleanup();
+
 		// Set up esim engine
 		Engine *engine = Engine::getInstance();
 
@@ -507,6 +522,7 @@ TEST(TestEngine, test_event_queue_priority)
 }
 
 }
+
 
 
 
