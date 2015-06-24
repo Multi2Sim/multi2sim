@@ -251,6 +251,211 @@ bool Timing::Run()
 
 void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 {
+	// Cache geometry for vector L1
+	std::string section = "CacheGeometry si-geo-vector-l1";
+	ini_file->WriteInt(section, "Sets", 64);
+	ini_file->WriteInt(section, "Assoc", 4);
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 1);
+	ini_file->WriteString(section, "Policy", "LRU");
+
+	// Cache geometry for scalar L1
+	section = "CacheGeometry si-geo-scalar-l1";
+	ini_file->WriteInt(section, "Sets", 64);
+	ini_file->WriteInt(section, "Assoc", 4);
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 1);
+	ini_file->WriteString(section, "Policy", "LRU");
+
+	// Cache geometry for L2
+	section = "CacheGeometry si-geo-l2";
+	ini_file->WriteInt(section, "Sets", 128);
+	ini_file->WriteInt(section, "Assoc", 16);
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 10);
+	ini_file->WriteString(section, "Policy", "LRU");
+
+	// Create scalar L1 caches
+	for (int i = 0; i < (Gpu::getNumComputeUnits() + 3) / 4; i++)
+	{
+		section = misc::fmt("Module si-scalar-l1-%d", i);
+		ini_file->WriteString(section, "Type", "Cache");
+		ini_file->WriteString(section, "Geometry", 
+			"si-geo-scalar-l1");
+		ini_file->WriteString(section, "LowNetwork", 
+			"si-net-l1-l2");
+		ini_file->WriteString(section, "LowModules", 
+			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+	}
+
+	// Create vector L1 caches
+	for (int i = 0; i < Gpu::getNumComputeUnits(); i++)
+	{
+		section = misc::fmt("Module si-vector-l1-%d", i);
+		ini_file->WriteString(section, "Type", "Cache");
+		ini_file->WriteString(section, "Geometry", 
+			"si-geo-vector-l1");
+		ini_file->WriteString(section, "LowNetwork", 
+			"si-net-l1-l2");
+		ini_file->WriteString(section, "LowModules", 
+			"si-l2-0 si-l2-1 si-l2-2 si-l2-3 si-l2-4 si-l2-5");
+	}
+
+	// Create entries from compute units to L1s
+	for (int i = 0; i < Gpu::getNumComputeUnits(); i++)
+	{
+		// Entry
+		section = misc::fmt("Entry si-cu-%d", i);
+		ini_file->WriteString(section, "Arch", "SouthernIslands");
+		ini_file->WriteInt(section, "ComputeUnit", i);
+
+		std::string value = misc::fmt("si-vector-l1-%d", i);
+		ini_file->WriteString(section, "DataModule", value);
+		
+		value = misc::fmt("si-scalar-l1-%d", i / 4);
+		ini_file->WriteString(section, "ConstantDataModule", value);
+	}
+
+	// L2 caches
+	section = "Module si-l2-0";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-0-gm-0");
+	ini_file->WriteString(section, "LowModules", "si-gm-0");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 0");
+
+	section = "Module si-l2-1";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-1-gm-1");
+	ini_file->WriteString(section, "LowModules", "si-gm-1");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 1");
+	
+	section = "Module si-l2-2";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-2-gm-2");
+	ini_file->WriteString(section, "LowModules", "si-gm-2");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 2");
+
+	section = "Module si-l2-3";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-3-gm-3");
+	ini_file->WriteString(section, "LowModules", "si-gm-3");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 3");
+
+	section = "Module si-l2-4";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-4-gm-4");
+	ini_file->WriteString(section, "LowModules", "si-gm-4");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 4");
+
+	section = "Module si-l2-5";
+	ini_file->WriteString(section, "Type", "Cache");
+	ini_file->WriteString(section, "Geometry", "si-geo-l2");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l1-l2");
+	ini_file->WriteString(section, "LowNetwork", "si-net-l2-5-gm-5");
+	ini_file->WriteString(section, "LowModules", "si-gm-5");
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 5");
+
+	// Global memory
+	section = "Module si-gm-0";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-0-gm-0");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 0");
+
+	section = "Module si-gm-1";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-1-gm-1");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 1");
+
+	section = "Module si-gm-2";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-2-gm-2");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 2");
+
+	section = "Module si-gm-3";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-3-gm-3");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 3");
+
+	section = "Module si-gm-4";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-4-gm-4");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 4");
+
+	section = "Module si-gm-5";
+	ini_file->WriteString(section, "Type", "MainMemory");
+	ini_file->WriteString(section, "HighNetwork", "si-net-l2-5-gm-5");
+	ini_file->WriteInt(section, "BlockSize", 64);
+	ini_file->WriteInt(section, "Latency", 100);
+	ini_file->WriteString(section, "AddressRange", 
+		"ADDR DIV 64 MOD 6 EQ 5");
+
+	// Network connecting L1s and L2s
+	section = "Network si-net-l1-l2";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	// Networks connecting memory controllers and global memory banks
+	section = "Network si-net-l2-0-gm-0";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	section = "Network si-net-l2-1-gm-1";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	section = "Network si-net-l2-2-gm-2";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	section = "Network si-net-l2-3-gm-3";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	section = "Network si-net-l2-4-gm-4";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
+
+	section = "Network si-net-l2-5-gm-5";
+	ini_file->WriteInt(section, "DefaultInputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultOutputBufferSize", 528);
+	ini_file->WriteInt(section, "DefaultBandwidth", 264);
 }
 
 

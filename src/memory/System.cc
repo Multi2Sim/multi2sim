@@ -51,7 +51,7 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new System());
+	instance = misc::new_unique<System>();
 	return instance.get();
 }
 
