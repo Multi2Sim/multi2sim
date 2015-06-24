@@ -56,9 +56,9 @@ void Network::ParseConfiguration(misc::IniFile *config,
 			!default_bandwidth)
 	{
 		throw misc::Error(misc::fmt(
-				"%s:%s:\nDefault values can not be "
-				"zero/non-existent.\n", __FILE__, 
-				__FUNCTION__));
+				"%s: %s:\nDefault values can not be "
+				"zero/non-existent.\n", config->getPath().c_str(),
+				name.c_str()));
 	}
 
 	// Packet size and frequency

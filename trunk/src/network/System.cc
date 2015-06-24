@@ -45,11 +45,11 @@ int System::message_size = 1;
 
 double System::injection_rate = 0.001;
 
-bool System::network_help = false;
-
 bool System::stand_alone = false;
 
-int System::net_system_frequency = 1000;
+bool System::help = false;
+
+int System::system_frequency = 1000;
 
 std::unique_ptr<System> System::instance;
 
@@ -61,7 +61,7 @@ System *System::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance = misc::new_unique<System>();
+	instance.reset(new System);
 	return instance.get();
 }
 
@@ -122,13 +122,6 @@ void System::RegisterOptions()
 			"Maximum number of cycles for network simulation."
 			"together with option '--net-sim.");
 
-	// Network Help Message
-	command_line->RegisterBool("--net-help",
-			network_help,
-			"Print help message describing the network configuration"
-			" file, passed to the simulator "
-			"with option '--net-config <file>'.");
-
 	// Message size for network stand-alone simulator
 	command_line->RegisterInt32("--net-msg-size <number> (default = 1 Byte)",
 			message_size,
@@ -155,6 +148,12 @@ void System::RegisterOptions()
 			"where <network> is the name of a network specified "
 			"in the network configuration file (option "
 			"'--net-config')");
+
+	// Help message for network configuration
+	command_line->RegisterBool("--net-help",
+			help,
+			"Print help message describing the network configuration"
+			" file, passed in option '--net-config <file>'.");
 }
 
 
@@ -164,6 +163,12 @@ void System::ProcessOptions()
 	System *net_system = System::getInstance();
 
 	// Debugger
+	if (help)
+	{
+		std::cerr << help_message;
+		exit(1);
+	}
+
 	if (!debug_file.empty())
 		debug.setPath(debug_file);
 
