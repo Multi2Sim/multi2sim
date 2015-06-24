@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 
 #include <arch/x86/timing/Timing.h>
+#include <arch/common/Arch.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
@@ -485,6 +486,21 @@ const std::string net_config_1 =
 		"Source = n1\n"
 		"Dest = s0\n";
 
+// Cleanup instances of singletons
+static void Cleanup()
+{
+	esim::Engine::Destroy();
+
+	net::System::Destroy();
+
+	System::Destroy();
+
+	x86::Timing::Destroy();
+
+	comm::ArchPool::Destroy();
+}
+
+
 TEST(TestSystemEvents, config_0_evict_0)
 {
 	try
@@ -631,21 +647,23 @@ TEST(TestSystemEvents, config_0_evict_0)
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
 		EXPECT_EQ(node->getReceivedBytes(), 272);
-		
-		// Finalize
-		net::System::Destroy();
 	}
 	catch (misc::Exception &e)
 	{
 		e.Dump();
 		FAIL();
 	}
+
+
 }
 
 TEST(TestSystemEvents, config_0_evict_1)
 {
 	try
-	{	
+	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -660,6 +678,7 @@ TEST(TestSystemEvents, config_0_evict_1)
 
 		// Set up network system
 		net::System *network_system = net::System::getInstance();
+		std::cout << "Cycle = " << network_system->getCycle() << std::endl;
 		network_system->ParseConfiguration(&ini_file_net);
 
 		// Set up memory system
@@ -795,12 +814,17 @@ TEST(TestSystemEvents, config_0_evict_1)
 		e.Dump();
 		FAIL();
 	}
+
+
 }
 
 TEST(TestSystemEvents, config_0_evict_2)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -955,6 +979,9 @@ TEST(TestSystemEvents, config_0_evict_3)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1109,6 +1136,9 @@ TEST(TestSystemEvents, config_0_evict_4)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1257,6 +1287,9 @@ TEST(TestSystemEvents, config_0_evict_5)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1405,6 +1438,9 @@ TEST(TestSystemEvents, config_0_evict_6)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1552,6 +1588,9 @@ TEST(TestSystemEvents, config_0_evict_7)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1696,6 +1735,9 @@ TEST(TestSystemEvents, config_0_load_0)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -1890,6 +1932,9 @@ TEST(TestSystemEvents, config_0_load_1)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
 		misc::IniFile ini_file_net;
@@ -2025,6 +2070,9 @@ TEST(TestSystemEvents, config_0_load_2)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
 		misc::IniFile ini_file_net;
@@ -2160,6 +2208,9 @@ TEST(TestSystemEvents, config_0_load_3)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
 		misc::IniFile ini_file_net;
@@ -2280,6 +2331,9 @@ TEST(TestSystemEvents, config_0_load_4)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
 		misc::IniFile ini_file_net;
@@ -2404,6 +2458,10 @@ TEST(TestSystemEvents, config_0_load_5)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
+		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
 		misc::IniFile ini_file_net;
@@ -2556,6 +2614,9 @@ TEST(TestSystemEvents, config_0_load_6)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -2675,6 +2736,9 @@ TEST(TestSystemEvents, config_0_load_7)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -2787,6 +2851,9 @@ TEST(TestSystemEvents, config_0_load_8)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -2874,6 +2941,9 @@ TEST(TestSystemEvents, config_0_load_9)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -2960,6 +3030,9 @@ TEST(TestSystemEvents, config_0_ncstore_0)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3073,6 +3146,9 @@ TEST(TestSystemEvents, config_0_ncstore_1)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3203,6 +3279,9 @@ TEST(TestSystemEvents, config_0_ncstore_2)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3325,6 +3404,9 @@ TEST(TestSystemEvents, config_0_ncstore_3)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3493,6 +3575,9 @@ TEST(TestSystemEvents, config_0_ncstore_4)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3615,6 +3700,9 @@ TEST(TestSystemEvents, config_0_ncstore_5)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3737,6 +3825,9 @@ TEST(TestSystemEvents, config_0_store_0)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3850,6 +3941,9 @@ TEST(TestSystemEvents, config_0_store_1)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem;
 		misc::IniFile ini_file_x86;
@@ -3937,6 +4031,9 @@ TEST(TestSystemEvents, config_1_evict_0)
 {
 	try
 	{
+		// Cleanup singleton instances
+		Cleanup();
+
 		// Load configuration files
 		misc::IniFile ini_file_mem_1;
 		misc::IniFile ini_file_x86;
@@ -4060,6 +4157,7 @@ TEST(TestSystemEvents, config_1_evict_0)
 }
 
 }
+
 
 
 

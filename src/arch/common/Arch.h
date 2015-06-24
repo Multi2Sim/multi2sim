@@ -164,6 +164,9 @@ public:
 	/// Return a unique instance of the singleton
 	static ArchPool *getInstance();
 
+	/// Destroy the singleton if allocated.
+	static void Destroy() { instance = nullptr; }
+
 	/// Register a disassembler for the architecture with the given name.
 	/// For a given architecture, this function should be invoked at most
 	/// once.
