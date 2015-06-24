@@ -20,9 +20,18 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_GPU_H
 
+#include <vector>
+
+#include <lib/cpp/Misc.h>
+
+#include "ComputeUnit.h"
+
+
 namespace SI
 {
 
+
+/// Class representing a Southern Islands GPU device.
 class Gpu
 {
 	//
@@ -32,10 +41,50 @@ class Gpu
 	// Number of compute units
 	static int num_compute_units;
 
+
+
+
+	//
+	// Class members
+	//
+
+	// Vector of compute units
+	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
+
 public:
+
+	//
+	// Static members
+	//
 
 	/// Return the number of compute units, as set up by the user
 	static int getNumComputeUnits() { return num_compute_units; }
+
+
+
+
+	//
+	// Class members
+	//
+
+	/// Return the compute unit with the given index.
+	ComputeUnit *getComputeUnit(int index) const
+	{
+		assert(misc::inRange(index, 0, compute_units.size() - 1));
+		return compute_units[index].get();
+	}
+
+	/// Return an iterator to the first compute unit
+	std::vector<std::unique_ptr<ComputeUnit>>::iterator getComputeUnitsBegin()
+	{
+		return compute_units.begin();
+	}
+
+	/// Return a past-the-end iterator to the list of compute units
+	std::vector<std::unique_ptr<ComputeUnit>>::iterator getComputeUnitsEnd()
+	{
+		return compute_units.end();
+	}
 };
 
 }

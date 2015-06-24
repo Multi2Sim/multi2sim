@@ -93,9 +93,6 @@ class Emulator : public comm::Emulator
 	// See setScheduleSignal()
 	bool schedule_signal = false;
 
-	// Private constructor for singleton
-	Emulator() : comm::Emulator("x86") { }
-	
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
 	// accessed thread-safely locking the mutex.
@@ -123,6 +120,9 @@ public:
 
 	/// Get instance of singleton
 	static Emulator *getInstance();
+	
+	/// Constructor
+	Emulator() : comm::Emulator("x86") { }
 
 	/// Create a new context associated with the emulator. The context is
 	/// inserted in the main emulator context list. Its state is set to

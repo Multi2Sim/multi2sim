@@ -253,7 +253,7 @@ Timing *Timing::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Timing());
+	instance = misc::new_unique<Timing>();
 	return instance.get();
 }
 
@@ -555,12 +555,9 @@ void Timing::ProcessOptions()
 	// Print x86 configuration INI format
 	if (help)
 	{
-		if (!help_message.empty())
-		{
-			misc::StringFormatter formatter(help_message);
-			std::cerr << formatter;
-			exit(1);
-		}
+		misc::StringFormatter formatter(help_message);
+		std::cerr << formatter;
+		exit(0);
 	}
 
 	// Debuggers

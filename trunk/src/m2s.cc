@@ -39,6 +39,7 @@
 #include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emulator/Emulator.h>
 #include <arch/southern-islands/driver/Driver.h>
+#include <arch/southern-islands/timing/Timing.h>
 #include <arch/arm/disassembler/Disassembler.h>
 #include <arch/arm/emulator/Emulator.h>
 #include <dram/System.h>
@@ -123,11 +124,6 @@ void RegisterRuntimes()
 
 	// HSA runtime
 	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
-
-#ifdef HAVE_OPENGL
-	// OpenGL runtime
-	runtime_pool->Register("OpenGL", "libOpenGL", "libm2s-opengl");
-#endif
 }
 
 
@@ -183,7 +179,9 @@ void LoadProgram(const std::vector<std::string> &args,
 		break;
 
 	default:
-		misc::fatal("%s: unsupported ELF architecture", exe.c_str());
+
+		throw misc::Error(misc::fmt("%s: unsupported ELF architecture",
+				exe.c_str()));
 	}
 
 	// Load the program in selected emulator
@@ -474,6 +472,8 @@ int MainProgram(int argc, char **argv)
 	MIPS::Disassembler::RegisterOptions();
 	MIPS::Emulator::RegisterOptions();
 	SI::Driver::RegisterOptions();
+	SI::Emulator::RegisterOptions();
+	SI::Timing::RegisterOptions();
 	x86::Disassembler::RegisterOptions();
 	x86::Emulator::RegisterOptions();
 	x86::Timing::RegisterOptions();
@@ -501,6 +501,8 @@ int MainProgram(int argc, char **argv)
 	MIPS::Disassembler::ProcessOptions();
 	MIPS::Emulator::ProcessOptions();
 	SI::Driver::ProcessOptions();
+	SI::Emulator::ProcessOptions();
+	SI::Timing::ProcessOptions();
 	x86::Disassembler::ProcessOptions();
 	x86::Emulator::ProcessOptions();
 	x86::Timing::ProcessOptions();
@@ -552,261 +554,5 @@ int main(int argc, char **argv)
 		e.Dump();
 		return 1;
 	}
-
-/*
-	using namespace mem; //////////
-
-	const std::string mem_config_0 =
-			"[CacheGeometry geo-l1]\n"
-			"Sets = 16\n"
-			"Assoc = 2\n"
-			"BlockSize = 64\n"
-			"Latency = 2\n"
-			"Policy = LRU\n"
-			"Ports = 2\n"
-			"\n"
-			"[CacheGeometry geo-l2]\n"
-			"Sets = 4\n"
-			"Assoc = 4\n"
-			"BlockSize = 128\n"
-			"Latency = 20\n"
-			"Policy = LRU\n"
-			"Ports = 4\n"
-			"\n"
-			"; 4 l1 cpu caches\n"
-			"\n"
-			"[Module mod-l1-0]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net0\n"
-			"LowNetworkNode = mod-l1-0\n"
-			"LowModules = mod-l2-0\n"
-			"\n"
-			"[Module mod-l1-1]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net0\n"
-			"LowNetworkNode = mod-l1-1\n"
-			"LowModules = mod-l2-0\n"
-			"\n"
-			"[Module mod-l1-2]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net1\n"
-			"LowNetworkNode = mod-l1-2\n"
-			"LowModules = mod-l2-1\n"
-			"\n"
-			"[Module mod-l1-3]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l1\n"
-			"LowNetwork = net1\n"
-			"LowNetworkNode = mod-l1-3\n"
-			"LowModules = mod-l2-1\n"
-			"\n"
-			"; 1 l2 cpu cache\n"
-			"\n"
-			"[Module mod-l2-0]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l2\n"
-			"HighNetwork = net0\n"
-			"HighNetworkNode = mod-l2-0\n"
-			"LowNetwork = net2\n"
-			"LowNetworkNode = mod-l2-0\n"
-			"LowModules = mod-mm\n"
-			"\n"
-			"[Module mod-l2-1]\n"
-			"Type = Cache\n"
-			"Geometry = geo-l2\n"
-			"HighNetwork = net1\n"
-			"HighNetworkNode = mod-l2-1\n"
-			"LowNetwork = net2\n"
-			"LowNetworkNode = mod-l2-1\n"
-			"LowModules = mod-mm\n"
-			"\n"
-			"; 1 mm\n"
-			"\n"
-			"[Module mod-mm]\n"
-			"Type = MainMemory\n"
-			"BlockSize = 128\n"
-			"Latency = 200\n"
-			"HighNetwork = net2\n"
-			"HighNetworkNode = mod-mm\n"
-			"\n"
-			"\n"
-			"[Entry core-0]\n"
-			"Arch = x86\n"
-			"Core = 0\n"
-			"Thread = 0\n"
-			"DataModule = mod-l1-0\n"
-			"InstModule = mod-l1-0\n"
-			"\n"
-			"[Entry core-1]\n"
-			"Arch = x86\n"
-			"Core = 1\n"
-			"Thread = 0\n"
-			"DataModule = mod-l1-1\n"
-			"InstModule = mod-l1-1\n"
-			"\n"
-			"[Entry core-2]\n"
-			"Arch = x86\n"
-			"Core = 2\n"
-			"Thread = 0\n"
-			"DataModule = mod-l1-2\n"
-			"InstModule = mod-l1-2\n"
-			"\n"
-			"[Entry core-3]\n"
-			"Arch = x86\n"
-			"Core = 3\n"
-			"Thread = 0\n"
-			"DataModule = mod-l1-3\n"
-			"InstModule = mod-l1-3\n";
-
-	const std::string x86_config =
-			"[ General ]\n"
-			"Cores = 4\n"
-			"Threads = 1\n";
-
-	const std::string net_config =
-			"[ Network.net0 ]\n"
-			"DefaultInputBufferSize = 1024\n"
-			"DefaultOutputBufferSize = 1024\n"
-			"DefaultBandwidth = 256\n"
-			"\n"
-			"[ Network.net1 ]\n"
-			"DefaultInputBufferSize = 1024\n"
-			"DefaultOutputBufferSize = 1024\n"
-			"DefaultBandwidth = 256\n"
-			"\n"
-			"[ Network.net2 ]\n"
-			"DefaultInputBufferSize = 1024\n"
-			"DefaultOutputBufferSize = 1024\n"
-			"DefaultBandwidth = 256\n"
-			"\n"
-			"[ Network.net0.Node.mod-l1-0 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net0.Node.mod-l1-1 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net0.Node.mod-l2-0 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net1.Node.mod-l1-2 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net1.Node.mod-l1-3 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net1.Node.mod-l2-1 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net2.Node.mod-l2-0 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net2.Node.mod-l2-1 ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net2.Node.mod-mm ]\n"
-			"Type = EndNode\n"
-			"\n"
-			"[ Network.net0.Node.s0 ]\n"
-			"Type = Switch \n"
-			"\n"
-			"[ Network.net1.Node.s1 ]\n"
-			"Type = Switch \n"
-			"\n"
-			"[ Network.net2.Node.s2 ]\n"
-			"Type = Switch \n"
-			"\n"
-			"[ Network.net0.Link.l0 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l1-0\n"
-			"Dest = s0\n"
-			"\n"
-			"[ Network.net0.Link.l1 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l1-1\n"
-			"Dest = s0\n"
-			"\n"
-			"[ Network.net0.Link.l2 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l2-0 \n"
-			"Dest = s0\n"
-			"\n"
-			"[ Network.net1.Link.l3 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l1-2 \n"
-			"Dest = s1\n"
-			"\n"
-			"[ Network.net1.Link.l4 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l1-3 \n"
-			"Dest = s1\n"
-			"\n"
-			"[ Network.net1.Link.l5 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l2-1 \n"
-			"Dest = s1\n"
-			"\n"
-			"[ Network.net2.Link.l6 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l2-0 \n"
-			"Dest = s2\n"
-			"\n"
-			"[ Network.net2.Link.l7 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-l2-1 \n"
-			"Dest = s2\n"
-			"\n"
-			"[ Network.net2.Link.l8 ]\n"
-			"Type = Bidirectional\n"
-			"Source = mod-mm \n"
-			"Dest = s2\n";
-	try
-	{
-		// Load configuration files
-		misc::IniFile ini_file_mem;
-		misc::IniFile ini_file_x86;
-		misc::IniFile ini_file_net;
-		ini_file_mem.LoadFromString(mem_config_0);
-		ini_file_x86.LoadFromString(x86_config);
-		ini_file_net.LoadFromString(net_config);
-
-		// Set up x86 timing simulator
-		x86::Timing::ParseConfiguration(&ini_file_x86);
-		x86::Timing::getInstance();
-
-		// Set up network system
-		net::System *network_system = net::System::getInstance();
-		network_system->ParseConfiguration(&ini_file_net);
-
-		// Set up memory system
-		System *memory_system = System::getInstance();
-		memory_system->ReadConfiguration(&ini_file_mem);
-
-		// Get modules
-		Module *module_l1_0 = memory_system->getModule("mod-l1-0");
-
-		// Accesses
-		int witness = -1;
-		module_l1_0->Access(Module::AccessNCStore, 0x0, &witness);
-
-		// Simulation loop
-		esim::Engine::setDebugPath("stdout");
-		mem::System::debug.setPath("stdout");
-		net::System::debug.setPath("stdout");
-		esim::Engine *esim_engine = esim::Engine::getInstance();
-		esim_engine->ProcessAllEvents();
-	
-
-#define EXPECT_EQ(a, b) assert((a) == (b));
-
-	}
-	catch (misc::Exception &e)
-	{
-		e.Dump();
-		return 1;
-	}
-	*/
 }
 
