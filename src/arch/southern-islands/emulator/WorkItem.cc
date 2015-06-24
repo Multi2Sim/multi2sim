@@ -229,15 +229,15 @@ float WorkItem::Float16to32(unsigned short value)
 	return v.f;
 }
 
-/*
- * Public functions
- */
 
 WorkItem::WorkItem(Wavefront *wavefront, int id)
 {
 	// Initialization
 	this->id = id;
 	this->wavefront = wavefront;
+
+	// Work-group that is belongs to
+	work_group = wavefront->getWorkGroup();
 
 	ISAInstFuncTable[InstOpcodeInvalid] =  nullptr;
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
@@ -247,10 +247,12 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	ISAInstFuncTable[InstOpcodeCount] = nullptr;
 }
 
+
 void WorkItem::Execute(InstOpcode opcode, Inst *inst)
 {
 	(this->*(ISAInstFuncTable[opcode]))(inst);
 }
+
 
 unsigned WorkItem::ReadSReg(int sreg)
 {
@@ -346,19 +348,21 @@ int WorkItem::ReadBitmaskSReg(int sreg)
 
 // Initialize a buffer resource descriptor
 void WorkItem::ReadBufferResource(
-	int sreg, EmuBufferDesc &buf_desc)
+	int sreg,
+	WorkItem::BufferDescriptor &buf_desc)
 {
 	// Buffer resource descriptor is stored in 4 succesive scalar registers
-	((unsigned *)&buf_desc)[0] = wavefront->getSregUint(sreg);
-	((unsigned *)&buf_desc)[1] = wavefront->getSregUint(sreg + 1);
-	((unsigned *)&buf_desc)[2] = wavefront->getSregUint(sreg + 2);
-	((unsigned *)&buf_desc)[3] = wavefront->getSregUint(sreg + 3);
+	((unsigned *) &buf_desc)[0] = wavefront->getSregUint(sreg);
+	((unsigned *) &buf_desc)[1] = wavefront->getSregUint(sreg + 1);
+	((unsigned *) &buf_desc)[2] = wavefront->getSregUint(sreg + 2);
+	((unsigned *) &buf_desc)[3] = wavefront->getSregUint(sreg + 3);
 }
 
 
 // Initialize a mempry pointer descriptor
 void WorkItem::ReadMemPtr(
-	int sreg, EmuMemPtr &mem_ptr)
+	int sreg,
+	WorkItem::MemoryPointer &mem_ptr)
 {
 	// Memory pointer descriptor is stored in 2 succesive scalar registers
 	((unsigned *)&mem_ptr)[0] = wavefront->getSregUint(sreg);

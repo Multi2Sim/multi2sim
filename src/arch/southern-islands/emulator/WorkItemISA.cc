@@ -64,11 +64,11 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 
 	// sbase holds the first of 4 registers containing the buffer
 	// resource descriptor
-	EmuBufferDesc buf_desc;
-	ReadBufferResource(sbase, buf_desc);
+	BufferDescriptor buffer_descriptor;
+	ReadBufferResource(sbase, buffer_descriptor);
 
 	// Calculate effective address
-	unsigned m_base = buf_desc.base_addr;
+	unsigned m_base = buffer_descriptor.base_addr;
 	unsigned m_offset = INST.imm ? INST.offset * 4 : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
@@ -98,11 +98,11 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
@@ -141,11 +141,11 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
@@ -183,11 +183,11 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
@@ -225,11 +225,11 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	wavefront->setScalarMemRead(true);
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
@@ -270,11 +270,11 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = INST.offset * 4;
 	unsigned m_addr = m_base + m_offset;
 
@@ -316,11 +316,11 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = INST.offset * 4;
 	unsigned m_addr = m_base + m_offset;
 
@@ -363,11 +363,11 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = INST.offset * 4;
 	unsigned m_addr = m_base + m_offset;
 
@@ -410,11 +410,11 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 
 	int sbase = INST.sbase << 1;
 
-	EmuMemPtr mem_ptr;
-	ReadMemPtr(sbase, mem_ptr);
+	MemoryPointer memory_pointer;
+	ReadMemPtr(sbase, memory_pointer);
 
 	// Calculate effective address
-	unsigned m_base = mem_ptr.addr;
+	unsigned m_base = memory_pointer.addr;
 	unsigned m_offset = INST.offset * 4;
 	unsigned m_addr = m_base + m_offset;
 
@@ -6961,7 +6961,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.lds);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -6970,13 +6970,13 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	int bytes_to_read = 1;
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7031,7 +7031,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.lds);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -7040,13 +7040,13 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	int bytes_to_read = 4;
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7100,7 +7100,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.lds);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -7114,13 +7114,13 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	}
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7175,7 +7175,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.lds);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -7189,13 +7189,13 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	}
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7245,7 +7245,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.lds);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 	InstReg prev_value;
 
@@ -7268,13 +7268,13 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	}
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7341,7 +7341,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	assert(!INST.tfe);
 	assert(!INST.slc);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	int bytes_to_read;
@@ -7357,13 +7357,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7420,7 +7420,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 
 	assert(!INST.addr64);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	int i;
@@ -7437,13 +7437,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7505,7 +7505,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 
 	assert(!INST.addr64);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	int i;
@@ -7523,13 +7523,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7552,7 +7552,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 		throw misc::Panic("Probably invalid buffer descriptor");
 
 	// XXX Need to know when to enable id_in_wavefront
-	id_in_wavefront = buf_desc.add_tid_enable ?  id_in_wavefront : 0;
+	id_in_wavefront = buffer_descriptor.add_tid_enable ?  id_in_wavefront : 0;
 	
 	// Calculate the address
 	unsigned addr = base + mem_offset + inst_offset + off_vgpr + 
@@ -7586,7 +7586,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 
 	assert(!INST.addr64);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -7600,13 +7600,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7655,7 +7655,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 
 	assert(!INST.addr64);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 
@@ -7670,13 +7670,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)
@@ -7728,7 +7728,7 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 
 	assert(!INST.addr64);
 
-	EmuBufferDesc buf_desc;
+	BufferDescriptor buffer_descriptor;
 	InstReg value;
 
 	unsigned off_vgpr = 0;
@@ -7742,13 +7742,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 	assert(elem_size == 4);
 
 	// srsrc is in units of 4 registers
-	ReadBufferResource(INST.srsrc * 4, buf_desc);
+	ReadBufferResource(INST.srsrc * 4, buffer_descriptor);
 
 	// Figure 8.1 from SI ISA defines address calculation
-	unsigned base = buf_desc.base_addr;
+	unsigned base = buffer_descriptor.base_addr;
 	unsigned mem_offset = ReadSReg(INST.soffset);
 	unsigned inst_offset = INST.offset;
-	unsigned stride = buf_desc.stride;
+	unsigned stride = buffer_descriptor.stride;
 
 	// Table 8.3 from SI ISA
 	if (!INST.idxen && INST.offen)

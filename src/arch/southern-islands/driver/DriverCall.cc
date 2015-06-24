@@ -87,6 +87,7 @@ int Driver::CallMemAlloc(comm::Context *context,
 	return device_ptr;
 }
 
+
 // ABI Call 'MemRead'
 //
 // ...
@@ -265,6 +266,7 @@ int Driver::CallProgramCreate(comm::Context *context,
 	return program->getId();
 }
 
+
 /// ABI Call 'ProgramSetBinary'
 ///
 /// Associate a binary to a Southern Islands program.
@@ -428,7 +430,7 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 }
 
 
-/// ABI Call 'KernelSet Arg Pointer'
+/// ABI Call 'KernelSetArgPointer'
 ///
 /// Set a kernel argument of type 'cl_mem', or local memory. In general, any
 /// argument that uses the 'pointer' name as first token in the metadata entry of
@@ -548,9 +550,6 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Cast context as an x86 context
-	x86::Context *x86_context = dynamic_cast<x86::Context *>(context);
-
 	// Arugments
 	int kernel_id;
 	int work_dim;
@@ -561,10 +560,6 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	unsigned int global_offset[3];
 	unsigned int global_size[3];
 	unsigned int local_size[3];
-
-	// FIXME
-	// if (driver->isFused())
-	// 	si_emu->setGlobalMem(&(ctx->getMem()));
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(int), (char *) &kernel_id);
@@ -600,13 +595,6 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	// Create ND-Range
 	NDRange *ndrange = AddNDRange();
 	debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
-
-	// Initialize address space ID.  Our current SVM implementation sets
-	// the ndrange ASID to the CPU context's ASID 
-	ndrange->setAddressSpaceIndex(x86_context->getAddressSpaceIndex());
-	
-	debug << misc::fmt("\tndrange address space index = %d\n", 
-		ndrange->getAddressSpaceIndex());
 
 	// Initialize from kernel binary encoding dictionary
 	ndrange->InitializeFromKernel(kernel);
@@ -661,6 +649,7 @@ int Driver::CallNDRangeGetNumBufferEntries(comm::Context *context,
 	return 0;
 }
 
+
 // ABI Call 'NDRangeSendWorkGroups'
 //
 // ...
@@ -708,6 +697,7 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 	return 0;
 }
 
+
 // ABI Call 'NDRangeFinish'
 //
 // ...
@@ -750,6 +740,7 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 	// Return
 	return 0;
 }
+
 
 // ABI Call 'NDRangePassMemObjs'
 //
@@ -797,6 +788,7 @@ int Driver::CallNDRangePassMemObjs(comm::Context *context,
 	return 0;
 }
 
+
 // ABI Call 'NDRangeSetFused'
 //
 // ...
@@ -823,6 +815,7 @@ int Driver::CallNDRangeSetFused(comm::Context *context,
 	// Return
 	return 0;
 }
+
 
 // ABI Call 'NDRangeFlush'
 //
@@ -860,6 +853,7 @@ int Driver::CallNDRangeFlush(comm::Context *context,
 	// Return                                      
 	return 0;
 }
+
 
 // ABI Call 'NDRangeFree'
 //

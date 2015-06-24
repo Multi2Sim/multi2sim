@@ -50,23 +50,23 @@ class Wavefront
 	int id;
 
 	// IDs of work-items it contains
-	int work_item_id_first;
-	int work_item_id_last;
-	int work_item_count;
+	int work_item_id_first = 0;
+	int work_item_id_last = 0;
+	int work_item_count = 0;
 
 	// Work-group it belongs to
-	WorkGroup *work_group;
+	WorkGroup *work_group = nullptr;
 
 	// Additional data added by timing simulator
 	std::unique_ptr<WavefrontData> data;
 
 	// Program counter. Offset to 'inst_addr' in NDRange where we can find the next
 	// instruction to be executed.
-	unsigned pc;
+	unsigned pc = 0;
 
 	// Current instruction
-	Inst *inst;
-	int inst_size;
+	Inst *inst = nullptr;
+	int inst_size = 0;
 
 	// Associated scalar work-item
 	std::unique_ptr<WorkItem> scalar_work_item;
@@ -125,8 +125,12 @@ public:
 
 	/// Constructor
 	///
-	/// \param work_group Work-group that the wavefront belongs to
-	/// \param id Global 1D identifier of the wavefront
+	/// \param work_group
+	///	Work-group that the wavefront belongs to
+	///
+	/// \param id
+	///	Global 1D identifier of the wavefront
+	///
 	Wavefront(WorkGroup *work_group, int id);
 
 	/// Getters
@@ -148,7 +152,7 @@ public:
 	}
 
 	/// Return pointer to the workgroup this wavefront belongs to
-	WorkGroup *getWorkgroup() const { return work_group; }
+	WorkGroup *getWorkGroup() const { return work_group; }
 
 	/// Get work_item_count
 	unsigned getWorkItemCount() const { return work_item_count; }

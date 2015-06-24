@@ -39,6 +39,7 @@
 #include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emulator/Emulator.h>
 #include <arch/southern-islands/driver/Driver.h>
+#include <arch/southern-islands/emulator/Emulator.h>
 #include <arch/southern-islands/timing/Timing.h>
 #include <arch/arm/disassembler/Disassembler.h>
 #include <arch/arm/emulator/Emulator.h>
