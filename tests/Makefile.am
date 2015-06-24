@@ -45,7 +45,8 @@ src_lib_esim_test_SOURCES = \
 src_network_test_LDADD = \
 	$(top_builddir)/src/network/libnetwork.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
-	$(top_builddir)/src/lib/cpp/libcpp.a 
+	$(top_builddir)/src/lib/cpp/libcpp.a \
+	$(am__append_2) -lz
 
 src_network_test_SOURCES = \
 	src/network/TestNetwork.cc

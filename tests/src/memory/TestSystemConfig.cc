@@ -67,8 +67,6 @@ TEST(TestSystemConfiguration, section_module_type)
 {
 	// Setup configuration file
 	std::string config =
-		"[ General ]\n"
-		"Frequency = 1000\n"
 		"[ Module test ]\n"
 		"Type = Anything";
 

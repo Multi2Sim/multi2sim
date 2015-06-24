@@ -30,7 +30,7 @@
 #include <lib/esim/Event.h>
 #include <lib/esim/Trace.h>
 
-
+#include "Network.h"
 namespace net
 {
 
@@ -54,6 +54,14 @@ public:
 /// Network system singleton.
 class System
 {
+	//
+	// Error messages
+	//
+
+    static const char *err_config_note;
+
+
+
 	// Debugger file
 	static std::string debug_file;
 
@@ -62,6 +70,12 @@ class System
 
 	// Trace file
 	static std::string trace_file;
+
+	// Show help for network configuration file
+	static bool help;
+
+	// Message to display with '--net-help'
+	static const std::string help_message;
 
 	// Stand-Alone Simulator Network Name
 	static std::string sim_net_name;
@@ -75,17 +89,11 @@ class System
 	// Stand-alone simulator instantiator
 	static bool stand_alone;
 
-	// Networks configuration file
-	static misc::IniFile ini_file;
-
-	// Print network help information
-	static bool network_help;
-
 	// Unique instance of singleton
 	static std::unique_ptr<System> instance;
 
 	// General frequency if not specified in the network section
-	static int net_system_frequency;
+	static int system_frequency;
 	
 	/// Message size in stand alone network
 	static int message_size;
