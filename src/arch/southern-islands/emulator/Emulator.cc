@@ -65,11 +65,10 @@ const unsigned Emulator::ConstBuf1Size = 1024; // FIXME
 	
 const unsigned Emulator::TotalConstBufSize = Emulator::ConstBuf0Size + Emulator::ConstBuf1Size;
 
-// Singleton
 std::unique_ptr<Emulator> Emulator::instance;
 
-// Debugger
 misc::Debug Emulator::debug;
+
 
 Emulator *Emulator::getInstance()
 {
@@ -78,11 +77,12 @@ Emulator *Emulator::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Emulator());
+	instance = misc::new_unique<Emulator>();
 	return instance.get();	
 }
 
-Emulator::Emulator()
+
+Emulator::Emulator() : comm::Emulator("Southern Islands")
 {
 	// Disassemler
 	disassembler = Disassembler::getInstance();
@@ -94,6 +94,7 @@ Emulator::Emulator()
 	shared_memory = misc::new_unique<mem::Memory>();
 	global_memory = video_memory.get();
 }
+
 
 void Emulator::Dump(std::ostream &os) const
 {
@@ -110,7 +111,8 @@ void Emulator::Dump(std::ostream &os) const
 	os << "VectorMemInstructions = " << vector_mem_inst_count << std::endl;
 }
 
-void Emulator::Run()
+
+bool Emulator::Run()
 {
 	// Get SI Driver
 	Driver *driver = Driver::getInstance();
@@ -118,7 +120,7 @@ void Emulator::Run()
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (!driver->getNumNDRanges())
-		return;
+		return false;
 
 	// NDRange list is shared by CL/GL driver
 	for (int i = 0; i < driver->getNumNDRanges(); i++)
@@ -149,10 +151,12 @@ void Emulator::Run()
 		// have been run
 		// opencl_driver->RequestWork((*ndr_i).get());
 	}
+
+	// Done with all the work
+	return false;
 }
 
 
-/// Initialize a buffer description of type EmuBufferDesc
 void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		int num_elems, ArgDataType data_type, 
 		EmuBufferDesc *buffer_desc)
@@ -349,4 +353,14 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 }
 
 
-}  // namespace SI
+void Emulator::RegisterOptions()
+{
+}
+
+
+void Emulator::ProcessOptions()
+{
+}
+
+}
+

@@ -17,13 +17,39 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Gpu.h"
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_COMPUTE_UNIT_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_COMPUTE_UNIT_H
+
+#include <memory/Module.h>
 
 
 namespace SI
 {
 
-int Gpu::num_compute_units = 32;
+class ComputeUnit
+{
+	// Index of the compute unit in the GPU device, initialized in the
+	// constructor.
+	int index;
+
+public:
+
+	/// Constructor
+	ComputeUnit(int index) : index(index)
+	{
+	}
+
+	/// Return the index of this compute unit in the GPU
+	int getIndex() const { return index; }
+
+	/// Cache used for vector data
+	mem::Module *vector_cache = nullptr;
+
+	/// Cache used for scalar data
+	mem::Module *scalar_cache = nullptr;
+};
 
 }
+
+#endif
 

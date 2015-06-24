@@ -83,12 +83,6 @@ class Timing : public comm::Timing
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
 
-	// Private constructor for singleton
-	Timing() : comm::Timing("x86")
-	{
-		setFrequencyDomain("x86", frequency);
-	}
-
 public:
 
 	/// Exception for X86 timing simulator
@@ -104,6 +98,12 @@ public:
 
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
+	
+	/// Constructor
+	Timing() : comm::Timing("x86")
+	{
+		setFrequencyDomain("x86", frequency);
+	}
 
 	/// get CPU instance pointer
 	CPU *getCPU() { return &cpu; }
