@@ -60,34 +60,12 @@ public:
 /// Memory system
 class System
 {
+	//
+	// Static fields
+	//
+
 	// Unique instance of this class
 	static std::unique_ptr<System> instance;
-
-	// Frequency domain for memory system
-	esim::FrequencyDomain *frequency_domain = nullptr;
-
-	// Private constructor
-	System();
-
-
-
-	//
-	// Error messages
-	//
-
-	static const char *err_config_note;
-	static const char *err_config_net;
-	static const char *err_levels;
-	static const char *err_block_size;
-	static const char *err_connect;
-	static const char *err_mem_disjoint;
-
-	
-	
-	//
-	// Memory system configuration. These functions are defined in
-	// SystemConfig.cc
-	//
 	
 	// Configuration file name
 	static std::string config_file;
@@ -104,6 +82,40 @@ class System
 	// Frequency of memory system in MHz
 	static int frequency;
 	
+	// Error messages
+	static const char *err_config_note;
+	static const char *err_config_net;
+	static const char *err_levels;
+	static const char *err_block_size;
+	static const char *err_connect;
+	static const char *err_mem_disjoint;
+
+	// Event handlers for NMOESI cache coherence protocol. These functions
+	// are defined in SystemCoherenceProtocol.cc.
+	static void EventLoadHandler(esim::Event *, esim::Frame *);
+	static void EventStoreHandler(esim::Event *, esim::Frame *);
+	static void EventNCStoreHandler(esim::Event *, esim::Frame *);
+	static void EventFindAndLockHandler(esim::Event *, esim::Frame *);
+	static void EventEvictHandler(esim::Event *, esim::Frame *);
+	static void EventWriteRequestHandler(esim::Event *, esim::Frame *);
+	static void EventReadRequestHandler(esim::Event *, esim::Frame *);
+	static void EventInvalidateHandler(esim::Event *, esim::Frame *);
+	static void EventMessageHandler(esim::Event *, esim::Frame *);
+	static void EventFlushHandler(esim::Event *, esim::Frame *);
+	static void EventLocalLoadHandler(esim::Event *, esim::Frame *);
+	static void EventLocalStoreHandler(esim::Event *, esim::Frame *);
+	static void EventLocalFindAndLockHandler(esim::Event *, esim::Frame *);
+
+
+
+
+	//
+	// Member functions
+	//
+
+	// Frequency domain for memory system
+	esim::FrequencyDomain *frequency_domain = nullptr;
+
 	// Construct a module and add it to the list and map of modules. The
 	// arguments for this function match the arguments for the constructor
 	// of the module. No module with the same name must exist.
@@ -203,26 +215,6 @@ class System
 	void ConfigReadCommands(misc::IniFile *ini_file);
 
 
-	//
-	// Event handlers for NMOESI cache coherence protocol. These functions
-	// are defined in SystemCoherenceProtocol.cc.
-	//
-
-	static void EventLoadHandler(esim::Event *, esim::Frame *);
-	static void EventStoreHandler(esim::Event *, esim::Frame *);
-	static void EventNCStoreHandler(esim::Event *, esim::Frame *);
-	static void EventFindAndLockHandler(esim::Event *, esim::Frame *);
-	static void EventEvictHandler(esim::Event *, esim::Frame *);
-	static void EventWriteRequestHandler(esim::Event *, esim::Frame *);
-	static void EventReadRequestHandler(esim::Event *, esim::Frame *);
-	static void EventInvalidateHandler(esim::Event *, esim::Frame *);
-	static void EventMessageHandler(esim::Event *, esim::Frame *);
-	static void EventFlushHandler(esim::Event *, esim::Frame *);
-	static void EventLocalLoadHandler(esim::Event *, esim::Frame *);
-	static void EventLocalStoreHandler(esim::Event *, esim::Frame *);
-	static void EventLocalFindAndLockHandler(esim::Event *, esim::Frame *);
-
-
 	// List of networks
 	std::list<std::unique_ptr<net::Network>> networks;
 
@@ -236,6 +228,9 @@ class System
 	std::map<std::string, Module *> module_map;
 
 public:
+
+	/// Constructor
+	System();
 
 	/// Return a module given its name, or nullptr if no module with that
 	/// name exists.

@@ -665,12 +665,10 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Read arguments
 	int ndrange_id;                                                          
 	unsigned work_group_start;                                           
 	unsigned work_group_count;                                           
-	long work_group_id;                                                      
-	
-	// Read arguments
 	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
 	memory->Read(args_ptr + 4, sizeof(unsigned), (char *) &work_group_start);
 	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &work_group_count);
@@ -694,7 +692,7 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 			work_group_start + work_group_count - 1);                        
 
 	// Receive work groups (add them to the waiting queue)               
-	for (work_group_id = work_group_start;                                   
+	for (unsigned work_group_id = work_group_start;                                   
 			work_group_id < work_group_start + work_group_count;             
 			work_group_id++)                                                                                                                        
 		ndrange->AddWorkgroupIdToWaitingList(work_group_id);                                          

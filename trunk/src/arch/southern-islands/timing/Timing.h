@@ -22,6 +22,8 @@
 
 #include <arch/common/Timing.h>
 
+#include "Gpu.h"
+
 
 namespace SI
 {
@@ -62,6 +64,9 @@ class Timing : public comm::Timing
 	//
 	// Member fields
 	//
+
+	// The GPU object
+	Gpu gpu;
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
