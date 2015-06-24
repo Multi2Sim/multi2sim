@@ -365,7 +365,7 @@ struct opencl_si_ndrange_t *opencl_si_ndrange_create(
 	args[1] = arch_ndrange->work_dim ;
 	args[2] = (unsigned) arch_ndrange->global_work_offset;
 	args[3] = (unsigned) arch_ndrange->global_work_size;
-	args[4] = arch_ndrange->local_work_size[0];
+	args[4] = (unsigned) arch_ndrange->local_work_size;
 
 	arch_ndrange->id = ioctl(opencl_si_device->fd, 
 		SINDRangeCreate, args);

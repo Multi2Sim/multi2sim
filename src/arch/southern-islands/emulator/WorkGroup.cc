@@ -45,6 +45,9 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 	// Create WorkgroupData for timing simulation
 	this->data.reset(new WorkGroupData());
 
+	// Emulator instance
+	Emulator *emulator = Emulator::getInstance();
+
 	unsigned lid;
 	unsigned lidx, lidy, lidz;
 	unsigned tid;
@@ -73,6 +76,11 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			this->work_items.emplace_back(
 					misc::new_unique<WorkItem>(
 					wavefronts[i].get(), work_item_id));
+			
+			// Set work item properties
+			WorkItem *work_item = this->work_items.back().get();
+			work_item->setWorkGroup(this);
+			work_item->setGlobalMemory(emulator->getGlobalMemory());
 		}
 	}
 

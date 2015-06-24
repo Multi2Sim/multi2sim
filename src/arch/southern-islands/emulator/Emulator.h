@@ -319,6 +319,9 @@ public:
 	/// allocated until the end of the execution.
 	static Emulator *getInstance();
 
+	/// Destroy the emulator singleton if allocated
+	static void Destroy () { instance = nullptr; }
+	
 	/// Register command-line options
 	static void RegisterOptions();
 
