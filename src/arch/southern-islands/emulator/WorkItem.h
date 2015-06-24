@@ -178,6 +178,9 @@ public:
 		assert(dim >= 0 && dim <= 2);
 		return id_in_work_group_3d[dim]; 
 	}
+	
+	/// Get pointer to global memory
+	mem::Memory *getGlobalMemory() { return global_mem;}
 
 
 
@@ -224,6 +227,10 @@ public:
 	/// \param wg Pointer of work-group where it belongs
 	void setWorkGroup(WorkGroup *wg) { work_group = wg; }
 
+	/// Set global memory
+	/// \param memory Pointer to global memory
+	void setGlobalMemory(mem::Memory *memory) { global_mem = memory; }
+	
 	// FIXME - probably most functions below can be inline
 
 	/// Execute an instruction

@@ -611,6 +611,9 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	// Initialize from kernel binary encoding dictionary
 	ndrange->InitializeFromKernel(kernel);
 
+	// Set the global and local sizes
+	ndrange->SetupSize(global_size, local_size, work_dim);
+
 	// FIXME
 	// if (si_gpu)
 	// 	SIGpuMapNDRange(si_gpu, ndrange);
