@@ -21,6 +21,7 @@
 #include <lib/cpp/CommandLine.h>
 #include <memory/System.h>
 
+#include "ComputeUnit.h"
 #include "Timing.h"
 
 
@@ -462,11 +463,144 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 		const std::string &section)
 {
+	// Allow these sections in case we quit before reading them.
+	ini_file->Allow(section, "DataModule");
+	ini_file->Allow(section, "ConstantDataModule");
+	ini_file->Allow(section, "Module");
+
+	// Unified or separate data and constant memory
+	bool unified_present = ini_file->Exists(section, "Module");
+	bool separate_present = ini_file->Exists(section, "DataModule") &&
+			ini_file->Exists(section, "ConstantDataModule");
+	if (!unified_present && !separate_present)
+		throw Error(misc::fmt("%s: section [%s]: "
+				"variable 'Module' missing.",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+	if (!(unified_present ^ separate_present))
+		throw Error(misc::fmt("%s: section [%s]: invalid combination "
+				"of modules. A Southern Islands entry to the "
+				"memory hierarchy needs to specify either a "
+				"unified entry for vector and scalar caches "
+				"(variable 'Module'), or two separate entries "
+				"for data and scalar (constant) data "
+				"(variables 'DataModule' and "
+				"'ConstantDataModule'), but not both.\n",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+
+	// Read compute unit
+	int compute_unit_id = ini_file->ReadInt(section, "ComputeUnit", -1);
+	if (compute_unit_id < 0)
+		throw Error(misc::fmt("%s: section [%s]: invalid or missing "
+				"value for 'ComputeUnit'",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+
+	// Check compute unit boundaries
+	if (compute_unit_id >= Gpu::getNumComputeUnits())
+	{
+		misc::Warning("%s: section [%s] ignored, referring "
+				"to Southern Islands compute unit %d. This "
+				"section refers to a compute unit that does "
+				"not currently exist. Please review your "
+				"Southern Islands configuration file if this "
+				"is not the desired behavior.",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				compute_unit_id);
+		return;
+	}
+
+	// Check that entry has not been assigned before
+	ComputeUnit *compute_unit = gpu.getComputeUnit(compute_unit_id);
+	if (compute_unit->vector_cache)
+		throw misc::Error(misc::fmt("%s: section [%s]: entry from "
+				"compute unit %d already assigned. "
+				"A different [Entry <name>] section in the "
+				"memory configuration file has already "
+				"assigned an entry for this particular compute "
+				"unit. Please review your configuration file "
+				"to avoid duplicates.",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				compute_unit_id));
+
+	// Read modules
+	std::string vector_cache_name;
+	std::string scalar_cache_name;
+	if (separate_present)
+	{
+		vector_cache_name = ini_file->ReadString(section, "DataModule");
+		scalar_cache_name = ini_file->ReadString(section, "ConstantDataModule");
+	}
+	else
+	{
+		vector_cache_name = scalar_cache_name =
+				ini_file->ReadString(section, "Module");
+	}
+	if (vector_cache_name.empty() || scalar_cache_name.empty())
+		throw misc::Error(misc::fmt("%s: [%s]: invalid name for vector "
+				"or scalar cache",
+				ini_file->getPath().c_str(),
+				section.c_str()));
+	
+	// Assign vector cache
+	mem::System *mem_system = mem::System::getInstance();
+	compute_unit->vector_cache = mem_system->getModule(vector_cache_name);
+	if (!compute_unit->vector_cache)
+		throw misc::Error(misc::fmt("%s: [%s]: '%s' is not a valid "
+				"module name. The given module name must match "
+				"a module declared in a section [Module <name>] "
+				"in the memory configuration file.\n",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				vector_cache_name.c_str()));
+	
+	// Assign scalar cache
+	compute_unit->scalar_cache = mem_system->getModule(scalar_cache_name);
+	if (!compute_unit->scalar_cache)
+		throw misc::Error(misc::fmt("%s: [%s]: '%s' is not a valid "
+				"module name: The given module name must match "
+				"a module declared in a section [Module <name>] "
+				"in the memory configuration file.\n",
+				ini_file->getPath().c_str(),
+				section.c_str(),
+				scalar_cache_name.c_str()));
+	
+	// Add modules to list of memory entries
+	entry_modules.push_back(compute_unit->vector_cache);
+	entry_modules.push_back(compute_unit->scalar_cache);
+	
+	// Debug
+	mem::System::debug << misc::fmt("\tSouthern Islands compute unit %d\n",
+			compute_unit_id)
+			<< "\t\tEntry for vector mem -> "
+			<< compute_unit->vector_cache->getName() << '\n'
+			<< "\t\tEntry for scalar mem -> "
+			<< compute_unit->scalar_cache->getName() << '\n'
+			<< '\n';
 }
 
 
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
+	// Check that all compute units have an entry to the memory hierarchy.
+	for (auto it = gpu.getComputeUnitsBegin(),
+			e = gpu.getComputeUnitsEnd();
+			it != e;
+			++it)
+	{
+		ComputeUnit *compute_unit = it->get();
+		if (!compute_unit->vector_cache)
+			throw Error(misc::fmt("%s: Southern Islands compute "
+					"unit %d has no entry to memory. Please "
+					"add a new [Entry <name>] section in your "
+					"memory configuration file to associate "
+					"this compute unit with a memory module.\n",
+					ini_file->getPath().c_str(),
+					compute_unit->getIndex()));
+	}
 }
 
 
@@ -478,76 +612,61 @@ void Timing::RegisterOptions()
 	// Category
 	command_line->setCategory("Southern Islands");
 
-/*
-	// Option --x86-sim <kind>
-	command_line->RegisterEnum("--x86-sim {functional|detailed} "
+	// Option --si-sim <kind>
+	command_line->RegisterEnum("--si-sim {functional|detailed} "
 			"(default = functional)",
 			(int &) sim_kind, comm::Arch::SimKindMap,
-			"Level of accuracy of x86 simulation.");
+			"Level of accuracy of Southern Islands simulation.");
 
-	// Option --x86-config <file>
-	command_line->RegisterString("--x86-config <file>", config_file,
-			"Configuration file for the x86 CPU timing model, including parameters"
-			"describing stage bandwidth, structures size, and other parameters of"
-			"processor cores and threads. Type 'm2s --x86-help' for details on the file"
-			"format.");
+	// Option --si-config <file>
+	command_line->RegisterString("--si-config <file>", config_file,
+			"Configuration file for the Southern Islands GPU timing "
+			"model, including parameters such as number of compute "
+			"units, stream cores, or wavefront size. Type 'm2s "
+			"--si-help' for details on the file format.");
 
-	// Option --x86-mmu-report <file>
-	command_line->RegisterString("--x86-mmu-report <file>", mmu_report_file,
-			"File to dump a report of the x86 MMU. Use together with a detailed"
-			"CPU simulation (option '--x86-sim detailed').");
+	// Option --si-report <file>
+	command_line->RegisterString("--si-report <file>", report_file,
+			"File to dump a report of the GPU pipeline, including "
+			"statistics such as active execution units, compute "
+			"unit occupancy, stream cores utilization, etc. Use "
+			"together with a detailed GPU simulation (option "
+			"'--si-sim detailed').");
 
-	// Option --x86-report <file>
-	command_line->RegisterString("--x86-report <file>", report_file,
-			"File to dump a report of the x86 CPU pipeline, including statistics such"
-			"as the number of instructions handled in every pipeline stage, read/write"
-			"accesses performed on pipeline queues, etc. This option is only valid for"
-			"detailed x86 simulation (option '--x86-sim detailed').");
-
-	// Option --x86-help
-	command_line->RegisterBool("--x86-help", help,
-			"Display a help message describing the format of the x86 CPU context"
-			"configuration file.");
-
-	// Option --x86-debug-trace-cache <file>
-	command_line->RegisterString("--x86-debug-trace-cache <file>", TraceCache::debug_file,
-			"Debug information for trace cache.");
-*/
+	// Option --si-help
+	command_line->RegisterBool("--si-help", help,
+			"Display a help message describing the format of the "
+			"Southern Islands GPU configuration file.");
 }
 
 
 void Timing::ProcessOptions()
 {
-/*
-	// Configuration
+	// Configuration file passed with option '--si-config'
 	misc::IniFile ini_file;
 	if (!config_file.empty())
 		ini_file.Load(config_file);
 
-	// Instantiate timing simulator if '--x86-sim detailed' is present
+	// Instantiate timing simulator if '--si-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
 	{
-		// First: parse configuration
+		// First: parse configuration. This initializes all configuration
+		// static variables in class Timing, Gpu, ComputeUnit, ...
 		ParseConfiguration(&ini_file);
 
-		// Second: generate instance
+		// Second: generate instance of timing simulator. The constructor
+		// of each class will use the previously initialized static
+		// variables to initialize the instances.
 		getInstance();
 	}
 
-	// Print x86 configuration INI format
+	// Print configuration INI file format
 	if (help)
 	{
-		if (!help_message.empty())
-		{
-			misc::StringFormatter formatter(help_message);
-			std::cerr << formatter;
-			exit(1);
-		}
+		misc::StringFormatter formatter(help_message);
+		std::cerr << formatter;
+		exit(0);
 	}
-
-	// Debuggers
-	TraceCache::debug.setPath(TraceCache::debug_file);
-*/
 }
 
 

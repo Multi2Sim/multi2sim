@@ -17,13 +17,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Gpu.h"
+#include "ComputeUnit.h"
 
 
 namespace SI
 {
 
-int Gpu::num_compute_units = 32;
 
 }
 

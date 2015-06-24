@@ -24,17 +24,12 @@
 #include <list>
 #include <memory>
 
+#include <arch/common/Emulator.h>
 #include <arch/southern-islands/disassembler/Arg.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <memory/Memory.h>
 
-
-// Forward declarations
-namespace Driver
-{
-	class OpenCLSIDriver;
-}
 
 namespace SI
 {
@@ -42,7 +37,6 @@ namespace SI
 // Forward declarations
 class Disassembler;
 class NDRange;
-class ShaderExport;
 class WorkGroup;
 
 /// Table 8.5 in SI documentation
@@ -146,7 +140,7 @@ struct EmuMemPtr
 
 
 /// Southern Islands emulator.
-class Emulator
+class Emulator : public comm::Emulator
 {
 
 public:
@@ -209,9 +203,6 @@ private:
 	// Associated disassembler
 	Disassembler *disassembler = nullptr;
 
-	// Associated drivers
-	::Driver::OpenCLSIDriver *opencl_driver = nullptr;
-
 	// Local to the GPU
 	std::unique_ptr<mem::Memory> video_memory;
 
@@ -263,11 +254,30 @@ private:
 	// Unique instance of Southern Islands Emulator
 	static std::unique_ptr<Emulator> instance;
 
-	// Private constructor. The only possible instance of the OpenCL Driver
-	// can be obtained with a call to getInstance()
-	Emulator();
-
 public:
+
+	//
+	// Error class
+	//
+
+	/// Exception for Southern Islands emulator
+	class Error : public misc::Error
+	{
+	public:
+
+		Error(const std::string &message) : misc::Error(message)
+		{
+			AppendPrefix("Southern Islands emulator");
+		}
+	};
+	
+
+
+
+	//
+	// Static fields
+	//
+
 	/// UAV Table
 	static const unsigned MaxNumUAVs = 16;
 	static const unsigned UAVTableEntrySize;
@@ -296,19 +306,34 @@ public:
 
 	static const unsigned TotalConstBufSize;
 
-	/// Exception for Southern Islands emulator
-	class Error : public misc::Error
-	{
-	public:
-
-		Error(const std::string &message) : misc::Error(message)
-		{
-			AppendPrefix("Southern Islands emulator");
-		}
-	};
-
 	/// Debugger for ISA traces
 	static misc::Debug debug;
+
+	/// Initialize a buffer description of type EmuBufferDesc
+	static void createBufferDesc(unsigned base_addr, unsigned size,
+			int num_elems, ArgDataType data_type, 
+			EmuBufferDesc *buffer_desc);
+
+	/// Get the only instance of the Southern Islands emulator. If the
+	/// instance does not exist yet, it will be created, and will remain
+	/// allocated until the end of the execution.
+	static Emulator *getInstance();
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
+
+
+
+	//
+	// Class members
+	//
+
+	/// Constructor
+	Emulator();
 
 	/// Return the maximum number of emulation cycles as set by the 
 	/// --si-max-cycles command-line option
@@ -325,16 +350,6 @@ public:
 	/// Return the size of the wavefront object
 	int getWavefrontSize() { return wavefront_size; }
 
-	/// Initialize a buffer description of type EmuBufferDesc
-	static void createBufferDesc(unsigned base_addr, unsigned size,
-			int num_elems, ArgDataType data_type, 
-			EmuBufferDesc *buffer_desc);
-
-	/// Get the only instance of the Southern Islands emulator. If the
-	/// instance does not exist yet, it will be created, and will remain
-	/// allocated until the end of the execution.
-	static Emulator *getInstance();
-
 	/// Dump emulator state
 	void Dump(std::ostream &os = std::cout) const;
 
@@ -345,9 +360,12 @@ public:
 		return os;
 	}
 
-	///
-	/// Getters
-	///
+
+
+
+	//
+	// Getters
+	//
 
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return ndrange_count++; }
@@ -367,19 +385,18 @@ public:
 	/// Get video_memory
 	mem::Memory *getVideoMemory() { return video_memory.get(); }
 
-	///
-	/// Setters
-	///
+
+
+
+	//
+	// Setters
+	//
 
 	/// Set global_memory
 	void setGlobalMemory(mem::Memory *memory) { global_memory = memory; }
 	
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
-
-	/// Set OpenCL driver
-	void setOpenCLSIDriver(::Driver::OpenCLSIDriver *opencl_driver)
-			{ this->opencl_driver = opencl_driver; }
 
 	/// Increment work_group_count
 	void incWorkGroupCount() { work_group_count++; }
@@ -409,7 +426,7 @@ public:
 	void DumpSummary(std::ostream &os);
 
 	/// Run one iteration of the emulation loop
-	void Run();
+	bool Run() override;
 
 	/// Increase video memory top
 	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }

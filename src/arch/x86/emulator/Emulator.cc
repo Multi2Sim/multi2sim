@@ -210,7 +210,7 @@ Emulator *Emulator::getInstance()
 		return instance.get();
 
 	// Create instance
-	instance.reset(new Emulator());
+	instance = misc::new_unique<Emulator>();
 	return instance.get();
 }
 
