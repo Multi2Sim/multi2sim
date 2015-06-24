@@ -121,11 +121,6 @@ private:
 	unsigned instruction_address = 0;
 	unsigned instruction_size = 0;
 
-	// Fetch shader memory containing Fetch shader instructions
-	int fs_buffer_initialized = 0;
-	unsigned fs_buffer_ptr = 0; // Relative offset
-	unsigned fs_buffer_size = 0;
-
 	// Local memory top to assign to local arguments.
 	// Initially it is equal to the size of local variables in 
 	// kernel function.
@@ -168,7 +163,7 @@ private:
 public:
 
 	/// Constructor
-	NDRange(Emulator *emulator);
+	NDRange();
 
 	/// Dump the state of the ND-range in a plain-text format into an output
 	/// stream.
@@ -176,14 +171,18 @@ public:
 
 	/// Short-hand notation for dumping ND-range.
 	friend std::ostream &operator<<(std::ostream &os,
-			const NDRange &ndrange) {
+			const NDRange &ndrange)
+	{
 		ndrange.Dump(os);
 		return os;
 	}
 
-	///
-	/// Getters
-	///
+
+
+
+	//
+	// Getters
+	//
 
 	/// Get work dim
 	unsigned getWorkDim() const { return work_dim; }
@@ -240,16 +239,16 @@ public:
 	}
 
 	/// Get stage of NDRange
-	Stage getStage()	const { return stage; }
+	Stage getStage() const { return stage; }
 
-	/// Get count of waiting_work_groups
-	unsigned getWaitingWorkgroupsCount() const { return waiting_work_groups.size(); }
+	/// Return the number of waiting work-groups
+	unsigned getNumWaitingWorkgroups() const { return waiting_work_groups.size(); }
 
-	/// Get count of running_work_groups
-	unsigned getRunningWorkgroupsCount() const { return running_work_groups.size(); }
+	/// Return the number of running work-groups
+	unsigned getNumRunningWorkgroups() const { return running_work_groups.size(); }
 
-	/// Get count of completed_work_groups
-	unsigned getCompletedWorkgroupsCount() const { return completed_work_groups.size(); }
+	/// Return the number of completed work-groups
+	unsigned getNumCompletedWorkgroups() const { return completed_work_groups.size(); }
 
 	/// Get id of NDRange
 	int getId() const { return id; }
@@ -336,9 +335,12 @@ public:
 		return running_work_groups.end();
 	}
 
-	///
-	///Setters
-	///
+
+
+
+	//
+	// Setters
+	//
 
 	/// Set address_space_index
 	void setAddressSpaceIndex(int value) { address_space_index = value; }
@@ -454,6 +456,7 @@ public:
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);
 };
+
 
 }  // namespace
 

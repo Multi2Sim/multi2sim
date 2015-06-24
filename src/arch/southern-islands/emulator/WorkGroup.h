@@ -122,19 +122,23 @@ public:
 
 	/// Equivalent to WorkGroup::Dump()
 	friend std::ostream &operator<<(std::ostream &os,
-			const WorkGroup &work_group) {
+			const WorkGroup &work_group)
+	{
 		work_group.Dump(os);
 		return os;
 	}
 
-	///
-	/// Getters
-	///
 
-	/// Get workgroup ID
+
+
+	//
+	// Getters
+	//
+
+	/// Get work-group ID
 	int getId() const { return id; }
 
-	/// Get workgroup ID in 3D
+	/// Get work-group ID in 3D
 	int getId3D(unsigned dim)
 	{
 		assert(dim >= 0 && dim <= 2);
@@ -168,15 +172,19 @@ public:
 	/// Get NDRange that it belongs to
 	NDRange *getNDRange() const { return ndrange; }
 
-	/// Get pointer of a workitem in this workgroup
-	WorkItem *getWorkItem(int id_in_work_group) {
-		assert(id_in_work_group >= 0 && id_in_work_group < (int)work_items.size());
+	/// Get pointer of a work-item in this work-group
+	WorkItem *getWorkItem(int id_in_work_group)
+	{
+		assert(id_in_work_group >= 0 && id_in_work_group < (int) work_items.size());
 		return work_items[id_in_work_group].get();
 	}
 
-	///
-	/// Setters
-	///
+
+
+
+	//
+	// Setters
+	//
 	
 	/// Increase wavefronts_at_barrier counter
 	void incWavefrontsAtBarrier() { wavefronts_at_barrier++; }
@@ -197,7 +205,10 @@ public:
 	void incVregWriteCount() { vreg_write_count++; }
 
 	/// Set wavefront_at_barrier counter
-	void setWavefrontsAtBarrier(unsigned counter) { wavefronts_at_barrier = counter; }
+	void setWavefrontsAtBarrier(unsigned counter)
+	{
+		wavefronts_at_barrier = counter;
+	}
 
 	/// Attach additional data to the work-group, passing an object derived
 	/// from class WorkGroupData. The object passed to it must be
@@ -214,16 +225,20 @@ public:
 	/// print them)
 	///
 	/// \code
-	/// for (auto i = work_group->WorkItemsBegin(),
-	///		e = work_group->WorkItemsEnd(); i != e; ++i)
-	///	i->Dump(std::cout);
+	/// for (auto it = work_group->WorkItemsBegin(),
+	///		e = work_group->WorkItemsEnd();
+	///		it != e;
+	///		++it)
 	/// \endcode
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin() {
+	///
+	std::vector<std::unique_ptr<WorkItem>>::iterator getWorkItemsBegin()
+	{
 		return work_items.begin();
 	}
 	
 	/// Return a past-the-end iterator to the list of work-items
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd() {
+	std::vector<std::unique_ptr<WorkItem>>::iterator getWorkItemsEnd()
+	{
 		return work_items.end();
 	}
 
@@ -232,16 +247,20 @@ public:
 	/// print them)
 	///
 	/// \code
-	/// for (auto i = work_group->WavefrontsBegin(),
-	///		e = work_group->WavefrontsEnd(); i != e; ++i)
-	///	i->Dump(std::cout);
+	/// for (auto it = work_group->WavefrontsBegin(),
+	///		e = work_group->WavefrontsEnd();
+	///		it != e;
+	///		++it)
 	/// \endcode
-	std::vector<std::unique_ptr<Wavefront>>::iterator WavefrontsBegin() {
+	///
+	std::vector<std::unique_ptr<Wavefront>>::iterator getWavefrontsBegin()
+	{
 		return wavefronts.begin();
 	}
 	
 	/// Return a past-the-end iterator to the list of wavefronts
-	std::vector<std::unique_ptr<Wavefront>>::iterator WavefrontsEnd() {
+	std::vector<std::unique_ptr<Wavefront>>::iterator getWavefrontsEnd()
+	{
 		return wavefronts.end();
 	}
 };
@@ -250,3 +269,4 @@ public:
 }  // namespace
 
 #endif
+

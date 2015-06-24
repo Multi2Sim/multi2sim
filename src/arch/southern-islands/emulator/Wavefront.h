@@ -141,7 +141,8 @@ public:
 	unsigned getSregUint(int sreg_id) const;
 
 	/// Return pointer to a workitem inside this wavefront
-	WorkItem *getWorkItem(int id_in_wavefront) {
+	WorkItem *getWorkItem(int id_in_wavefront)
+	{
 		assert(id_in_wavefront >= 0 && id_in_wavefront < (int) work_item_count);
 		return work_items_begin[id_in_wavefront].get();
 	}
@@ -156,12 +157,20 @@ public:
 	/// given relative to the first work-item in the wavefront
 	bool isWorkItemActive(int id_in_wavefront);
 
-	/// Setters
-	///
-	/// Set work_item_count
-	void setWorkItemCount(unsigned work_item_count) { this->work_item_count = work_item_count; }
 
-	/// Set work_item_count++
+
+
+	//
+	// Setters
+	//
+
+	/// Set number of work-items
+	void setWorkItemCount(unsigned work_item_count)
+	{
+		this->work_item_count = work_item_count;
+	}
+
+	/// Increment the number of work-items
 	void incWorkItemCount() { work_item_count++; }
 
 	/// Set PC
@@ -176,7 +185,10 @@ public:
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a scalar memory read operation.
-	void setScalarMemRead(bool scalar_mem_read) { this->scalar_mem_read = scalar_mem_read; }
+	void setScalarMemRead(bool scalar_mem_read)
+	{
+		this->scalar_mem_read = scalar_mem_read;
+	}
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a memory wait operation.
@@ -192,7 +204,9 @@ public:
 
 	/// Flag set during instruction emulation.
 	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) 
-		{ this->vector_mem_global_coherency = vector_mem_global_coherency; }
+	{
+		this->vector_mem_global_coherency = vector_mem_global_coherency;
+	}
 
 	/// Set scalar register as an unsigned int
 	void setSregUint(int id, unsigned int value);
@@ -266,18 +280,19 @@ public:
 	/// iterators. This is an example of how to dump all work-items in the
 	/// wavefront:
 	/// \code
-	///	for (auto i = wavefront->WorkItemsBegin(),
-	///			e = wavefront->WorkItemsEnd(); i != e; ++i)
-	///		i->Dump(std::cout);
+	///	for (auto it = wavefront->getWorkItemsBegin(),
+	///			e = wavefront->getWorkItemsEnd();
+	///			it != e;
+	///			++it)
 	/// \endcode
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsBegin()
+	std::vector<std::unique_ptr<WorkItem>>::iterator getWorkItemsBegin()
 	{
 		return work_items_begin;
 	}
 
 	/// Return a past-the-end iterator for the list of work-items in the
 	/// wavefront.
-	std::vector<std::unique_ptr<WorkItem>>::iterator WorkItemsEnd()
+	std::vector<std::unique_ptr<WorkItem>>::iterator getWorkItemsEnd()
 	{
 		return work_items_end;
 	}

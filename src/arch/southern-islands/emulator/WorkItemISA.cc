@@ -2087,8 +2087,10 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	// If all wavefronts in work-group reached the barrier, wake them up
 	if (work_group->getWavefrontsAtBarrier() == work_group->getWavefrontsInWorkgroup())
 	{
-		for (auto i = work_group->WavefrontsBegin(),
-			e = work_group->WavefrontsEnd(); i != e; ++i)
+		for (auto i = work_group->getWavefrontsBegin(),
+				e = work_group->getWavefrontsEnd();
+				i != e;
+				++i)
 			(*i)->setAtBarrier(false);
 
 		work_group->setWavefrontsAtBarrier(0);

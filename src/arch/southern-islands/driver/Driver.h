@@ -123,9 +123,10 @@ class Driver : public comm::Driver
 
 public:
 
-	/// Maximum work goup buffer size
-	static const unsigned MaxWorkGroupBufferSize = 1024 * 1024;
-	
+	//
+	// Error class
+	//
+
 	/// Error related with the Southern Islands driver
 	class Error : public misc::Error
 	{
@@ -137,10 +138,36 @@ public:
 			AppendPrefix("Southern Islands driver");
 		}
 	};
+
+
+
+
+	//
+	// Static fields
+	//
 	
+	/// Maximum work goup buffer size
+	static const unsigned MaxWorkGroupBufferSize = 1024 * 1024;
+	
+	/// Debugger
+	static misc::Debug debug;
+
 	/// Obtain instance of the singleton
 	static Driver *getInstance();
-	
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
+
+
+
+	//
+	// Member functions
+	//
+
 	/// Constructor
 	Driver() : comm::Driver("Southern Islands",
 			"/dev/southern-islands")
@@ -154,15 +181,6 @@ public:
 			int code,
 			unsigned args_ptr);
 	
-	/// Debugger
-	static misc::Debug debug;
-
-	/// Register command-line options
-	static void RegisterOptions();
-
-	/// Process command-line options
-	static void ProcessOptions();
-
 	/// Get reference to the main program list
 	std::vector<std::unique_ptr<Program>> &getPrograms() { return programs; }
 
