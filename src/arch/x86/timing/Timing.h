@@ -98,6 +98,9 @@ public:
 
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
+
+	/// Destroy the singleton if allocated.
+	static void Destroy() { instance = nullptr; }
 	
 	/// Constructor
 	Timing() : comm::Timing("x86")
