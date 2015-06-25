@@ -21,6 +21,7 @@
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkItem.h>
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/Misc.h>
 
@@ -33,7 +34,9 @@ namespace SI
 
 std::unique_ptr<Emulator> Emulator::instance;
 
-misc::Debug Emulator::debug;
+misc::Debug Emulator::isa_debug;
+
+std::string Emulator::isa_debug_file;
 
 
 Emulator *Emulator::getInstance()
@@ -333,11 +336,21 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 
 void Emulator::RegisterOptions()
 {
+	// Get command line object
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();
+	command_line->setCategory("Southern Islands");
+	
+	// Option --si-debug-isa <file>
+	command_line->RegisterString("--si-debug-isa <file>", isa_debug_file,
+			"Debug information for dynamic execution of Southern "
+			"Islands instructions, tracking state changes in "
+			"register values and memory positions.");
 }
 
 
 void Emulator::ProcessOptions()
 {
+	isa_debug.setPath(isa_debug_file);
 }
 	
 	
