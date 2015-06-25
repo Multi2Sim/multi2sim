@@ -31,9 +31,9 @@ namespace SI
 TEST(TestISASOP2, S_ADD_U32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	// Build instruction -  S_add_U32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
@@ -130,9 +130,9 @@ TEST(TestISASOP2, S_ADD_U32)
 TEST(TestISASOP2, S_ADD_I32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	
 	// Build instruction -  S_add_I32 s2, scc, s0, s1
@@ -230,9 +230,9 @@ TEST(TestISASOP2, S_ADD_I32)
 TEST(TestISASOP2, S_SUB_I32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	
 	// Build instruction -  S_SUB_I32 s2, scc, s0, s1
@@ -330,9 +330,9 @@ TEST(TestISASOP2, S_SUB_I32)
 TEST(TestISASOP2, S_MIN_U32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	
 	// Build instruction -  S_MIN_U32 s2, scc, s0, s1
@@ -424,9 +424,9 @@ TEST(TestISASOP2, S_MIN_U32)
 TEST(TestISASOP2, S_MAX_I32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	
 	// Build instruction -  S_MAX_I32 s2, scc, s0, s1
