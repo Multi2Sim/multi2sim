@@ -158,7 +158,7 @@ private:
 	std::unique_ptr<mem::Memory> instruction_memory;
 	std::unique_ptr<char[]> instruction_buffer;
 	unsigned instruction_address = 0;
-	unsigned instruction_size = 0;
+	unsigned instruction_buffer_size = 0;
 
 	// Local memory top to assign to local arguments.
 	// Initially it is equal to the size of local variables in 
@@ -331,8 +331,9 @@ public:
 	/// Get instruction address in instruction memory
 	unsigned getInstructionAddress() const { return instruction_address; }
 
-	/// Get size of instructions
-	unsigned getInstructionSize() const { return instruction_size; }
+	/// Get size of instruction buffer
+	unsigned getInstructionBufferSize() const { 
+			return instruction_buffer_size; }
 
 	/// Get user element object
 	BinaryUserElement *getUserElement(int idx)
@@ -521,7 +522,15 @@ public:
 	
 	/// Move work groups in the running list to the completed list.
 	/// Note that this function only takes a single work group id.
-	void RunningToCompleted(long work_group_id);
+	///
+	/// \param work_group_id 
+	/// 	ID of work group to move to the completed list
+	///
+	/// \return An iterator to the next element in the running list is
+	/// returned. If the moved element was the last in the runnning list, 
+	/// then a past-the-end iterator is returned. If the work group ID was
+	/// not found, an exception is thrown.
+	std::list<WorkGroup *>::iterator RunningToCompleted(long work_group_id);
 	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);
