@@ -246,6 +246,13 @@ bool Timing::help = false;
 int Timing::frequency = 1000;
 
 
+Timing::Timing() : comm::Timing("x86")
+{
+	// Configure frequency domain with the frequency given by the user
+	ConfigureFrequencyDomain(frequency);
+}
+
+
 Timing *Timing::getInstance()
 {
 	// Instance already exists

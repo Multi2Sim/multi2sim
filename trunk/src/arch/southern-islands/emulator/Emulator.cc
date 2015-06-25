@@ -51,7 +51,7 @@ Emulator *Emulator::getInstance()
 }
 
 
-Emulator::Emulator() : comm::Emulator("Southern Islands")
+Emulator::Emulator() : comm::Emulator("SouthernIslands")
 {
 	// Disassemler
 	disassembler = Disassembler::getInstance();

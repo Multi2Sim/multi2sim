@@ -73,6 +73,10 @@ class Timing : public comm::Timing
 
 public:
 
+	//
+	// Error class
+	//
+
 	/// User error
 	class Error : public misc::Error
 	{
@@ -83,11 +87,36 @@ public:
 			AppendPrefix("Southern Islands timing simulator");
 		}
 	};
+
+
+
+
+	//
+	// Static fields
+	//
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
+	/// Parse the configuration file
+	static void ParseConfiguration(misc::IniFile *ini_file);
+
+	/// Return the simulation level set by command-line option
+	/// '--si-sim-kind'.
+	static comm::Arch::SimKind getSimKind() { return sim_kind; }
+
+
+
+
+	//
+	// Class members
+	//
 	
 	/// Constructor
-	Timing() : comm::Timing("Southern Islands")
-	{
-	}
+	Timing();
 
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
@@ -124,26 +153,6 @@ public:
 		assert(index >= 0 && index < (int) entry_modules.size());
 		return entry_modules[index];
 	}
-	
-	
-	
-	
-	//
-	// Configuration
-	//
-
-	/// Register command-line options
-	static void RegisterOptions();
-
-	/// Process command-line options
-	static void ProcessOptions();
-
-	/// Parse the configuration file
-	static void ParseConfiguration(misc::IniFile *ini_file);
-
-	/// Return the simulation level set by command-line option
-	/// '--si-sim-kind'.
-	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 };
 
 

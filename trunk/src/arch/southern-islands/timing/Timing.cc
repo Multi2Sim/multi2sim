@@ -230,6 +230,13 @@ const std::string Timing::help_message =
 bool Timing::help = false;
 
 int Timing::frequency = 1000;
+	
+	
+Timing::Timing() : comm::Timing("SouthernIslands")
+{
+	// Configure frequency domain with the frequency given by the user
+	ConfigureFrequencyDomain(frequency);
+}
 
 
 Timing *Timing::getInstance()
@@ -666,6 +673,16 @@ void Timing::ProcessOptions()
 
 void Timing::ParseConfiguration(misc::IniFile *ini_file)
 {
+	// Section [General]
+	std::string section = "General";
+
+	// Frequency domain
+	frequency = ini_file->ReadInt(section, "Frequency", frequency);
+	if (!esim::Engine::isValidFrequency(frequency))
+		throw Error(misc::fmt("%s: The value for 'Frequency' "
+				"must be between 1MHz and 1000GHz.\n",
+				ini_file->getPath().c_str()));
+
 }
 
 
@@ -763,7 +780,11 @@ bool Timing::Run()
 	// Still running
 	return TRUE;
 */
-	return false;
+	// Advance one cycle in GPU device
+	gpu.Run();
+
+	// Still running
+	return true;
 }
 
 }

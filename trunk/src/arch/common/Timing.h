@@ -58,15 +58,18 @@ public:
 	/// function must be implemented by every derived class.
 	virtual bool Run() = 0;
 
-	/// Configure the frequency domain
-	void setFrequencyDomain(const std::string &name, int frequency)
-	{
-		esim::Engine *engine = esim::Engine::getInstance();
-		frequency_domain = engine->RegisterFrequencyDomain(name, frequency);
-	}
+	/// Configure the frequency domain with the given frequency. After this
+	/// call, the frequency domain can be retrieved with a call to
+	/// getFrequencyDomain().
+	void ConfigureFrequencyDomain(int frequency);
 
-	/// Return the frequency domain identifier
-	esim::FrequencyDomain *getFrequencyDomain() { return frequency_domain; }
+	/// Return the frequency domain associated with this timing simulator.
+	/// A previous call to ConfigureFrequencyDomain() must have been made.
+	esim::FrequencyDomain *getFrequencyDomain()
+	{
+		assert(frequency_domain);
+		return frequency_domain;
+	}
 
 	/// Return the current cycle in the frequency domain of this timing
 	/// simulator.

@@ -103,10 +103,7 @@ public:
 	static void Destroy() { instance = nullptr; }
 	
 	/// Constructor
-	Timing() : comm::Timing("x86")
-	{
-		setFrequencyDomain("x86", frequency);
-	}
+	Timing();
 
 	/// get CPU instance pointer
 	CPU *getCPU() { return &cpu; }
