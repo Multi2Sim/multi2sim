@@ -321,9 +321,18 @@ void NDRange::ImageIntoUAVTable(
 void NDRange::WaitingToRunning()
 {
 	// Add waiting work-groups to the list of running work-groups
-	for (auto i = waiting_work_groups.begin(), e = waiting_work_groups.end(); 
-		i != e; ++i)
-		running_work_groups.push_back(std::move(*i));
+	for (auto it = waiting_work_groups.begin(), 
+			e = waiting_work_groups.end(); 
+			it != e; ++it)
+	{
+		WorkGroup *work_group = addWorkGroup(*it);
+		running_work_groups.push_back(work_group);
+	}
+
+	// Erase elements in waiting_work_groups, they are now in 
+	// running_work_groups
+	waiting_work_groups.erase(waiting_work_groups.begin(), 
+			waiting_work_groups.end());
 }
 
 
@@ -332,8 +341,35 @@ void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 	// Add work-group to waiting list
 	waiting_work_groups.push_back(work_group_id);
 }
-	
-	
+			
+void NDRange::RunningToCompleted(long work_group_id)
+{
+	// Add work-group to completed list
+	completed_work_groups.push_back(work_group_id);
+
+	for (auto it = RunningWorkGroupBegin(), 
+			e = RunningWorkGroupEnd(); 
+			it != e; ++it)
+	{
+		// Find work_group in the list with a matching ID
+		if ((*it)->getId() == work_group_id)
+		{
+			// Save pointer to work group
+			WorkGroup *work_group = *it;
+
+			// Remove work group from Running list
+			running_work_groups.erase(it);
+
+			// Remove work group from overall list
+			RemoveWorkGroup(work_group);
+
+			// Return if the work group was found and removed
+			return;
+		}
+	}
+}
+
+
 WorkGroup *NDRange::addWorkGroup(int id)
 {
 	// Create work-group
@@ -352,7 +388,6 @@ WorkGroup *NDRange::addWorkGroup(int id)
 void NDRange::RemoveWorkGroup(WorkGroup *work_group)
 {
 	assert(work_group->work_groups_iterator != work_groups.end());
-	work_group->work_groups_iterator = work_groups.end();
 	work_groups.erase(work_group->work_groups_iterator);
 }
 

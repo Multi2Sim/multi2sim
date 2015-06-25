@@ -54,12 +54,6 @@ class Driver : public comm::Driver
 	// Primary list of Kernels
 	std::vector<std::unique_ptr<Kernel>> kernels;
 
-	// Primary list of NDRanges
-	std::vector<std::unique_ptr<NDRange>> ndranges;
-
-	// Number of ndranges currently running
-	int ndranges_running = 0;
-
 	// Indicates whether memory is fused or not
 	bool fused = false;
 
@@ -114,13 +108,7 @@ class Driver : public comm::Driver
 
 	// Add kernel
 	Kernel *AddKernel(int kernel_id, const std::string &func, Program *program);
-
-	// Add ndrange
-	NDRange *AddNDRange();
 	
-	// Remove ndrange
-	void RemoveNDRange(unsigned id);
-
 public:
 
 	//
@@ -202,16 +190,6 @@ public:
 	{
 		assert(id < kernels.size());
 		return kernels[id].get();
-	}
-
-	/// Get count of ndranges in list
-	int getNumNDRanges() const { return ndranges.size(); }
-
-	/// Get ndrange by its Id
-	NDRange *getNDRangeById(unsigned id)
-	{
-		assert(id >= 0 && id < ndranges.size());
-		return ndranges[id].get();
 	}
 };
 

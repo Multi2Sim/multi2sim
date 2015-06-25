@@ -129,9 +129,9 @@ private:
 	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
 	// Work-group lists, IDs only
-	std::list<long> waiting_work_groups;
-	std::list<long> running_work_groups;
-	std::list<long> completed_work_groups;
+	std::vector<long> waiting_work_groups;
+	std::list<WorkGroup *> running_work_groups;
+	std::vector<long> completed_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent = false;
@@ -384,13 +384,13 @@ public:
 	bool isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
-	std::list<long>::iterator RunningWorkGroupBegin()
+	std::list<WorkGroup *>::iterator RunningWorkGroupBegin()
 	{ 
 		return running_work_groups.begin();
 	}
 
 	// Return an iterator to the past-to-end iterator in the running_work_group list.
-	std::list<long>::iterator RunningWorkGroupEnd()
+	std::list<WorkGroup *>::iterator RunningWorkGroupEnd()
 	{ 
 		return running_work_groups.end();
 	}
@@ -514,9 +514,15 @@ public:
 			WorkItem::ImageDescriptor *image_descriptor,
 			unsigned uav);
 
-	/// Move workgroups in waiting list to running list
+	/// Move workgroups in waiting list to running list. This function
+	/// will move all the work groups in the waiting list to the running
+	/// list
 	void WaitingToRunning();	
-
+	
+	/// Move work groups in the running list to the completed list.
+	/// Note that this function only takes a single work group id.
+	void RunningToCompleted(long work_group_id);
+	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);
 };
