@@ -18,7 +18,6 @@
  */
 
 #include <arch/southern-islands/disassembler/Disassembler.h>
-#include <arch/southern-islands/driver/Driver.h>
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkItem.h>
@@ -81,19 +80,16 @@ void Emulator::Dump(std::ostream &os) const
 
 bool Emulator::Run()
 {
-	// Get SI Driver
-	Driver *driver = Driver::getInstance();
-
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
-	if (!driver->getNumNDRanges())
+	if (!getNumNDRanges())
 		return false;
 
 	// NDRange list is shared by CL/GL driver
-	for (int i = 0; i < driver->getNumNDRanges(); i++)
+	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it !=e; ++it)
 	{
 		// Get NDRange
-		NDRange *ndrange = driver->getNDRangeById(i);
+		NDRange *ndrange = it->get();
 		
 		// Move waiting work groups to running work groups 
 		ndrange->WaitingToRunning();
@@ -107,10 +103,8 @@ bool Emulator::Run()
 			wg_e = ndrange->RunningWorkGroupEnd(); 
 			wg_i != wg_e; ++wg_i)
 		{
-			auto workgroup = misc::new_unique<WorkGroup>(ndrange, (*wg_i));
-
-			for (auto wf_i = workgroup->getWavefrontsBegin(), 
-					wf_e = workgroup->getWavefrontsEnd();
+			for (auto wf_i = (*wg_i)->getWavefrontsBegin(), 
+					wf_e = (*wg_i)->getWavefrontsEnd();
 					wf_i != wf_e;
 					++wf_i)
 				(*wf_i)->Execute();
@@ -352,6 +346,25 @@ void Emulator::RemoveNDRange(NDRange *ndrange)
 	ndranges.erase(ndrange->ndranges_iterator);
 }
 
+NDRange *Emulator::getNDRangeById(unsigned id)
+{
+	// Check that id is in range
+	assert(id >= 0 && id < (unsigned) getNumNDRanges());
 
+	// Iterate through NDRange list
+	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it !=e; ++it)
+	{
+		// Get NDRange
+		NDRange *ndrange = it->get();
+			
+		// Check ID
+		if ((unsigned) ndrange->getId() == id)
+			return ndrange;
+	}
+
+	// If no ndrange is found return null
+	return nullptr;
 }
 
+
+} // SI namespace

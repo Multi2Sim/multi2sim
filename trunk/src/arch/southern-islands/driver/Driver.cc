@@ -149,21 +149,5 @@ Kernel *Driver::AddKernel(int kernel_id, const std::string &func, Program *progr
 }
 
 
-NDRange *Driver::AddNDRange()
-{
-	// Create new ndrange and insert it to ndrange list
-	ndranges.emplace_back(misc::new_unique<NDRange>());
-
-	// Return
-	return ndranges.back().get();
-}
-
-
-void Driver::RemoveNDRange(unsigned id)
-{
-	// Remove element from vector
-	ndranges.erase(ndranges.begin() + id);
-}
-
 }  // namepsace SI
 

@@ -623,7 +623,11 @@ void Wavefront::Execute()
 		if (work_group->getWavefrontsCompletedEmu() == 
 			work_group->getWavefrontsInWorkgroup())
 		{
+			// Mark work group as finished
 			work_group->setFinishedEmu(true);
+			
+			// Move work group to the completed list
+			ndrange->RunningToCompleted(work_group->getId());
 		}
 	}
 }
