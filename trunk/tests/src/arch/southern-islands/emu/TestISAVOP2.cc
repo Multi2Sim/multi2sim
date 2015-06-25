@@ -31,9 +31,9 @@ namespace SI
 TEST(TestISAVOP2, V_ADD_I32)
 {
 	// Initialize environment using the ObjectPool
-	auto pool = misc::new_unique<ObjectPool>();
-	WorkItem *work_item = pool->getWorkItem();
-	Inst *inst = pool->getInst();
+	ObjectPool pool;
+	WorkItem *work_item = pool.getWorkItem();
+	Inst *inst = pool.getInst();
 
 	
 	// Build instruction -  v_add_i32 v2, vcc, v0, v1

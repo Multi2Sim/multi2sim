@@ -65,7 +65,6 @@ src_arch_x86_timing_test_SOURCES = \
 	
 src_arch_southern_islands_emu_test_LDADD = \
 	$(top_builddir)/src/arch/southern-islands/emulator/libemulator.a \
-	$(top_builddir)/src/arch/southern-islands/driver/libdriver.a \
 	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
 	$(top_builddir)/src/arch/common/libcommon.a \
 	$(top_builddir)/src/memory/libmemory.a \
