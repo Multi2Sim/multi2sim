@@ -136,7 +136,7 @@ void NDRange::SetupInstructionMemory(const char *buf, unsigned size, unsigned pc
 	instruction_memory->Map(pc, size,
 		mem::Memory::AccessRead | mem::Memory::AccessWrite);
 	instruction_memory->Write(pc, size, buf);
-	instruction_size = size;
+	instruction_buffer_size = size;
 	instruction_address = pc;
 
 	// Save a copy of buffer in NDRange
@@ -342,7 +342,7 @@ void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 	waiting_work_groups.push_back(work_group_id);
 }
 			
-void NDRange::RunningToCompleted(long work_group_id)
+std::list<WorkGroup *>::iterator NDRange::RunningToCompleted(long work_group_id)
 {
 	// Add work-group to completed list
 	completed_work_groups.push_back(work_group_id);
@@ -358,15 +358,19 @@ void NDRange::RunningToCompleted(long work_group_id)
 			WorkGroup *work_group = *it;
 
 			// Remove work group from Running list
-			running_work_groups.erase(it);
+			auto next_it = running_work_groups.erase(it);
 
 			// Remove work group from overall list
 			RemoveWorkGroup(work_group);
 
 			// Return if the work group was found and removed
-			return;
+			return next_it;
 		}
 	}
+
+	// Throw an error if the work_group ID is not found
+	throw Emulator::Error(misc::fmt("%s: invalid work-group ID (%d)", 
+		__FUNCTION__, (int) work_group_id));
 }
 
 

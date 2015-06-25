@@ -184,6 +184,9 @@ public:
 		return work_items[id_in_work_group].get();
 	}
 
+	/// Get finished_emu flag
+	bool getFinishedEmu() { return finished_emu; }
+
 
 
 

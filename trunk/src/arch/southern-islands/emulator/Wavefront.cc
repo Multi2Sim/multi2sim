@@ -170,12 +170,15 @@ void Wavefront::Execute()
 	assert(!finished);
 	
 	// Grab the instruction at PC and update the pointer 
-	unsigned inst_addr = ndrange->getInstructionAddress();
-	unsigned inst_size = ndrange->getInstructionSize();
-	char *inst_buffer = ndrange->getInstructionBuffer();
-	ndrange->getInstructionMemory()->Read(
-			inst_addr, inst_size, inst_buffer);
-	inst.Decode(inst_buffer, pc);
+	unsigned total_inst_buffer_size = ndrange->getInstructionBufferSize();
+	assert(total_inst_buffer_size > pc);
+
+	unsigned remaining_inst_buffer_size = total_inst_buffer_size - pc;
+
+	auto inst_buffer = misc::new_unique_array<char>(remaining_inst_buffer_size);
+	ndrange->getInstructionMemory()->Read(pc, remaining_inst_buffer_size, 
+			inst_buffer.get());
+	inst.Decode(inst_buffer.get(), pc);
 
 	this->inst_size = inst.getSize();
 	InstOpcode opcode = inst.getOpcode();
@@ -615,7 +618,7 @@ void Wavefront::Execute()
 	if (!finished)
 	{
 		// Increment the PC
-		pc += inst_size;
+		pc += this->inst_size;
 	}
 	else
 	{
@@ -624,10 +627,7 @@ void Wavefront::Execute()
 			work_group->getWavefrontsInWorkgroup())
 		{
 			// Mark work group as finished
-			work_group->setFinishedEmu(true);
-			
-			// Move work group to the completed list
-			ndrange->RunningToCompleted(work_group->getId());
+			work_group->setFinishedEmu(true);	
 		}
 	}
 }

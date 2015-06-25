@@ -101,13 +101,28 @@ bool Emulator::Run()
 		// Iterate over running work groups
 		for (auto wg_i = ndrange->RunningWorkGroupBegin(), 
 			wg_e = ndrange->RunningWorkGroupEnd(); 
-			wg_i != wg_e; ++wg_i)
+			wg_i != wg_e;)
 		{
+			
 			for (auto wf_i = (*wg_i)->getWavefrontsBegin(), 
 					wf_e = (*wg_i)->getWavefrontsEnd();
 					wf_i != wf_e;
 					++wf_i)
 				(*wf_i)->Execute();
+
+			if ((*wg_i)->getFinishedEmu())
+			{
+				// Move work group to the completed list
+				wg_i = ndrange->RunningToCompleted(
+						(*wg_i)->getId());
+				
+				// Re-evaluate end iterator
+				wg_e = ndrange->RunningWorkGroupEnd();
+			}
+			else
+			{
+				++wg_i;
+			}
 		}
 
 		// Let OpenCL driver know that all work-groups from this nd-range
