@@ -201,7 +201,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -216,7 +216,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 		
 		break;
 	}
@@ -239,7 +239,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -254,7 +254,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -269,7 +269,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -285,7 +285,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -307,7 +307,7 @@ void Wavefront::Execute()
 				work_item->Execute(opcode, &inst);
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -360,7 +360,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -383,7 +383,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -406,7 +406,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -429,7 +429,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -452,7 +452,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
  	
 		break;
 	}
@@ -493,7 +493,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -531,7 +531,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -575,7 +575,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 	}
@@ -601,7 +601,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::debug << "\n";
+		Emulator::isa_debug << "\n";
 
 		break;
 

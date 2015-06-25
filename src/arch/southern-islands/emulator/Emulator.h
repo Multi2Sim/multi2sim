@@ -100,6 +100,9 @@ private:
 
 	// Size of wavefront
 	static int wavefront_size;
+
+	// Debug file for ISA
+	static std::string isa_debug_file;
 	
 	// Singleton
 	static std::unique_ptr<Emulator> instance;
@@ -189,7 +192,7 @@ public:
 	//
 
 	/// Debugger for ISA traces
-	static misc::Debug debug;
+	static misc::Debug isa_debug;
 
 	/// Initialize a buffer description of type EmuBufferDesc
 	static void createBufferDesc(unsigned base_addr, unsigned size,
