@@ -32,7 +32,7 @@ ObjectPool::ObjectPool()
 	emulator = Emulator::getInstance();
 
 	// Allocate NDRange
-	ndrange = misc::new_unique<NDRange>(emulator);
+	ndrange = misc::new_unique<NDRange>();
 	
 	// Set local size, global size, and work dimension
 	int work_dim = 1;
