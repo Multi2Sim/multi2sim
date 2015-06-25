@@ -34,6 +34,14 @@ Timing::Timing(const std::string &name) :
 	arch_pool->RegisterTiming(name, this);
 }
 
+
+void Timing::ConfigureFrequencyDomain(int frequency)
+{
+	esim::Engine *engine = esim::Engine::getInstance();
+	assert(!frequency_domain);
+	frequency_domain = engine->RegisterFrequencyDomain(name, frequency);
+}
+
 	
 void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 {

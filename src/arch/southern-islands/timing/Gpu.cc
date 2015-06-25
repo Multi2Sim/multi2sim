@@ -25,5 +25,22 @@ namespace SI
 
 int Gpu::num_compute_units = 32;
 
+
+Gpu::Gpu()
+{
+	// Create compute units
+	compute_units.reserve(num_compute_units);
+	for (int i = 0; i < num_compute_units; i++)
+		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i));
+}
+
+
+void Gpu::Run()
+{
+	// Advance one cycle in each compute unit
+	for (auto &compute_unit : compute_units)
+		compute_unit->Run();
+}
+
 }
 

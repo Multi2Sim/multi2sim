@@ -23,6 +23,9 @@
 namespace SI
 {
 
+void ComputeUnit::Run()
+{
+}
 
 }
 

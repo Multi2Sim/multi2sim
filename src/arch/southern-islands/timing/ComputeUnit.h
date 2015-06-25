@@ -39,6 +39,9 @@ public:
 	{
 	}
 
+	/// Advance compute unit state by one cycle
+	void Run();
+
 	/// Return the index of this compute unit in the GPU
 	int getIndex() const { return index; }
 
