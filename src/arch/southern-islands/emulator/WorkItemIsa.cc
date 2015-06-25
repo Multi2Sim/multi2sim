@@ -80,8 +80,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	WriteSReg(INST.sdst, value.as_uint);
 
 	// Debug
-	if (Emulator::debug)
-		Emulator::debug << misc::fmt("wf%d: S%u<=(%u)(%u,%gf)", 
+	if (Emulator::isa_debug)
+		Emulator::isa_debug << misc::fmt("wf%d: S%u<=(%u)(%u,%gf)", 
 				wavefront->getId(), INST.sdst, addr, 
 				value.as_uint, value.as_float);
 
@@ -116,12 +116,12 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("wf%d: ", wavefront->getId());
+		Emulator::isa_debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (int i = 0; i < 2; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emulator::isa_debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i * 4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -159,12 +159,12 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("wf%d: ", wavefront->getId());
+		Emulator::isa_debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (int i = 0; i < 4; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emulator::isa_debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -201,12 +201,12 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("wf%d: ", wavefront->getId());
+		Emulator::isa_debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (int i = 0; i < 8; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emulator::isa_debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -243,12 +243,12 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("wf%d: ", wavefront->getId());
+		Emulator::isa_debug << misc::fmt("wf%d: ", wavefront->getId());
 		for (int i = 0; i < 16; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
+			Emulator::isa_debug << misc::fmt("S%u<=(%u)(%u,%gf) ", INST.sdst + i, 
 				addr + i*4, value[i].as_uint, 
 				value[i].as_float);
 		}
@@ -290,13 +290,13 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emulator::isa_debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (int i = 0; i < 2; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emulator::isa_debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -336,13 +336,13 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emulator::isa_debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (int i = 0; i < 4; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emulator::isa_debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -383,13 +383,13 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emulator::isa_debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (int i = 0; i < 8; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emulator::isa_debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -430,13 +430,13 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 	}
 
 	// Debug
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
+		Emulator::isa_debug << misc::fmt("S[%u,%u] <= (addr %u): ", INST.sdst, INST.sdst+3, 
 			m_addr);
 		for (int i = 0; i < 8; i++)
 		{
-			Emulator::debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
+			Emulator::isa_debug << misc::fmt("S%u<=(%u,%gf) ", INST.sdst + i,
 				value[i].as_uint, value[i].as_float);
 		}
 	}
@@ -483,10 +483,10 @@ void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, carry.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", carry.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -525,10 +525,10 @@ void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%u) ", INST.sdst, sum.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
 	}
 }
 #undef INST
@@ -566,10 +566,10 @@ void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d) ", INST.sdst, diff.as_int);
-		Emulator::debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d) ", INST.sdst, diff.as_int);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", ovf.as_uint);
 	}
 }
 #undef INST
@@ -613,10 +613,10 @@ void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, s0_min.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%u) ", INST.sdst, min.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%d) ", s0_min.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%u) ", INST.sdst, min.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%d) ", s0_min.as_uint);
 	}
 }
 #undef INST
@@ -661,10 +661,10 @@ void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d) ", INST.sdst, max.as_int);
-		Emulator::debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d) ", INST.sdst, max.as_int);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
 	}
 }
 #undef INST
@@ -708,10 +708,10 @@ void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%u) ", INST.sdst, max.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%u) ", INST.sdst, max.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", s0_max.as_uint);
 	}
 }
 #undef INST
@@ -745,9 +745,9 @@ void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
 	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
 	}
 }
 #undef INST
@@ -784,10 +784,10 @@ void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -828,11 +828,11 @@ void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -869,10 +869,10 @@ void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -913,11 +913,11 @@ void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -958,11 +958,11 @@ void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1003,11 +1003,11 @@ void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1048,11 +1048,11 @@ void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, result_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1098,10 +1098,10 @@ void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1147,10 +1147,10 @@ void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1196,10 +1196,10 @@ void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d) ", INST.sdst, result.as_int);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d) ", INST.sdst, result.as_int);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1231,9 +1231,9 @@ void WorkItem::ISA_S_MUL_I32_Impl(Inst *inst)
 	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
 	}
 }
 #undef INST
@@ -1283,10 +1283,10 @@ void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
 
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 	
 }
@@ -1316,9 +1316,9 @@ void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
 	WriteSReg(INST.sdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d)", INST.sdst, result.as_int);
 	}
 }
 #undef INST
@@ -1363,10 +1363,10 @@ void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d)", INST.sdst, sum.as_int);
-		Emulator::debug << misc::fmt("scc<=(%u)", ovf.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d)", INST.sdst, sum.as_int);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", ovf.as_uint);
 	}
 }
 #undef INST
@@ -1402,10 +1402,10 @@ void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(%d)", INST.sdst, product.as_int);
-		Emulator::debug << misc::fmt("scc<=(%u)", ovf.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(%d)", INST.sdst, product.as_int);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", ovf.as_uint);
 	}
 }
 #undef INST
@@ -1431,10 +1431,10 @@ void WorkItem::ISA_S_MOV_B64_Impl(Inst *inst)
 	WriteSReg(INST.sdst + 1, s0_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x)", INST.sdst + 1, s0_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x)", INST.sdst + 1, s0_hi.as_uint);
 	}
 }
 #undef INST
@@ -1460,9 +1460,9 @@ void WorkItem::ISA_S_MOV_B32_Impl(Inst *inst)
 	WriteSReg(INST.sdst, s0.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
 	}
 }
 #undef INST
@@ -1488,9 +1488,9 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, s0.as_uint);
 	}
 }
 #undef INST
@@ -1526,11 +1526,11 @@ void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
 	wavefront->setPC(s0_lo.as_uint - 4);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, pc + 4);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
-		Emulator::debug << misc::fmt("PC<=(0x%x)", wavefront->getPC());
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, pc + 4);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, s0_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("PC<=(0x%x)", wavefront->getPC());
 	}
 }
 #undef INST
@@ -1576,13 +1576,13 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, exec_lo.as_uint);
-		Emulator::debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, exec_hi.as_uint);
-		Emulator::debug << misc::fmt("exec_lo<=(0x%x) ", exec_new_lo.as_uint);
-		Emulator::debug << misc::fmt("exec_hi<=(0x%x) ", exec_new_hi.as_uint);
-		Emulator::debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst, exec_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("S%u<=(0x%x) ", INST.sdst + 1, exec_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("exec_lo<=(0x%x) ", exec_new_lo.as_uint);
+		Emulator::isa_debug << misc::fmt("exec_hi<=(0x%x) ", exec_new_hi.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u)", nonzero.as_uint);
 	}
 }
 #undef INST
@@ -1618,9 +1618,9 @@ void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("wf%d: scc<=(%u) (%u ==? %u)", 
+		Emulator::isa_debug << misc::fmt("wf%d: scc<=(%u) (%u ==? %u)", 
 			wavefront->getId(), result.as_uint, s0.as_int,
 			s1.as_int);
 	}
@@ -1654,9 +1654,9 @@ void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) (%u >? %u) ", result.as_uint,
+		Emulator::isa_debug << misc::fmt("scc<=(%u) (%u >? %u) ", result.as_uint,
 			s0.as_uint, s1.as_uint);
 	}
 }
@@ -1689,9 +1689,9 @@ void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1723,9 +1723,9 @@ void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1757,9 +1757,9 @@ void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1791,9 +1791,9 @@ void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1825,9 +1825,9 @@ void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1859,9 +1859,9 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
 	WriteSReg(Inst::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("scc<=(%u) ", result.as_uint);
+		Emulator::isa_debug << misc::fmt("scc<=(%u) ", result.as_uint);
 	}
 }
 #undef INST
@@ -1940,18 +1940,18 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 			se_simm16 * 4 + 4 - inst->getSize());
 
 		// Print isa debug information.
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("wf%d: SCC=%u (taken)", 
+			Emulator::isa_debug << misc::fmt("wf%d: SCC=%u (taken)", 
 				wavefront->getId(), scc.as_uint);
 		}
 	}
 	else
 	{
 		// Print isa debug information.
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("wf%d: SCC=%u (not taken)", 
+			Emulator::isa_debug << misc::fmt("wf%d: SCC=%u (not taken)", 
 				wavefront->getId(), scc.as_uint);
 		}
 	}
@@ -2025,9 +2025,9 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 			se_simm16 * 4 + 4 - inst->getSize());
 
 		// Print isa debug information.
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u (taken)", 
+			Emulator::isa_debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u (taken)", 
 				wavefront->getId(), exec.as_uint, 
 				execz.as_uint);
 		}
@@ -2035,9 +2035,9 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 	else
 	{
 		// Print isa debug information.
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u " 
+			Emulator::isa_debug << misc::fmt("wf%d: EXEC=0x%x, EXECZ=%u " 
 				"(not taken)", wavefront->getId(), 
 				exec.as_uint, execz.as_uint);
 		}
@@ -2076,7 +2076,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	wavefront->setAtBarrier(true);
 	work_group->incWavefrontsAtBarrier();
 
-	Emulator::debug << misc::fmt("Group %d wavefront %d reached barrier "
+	Emulator::isa_debug << misc::fmt("Group %d wavefront %d reached barrier "
 		"(%d reached, %d left)\n",
 		work_group->getId(), wavefront->getId(), 
 		work_group->getWavefrontsAtBarrier(),
@@ -2095,7 +2095,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 
 		work_group->setWavefrontsAtBarrier(0);
 
-		Emulator::debug << misc::fmt("Group %d completed barrier\n", work_group->getId());
+		Emulator::isa_debug << misc::fmt("Group %d completed barrier\n", work_group->getId());
 	}
 }
 
@@ -2138,9 +2138,9 @@ void WorkItem::ISA_V_MOV_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2161,9 +2161,9 @@ void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
 	WriteSReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2207,9 +2207,9 @@ void WorkItem::ISA_V_CVT_F64_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, result_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
 			INST.vdst, value.as_double);
 	}
 }
@@ -2233,9 +2233,9 @@ void WorkItem::ISA_V_CVT_F32_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2259,9 +2259,9 @@ void WorkItem::ISA_V_CVT_F32_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2299,9 +2299,9 @@ void WorkItem::ISA_V_CVT_U32_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			value.as_uint);
 	}
 }
@@ -2341,9 +2341,9 @@ void WorkItem::ISA_V_CVT_I32_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			value.as_int);
 	}
 }
@@ -2374,9 +2374,9 @@ void WorkItem::ISA_V_CVT_F32_F64_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2413,9 +2413,9 @@ void WorkItem::ISA_V_CVT_F64_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, value_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V[%u:+1]<=(%lgf) ", id,
 			INST.vdst, value.as_double);
 	}
 }
@@ -2449,9 +2449,9 @@ void WorkItem::ISA_V_TRUNC_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, value.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			value.as_float);
 	}
 }
@@ -2492,9 +2492,9 @@ void WorkItem::ISA_V_RCP_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, rcp.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			rcp.as_float);
 	}
 }
@@ -2535,9 +2535,9 @@ void WorkItem::ISA_V_SQRT_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, srt.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			srt.as_float);
 	}
 }
@@ -2574,9 +2574,9 @@ void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (sin %gf) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (sin %gf) ", id, 
 			INST.vdst, result.as_float, s0.as_float);
 	}
 }
@@ -2613,9 +2613,9 @@ void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (cos %gf) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (cos %gf) ", id, 
 			INST.vdst, result.as_float, s0.as_float);
 	}
 }
@@ -2641,9 +2641,9 @@ void WorkItem::ISA_V_NOT_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -2684,9 +2684,9 @@ void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst+m0.as_uint, s0.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u+%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V[%u+%u]<=(0x%x) ", id, 
 			INST.vdst, m0.as_uint, s0.as_uint);
 	}
 }
@@ -2713,9 +2713,9 @@ void WorkItem::ISA_V_MOVRELS_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, s0.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V[%u]<=(0x%x) ", id, 
 			INST.vdst, s0.as_uint);
 	}
 }
@@ -2752,9 +2752,9 @@ void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -2782,9 +2782,9 @@ void WorkItem::ISA_V_ADD_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, sum.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			sum.as_float);
 	}
 }
@@ -2812,9 +2812,9 @@ void WorkItem::ISA_V_SUB_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, dif.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			dif.as_float);
 	}
 }
@@ -2842,9 +2842,9 @@ void WorkItem::ISA_V_SUBREV_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, dif.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			dif.as_float);
 	}
 }
@@ -2888,9 +2888,9 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, product.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -2918,9 +2918,9 @@ void WorkItem::ISA_V_MUL_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, product.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -2952,9 +2952,9 @@ void WorkItem::ISA_V_MUL_I32_I24_Impl(Inst *inst)
 	WriteVReg(INST.vdst, product.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			product.as_int);
 	}
 }
@@ -2989,9 +2989,9 @@ void WorkItem::ISA_V_MIN_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, min.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
 			min.as_float);
 	}
 }
@@ -3026,9 +3026,9 @@ void WorkItem::ISA_V_MAX_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf)", id, INST.vdst,
 			max.as_float);
 	}
 }
@@ -3063,9 +3063,9 @@ void WorkItem::ISA_V_MAX_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			max.as_int);
 	}
 }
@@ -3100,9 +3100,9 @@ void WorkItem::ISA_V_MIN_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, min.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			min.as_int);
 	}
 }
@@ -3137,9 +3137,9 @@ void WorkItem::ISA_V_MIN_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, min.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
 			min.as_uint);
 	}
 }
@@ -3174,9 +3174,9 @@ void WorkItem::ISA_V_MAX_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)", id, INST.vdst,
 			max.as_uint);
 	}
 }
@@ -3209,9 +3209,9 @@ void WorkItem::ISA_V_LSHRREV_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) (%u >> %u) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) (%u >> %u) ", id,
 			INST.vdst, result.as_uint, s1.as_uint, s0.as_uint);
 	}
 }
@@ -3244,9 +3244,9 @@ void WorkItem::ISA_V_ASHRREV_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d, %u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d, %u) ", id, INST.vdst,
 			result.as_int, result.as_uint);
 	}
 }
@@ -3274,9 +3274,9 @@ void WorkItem::ISA_V_LSHL_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -3309,9 +3309,9 @@ void WorkItem::ISA_V_LSHLREV_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) (%u << %u) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) (%u << %u) ", id,
 			INST.vdst, result.as_uint, s1.as_uint, s0.as_uint);
 	}
 }
@@ -3343,9 +3343,9 @@ void WorkItem::ISA_V_AND_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) (%u & %u) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) (%u & %u) ", id, 
 			INST.vdst, result.as_uint, s0.as_uint, s1.as_uint);
 	}
 }
@@ -3373,9 +3373,9 @@ void WorkItem::ISA_V_OR_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) (%u | %u) ", 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) (%u | %u) ", 
 			id, INST.vdst, result.as_uint, s0.as_uint,
 			s1.as_uint);
 	}
@@ -3404,9 +3404,9 @@ void WorkItem::ISA_V_XOR_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%u ^ %u) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%u ^ %u) ", id, 
 			INST.vdst, result.as_uint, s0.as_uint, s1.as_uint);
 	}
 }
@@ -3444,9 +3444,9 @@ void WorkItem::ISA_V_MAC_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -3473,9 +3473,9 @@ void WorkItem::ISA_V_MADMK_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, dst.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%f) (%f * %f + %f)", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%f) (%f * %f + %f)", id, 
 			INST.vdst, dst.as_float, s0.as_float, K.as_float, 
 			s1.as_float);
 	}
@@ -3508,11 +3508,11 @@ void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) (%d + %d) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) (%d + %d) ", id, 
 			INST.vdst, sum.as_int, s0.as_int, s1.as_int);
-		Emulator::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
+		Emulator::isa_debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3542,11 +3542,11 @@ void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			dif.as_int);
-		Emulator::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
+		Emulator::isa_debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3576,11 +3576,11 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			dif.as_int);
-		Emulator::debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
+		Emulator::isa_debug << misc::fmt("vcc<=(%u) ", carry.as_uint);
 	}
 }
 #undef INST
@@ -3622,9 +3622,9 @@ void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, float_pack.as_uint32);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			float_pack.as_uint32);
 	}	
 }
@@ -3657,9 +3657,9 @@ void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3687,9 +3687,9 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3725,9 +3725,9 @@ void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3755,9 +3755,9 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3842,9 +3842,9 @@ void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3872,9 +3872,9 @@ void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3902,9 +3902,9 @@ void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3932,9 +3932,9 @@ void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3962,9 +3962,9 @@ void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -3992,9 +3992,9 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4030,9 +4030,9 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4067,9 +4067,9 @@ void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4097,9 +4097,9 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: vcc<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
 			id_in_wavefront, result.as_uint);
 	}
 }
@@ -4161,9 +4161,9 @@ void WorkItem::ISA_V_CNDMASK_B32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u, %gf) (s1=%u, s0=%u)", 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u, %gf) (s1=%u, s0=%u)", 
 			id, INST.vdst, result.as_uint, 
 			result.as_float, s1.as_uint, s0.as_uint);
 	}
@@ -4206,9 +4206,9 @@ void WorkItem::ISA_V_ADD_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, sum.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			sum.as_float);
 	}
 }
@@ -4250,9 +4250,9 @@ void WorkItem::ISA_V_SUBREV_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, diff.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			diff.as_float);
 	}
 }
@@ -4284,9 +4284,9 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, product.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (%gf * %gf) ", id, 
 			INST.vdst, product.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -4328,9 +4328,9 @@ void WorkItem::ISA_V_MUL_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf)", id, 
 			INST.vdst, result.as_float, s0.as_float, s1.as_float);
 	}
 }
@@ -4364,9 +4364,9 @@ void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, product.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d)", id, INST.vdst,
 			product.as_int);
 	}
 }
@@ -4409,9 +4409,9 @@ void WorkItem::ISA_V_MAX_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4457,9 +4457,9 @@ void WorkItem::ISA_V_MAD_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4494,9 +4494,9 @@ void WorkItem::ISA_V_MAD_U32_U24_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4532,11 +4532,11 @@ void WorkItem::ISA_V_BFE_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ",
+		Emulator::isa_debug << misc::fmt("t%d: value:s0:%u, offset:s1:%u, width:s2:%u ",
 			id, s0.as_uint, s1.as_uint, s2.as_uint);
-		Emulator::debug << misc::fmt("V%u<=(0x%x) ", INST.vdst, result.as_uint);
+		Emulator::isa_debug << misc::fmt("V%u<=(0x%x) ", INST.vdst, result.as_uint);
 	}
 }
 #undef INST
@@ -4583,9 +4583,9 @@ void WorkItem::ISA_V_BFE_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d) ", id, INST.vdst,
 			result.as_int);
 	}
 }
@@ -4618,9 +4618,9 @@ void WorkItem::ISA_V_BFI_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4666,9 +4666,9 @@ void WorkItem::ISA_V_FMA_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf + %gf) ", 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) (%gf*%gf + %gf) ", 
 			id, INST.vdst, result.as_float, 
 			s0.as_float, s1.as_float, s2.as_float);
 	}
@@ -4715,9 +4715,9 @@ void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x, %u) ({0x%x,0x%x} >> %u) ",
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x, %u) ({0x%x,0x%x} >> %u) ",
 			id, INST.vdst, result.as_uint, 
 			result.as_uint, src.as_reg[1], src.as_reg[0], 
 			src2.as_uint);
@@ -4814,9 +4814,9 @@ void WorkItem::ISA_V_MUL_LO_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4867,9 +4867,9 @@ void WorkItem::ISA_V_MUL_HI_U32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			result.as_uint);
 	}
 }
@@ -4900,9 +4900,9 @@ void WorkItem::ISA_V_MUL_LO_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%d)(%d*%d) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%d)(%d*%d) ", id, 
 			INST.vdst, result.as_int, s0.as_int, s1.as_int);
 	}
 }
@@ -4939,9 +4939,9 @@ void WorkItem::ISA_V_FRACT_F32_VOP3a_Impl(Inst *inst)
 	WriteVReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
 			result.as_float);
 	}
 }
@@ -4983,9 +4983,9 @@ void WorkItem::ISA_V_CMP_LT_F32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5028,9 +5028,9 @@ void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5080,9 +5080,9 @@ void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5133,9 +5133,9 @@ void WorkItem::ISA_V_CMP_NEQ_F32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5178,9 +5178,9 @@ void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5231,9 +5231,9 @@ void WorkItem::ISA_V_CMP_LT_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5276,9 +5276,9 @@ void WorkItem::ISA_V_CMP_EQ_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5321,9 +5321,9 @@ void WorkItem::ISA_V_CMP_LE_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5366,9 +5366,9 @@ void WorkItem::ISA_V_CMP_GT_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:%u]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:%u]<=(%u) ",
 			id_in_wavefront, INST.vdst, INST.vdst + 1, 
 			result.as_uint);
 	}
@@ -5411,9 +5411,9 @@ void WorkItem::ISA_V_CMP_NE_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5456,9 +5456,9 @@ void WorkItem::ISA_V_CMP_GE_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5504,9 +5504,9 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(Inst::RegisterExec, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:%u],EXEC<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:%u],EXEC<=(%u) ",
 			id_in_wavefront, INST.vdst, INST.vdst+1,
 			result.as_uint);
 	}
@@ -5545,9 +5545,9 @@ void WorkItem::ISA_V_CMP_LT_U32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5578,9 +5578,9 @@ void WorkItem::ISA_V_CMP_LE_U32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5611,9 +5611,9 @@ void WorkItem::ISA_V_CMP_GT_U32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5644,9 +5644,9 @@ void WorkItem::ISA_V_CMP_LG_U32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5677,9 +5677,9 @@ void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%u) ",
 			id_in_wavefront, INST.vdst,
 			result.as_uint);
 	}
@@ -5738,9 +5738,9 @@ void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, max.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u]<=(%d) ",
+		Emulator::isa_debug << misc::fmt("t%d: V[%u]<=(%d) ",
 			id_in_wavefront, INST.vdst, max.as_int);
 	}
 }
@@ -5796,9 +5796,9 @@ void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, median.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V[%u]<=(%d) ",
+		Emulator::isa_debug << misc::fmt("t%d: V[%u]<=(%d) ",
 			id_in_wavefront, INST.vdst, median.as_int);
 	}
 }
@@ -5840,12 +5840,12 @@ void WorkItem::ISA_V_LSHR_B64_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, result_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
 			id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		Emulator::debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
+		Emulator::isa_debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
 			result_hi.as_uint);
 	}
 }
@@ -5887,12 +5887,12 @@ void WorkItem::ISA_V_ASHR_I64_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, result_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u]<=(0x%x) ",
 			id_in_wavefront, INST.vdst,
 			result_lo.as_uint);
-		Emulator::debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
+		Emulator::isa_debug << misc::fmt("S[%u]<=(0x%x) ", INST.vdst + 1,
 			result_hi.as_uint);
 	}
 }
@@ -6004,9 +6004,9 @@ void WorkItem::ISA_V_ADD_F64_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, result_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
 			id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -6131,9 +6131,9 @@ void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
 	WriteVReg(INST.vdst + 1, result_hi.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
+		Emulator::isa_debug << misc::fmt("t%d: S[%u:+1]<=(%lgf) ",
 			id_in_wavefront, INST.vdst,
 			value.as_double);
 	}
@@ -6183,11 +6183,11 @@ void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.sdst, carry_out.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u) ", id, INST.vdst,
 			sum.as_uint);
-		Emulator::debug << misc::fmt("vcc<=(%u) ", carry_out.as_uint);
+		Emulator::isa_debug << misc::fmt("vcc<=(%u) ", carry_out.as_uint);
 	}
 }
 #undef INST
@@ -6256,9 +6256,9 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, data.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%f = P10(%f) * Lamda2(%f) + P0(%f)) \n", 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%f = P10(%f) * Lamda2(%f) + P0(%f)) \n", 
 			id, INST.vdst, data.as_float, p10.as_float, 
 			s.as_float, p0.as_float);
 	}
@@ -6310,9 +6310,9 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 	WriteVReg(INST.vdst, data.as_uint);
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%f += P20(%f) * Lamda2(%f)) \n", 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%f += P20(%f) * Lamda2(%f)) \n", 
 			id, INST.vdst, data.as_float, p20.as_float, 
 			s.as_float);
 	}
@@ -6412,18 +6412,18 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug && INST.gds)
+	if (Emulator::isa_debug && INST.gds)
 	{
-		Emulator::debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		Emulator::debug << misc::fmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
+		Emulator::isa_debug << misc::fmt("GDS[%u]<=(%u,%f) ", addr1.as_uint, data0.as_uint,
 			data0.as_float);
 	}
 	else
 	{
-		Emulator::debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
 			addr0.as_uint, data0.as_uint, data0.as_float);
-		Emulator::debug << misc::fmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
+		Emulator::isa_debug << misc::fmt("LDS[%u]<=(%u,%f) ", addr1.as_uint, data1.as_uint, 
 			data1.as_float);
 	}
 }
@@ -6478,14 +6478,14 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug && INST.gds)
+	if (Emulator::isa_debug && INST.gds)
 	{
-		Emulator::debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: GDS[%u]<=(%u,%f) ", id, 
 			addr.as_uint, data0.as_uint, data0.as_float);
 	}
 	else
 	{
-		Emulator::debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: LDS[%u]<=(%u,%f) ", id, 
 			addr.as_uint, data0.as_uint, data0.as_float);
 	}
 }
@@ -6534,14 +6534,14 @@ void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug && INST.gds)
+	if (Emulator::isa_debug && INST.gds)
 	{
-		Emulator::debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ubyte[0]);
 	}
 	else
 	{
-		Emulator::debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ubyte[0]);
 	}
 }
@@ -6590,14 +6590,14 @@ void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug && INST.gds)
+	if (Emulator::isa_debug && INST.gds)
 	{
-		Emulator::debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: GDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ushort[0]);
 	}
 	else
 	{
-		Emulator::debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: LDS[%u]<=(0x%x) ", id, 
 			addr.as_uint, data0.as_ushort[0]);
 	}
 
@@ -6649,9 +6649,9 @@ void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
 			INST.vdst, addr.as_uint, data.as_uint);
 	}
 
@@ -6711,12 +6711,12 @@ void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(0x%x) ", id, 
 			INST.vdst, addr.as_uint+INST.offset0*4, 
 			data0.as_uint);
-		Emulator::debug << misc::fmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
+		Emulator::isa_debug << misc::fmt("V%u<=(0x%x)(0x%x) ", INST.vdst+1, 
 			addr.as_uint+INST.offset1*4, data1.as_uint);
 	}
 }
@@ -6770,9 +6770,9 @@ void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
 			addr.as_uint, data.as_int);
 	}
 }
@@ -6826,9 +6826,9 @@ void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
 			addr.as_uint, data.as_uint);
 	}
 }
@@ -6881,9 +6881,9 @@ void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(%d) ", id, INST.vdst,
 			addr.as_uint, data.as_int);
 	}
 
@@ -6938,9 +6938,9 @@ void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
 	}
 
 	// Print isa debug information.
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(0x%x)(%u) ", id, INST.vdst,
 			addr.as_uint, data.as_uint);
 	}
 }
@@ -7013,9 +7013,9 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	global_mem_access_addr = addr;
 	global_mem_access_size = bytes_to_read;
 
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7083,9 +7083,9 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	global_mem_access_addr = addr;
 	global_mem_access_size = bytes_to_read;
 
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7158,9 +7158,9 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	global_mem_access_addr = addr;
 	global_mem_access_size = bytes_to_write;
 
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7228,9 +7228,9 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	global_mem_access_addr = addr;
 	global_mem_access_size = bytes_to_write;
 
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: (%u)<=V%u(%d) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: (%u)<=V%u(%d) ", id,
 			addr, INST.vdata, value.as_int);
 	}
 }
@@ -7320,9 +7320,9 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	global_mem_access_addr = addr;
 	global_mem_access_size = bytes_to_write;
 
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%d) ", id,
 			INST.vdata, addr, value.as_int);
 	}
 }
@@ -7400,15 +7400,15 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	global_mem_access_size = bytes_to_read;
 
 	// TODO Print value based on type
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 			INST.vdata, addr, value.as_uint, value.as_float);
 		if (INST.offen)
-			Emulator::debug << misc::fmt("offen ");
+			Emulator::isa_debug << misc::fmt("offen ");
 		if (INST.idxen)
-			Emulator::debug << misc::fmt("idxen ");
-		Emulator::debug << misc::fmt("%u,%u,%u,%u,%u,%u ", base, mem_offset, 
+			Emulator::isa_debug << misc::fmt("idxen ");
+		Emulator::isa_debug << misc::fmt("%u,%u,%u,%u,%u,%u ", base, mem_offset, 
 			inst_offset, off_vgpr, idx_vgpr, stride);
 	}
 }
@@ -7478,9 +7478,9 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 		WriteVReg(INST.vdata + i, value.as_uint);
 
 		// TODO Print value based on type
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+			Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
@@ -7566,9 +7566,9 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 		WriteVReg(INST.vdata + i, value.as_uint);
 
 		// TODO Print value based on type
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
+			Emulator::isa_debug << misc::fmt("t%d: V%u<=(%u)(%u,%gf) ", id,
 				INST.vdata + i, addr+4*i, value.as_uint,
 				value.as_float);
 		}
@@ -7640,9 +7640,9 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 	global_mem_access_size = bytes_to_write;
 
 	// TODO Print value based on type
-	if (Emulator::debug)
+	if (Emulator::isa_debug)
 	{
-		Emulator::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
+		Emulator::isa_debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
 			addr, INST.vdata, value.as_uint,
 			value.as_float);
 	}
@@ -7708,9 +7708,9 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 		global_mem->Write(addr+4*i, 4, (char *)&value);
 
 		// TODO Print value based on type
-		if (Emulator::debug)
+		if (Emulator::isa_debug)
 		{
-			Emulator::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
+			Emulator::isa_debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
 				addr, INST.vdata+i, value.as_uint,
 				value.as_float);
 		}
@@ -7781,12 +7781,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
 		global_mem->Write(addr+4*i, 4, (char *)&value);
 
 		// TODO Print value based on type
-		if (Emulator::debug)
-		{
-			Emulator::debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ", id,
-				addr, INST.vdata+i, value.as_uint,
+		if (Emulator::isa_debug)
+			Emulator::isa_debug << misc::fmt("t%d: (%u)<=V%u(%u,%gf) ",
+				id,
+				addr,
+				INST.vdata + i,
+				value.as_uint,
 				value.as_float);
-		}
 	}
 
 	// Record last memory access for the detailed simulator.
