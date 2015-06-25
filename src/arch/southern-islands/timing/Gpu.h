@@ -67,6 +67,9 @@ public:
 	// Class members
 	//
 
+	/// Constructor
+	Gpu();
+
 	/// Return the compute unit with the given index.
 	ComputeUnit *getComputeUnit(int index) const
 	{
@@ -85,6 +88,9 @@ public:
 	{
 		return compute_units.end();
 	}
+
+	/// Advance one cycle in the GPU state
+	void Run();
 };
 
 }
