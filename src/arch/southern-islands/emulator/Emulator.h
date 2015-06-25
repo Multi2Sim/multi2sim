@@ -134,12 +134,11 @@ private:
 	// Current ND-Range
 	NDRange *ndrange = nullptr;
 
-	// Work-group lists
-	std::list<WorkGroup *> waiting_work_groups;
-	std::list<WorkGroup *> running_work_groups;
-
 	// Number of OpenCL kernels executed
 	int ndrange_count = 0;              
+	
+	// Number of ndranges currently running
+	int ndranges_running = 0;
 	
 	// Number of OpenCL work groups executed
 	long long work_group_count = 0; 
@@ -244,6 +243,11 @@ public:
 	/// All other references to this ND-range are invalidated.
 	void RemoveNDRange(NDRange *ndrange);
 	
+	/// Returns an NDRange based on the NDRange ID field. If the id does not
+	// refer to a valid NDRange, a nullptr is returned.
+	/// \param id ID with which to select and NDRange.
+	NDRange *getNDRangeById(unsigned id);
+
 	/// Run one iteration of the emulation loop
 	bool Run() override;
 
@@ -297,6 +301,22 @@ public:
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
+	/// Increment ndranges_running
+	void incNDRangesRunning() 
+	{ 
+		// Check number of ndranges running before incrementing
+		assert(ndranges_running >= 0); 
+		ndranges_running++; 
+	}
+	
+	/// Decrement ndranges_running
+	void decNDRangesRunning() 
+	{ 
+		// Check number number of ndranges running after decrementing
+		ndranges_running--; 
+		assert(ndranges_running  >= 0); 
+	}
+	
 	/// Increment work_group_count
 	void incWorkGroupCount() { work_group_count++; }
 

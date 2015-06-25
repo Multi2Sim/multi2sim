@@ -550,7 +550,10 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arugments
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
+	// Arguments
 	int kernel_id;
 	int work_dim;
 	unsigned global_offset_ptr;
@@ -593,7 +596,7 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 			__FUNCTION__, kernel_id));
 
 	// Create ND-Range
-	NDRange *ndrange = AddNDRange();
+	NDRange *ndrange = emulator->addNDRange();
 	debug << misc::fmt("\tcreated ndrange %d\n", ndrange->getId());
 
 	// Initialize from kernel binary encoding dictionary
@@ -657,6 +660,9 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
 	// Read arguments
 	int ndrange_id;                                                          
 	unsigned work_group_start;                                           
@@ -666,7 +672,7 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &work_group_count);
 
 	// Get ndrange
-	NDRange *ndrange = getNDRangeById(ndrange_id);
+	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 
 	// Check for ndrange
 	if (!ndrange)                                                            
@@ -705,13 +711,16 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
 	int ndrange_id;
 
 	// Read arguments
 	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
 
 	// Get ndrange
-	NDRange *ndrange = getNDRangeById(ndrange_id);
+	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 	
 	// Check for ndrange
 	if (!ndrange)                                                            
@@ -749,6 +758,9 @@ int Driver::CallNDRangePassMemObjs(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
 	int kernel_id;
 	int ndrange_id;
 	unsigned table_ptr;
@@ -761,7 +773,7 @@ int Driver::CallNDRangePassMemObjs(comm::Context *context,
 	memory->Read(args_ptr + 12, sizeof(int), (char *) &cb_ptr);
 	
 	// Get NDRange
-	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 	if (!ndrange)
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
 			__FUNCTION__, ndrange_id));
@@ -824,6 +836,9 @@ int Driver::CallNDRangeFlush(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
 	// TODO - add support for timing simulator
 
 	// If there's not a timing simulator, no need to flush
@@ -836,7 +851,7 @@ int Driver::CallNDRangeFlush(comm::Context *context,
 	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
 	
 	// Get NDRange
-	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 	if (!ndrange)
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
 			__FUNCTION__, ndrange_id));
@@ -862,19 +877,22 @@ int Driver::CallNDRangeFree(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	
 	int ndrange_id;                                                          
 	
 	// Read arguments
 	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
 	
 	// Get NDRange
-	SI::NDRange *ndrange = getNDRangeById(ndrange_id);
+	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 	if (!ndrange)
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
 			__FUNCTION__, ndrange_id));
 
 	// Free       
-	RemoveNDRange(ndrange_id);
+	emulator->RemoveNDRange(ndrange);
 
 	// Return
 	return 0;
@@ -888,13 +906,14 @@ int Driver::CallNDRangeStart(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
 
 	//X86Emu *x86_emu = ctx->emu;                                              
 	//OpenclDriver *driver = x86_emu->opencl_driver;                           
 
-	// Make sure ndranges are greater than or equal to 0
-	assert(ndranges_running >= 0);                                   
-	ndranges_running++;                                              
+	// Increment number of ndranges that are running
+	emulator->incNDRangesRunning();
 
 	// TODO - x86 emulator might need to keep track of ndranges running too
 	//if (driver->x86_cpu)                                                     
@@ -911,9 +930,14 @@ int Driver::CallNDRangeEnd(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Decrement number of ndranges running
-	ndranges_running--;                                              
-	assert(ndranges_running >= 0);                                   
+	// Get emulator instance
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+
+	//X86Emu *x86_emu = ctx->emu;                                              
+	//OpenclDriver *driver = x86_emu->opencl_driver;                           
+
+	// Decrement number of ndranges that are running
+	emulator->decNDRangesRunning();
 
 	// TODO - x86 emulator might need to keep track of ndranges
 	//if (driver->x86_cpu)                                                     
