@@ -415,15 +415,12 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 	if (!arg || arg->getType() != ArgTypeValue)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
-	// Check valid size 
-	if (size != arg->getSize())
-		throw Error(misc::fmt("Argument %d: Size %d expected, but "
-				"%d found", index, arg->getSize(), size));
-
-	// Save value 
+	// Save value and size
 	auto value_ptr = misc::new_unique_array<char>(size);
 	memory->Read(host_ptr, size, value_ptr.get());
 	arg->setValue(value_ptr.get());
+	arg->setSize(size);
+	arg->setSetFlag(true);
 
 	// No return value 
 	return 0;

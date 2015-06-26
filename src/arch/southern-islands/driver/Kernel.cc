@@ -130,9 +130,9 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
-			int data_type_int = misc::StringToInt(*token_list.begin());
+			const char *data_type_string = (*token_list.begin()).c_str();
+			int data_type_int = arg_data_type_map.MapString(*token_list.begin(), err);
 			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
-			const char *data_type_string = arg_data_type_map.MapValue(data_type, err);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid data "
 						"type: %s.\n%s",
@@ -151,7 +151,7 @@ void Kernel::LoadMetaDataV3()
 			Expect(token_list, "1");
 			int constant_buffer_num = misc::StringToInt(*token_list.begin());
 
-			// Token 5 - Conastant offset
+			// Token 5 - Constant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			int constant_offset = misc::StringToInt(*token_list.begin());
