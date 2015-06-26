@@ -14,20 +14,12 @@ TESTS += \
 	\
 	src_network_test \
 	\
-	src_arch_x86_timing_test \
-	\
-	src_arch_southern_islands_emu_test \
-	\
 	src_memory_test
 
 check_PROGRAMS = \
 	src_lib_esim_test \
 	\
 	src_network_test \
-	\
-	src_arch_x86_timing_test \
-	\
-	src_arch_southern_islands_emu_test \
 	\
 	src_memory_test
 

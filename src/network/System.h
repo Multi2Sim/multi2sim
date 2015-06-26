@@ -54,13 +54,6 @@ public:
 /// Network system singleton.
 class System
 {
-	//
-	// Error messages
-	//
-
-	static const char *err_config_note;
-
-
 
 	// Debugger file
 	static std::string debug_file;
@@ -93,7 +86,7 @@ class System
 	static std::unique_ptr<System> instance;
 
 	// General frequency if not specified in the network section
-	static int frequency; 
+	static int frequency;
 	
 	/// Message size in stand alone network
 	static int message_size;
@@ -137,6 +130,12 @@ class System
 	static void EventTypeReceiveHandler(esim::Event *, esim::Frame *);
 
 public:
+
+	//
+	// Error messages
+	//
+
+	static const char *err_config_note;
 
 	//
 	// Event driven simulation event types
