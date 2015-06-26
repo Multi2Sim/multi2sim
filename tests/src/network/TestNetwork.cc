@@ -20,6 +20,7 @@
 #include "gtest/gtest.h"
 
 #include <string>
+#include <regex>
 
 #include <network/System.h>
 #include <lib/cpp/IniFile.h>
@@ -42,7 +43,7 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	// cleanup singleton instance
 	Cleanup();
 	// Setup configuration file
-	std::string config = 
+	std::string config =
 			"[ General ]\n"
 			"Frequency = 2000000";
 
@@ -54,11 +55,6 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	System *network_system = System::getInstance();
 	EXPECT_TRUE(network_system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt(".*%s: The value for 'Frequency' "
-			"must be between 1MHz and 1000GHz.\n.*",
-			ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -69,8 +65,10 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, 
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt(".*%s: The value for 'Frequency' "
+						"must be between 1MHz and 1000GHz.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_network_two_defaults_missing)
@@ -91,10 +89,6 @@ TEST(TestSystemConfiguration, section_network_two_defaults_missing)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-			" zero/non-existent.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -105,8 +99,10 @@ TEST(TestSystemConfiguration, section_network_two_defaults_missing)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);}, 
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: test:\nDefault values can not be"
+						" zero/non-existent.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_network_missing_over_negative)
@@ -128,10 +124,6 @@ TEST(TestSystemConfiguration, section_network_missing_over_negative)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-			" zero/non-existent.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -142,8 +134,10 @@ TEST(TestSystemConfiguration, section_network_missing_over_negative)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: test:\nDefault values can not be"
+						" zero/non-existent.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_network_non_existant_default)
@@ -165,10 +159,6 @@ TEST(TestSystemConfiguration, section_network_non_existant_default)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-			" zero/non-existent.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -179,8 +169,10 @@ TEST(TestSystemConfiguration, section_network_non_existant_default)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: test:\nDefault values can not be"
+						" zero/non-existent.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_network_default_negative)
@@ -203,10 +195,6 @@ TEST(TestSystemConfiguration, section_network_default_negative)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-			" negative.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -217,8 +205,9 @@ TEST(TestSystemConfiguration, section_network_default_negative)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: test:\nDefault values can not be negative.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_network_negative_packet_size)
@@ -242,10 +231,6 @@ TEST(TestSystemConfiguration, section_network_negative_packet_size)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-			" negative.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -256,8 +241,9 @@ TEST(TestSystemConfiguration, section_network_negative_packet_size)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: test:\nDefault values can not be negative.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_node_unknown_type)
@@ -284,10 +270,6 @@ TEST(TestSystemConfiguration, section_node_unknown_type)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Node type 'anything' is not "
-			"supported.\n.*",	ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -299,8 +281,10 @@ TEST(TestSystemConfiguration, section_node_unknown_type)
 		message = error.getMessage();
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Node type 'anything' is not "
+						"supported.\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
@@ -328,10 +312,6 @@ TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Invalid argument for Node "
-			"'N1'\n.*",	ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -343,8 +323,9 @@ TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 		message = error.getMessage();
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Invalid argument for Node 'N1'\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_node_switch_bandwidth)
@@ -373,9 +354,6 @@ TEST(TestSystemConfiguration, section_node_switch_bandwidth)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Invalid argument for Node "
-			"'S1'\n.*",	ini_file.getPath().c_str());
 
 	// Test body
 	std::string message;
@@ -391,9 +369,9 @@ TEST(TestSystemConfiguration, section_node_switch_bandwidth)
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_FALSE(network->getNodeByName("S1") != nullptr);
-
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Invalid argument for Node 'S1'\n.*",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_type)
@@ -423,10 +401,6 @@ TEST(TestSystemConfiguration, section_link_type)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Link type 'anything' is not "
-					"supported.\n.*", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -443,8 +417,9 @@ TEST(TestSystemConfiguration, section_link_type)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Link type 'anything' is not supported.\n.*",
+					ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_source)
@@ -476,10 +451,6 @@ TEST(TestSystemConfiguration, section_link_wrong_source)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Source node 'anything' is invalid"
-					" for link 'S1-S2'.\n", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -496,8 +467,10 @@ TEST(TestSystemConfiguration, section_link_wrong_source)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Source node 'anything' is invalid"
+								" for link 'S1-S2'.\n",
+								ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_no_source)
@@ -528,10 +501,6 @@ TEST(TestSystemConfiguration, section_link_no_source)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Source node is not provided "
-					"for link 'S1-S2'.\n", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -548,8 +517,10 @@ TEST(TestSystemConfiguration, section_link_no_source)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Source node is not provided "
+								"for link 'S1-S2'.\n",
+								ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_destination)
@@ -581,10 +552,6 @@ TEST(TestSystemConfiguration, section_link_wrong_destination)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Destination node 'anything' is "
-			"invalid for link 'S1-S2'.\n", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -601,8 +568,10 @@ TEST(TestSystemConfiguration, section_link_wrong_destination)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Destination node 'anything' is "
+						"invalid for link 'S1-S2'.\n",
+						ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_no_destination)
@@ -633,10 +602,6 @@ TEST(TestSystemConfiguration, section_link_no_destination)
 	System *system = System::getInstance();
 	EXPECT_TRUE(system != nullptr);
 
-	// Expected string
-	std::string expected_str = misc::fmt("%s: Destination node is not provided "
-					"for link 'S1-S2'.\n", ini_file.getPath().c_str());
-
 	// Test body
 	std::string message;
 	try
@@ -653,8 +618,10 @@ TEST(TestSystemConfiguration, section_link_no_destination)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
-			expected_str.c_str());
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Destination node is not provided "
+								"for link 'S1-S2'.\n",
+								ini_file.getPath().c_str()))));
 }
 
 }
