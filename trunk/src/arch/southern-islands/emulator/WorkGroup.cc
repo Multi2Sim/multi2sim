@@ -145,14 +145,19 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				// in wavefront 
 				wavefront = work_item->getWavefront();
 				if (!wavefront->getWorkItemCount())
+				{
+					assert((this->work_items.begin() + lid) < 
+							this->work_items.end());
 					wavefront->setWorkItemsBegin(
 							this->work_items.begin() 
 							+ lid);
-				
-				// Need a past-the-end iterator so add 1
+				}
+				// Need a past-the-end iterator so add tid + 1
+				assert(this->work_items.begin() + lid + 1 <=
+						this->work_items.end());
 				wavefront->setWorkItemsEnd(
 						this->work_items.begin() 
-						+ tid + 1);
+						+ lid + 1);
 				wavefront->incWorkItemCount();
 
 				// Next work-item
