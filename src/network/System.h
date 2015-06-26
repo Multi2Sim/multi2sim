@@ -137,6 +137,9 @@ public:
 
 	static const char *err_config_note;
 
+
+
+
 	//
 	// Event driven simulation event types
 	//
@@ -145,7 +148,6 @@ public:
 	static esim::Event *event_output_buffer;
 	static esim::Event *event_input_buffer;
 	static esim::Event *event_receive;
-	
 
 	/// Network system trace
 	static esim::Trace trace;
@@ -192,6 +194,7 @@ public:
 
 	/// Parse a configuration INI file
 	void ParseConfiguration(misc::IniFile *ini_file);
+
 
 
 

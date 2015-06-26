@@ -21,7 +21,7 @@
 
 #include <string>
 #include <regex>
-
+#include <exception>
 #include <network/System.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Error.h>
@@ -286,6 +286,51 @@ TEST(TestSystemConfiguration, section_node_unknown_type)
 						"supported.\n.*",
 						ini_file.getPath().c_str()))));
 }
+
+TEST(TestSystemConfiguration, section_section_unknown)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"\n"
+			"[Network.test.anything]";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+		fprintf(stderr,"%s\n",message.c_str());
+	}
+	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
+	// FIXME
+	// regular Bracket in regex. \[ and \\[ result in regex_error
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: invalid section (.*anything.)",
+						ini_file.getPath().c_str()))));
+}
+
+// FIXME
+// Add a test to check node without a network setup before that
 
 TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 {
