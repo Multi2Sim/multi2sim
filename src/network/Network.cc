@@ -36,8 +36,8 @@ namespace net
 
 
 Network::Network(const std::string &name) :
-		name(name),
-		routing_table(this)
+						name(name),
+						routing_table(this)
 {
 }
 
@@ -99,7 +99,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 	for (int i = 0; i < config->getNumSections(); i++)
 	{
 		std::string section = config->getSection(i);
-		
+
 		// Tokenize section name
 		std::vector<std::string> tokens;
 		misc::StringTokenize(section, tokens, ".");
@@ -117,6 +117,12 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		// Get name
 		std::string node_name = tokens[3];
 
+		// Make sure node is not duplicate
+		if (getNodeByName(node_name) != nullptr)
+			throw Error(misc::fmt("%s: Node '%s' already exists in the "
+					"network\n", config->getPath().c_str(),
+					node_name.c_str()));
+
 		// Get properties
 		std::string type = config->ReadString(section, "Type");
 		int input_buffer_size = config->ReadInt(section,
@@ -125,6 +131,12 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 				"OutputBufferSize", default_output_buffer_size);
 		int bandwidth = config->ReadInt(section, "BandWidth",
 				default_bandwidth);
+
+		if ((input_buffer_size < 1) || (output_buffer_size < 1) ||
+				(bandwidth < 1))
+			throw Error(misc::fmt("%s: Invalid argument for Node "
+					"'%s'\n%s",	config->getPath().c_str(),
+					node_name.c_str(), System::err_config_note));
 
 		// Create node
 		if (!strcasecmp(type.c_str(), "EndNode"))
@@ -161,25 +173,12 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 							System::getMessageSize();
 			}
 
-			if ((end_node_input_buffer_size < 1) ||
-					(end_node_output_buffer_size < 1))
-			{
-				throw Error(misc::fmt("%s: Invalid buffer size for Node "
-						"'%s'\n%s",	config->getPath().c_str(),
-						node_name.c_str(), System::err_config_note));
-			}
 			addEndNode(end_node_input_buffer_size,
 					end_node_output_buffer_size,
 					node_name, NULL);
 		}
 		else if (!strcasecmp(type.c_str(), "Switch"))
 		{
-			if ((input_buffer_size < 1) || (output_buffer_size < 1)
-					|| (bandwidth < 1))
-				throw Error(misc::fmt("%s: Invalid argument for Switch "
-						"'%s'\n%s",	config->getPath().c_str(),
-						node_name.c_str(),System::err_config_note));
-
 			addSwitch(input_buffer_size, output_buffer_size,
 					bandwidth, node_name);
 		}
@@ -239,27 +238,43 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 		if (strcasecmp(tokens[2].c_str(), "Link"))
 			continue;
 
+		std::string link_name = tokens[3];
+
 		// Get type and create by type
 		std::string type = ini_file->ReadString(section, "Type");
-		if (!strcasecmp(type.c_str(), "Bidirectional"))
+		if (!strcasecmp(type.c_str(), "Bidirectional") ||
+				!strcasecmp(type.c_str(), "Unidirectional"))
 		{
 			// Get source node
 			std::string src_name = ini_file->ReadString(section,
 					"Source");
+
+			if (src_name.empty())
+				throw Error(misc::fmt("%s: Source node is not provided for "
+						"link '%s'.\n",	ini_file->getPath().c_str(),
+						link_name.c_str()));
+
 			Node *source = getNodeByName(src_name);
 			if (!source)
-				throw Error(misc::fmt("%s: %s: invalid node name",
-						section.c_str(),
-						src_name.c_str()));
+				throw Error(misc::fmt("%s: Source node '%s' is invalid "
+						"for link '%s'.\n",	ini_file->getPath().c_str(),
+						src_name.c_str(), link_name.c_str()));
 
 			// Get destination node
 			std::string dst_name = ini_file->ReadString(section,
 					"Dest");
+
+			if (dst_name.empty())
+				throw Error(misc::fmt("%s: Destination node is not provided"
+						" for link '%s'.\n", ini_file->getPath().c_str(),
+						link_name.c_str()));
+
 			Node *destination = getNodeByName(dst_name);
 			if (!destination)
-				throw Error(misc::fmt("%s: %s: invalid node name",
-						section.c_str(),
-						dst_name.c_str()));
+				throw Error(misc::fmt("%s: Destination node '%s' is "
+						"invalid for link '%s'.\n",
+						ini_file->getPath().c_str(), dst_name.c_str(),
+						link_name.c_str()));
 
 			// Get number of virtual channels
 			int num_virtual_channel = ini_file->ReadInt(section,
@@ -270,18 +285,28 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 					default_bandwidth);
 
 			// Add link
-			addBidirectionalLink(tokens[3],
-					source,
-					destination,
-					bandwidth,
-					default_input_buffer_size,
-					default_output_buffer_size,
-					num_virtual_channel);
+			if (!strcasecmp(type.c_str(), "Bidirectional"))
+				addBidirectionalLink(link_name,
+						source,
+						destination,
+						bandwidth,
+						default_input_buffer_size,
+						default_output_buffer_size,
+						num_virtual_channel);
+			else if (!strcasecmp(type.c_str(), "Unidirectional"))
+				addLink(link_name,
+						source,
+						destination,
+						bandwidth,
+						default_input_buffer_size,
+						default_output_buffer_size,
+						num_virtual_channel);
 		}
 		else
 		{
-			throw misc::Panic(misc::fmt("Node type %s not "
-					"supported.", type.c_str()));
+			throw Error(misc::fmt("%s: Link type '%s' is not "
+					"supported.\n%s", ini_file->getPath().c_str(),
+					type.c_str(), System::err_config_note));
 		}
 
 	}
@@ -350,12 +375,12 @@ Node *Network::getNodeByUserData(void *user_data) const
 	// Nothing for null user data
 	if (!user_data)
 		return nullptr;
-	
+
 	// Search node
 	for (auto &node : nodes)
 		if (node->getUserData() == user_data)
 			return node.get();
-	
+
 	// Not found
 	return nullptr;
 }
@@ -386,12 +411,12 @@ void Network::Dump(std::ostream &os) const
 
 
 Message *Network::newMessage(EndNode *source_node, EndNode *destination_node,
-			int size)
+		int size)
 {
 	// Insert the created message into the hashtable
 	message_table.emplace(message_id_counter, misc::new_unique<Message>(
-				message_id_counter, this, source_node, 
-				destination_node, size));
+			message_id_counter, this, source_node,
+			destination_node, size));
 
 	// Get the pointer to the newly created messag
 	Message *message = message_table[message_id_counter].get();
@@ -486,7 +511,7 @@ Message *Network::Send(EndNode *source_node,
 	for (int i = 0; i < message->getNumPacket(); i++)
 	{
 		Packet *packet = message->getPacket(i);
-		
+
 		// Create event frame
 		auto frame = misc::new_shared<Frame>(packet, receive_event);
 
