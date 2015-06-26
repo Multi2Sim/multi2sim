@@ -71,6 +71,7 @@ NDRange::NDRange()
 	// Initialize instruction memor - FIXME to be removed if allocated
 	// statically.
 	instruction_memory = misc::new_unique<mem::Memory>();
+	instruction_memory->setSafe(true);
 }
 
 

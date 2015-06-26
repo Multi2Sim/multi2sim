@@ -61,6 +61,7 @@ Emulator::Emulator() : comm::Emulator("SouthernIslands")
 	video_memory->setSafe(true);
 
 	shared_memory = misc::new_unique<mem::Memory>();
+	shared_memory->setSafe(true);
 	global_memory = video_memory.get();
 }
 
