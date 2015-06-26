@@ -76,7 +76,7 @@ void Link::TransferPacket(Packet *packet)
 {
 	// Get current cycle
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	esim::Event*current_event = esim_engine->getCurrentEvent();
+	esim::Event *current_event = esim_engine->getCurrentEvent();
 	long long cycle = System::getInstance()->getCycle();
 
 	// Retrieve related information

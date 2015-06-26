@@ -78,7 +78,35 @@ public:
 	///
 	void Forward(Packet *packet);
 
-
+	/// Implements the arbiter in the switch. This function takes in 
+	/// an output buffer and returns the input buffer that is authorized
+	/// to send packet to that output buffer. This function would first
+	/// check if the output buffer is already has a linked input buffer
+	/// for current cycle. If yes, the linked input buffer will be 
+	/// returned. Otherwise, a new decision will be made. New decision is
+	/// made in a round-robin fashion. From the input buffer that is 
+	/// linked in previous cycle, the arbiter finds the next input buffer 
+	/// whose first packet need to be forwared to this particular 
+	/// output buffer. The found input buffer is returned. The decision
+	/// will also be written into the output buffer's corresponding 
+	/// fields. If there is no input buffer that can send a packet, 
+	/// a nullptr will be returned.
+	///
+	/// Requirement: 
+	/// 	1. This function needs to be called within an event handler. 
+	///	2. User of this function has to guarantee that the output
+	///	buffer is not in write busy.
+	/// 	3. User of this function has to guarantee that at least one
+	///	input buffer, which is not in read busy, has a packet in front
+	/// 	need to be forwarded to the output buffer.
+	/// 
+	/// \param output_buffer
+	/// 	The output buffer need to be scheduled
+	/// 	
+	/// \return
+	/// 	The input buffer that is wired with the output buffer
+	///
+	Buffer *Schedule(Buffer *output_buffer);
 };
 
 }
