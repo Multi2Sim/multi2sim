@@ -73,19 +73,19 @@ TEST(TestSystemConfiguration, section_general_frequency)
 		expected_str.c_str());
 }
 
-TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
+TEST(TestSystemConfiguration, section_network_two_defaults_missing)
 {
 	// cleanup singleton instance
 	Cleanup();
 	
 	// Setup configuration file
-	std::string config2 =
+	std::string config =
 		"[ Network.test ]\n"
-		"DefaultInputBufferSize = -1";
+		"DefaultInputBufferSize = 10";
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(config2);
+	ini_file.LoadFromString(config);
 
 	// Set up network instance
 	System *system = System::getInstance();
@@ -93,7 +93,7 @@ TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
 
 	// Expected string
 	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
-				" zero/non-existent.\n", ini_file.getPath().c_str());
+				" zero/non-existent.\n.*", ini_file.getPath().c_str());
 
 	// Test body
 	std::string message;
@@ -109,4 +109,287 @@ TEST(TestSystemConfiguration, section_network_default_input_buffer_size)
 		expected_str.c_str());
 }
 
+TEST(TestSystemConfiguration, section_network_missing_over_negative)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
+				" zero/non-existent.\n.*", ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_network_non_existant_default)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = 4";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
+				" zero/non-existent.\n.*", ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_network_default_negative)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = -5\n"
+		"DefaultBandwidth = 1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
+				" negative.\n.*", ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_network_negative_packet_size)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = 4\n"
+		"DefaultBandwidth = 1\n"
+		"DefaultPacketSize = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: test:\nDefault values can not be"
+				" negative.\n.*", ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_node_unknown_type)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = 4\n"
+		"DefaultBandwidth = 1\n"
+		"DefaultPacketSize = 1\n"
+		"\n"
+		"[Network.test.Node.N1]\n"
+		"Type = anything";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: Node type 'anything' is not "
+			"supported.\n.*",	ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = 4\n"
+		"DefaultBandwidth = 1\n"
+		"DefaultPacketSize = 0\n"
+		"\n"
+		"[Network.test.Node.N1]\n"
+		"Type = EndNode\n"
+		"Bandwidth = -1\n"
+		"InputBufferSize = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: Invalid buffer size for Node "
+						"'N1'\n.*",	ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
+
+TEST(TestSystemConfiguration, section_node_switch_bandwidth)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+		"[ Network.test ]\n"
+		"DefaultInputBufferSize = 4\n"
+		"DefaultOutputBufferSize = 4\n"
+		"DefaultBandwidth = 1\n"
+		"DefaultPacketSize = 0\n"
+		"\n"
+		"[Network.test.Node.S1]\n"
+		"Type = Switch\n"
+		"Bandwidth = -1\n"
+		"InputBufferSize = 1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Expected string
+	std::string expected_str = misc::fmt("%s: Invalid argument for Switch "
+						"'S1'\n.*",	ini_file.getPath().c_str());
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
+	EXPECT_DEATH({std::cerr << message.c_str(); exit(1);},
+		expected_str.c_str());
+}
 }

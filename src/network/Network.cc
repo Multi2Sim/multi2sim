@@ -57,18 +57,21 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	{
 		throw misc::Error(misc::fmt(
 				"%s: %s:\nDefault values can not be "
-				"zero/non-existent.\n", config->getPath().c_str(),
-				name.c_str()));
+				"zero/non-existent.\n%s", config->getPath().c_str(),
+				name.c_str(), System::err_config_note));
 	}
 
-	// Packet size and frequency
+	// Packet size
 	packet_size = config->ReadInt(section, "DefaultPacketSize", 0);
 
-	// FIXME
-	// This has to change. We have a general section for
-	// frequency. Each Network should be able to have a different frequency
-	// or their frequency should be set to the default frequency.
-	net_frequency = config->ReadInt(section, "Frequency", 0);
+	if ((default_output_buffer_size < 0) || (default_input_buffer_size < 0) ||
+			(default_bandwidth < 0) || (packet_size < 0))
+	{
+		throw misc::Error(misc::fmt(
+				"%s: %s:\nDefault values can not be "
+				"negative.\n%s", config->getPath().c_str(),
+				name.c_str(), System::err_config_note));
+	}
 
 	// Parse the configure file for nodes
 	ParseConfigurationForNodes(config);
@@ -129,16 +132,19 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 			int end_node_input_buffer_size = input_buffer_size;
 			int end_node_output_buffer_size = output_buffer_size;
 
-			// End-node should be able to contain an entire msg or
+			// End-node should be able to contain an entire msg
 			// or equivalent number of packets for that message.
 			if (input_buffer_size <= System::getMessageSize())
 			{
+				// FIXME
+				// Should we throw an error here and let the user take
+				// care of this and re-run simulation again?
+				// or should we throw a warning saying multi2sim
+				// resized buffer?
 				if(packet_size != 0)
 					end_node_input_buffer_size =
-							((System::getMessageSize()
-							- 1)/
-							packet_size + 1) *
-							packet_size;
+							((System::getMessageSize() - 1) / packet_size + 1)
+							* packet_size;
 				else
 					end_node_input_buffer_size =
 							System::getMessageSize();
@@ -148,13 +154,19 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 			{
 				if(packet_size != 0)
 					end_node_output_buffer_size =
-							((System::getMessageSize()
-							- 1)/
-							packet_size + 1) *
-							packet_size;
+							((System::getMessageSize() - 1) / packet_size + 1)
+							* packet_size;
 				else
 					end_node_output_buffer_size =
 							System::getMessageSize();
+			}
+
+			if ((end_node_input_buffer_size < 1) ||
+					(end_node_output_buffer_size < 1))
+			{
+				throw Error(misc::fmt("%s: Invalid buffer size for Node "
+						"'%s'\n%s",	config->getPath().c_str(),
+						node_name.c_str(), System::err_config_note));
 			}
 			addEndNode(end_node_input_buffer_size,
 					end_node_output_buffer_size,
@@ -162,13 +174,21 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		}
 		else if (!strcasecmp(type.c_str(), "Switch"))
 		{
+			if ((input_buffer_size < 1) || (output_buffer_size < 1)
+					|| (bandwidth < 1))
+				throw Error(misc::fmt("%s: Invalid argument for Switch "
+						"'%s'\n%s",	config->getPath().c_str(),
+						node_name.c_str(),System::err_config_note));
+
 			addSwitch(input_buffer_size, output_buffer_size,
 					bandwidth, node_name);
 		}
 		else
 		{
-			throw misc::Panic(misc::fmt("Node type %s not "
-					"supported.", type.c_str()));
+			throw Error(misc::fmt("%s: Node type '%s' is not "
+					"supported.\n%s",
+					config->getPath().c_str(), type.c_str(),
+					System::err_config_note));
 		}
 	}
 }
