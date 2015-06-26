@@ -65,10 +65,11 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
-			misc::fmt(".*%s: The value for 'Frequency' "
-						"must be between 1MHz and 1000GHz.\n.*",
-						ini_file.getPath().c_str()))));
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: The value for 'Frequency' "
+			"must be between 1MHz and 1000GHz.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_two_defaults_missing)
