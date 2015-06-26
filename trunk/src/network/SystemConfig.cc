@@ -157,6 +157,8 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 		// Setup network by configuration
 		network->ParseConfiguration(ini_file, section);
 	}
+
+	ini_file->Check();
 }
 
 
