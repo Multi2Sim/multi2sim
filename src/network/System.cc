@@ -239,7 +239,7 @@ void System::UniformTrafficSimulation(Network *network)
 				int index = random() % num_nodes;
 				dst_node = dynamic_cast<EndNode *>(
 						network->getNode(index));
-				if (!dst_node || dst_node != node)
+				if (dst_node && dst_node != node)
 					break;
 			}
 

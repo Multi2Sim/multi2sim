@@ -62,6 +62,15 @@ class Buffer
 	// Cycle until a write operation on buffer lasts
 	long long write_busy = -1;
 
+	// The scheduled cycle is for an arbiter to keep track of when 
+	// a decision is made on this buffer. An init value of -1 means
+	// no previous decision has been made.
+	long long scheduled_cycle = -1;
+
+	// The scheduled buffer is the buffer that is linked within a switch
+	// or a bus.
+	Buffer *scheduled_buffer = nullptr;
+
 	// A list of packets in the buffer
 	std::list<Packet *> packets;
 
@@ -106,6 +115,24 @@ public:
 	void setReadBusy(long long read_busy)
 	{
 		this->read_busy = read_busy;
+	}
+	
+	/// Get the scheduled cycle
+	long long getScheduledCycle() const { return scheduled_cycle; }
+
+	/// Set the scheduled cycle
+	void setScheduledCycle(long long scheduled_cycle) 
+	{
+		this->scheduled_cycle = scheduled_cycle;
+	}
+
+	/// Get the scheduled buffer
+	Buffer *getScheduledBuffer() const { return scheduled_buffer; }
+
+	/// Set the scheduled buffer
+	void setScheduledBuffer(Buffer *scheduled_buffer)
+	{
+		this->scheduled_buffer = scheduled_buffer;
 	}
 
 	/// Suspend the current event chain in the event queue associated with
