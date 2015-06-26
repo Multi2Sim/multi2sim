@@ -104,8 +104,8 @@ const std::string System::help_message =
 		"   on the link between node_A and node_B. \n" "\n" "\n";
 
 const char *System::err_config_note =
-		"Please run 'm2s --n-help' or consult the Multi2Sim Guide for "
-		"a description of the memory system configuration file format.";
+		"Please run 'm2s --net-help' or consult the Multi2Sim Guide for "
+		"a description of the network system configuration file format.";
 
 void System::ParseConfiguration(misc::IniFile *ini_file)
 {
@@ -115,8 +115,7 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Default Frequency
 	std::string section = "General";
-	frequency = ini_file->ReadInt(section, "Frequency",
-			frequency);
+	frequency = ini_file->ReadInt(section, "Frequency", 1000);
 	if (!esim::Engine::isValidFrequency(frequency))
 	{
 		throw Error(misc::fmt("%s: The value for 'Frequency' "

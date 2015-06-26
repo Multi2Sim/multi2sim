@@ -101,12 +101,8 @@ class Network
 	// Default bandwidth
 	int default_bandwidth = 4;
 
-	// Defaule packet size
-	int packet_size = 1;
-
-	// Network frequency
-	int net_frequency = 1e3;
-
+	// Defaule packet size - zero means no packeting
+	int packet_size = 0;
 
 
 	
