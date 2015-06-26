@@ -52,26 +52,23 @@ void Network::ParseConfiguration(misc::IniFile *config,
 			"DefaultInputBufferSize",0);
 	default_bandwidth = config->ReadInt(section,
 			"DefaultBandwidth",0);
+
 	if (!default_output_buffer_size || !default_input_buffer_size ||
 			!default_bandwidth)
-	{
 		throw misc::Error(misc::fmt(
 				"%s: %s:\nDefault values can not be "
 				"zero/non-existent.\n%s", config->getPath().c_str(),
 				name.c_str(), System::err_config_note));
-	}
 
 	// Packet size
 	packet_size = config->ReadInt(section, "DefaultPacketSize", 0);
 
 	if ((default_output_buffer_size < 0) || (default_input_buffer_size < 0) ||
 			(default_bandwidth < 0) || (packet_size < 0))
-	{
 		throw misc::Error(misc::fmt(
 				"%s: %s:\nDefault values can not be "
 				"negative.\n%s", config->getPath().c_str(),
 				name.c_str(), System::err_config_note));
-	}
 
 	// Parse the configure file for nodes
 	ParseConfigurationForNodes(config);
@@ -91,6 +88,8 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	// Parse the routing elements, for manual routing.
 	if (!ParseConfigurationForRoutes(config))
 		routing_table.FloydWarshall();
+
+	config->Check();
 }
 
 
@@ -138,6 +137,9 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 					"'%s'\n%s",	config->getPath().c_str(),
 					node_name.c_str(), System::err_config_note));
 
+		// Enforcing type
+		config->Enforce(section, "Type");
+
 		// Create node
 		if (!strcasecmp(type.c_str(), "EndNode"))
 		{
@@ -153,7 +155,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 				// care of this and re-run simulation again?
 				// or should we throw a warning saying multi2sim
 				// resized buffer?
-				if(packet_size != 0)
+				if (packet_size != 0)
 					end_node_input_buffer_size =
 							((System::getMessageSize() - 1) / packet_size + 1)
 							* packet_size;
@@ -164,7 +166,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 
 			if (output_buffer_size <= System::getMessageSize())
 			{
-				if(packet_size != 0)
+				if (packet_size != 0)
 					end_node_output_buffer_size =
 							((System::getMessageSize() - 1) / packet_size + 1)
 							* packet_size;
