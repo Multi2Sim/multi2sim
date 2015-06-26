@@ -1635,6 +1635,14 @@ GTEST_API_ AssertionResult CmpHelperSTRNE(const char* s1_expression,
                                           const wchar_t* s1,
                                           const wchar_t* s2);
 
+// The helper function for {ASSERT|EXPECT}_REGEX_MATCH.
+//
+// INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
+GTEST_API_ AssertionResult CmpHelperRegexMatch(const char* expected_expression,
+                                              const char* actual_expression,
+                                              const char* expected,
+                                              const char* actual);
+
 }  // namespace internal
 
 // IsSubstring() and IsNotSubstring() are intended to be used as the
@@ -2064,6 +2072,14 @@ class TestWithParam : public Test, public WithParamInterface<T> {
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASEEQ, expected, actual)
 #define ASSERT_STRCASENE(s1, s2)\
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASENE, s1, s2)
+
+// Regular Expression Matches.
+
+#define EXPECT_REGEX_MATCH(expected, actual) \
+  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperRegexMatch, expected, actual)
+
+#define ASSERT_REGEX_MATCH(expected, actual) \
+  ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperRegexMatch, expected, actual)
 
 // Macros for comparing floating-point numbers.
 //

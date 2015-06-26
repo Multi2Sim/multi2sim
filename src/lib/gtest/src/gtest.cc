@@ -42,6 +42,7 @@
 #include <time.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <regex>
 
 #include <algorithm>
 #include <iomanip>
@@ -1218,6 +1219,22 @@ AssertionResult CmpHelperSTRCASENE(const char* s1_expression,
         << "Expected: (" << s1_expression << ") != ("
         << s2_expression << ") (ignoring case), actual: \""
         << s1 << "\" vs \"" << s2 << "\"";
+  }
+}
+
+// The helper function for {ASSERT|EXPECT}_REGEX_MATCH.
+AssertionResult CmpHelperRegexMatch(const char* s1_expression,
+                                   const char* s2_expression,
+                                   const char* s1,
+                                   const char* s2) {
+  bool isMatch = std::regex_match (s2, std::regex(s1));
+  if (isMatch) {
+    return AssertionSuccess();
+  } else {
+    return AssertionFailure()
+        << "Expected regex: (" << s1_expression << ") does not match ("
+        << s2_expression << "), actual: regex(\""
+        << s1 << "\") vs \"" << s2 << "\"";
   }
 }
 
