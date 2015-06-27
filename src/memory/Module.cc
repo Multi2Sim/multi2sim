@@ -611,6 +611,67 @@ bool Module::FindBlock(unsigned address,
 }
 
 
+void Module::FlushPages(esim::Frame *esim_frame)
+{
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+
+	//page_start = stack->flush_page;
+	//page_end = (page_start + MEM_PAGE_SIZE - 1);
+
+	for (int set = 0; set < directory_num_sets; set++)
+	{
+		for (int way = 0; way < directory_num_ways; way++)
+		{
+			// Get block
+			Cache::Block *block = cache->getBlock(set, way);
+
+			if (block->getState() != Cache::BlockState::BlockInvalid)
+				continue;
+
+			// FIXME if the address is within the page range
+			//if (!(tag >= page_start && tag <= page_end))
+			//	continue;
+
+			frame->pending++;
+
+			esim::Engine *esim_engine = esim::Engine::getInstance();
+			auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					this,
+					frame->tag);
+
+			new_frame->set = set;
+			new_frame->way = way;
+			new_frame->witness = frame->witness;
+
+			esim_engine->Call(System::event_invalidate,
+				new_frame, nullptr, 0);
+		}
+	}
+}
+
+
+void Module::RecursiveFlush(esim::Frame *esim_frame)
+{
+	// Get pointer
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+
+	// Iterate through low_modules
+	for (Module *low_module : low_modules)
+	{
+		// Module cannot be main memory
+		if (low_module->getType() != TypeMainMemory)
+		{
+			RecursiveFlush(frame);
+		}
+		else
+		{
+			FlushPages(frame);
+		}
+	}
+}
+
+
 void Module::UpdateStats(Frame *frame)
 {
 	// Record access type. I purposefully chose to record both hits and
@@ -715,4 +776,5 @@ int Module::getRetryLatency() const
 
 
 }  // namespace mem
+
 

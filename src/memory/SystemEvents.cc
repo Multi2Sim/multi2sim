@@ -3328,34 +3328,210 @@ void System::EventInvalidateHandler(esim::Event *event,
 void System::EventMessageHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
+	Module *module = frame->getModule();
+	Module *target_module = frame->target_module;
+	Directory *target_directory = target_module->getDirectory();
+
 	// Event "message"
 	if (event == event_message)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"message\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Set reply
+		frame->reply_size = 8;
+		frame->reply = Frame::ReplyAck;
+
+		// Default return value
+		parent_frame->error = false;
+
+		// Checks
+		assert(frame->message);
+
+		// Get source and destination node
+		net::Network *network = module->getLowNetwork();
+		net::EndNode *source_node = module->getLowNetworkNode();
+		net::EndNode *destination_node = \
+				target_module->getHighNetworkNode();
+
+		// Send message
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				8,
+				event_message_receive,
+				event);
+
+		// Trace
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+
+		return;
 	}
 
 	// Event "message_receive"
 	if (event == event_message_receive)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"message\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Receive message
+		net::Network *network = target_module->getHighNetwork();
+		net::EndNode *node = target_module->getHighNetworkNode();
+		network->Receive(node, frame->message);
+
+		// Find and lock
+		auto new_frame = misc::new_shared<Frame>(
+					frame->getId(),
+					target_module,
+					frame->getAddress());
+		//new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = false;
+		new_frame->read = false;
+		new_frame->retry = false;
+
+		// Schedule event
+		esim_engine->Call(event_find_and_lock,
+				new_frame,
+				nullptr,
+				0);
+
+		return;
 	}
 
 	// Event "message_action"
 	if (event == event_message_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"message\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+		// Checks
+		assert(frame->message);
+
+		// Check block locking error
+		debug << misc::fmt("frame error = %u\n", frame->error);
+		if (frame->error)
+		{
+			//assert(frame->request_direction == Frame::RequestDirectionDownUp);
+			parent_frame->error = true;
+			parent_frame->setReplyIfHigher(Frame::ReplyAckError);
+			frame->reply_size = 8;
+			esim_engine->Next(event_message_reply, 0);
+			return;
+		}
+
+		if (frame->message_type == Frame::MessageClearOwner)
+		{
+			// Remove owner
+			for (int z = 0; z < target_module->getDirectorySize(); z++)
+			{
+				// Skip other subblocks
+				if (frame->getId() == frame->tag + z * target_module->getSubBlockSize())
+				{
+					// Clear the owner
+					target_directory->setOwner(
+							frame->set,
+							frame->way,
+							z,
+							0);
+				}
+
+			}
+
+		}
+
+		else
+		{
+			throw misc::Panic("Unexpected Message");
+		}
+
+		// Unlock directory entry
+		target_directory->UnlockEntry(frame->set, frame->way);
+
+		// Schedule event
+		esim_engine->Next(event_message_reply, 0);
+
+		return;
 	}
 
 	// Event "message_reply"
 	if (event == event_message_reply)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"message\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Get source and destination node
+		net::Network *network = module->getLowNetwork();
+		net::EndNode *source_node = target_module->getHighNetworkNode();
+		net::EndNode *destination_node = \
+				module->getLowNetworkNode();
+
+		// TODO Checks
+
+
+		// Send message
+		frame->message = network->TrySend(source_node,
+				destination_node,
+				frame->reply_size,
+				event_message_finish,
+				event);
+
+		// Trace
+		if (frame->message)
+			trace << misc::fmt("net.msg_access "
+					"net=\"%s\" "
+					"name=\"M-%lld\" "
+					"access=\"A-%lld\"\n",
+					network->getName().c_str(),
+					frame->message->getId(),
+					frame->getId());
+		return;
 	}
 
 	// Event "message_finish"
 	if (event == event_message_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"message\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Receive message
+		net::Network *network = module->getLowNetwork();
+		net::EndNode *node = module->getLowNetworkNode();
+		network->Receive(node, frame->message);
+		return;
 	}
 
 	// Invalid event
@@ -3366,18 +3542,70 @@ void System::EventMessageHandler(esim::Event *event,
 void System::EventFlushHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Module *module = frame->getModule();
+
 	// Event "flush"
 	if (event == event_flush)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"flush\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"flush\" "
+				"state=\"%s:flush\" "
+				"addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Set pending replies to 1
+		frame->pending = 1;
+
+		if (module->getType() == Module::TypeCache)
+
+		// TODO Recursive flush
+		module->RecursiveFlush(frame);
+
+		// Schedule event
+		esim_engine->Next(event_flush_finish, 0);
+
+		return;
 	}
 
 	// Event "flush_finish"
 	if (event == event_flush_finish)
 	{
-		throw misc::Panic("Not implemented");
-	}
+		// Ignore while pending requests
+		assert(frame->pending > 0);
+		frame->pending--;
+		if (frame->pending)
+			return;
 
+		// Trace
+		trace << misc::fmt("mem.end_access name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Increment the witness pointer if one was provided
+		if (frame->witness)
+			(*frame->witness)++;
+
+		// TODO Execute callback if one was provided
+		// ?????
+
+		esim_engine->Return();
+
+		return;
+	}
 	// Invalid event
 	throw misc::Panic("Invalid event");
 }
@@ -3386,22 +3614,143 @@ void System::EventFlushHandler(esim::Event *event,
 void System::EventLocalLoadHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Module *module = frame->getModule();
+
 	// Event "local_load"
 	if (event == event_local_load)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("%lld %lld 0x%x %s load\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		// Trace
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"store\" "
+				"state=\"%s:store\" addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Record access
+		module->StartAccess(frame, Module::AccessLoad);
+
+		// Coalesce access
+		Frame *master_frame = module->canCoalesce(
+				Module::AccessLoad,
+				frame->getAddress(),
+				frame);
+		if (master_frame)
+		{
+			// Coalesce
+			module->incCoalescedReads();
+			module->Coalesce(master_frame, frame);
+			master_frame->queue.Wait(event_local_load_finish);
+
+			// Increment witness
+			if (frame->witness)
+				(*frame->witness)++;
+
+			// Done
+			return;
+		}
+
+		// Continue
+		esim_engine->Next(event_local_load_lock);
+		return;
 	}
 
 	// Event "local_load_lock"
 	if (event == event_local_load_lock)
 	{
-		throw misc::Panic("Not implemented");
+		debug << misc::fmt("  %lld %lld 0x%x %s load lock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If there is any older write, wait for it
+		Frame *older_frame = module->getInFlightWrite(frame);
+		if (older_frame)
+		{
+			debug << misc::fmt("    %lld wait for write %lld\n",
+					frame->getId(),
+					older_frame->getId());
+			older_frame->queue.Wait(event_local_load_lock);
+			return;
+		}
+
+		// If there is any older access to the same address that this
+		// access could not be coalesced with, wait for it.
+		older_frame = module->getInFlightAddress(
+				frame->getAddress(),
+				frame);
+		if (older_frame)
+		{
+			debug << misc::fmt("    %lld wait for access %lld\n",
+					frame->getId(),
+					older_frame->getId());
+			older_frame->queue.Wait(event_local_load_lock);
+			return;
+		}
+
+		// Call "find_and_lock" event chain
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->getAddress());
+		//new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = true;
+		new_frame->read = true;
+		new_frame->retry = frame->retry;
+		esim_engine->Call(event_find_and_lock,
+				new_frame);
+
+		return;
 	}
 
 	// Event "local_load_finish"
 	if (event == event_local_load_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("%lld %lld 0x%x %s load finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:load_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.end_access "
+				"name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Increment witness variable
+		if (frame->witness)
+			(*frame->witness)++;
+
+		// Finish access
+		module->FinishAccess(frame);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
@@ -3412,22 +3761,138 @@ void System::EventLocalLoadHandler(esim::Event *event,
 void System::EventLocalStoreHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Module *module = frame->getModule();
+
 	// Event "local_store"
 	if (event == event_local_store)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("%lld %lld 0x%x %s store\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.new_access "
+				"name=\"A-%lld\" "
+				"type=\"store\" "
+				"state=\"%s:store\" addr=0x%x\n",
+				frame->getId(),
+				module->getName().c_str(),
+				frame->getAddress());
+
+		// Record access
+		module->StartAccess(frame, Module::AccessStore);
+
+		// Coalesce access
+		Frame *master_frame = module->canCoalesce(
+				Module::AccessStore,
+				frame->getAddress(),
+				frame);
+		if (master_frame)
+		{
+			// Coalesce
+			module->incCoalescedWrites();
+			module->Coalesce(master_frame, frame);
+			master_frame->queue.Wait(event_store_finish);
+
+			// Increment witness
+			if (frame->witness)
+				(*frame->witness)++;
+
+			// Done
+			return;
+		}
+
+		// Continue
+		esim_engine->Next(event_local_store_lock, 0);
+		return;
 	}
 
 	// Event "local_store_lock"
 	if (event == event_local_store_lock)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug
+		debug << misc::fmt("  %lld %lld 0x%x %s store lock\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// If there is any older access, wait for it
+		auto it = frame->access_list_iterator;
+		assert(it != module->getAccessListEnd());
+		if (it != module->getAccessListBegin())
+		{
+			// Get older access
+			--it;
+			Frame *older_frame = *it;
+
+			// Debug
+			debug << misc::fmt("    %lld wait for access %lld\n",
+					frame->getId(),
+					older_frame->getId());
+
+			// Enqueue
+			older_frame->queue.Wait(event_local_store_lock);
+			return;
+		}
+
+		// Call 'find-and-lock'
+		auto new_frame = misc::new_shared<Frame>(
+				frame->getId(),
+				module,
+				frame->getAddress());
+		//new_frame->request_direction = Frame::RequestDirectionUpDown;
+		new_frame->blocking = true;
+		new_frame->write = true;
+		new_frame->retry = frame->retry;
+		new_frame->witness = frame->witness;
+		esim_engine->Call(event_local_find_and_lock,
+				new_frame);
+
+		return;
 	}
 
 	// Event "local_store_finish"
 	if (event == event_local_store_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Debug
+		debug << misc::fmt("%lld %lld 0x%x %s store finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:store_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.end_access "
+				"name=\"A-%lld\"\n",
+				frame->getId());
+
+		// Finish access
+		module->FinishAccess(frame);
+
+		// Return
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
@@ -3438,35 +3903,147 @@ void System::EventLocalStoreHandler(esim::Event *event,
 void System::EventLocalFindAndLockHandler(esim::Event *event,
 		esim::Frame *esim_frame)
 {
+	// Get useful objects
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	Frame *frame = misc::cast<Frame *>(esim_frame);
+	Frame *parent_frame = misc::cast<Frame *>(esim_engine->getParentFrame());
+	Module *module = frame->getModule();
+
 	// Event "local_find_and_lock"
 	if (event == event_local_find_and_lock)
 	{
-		throw misc::Panic("Not implemented");
+		debug << misc::fmt("  %lld %lld 0x%x %s "
+				"find and lock (blocking=%d)\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str(),
+				frame->blocking);
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Default return values
+		parent_frame->error = false;
+
+		// If this access has already been assigned a way, keep using it
+		frame->way = parent_frame->way;
+
+		// Get a port
+		module->LockPort(frame, event_local_find_and_lock_port);
+
+		return;
 	}
 
 	// Event "local_find_and_lock_port"
 	if (event == event_local_find_and_lock_port)
 	{
-		throw misc::Panic("Not implemented");
+		// Get locked port
+		Module::Port *port = frame->port;
+		assert(port);
+
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s find and lock port\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->getAddress(),
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_port\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Set parent frame flag expressing that port has already been
+		// locked. This flag is checked by new writes to find out if
+		// it is already too late to coalesce.
+		parent_frame->port_locked = true;
+
+		// Statistics
+		module->incAccesses();
+		if (frame->retry)
+			module->incRetryAccesses();
+
+		if (frame->read)
+			module->UpdateStats(frame);
+
+		else
+		{
+			module->UpdateStats(frame);
+
+			if (frame->witness)
+			{
+				(*frame->witness)++;
+				frame->witness = NULL;
+			}
+		}
+		// Schedule event
+		esim_engine->Next(event_local_find_and_lock_action,
+				module->getDataLatency());
+
+		return;
 	}
 
 	// Event "local_find_and_lock_action"
 	if (event == event_local_find_and_lock_action)
 	{
-		throw misc::Panic("Not implemented");
+		// Get locked port
+		Module::Port *port = frame->port;
+		assert(port);
+
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s find and lock action\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_action\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		// Release port
+		module->UnlockPort(port, frame);
+		parent_frame->port_locked = false;
+
+		// Schedule event
+		esim_engine->Next(event_local_find_and_lock_finish, 0);
+
+		return;
 	}
 
 	// Event "local_find_and_lock_finish"
 	if (event == event_local_find_and_lock_finish)
 	{
-		throw misc::Panic("Not implemented");
+		// Memory debug
+		debug << misc::fmt("  %lld %lld 0x%x %s find and lock finish\n",
+				esim_engine->getTime(),
+				frame->getId(),
+				frame->tag,
+				module->getName().c_str());
+
+		// Trace
+		trace << misc::fmt("mem.access "
+				"name=\"A-%lld\" "
+				"state=\"%s:find_and_lock_finish\"\n",
+				frame->getId(),
+				module->getName().c_str());
+
+		esim_engine->Return();
+		return;
 	}
 
 	// Invalid event
 	throw misc::Panic("Invalid event");
 }
 
-
-
 }
+
 
