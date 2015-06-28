@@ -3404,7 +3404,6 @@ void System::EventMessageHandler(esim::Event *event,
 					frame->getId(),
 					target_module,
 					frame->getAddress());
-		//new_frame->request_direction = Frame::RequestDirectionUpDown;
 		new_frame->blocking = false;
 		new_frame->read = false;
 		new_frame->retry = false;
@@ -3435,7 +3434,6 @@ void System::EventMessageHandler(esim::Event *event,
 		debug << misc::fmt("frame error = %u\n", frame->error);
 		if (frame->error)
 		{
-			//assert(frame->request_direction == Frame::RequestDirectionDownUp);
 			parent_frame->error = true;
 			parent_frame->setReplyIfHigher(Frame::ReplyAckError);
 			frame->reply_size = 8;
@@ -3572,9 +3570,10 @@ void System::EventFlushHandler(esim::Event *event,
 		frame->pending = 1;
 
 		if (module->getType() == Module::TypeCache)
-
-		// TODO Recursive flush
-		module->RecursiveFlush(frame);
+		{
+			// Flush the cache
+			module->RecursiveFlush(frame);	
+		}
 
 		// Schedule event
 		esim_engine->Next(event_flush_finish, 0);
@@ -3598,9 +3597,6 @@ void System::EventFlushHandler(esim::Event *event,
 		// Increment the witness pointer if one was provided
 		if (frame->witness)
 			(*frame->witness)++;
-
-		// TODO Execute callback if one was provided
-		// ?????
 
 		esim_engine->Return();
 
@@ -3709,11 +3705,10 @@ void System::EventLocalLoadHandler(esim::Event *event,
 				frame->getId(),
 				module,
 				frame->getAddress());
-		//new_frame->request_direction = Frame::RequestDirectionUpDown;
 		new_frame->blocking = true;
 		new_frame->read = true;
 		new_frame->retry = frame->retry;
-		esim_engine->Call(event_find_and_lock,
+		esim_engine->Call(event_local_find_and_lock,
 				new_frame);
 
 		return;
@@ -3854,13 +3849,16 @@ void System::EventLocalStoreHandler(esim::Event *event,
 				frame->getId(),
 				module,
 				frame->getAddress());
-		//new_frame->request_direction = Frame::RequestDirectionUpDown;
 		new_frame->blocking = true;
 		new_frame->write = true;
 		new_frame->retry = frame->retry;
 		new_frame->witness = frame->witness;
 		esim_engine->Call(event_local_find_and_lock,
 				new_frame);
+
+		// Set witness to nullptr so that retries from the same frame
+		// do not increment it multiple times
+		frame->witness = nullptr;
 
 		return;
 	}
@@ -3978,7 +3976,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 			if (frame->witness)
 			{
 				(*frame->witness)++;
-				frame->witness = NULL;
+				frame->witness = nullptr;
 			}
 		}
 		// Schedule event
