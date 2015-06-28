@@ -89,7 +89,6 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	if (!ParseConfigurationForRoutes(config))
 		routing_table.FloydWarshall();
 
-	config->Check();
 }
 
 
@@ -244,13 +243,12 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 
 		// Get type and create by type
 		std::string type = ini_file->ReadString(section, "Type");
+
 		if (!strcasecmp(type.c_str(), "Bidirectional") ||
 				!strcasecmp(type.c_str(), "Unidirectional"))
 		{
 			// Get source node
-			std::string src_name = ini_file->ReadString(section,
-					"Source");
-
+			std::string src_name = ini_file->ReadString(section, "Source");
 			if (src_name.empty())
 				throw Error(misc::fmt("%s: Source node is not provided for "
 						"link '%s'.\n",	ini_file->getPath().c_str(),
@@ -263,8 +261,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						src_name.c_str(), link_name.c_str()));
 
 			// Get destination node
-			std::string dst_name = ini_file->ReadString(section,
-					"Dest");
+			std::string dst_name = ini_file->ReadString(section, "Dest");
 
 			if (dst_name.empty())
 				throw Error(misc::fmt("%s: Destination node is not provided"
