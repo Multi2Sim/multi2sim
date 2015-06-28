@@ -320,7 +320,6 @@ TEST(TestSystemConfiguration, section_section_unknown)
 	catch (misc::Error &error)
 	{
 		message = error.getMessage();
-		fprintf(stderr,"%s\n",message.c_str());
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
 	// FIXME
