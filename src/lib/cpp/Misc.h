@@ -183,7 +183,7 @@ std::string getBaseName(const std::string &path);
 
 
 //
-// Miscelaneous
+// Miscellaneous
 //
 
 
