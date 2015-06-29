@@ -35,7 +35,7 @@ namespace x86
 #define op_stdop_al_imm8(stdop, wb, cin, uinst) \
 void Context::ExecuteInst_##stdop##_al_imm8() \
 { \
-	unsigned char al = regs.Read(InstRegAl); \
+	unsigned char al = regs.Read(Instruction::RegAl); \
 	unsigned char imm8 = inst.getImmByte(); \
 	unsigned long flags = regs.getEflags(); \
 	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
@@ -54,7 +54,7 @@ void Context::ExecuteInst_##stdop##_al_imm8() \
 	); \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
-		regs.Write(InstRegAl, al); \
+		regs.Write(Instruction::RegAl, al); \
 		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
@@ -68,7 +68,7 @@ void Context::ExecuteInst_##stdop##_al_imm8() \
 #define op_stdop_ax_imm16(stdop, wb, cin, uinst) \
 void Context::ExecuteInst_##stdop##_ax_imm16() \
 { \
-	unsigned short ax = regs.Read(InstRegAx); \
+	unsigned short ax = regs.Read(Instruction::RegAx); \
 	unsigned short imm16 = inst.getImmWord(); \
 	unsigned long flags = regs.getEflags(); \
 	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
@@ -87,7 +87,7 @@ void Context::ExecuteInst_##stdop##_ax_imm16() \
 	); \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
-		regs.Write(InstRegAx, ax); \
+		regs.Write(Instruction::RegAx, ax); \
 		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \
@@ -101,7 +101,7 @@ void Context::ExecuteInst_##stdop##_ax_imm16() \
 #define op_stdop_eax_imm32(stdop, wb, cin, uinst) \
 void Context::ExecuteInst_##stdop##_eax_imm32() \
 { \
-	unsigned int eax = regs.Read(InstRegEax); \
+	unsigned int eax = regs.Read(Instruction::RegEax); \
 	unsigned int imm32 = inst.getImmDWord(); \
 	unsigned long flags = regs.getEflags(); \
 	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
@@ -120,7 +120,7 @@ void Context::ExecuteInst_##stdop##_eax_imm32() \
 	); \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
-		regs.Write(InstRegEax, eax); \
+		regs.Write(Instruction::RegEax, eax); \
 		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
 				UInstDepZps, UInstDepCf, UInstDepOf); \
 	} else { \

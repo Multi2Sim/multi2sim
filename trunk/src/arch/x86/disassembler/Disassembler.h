@@ -26,7 +26,7 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Error.h>
 
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace x86
@@ -57,22 +57,22 @@ class Disassembler : public comm::Disassembler
 	static std::unique_ptr<Disassembler> instance;
 
 	// Instruction information
-	InstInfo inst_info[InstOpcodeCount];
+	Instruction::Info inst_info[Instruction::OpcodeCount];
 
 	// Decoding tables
-	InstDecodeInfo *dec_table[0x100];
-	InstDecodeInfo *dec_table_0f[0x100];
+	Instruction::DecodeInfo *dec_table[0x100];
+	Instruction::DecodeInfo *dec_table_0f[0x100];
 
 	// Look-up table returning true if a byte is an x86 prefix
 	bool is_prefix[0x100];
 
 	// For decoding table initialization
-	void InsertInstInfo(InstInfo *info);
-	void InsertInstInfo(InstDecodeInfo **table,
-			InstDecodeInfo *elem, int at);
+	void InsertInstInfo(Instruction::Info *info);
+	void InsertInstInfo(Instruction::DecodeInfo **table,
+			Instruction::DecodeInfo *elem, int at);
 
 	// Free decoding tables
-	void FreeInstDecodeInfo(InstDecodeInfo *elem);
+	void FreeInstDecodeInfo(Instruction::DecodeInfo *elem);
 
 	// Private constructor for singleton
 	Disassembler();
@@ -103,19 +103,19 @@ public:
 	static Disassembler *getInstance();
 
 	/// Get instruction information for a given opcode
-	const InstInfo *getInstInfo(InstOpcode opcode) const
+	const Instruction::Info *getInstInfo(Instruction::Opcode opcode) const
 	{
-		assert(opcode >= 0 && opcode < InstOpcodeCount);
+		assert(opcode >= 0 && opcode < Instruction::OpcodeCount);
 		return &inst_info[opcode];
 	}
 
 	/// Return the main decoding table, indexed for instruction decoding
 	/// using the first instruction byte.
-	InstDecodeInfo * const *getDecTable() const { return dec_table; }
+	Instruction::DecodeInfo * const *getDecTable() const { return dec_table; }
 
 	/// Return the secondary decoding table, indexed when the first byte
 	/// of the instruction is 0x0f.
-	InstDecodeInfo * const *getDecTable0f() const { return dec_table_0f; }
+	Instruction::DecodeInfo * const *getDecTable0f() const { return dec_table_0f; }
 
 	/// Return \c true if \a byte is a valid x86 instruction prefix.
 	bool isPrefix(unsigned char byte) const { return is_prefix[byte]; }

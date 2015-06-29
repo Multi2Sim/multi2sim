@@ -248,7 +248,7 @@ void Context::ExecuteInst_fcmovb_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (regs.getFlag(InstFlagCF))
+	if (regs.getFlag(Instruction::FlagCF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
@@ -259,7 +259,7 @@ void Context::ExecuteInst_fcmove_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (regs.getFlag(InstFlagZF))
+	if (regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
@@ -270,7 +270,7 @@ void Context::ExecuteInst_fcmovbe_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (regs.getFlag(InstFlagCF) || regs.getFlag(InstFlagZF))
+	if (regs.getFlag(Instruction::FlagCF) || regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
@@ -281,7 +281,7 @@ void Context::ExecuteInst_fcmovu_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (regs.getFlag(InstFlagPF))
+	if (regs.getFlag(Instruction::FlagPF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
@@ -292,7 +292,7 @@ void Context::ExecuteInst_fcmovnb_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (!regs.getFlag(InstFlagCF))
+	if (!regs.getFlag(Instruction::FlagCF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
@@ -303,7 +303,7 @@ void Context::ExecuteInst_fcmovne_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (!regs.getFlag(InstFlagZF))
+	if (!regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
@@ -314,7 +314,7 @@ void Context::ExecuteInst_fcmovnbe_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (!regs.getFlag(InstFlagCF) && !regs.getFlag(InstFlagZF))
+	if (!regs.getFlag(Instruction::FlagCF) && !regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
@@ -325,7 +325,7 @@ void Context::ExecuteInst_fcmovnu_st0_sti()
 {
 	unsigned char sti[10];
 	LoadFpu(inst.getOpIndex(), sti);
-	if (!regs.getFlag(InstFlagPF))
+	if (!regs.getFlag(Instruction::FlagPF))
 		StoreFpu(0, sti);
 
 	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
@@ -1334,7 +1334,7 @@ void Context::ExecuteInst_fnstcw_m16()
 void Context::ExecuteInst_fnstsw_ax()
 {
 	unsigned short status = LoadFpuStatus();
-	regs.Write(InstRegAx, status);
+	regs.Write(Instruction::RegAx, status);
 
 	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
 }
@@ -1683,7 +1683,7 @@ void Context::ExecuteInst_fstp_sti()
 void Context::ExecuteInst_fstsw_ax()
 {
 	unsigned short status = LoadFpuStatus();
-	regs.Write(InstRegAx, status);
+	regs.Write(Instruction::RegAx, status);
 
 	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
 }

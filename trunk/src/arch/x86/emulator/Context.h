@@ -218,7 +218,7 @@ private:
 	int str_op_count = 0;  // Number of iterations in string operation //
 
 	// Last emulated instruction
-	Inst inst;
+	Instruction inst;
 	
 	// For segmented memory access in glibc
 	unsigned glibc_segment_base = 0;
@@ -555,11 +555,11 @@ private:
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) void ExecuteInst_##name();
-#include <arch/x86/disassembler/Inst.def>
+#include <arch/x86/disassembler/Instruction.def>
 #undef DEFINST
 
 	// Table of functions
-	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+	static ExecuteInstFn execute_inst_fn[Instruction::OpcodeCount];
 
 	// Safe memory accesses, based on the current speculative mode
 	void MemoryRead(unsigned int address, int size, void *buffer);
@@ -632,26 +632,26 @@ private:
 	void StoreM64(unsigned long long value);
 
 	// Load value from register
-	unsigned char LoadR8() { return regs.Read(inst.getModRmReg() + InstRegAl); }
-	unsigned short LoadR16() { return regs.Read(inst.getModRmReg() + InstRegAx); }
-	unsigned int LoadR32() { return regs.Read(inst.getModRmReg() + InstRegEax); }
-	unsigned short LoadSReg() { return regs.Read(inst.getModRmReg() + InstRegEs); }
+	unsigned char LoadR8() { return regs.Read(inst.getModRmReg() + Instruction::RegAl); }
+	unsigned short LoadR16() { return regs.Read(inst.getModRmReg() + Instruction::RegAx); }
+	unsigned int LoadR32() { return regs.Read(inst.getModRmReg() + Instruction::RegEax); }
+	unsigned short LoadSReg() { return regs.Read(inst.getModRmReg() + Instruction::RegEs); }
 
 	// Store value into register
-	void StoreR8(unsigned char value) { regs.Write(inst.getModRmReg() + InstRegAl, value); }
-	void StoreR16(unsigned short value) { regs.Write(inst.getModRmReg() + InstRegAx, value); }
-	void StoreR32(unsigned int value) { regs.Write(inst.getModRmReg() + InstRegEax, value); }
-	void StoreSReg(unsigned short value) { regs.Write(inst.getModRmReg() + InstRegEs, value); }
+	void StoreR8(unsigned char value) { regs.Write(inst.getModRmReg() + Instruction::RegAl, value); }
+	void StoreR16(unsigned short value) { regs.Write(inst.getModRmReg() + Instruction::RegAx, value); }
+	void StoreR32(unsigned int value) { regs.Write(inst.getModRmReg() + Instruction::RegEax, value); }
+	void StoreSReg(unsigned short value) { regs.Write(inst.getModRmReg() + Instruction::RegEs, value); }
 
 	// Load value from index register
-	unsigned char LoadIR8() { return regs.Read(inst.getOpIndex() + InstRegAl); }
-	unsigned short LoadIR16() { return regs.Read(inst.getOpIndex() + InstRegAx); }
-	unsigned int LoadIR32() { return regs.Read(inst.getOpIndex() + InstRegEax); }
+	unsigned char LoadIR8() { return regs.Read(inst.getOpIndex() + Instruction::RegAl); }
+	unsigned short LoadIR16() { return regs.Read(inst.getOpIndex() + Instruction::RegAx); }
+	unsigned int LoadIR32() { return regs.Read(inst.getOpIndex() + Instruction::RegEax); }
 
 	// Store value into index register
-	void StoreIR8(unsigned char value) { regs.Write(inst.getOpIndex() + InstRegAl, value); }
-	void StoreIR16(unsigned short value) { regs.Write(inst.getOpIndex() + InstRegAx, value); }
-	void StoreIR32(unsigned int value) { regs.Write(inst.getOpIndex() + InstRegEax, value); }
+	void StoreIR8(unsigned char value) { regs.Write(inst.getOpIndex() + Instruction::RegAl, value); }
+	void StoreIR16(unsigned short value) { regs.Write(inst.getOpIndex() + Instruction::RegAx, value); }
+	void StoreIR32(unsigned int value) { regs.Write(inst.getOpIndex() + Instruction::RegEax, value); }
 
 	void LoadFpu(int index, unsigned char *value);
 	void StoreFpu(int index, unsigned char *value);
@@ -906,7 +906,7 @@ public:
 	Regs &getRegs() { return regs; }
 
 	/// Return a reference of instruction
-	Inst &getInst() { return inst; }
+	Instruction &getInst() { return inst; }
 
 	/// Return a reference of Uinst list
 	std::vector<std::unique_ptr<UInst>> &getUinstList()
