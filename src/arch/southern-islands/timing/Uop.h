@@ -17,30 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Gpu.h"
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
 
 namespace SI
 {
 
-int Gpu::num_compute_units = 32;
-
-
-Gpu::Gpu()
+/// Class representing an instruction flowing through the pipelines of the
+/// GPU compute units.
+class Uop
 {
-	// Create compute units
-	compute_units.reserve(num_compute_units);
-	for (int i = 0; i < num_compute_units; i++)
-		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i));
+	// Counter tracking the ID assigned to the last uop created
+	static long long id_counter;
+
+	// Unique identifier of the instruction, assigned when created
+	long long id;
+
+public:
+
+	/// Constructor
+	Uop();
+
+	/// Return the unique identifier assigned in sequential order to the
+	/// uop when it was created.
+	long long getId() const { return id; }
+};
+
 }
 
-
-void Gpu::Run()
-{
-	// Advance one cycle in each compute unit
-	for (auto &compute_unit : compute_units)
-		compute_unit->Run();
-}
-
-}
+#endif
 
