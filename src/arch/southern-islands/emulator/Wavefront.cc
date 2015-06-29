@@ -18,7 +18,7 @@
  */
 
 #include <arch/southern-islands/disassembler/Disassembler.h>
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Misc.h>
 
@@ -45,18 +45,18 @@ unsigned Wavefront::getSregUint(int sreg) const
 	assert(sreg != 254);
 	assert(sreg < 256);
 
-	if (sreg == Inst::RegisterVccz)
+	if (sreg == Instruction::RegisterVccz)
 	{
-		if (this->sreg[Inst::RegisterVcc].as_uint == 0 && 
-			this->sreg[Inst::RegisterVcc+1].as_uint == 0)
+		if (this->sreg[Instruction::RegisterVcc].as_uint == 0 && 
+			this->sreg[Instruction::RegisterVcc+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
 	}
-	if (sreg == Inst::RegisterExecz)
+	if (sreg == Instruction::RegisterExecz)
 	{
-		if (this->sreg[Inst::RegisterExec].as_uint == 0 && 
-			this->sreg[Inst::RegisterExec+1].as_uint == 0)
+		if (this->sreg[Instruction::RegisterExec].as_uint == 0 && 
+			this->sreg[Instruction::RegisterExec+1].as_uint == 0)
 			value = 1;
 		else 
 			value = 0;
@@ -87,17 +87,17 @@ void Wavefront::setSregUint(int sreg, unsigned int value)
 	this->sreg[sreg].as_uint = value;
 
 	// Update VCCZ and EXECZ if necessary.
-	if (sreg == Inst::RegisterVcc || sreg == Inst::RegisterVcc + 1)
+	if (sreg == Instruction::RegisterVcc || sreg == Instruction::RegisterVcc + 1)
 	{
-		this->sreg[Inst::RegisterVccz].as_uint = 
-			!this->sreg[Inst::RegisterVcc].as_uint &
-			!this->sreg[Inst::RegisterVcc + 1].as_uint;
+		this->sreg[Instruction::RegisterVccz].as_uint = 
+			!this->sreg[Instruction::RegisterVcc].as_uint &
+			!this->sreg[Instruction::RegisterVcc + 1].as_uint;
 	}
-	if (sreg == Inst::RegisterExec || sreg == Inst::RegisterExec + 1)
+	if (sreg == Instruction::RegisterExec || sreg == Instruction::RegisterExec + 1)
 	{
-		this->sreg[Inst::RegisterExecz].as_uint = 
-			!this->sreg[Inst::RegisterExec].as_uint &
-			!this->sreg[Inst::RegisterExec + 1].as_uint;
+		this->sreg[Instruction::RegisterExecz].as_uint = 
+			!this->sreg[Instruction::RegisterExec].as_uint &
+			!this->sreg[Instruction::RegisterExec + 1].as_uint;
 	}
 
 	// Statistics
@@ -153,7 +153,7 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
-	Inst inst;
+	Instruction inst;
 
 	// Reset instruction flags
 	vector_mem_write = 0;
@@ -181,9 +181,9 @@ void Wavefront::Execute()
 	inst.Decode(inst_buffer.get(), pc);
 
 	this->inst_size = inst.getSize();
-	InstOpcode opcode = inst.getOpcode();
-	InstFormat format = inst.getFormat();
-	InstBytes *bytes = inst.getBytes();
+	Instruction::Opcode opcode = inst.getOpcode();
+	Instruction::Format format = inst.getFormat();
+	Instruction::Bytes *bytes = inst.getBytes();
 	int op = inst.getOp();
 
 	// Dump instruction string when debugging
@@ -191,7 +191,7 @@ void Wavefront::Execute()
 	{
 
 	// Scalar ALU Instructions
-	case InstFormatSOP1:
+	case Instruction::FormatSOP1:
 	{
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -206,7 +206,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatSOP2:
+	case Instruction::FormatSOP2:
 	{
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -221,7 +221,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatSOPP:
+	case Instruction::FormatSOPP:
 	{
 		// Stats
 		if (bytes->sopp.op > 1 &&
@@ -244,7 +244,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatSOPC:
+	case Instruction::FormatSOPC:
 	{
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -259,7 +259,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatSOPK:
+	case Instruction::FormatSOPK:
 	{
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -275,7 +275,7 @@ void Wavefront::Execute()
 	}
 
 	// Scalar Memory Instructions
-	case InstFormatSMRD:
+	case Instruction::FormatSMRD:
 	{
 		// Stats
 		emulator->incScalarMemInstCount();
@@ -291,7 +291,7 @@ void Wavefront::Execute()
 	}
 
 	// Vector ALU Instructions
-	case InstFormatVOP2:
+	case Instruction::FormatVOP2:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -312,7 +312,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatVOP1:
+	case Instruction::FormatVOP1:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -326,8 +326,8 @@ void Wavefront::Execute()
 			// active work item from the least significant bit 
 			// in EXEC. (if exec is 0, execute work item 0)
 			work_item = (work_items_begin[0]).get();
-			if (work_item->ReadSReg(Inst::RegisterExec) == 0 && 
-				work_item->ReadSReg(Inst::RegisterExec + 1) == 0)
+			if (work_item->ReadSReg(Instruction::RegisterExec) == 0 && 
+				work_item->ReadSReg(Instruction::RegisterExec + 1) == 0)
 			{
 				work_item->Execute(opcode, &inst);
 			}
@@ -365,7 +365,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatVOPC:
+	case Instruction::FormatVOPC:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -388,7 +388,7 @@ void Wavefront::Execute()
 		break;
 	}
 	
-	case InstFormatVOP3a:
+	case Instruction::FormatVOP3a:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -411,7 +411,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatVOP3b:
+	case Instruction::FormatVOP3b:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -434,7 +434,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatVINTRP:
+	case Instruction::FormatVINTRP:
 	{
 		// Stats
 		emulator->incVectorAluInstCount();
@@ -457,7 +457,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatDS:
+	case Instruction::FormatDS:
 	{
 		// Stats
 		emulator->incLdsInstCount();
@@ -499,7 +499,7 @@ void Wavefront::Execute()
 	}
 
 	// Vector Memory Instructions
-	case InstFormatMTBUF:
+	case Instruction::FormatMTBUF:
 	{
 		// Stats
 		emulator->incVectorMemInstCount();
@@ -536,7 +536,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatMUBUF:
+	case Instruction::FormatMUBUF:
 	{
 		// Stats
 		emulator->incVectorMemInstCount();
@@ -580,7 +580,7 @@ void Wavefront::Execute()
 		break;
 	}
 
-	case InstFormatEXP:
+	case Instruction::FormatEXP:
 	{
 		// Stats
 		emulator->incExportInstCount();
@@ -639,13 +639,13 @@ bool Wavefront::isWorkItemActive(int id_in_wavefront)
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;
-		return (sreg[Inst::RegisterExec].as_uint & mask) >> 
+		return (sreg[Instruction::RegisterExec].as_uint & mask) >> 
 			id_in_wavefront;
 	}
 	else
 	{
 		mask <<= (id_in_wavefront - 32);
-		return (sreg[Inst::RegisterExec + 1].as_uint & mask) >> 
+		return (sreg[Instruction::RegisterExec + 1].as_uint & mask) >> 
 			(id_in_wavefront - 32);
 	}	
 }

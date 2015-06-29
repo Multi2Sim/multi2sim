@@ -63,13 +63,13 @@ class BasicBlock : public comm::BasicBlock
 	static int getPointedLlvmTypeSize(llvm::Type *llvm_type);
 
 	// Return corresponding SI buffer format
-	static enum SI::InstBufDataFormat getBufDataFormat32(int num_elems);
+	static enum SI::Instruction::BufDataFormat getBufDataFormat32(int num_elems);
 
 	// Return corresponding SI buffer format
-	static enum SI::InstBufDataFormat getBufDataFormat(llvm::Type *llvm_type);
+	static enum SI::Instruction::BufDataFormat getBufDataFormat(llvm::Type *llvm_type);
 
 	// Return corresponding SI buffer vector format
-	static enum SI::InstBufDataFormat getBufDataFormatVector(llvm::Type *llvm_type);
+	static enum SI::Instruction::BufDataFormat getBufDataFormatVector(llvm::Type *llvm_type);
 
 	// Convert scalar to vector
 	void ArgScalarToVector(std::unique_ptr<si2bin::Argument> &arg,
@@ -150,7 +150,7 @@ public:
 
 	/// Add an instruction to the end of the basic block, constructed with
 	/// an opcode.
-	si2bin::Instruction *addInstruction(SI::InstOpcode opcode)
+	si2bin::Instruction *addInstruction(SI::Instruction::Opcode opcode)
 	{
 		instructions.emplace_back(
 				misc::new_unique<si2bin::Instruction>
@@ -163,7 +163,7 @@ public:
 	si2bin::Instruction *addInstruction(
 			std::list<std::unique_ptr<si2bin::Instruction>>
 			::iterator it,
-			SI::InstOpcode opcode)
+			SI::Instruction::Opcode opcode)
 	{
 		it = instructions.emplace(it,
 				misc::new_unique<si2bin::Instruction>

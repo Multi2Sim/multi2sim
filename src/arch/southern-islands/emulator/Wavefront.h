@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 
 namespace SI
 {
@@ -65,7 +65,7 @@ class Wavefront
 	unsigned pc = 0;
 
 	// Current instruction
-	Inst *inst = nullptr;
+	Instruction *inst = nullptr;
 	int inst_size = 0;
 
 	// Associated scalar work-item
@@ -85,7 +85,7 @@ class Wavefront
 	std::vector<std::unique_ptr<WorkItem>>::iterator work_items_end;
 
 	// Scalar registers
-	InstReg sreg[256];
+	Instruction::Register sreg[256];
 
 	// Flags updated during instruction execution
 	bool vector_mem_read;

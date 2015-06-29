@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <lib/cpp/Misc.h>
 
 #include "Symbol.h"
@@ -48,7 +48,7 @@ void Task::Dump(std::ostream &os)
 
 void Task::Process()
 {
-	SI::InstBytes inst;
+	SI::Instruction::Bytes inst;
 
 	// Check whether symbol is resolved
 	if (!symbol)
@@ -59,10 +59,10 @@ void Task::Process()
 	// Resolve label
 	assert((offset >= 0) && (buffer->getSize() - 4));
 	buffer->setReadPosition(offset);
-	buffer->Read((char *) &inst, sizeof(SI::InstBytesSOPP));
+	buffer->Read((char *) &inst, sizeof(SI::Instruction::BytesSOPP));
 	inst.sopp.simm16 = (symbol->getValue() - offset) / 4 - 1;
 	buffer->setWritePosition(offset);
-	buffer->Write((char *) &inst, sizeof(SI::InstBytesSOPP));
+	buffer->Write((char *) &inst, sizeof(SI::Instruction::BytesSOPP));
 }
 
 }  /* namespace si2bin */

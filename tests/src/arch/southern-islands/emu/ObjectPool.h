@@ -55,7 +55,7 @@ class ObjectPool
 	std::unique_ptr<WorkItem> work_item;
 
 	// Inst
-	std::unique_ptr<Inst> inst;
+	std::unique_ptr<Instruction> inst;
 
 public:
 	/// Constructor
@@ -72,7 +72,7 @@ public:
 	WorkItem *getWorkItem() { return work_item.get(); }	
 	
 	/// Return a pointer to the work_item member
-	Inst *getInst() { return inst.get(); }	
+	Instruction *getInst() { return inst.get(); }	
 };
 
 

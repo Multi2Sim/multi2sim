@@ -66,7 +66,7 @@ bool Context::active = false;
  * Class 'InstInfo'
  */
 
-InstInfo::InstInfo(SI::InstInfo *info)
+InstInfo::InstInfo(SI::Instruction::Info *info)
 {
 	// Initialize
 	this->info = info;
@@ -112,10 +112,10 @@ std::unique_ptr<Context> Context::instance;
 Context::Context()
 {
 	// Initialize hash table and list with instruction information.
-	for (int i = 0; i < SI::InstOpcodeCount; i++)
+	for (int i = 0; i < SI::Instruction::OpcodeCount; i++)
 	{
 		// Instruction info from disassembler
-		SI::InstInfo *inst_info = as.getInstInfo(i);
+		SI::Instruction::Info *inst_info = as.getInstInfo(i);
 		if (!inst_info->name || !inst_info->fmt_str)
 			continue;
 

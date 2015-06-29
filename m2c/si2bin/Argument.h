@@ -20,7 +20,7 @@
 #ifndef M2C_SI2BIN_ARGUMENT_H
 #define M2C_SI2BIN_ARGUMENT_H
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 #include <m2c/common/Argument.h>
@@ -579,15 +579,15 @@ class ArgMaddr : public Argument
 	// Sub-argument of type ArgMaddrQual (memory address qualifier)
 	std::unique_ptr<ArgMaddrQual> qual;
 
-	SI::InstBufDataFormat data_format;
+	SI::Instruction::BufDataFormat data_format;
 
-	SI::InstBufNumFormat num_format;
+	SI::Instruction::BufNumFormat num_format;
 
 public:
 
 	ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
-			SI::InstBufDataFormat data_format,
-			SI::InstBufNumFormat num_format);
+			SI::Instruction::BufDataFormat data_format,
+			SI::Instruction::BufNumFormat num_format);
 
 	void Dump(std::ostream &os) const;
 
@@ -595,19 +595,19 @@ public:
 
 	ArgMaddrQual *getQual() const { return qual.get(); }
 
-	SI::InstBufDataFormat getDataFormat() const { return data_format; }
+	SI::Instruction::BufDataFormat getDataFormat() const { return data_format; }
 
-	SI::InstBufNumFormat getNumFormat() const { return num_format; }
+	SI::Instruction::BufNumFormat getNumFormat() const { return num_format; }
 };
 
 
 class ArgSpecialRegister : public Argument
 {
-	SI::InstSpecialReg reg;
+	SI::Instruction::SpecialReg reg;
 
 public:
 
-	ArgSpecialRegister(SI::InstSpecialReg reg) :
+	ArgSpecialRegister(SI::Instruction::SpecialReg reg) :
 			Argument(TypeSpecialRegister),
 			reg(reg)
 	{
@@ -617,7 +617,7 @@ public:
 
 	int Encode();
 
-	SI::InstSpecialReg getReg() const { return reg; }
+	SI::Instruction::SpecialReg getReg() const { return reg; }
 };
 
 

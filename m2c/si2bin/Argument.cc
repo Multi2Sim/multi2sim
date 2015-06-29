@@ -384,8 +384,8 @@ void ArgMaddrQual::Dump(std::ostream &os) const
 //
 
 ArgMaddr::ArgMaddr(Argument *soffset, ArgMaddrQual *qual,
-		SI::InstBufDataFormat data_format,
-		SI::InstBufNumFormat num_format) :
+		SI::Instruction::BufDataFormat data_format,
+		SI::Instruction::BufNumFormat num_format) :
 		Argument(TypeMaddr)
 {
 	// Initialize
@@ -400,9 +400,9 @@ void ArgMaddr::Dump(std::ostream &os) const
 {
 	soffset->Dump(os);
 	qual->Dump(os);
-	os << " format:[" << SI::inst_buf_data_format_map.MapValue(
+	os << " format:[" << SI::Instruction::buf_data_format_map.MapValue(
 			data_format) << ',' <<
-			SI::inst_buf_num_format_map.MapValue(num_format)
+			SI::Instruction::buf_num_format_map.MapValue(num_format)
 			<< ']';
 }
 
@@ -414,7 +414,7 @@ void ArgMaddr::Dump(std::ostream &os) const
 
 void ArgSpecialRegister::Dump(std::ostream &os) const
 {
-	os << SI::inst_special_reg_map.MapValue(reg);
+	os << SI::Instruction::special_reg_map.MapValue(reg);
 }
 	
 
@@ -422,19 +422,19 @@ int ArgSpecialRegister::Encode()
 {
 	switch (reg)
 	{
-	case SI::InstSpecialRegVcc:
+	case SI::Instruction::SpecialRegVcc:
 
 		return 106;
 
-	case SI::InstSpecialRegExec:
+	case SI::Instruction::SpecialRegExec:
 
 		return 126;
 
-	case SI::InstSpecialRegScc:
+	case SI::Instruction::SpecialRegScc:
 
 		return 253;
 
-	case SI::InstSpecialRegM0:
+	case SI::Instruction::SpecialRegM0:
 
 		return 124;
 

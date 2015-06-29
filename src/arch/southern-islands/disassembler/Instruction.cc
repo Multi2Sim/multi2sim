@@ -25,44 +25,43 @@
 #include <lib/cpp/Misc.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace SI
 {
 
 /// Constants for special registers
-const unsigned Inst::RegisterM0;
-const unsigned Inst::RegisterVcc;
-const unsigned Inst::RegisterVccz;
-const unsigned Inst::RegisterExec;
-const unsigned Inst::RegisterExecz;
-const unsigned Inst::RegisterScc;
+const unsigned Instruction::RegisterM0;
+const unsigned Instruction::RegisterVcc;
+const unsigned Instruction::RegisterVccz;
+const unsigned Instruction::RegisterExec;
+const unsigned Instruction::RegisterExecz;
+const unsigned Instruction::RegisterScc;
 
-misc::StringMap inst_format_map =
+const misc::StringMap Instruction::format_map =
 {
-	{ "<invalid>", InstFormatInvalid },
-	{ "sop2", InstFormatSOP2 },
-	{ "sopk", InstFormatSOPK },
-	{ "sop1", InstFormatSOP1 },
-	{ "sopc", InstFormatSOPC },
-	{ "sopp", InstFormatSOPP },
-	{ "smrd", InstFormatSMRD },
-	{ "vop2", InstFormatVOP2 },
-	{ "vop1", InstFormatVOP1 },
-	{ "vopc", InstFormatVOPC },
-	{ "vop3a", InstFormatVOP3a },
-	{ "vop3b", InstFormatVOP3b },
-	{ "vintrp", InstFormatVINTRP },
-	{ "ds", InstFormatDS },
-	{ "mubuf", InstFormatMUBUF },
-	{ "mtbuf", InstFormatMTBUF },
-	{ "mimg", InstFormatMIMG },
-	{ "exp", InstFormatEXP }
+	{ "<invalid>", FormatInvalid },
+	{ "sop2", FormatSOP2 },
+	{ "sopk", FormatSOPK },
+	{ "sop1", FormatSOP1 },
+	{ "sopc", FormatSOPC },
+	{ "sopp", FormatSOPP },
+	{ "smrd", FormatSMRD },
+	{ "vop2", FormatVOP2 },
+	{ "vop1", FormatVOP1 },
+	{ "vopc", FormatVOPC },
+	{ "vop3a", FormatVOP3a },
+	{ "vop3b", FormatVOP3b },
+	{ "vintrp", FormatVINTRP },
+	{ "ds", FormatDS },
+	{ "mubuf", FormatMUBUF },
+	{ "mtbuf", FormatMTBUF },
+	{ "mimg", FormatMIMG },
+	{ "exp", FormatEXP }
 };
 
-/* String maps for assembly dump. */
-static misc::StringMap inst_sdst_map =
+const misc::StringMap Instruction::sdst_map =
 {
 	{"reserved", 0},
 	{"reserved", 1},
@@ -90,7 +89,7 @@ static misc::StringMap inst_sdst_map =
 	{"exec_hi", 23}
 };
 
-static misc::StringMap inst_ssrc_map =
+const misc::StringMap Instruction::ssrc_map =
 {
 	{"0.5", 0},
 	{"-0.5", 1},
@@ -110,45 +109,45 @@ static misc::StringMap inst_ssrc_map =
 	{"literal constant", 15}
 };
 
-misc::StringMap inst_buf_data_format_map =
+const misc::StringMap Instruction::buf_data_format_map =
 {
-	{"invalid", InstBufDataFormatInvalid },
-	{"BUF_DATA_FORMAT_8", InstBufDataFormat8 },
-	{"BUF_DATA_FORMAT_16", InstBufDataFormat16 },
-	{"BUF_DATA_FORMAT_8_8", InstBufDataFormat8_8 },
-	{"BUF_DATA_FORMAT_32", InstBufDataFormat32 },
-	{"BUF_DATA_FORMAT_16_16", InstBufDataFormat16_16 },
-	{"BUF_DATA_FORMAT_10_11_11", InstBufDataFormat10_11_11 },
-	{"BUF_DATA_FORMAT_11_10_10", InstBufDataFormat11_10_10 },
-	{"BUF_DATA_FORMAT_10_10_10_2", InstBufDataFormat10_10_10_2 },
-	{"BUF_DATA_FORMAT_2_10_10_10", InstBufDataFormat2_10_10_10 },
-	{"BUF_DATA_FORMAT_8_8_8_8", InstBufDataFormat8_8_8_8 },
-	{"BUF_DATA_FORMAT_32_32", InstBufDataFormat32_32 },
-	{"BUF_DATA_FORMAT_16_16_16_16", InstBufDataFormat16_16_16_16 },
-	{"BUF_DATA_FORMAT_32_32_32", InstBufDataFormat32_32_32 },
-	{"BUF_DATA_FORMAT_32_32_32_32", InstBufDataFormat32_32_32_32 },
-	{"reserved", InstBufDataFormatReserved }
+	{"invalid", BufDataFormatInvalid },
+	{"BUF_DATA_FORMAT_8", BufDataFormat8 },
+	{"BUF_DATA_FORMAT_16", BufDataFormat16 },
+	{"BUF_DATA_FORMAT_8_8", BufDataFormat8_8 },
+	{"BUF_DATA_FORMAT_32", BufDataFormat32 },
+	{"BUF_DATA_FORMAT_16_16", BufDataFormat16_16 },
+	{"BUF_DATA_FORMAT_10_11_11", BufDataFormat10_11_11 },
+	{"BUF_DATA_FORMAT_11_10_10", BufDataFormat11_10_10 },
+	{"BUF_DATA_FORMAT_10_10_10_2", BufDataFormat10_10_10_2 },
+	{"BUF_DATA_FORMAT_2_10_10_10", BufDataFormat2_10_10_10 },
+	{"BUF_DATA_FORMAT_8_8_8_8", BufDataFormat8_8_8_8 },
+	{"BUF_DATA_FORMAT_32_32", BufDataFormat32_32 },
+	{"BUF_DATA_FORMAT_16_16_16_16", BufDataFormat16_16_16_16 },
+	{"BUF_DATA_FORMAT_32_32_32", BufDataFormat32_32_32 },
+	{"BUF_DATA_FORMAT_32_32_32_32", BufDataFormat32_32_32_32 },
+	{"reserved", BufDataFormatReserved }
 };
 
-misc::StringMap inst_buf_num_format_map =
+const misc::StringMap Instruction::buf_num_format_map =
 {
-	{"BUF_NUM_FORMAT_UNORM", InstBufNumFormatUnorm },
-	{"BUF_NUM_FORMAT_SNORM", InstBufNumFormatSnorm },
-	{"BUF_NUM_FORMAT_UNSCALED", InstBufNumFormatUnscaled },
-	{"BUF_NUM_FORMAT_SSCALED", InstBufNumFormatSscaled },
-	{"BUF_NUM_FORMAT_UINT", InstBufNumFormatUint },
-	{"BUF_NUM_FORMAT_SINT", InstBufNumFormatSint },
-	{"BUF_NUM_FORMAT_SNORM_NZ", InstBufNumFormatSnormNz },
-	{"BUF_NUM_FORMAT_FLOAT", InstBufNumFormatFloat },
-	{"reserved", InstBufNumFormatReserved },
-	{"BUF_NUM_FORMAT_SRGB", InstBufNumFormatSrgb },
-	{"BUF_NUM_FORMAT_UBNORM", InstBufNumFormatUbnorm },
-	{"BUF_NUM_FORMAT_UBNORM_NZ", InstBufNumFormatUbnormNz },
-	{"BUF_NUM_FORMAT_UBINT", InstBufNumFormatUbint },
-	{"BUF_NUM_FORMAT_UBSCALED", InstBufNumFormatUbscaled }
+	{"BUF_NUM_FORMAT_UNORM", BufNumFormatUnorm },
+	{"BUF_NUM_FORMAT_SNORM", BufNumFormatSnorm },
+	{"BUF_NUM_FORMAT_UNSCALED", BufNumFormatUnscaled },
+	{"BUF_NUM_FORMAT_SSCALED", BufNumFormatSscaled },
+	{"BUF_NUM_FORMAT_UINT", BufNumFormatUint },
+	{"BUF_NUM_FORMAT_SINT", BufNumFormatSint },
+	{"BUF_NUM_FORMAT_SNORM_NZ", BufNumFormatSnormNz },
+	{"BUF_NUM_FORMAT_FLOAT", BufNumFormatFloat },
+	{"reserved", BufNumFormatReserved },
+	{"BUF_NUM_FORMAT_SRGB", BufNumFormatSrgb },
+	{"BUF_NUM_FORMAT_UBNORM", BufNumFormatUbnorm },
+	{"BUF_NUM_FORMAT_UBNORM_NZ", BufNumFormatUbnormNz },
+	{"BUF_NUM_FORMAT_UBINT", BufNumFormatUbint },
+	{"BUF_NUM_FORMAT_UBSCALED", BufNumFormatUbscaled }
 };
 
-static misc::StringMap inst_OP16_map =
+const misc::StringMap Instruction::op16_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -168,7 +167,7 @@ static misc::StringMap inst_OP16_map =
 	{"tru", 15}
 };
 
-static misc::StringMap inst_OP8_map =
+const misc::StringMap Instruction::op8_map =
 {
 	{"f", 0},
 	{"lt", 1},
@@ -180,17 +179,17 @@ static misc::StringMap inst_OP8_map =
 	{"tru", 7}
 };
 
-misc::StringMap inst_special_reg_map =
+const misc::StringMap Instruction::special_reg_map =
 {
-	{ "vcc", InstSpecialRegVcc },
-	{ "scc", InstSpecialRegScc },
-	{ "exec", InstSpecialRegExec },
-	{ "tma", InstSpecialRegTma },
-	{ "m0", InstSpecialRegM0 }	
+	{ "vcc", SpecialRegVcc },
+	{ "scc", SpecialRegScc },
+	{ "exec", SpecialRegExec },
+	{ "tma", SpecialRegTma },
+	{ "m0", SpecialRegM0 }	
 };
 
 
-void Inst::DumpOperand(std::ostream& os, int operand)
+void Instruction::DumpOperand(std::ostream& os, int operand)
 {
 	assert(operand >= 0 && operand <= 511);
 	if (operand <= 103)
@@ -201,7 +200,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	else if (operand <= 127)
 	{
 		/* sdst special registers */
-		os << inst_sdst_map.MapValue(operand - 104);
+		os << sdst_map.MapValue(operand - 104);
 	}
 	else if (operand <= 192)
 	{
@@ -220,7 +219,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 	}
 	else if (operand <= 255)
 	{
-		os << inst_ssrc_map.MapValue(operand - 240);
+		os << ssrc_map.MapValue(operand - 240);
 	}
 	else if (operand <= 511)
 	{
@@ -230,7 +229,7 @@ void Inst::DumpOperand(std::ostream& os, int operand)
 }
 
 
-void Inst::DumpOperandSeries(std::ostream& os, int start, int end)
+void Instruction::DumpOperandSeries(std::ostream& os, int start, int end)
 {
 	assert(start <= end);
 	if (start == end)
@@ -310,31 +309,31 @@ void Inst::DumpOperandSeries(std::ostream& os, int start, int end)
 }
 
 
-void Inst::DumpScalar(std::ostream& os, int operand)
+void Instruction::DumpScalar(std::ostream& os, int operand)
 {
 	DumpOperand(os, operand);
 }
 
 
-void Inst::DumpScalarSeries(std::ostream& os, int start, int end)
+void Instruction::DumpScalarSeries(std::ostream& os, int start, int end)
 {
 	DumpOperandSeries(os, start, end);
 }
 
 
-void Inst::DumpVector(std::ostream& os, int operand)
+void Instruction::DumpVector(std::ostream& os, int operand)
 {
 	DumpOperand(os, operand + 256);
 }
 
 
-void Inst::DumpVectorSeries(std::ostream& os, int start, int end)
+void Instruction::DumpVectorSeries(std::ostream& os, int start, int end)
 {
 	DumpOperandSeries(os, start + 256, end + 256);
 }
 
 
-void Inst::DumpOperandExp(std::ostream& os, int operand)
+void Instruction::DumpOperandExp(std::ostream& os, int operand)
 {
 	assert(operand >= 0 && operand <= 63);
 	if (operand <= 7)
@@ -375,7 +374,7 @@ void Inst::DumpOperandExp(std::ostream& os, int operand)
 }
 
 
-void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
+void Instruction::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 {
 	int vdata_end;
 
@@ -411,7 +410,7 @@ void Inst::DumpSeriesVdata(std::ostream& os, unsigned int vdata, int op)
 }
 
 
-void Inst::DumpSsrc(std::ostream& os, unsigned int ssrc) const
+void Instruction::DumpSsrc(std::ostream& os, unsigned int ssrc) const
 {
 	if (ssrc == 0xff)
 		os << misc::fmt("0x%08x", bytes.sop2.lit_cnst);
@@ -420,7 +419,7 @@ void Inst::DumpSsrc(std::ostream& os, unsigned int ssrc) const
 }
 
 
-void Inst::Dump64Ssrc(std::ostream& os, unsigned int ssrc) const
+void Instruction::Dump64Ssrc(std::ostream& os, unsigned int ssrc) const
 {		
 	if (ssrc == 0xff)
 		os << misc::fmt("0x%08x", bytes.sop2.lit_cnst);
@@ -429,7 +428,7 @@ void Inst::Dump64Ssrc(std::ostream& os, unsigned int ssrc) const
 }
 
 
-void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
+void Instruction::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
 {
 	std::stringstream ss;
 
@@ -460,7 +459,7 @@ void Inst::DumpVop3Src(std::ostream& os, unsigned int src, int neg) const
 }
 
 
-void Inst::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
+void Instruction::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
 {
 	std::stringstream ss;
 
@@ -491,7 +490,7 @@ void Inst::DumpVop364Src(std::ostream& os, unsigned int src, int neg) const
 }
 
 
-void Inst::DumpMaddr(std::ostream& os) const
+void Instruction::DumpMaddr(std::ostream& os) const
 {
 	/* soffset */
 	assert(bytes.mtbuf.soffset <= 103 ||
@@ -514,7 +513,7 @@ void Inst::DumpMaddr(std::ostream& os) const
 }
 
 
-void Inst::DumpDug(std::ostream& os) const
+void Instruction::DumpDug(std::ostream& os) const
 {
 	/* DMASK */
 	os << misc::fmt(" dmask:0x%x", bytes.mimg.dmask);
@@ -529,14 +528,14 @@ void Inst::DumpDug(std::ostream& os) const
 }
 
 
-Inst::Inst()
+Instruction::Instruction()
 {
 	this->disassembler = Disassembler::getInstance();
 	Clear();
 }
 
 
-void Inst::Dump(std::ostream &os) const
+void Instruction::Dump(std::ostream &os) const
 {
 	int token_len;
 	const char *fmt_str;
@@ -557,7 +556,7 @@ void Inst::Dump(std::ostream &os) const
 		fmt_str++;
 		if (comm::Disassembler::isToken(fmt_str, "WAIT_CNT", token_len))
 		{	
-			const InstBytesSOPP *sopp = &bytes.sopp;
+			const BytesSOPP *sopp = &bytes.sopp;
 
 			unsigned int more = 0;
 			int vm_cnt = (sopp->simm16 & 0xF);
@@ -588,7 +587,7 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (comm::Disassembler::isToken(fmt_str, "LABEL", token_len))
 		{		
-			const InstBytesSOPP *sopp = &bytes.sopp;
+			const BytesSOPP *sopp = &bytes.sopp;
 	
 			short simm16 = sopp->simm16;
 			int se_simm = simm16;
@@ -701,11 +700,11 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (comm::Disassembler::isToken(fmt_str, "VOP3_OP16", token_len))
 		{
-			os << inst_OP16_map.MapValue(bytes.vop3a.op & 15);
+			os << op16_map.MapValue(bytes.vop3a.op & 15);
 		}
 		else if (comm::Disassembler::isToken(fmt_str, "VOP3_OP8", token_len))
 		{
-			os << inst_OP8_map.MapValue(bytes.vop3a.op & 15);
+			os << op8_map.MapValue(bytes.vop3a.op & 15);
 		}
 		else if (comm::Disassembler::isToken(fmt_str, "SMRD_SDST", token_len))
 		{
@@ -937,9 +936,9 @@ void Inst::Dump(std::ostream &os) const
 		{
 			DumpMaddr(os);
 			os << " format:["
-					<< inst_buf_data_format_map.MapValue(
+					<< buf_data_format_map.MapValue(
 					bytes.mtbuf.dfmt) << ','
-					<< inst_buf_num_format_map.MapValue(
+					<< buf_num_format_map.MapValue(
 					bytes.mtbuf.nfmt) << ']';
 		}
 		else if (comm::Disassembler::isToken(fmt_str, "MIMG_SERIES_VDATA_SRC", token_len) ||
@@ -1020,7 +1019,7 @@ void Inst::Dump(std::ostream &os) const
 }
 
 
-void Inst::Clear()
+void Instruction::Clear()
 {
 	info = NULL;
 	bytes.dword = 0;
@@ -1029,7 +1028,7 @@ void Inst::Clear()
 }
 
 
-void Inst::Decode(const char *buf, unsigned int address)
+void Instruction::Decode(const char *buf, unsigned int address)
 {
 	/* Initialize instruction */
 	info = NULL;

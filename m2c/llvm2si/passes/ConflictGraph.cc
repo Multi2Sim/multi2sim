@@ -168,9 +168,9 @@ void ConflictGraphPass::runScalar()
 							instruction != instruction_queue.rend();
 							instruction++)
 		{
-			SI::InstOpcode opcode = (*instruction)->getOpcode();
+			SI::Instruction::Opcode opcode = (*instruction)->getOpcode();
 			// Phi and Mov instructions don't introduce interference
-			if(opcode != SI::INST_PHI || opcode != SI::INST_S_MOV_B32 || opcode != SI::INST_S_MOV_B64)
+			if(opcode != SI::Instruction::Opcode_PHI || opcode != SI::Instruction::Opcode_S_MOV_B32 || opcode != SI::Instruction::Opcode_S_MOV_B64)
 			{
 				// Get arguments from the instruction
 				for (auto &argument : (*instruction)->getArguments())
@@ -397,9 +397,9 @@ void ConflictGraphPass::runVector()
 							instruction != instruction_queue.rend();
 							instruction++)
 		{
-			SI::InstOpcode opcode = (*instruction)->getOpcode();
+			SI::Instruction::Opcode opcode = (*instruction)->getOpcode();
 			// Phi and Mov instructions don't introduce interference
-			if(opcode != SI::INST_PHI || opcode != SI::INST_V_MOV_B32)
+			if(opcode != SI::Instruction::Opcode_PHI || opcode != SI::Instruction::Opcode_V_MOV_B32)
 			{
 				// Get arguments from the instruction
 				for (auto &argument : (*instruction)->getArguments())

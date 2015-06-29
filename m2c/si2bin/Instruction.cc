@@ -29,7 +29,7 @@ namespace si2bin
 {
 
 Instruction::Instruction(llvm2si::BasicBlock *basic_block,
-		SI::InstOpcode opcode) :
+		SI::Instruction::Opcode opcode) :
 		basic_block(basic_block),
 		opcode(opcode)
 {
@@ -129,7 +129,7 @@ void Instruction::InferOpcodeFromName(const std::string &name)
 bool Instruction::hasValidArguments()
 {
 	// The Phi instruction is a special case
-	if (opcode == SI::INST_PHI)
+	if (opcode == SI::Instruction::Opcode_PHI)
 	{
 		// At least 3 arguments
 		if (arguments.size() < 3)
@@ -364,20 +364,20 @@ void Instruction::EncodeArgument(Argument *argument, Token *token)
 		switch (opcode)
 		{
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_X:
-		case SI::INST_TBUFFER_STORE_FORMAT_X:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_X:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_X:
 
 			high_must = low;
 			break;
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_XY:
-		case SI::INST_TBUFFER_STORE_FORMAT_XY:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XY:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XY:
 
 			high_must = low + 1;
 			break;
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_XYZW:
-		case SI::INST_TBUFFER_STORE_FORMAT_XYZW:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XYZW:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XYZW:
 
 			high_must = low + 3;
 			break;
@@ -437,20 +437,20 @@ void Instruction::EncodeArgument(Argument *argument, Token *token)
 		switch (opcode)
 		{
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_X:
-		case SI::INST_TBUFFER_STORE_FORMAT_X:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_X:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_X:
 
 			high_must = low;
 			break;
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_XY:
-		case SI::INST_TBUFFER_STORE_FORMAT_XY:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XY:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XY:
 
 			high_must = low + 1;
 			break;
 
-		case SI::INST_TBUFFER_LOAD_FORMAT_XYZW:
-		case SI::INST_TBUFFER_STORE_FORMAT_XYZW:
+		case SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XYZW:
+		case SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XYZW:
 
 			high_must = low + 3;
 			break;
@@ -525,17 +525,17 @@ void Instruction::EncodeArgument(Argument *argument, Token *token)
 		switch (opcode)
 		{
 
-		case SI::INST_S_LOAD_DWORDX2:
-		case SI::INST_S_LOAD_DWORDX4:
+		case SI::Instruction::Opcode_S_LOAD_DWORDX2:
+		case SI::Instruction::Opcode_S_LOAD_DWORDX4:
 
 			// High register must be low plus 1
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[x:x+1]");
 			break;
 
-		case SI::INST_S_BUFFER_LOAD_DWORD:
-		case SI::INST_S_BUFFER_LOAD_DWORDX2:
-		case SI::INST_S_BUFFER_LOAD_DWORDX4:
+		case SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD:
+		case SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX2:
+		case SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX4:
 
 			// High register must be low plus 3
 			if (srs->getHigh() != srs->getLow() + 3)
@@ -563,16 +563,16 @@ void Instruction::EncodeArgument(Argument *argument, Token *token)
 		switch (opcode)
 		{
 
-		case SI::INST_S_LOAD_DWORDX2:
-		case SI::INST_S_BUFFER_LOAD_DWORDX2:
+		case SI::Instruction::Opcode_S_LOAD_DWORDX2:
+		case SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX2:
 
 			// High register must be low plus 1
 			if (srs->getHigh() != srs->getLow() + 1)
 				misc::fatal("register series must be s[low:low+1]");
 			break;
 
-		case SI::INST_S_LOAD_DWORDX4:
-		case SI::INST_S_BUFFER_LOAD_DWORDX4:
+		case SI::Instruction::Opcode_S_LOAD_DWORDX4:
+		case SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX4:
 
 			// High register must be low plus 3
 			if (srs->getHigh() != srs->getLow() + 3)
@@ -1090,7 +1090,7 @@ void Instruction::Encode()
 	 * format. 4-bit instructions could be extended later to 8 bits upon
 	 * the presence of a literal constant. */
 	assert(info);
-	SI::InstInfo *si_info = info->getInfo();
+	SI::Instruction::Info *si_info = info->getInfo();
 	size = si_info->size;
 
 	// Instruction opcode
@@ -1098,119 +1098,119 @@ void Instruction::Encode()
 	{
 
 	// encoding in [31:26], op in [18:16]
-	case SI::InstFormatMTBUF:
+	case SI::Instruction::FormatMTBUF:
 
 		bytes.mtbuf.enc = 0x3a;
 		bytes.mtbuf.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatMUBUF:
+	case SI::Instruction::FormatMUBUF:
 
 		bytes.mubuf.enc = 0x38;
 		bytes.mubuf.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatMIMG:
+	case SI::Instruction::FormatMIMG:
 		
 		bytes.mimg.enc = 0x3c;
 		bytes.mimg.op = si_info->op;
 		break;
 
 	// encoding in [31:27], op in [26:22]
-	case SI::InstFormatSMRD:
+	case SI::Instruction::FormatSMRD:
 
 		bytes.smrd.enc = 0x18;
 		bytes.smrd.op = si_info->op;
 		break;
 
 	// encoding in [31:26], op in [25:28]
-	case SI::InstFormatDS:
+	case SI::Instruction::FormatDS:
 
 		bytes.ds.enc = 0x36;
 		bytes.ds.op = si_info->op;
 		break;
 
 	// encoding in [31:23], op in [22:16]
-	case SI::InstFormatSOPC:
+	case SI::Instruction::FormatSOPC:
 
 		bytes.sopc.enc = 0x17e;
 		bytes.sopc.op = si_info->op;
 		break;
 
 	// encoding in [31:23], op in [15:8]
-	case SI::InstFormatSOP1:
+	case SI::Instruction::FormatSOP1:
 
 		bytes.sop1.enc = 0x17d;
 		bytes.sop1.op = si_info->op;
 		break;
 
 	// encoding in [31:30], op in [29:23]
-	case SI::InstFormatSOP2:
+	case SI::Instruction::FormatSOP2:
 
 		bytes.sop2.enc = 0x2;
 		bytes.sop2.op = si_info->op;
 		break;
 
 	// encoding in [31:23], op in [22:16]
-	case SI::InstFormatSOPP:
+	case SI::Instruction::FormatSOPP:
 
 		bytes.sopp.enc = 0x17f;
 		bytes.sopp.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatSOPK:
+	case SI::Instruction::FormatSOPK:
 
 		bytes.sopk.enc = 0xb;
 		bytes.sopk.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatVOPC:
+	case SI::Instruction::FormatVOPC:
 
 		bytes.vopc.enc = 0x3e;
 		bytes.vopc.op = si_info->op;
 		break;
 
 	// encoding in [31:25], op in [16:9]
-	case SI::InstFormatVOP1:
+	case SI::Instruction::FormatVOP1:
 
 		bytes.vop1.enc = 0x3f;
 		bytes.vop1.op = si_info->op;
 		break;
 
 	// encoding in [31], op in [30:25]
-	case SI::InstFormatVOP2:
+	case SI::Instruction::FormatVOP2:
 
 		bytes.vop2.enc = 0x0;
 		bytes.vop2.op = si_info->op;
 		break;
 
 	// encoding in [31:26], op in [25:17]
-	case SI::InstFormatVOP3a:
+	case SI::Instruction::FormatVOP3a:
 
 		bytes.vop3a.enc = 0x34;
 		bytes.vop3a.op = si_info->op;
 		break;
 
 	// encoding in [31:26], op in [25:17]
-	case SI::InstFormatVOP3b:
+	case SI::Instruction::FormatVOP3b:
 
 		bytes.vop3a.enc = 0x34;
 		bytes.vop3a.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatVINTRP:
+	case SI::Instruction::FormatVINTRP:
 
 		bytes.vintrp.enc = 0x32;
 		bytes.vintrp.op = si_info->op;
 		break;
 
 	// encoding in [:], op in []
-	case SI::InstFormatEXP:
+	case SI::Instruction::FormatEXP:
 
 		bytes.exp.enc = 0x3e;
 		// No opcode: only 1 instruction

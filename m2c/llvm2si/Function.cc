@@ -212,7 +212,7 @@ void Function::AddUAV(FunctionUAV *uav)
 	//
 	// s_load_dwordx4 s[uavX:uavX+3], s[uav_table:uav_table+1], x * 8
 	//
-	Instruction *inst = basic_block->addInstruction(SI::INST_S_LOAD_DWORDX4);
+	Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_LOAD_DWORDX4);
 	inst->addScalarRegisterSeries(uav->sreg, uav->sreg + 3);
 	inst->addScalarRegisterSeries(sreg_uav_table, sreg_uav_table + 1);
 	inst->addLiteral((uav->index + 10) * 8);
@@ -250,13 +250,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	{
 	case 1:
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORD);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD);
 		inst->addScalarRegister(arg->sreg);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
 		assert(inst->hasValidArguments());
 
-		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
 		assert(inst->hasValidArguments());
 
@@ -268,7 +268,7 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 		//
 		// v_mov_b32 v[arg], s[arg]
 		//
-		/*inst = new Inst(SI::INST_V_MOV_B32,
+		/*inst = new Inst(SI::Instruction::Opcode_V_MOV_B32,
 				new ArgVectorRegister(arg->vreg),
 				new ArgScalarRegister(arg->sreg));
 		basic_block->AddInst(inst);*/
@@ -281,13 +281,13 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 
 	case 4:
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORDX4);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX4);
 		inst->addScalarRegisterSeries(arg->sreg, arg->sreg + 3);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
 		assert(inst->hasValidArguments());
 
-		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
 		assert(inst->hasValidArguments());
 
@@ -299,20 +299,20 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 	}
 	case 8:
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORDX4);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX4);
 		inst->addScalarRegisterSeries(arg->sreg, arg->sreg + 3);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + offset);
 		assert(inst->hasValidArguments());
 		
-		inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORDX4);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORDX4);
 		inst->addScalarRegisterSeries(arg->sreg + 4, arg->sreg + 7);
 		inst->addScalarRegisterSeries(sreg_cb1, sreg_cb1 + 3);
 		inst->addLiteral(arg->index * 4 + 4 + offset);
 		assert(inst->hasValidArguments());
 		offset += 4;
 		
-		inst = basic_block->addInstruction(SI::INST_S_WAITCNT);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 		inst->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
 		assert(inst->hasValidArguments());
 
@@ -488,7 +488,7 @@ void Function::EmitHeader()
 	sreg_gsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORD);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD);
 		inst->addScalarRegister(sreg_gsize + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(index);
@@ -505,7 +505,7 @@ void Function::EmitHeader()
 	sreg_lsize = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORD);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD);
 		inst->addScalarRegister(sreg_lsize + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(4 + index);
@@ -522,7 +522,7 @@ void Function::EmitHeader()
 	sreg_offs = AllocSReg(3);
 	for (int index = 0; index < 3; index++)
 	{
-		Instruction *inst = basic_block->addInstruction(SI::INST_S_BUFFER_LOAD_DWORD);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD);
 		inst->addScalarRegister(sreg_offs + index);
 		inst->addScalarRegisterSeries(sreg_cb0, sreg_cb0 + 3);
 		inst->addLiteral(0x18 + index);
@@ -544,30 +544,30 @@ void Function::EmitHeader()
 				"in dimension %d", index));
 
 		// v_mov_b32
-		Instruction *inst = basic_block->addInstruction(SI::INST_V_MOV_B32);
+		Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addScalarRegister(sreg_lsize + index);
 		assert(inst->hasValidArguments());
 
 		// v_mul_i32_i24
-		inst = basic_block->addInstruction(SI::INST_V_MUL_I32_I24);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_V_MUL_I32_I24);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addScalarRegister(sreg_wgid + index);
 		inst->addVectorRegister(vreg_gid + index);
 		assert(inst->hasValidArguments());
 
 		// v_add_i32
-		inst = basic_block->addInstruction(SI::INST_V_ADD_I32);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 		inst->addVectorRegister(vreg_gid + index);
-		inst->addSpecialRegister(SI::InstSpecialRegVcc);
+		inst->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 		inst->addVectorRegister(vreg_gid + index);
 		inst->addVectorRegister(vreg_lid + index);
 		assert(inst->hasValidArguments());
 
 		// v_add_i32
-		inst = basic_block->addInstruction(SI::INST_V_ADD_I32);
+		inst = basic_block->addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 		inst->addVectorRegister(vreg_gid + index);
-		inst->addSpecialRegister(SI::InstSpecialRegVcc);
+		inst->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 		inst->addScalarRegister(sreg_offs + index);
 		inst->addVectorRegister(vreg_gid + index);
 		assert(inst->hasValidArguments());
@@ -576,8 +576,8 @@ void Function::EmitHeader()
 	// Emit instructions to initialize M0
 	//
 	// s_mov_b32 m0, 0x00008000
-	Instruction *inst = basic_block->addInstruction(SI::INST_S_MOV_B32);
-	inst->addSpecialRegister(SI::InstSpecialRegM0);
+	Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_S_MOV_B32);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegM0);
 	inst->addLiteral(32768);
 	assert(inst->hasValidArguments());
 }
@@ -706,7 +706,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 			// Emit move instruction
 			// v_mov_b32 <dest_value>, <src_value>
 			Instruction *instruction = basic_block->addInstruction(it,
-					SI::INST_V_MOV_B32);
+					SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(dst_vreg);
 			instruction->addVectorRegister(src_vreg);
 			assert(instruction->hasValidArguments());
@@ -720,7 +720,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 			// Emit move instruction
 			// v_mov_b32 <dest_value>, <src_value>
 			Instruction *instruction = basic_block->addInstruction(it,
-					SI::INST_V_MOV_B32);
+					SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(dst_vreg);
 			instruction->addScalarRegister(src_sreg);
 			assert(instruction->hasValidArguments());
@@ -735,7 +735,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 			// Emit move instruction
 			// v_mov_b32 <dest_value>, <src_value>
 			Instruction *instruction = basic_block->addInstruction(it,
-					SI::INST_V_MOV_B32);
+					SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(dst_vreg);
 			instruction->addLiteral(src_literal);
 			assert(instruction->hasValidArguments());
@@ -750,7 +750,7 @@ void Function::EmitPhiMoves(si2bin::Instruction *inst)
 			// Emit move instruction
 			// v_mov_b32 <dest_value>, <src_value>
 			Instruction *instruction = basic_block->addInstruction(it,
-					SI::INST_V_MOV_B32);
+					SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(dst_vreg);
 			instruction->addLiteralFloat(src_literal_float);
 			assert(instruction->hasValidArguments());
@@ -777,7 +777,7 @@ void Function::EmitPhi()
 
 			// Process Phi instruction
 			Instruction *inst = it->get();
-			if (inst->getOpcode() == SI::INST_PHI)
+			if (inst->getOpcode() == SI::Instruction::Opcode_PHI)
 			{
 				EmitPhiMoves(inst);
 				basic_block->getInstructions().erase(it);
@@ -844,7 +844,7 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	//
 	Instruction *inst = if_basic_block->addInstruction(
-			SI::INST_S_AND_SAVEEXEC_B64);
+			SI::Instruction::Opcode_S_AND_SAVEEXEC_B64);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
@@ -859,8 +859,8 @@ void Function::EmitIfThen(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = then_basic_block->addInstruction(SI::INST_S_MOV_B64);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst = then_basic_block->addInstruction(SI::Instruction::Opcode_S_MOV_B64);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
@@ -932,7 +932,7 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	// s_and_saveexec_b64 <tos_sreg> <cond_sreg>
 	//
 	Instruction *inst = if_basic_block->addInstruction(
-			SI::INST_S_AND_SAVEEXEC_B64);
+			SI::Instruction::Opcode_S_AND_SAVEEXEC_B64);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
@@ -947,10 +947,10 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	//
 	// s_andn2_b64 exec, <tos_sreg>, exec
 	//
-	inst = then_basic_block->addInstruction(SI::INST_S_ANDN2_B64);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst = then_basic_block->addInstruction(SI::Instruction::Opcode_S_ANDN2_B64);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
 
@@ -963,8 +963,8 @@ void Function::EmitIfThenElse(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = else_basic_block->addInstruction(SI::INST_S_MOV_B64);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst = else_basic_block->addInstruction(SI::Instruction::Opcode_S_MOV_B64);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
@@ -1029,9 +1029,9 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_mov_b64 <tos_sreg>, exec
 	//
-	Instruction *inst = pre_basic_block->addInstruction(SI::INST_S_MOV_B64);
+	Instruction *inst = pre_basic_block->addInstruction(SI::Instruction::Opcode_S_MOV_B64);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
 
@@ -1044,8 +1044,8 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_mov_b64 exec, <tos_sreg>
 	//
-	inst = exit_basic_block->addInstruction(SI::INST_S_MOV_B64);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst = exit_basic_block->addInstruction(SI::Instruction::Opcode_S_MOV_B64);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->addScalarRegisterSeries(tos_sreg, tos_sreg + 1);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
@@ -1059,7 +1059,7 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 	//
 	// s_branch <head_block>
 	//
-	inst = tail_basic_block->addInstruction(SI::INST_S_BRANCH);
+	inst = tail_basic_block->addInstruction(SI::Instruction::Opcode_S_BRANCH);
 	inst->addLabel(head_leaf_node->getName());
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
@@ -1087,23 +1087,23 @@ void Function::EmitWhileLoop(comm::AbstractNode *node)
 
 	// Obtain opcode depending on whether the loop exists when the head's
 	// condition is true or it does when it is false.
-	SI::InstOpcode opcode = SI::INST_S_AND_B64;
+	SI::Instruction::Opcode opcode = SI::Instruction::Opcode_S_AND_B64;
 	assert(head_node->getExitIfTrue() ^ head_node->getExitIfFalse());
 	if (head_node->getExitIfTrue())
-		opcode = SI::INST_S_ANDN2_B64;
+		opcode = SI::Instruction::Opcode_S_ANDN2_B64;
 
 	// Bitwise 'and' of active mask with condition.
 	// s_and(n2)_b64 exec, exec, <cond_sreg>
 	inst = head_basic_block->addInstruction(opcode);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
-	inst->addSpecialRegister(SI::InstSpecialRegExec);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
+	inst->addSpecialRegister(SI::Instruction::SpecialRegExec);
 	inst->addScalarRegisterSeries(cond_sreg, cond_sreg + 1);
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
 
 	// Exit loop if no more work-items are active.
 	// s_cbranch_execz <exit_node>
-	inst = head_basic_block->addInstruction(SI::INST_S_CBRANCH_EXECZ);
+	inst = head_basic_block->addInstruction(SI::Instruction::Opcode_S_CBRANCH_EXECZ);
 	inst->addLabel(exit_node->getName());
 	inst->setControlFlow(true);
 	assert(inst->hasValidArguments());
@@ -1548,7 +1548,7 @@ std::unique_ptr<Argument> Function::ConstToVReg(BasicBlock *basic_block,
 	//
 	// v_mov_b32 <vreg>, <const>
 	//
-	Instruction *inst = basic_block->addInstruction(SI::INST_V_MOV_B32);
+	Instruction *inst = basic_block->addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 	inst->addVectorRegister(vreg);
 	inst->addArgument(std::move(arg));
 	assert(inst->hasValidArguments());
