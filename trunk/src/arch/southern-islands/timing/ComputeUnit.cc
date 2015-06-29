@@ -87,6 +87,10 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 					(*oldest_uop_iterator)->getWavefront()->getId())
 				oldest_uop_iterator = it;
 		}
+
+		// Stop if no instruction found
+		/*if (odest_uop_iterator == fetch_buffer->end())
+			break;*/
 	}
 #if 0
 		/* Issue the oldest branch instruction */

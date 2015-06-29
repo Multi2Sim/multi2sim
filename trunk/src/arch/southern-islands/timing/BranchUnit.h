@@ -20,6 +20,11 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_BRANCH_UNIT_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_BRANCH_UNIT_H
 
+#include <deque>
+#include <memory>
+
+#include "Uop.h"
+
 
 namespace SI
 {
@@ -34,6 +39,9 @@ class BranchUnit
 	// Compute unit that it belongs to, assigned in constructor
 	ComputeUnit *compute_unit;
 
+	// Issue buffer absorbing instructions from the front end
+	std::deque<std::shared_ptr<Uop>> issue_buffer;
+
 	// Number of instructions
 	long long num_instructions = 0;
 
@@ -46,6 +54,13 @@ public:
 
 	/// Run the actions occurring in one cycle
 	void Run();
+
+	/// Return whether there is room in the issue buffer of the branch
+	/// unit to absorb a new instruction.
+	/*bool canIssue() const
+	{
+		return (int) issue_buffer.size() < issue_buffer_size;
+	}*/
 };
 
 }

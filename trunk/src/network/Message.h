@@ -90,7 +90,7 @@ public:
 	int getSize() const { return size; }
 
 	/// Get number of packets belongs to the message
-	int getNumPacket() const { return packets.size(); }
+	int getNumPackets() const { return packets.size(); }
 
 	/// Get packet by index
 	Packet *getPacket(int index) const { return packets[index].get(); }
