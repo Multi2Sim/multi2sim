@@ -17,11 +17,29 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "VectorMemoryUnit.h"
+#include <cassert>
+
+#include "FetchBuffer.h"
 
 
 namespace SI
 {
+
+int FetchBuffer::fetch_latency = 1;
+int FetchBuffer::fetch_width = 1;
+int FetchBuffer::fetch_buffer_size = 10;
+int FetchBuffer::issue_latency = 1;
+int FetchBuffer::issue_width = 5;
+int FetchBuffer::max_instructions_issued_per_type = 1;
+	
+	
+std::shared_ptr<Uop> FetchBuffer::Remove(std::list<std::shared_ptr<Uop>>::iterator it)
+{
+	assert(it != buffer.end());
+	std::shared_ptr<Uop> uop = *it;
+	buffer.erase(it);
+	return uop;
+}
 
 }
 

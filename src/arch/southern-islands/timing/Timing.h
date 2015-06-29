@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_TIMING_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_TIMING_H
 
+#include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
 
 #include "Gpu.h"

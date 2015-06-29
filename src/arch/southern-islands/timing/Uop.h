@@ -20,28 +20,60 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
+#include <arch/southern-islands/disassembler/Inst.h>
+
 
 namespace SI
 {
+
+// Forward declarations
+class Wavefront;
+
 
 /// Class representing an instruction flowing through the pipelines of the
 /// GPU compute units.
 class Uop
 {
+	//
+	// Static fields
+	//
+
 	// Counter tracking the ID assigned to the last uop created
 	static long long id_counter;
+
+
+
+
+	//
+	// Class members
+	//
 
 	// Unique identifier of the instruction, assigned when created
 	long long id;
 
+	// Associated instruction
+	Inst instruction;
+
+	// Associated wavefront, assigned in constructor
+	Wavefront *wavefront;
+
 public:
 
 	/// Constructor
-	Uop();
+	Uop(Wavefront *wavefront);
 
 	/// Return the unique identifier assigned in sequential order to the
 	/// uop when it was created.
 	long long getId() const { return id; }
+
+	/// Return the instruction associated with the uop
+	Inst *getInstruction() { return &instruction; }
+
+	/// Return the associated wavefront
+	Wavefront *getWavefront() { return wavefront; }
+
+	/// Cycle in which the uop is first ready after fetch
+	long long fetch_ready = 0;
 };
 
 }

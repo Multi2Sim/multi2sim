@@ -37,6 +37,7 @@ namespace SI
 {
 
 // Forward declarations
+class Timing;
 class WorkGroup;
 
 
@@ -56,6 +57,16 @@ class ComputeUnit
 	//
 	// Class members
 	//
+
+	// Fetch an instruction from the given wavefront pool
+	void Fetch(int wavefront_pool_id);
+
+	// Issue an instruction from the given fetch buffer into the
+	// appropriate execution unit.
+	void Issue(int fetch_buffer_id);
+
+	// Associated timing simulator, saved for performance
+	Timing *timing = nullptr;
 
 	// Index of the compute unit in the GPU device, initialized in the
 	// constructor.
