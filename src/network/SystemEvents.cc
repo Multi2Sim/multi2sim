@@ -198,10 +198,10 @@ void System::EventTypeReceiveHandler(esim::Event *type,
 	// Check if the packet can be assembled 
 	if (message->Assemble(packet))
 	{
-		if(network_frame->getReturnEvent()) 
-			esim_engine->Next(network_frame->getReturnEvent());
-		else 
+		if (network_frame->automatic_receive)
 			network->Receive(node, message);
+		else 
+			esim_engine->Return();
 	}
 }
 

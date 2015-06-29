@@ -31,23 +31,20 @@ class Frame : public esim::Frame
 	// Packet
 	Packet *packet;
 
-	// The event to be scheduled when the message arrived
-	esim::Event *return_event;
-
 public:
 
 	/// Constructor
-	Frame(Packet *packet, esim::Event *return_event) :
-		packet(packet),
-		return_event(return_event)
+	Frame(Packet *packet) : packet(packet)
 	{
 	}
 
 	/// Return the packet
 	Packet *getPacket() const { return packet; }
 
-	/// Get the return event type
-	esim::Event *getReturnEvent() { return return_event; }
+	/// If true, the packet associated with this frame will be consumed
+	/// automatically by the destination end node. If false, the user
+	/// is responsible for receiving that in the receive event handler.
+	bool automatic_receive = false;
 };
 
 }
