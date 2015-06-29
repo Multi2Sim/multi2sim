@@ -851,9 +851,9 @@ operand
 	
 	| TOK_SPECIAL_REGISTER
 	{
-		SI::InstSpecialReg reg;
-		reg = static_cast<SI::InstSpecialReg>
-			(SI::inst_special_reg_map.MapString($1));
+		SI::Instruction::SpecialReg reg;
+		reg = static_cast<SI::Instruction::SpecialReg>
+			(SI::Instruction::special_reg_map.MapString($1));
 		$$ = new si2bin::ArgSpecialRegister(reg);
 	}
 
@@ -981,8 +981,8 @@ arg
 		char *id_data_format;
 		char *id_num_format;
 		
-		SI::InstBufDataFormat data_format;
-		SI::InstBufNumFormat num_format;
+		SI::Instruction::BufDataFormat data_format;
+		SI::Instruction::BufNumFormat num_format;
 		
 		bool err;
 
@@ -994,15 +994,15 @@ arg
 		
 		// Data format
 		data_format = 
-			static_cast<SI::InstBufDataFormat>(
-			SI::inst_buf_data_format_map.MapString(id_data_format, err));
+			static_cast<SI::Instruction::BufDataFormat>(
+			SI::Instruction::buf_data_format_map.MapString(id_data_format, err));
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid data format", id_data_format);
 			
 		// Number format
 		num_format = 
-			static_cast<SI::InstBufNumFormat>(
-			SI::inst_buf_num_format_map.MapString(id_num_format, err));
+			static_cast<SI::Instruction::BufNumFormat>(
+			SI::Instruction::buf_num_format_map.MapString(id_num_format, err));
 		if (err)
 			si2bin_yyerror_fmt("%s: invalid number format", id_num_format); 
 

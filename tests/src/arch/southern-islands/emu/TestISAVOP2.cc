@@ -33,7 +33,7 @@ TEST(TestISAVOP2, V_ADD_I32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	
 	// Build instruction -  v_add_i32 v2, vcc, v0, v1
@@ -64,7 +64,7 @@ TEST(TestISAVOP2, V_ADD_I32)
 	int src0 = inst->getBytes()->vop2.src0;
 	int vsrc1 = inst->getBytes()->vop2.vsrc1;
 	int vdst = inst->getBytes()->vop2.vdst;
-	int vcc = Inst::RegisterVcc;
+	int vcc = Instruction::RegisterVcc;
 	
 
 

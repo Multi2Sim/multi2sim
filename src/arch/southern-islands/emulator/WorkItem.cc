@@ -27,7 +27,7 @@
 namespace SI
 {
 
-void WorkItem::ISAUnimplemented(Inst *inst)
+void WorkItem::ISAUnimplemented(Instruction *inst)
 {
 	throw misc::Panic(misc::fmt("%s: Unimplemented Southern Islands "
 			"instruction\n"
@@ -239,16 +239,16 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	// Work-group that is belongs to
 	work_group = wavefront->getWorkGroup();
 
-	ISAInstFuncTable[InstOpcodeInvalid] =  nullptr;
+	ISAInstFuncTable[Instruction::OpcodeInvalid] =  nullptr;
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
-	ISAInstFuncTable[INST_##_name] = &WorkItem::ISA_##_name##_Impl;
-#include <arch/southern-islands/disassembler/Inst.def>
+	ISAInstFuncTable[Instruction::Opcode_##_name] = &WorkItem::ISA_##_name##_Impl;
+#include <arch/southern-islands/disassembler/Instruction.def>
 #undef DEFINST
-	ISAInstFuncTable[InstOpcodeCount] = nullptr;
+	ISAInstFuncTable[Instruction::OpcodeCount] = nullptr;
 }
 
 
-void WorkItem::Execute(InstOpcode opcode, Inst *inst)
+void WorkItem::Execute(Instruction::Opcode opcode, Instruction *inst)
 {
 	(this->*(ISAInstFuncTable[opcode]))(inst);
 }
@@ -310,7 +310,7 @@ void WorkItem::WriteBitmaskSReg(int sreg,
 {
 	unsigned mask = 1;
 	unsigned bitfield;
-	InstReg new_field;
+	Instruction::Register new_field;
 	if (id_in_wavefront < 32)
 	{
 		mask <<= id_in_wavefront;

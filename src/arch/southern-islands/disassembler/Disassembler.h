@@ -25,7 +25,7 @@
 
 #include <lib/cpp/Error.h>
 
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace SI
@@ -55,25 +55,25 @@ class Disassembler
 	static const int dec_table_exp_count = 1;
 
 	// Info about Southern Islands instructions.
-	InstInfo inst_info[InstOpcodeCount];
+	Instruction::Info inst_info[Instruction::OpcodeCount];
 
 	// Pointers to elements in 'inst_info'
-	InstInfo *dec_table_sopp[dec_table_sopp_count];
-	InstInfo *dec_table_sopc[dec_table_sopc_count];
-	InstInfo *dec_table_sop1[dec_table_sop1_count];
-	InstInfo *dec_table_sopk[dec_table_sopk_count];
-	InstInfo *dec_table_sop2[dec_table_sop2_count];
-	InstInfo *dec_table_smrd[dec_table_smrd_count];
-	InstInfo *dec_table_vop3[dec_table_vop3_count];
-	InstInfo *dec_table_vopc[dec_table_vopc_count];
-	InstInfo *dec_table_vop1[dec_table_vop1_count];
-	InstInfo *dec_table_vop2[dec_table_vop2_count];
-	InstInfo *dec_table_vintrp[dec_table_vintrp_count];
-	InstInfo *dec_table_ds[dec_table_ds_count];
-	InstInfo *dec_table_mtbuf[dec_table_mtbuf_count];
-	InstInfo *dec_table_mubuf[dec_table_mubuf_count];
-	InstInfo *dec_table_mimg[dec_table_mimg_count];
-	InstInfo *dec_table_exp[dec_table_exp_count];
+	Instruction::Info *dec_table_sopp[dec_table_sopp_count];
+	Instruction::Info *dec_table_sopc[dec_table_sopc_count];
+	Instruction::Info *dec_table_sop1[dec_table_sop1_count];
+	Instruction::Info *dec_table_sopk[dec_table_sopk_count];
+	Instruction::Info *dec_table_sop2[dec_table_sop2_count];
+	Instruction::Info *dec_table_smrd[dec_table_smrd_count];
+	Instruction::Info *dec_table_vop3[dec_table_vop3_count];
+	Instruction::Info *dec_table_vopc[dec_table_vopc_count];
+	Instruction::Info *dec_table_vop1[dec_table_vop1_count];
+	Instruction::Info *dec_table_vop2[dec_table_vop2_count];
+	Instruction::Info *dec_table_vintrp[dec_table_vintrp_count];
+	Instruction::Info *dec_table_ds[dec_table_ds_count];
+	Instruction::Info *dec_table_mtbuf[dec_table_mtbuf_count];
+	Instruction::Info *dec_table_mubuf[dec_table_mubuf_count];
+	Instruction::Info *dec_table_mimg[dec_table_mimg_count];
+	Instruction::Info *dec_table_exp[dec_table_exp_count];
 
 	void DisassembleBuffer(std::ostream& os, const char *buffer, int size);
 
@@ -102,44 +102,110 @@ public:
 	/// Destroy the disassembler singleton if allocated
 	static void Destroy () { instance = nullptr; }
 	
-	// Disassemblers
-	void DisassembleBinary(std::string path);
+	/// Disassemble the binary file given in \a path
+	void DisassembleBinary(const std::string &path);
 
-	// Getters
-	InstInfo *getInstInfo(int index) { assert(index >= 0 && index <
-			InstOpcodeCount); return &inst_info[index]; }
-	InstInfo *getDecTableSopp(int index) { assert(index >= 0 && index <
-			dec_table_sopp_count); return dec_table_sopp[index]; }
-	InstInfo *getDecTableSopc(int index) { assert(index >= 0 && index <
-			dec_table_sopc_count); return dec_table_sopc[index]; }
-	InstInfo *getDecTableSop1(int index) { assert(index >= 0 && index <
-			dec_table_sop1_count); return dec_table_sop1[index]; }
-	InstInfo *getDecTableSopk(int index) { assert(index >= 0 && index <
-			dec_table_sopk_count); return dec_table_sopk[index]; }
-	InstInfo *getDecTableSop2(int index) { assert(index >= 0 && index <
-			dec_table_sop2_count); return dec_table_sop2[index]; }
-	InstInfo *getDecTableSmrd(int index) { assert(index >= 0 && index <
-			dec_table_smrd_count); return dec_table_smrd[index]; }
-	InstInfo *getDecTableVop3(int index) { assert(index >= 0 && index <
-			dec_table_vop3_count); return dec_table_vop3[index]; }
-	InstInfo *getDecTableVopc(int index) { assert(index >= 0 && index <
-			dec_table_vopc_count); return dec_table_vopc[index]; }
-	InstInfo *getDecTableVop1(int index) { assert(index >= 0 && index <
-			dec_table_vop1_count); return dec_table_vop1[index]; }
-	InstInfo *getDecTableVop2(int index) { assert(index >= 0 && index <
-			dec_table_vop2_count); return dec_table_vop2[index]; }
-	InstInfo *getDecTableVintrp(int index) { assert(index >= 0 && index <
-			dec_table_vintrp_count); return dec_table_vintrp[index]; }
-	InstInfo *getDecTableDs(int index) { assert(index >= 0 && index <
-			dec_table_ds_count); return dec_table_ds[index]; }
-	InstInfo *getDecTableMtbuf(int index) { assert(index >= 0 && index <
-			dec_table_mtbuf_count); return dec_table_mtbuf[index]; }
-	InstInfo *getDecTableMubuf(int index) { assert(index >= 0 && index <
-			dec_table_mubuf_count); return dec_table_mubuf[index]; }
-	InstInfo *getDecTableMimg(int index) { assert(index >= 0 && index <
-			dec_table_mimg_count); return dec_table_mimg[index]; }
-	InstInfo *getDecTableExp(int index) { assert(index >= 0 && index <
-			dec_table_exp_count); return dec_table_exp[index]; }
+	Instruction::Info *getInstInfo(int index)
+	{
+		assert(index >= 0 && index < Instruction::OpcodeCount);
+		return &inst_info[index];
+	}
+
+	Instruction::Info *getDecTableSopp(int index)
+	{
+		assert(index >= 0 && index < dec_table_sopp_count);
+		return dec_table_sopp[index];
+	}
+
+	Instruction::Info *getDecTableSopc(int index)
+	{
+		assert(index >= 0 && index < dec_table_sopc_count);
+		return dec_table_sopc[index];
+	}
+
+	Instruction::Info *getDecTableSop1(int index)
+	{
+		assert(index >= 0 && index < dec_table_sop1_count);
+		return dec_table_sop1[index];
+	}
+
+	Instruction::Info *getDecTableSopk(int index)
+	{
+		assert(index >= 0 && index < dec_table_sopk_count);
+		return dec_table_sopk[index];
+	}
+
+	Instruction::Info *getDecTableSop2(int index)
+	{
+		assert(index >= 0 && index < dec_table_sop2_count);
+		return dec_table_sop2[index];
+	}
+
+	Instruction::Info *getDecTableSmrd(int index)
+	{
+		assert(index >= 0 && index < dec_table_smrd_count);
+		return dec_table_smrd[index];
+	}
+
+	Instruction::Info *getDecTableVop3(int index)
+	{
+		assert(index >= 0 && index < dec_table_vop3_count);
+		return dec_table_vop3[index];
+	}
+
+	Instruction::Info *getDecTableVopc(int index)
+	{
+		assert(index >= 0 && index < dec_table_vopc_count);
+		return dec_table_vopc[index];
+	}
+
+	Instruction::Info *getDecTableVop1(int index)
+	{
+		assert(index >= 0 && index < dec_table_vop1_count);
+		return dec_table_vop1[index];
+	}
+
+	Instruction::Info *getDecTableVop2(int index)
+	{
+		assert(index >= 0 && index < dec_table_vop2_count);
+		return dec_table_vop2[index];
+	}
+
+	Instruction::Info *getDecTableVintrp(int index)
+	{
+		assert(index >= 0 && index < dec_table_vintrp_count);
+		return dec_table_vintrp[index];
+	}
+
+	Instruction::Info *getDecTableDs(int index)
+	{
+		assert(index >= 0 && index < dec_table_ds_count);
+		return dec_table_ds[index];
+	}
+
+	Instruction::Info *getDecTableMtbuf(int index)
+	{
+		assert(index >= 0 && index < dec_table_mtbuf_count);
+		return dec_table_mtbuf[index];
+	}
+
+	Instruction::Info *getDecTableMubuf(int index)
+	{
+		assert(index >= 0 && index < dec_table_mubuf_count);
+		return dec_table_mubuf[index];
+	}
+
+	Instruction::Info *getDecTableMimg(int index)
+	{
+		assert(index >= 0 && index < dec_table_mimg_count);
+		return dec_table_mimg[index];
+	}
+
+	Instruction::Info *getDecTableExp(int index)
+	{
+		assert(index >= 0 && index < dec_table_exp_count);
+		return dec_table_exp[index];
+	}
 };
 
 

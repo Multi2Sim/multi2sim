@@ -60,7 +60,7 @@ class InstInfo
 	InstInfo *next;
 
 	// Associated info structure in disassembler
-	SI::InstInfo *info;
+	SI::Instruction::Info *info;
 
 	// List of tokens in format string
 	std::vector<std::string> str_tokens;
@@ -70,17 +70,17 @@ class InstInfo
 	std::string name;
 
 	// Instruction opcode as a unique integer identifier
-	SI::InstOpcode opcode;
+	SI::Instruction::Opcode opcode;
 
 public:
 
-	InstInfo(SI::InstInfo *info);
+	InstInfo(SI::Instruction::Info *info);
 
 	// Getters
 
 	const std::string &getName() { return name; }
-	SI::InstOpcode getOpcode() { return opcode; }
-	SI::InstInfo *getInfo() { return info; }
+	SI::Instruction::Opcode getOpcode() { return opcode; }
+	SI::Instruction::Info *getInfo() { return info; }
 	InstInfo *getNext() { return next; }
 	size_t getNumTokens() { return tokens.size(); }
 
@@ -131,7 +131,7 @@ class Context
 	static std::string output_file;
 
 	// Information with all Southern Islands instructions
-	std::array<std::unique_ptr<InstInfo>, SI::InstOpcodeCount> inst_info_array;
+	std::array<std::unique_ptr<InstInfo>, SI::Instruction::OpcodeCount> inst_info_array;
 
 	// Hash table indexed by an instruction name. Each entry contains a
 	// linked list of instructions with that name.
@@ -164,10 +164,10 @@ public:
 
 	// Return instruction information associated with a given opcode, or
 	// null if the opcode is invalid.
-	InstInfo *getInstInfo(SI::InstOpcode opcode)
+	InstInfo *getInstInfo(SI::Instruction::Opcode opcode)
 	{
-		return (opcode > SI::InstOpcodeInvalid &&
-				opcode < SI::InstOpcodeCount) ?
+		return (opcode > SI::Instruction::OpcodeInvalid &&
+				opcode < SI::Instruction::OpcodeCount) ?
 			inst_info_array[opcode].get() : nullptr;
 	}
 

@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_WORK_ITEM_H
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <memory/Memory.h>
 
 
@@ -196,7 +196,7 @@ private:
 	mem::Memory *lds = nullptr;
 
 	// Vector registers
-	InstReg vreg[256];
+	Instruction::Register vreg[256];
 
 	// Last global memory address
 	unsigned global_mem_access_addr;
@@ -211,18 +211,18 @@ private:
 	//TODO fix this naming implementation
 
 	// Emulation of ISA. This code expands to one function per ISA
-	// instruction. For example: ISA_s_mov_b32_Impl(Inst *inst)
+	// instruction. For example: ISA_s_mov_b32_Impl(Instruction *inst)
 #define DEFINST(_name, _fmt_str, _fmt, _opcode, _size, _flags) \
-	void ISA_##_name##_Impl(Inst *inst);
-#include <arch/southern-islands/disassembler/Inst.def>
+	void ISA_##_name##_Impl(Instruction *instruction);
+#include <arch/southern-islands/disassembler/Instruction.def>
 #undef DEFINST
 
 	// Instruction execution table 
-	typedef void (WorkItem::*ISAInstFuncPtr)(Inst *inst);
-	ISAInstFuncPtr ISAInstFuncTable[InstOpcodeCount + 1];
+	typedef void (WorkItem::*ISAInstFuncPtr)(Instruction *inst);
+	ISAInstFuncPtr ISAInstFuncTable[Instruction::OpcodeCount + 1];
 
 	// Error massage for unimplemented instructions
-	static void ISAUnimplemented(Inst *inst);
+	static void ISAUnimplemented(Instruction *inst);
 
 	// Get number of elements based on data format
 	static int ISAGetNumElems(int data_format);
@@ -340,7 +340,7 @@ public:
 	// FIXME - probably most functions below can be inline
 
 	/// Execute an instruction
-	void Execute(InstOpcode opcode, Inst *inst);
+	void Execute(Instruction::Opcode opcode, Instruction *inst);
 
 	/// Get value of a scalar register
 	/// \param sreg Scalar register identifier

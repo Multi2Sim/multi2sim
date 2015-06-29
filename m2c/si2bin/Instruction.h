@@ -25,7 +25,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <src/lib/cpp/Bitmap.h>
 #include <src/lib/cpp/Misc.h>
 #include <m2c/common/Instruction.h>
@@ -55,7 +55,7 @@ class Instruction : public comm::Instruction
 
 	// Instruction opcode. This field should match the content of
 	// info->info->opcode.
-	SI::InstOpcode opcode = SI::InstOpcodeInvalid;
+	SI::Instruction::Opcode opcode = SI::Instruction::OpcodeInvalid;
 
 	// Instruction size in bytes (4 or 8). This value is produced after a
 	// call to Inst::Encode()
@@ -63,7 +63,7 @@ class Instruction : public comm::Instruction
 
 	// Instruction bytes. This value is produced after a call to
 	// Inst::Encode().
-	SI::InstBytes bytes;
+	SI::Instruction::Bytes bytes;
 
 	// Invariable information related with this instruction
 	InstInfo *info;
@@ -109,7 +109,7 @@ public:
 	///
 	/// \param opcode
 	///	Instruction opcode.
-	Instruction(llvm2si::BasicBlock *basic_block, SI::InstOpcode opcode);
+	Instruction(llvm2si::BasicBlock *basic_block, SI::Instruction::Opcode opcode);
 	
 	/// Construction based on an instruction opcode and a list of arguments.
 	/// The argument in the list are given as newly allocated object that
@@ -176,15 +176,15 @@ public:
 	/// Add a memory address argument
 	ArgMaddr *addMemoryAddress(Argument *soffset,
 			ArgMaddrQual *qual,
-			SI::InstBufDataFormat data_format,
-			SI::InstBufNumFormat num_format)
+			SI::Instruction::BufDataFormat data_format,
+			SI::Instruction::BufNumFormat num_format)
 	{
 		return addArgument<ArgMaddr>(soffset, qual, data_format,
 				num_format);
 	}
 
 	/// Add a special register argument
-	ArgSpecialRegister *addSpecialRegister(SI::InstSpecialReg reg)
+	ArgSpecialRegister *addSpecialRegister(SI::Instruction::SpecialReg reg)
 	{
 		return addArgument<ArgSpecialRegister>(reg);
 	}
@@ -238,7 +238,7 @@ public:
 	llvm2si::BasicBlock *getBasicBlock() { return basic_block; }
 
 	/// Return the instruction opcode
-	SI::InstOpcode getOpcode() const { return opcode; }
+	SI::Instruction::Opcode getOpcode() const { return opcode; }
 
 	/// Associate the instruction to a basic block
 	void setBasicBlock(llvm2si::BasicBlock *basic_block)

@@ -1407,7 +1407,7 @@ DEFINST(V_CMP_OP16_F64_VOP3a,
 	VOP3a,
 	32,
 	8,
-	InstFlagOp16
+	Instruction::FlagOp16
 )
 
 DEFINST(V_CMP_LT_I32_VOP3a,

@@ -26,7 +26,7 @@
 
 #include "Binary.h"
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace SI
@@ -37,73 +37,73 @@ std::unique_ptr<Disassembler> Disassembler::instance;
 
 Disassembler::Disassembler()
 {
-	InstInfo *info;
+	Instruction::Info *info;
 	int i;
 
 	// Type size assertions
-	assert(sizeof(InstReg) == 4);
+	assert(sizeof(Instruction::Register) == 4);
 
 	// Read information about all instructions
 #define DEFINST(_name, _fmt_str, _fmt, _op, _size, _flags) \
-	info = &inst_info[INST_##_name]; \
-	info->opcode = INST_##_name; \
+	info = &inst_info[Instruction::Opcode_##_name]; \
+	info->opcode = Instruction::Opcode_##_name; \
 	info->name = #_name; \
 	info->fmt_str = _fmt_str; \
-	info->fmt = InstFormat##_fmt; \
+	info->fmt = Instruction::Format##_fmt; \
 	info->op = _op; \
 	info->size = _size; \
-	info->flags = (InstFlag) _flags;
-#include "Inst.def"
+	info->flags = (Instruction::Flag) _flags;
+#include "Instruction.def"
 #undef DEFINST
 
 	// Tables of pointers to 'inst_info'
-	for (i = 1; i < InstOpcodeCount; i++)
+	for (i = 1; i < Instruction::OpcodeCount; i++)
 	{
 		info = &inst_info[i];
 
-		if (info->fmt == InstFormatSOPP)
+		if (info->fmt == Instruction::FormatSOPP)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_sopp_count - 1));
 			dec_table_sopp[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatSOPC)
+		else if (info->fmt == Instruction::FormatSOPC)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_sopc_count - 1));
 			dec_table_sopc[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatSOP1)
+		else if (info->fmt == Instruction::FormatSOP1)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_sop1_count - 1));
 			dec_table_sop1[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatSOPK)
+		else if (info->fmt == Instruction::FormatSOPK)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_sopk_count - 1));
 			dec_table_sopk[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatSOP2)
+		else if (info->fmt == Instruction::FormatSOP2)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_sop2_count - 1));
 			dec_table_sop2[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatSMRD) 
+		else if (info->fmt == Instruction::FormatSMRD) 
 		{
 			assert(misc::inRange(info->op, 0, dec_table_smrd_count - 1));
 			dec_table_smrd[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatVOP3a || info->fmt == InstFormatVOP3b)
+		else if (info->fmt == Instruction::FormatVOP3a || info->fmt == Instruction::FormatVOP3b)
 		{
 			int i;
 
 			assert(misc::inRange(info->op, 0, dec_table_vop3_count - 1));
 			dec_table_vop3[info->op] = info;
-			if (info->flags & InstFlagOp8)
+			if (info->flags & Instruction::FlagOp8)
 			{
 				for (i = 1; i < 8; i++)
 				{
@@ -111,7 +111,7 @@ Disassembler::Disassembler()
 						info;
 				}
 			}
-			if (info->flags & InstFlagOp16)
+			if (info->flags & Instruction::FlagOp16)
 			{
 				for (i = 1; i < 16; i++)
 				{
@@ -121,55 +121,55 @@ Disassembler::Disassembler()
 			}
 			continue;
 		}
-		else if (info->fmt == InstFormatVOPC)
+		else if (info->fmt == Instruction::FormatVOPC)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_vopc_count - 1));
 			dec_table_vopc[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatVOP1)
+		else if (info->fmt == Instruction::FormatVOP1)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_vop1_count - 1));
 			dec_table_vop1[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatVOP2)
+		else if (info->fmt == Instruction::FormatVOP2)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_vop2_count - 1));
 			dec_table_vop2[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatVINTRP)
+		else if (info->fmt == Instruction::FormatVINTRP)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_vintrp_count - 1));
 			dec_table_vintrp[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatDS)
+		else if (info->fmt == Instruction::FormatDS)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_ds_count - 1));
 			dec_table_ds[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatMTBUF)
+		else if (info->fmt == Instruction::FormatMTBUF)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_mtbuf_count - 1));
 			dec_table_mtbuf[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatMUBUF)
+		else if (info->fmt == Instruction::FormatMUBUF)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_mubuf_count - 1));
 			dec_table_mubuf[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatMIMG)
+		else if (info->fmt == Instruction::FormatMIMG)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_mimg_count - 1));
 			dec_table_mimg[info->op] = info;
 			continue;
 		}
-		else if (info->fmt == InstFormatEXP)
+		else if (info->fmt == Instruction::FormatEXP)
 		{
 			assert(misc::inRange(info->op, 0, dec_table_exp_count - 1));
 			dec_table_exp[info->op] = info;
@@ -208,10 +208,10 @@ void Disassembler::DisassembleBuffer(std::ostream& os, const char *buffer, int s
 	int *next_label = &label_addr[0];	// The next label to dump.
 	int *end_label = &label_addr[0];	// The address after the last label.
 
-	InstFormat format;
-	InstBytes *bytes;
+	Instruction::Format format;
+	Instruction::Bytes *bytes;
 
-	Inst inst;
+	Instruction inst;
 
 	// Read through instructions to find labels.
 	while (buffer < original_buffer + size)
@@ -222,12 +222,12 @@ void Disassembler::DisassembleBuffer(std::ostream& os, const char *buffer, int s
 		bytes = inst.getBytes();
 
 		// If ENDPGM, break.
-		if (format == InstFormatSOPP && bytes->sopp.op == 1)
+		if (format == Instruction::FormatSOPP && bytes->sopp.op == 1)
 			break;
 
 		/* If the instruction branches, insert the label into 
 		 * the sorted list. */
-		if (format == InstFormatSOPP &&
+		if (format == Instruction::FormatSOPP &&
 			(bytes->sopp.op >= 2 && 
 			 bytes->sopp.op <= 9))
 		{
@@ -302,7 +302,7 @@ void Disassembler::DisassembleBuffer(std::ostream& os, const char *buffer, int s
 		os << '\n';
 
 		// Break at end of program.
-		if (format == InstFormatSOPP && bytes->sopp.op == 1)
+		if (format == Instruction::FormatSOPP && bytes->sopp.op == 1)
 			break;
 
 		// Increment instruction pointer
@@ -311,7 +311,7 @@ void Disassembler::DisassembleBuffer(std::ostream& os, const char *buffer, int s
 	}
 }
 
-void Disassembler::DisassembleBinary(std::string path)
+void Disassembler::DisassembleBinary(const std::string &path)
 {
 	// Load ELF file
 	ELFReader::File file(path);
