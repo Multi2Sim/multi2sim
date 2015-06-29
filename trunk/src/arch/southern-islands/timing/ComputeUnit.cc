@@ -23,6 +23,29 @@
 namespace SI
 {
 
+int ComputeUnit::num_wavefront_pools = 4;
+
+
+ComputeUnit::ComputeUnit(int index) :
+		index(index),
+		scalar_unit(this),
+		branch_unit(this),
+		lds_unit(this),
+		vector_memory_unit(this)
+{
+	// Create wavefront pools, and SIMD units
+	wavefront_pools.reserve(num_wavefront_pools);
+	fetch_buffers.reserve(num_wavefront_pools);
+	simd_units.reserve(num_wavefront_pools);
+	for (int i = 0; i < num_wavefront_pools; i++)
+	{
+		wavefront_pools[i] = misc::new_unique<WavefrontPool>(this);
+		fetch_buffers[i] = misc::new_unique<FetchBuffer>(this);
+		simd_units[i] = misc::new_unique<SimdUnit>(this);
+	}
+}
+
+
 void ComputeUnit::Run()
 {
 }
