@@ -36,8 +36,8 @@ namespace net
 
 
 Network::Network(const std::string &name) :
-						name(name),
-						routing_table(this)
+		name(name),
+		routing_table(this)
 {
 }
 
@@ -507,15 +507,19 @@ Message *Network::Send(EndNode *source_node,
 	}
 
 	// Send the message out
-	for (int i = 0; i < message->getNumPacket(); i++)
+	for (int i = 0; i < message->getNumPackets(); i++)
 	{
 		Packet *packet = message->getPacket(i);
 
 		// Create event frame
-		auto frame = misc::new_shared<Frame>(packet, receive_event);
+		auto frame = misc::new_shared<Frame>(packet);
+
+		// The packet will be received automatically if the user didn't
+		// pass any receive event
+		frame->automatic_receive = !receive_event;
 
 		// Schedule send event
-		esim_engine->Call(System::event_send, frame);
+		esim_engine->Call(System::event_send, frame, receive_event);
 
 		// Update statistics
 		source_node->IncreaseSentBytes(size);
@@ -544,7 +548,7 @@ Message *Network::TrySend(EndNode *source_node,
 void Network::Receive(EndNode *node, Message *message)
 {
 	// Assert that the location of the packets are in the receive node
-	for (int i = 0; i < message->getSize(); i++)
+	for (int i = 0; i < message->getNumPackets(); i++)
 	{
 		Packet *packet = message->getPacket(i);
 		Node *packet_node = packet->getNode();
@@ -570,7 +574,7 @@ void Network::Receive(EndNode *node, Message *message)
 	System::debug << misc::fmt("[Network] message %lld received at [node %s]"
 			"\n", message->getId(), node->getName().c_str());
 
-	// Destory the message
+	// Destroy the message
 	message_table.erase(message->getId());
 }
 
