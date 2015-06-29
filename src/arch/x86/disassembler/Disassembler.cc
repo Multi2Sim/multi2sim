@@ -25,7 +25,7 @@
 #include <lib/cpp/String.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace x86
@@ -84,7 +84,9 @@ static const unsigned char asm_prefixes[] =
 std::unique_ptr<Disassembler> Disassembler::instance;
 
 
-void Disassembler::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, int at)
+void Disassembler::InsertInstInfo(Instruction::DecodeInfo **table,
+		Instruction::DecodeInfo *elem,
+		int at)
 {
 	// First entry
 	if (!table[at])
@@ -94,20 +96,20 @@ void Disassembler::InsertInstInfo(InstDecodeInfo **table, InstDecodeInfo *elem, 
 	}
 
 	// Go to the end of the list
-	InstDecodeInfo *prev = table[at];
+	Instruction::DecodeInfo *prev = table[at];
 	while (prev->next)
 		prev = prev->next;
 	prev->next = elem;
 }
 
 
-void Disassembler::InsertInstInfo(InstInfo *info)
+void Disassembler::InsertInstInfo(Instruction::Info *info)
 {
 	// Obtain the table where to insert, the initial index, and
 	// the number of times we must insert the instruction.
 	int index;
 	int count;
-	InstDecodeInfo **table;
+	Instruction::DecodeInfo **table;
 	if ((info->op1 & 0xff) == 0x0f)
 	{
 		table = dec_table_0f;
@@ -124,18 +126,18 @@ void Disassembler::InsertInstInfo(InstInfo *info)
 	// Insert
 	for (int i = 0; i < count; i++)
 	{
-		InstDecodeInfo *elem = new InstDecodeInfo();
+		Instruction::DecodeInfo *elem = new Instruction::DecodeInfo();
 		elem->info = info;
 		InsertInstInfo(table, elem, index + i);
 	}
 }
 
 
-void Disassembler::FreeInstDecodeInfo(InstDecodeInfo *elem)
+void Disassembler::FreeInstDecodeInfo(Instruction::DecodeInfo *elem)
 {
 	while (elem)
 	{
-		InstDecodeInfo *next = elem->next;
+		Instruction::DecodeInfo *next = elem->next;
 		delete elem;
 		elem = next;
 	}
@@ -146,11 +148,11 @@ Disassembler::Disassembler() : comm::Disassembler("x86")
 {
 	// Initialize instruction information list
 	memset(inst_info, 0, sizeof inst_info);
-	inst_info[InstOpcodeInvalid].fmt = "";
-	struct InstInfo *info;
+	inst_info[Instruction::OpcodeInvalid].fmt = "";
+	struct Instruction::Info *info;
 #define DEFINST(__name, __op1, __op2, __op3, __modrm, __imm, __prefixes) \
-	info = &inst_info[INST_##__name]; \
-	info->opcode = INST_##__name; \
+	info = &inst_info[Instruction::Opcode_##__name]; \
+	info->opcode = Instruction::Opcode_##__name; \
 	info->op1 = __op1; \
 	info->op2 = __op2; \
 	info->op3 = __op3; \
@@ -158,7 +160,7 @@ Disassembler::Disassembler() : comm::Disassembler("x86")
 	info->imm = __imm; \
 	info->prefixes = __prefixes; \
 	info->fmt = #__name;
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 
 	// Initialize table of prefixes
@@ -171,7 +173,7 @@ Disassembler::Disassembler() : comm::Disassembler("x86")
 	// the table can be indexed by the first byte of its opcode.
 	memset(dec_table, 0, sizeof dec_table);
 	memset(dec_table_0f, 0, sizeof dec_table_0f);
-	for (int op = 1; op < InstOpcodeCount; op++)
+	for (int op = 1; op < Instruction::OpcodeCount; op++)
 	{
 		// Insert into table
 		info = &inst_info[op];
@@ -299,7 +301,7 @@ void Disassembler::DisassembleBinary(const std::string &path, std::ostream &os) 
 		ELFReader::Symbol *symbol = file.getSymbol(current_symbol);
 
 		// Disassemble
-		Inst inst;
+		Instruction inst;
 		unsigned offset = 0;
 		while (offset < section->getSize())
 		{

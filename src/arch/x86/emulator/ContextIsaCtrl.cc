@@ -36,11 +36,11 @@ namespace x86
 
 
 
-#define CF regs.getFlag(InstFlagCF)
-#define ZF regs.getFlag(InstFlagZF)
-#define SF regs.getFlag(InstFlagSF)
-#define OF regs.getFlag(InstFlagOF)
-#define PF regs.getFlag(InstFlagPF)
+#define CF regs.getFlag(Instruction::FlagCF)
+#define ZF regs.getFlag(Instruction::FlagZF)
+#define SF regs.getFlag(Instruction::FlagSF)
+#define OF regs.getFlag(Instruction::FlagOF)
+#define PF regs.getFlag(Instruction::FlagPF)
 
 
 #define cc_a	(!CF && !ZF)
@@ -139,7 +139,7 @@ op_cc_all(cmov_r32_rm32)
 void Context::ExecuteInst_jecxz_rel8()
 {
 	target_eip = regs.getEip() + inst.getImmByte();
-	if (!regs.Read(InstRegEcx))
+	if (!regs.Read(Instruction::RegEcx))
 		regs.setEip(target_eip);
 	newUInst(UInstBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
 }
@@ -148,7 +148,7 @@ void Context::ExecuteInst_jecxz_rel8()
 void Context::ExecuteInst_jcxz_rel8()
 {
 	target_eip = regs.getEip() + inst.getImmByte();
-	if (!regs.Read(InstRegCx))
+	if (!regs.Read(Instruction::RegCx))
 		regs.setEip(target_eip);
 	newUInst(UInstBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
 }

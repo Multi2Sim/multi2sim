@@ -24,126 +24,113 @@
 #include <lib/cpp/Misc.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace x86
 {
 
-// Register names
-misc::StringMap inst_reg_map =
+const misc::StringMap Instruction::reg_map =
 {
-	{ "eax", InstRegEax },
-	{ "ecx", InstRegEcx },
-	{ "edx", InstRegEdx },
-	{ "ebx", InstRegEbx },
-	{ "esp", InstRegEsp },
-	{ "ebp", InstRegEbp },
-	{ "esi", InstRegEsi },
-	{ "edi", InstRegEdi },
-	{ "ax", InstRegAx },
-	{ "cx", InstRegCx },
-	{ "dx", InstRegDx },
-	{ "bx", InstRegBx },
-	{ "sp", InstRegSp },
-	{ "bp", InstRegBp },
-	{ "si", InstRegSi },
-	{ "di", InstRegDi },
-	{ "al", InstRegAl },
-	{ "cl", InstRegCl },
-	{ "dl", InstRegDl },
-	{ "bl", InstRegBl },
-	{ "ah", InstRegAh },
-	{ "ch", InstRegCh },
-	{ "dh", InstRegDh },
-	{ "bh", InstRegBh },
-	{ "es", InstRegEs },
-	{ "cs", InstRegCs },
-	{ "ss", InstRegSs },
-	{ "ds", InstRegDs },
-	{ "fs", InstRegFs },
-	{ "gs", InstRegGs }
+	{ "eax", RegEax },
+	{ "ecx", RegEcx },
+	{ "edx", RegEdx },
+	{ "ebx", RegEbx },
+	{ "esp", RegEsp },
+	{ "ebp", RegEbp },
+	{ "esi", RegEsi },
+	{ "edi", RegEdi },
+	{ "ax", RegAx },
+	{ "cx", RegCx },
+	{ "dx", RegDx },
+	{ "bx", RegBx },
+	{ "sp", RegSp },
+	{ "bp", RegBp },
+	{ "si", RegSi },
+	{ "di", RegDi },
+	{ "al", RegAl },
+	{ "cl", RegCl },
+	{ "dl", RegDl },
+	{ "bl", RegBl },
+	{ "ah", RegAh },
+	{ "ch", RegCh },
+	{ "dh", RegDh },
+	{ "bh", RegBh },
+	{ "es", RegEs },
+	{ "cs", RegCs },
+	{ "ss", RegSs },
+	{ "ds", RegDs },
+	{ "fs", RegFs },
+	{ "gs", RegGs }
 };
 
-
-// Table indexed by pairs ModRM.mod and ModRM.rm, containing
-// information about what will come next and effective address
-// computation.
-struct InstModRMTableEntry
+const Instruction::ModRMTableEntry Instruction::modrm_table[32] =
 {
-	InstReg ea_base;
-	int disp_size;
-	int sib_size;
-};
+	{ RegEax, 0, 0 },
+	{ RegEcx, 0, 0 },
+	{ RegEdx, 0, 0 },
+	{ RegEbx, 0, 0 },
+	{ RegNone, 0, 1 },
+	{ RegNone, 4, 0 },
+	{ RegEsi, 0, 0 },
+	{ RegEdi, 0, 0 },
 
+	{ RegEax, 1, 0 },
+	{ RegEcx, 1, 0 },
+	{ RegEdx, 1, 0 },
+	{ RegEbx, 1, 0 },
+	{ RegNone, 1, 1 },
+	{ RegEbp, 1, 0 },
+	{ RegEsi, 1, 0 },
+	{ RegEdi, 1, 0 },
 
-static const InstModRMTableEntry inst_modrm_table[32] =
-{
-	{ InstRegEax, 0, 0 },
-	{ InstRegEcx, 0, 0 },
-	{ InstRegEdx, 0, 0 },
-	{ InstRegEbx, 0, 0 },
-	{ InstRegNone, 0, 1 },
-	{ InstRegNone, 4, 0 },
-	{ InstRegEsi, 0, 0 },
-	{ InstRegEdi, 0, 0 },
+	{ RegEax, 4, 0 },
+	{ RegEcx, 4, 0 },
+	{ RegEdx, 4, 0 },
+	{ RegEbx, 4, 0 },
+	{ RegNone, 4, 1 },
+	{ RegEbp, 4, 0 },
+	{ RegEsi, 4, 0 },
+	{ RegEdi, 4, 0 },
 
-	{ InstRegEax, 1, 0 },
-	{ InstRegEcx, 1, 0 },
-	{ InstRegEdx, 1, 0 },
-	{ InstRegEbx, 1, 0 },
-	{ InstRegNone, 1, 1 },
-	{ InstRegEbp, 1, 0 },
-	{ InstRegEsi, 1, 0 },
-	{ InstRegEdi, 1, 0 },
-
-	{ InstRegEax, 4, 0 },
-	{ InstRegEcx, 4, 0 },
-	{ InstRegEdx, 4, 0 },
-	{ InstRegEbx, 4, 0 },
-	{ InstRegNone, 4, 1 },
-	{ InstRegEbp, 4, 0 },
-	{ InstRegEsi, 4, 0 },
-	{ InstRegEdi, 4, 0 },
-
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 },
-	{ InstRegNone, 0, 0 }
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 },
+	{ RegNone, 0, 0 }
 };
 
 
 // Table to obtain the scale from its decoded value
-static const unsigned inst_ea_scale_table[4] = { 1, 2, 4, 8 };
+static const unsigned ea_scale_table[4] = { 1, 2, 4, 8 };
 
 
-Inst::Inst()
+Instruction::Instruction()
 {
 	disassembler = Disassembler::getInstance();
 	Clear();
 }
 
 
-void Inst::DumpMoffsAddr(std::ostream &os) const
+void Instruction::DumpMoffsAddr(std::ostream &os) const
 {
-	InstReg reg = segment ? segment : InstRegDs;
-	os << misc::fmt("%s:0x%x", inst_reg_map.MapValue(reg), imm.d);
+	Reg reg = segment ? segment : RegDs;
+	os << misc::fmt("%s:0x%x", reg_map.MapValue(reg), imm.d);
 }
 
 
-void Inst::DumpAddr(std::ostream &os) const
+void Instruction::DumpAddr(std::ostream &os) const
 {
 	// Segment
 	assert(modrm_mod != 3);
 	std::string segment_str;
 	if (segment)
 	{
-		assert(segment >= 0 && segment < InstRegCount);
-		segment_str = inst_reg_map.MapValue(segment);
+		assert(segment >= 0 && segment < RegCount);
+		segment_str = reg_map.MapValue(segment);
 		segment_str += ':';
 	}
 
@@ -161,14 +148,14 @@ void Inst::DumpAddr(std::ostream &os) const
 	os << segment_str << '[';
 	if (ea_base)
 	{
-		os << inst_reg_map.MapValue(ea_base);
+		os << reg_map.MapValue(ea_base);
 		write_sign = true;
 	}
 	if (ea_index)
 	{
 		if (write_sign)
 			os << '+';
-		os << inst_reg_map.MapValue(ea_index);
+		os << reg_map.MapValue(ea_index);
 		if (ea_scale > 1)
 			os << '*' << ea_scale;
 		write_sign = true;
@@ -185,13 +172,13 @@ void Inst::DumpAddr(std::ostream &os) const
 }
 
 
-void Inst::Dump(std::ostream &os) const
+void Instruction::Dump(std::ostream &os) const
 {
 	// Instruction must have been decoded
 	assert(decoded);
 
 	// Get instruction information
-	const InstInfo *info = disassembler->getInstInfo(opcode);
+	const Info *info = disassembler->getInstInfo(opcode);
 	bool name_printed = false;
 	const char *fmt = info->fmt;
 	const char *fmt_first_arg = index(fmt, '_');
@@ -204,24 +191,24 @@ void Inst::Dump(std::ostream &os) const
 		int length = 0;
 		if (comm::Disassembler::isToken(fmt, "r8", length))
 		{
-			os << inst_reg_map.MapValue(modrm_reg
-					+ InstRegAl);
+			os << reg_map.MapValue(modrm_reg
+					+ RegAl);
 		}
 		else if (comm::Disassembler::isToken(fmt, "r16", length))
 		{
-			os << inst_reg_map.MapValue(modrm_reg
-					+ InstRegAx);
+			os << reg_map.MapValue(modrm_reg
+					+ RegAx);
 		}
 		else if (comm::Disassembler::isToken(fmt, "r32", length))
 		{
-			os << inst_reg_map.MapValue(modrm_reg
-					+ InstRegEax);
+			os << reg_map.MapValue(modrm_reg
+					+ RegEax);
 		}
 		else if (comm::Disassembler::isToken(fmt, "rm8", length))
 		{
 			if (modrm_mod == 0x03)
-				os << inst_reg_map.MapValue(modrm_rm
-						+ InstRegAl);
+				os << reg_map.MapValue(modrm_rm
+						+ RegAl);
 			else
 			{
 				os << "BYTE PTR ";
@@ -231,8 +218,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (comm::Disassembler::isToken(fmt, "rm16", length))
 		{
 			if (modrm_mod == 0x03)
-				os << inst_reg_map.MapValue(modrm_rm
-						+ InstRegAx);
+				os << reg_map.MapValue(modrm_rm
+						+ RegAx);
 			else
 			{
 				os << "WORD PTR ";
@@ -242,8 +229,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (comm::Disassembler::isToken(fmt, "rm32", length))
 		{
 			if (modrm_mod == 0x03)
-				os << inst_reg_map.MapValue(modrm_rm
-						+ InstRegEax);
+				os << reg_map.MapValue(modrm_rm
+						+ RegEax);
 			else
 			{
 				os << "DWORD PTR ";
@@ -253,8 +240,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (comm::Disassembler::isToken(fmt, "r32m8", length))
 		{
 			if (modrm_mod == 3)
-				os << inst_reg_map.MapValue(modrm_rm
-						+ InstRegEax);
+				os << reg_map.MapValue(modrm_rm
+						+ RegEax);
 			else
 			{
 				os << "BYTE PTR ";
@@ -264,8 +251,8 @@ void Inst::Dump(std::ostream &os) const
 		else if (comm::Disassembler::isToken(fmt, "r32m16", length))
 		{
 			if (modrm_mod == 3)
-				os << inst_reg_map.MapValue(modrm_rm
-						+ InstRegEax);
+				os << reg_map.MapValue(modrm_rm
+						+ RegEax);
 			else
 			{
 				os << "WORD PTR ";
@@ -352,19 +339,19 @@ void Inst::Dump(std::ostream &os) const
 		}
 		else if (comm::Disassembler::isToken(fmt, "ir8", length))
 		{
-			os << inst_reg_map.MapValue(opindex + InstRegAl);
+			os << reg_map.MapValue(opindex + RegAl);
 		}
 		else if (comm::Disassembler::isToken(fmt, "ir16", length))
 		{
-			os << inst_reg_map.MapValue(opindex + InstRegAx);
+			os << reg_map.MapValue(opindex + RegAx);
 		}
 		else if (comm::Disassembler::isToken(fmt, "ir32", length))
 		{
-			os << inst_reg_map.MapValue(opindex + InstRegEax);
+			os << reg_map.MapValue(opindex + RegEax);
 		}
 		else if (comm::Disassembler::isToken(fmt, "sreg", length))
 		{
-			os << inst_reg_map.MapValue(reg + InstRegEs);
+			os << reg_map.MapValue(reg + RegEs);
 		}
 		else if (comm::Disassembler::isToken(fmt, "xmmm32", length))
 		{
@@ -439,13 +426,13 @@ void Inst::Dump(std::ostream &os) const
 }
 
 
-void Inst::Clear()
+void Instruction::Clear()
 {
 	decoded = false;
 
 	eip = 0;
 	size = 0;
-	opcode = InstOpcodeInvalid;
+	opcode = OpcodeInvalid;
 	format = nullptr;
 
 	prefix_size = 0;
@@ -456,7 +443,7 @@ void Inst::Clear()
 	imm_size = 0;
 
 	opindex = 0;
-	segment = InstRegNone;
+	segment = RegNone;
 	prefixes = 0;
 
 	op_size = 0;
@@ -475,15 +462,15 @@ void Inst::Clear()
 	disp = 0;
 	imm.d = 0;
 
-	ea_base = InstRegNone;
-	ea_index = InstRegNone;
+	ea_base = RegNone;
+	ea_index = RegNone;
 	ea_scale = 0;
 
 	reg = 0;
 }
 
 
-void Inst::Decode(const char *buffer, unsigned eip)
+void Instruction::Decode(const char *buffer, unsigned eip)
 {
 	// Initialize instruction
 	Clear();
@@ -503,45 +490,45 @@ void Inst::Decode(const char *buffer, unsigned eip)
 			break;
 
 		case 0xf2:
-			prefixes |= InstPrefixRepnz;
+			prefixes |= PrefixRepnz;
 			break;
 
 		case 0xf3:
-			prefixes |= InstPrefixRep;
+			prefixes |= PrefixRep;
 			break;
 
 		case 0x66:
-			prefixes |= InstPrefixOp;
+			prefixes |= PrefixOp;
 			op_size = 2;
 			break;
 
 		case 0x67:
-			prefixes |= InstPrefixAddr;
+			prefixes |= PrefixAddr;
 			addr_size = 2;
 			break;
 
 		case 0x2e:
-			segment = InstRegCs;
+			segment = RegCs;
 			break;
 
 		case 0x36:
-			segment = InstRegSs;
+			segment = RegSs;
 			break;
 
 		case 0x3e:
-			segment = InstRegDs;
+			segment = RegDs;
 			break;
 
 		case 0x26:
-			segment = InstRegEs;
+			segment = RegEs;
 			break;
 
 		case 0x64:
-			segment = InstRegFs;
+			segment = RegFs;
 			break;
 
 		case 0x65:
-			segment = InstRegGs;
+			segment = RegGs;
 			break;
 
 		default:
@@ -559,7 +546,7 @@ void Inst::Decode(const char *buffer, unsigned eip)
 	// Obtain lookup table and index
 	unsigned char buf8 = *buffer;
 	unsigned buf32 = * (unsigned *) buffer;
-	const InstDecodeInfo * const *table;
+	const DecodeInfo * const *table;
 	int index;
 	if (buf8 == 0x0f)
 	{
@@ -573,8 +560,8 @@ void Inst::Decode(const char *buffer, unsigned eip)
 	}
 
 	// Find instruction
-	const InstDecodeInfo *elem = nullptr;
-	const InstInfo *info = nullptr;
+	const DecodeInfo *elem = nullptr;
+	const Info *info = nullptr;
 	for (elem = table[index]; elem; elem = elem->next)
 	{
 		info = elem->info;
@@ -609,8 +596,8 @@ void Inst::Decode(const char *buffer, unsigned eip)
 		reg = modrm_reg;
 
 		// Access ModRM table
-		const InstModRMTableEntry *modrm_table_entry =
-				&inst_modrm_table[(modrm_mod << 3) | modrm_rm];
+		const ModRMTableEntry *modrm_table_entry =
+				&modrm_table[(modrm_mod << 3) | modrm_rm];
 		sib_size = modrm_table_entry->sib_size;
 		disp_size = modrm_table_entry->disp_size;
 		ea_base = modrm_table_entry->ea_base;
@@ -623,13 +610,13 @@ void Inst::Decode(const char *buffer, unsigned eip)
 			sib_scale = (sib & 0xc0) >> 6;
 			sib_index = (sib & 0x38) >> 3;
 			sib_base = sib & 0x07;
-			ea_scale = inst_ea_scale_table[sib_scale];
-			ea_index = sib_index == 0x04 ? InstRegNone :
-					(InstReg) (InstRegEax + sib_index);
-			ea_base = (InstReg) (sib_base + InstRegEax);
+			ea_scale = ea_scale_table[sib_scale];
+			ea_index = sib_index == 0x04 ? RegNone :
+					(Reg) (RegEax + sib_index);
+			ea_base = (Reg) (sib_base + RegEax);
 			if (sib_base == 0x05 && modrm_mod == 0x00)
 			{
-				ea_base = InstRegNone;
+				ea_base = RegNone;
 				disp_size = 4;
 			}
 			buffer += sib_size;  // Skip SIB

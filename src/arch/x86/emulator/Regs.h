@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include <arch/x86/disassembler/Inst.h>
+#include <arch/x86/disassembler/Instruction.h>
 #include <lib/cpp/Misc.h>
 
 #include "Extended.h"
@@ -94,12 +94,12 @@ class Regs
 	XMMValue xmm[8];
 
 	// Register info table, used to efficiently access a register given its
-	// identifier (\c InstRegXXX constant).
+	// identifier (\c Inst::RegXXX constant).
 	static const struct Info
 	{
 		int offset;
 		int size;
-	} info[InstRegCount];
+	} info[Instruction::RegCount];
 
 	// Table indexed by a number of bytes, returning a mask that can be
 	// applied on a value to filter that number of least significant bytes
@@ -111,30 +111,30 @@ public:
 	Regs();
 
 	/// Read one of the main x86 registers (registers \a eax through \a gs),
-	/// identified with an \c InstRegXXX constant. If the requested register
+	/// identified with an \c Inst::RegXXX constant. If the requested register
 	/// is less than 32-bit wide, the read value is zero-extended. The type
 	/// of argument \a reg is \c int in order to avoid conversion warnings
 	/// when using arithmetic to compute it.
 	unsigned Read(int reg) const;
 
 	/// Write one of the main x86 registers (register \a eax through \a gs),
-	/// identified with an \c InstRegXXX constant. Argument \a reg has type
+	/// identified with an \c Inst::RegXXX constant. Argument \a reg has type
 	/// \a int to avoid cast warnings when using integer arithmetic to
 	/// compute it.
 	void Write(int reg, unsigned value);
 
-	/// Set the value of a flag, given as an \c InstFlagXXX identifier.
-	void setFlag(InstFlag flag) {
+	/// Set the value of a flag, given as an \c Inst::FlagXXX identifier.
+	void setFlag(Instruction::Flag flag) {
 		eflags = misc::setBit32(eflags, flag);
 	}
 
-	/// Clear the value of a flag, given as an \c InstFlagXXX identifier.
-	void clearFlag(InstFlag flag) {
+	/// Clear the value of a flag, given as an \c Inst::FlagXXX identifier.
+	void clearFlag(Instruction::Flag flag) {
 		eflags = misc::clearBit32(eflags, flag);
 	}
 
-	/// Get the value of a flag, given as an \c InstFlagXXX constant.
-	bool getFlag(InstFlag flag) {
+	/// Get the value of a flag, given as an \c Inst::FlagXXX constant.
+	bool getFlag(Instruction::Flag flag) {
 		return misc::getBit32(eflags, flag);
 	}
 
@@ -266,25 +266,25 @@ public:
 	void setEax(unsigned value) { eax = value; }
 
 	/// Set value of register \c ax
-	void setAx(unsigned short value) { Write(InstRegAx, value); }
+	void setAx(unsigned short value) { Write(Instruction::RegAx, value); }
 
 	/// Set value of register \c al
-	void setAl(unsigned char value) { Write(InstRegAl, value); }
+	void setAl(unsigned char value) { Write(Instruction::RegAl, value); }
 
 	/// Set value of register \c ah
-	void setAh(unsigned char value) { Write(InstRegAh, value); }
+	void setAh(unsigned char value) { Write(Instruction::RegAh, value); }
 
 	/// Set value of register \c ebx
 	void setEbx(unsigned value) { ebx = value; }
 
 	/// Set value of register \c bx
-	void setBx(unsigned short value) { Write(InstRegBx, value); }
+	void setBx(unsigned short value) { Write(Instruction::RegBx, value); }
 
 	/// Set value of register \c bl
-	void setBl(unsigned char value) { Write(InstRegBl, value); }
+	void setBl(unsigned char value) { Write(Instruction::RegBl, value); }
 
 	/// Set value of register \c bh
-	void setBh(unsigned char value) { Write(InstRegBh, value); }
+	void setBh(unsigned char value) { Write(Instruction::RegBh, value); }
 
 	/// Set value of register \c ecx
 	void setEcx(unsigned value) { ecx = value; }
@@ -298,25 +298,25 @@ public:
 	void decEcx(int value = 1) { ecx -= value; }
 
 	/// Set value of register \c cx
-	void setCx(unsigned short value) { Write(InstRegCx, value); }
+	void setCx(unsigned short value) { Write(Instruction::RegCx, value); }
 
 	/// Set value of register \c cl
-	void setCl(unsigned char value) { Write(InstRegCl, value); }
+	void setCl(unsigned char value) { Write(Instruction::RegCl, value); }
 
 	/// Set value of register \c ch
-	void setCh(unsigned char value) { Write(InstRegCh, value); }
+	void setCh(unsigned char value) { Write(Instruction::RegCh, value); }
 
 	/// Set value of register \c edx
 	void setEdx(unsigned value) { edx = value; }
 
 	/// Set value of register \c dx
-	void setDx(unsigned short value) { Write(InstRegDx, value); }
+	void setDx(unsigned short value) { Write(Instruction::RegDx, value); }
 
 	/// Set value of register \c dl
-	void setDl(unsigned char value) { Write(InstRegDl, value); }
+	void setDl(unsigned char value) { Write(Instruction::RegDl, value); }
 
 	/// Set value of register \c dh
-	void setDh(unsigned char value) { Write(InstRegDh, value); }
+	void setDh(unsigned char value) { Write(Instruction::RegDh, value); }
 
 	/// Set value of register \c esp
 	void setEsp(unsigned value) { esp = value; }
@@ -330,13 +330,13 @@ public:
 	void decEsp(int value = 4) { esp -= value; }
 
 	/// Set value of register \c sp
-	void setSp(unsigned value) { Write(InstRegSp, value); }
+	void setSp(unsigned value) { Write(Instruction::RegSp, value); }
 
 	/// Set value of register \c ebp
 	void setEbp(unsigned value) { ebp = value; }
 
 	/// Set value of register \c bp
-	void setBp(unsigned value) { Write(InstRegBp, value); }
+	void setBp(unsigned value) { Write(Instruction::RegBp, value); }
 
 	/// Set value of register \c esi
 	void setEsi(unsigned value) { esi = value; }
@@ -346,7 +346,7 @@ public:
 	void incEsi(int value = 1) { esi += value; }
 
 	/// Set value of register \c si
-	void setSi(unsigned value) { Write(InstRegSi, value); }
+	void setSi(unsigned value) { Write(Instruction::RegSi, value); }
 
 	/// Set value of register \c edi
 	void setEdi(unsigned value) { edi = value; }
@@ -356,7 +356,7 @@ public:
 	void incEdi(int value = 1) { edi += value; }
 
 	/// Set value of register \c di
-	void setDi(unsigned value) { Write(InstRegDi, value); }
+	void setDi(unsigned value) { Write(Instruction::RegDi, value); }
 
 	/// Set value of register \c es
 	void setEs(unsigned short value) { es = value; }

@@ -29,12 +29,12 @@
 namespace x86
 {
 
-Context::ExecuteInstFn Context::execute_inst_fn[InstOpcodeCount] =
+Context::ExecuteInstFn Context::execute_inst_fn[Instruction::OpcodeCount] =
 {
-		nullptr  // For InstOpcodeNone
+		nullptr  // For Inst::OpcodeNone
 #define DEFINST(name, op1, op2, op3, modrm, imm, pfx) \
 		 , &Context::ExecuteInst_##name
-#include <arch/x86/disassembler/Inst.def>
+#include <arch/x86/disassembler/Instruction.def>
 #undef DEFINST
 };
 
@@ -83,7 +83,7 @@ unsigned char Context::LoadRm8()
 	unsigned char value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read(inst.getModRmRm() + InstRegAl);
+		return regs.Read(inst.getModRmRm() + Instruction::RegAl);
 
 	MemoryRead(getEffectiveAddress(), 1, &value);
 	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
@@ -95,7 +95,7 @@ unsigned short Context::LoadRm16()
 	unsigned short value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read(inst.getModRmRm() + InstRegAx);
+		return regs.Read(inst.getModRmRm() + Instruction::RegAx);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
 	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
@@ -107,7 +107,7 @@ unsigned int Context::LoadRm32()
 	unsigned int value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read(inst.getModRmRm() + InstRegEax);
+		return regs.Read(inst.getModRmRm() + Instruction::RegEax);
 
 	MemoryRead(getEffectiveAddress(), 4, &value);
 	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
@@ -119,7 +119,7 @@ unsigned short Context::LoadR32M16()
 	unsigned short value;
 
 	if (inst.getModRmMod() == 0x03)
-		return regs.Read(inst.getModRmRm() + InstRegEax);
+		return regs.Read(inst.getModRmRm() + Instruction::RegEax);
 
 	MemoryRead(getEffectiveAddress(), 2, &value);
 	emulator->isa_debug << misc::fmt("  [0x%x]=0x%x", last_effective_address, value);
@@ -139,7 +139,7 @@ void Context::StoreRm8(unsigned char value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write(inst.getModRmRm() + InstRegAl, value);
+		regs.Write(inst.getModRmRm() + Instruction::RegAl, value);
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 1, &value);
@@ -150,7 +150,7 @@ void Context::StoreRm16(unsigned short value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write(inst.getModRmRm() + InstRegAx, value);
+		regs.Write(inst.getModRmRm() + Instruction::RegAx, value);
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 2, &value);
@@ -161,7 +161,7 @@ void Context::StoreRm32(unsigned int value)
 {
 	if (inst.getModRmMod() == 0x03)
 	{
-		regs.Write(inst.getModRmRm() + InstRegEax, value);
+		regs.Write(inst.getModRmRm() + Instruction::RegEax, value);
 		return;
 	}
 	MemoryWrite(getEffectiveAddress(), 4, &value);
@@ -181,17 +181,17 @@ unsigned Context::getLinearAddress(unsigned offset)
 		return offset;
 	
 	// Segment override
-	if (inst.getSegment() != InstRegGs)
+	if (inst.getSegment() != Instruction::RegGs)
 	{
 		throw misc::Panic("Unimplemented segment override");
 		return 0;
 	}
 
 	// GLibc segment at TLS entry 6
-	if (regs.Read(InstRegGs) != 0x33)
+	if (regs.Read(Instruction::RegGs) != 0x33)
 	{
 		throw misc::Panic(misc::fmt("Linear address for gs = 0x%x",
-				regs.Read(InstRegGs)));
+				regs.Read(Instruction::RegGs)));
 		return 0;
 	}
 

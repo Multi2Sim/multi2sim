@@ -80,7 +80,7 @@ void Context::StartRepInst()
 		{ \
 			ExecuteStringInst_##X(); \
 			regs.decEcx(); \
-			if (regs.getFlag(InstFlagZF)) \
+			if (regs.getFlag(Instruction::FlagZF)) \
 				regs.decEip(inst.getSize()); \
 		} \
 		\
@@ -101,7 +101,7 @@ void Context::StartRepInst()
 		{ \
 			ExecuteStringInst_##X(); \
 			regs.decEcx(); \
-			if (!regs.getFlag(InstFlagZF)) \
+			if (!regs.getFlag(Instruction::FlagZF)) \
 				regs.decEip(inst.getSize()); \
 		} \
 		\
@@ -155,8 +155,8 @@ void Context::ExecuteStringInst_cmpsb()
 	__X86_CONTEXT_RESTORE_FLAGS__
 
 	regs.setEflags(flags);
-	regs.incEsi(regs.getFlag(InstFlagDF) ? -1 : 1);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -1 : 1);
+	regs.incEsi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
 }
 
 
@@ -209,8 +209,8 @@ void Context::ExecuteStringInst_cmpsd()
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 
 	regs.setEflags(flags);
-	regs.incEsi(regs.getFlag(InstFlagDF) ? -4 : 4);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -4 : 4);
+	regs.incEsi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
 }
 
 
@@ -338,8 +338,8 @@ void Context::ExecuteStringInst_movsb()
 	MemoryRead(regs.getEsi(), 1, &m8);
 	MemoryWrite(regs.getEdi(), 1, &m8);
 
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -1 : 1);
-	regs.incEsi(regs.getFlag(InstFlagDF) ? -1 : 1);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
+	regs.incEsi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
 }
 
 
@@ -373,8 +373,8 @@ void Context::ExecuteStringInst_movsw()
 	MemoryRead(regs.getEsi(), 2, &m16);
 	MemoryWrite(regs.getEdi(), 2, &m16);
 
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -2 : 2);
-	regs.incEsi(regs.getFlag(InstFlagDF) ? -2 : 2);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -2 : 2);
+	regs.incEsi(regs.getFlag(Instruction::FlagDF) ? -2 : 2);
 
 }
 
@@ -408,8 +408,8 @@ void Context::ExecuteStringInst_movsd()
 	MemoryRead(regs.getEsi(), 4, &m32);
 	MemoryWrite(regs.getEdi(), 4, &m32);
 
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -4 : 4);
-	regs.incEsi(regs.getFlag(InstFlagDF) ? -4 : 4);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
+	regs.incEsi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
 
 }
 
@@ -491,7 +491,7 @@ void Context::ExecuteInst_outsd()
 
 void Context::ExecuteStringInst_scasb()
 {
-	unsigned char al = regs.Read(InstRegAl);
+	unsigned char al = regs.Read(Instruction::RegAl);
 	unsigned char m8;
 	unsigned long flags = regs.getEflags();
 
@@ -512,7 +512,7 @@ void Context::ExecuteStringInst_scasb()
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 
 	regs.setEflags(flags);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -1 : 1);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
 
 }
 
@@ -539,7 +539,7 @@ void Context::ExecuteInst_scasb()
 
 void Context::ExecuteStringInst_scasd()
 {
-	unsigned int eax = regs.Read(InstRegEax);
+	unsigned int eax = regs.Read(Instruction::RegEax);
 	unsigned int m32;
 	unsigned long flags = regs.getEflags();
 
@@ -560,7 +560,7 @@ void Context::ExecuteStringInst_scasd()
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 
 	regs.setEflags(flags);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -4 : 4);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
 
 }
 
@@ -587,11 +587,11 @@ void Context::ExecuteInst_scasd()
 
 void Context::ExecuteStringInst_stosb()
 {
-	unsigned char m8 = regs.Read(InstRegAl);
-	unsigned int addr = regs.Read(InstRegEdi);
+	unsigned char m8 = regs.Read(Instruction::RegAl);
+	unsigned int addr = regs.Read(Instruction::RegEdi);
 	
 	MemoryWrite(addr, 1, &m8);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -1 : 1);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -1 : 1);
 }
 
 
@@ -617,11 +617,11 @@ void Context::ExecuteInst_stosb()
 
 void Context::ExecuteStringInst_stosd()
 {
-	unsigned int m32 = regs.Read(InstRegEax);
-	unsigned int addr = regs.Read(InstRegEdi);
+	unsigned int m32 = regs.Read(Instruction::RegEax);
+	unsigned int addr = regs.Read(Instruction::RegEdi);
 	
 	MemoryWrite(addr, 4, &m32);
-	regs.incEdi(regs.getFlag(InstFlagDF) ? -4 : 4);
+	regs.incEdi(regs.getFlag(Instruction::FlagDF) ? -4 : 4);
 }
 
 

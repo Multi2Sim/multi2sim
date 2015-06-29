@@ -736,7 +736,7 @@ void Context::Execute()
 
 	// Disassemble
 	inst.Decode((char *)buffer_ptr, regs.getEip());
-	if (inst.getOpcode() == InstOpcodeInvalid && !spec_mode)
+	if (inst.getOpcode() == Instruction::OpcodeInvalid && !spec_mode)
 	{
 		inst.Dump(std::cout);
 		throw Error(misc::fmt("Unsupported instruction "

@@ -279,8 +279,8 @@ void Context::ExecuteInst_call_rm32()
 
 void Context::ExecuteInst_cbw()
 {
-	unsigned short ax = (char) regs.Read(InstRegAl);
-	regs.Write(InstRegAx, ax);
+	unsigned short ax = (char) regs.Read(Instruction::RegAl);
+	regs.Write(Instruction::RegAx, ax);
 
 	newUInst(UInstSign, UInstDepEax, 0, 0, UInstDepEax, 0, 0, 0);
 }
@@ -298,7 +298,7 @@ void Context::ExecuteInst_cdq()
 
 void Context::ExecuteInst_cld()
 {
-	regs.clearFlag(InstFlagDF);
+	regs.clearFlag(Instruction::FlagDF);
 
 	newUInst(UInstMove, 0, 0, 0, 0, UInstDepDf, 0, 0);
 }
@@ -330,7 +330,7 @@ void Context::ExecuteInst_cmpxchg_rm32_r32()
 	__X86_CONTEXT_RESTORE_FLAGS__
 
 	regs.setEflags(flags);
-	regs.Write(InstRegEax, eax);
+	regs.Write(Instruction::RegEax, eax);
 	StoreRm32(rm32);
 
 	newUInst(UInstSub, UInstDepEax, UInstDepRm32, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
@@ -353,13 +353,13 @@ void Context::ExecuteInst_cmpxchg8b_m64()
 
 	if (edx_eax == m64)
 	{
-		regs.setFlag(InstFlagZF);
+		regs.setFlag(Instruction::FlagZF);
 		m64 = ((unsigned long long) ecx << 32) | ebx;
 		StoreM64(m64);
 	}
 	else
 	{
-		regs.clearFlag(InstFlagZF);
+		regs.clearFlag(Instruction::FlagZF);
 		regs.setEdx(m64 >> 32);
 		regs.setEax(m64);
 	}
@@ -384,17 +384,17 @@ void Context::ExecuteInst_cpuid()
 
 	case 0x0:
 
-		regs.Write(InstRegEax, 0x2);
-		regs.Write(InstRegEbx, 0x756e6547);
-		regs.Write(InstRegEcx, 0x6c65746e);
-		regs.Write(InstRegEdx, 0x49656e69);
+		regs.Write(Instruction::RegEax, 0x2);
+		regs.Write(Instruction::RegEbx, 0x756e6547);
+		regs.Write(Instruction::RegEcx, 0x6c65746e);
+		regs.Write(Instruction::RegEdx, 0x49656e69);
 		break;
 
 	case 0x1:
 
-		regs.Write(InstRegEax, 0x00000f29);
-		regs.Write(InstRegEbx, 0x0102080b);
-		regs.Write(InstRegEcx, 0x00004400);
+		regs.Write(Instruction::RegEax, 0x00000f29);
+		regs.Write(Instruction::RegEbx, 0x0102080b);
+		regs.Write(Instruction::RegEcx, 0x00004400);
 
 		// EDX register returns CPU features information.
 		info = misc::setBit32(info, 31, 1);  // PBE - Pend Brk En
@@ -427,55 +427,55 @@ void Context::ExecuteInst_cpuid()
 		info = misc::setBit32(info, 1, 1);  // VME - Virtual-8086 Mode Enhancement
 		info = misc::setBit32(info, 0, 1);  // FPU - x87 FPU on Chip
 
-		regs.Write(InstRegEdx, info);
+		regs.Write(Instruction::RegEdx, info);
 		break;
 
 	case 0x2:
 
-		regs.Write(InstRegEax, 0);
-		regs.Write(InstRegEbx, 0);
-		regs.Write(InstRegEcx, 0);
-		regs.Write(InstRegEdx, 0);
+		regs.Write(Instruction::RegEax, 0);
+		regs.Write(Instruction::RegEbx, 0);
+		regs.Write(Instruction::RegEcx, 0);
+		regs.Write(Instruction::RegEdx, 0);
 		break;
 
 	case 0x80000000:
 
-		regs.Write(InstRegEax, 0x80000004);
-		regs.Write(InstRegEbx, 0);
-		regs.Write(InstRegEcx, 0);
-		regs.Write(InstRegEdx, 0);
+		regs.Write(Instruction::RegEax, 0x80000004);
+		regs.Write(Instruction::RegEbx, 0);
+		regs.Write(Instruction::RegEcx, 0);
+		regs.Write(Instruction::RegEdx, 0);
 		break;
 
 	case 0x80000001:
 
-		regs.Write(InstRegEax, 0);
-		regs.Write(InstRegEbx, 0);
-		regs.Write(InstRegEcx, 0);
-		regs.Write(InstRegEdx, 0);
+		regs.Write(Instruction::RegEax, 0);
+		regs.Write(Instruction::RegEbx, 0);
+		regs.Write(Instruction::RegEcx, 0);
+		regs.Write(Instruction::RegEdx, 0);
 		break;
 
 	case 0x80000002:
 
-		regs.Write(InstRegEax, 0x20202020);
-		regs.Write(InstRegEbx, 0x20202020);
-		regs.Write(InstRegEcx, 0x20202020);
-		regs.Write(InstRegEdx, 0x20202020);
+		regs.Write(Instruction::RegEax, 0x20202020);
+		regs.Write(Instruction::RegEbx, 0x20202020);
+		regs.Write(Instruction::RegEcx, 0x20202020);
+		regs.Write(Instruction::RegEdx, 0x20202020);
 		break;
 
 	case 0x80000003:
 
-		regs.Write(InstRegEax, 0x6e492020);
-		regs.Write(InstRegEbx, 0x286c6574);
-		regs.Write(InstRegEcx, 0x58202952);
-		regs.Write(InstRegEdx, 0x286e6f65);
+		regs.Write(Instruction::RegEax, 0x6e492020);
+		regs.Write(Instruction::RegEbx, 0x286c6574);
+		regs.Write(Instruction::RegEcx, 0x58202952);
+		regs.Write(Instruction::RegEdx, 0x286e6f65);
 		break;
 
 	case 0x80000004:
 
-		regs.Write(InstRegEax, 0x20294d54);
-		regs.Write(InstRegEbx, 0x20555043);
-		regs.Write(InstRegEcx, 0x30382e32);
-		regs.Write(InstRegEdx, 0x7a4847);
+		regs.Write(Instruction::RegEax, 0x20294d54);
+		regs.Write(Instruction::RegEbx, 0x20555043);
+		regs.Write(Instruction::RegEcx, 0x30382e32);
+		regs.Write(Instruction::RegEdx, 0x7a4847);
 		break;
 
 	default:
@@ -493,8 +493,8 @@ void Context::ExecuteInst_cpuid()
 
 void Context::ExecuteInst_cwde()
 {
-	unsigned int eax = (short) regs.Read(InstRegAx);
-	regs.Write(InstRegEax, eax);
+	unsigned int eax = (short) regs.Read(Instruction::RegAx);
+	regs.Write(Instruction::RegEax, eax);
 
 	newUInst(UInstSign, UInstDepEax, 0, 0, UInstDepEax, 0, 0, 0);
 }
@@ -640,7 +640,7 @@ void Context::ExecuteInst_div_rm8()
 	int skip_emulation;
 	int spec_mode;
 
-	unsigned short ax = regs.Read(InstRegAx);
+	unsigned short ax = regs.Read(Instruction::RegAx);
 	unsigned char rm8 = LoadRm8();
 
 	if (!rm8)
@@ -667,7 +667,7 @@ void Context::ExecuteInst_div_rm8()
 		__X86_CONTEXT_RESTORE_FLAGS__
 	}
 
-	regs.Write(InstRegAx, ax);
+	regs.Write(Instruction::RegAx, ax);
 
 	newUInst(UInstDiv, UInstDepEax, UInstDepRm8, 0, UInstDepEax, 0, 0, 0);
 }
@@ -708,8 +708,8 @@ void Context::ExecuteInst_div_rm32()
 		__X86_CONTEXT_RESTORE_FLAGS__
 	}
 
-	regs.Write(InstRegEax, eax);
-	regs.Write(InstRegEdx, edx);
+	regs.Write(Instruction::RegEax, eax);
+	regs.Write(Instruction::RegEdx, edx);
 
 	newUInst(UInstDiv, UInstDepEdx, UInstDepEax, UInstDepRm32, UInstDepEax, UInstDepEdx, 0, 0);
 }
@@ -761,8 +761,8 @@ void Context::ExecuteInst_idiv_rm32()
 		__X86_CONTEXT_RESTORE_FLAGS__
 	}
 
-	regs.Write(InstRegEax, eax);
-	regs.Write(InstRegEdx, edx);
+	regs.Write(Instruction::RegEax, eax);
+	regs.Write(Instruction::RegEdx, edx);
 
 	newUInst(UInstDiv, UInstDepRm32, UInstDepEax, 0, UInstDepEax, UInstDepEdx, 0, 0);
 }
@@ -770,7 +770,7 @@ void Context::ExecuteInst_idiv_rm32()
 
 void Context::ExecuteInst_imul_rm32()
 {
-	unsigned int eax = regs.Read(InstRegEax);
+	unsigned int eax = regs.Read(Instruction::RegEax);
 	unsigned int rm32 = LoadRm32();
 	unsigned long flags = regs.getEflags();
 	unsigned int edx;
@@ -792,8 +792,8 @@ void Context::ExecuteInst_imul_rm32()
 	);
 	__X86_CONTEXT_RESTORE_FLAGS__
 
-	regs.Write(InstRegEax, eax);
-	regs.Write(InstRegEdx, edx);
+	regs.Write(Instruction::RegEax, eax);
+	regs.Write(Instruction::RegEdx, edx);
 	regs.setEflags(flags);
 
 	newUInst(UInstMult, UInstDepRm32, UInstDepEax, 0, UInstDepEax, UInstDepEdx, UInstDepCf, UInstDepOf);
@@ -1141,7 +1141,7 @@ void Context::ExecuteInst_leave()
 
 	MemoryRead(regs.getEsp(), 4, &value);
 	regs.incEsp(4);
-	regs.Write(InstRegEbp, value);
+	regs.Write(Instruction::RegEbp, value);
 
 	newUInst(UInstMove, UInstDepEbp, 0, 0, UInstDepEsp, 0, 0, 0);
 	newUInst(UInstEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
@@ -1223,7 +1223,7 @@ void Context::ExecuteInst_mov_al_moffs8()
 	unsigned char value;
 
 	MemoryRead(getMoffsAddress(), 1, &value);
-	regs.Write(InstRegAl, value);
+	regs.Write(Instruction::RegAl, value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, getMoffsAddress(), 1, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
@@ -1235,7 +1235,7 @@ void Context::ExecuteInst_mov_ax_moffs16()
 	unsigned short value;
 
 	MemoryRead(getMoffsAddress(), 2, &value);
-	regs.Write(InstRegAx, value);
+	regs.Write(Instruction::RegAx, value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, getMoffsAddress(), 2, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
@@ -1247,7 +1247,7 @@ void Context::ExecuteInst_mov_eax_moffs32()
 	unsigned int value;
 
 	MemoryRead(getMoffsAddress(), 4, &value);
-	regs.Write(InstRegEax, value);
+	regs.Write(Instruction::RegEax, value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
 	newMemoryUInst(UInstLoad, getMoffsAddress(), 4, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
@@ -1256,7 +1256,7 @@ void Context::ExecuteInst_mov_eax_moffs32()
 
 void Context::ExecuteInst_mov_moffs8_al()
 {
-	unsigned char value = regs.Read(InstRegAl);
+	unsigned char value = regs.Read(Instruction::RegAl);
 	MemoryWrite(getMoffsAddress(), 1, &value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
@@ -1266,7 +1266,7 @@ void Context::ExecuteInst_mov_moffs8_al()
 
 void Context::ExecuteInst_mov_moffs16_ax()
 {
-	unsigned short value = regs.Read(InstRegAx);
+	unsigned short value = regs.Read(Instruction::RegAx);
 	MemoryWrite(getMoffsAddress(), 2, &value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
@@ -1276,7 +1276,7 @@ void Context::ExecuteInst_mov_moffs16_ax()
 
 void Context::ExecuteInst_mov_moffs32_eax()
 {
-	unsigned int value = regs.Read(InstRegEax);
+	unsigned int value = regs.Read(Instruction::RegEax);
 	MemoryWrite(getMoffsAddress(), 4, &value);
 
 	newUInst(UInstEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
@@ -1419,7 +1419,7 @@ void Context::ExecuteInst_movzx_r32_rm16()
 
 void Context::ExecuteInst_mul_rm32()
 {
-	unsigned int eax = regs.Read(InstRegEax);
+	unsigned int eax = regs.Read(Instruction::RegEax);
 	unsigned int rm32 = LoadRm32();
 	unsigned long flags = regs.getEflags();
 	unsigned int edx;
@@ -1441,8 +1441,8 @@ void Context::ExecuteInst_mul_rm32()
 	);
 	__X86_CONTEXT_RESTORE_FLAGS__
 
-	regs.Write(InstRegEax, eax);
-	regs.Write(InstRegEdx, edx);
+	regs.Write(Instruction::RegEax, eax);
+	regs.Write(Instruction::RegEdx, edx);
 	regs.setEflags(flags);
 
 	newUInst(UInstMult, UInstDepRm32, UInstDepEax, 0, UInstDepEdx, UInstDepEax, UInstDepOf, UInstDepCf);
@@ -1674,7 +1674,7 @@ void Context::ExecuteInst_push_imm8()
 {
 	unsigned int value = (char) inst.getImmByte();
 
-	regs.Write(InstRegEsp, regs.getEsp() - 4);
+	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1687,7 +1687,7 @@ void Context::ExecuteInst_push_imm32()
 {
 	unsigned int value = inst.getImmDWord();
 
-	regs.Write(InstRegEsp, regs.getEsp() - 4);
+	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1700,7 +1700,7 @@ void Context::ExecuteInst_push_rm32()
 {
 	unsigned int value = LoadRm32();
 
-	regs.Write(InstRegEsp, regs.getEsp() - 4);
+	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1713,7 +1713,7 @@ void Context::ExecuteInst_push_ir32()
 {
 	unsigned int value = LoadIR32();
 
-	regs.Write(InstRegEsp, regs.getEsp() - 4);
+	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1725,7 +1725,7 @@ void Context::ExecuteInst_push_ir32()
 void Context::ExecuteInst_pushf()
 {
 	unsigned eflags = regs.getEflags();
-	regs.Write(InstRegEsp, regs.getEsp() - 4);
+	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &eflags);
 
 	newUInst(UInstSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
@@ -1750,8 +1750,8 @@ void Context::ExecuteInst_rdtsc()
 	);
 	__X86_CONTEXT_RESTORE_FLAGS__
 
-	regs.Write(InstRegEdx, edx);
-	regs.Write(InstRegEax, eax);
+	regs.Write(Instruction::RegEdx, edx);
+	regs.Write(Instruction::RegEax, eax);
 
 	newUInst(UInstMove, 0, 0, 0, UInstDepEax, UInstDepEdx, 0, 0);
 }
@@ -1811,7 +1811,7 @@ void Context::ExecuteInst_ret_imm16()
 void Context::ExecuteInst_sahf()
 {
 	regs.setEflags(regs.getEflags() & ~0xff);
-	regs.setEflags(regs.getEflags() | regs.Read(InstRegAh));
+	regs.setEflags(regs.getEflags() | regs.Read(Instruction::RegAh));
 	regs.setEflags(regs.getEflags() & ~0x28);
 	regs.setEflags(regs.getEflags() | 0x2);
 
@@ -1859,7 +1859,7 @@ void Context::ExecuteInst_shld_rm16_r16_cl()
 {
 	unsigned short rm16 = LoadRm16();
 	unsigned short r16 = LoadR16();
-	unsigned char cl = regs.Read(InstRegCl);
+	unsigned char cl = regs.Read(Instruction::RegCl);
 	unsigned long flags = regs.getEflags();
 
 	__X86_CONTEXT_SAVE_FLAGS__
@@ -1922,7 +1922,7 @@ void Context::ExecuteInst_shld_rm32_r32_cl()
 {
 	unsigned int rm32 = LoadRm32();
 	unsigned int r32 = LoadR32();
-	unsigned char cl = regs.Read(InstRegCl);
+	unsigned char cl = regs.Read(Instruction::RegCl);
 	unsigned long flags = regs.getEflags();
 
 	__X86_CONTEXT_SAVE_FLAGS__
@@ -1985,7 +1985,7 @@ void Context::ExecuteInst_shrd_rm32_r32_cl()
 {
 	unsigned int rm32 = LoadRm32();
 	unsigned int r32 = LoadR32();
-	unsigned char cl = regs.Read(InstRegCl);
+	unsigned char cl = regs.Read(Instruction::RegCl);
 	unsigned long flags = regs.getEflags();
 
 	__X86_CONTEXT_SAVE_FLAGS__
@@ -2015,7 +2015,7 @@ void Context::ExecuteInst_shrd_rm32_r32_cl()
 
 void Context::ExecuteInst_std()
 {
-	regs.setFlag(InstFlagDF);
+	regs.setFlag(Instruction::FlagDF);
 
 	newUInst(UInstMove, 0, 0, 0, 0, UInstDepDf, 0, 0);
 }
@@ -2089,9 +2089,9 @@ void Context::ExecuteInst_xchg_ir16_ax()
 {
 	unsigned short ax, ir16;
 
-	ax = regs.Read(InstRegAx);
+	ax = regs.Read(Instruction::RegAx);
 	ir16 = LoadIR16();
-	regs.Write(InstRegAx, ir16);
+	regs.Write(Instruction::RegAx, ir16);
 	StoreIR16(ax);
 
 	newUInst(UInstMove, UInstDepIr16, UInstDepEax, 0, UInstDepIr16, UInstDepEax, 0, 0);
@@ -2102,9 +2102,9 @@ void Context::ExecuteInst_xchg_ir32_eax()
 {
 	unsigned int eax, ir32;
 
-	eax = regs.Read(InstRegEax);
+	eax = regs.Read(Instruction::RegEax);
 	ir32 = LoadIR32();
-	regs.Write(InstRegEax, ir32);
+	regs.Write(Instruction::RegEax, ir32);
 	StoreIR32(eax);
 
 	newUInst(UInstMove, UInstDepIr32, UInstDepEax, 0, UInstDepIr32, UInstDepEax, 0, 0);
