@@ -20,7 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 
 
 namespace SI
@@ -52,7 +52,7 @@ class Uop
 	long long id;
 
 	// Associated instruction
-	Inst instruction;
+	Instruction instruction;
 
 	// Associated wavefront, assigned in constructor
 	Wavefront *wavefront;
@@ -67,7 +67,7 @@ public:
 	long long getId() const { return id; }
 
 	/// Return the instruction associated with the uop
-	Inst *getInstruction() { return &instruction; }
+	Instruction *getInstruction() { return &instruction; }
 
 	/// Return the associated wavefront
 	Wavefront *getWavefront() { return wavefront; }

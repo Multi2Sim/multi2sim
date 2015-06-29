@@ -167,15 +167,15 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				// Initialize the execution mask
 				if (work_item->getIdInWavefront() < 32)
 				{
-					unsigned exec_mask = wavefront->getSregUint(Inst::RegisterExec);
+					unsigned exec_mask = wavefront->getSregUint(Instruction::RegisterExec);
 					exec_mask |= 1 << work_item->getIdInWavefront();
-					wavefront->setSregUint(Inst::RegisterExec, exec_mask);
+					wavefront->setSregUint(Instruction::RegisterExec, exec_mask);
 				}
 				else if (work_item->getIdInWavefront() < 64)
 				{
-					unsigned exec_mask = wavefront->getSregUint(Inst::RegisterExec + 1);
+					unsigned exec_mask = wavefront->getSregUint(Instruction::RegisterExec + 1);
 					exec_mask |= 1 << work_item->getIdInWavefront();
-					wavefront->setSregUint(Inst::RegisterExec, exec_mask);
+					wavefront->setSregUint(Instruction::RegisterExec, exec_mask);
 				}
 				else 
 				{

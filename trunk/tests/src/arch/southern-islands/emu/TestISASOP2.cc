@@ -33,7 +33,7 @@ TEST(TestISASOP2, S_ADD_U32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	// Build instruction -  S_add_U32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
@@ -63,7 +63,7 @@ TEST(TestISASOP2, S_ADD_U32)
 	int ssrc0 = inst->getBytes()->sop2.ssrc0;
 	int ssrc1 = inst->getBytes()->sop2.ssrc1;
 	int sdst = inst->getBytes()->sop2.sdst;
-	int scc = Inst::RegisterScc;
+	int scc = Instruction::RegisterScc;
 
 
 
@@ -132,7 +132,7 @@ TEST(TestISASOP2, S_ADD_I32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	
 	// Build instruction -  S_add_I32 s2, scc, s0, s1
@@ -163,7 +163,7 @@ TEST(TestISASOP2, S_ADD_I32)
 	int ssrc0 = inst->getBytes()->sop2.ssrc0;
 	int ssrc1 = inst->getBytes()->sop2.ssrc1;
 	int sdst = inst->getBytes()->sop2.sdst;
-	int scc = Inst::RegisterScc;
+	int scc = Instruction::RegisterScc;
 
 
 
@@ -232,7 +232,7 @@ TEST(TestISASOP2, S_SUB_I32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	
 	// Build instruction -  S_SUB_I32 s2, scc, s0, s1
@@ -263,7 +263,7 @@ TEST(TestISASOP2, S_SUB_I32)
 	int ssrc0 = inst->getBytes()->sop2.ssrc0;
 	int ssrc1 = inst->getBytes()->sop2.ssrc1;
 	int sdst = inst->getBytes()->sop2.sdst;
-	int scc = Inst::RegisterScc;
+	int scc = Instruction::RegisterScc;
 
 
 
@@ -332,7 +332,7 @@ TEST(TestISASOP2, S_MIN_U32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	
 	// Build instruction -  S_MIN_U32 s2, scc, s0, s1
@@ -363,7 +363,7 @@ TEST(TestISASOP2, S_MIN_U32)
 	int ssrc0 = inst->getBytes()->sop2.ssrc0;
 	int ssrc1 = inst->getBytes()->sop2.ssrc1;
 	int sdst = inst->getBytes()->sop2.sdst;
-	int scc = Inst::RegisterScc;
+	int scc = Instruction::RegisterScc;
 
 
 
@@ -426,7 +426,7 @@ TEST(TestISASOP2, S_MAX_I32)
 	// Initialize environment using the ObjectPool
 	ObjectPool pool;
 	WorkItem *work_item = pool.getWorkItem();
-	Inst *inst = pool.getInst();
+	Instruction *inst = pool.getInst();
 
 	
 	// Build instruction -  S_MAX_I32 s2, scc, s0, s1
@@ -457,7 +457,7 @@ TEST(TestISASOP2, S_MAX_I32)
 	int ssrc0 = inst->getBytes()->sop2.ssrc0;
 	int ssrc1 = inst->getBytes()->sop2.ssrc1;
 	int sdst = inst->getBytes()->sop2.sdst;
-	int scc = Inst::RegisterScc;
+	int scc = Instruction::RegisterScc;
 
 
 

@@ -50,7 +50,7 @@ ObjectPool::ObjectPool()
 	work_item->setWorkGroup(work_group.get());
 
 	// Create a new Instruction
-	inst = misc::new_unique<Inst>();
+	inst = misc::new_unique<Instruction>();
 }
 
 

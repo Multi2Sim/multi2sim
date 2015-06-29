@@ -82,23 +82,23 @@ int BasicBlock::getPointedLlvmTypeSize(llvm::Type *llvm_type)
 }
 
 
-enum SI::InstBufDataFormat BasicBlock::getBufDataFormat32(int num_elems)
+enum SI::Instruction::BufDataFormat BasicBlock::getBufDataFormat32(int num_elems)
 {
-	enum SI::InstBufDataFormat buf_data_format = SI::InstBufDataFormatInvalid;
+	enum SI::Instruction::BufDataFormat buf_data_format = SI::Instruction::BufDataFormatInvalid;
 
 	switch (num_elems)
 	{
 	case 1:
-		buf_data_format = SI::InstBufDataFormat32;
+		buf_data_format = SI::Instruction::BufDataFormat32;
 		break;
 	case 2:
-		buf_data_format = SI::InstBufDataFormat32_32;
+		buf_data_format = SI::Instruction::BufDataFormat32_32;
 		break;
 	case 3:
-		buf_data_format = SI::InstBufDataFormat32_32_32;
+		buf_data_format = SI::Instruction::BufDataFormat32_32_32;
 		break;
 	case 4:
-		buf_data_format = SI::InstBufDataFormat32_32_32_32;
+		buf_data_format = SI::Instruction::BufDataFormat32_32_32_32;
 		break;
 	default:
 		break;
@@ -109,13 +109,13 @@ enum SI::InstBufDataFormat BasicBlock::getBufDataFormat32(int num_elems)
 }
 
 
-enum SI::InstBufDataFormat BasicBlock::getBufDataFormat(llvm::Type *llvm_type)
+enum SI::Instruction::BufDataFormat BasicBlock::getBufDataFormat(llvm::Type *llvm_type)
 {
-	enum SI::InstBufDataFormat buf_data_format = SI::InstBufDataFormatInvalid;
+	enum SI::Instruction::BufDataFormat buf_data_format = SI::Instruction::BufDataFormatInvalid;
 	
 	if (llvm_type->isIntegerTy() || llvm_type->isFloatTy())
 	{
-		buf_data_format = SI::InstBufDataFormat32;
+		buf_data_format = SI::Instruction::BufDataFormat32;
 	}
 	else if (llvm_type->isVectorTy())
 	{
@@ -131,9 +131,9 @@ enum SI::InstBufDataFormat BasicBlock::getBufDataFormat(llvm::Type *llvm_type)
 }
 
 
-enum SI::InstBufDataFormat BasicBlock::getBufDataFormatVector(llvm::Type *llvm_type)
+enum SI::Instruction::BufDataFormat BasicBlock::getBufDataFormatVector(llvm::Type *llvm_type)
 {
-	enum SI::InstBufDataFormat buf_data_format;
+	enum SI::Instruction::BufDataFormat buf_data_format;
 
 	int num_elems = llvm_type->getVectorNumElements();
 	llvm::Type *elem_type = llvm_type->getVectorElementType();
@@ -175,7 +175,7 @@ void BasicBlock::ArgScalarToVector(std::unique_ptr<Argument> &arg,
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -295,9 +295,9 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 
 		// Emit addition.
 		// v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
-		Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+		instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
 		assert(instruction->hasValidArguments());
@@ -344,9 +344,9 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 					// Emit addition.
 					// v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 					Instruction *instruction = 
-						addInstruction(SI::INST_V_ADD_I32);
+						addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 					instruction->addVectorRegister(ret_vreg + inst_count);
-					instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+					instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 					instruction->addVectorRegister(arg1_vreg_base + inst_count);
 					instruction->addVectorRegister(arg2_vreg_base + inst_count);
 					assert(instruction->hasValidArguments());
@@ -373,9 +373,9 @@ void BasicBlock::EmitAdd(llvm::BinaryOperator *llvm_inst)
 					// Emit addition.
 					// v_add_i32 ret_vreg, vcc, arg_op1, arg_op2
 					Instruction *instruction = 
-						addInstruction(SI::INST_V_ADD_I32);
+						addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 					instruction->addVectorRegister(ret_vreg + inst_count);
-					instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+					instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 					instruction->addLiteral(arg1_literal_val);
 					instruction->addVectorRegister(arg2_vreg_base + inst_count);
 					assert(instruction->hasValidArguments());
@@ -437,7 +437,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 			ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 			// v_sqrt_f32 ret_vreg, vreg
-			Instruction *instruction = addInstruction(SI::INST_V_SQRT_F32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_SQRT_F32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addArgument(std::move(arg1));
 			assert(instruction->hasValidArguments());
@@ -485,7 +485,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 				// Has to be in vector register
 				ArgLiteralToVector(arg2);
 
-				Instruction *instruction = addInstruction(SI::INST_DS_ADD_U32);
+				Instruction *instruction = addInstruction(SI::Instruction::Opcode_DS_ADD_U32);
 				instruction->addArgument(std::move(arg1));
 				instruction->addArgument(std::move(arg2));
 				assert(instruction->hasValidArguments());
@@ -541,7 +541,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 
 			// Create new vector register containing the work group id.
 			// v_mov_b32 vreg, s[wgid + dim]
-			Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addScalarRegister(function->getSRegWGid() + dim);
 			assert(instruction->hasValidArguments());
@@ -561,7 +561,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 
 			// Create new vector register containing the global size.
 			// v_mov_b32 vreg, s[gsize + dim]
-			Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addScalarRegister(function->getSRegGSize() + dim);
 			assert(instruction->hasValidArguments());
@@ -575,7 +575,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 
 			// Create new vector register containing the local size.
 			// v_mov_b32 vreg, s[lsize + dim]
-			Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addScalarRegister(function->getSRegLSize() + dim);
 			assert(instruction->hasValidArguments());
@@ -586,7 +586,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 			int num_group_sreg = function->AllocSReg();
 
 			// Load from ConstBuffer 0
-			Instruction *instruction = addInstruction(SI::INST_S_BUFFER_LOAD_DWORD);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_BUFFER_LOAD_DWORD);
 			instruction->addScalarRegister(num_group_sreg);
 			instruction->addScalarRegisterSeries(function->getSRegCB0(),
 							function->getSRegCB0() + 3);
@@ -600,7 +600,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 			ret_symbol->setRegister(Symbol::TypeVectorRegister, ret_vreg);
 
 			// v_mov_b32 vreg, s[num_group_sreg]
-			instruction = addInstruction(SI::INST_V_MOV_B32);
+			instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addScalarRegister(num_group_sreg);
 			assert(instruction->hasValidArguments());
@@ -608,7 +608,7 @@ void BasicBlock::EmitCall(llvm::CallInst *llvm_inst)
 		else if (func_name == "barrier")
 		{
 			function->addSymbol(var_name);
-			Instruction *instruction = addInstruction(SI::INST_S_BARRIER);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_BARRIER);
 			assert(instruction->hasValidArguments());
 		}
 		else
@@ -644,7 +644,7 @@ void BasicBlock::EmitUitofp(llvm::CastInst *llvm_inst)
 		//
 		// v_cvt_f32_u32 ret_vreg, arg1
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg1));
 		assert(instruction->hasValidArguments());
@@ -722,7 +722,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			//
 			// v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
 			//
-			Instruction *instruction = addInstruction(SI::INST_V_MUL_I32_I24);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MUL_I32_I24);
 			instruction->addVectorRegister(tmp_vreg);
 			instruction->addLiteral(ptr_size);
 			instruction->addArgument(std::move(arg_index));
@@ -736,9 +736,9 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 		//
 		// v_add_i32 ret_vreg, vcc, arg_pointer, arg_offset
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+		instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 		instruction->addArgument(std::move(arg_ptr));
 		instruction->addArgument(std::move(arg_offset));
 		assert(instruction->hasValidArguments());
@@ -780,7 +780,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 				//
 				// v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
 				//
-				Instruction *instruction = addInstruction(SI::INST_V_MUL_I32_I24);
+				Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MUL_I32_I24);
 				instruction->addVectorRegister(tmp_vreg);
 				instruction->addLiteral(ptr_size);
 				instruction->addArgument(std::move(arg_index));
@@ -794,9 +794,9 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 			//
 			// v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 			//
-			Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 			instruction->addVectorRegister(ret_vreg);
-			instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+			instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 			instruction->addArgument(std::move(arg_ptr));
 			instruction->addArgument(std::move(arg_offset));
 			assert(instruction->hasValidArguments());
@@ -849,7 +849,7 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 					//
 					// v_mul_i32_i24 tmp_vreg, ptr_size, arg_index
 					//
-					Instruction *instruction = addInstruction(SI::INST_V_MUL_I32_I24);
+					Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MUL_I32_I24);
 					instruction->addVectorRegister(tmp_vreg);
 					instruction->addLiteral(ptr_size);
 					instruction->addArgument(std::move(arg_index));
@@ -864,18 +864,18 @@ void BasicBlock::EmitGetElementPtr(llvm::GetElementPtrInst *llvm_inst)
 				// v_add_i32 ret_vreg, vcc, arg_offset, arg_pointer
 				//
 				
-				Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+				Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 				instruction->addVectorRegister(ret_vreg);
-				instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+				instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 				instruction->addArgument(std::move(arg_ptr));
 				instruction->addArgument(std::move(arg_offset));
 				assert(instruction->hasValidArguments());
 
 				for (int inst_count = 0; inst_count < num_insts; ++inst_count)
 				{
-					Instruction *instruction = addInstruction(SI::INST_V_ADD_I32);
+					Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 					instruction->addVectorRegister(ret_vreg + inst_count + 1);
-					instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+					instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 					instruction->addLiteral(elem_size * (inst_count + 1));
 					instruction->addVectorRegister(ret_vreg);
 					assert(instruction->hasValidArguments());					
@@ -930,7 +930,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg1_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -954,7 +954,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg2_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -988,75 +988,75 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 			ret_sreg_series, ret_sreg_series + 1);
 
 	// Choose instruction based on predicate
-	SI::InstOpcode opcode = SI::InstOpcodeInvalid;
+	SI::Instruction::Opcode opcode = SI::Instruction::OpcodeInvalid;
 	llvm::CmpInst::Predicate llvm_pred = llvm_inst->getPredicate();
 	switch (llvm_pred)
 	{
 
 	case llvm::CmpInst::ICMP_EQ:
 
-		opcode = SI::INST_V_CMP_EQ_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_EQ_I32;
 		break;
 
 	case llvm::CmpInst::ICMP_NE:
 
-		opcode = SI::INST_V_CMP_NE_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_NE_I32;
 		break;
 
 	case llvm::CmpInst::ICMP_UGT:
 
-		opcode = SI::INST_V_CMP_GT_U32;
+		opcode = SI::Instruction::Opcode_V_CMP_GT_U32;
 		if (invert)
-			opcode = SI::INST_V_CMP_LT_U32;
+			opcode = SI::Instruction::Opcode_V_CMP_LT_U32;
 		break;
 
 	case llvm::CmpInst::ICMP_UGE:
 
-		opcode = SI::INST_V_CMP_GE_U32;
+		opcode = SI::Instruction::Opcode_V_CMP_GE_U32;
 		if (invert)
-			opcode = SI::INST_V_CMP_LE_U32;
+			opcode = SI::Instruction::Opcode_V_CMP_LE_U32;
 		break;
 
 	case llvm::CmpInst::ICMP_ULT:
 
-		opcode = SI::INST_V_CMP_LT_U32;
+		opcode = SI::Instruction::Opcode_V_CMP_LT_U32;
 		if (invert)
-			opcode = SI::INST_V_CMP_GT_U32;
+			opcode = SI::Instruction::Opcode_V_CMP_GT_U32;
 		break;
 
 	case llvm::CmpInst::ICMP_ULE:
 
-		opcode = SI::INST_V_CMP_LE_U32;
+		opcode = SI::Instruction::Opcode_V_CMP_LE_U32;
 		if (invert)
-			opcode = SI::INST_V_CMP_GE_U32;
+			opcode = SI::Instruction::Opcode_V_CMP_GE_U32;
 		break;
 
 	case llvm::CmpInst::ICMP_SGT:
 
-		opcode = SI::INST_V_CMP_GT_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_GT_I32;
 		if (invert)
-			opcode = SI::INST_V_CMP_LT_I32;
+			opcode = SI::Instruction::Opcode_V_CMP_LT_I32;
 		break;
 
 	case llvm::CmpInst::ICMP_SGE:
 
-		opcode = SI::INST_V_CMP_GE_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_GE_I32;
 		if (invert)
-			opcode = SI::INST_V_CMP_LE_I32;
+			opcode = SI::Instruction::Opcode_V_CMP_LE_I32;
 		break;
 
 	case llvm::CmpInst::ICMP_SLT:
 
-		opcode = SI::INST_V_CMP_LT_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_LT_I32;
 		if (invert)
-			opcode = SI::INST_V_CMP_GT_I32;
+			opcode = SI::Instruction::Opcode_V_CMP_GT_I32;
 		break;
 
 	case llvm::CmpInst::ICMP_SLE:
 
-		opcode = SI::INST_V_CMP_LE_I32;
+		opcode = SI::Instruction::Opcode_V_CMP_LE_I32;
 		if (invert)
-			opcode = SI::INST_V_CMP_GE_I32;
+			opcode = SI::Instruction::Opcode_V_CMP_GE_I32;
 		break;
 
 	default:
@@ -1070,7 +1070,7 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	// v_cmp_<pred>_<type> vcc, arg_op1, arg_op2
 	//
 	Instruction *instruction = addInstruction(opcode);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
 	assert(instruction->hasValidArguments());
@@ -1079,9 +1079,9 @@ void BasicBlock::EmitICmp(llvm::ICmpInst *llvm_inst)
 	//
 	// s_mov_b64 ret_sreg_series, vcc
 	//
-	instruction = addInstruction(SI::INST_S_MOV_B64);
+	instruction = addInstruction(SI::Instruction::Opcode_S_MOV_B64);
 	instruction->addScalarRegisterSeries(ret_sreg_series, ret_sreg_series + 1);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	assert(instruction->hasValidArguments());
 }
 
@@ -1134,17 +1134,17 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 			// 	s[sreg_uav,sreg_uav+3],
 			//	0 offen format:[BUF_DATA_FORMAT_32,BUF_NUM_FORMAT_FLOAT]
 			//
-			Instruction *instruction = addInstruction(SI::INST_TBUFFER_LOAD_FORMAT_X);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_X);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addArgument(std::move(arg_addr));
 			instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
 			instruction->addMemoryAddress(new ArgLiteral(0),
 					new ArgMaddrQual(true, false, 0),
-					SI::InstBufDataFormat32,
-					SI::InstBufNumFormatFloat);
+					SI::Instruction::BufDataFormat32,
+					SI::Instruction::BufNumFormatFloat);
 			assert(instruction->hasValidArguments());
 
-			instruction = addInstruction(SI::INST_S_WAITCNT);
+			instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 			instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 			assert(instruction->hasValidArguments());
 		}
@@ -1173,25 +1173,25 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 					ret_vreg + num_vregs - 1);
 
 				// Get corresponding instruction opcode
-				SI::InstOpcode inst_op;
+				SI::Instruction::Opcode inst_op;
 				switch (num_elems_per_inst)
 				{
 				case 1:
-					inst_op = SI::INST_TBUFFER_LOAD_FORMAT_X;
+					inst_op = SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_X;
 					break;
 				case 2:
-					inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XY;
+					inst_op = SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XY;
 					break;
 				case 3:
-					inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XYZ;
+					inst_op = SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XYZ;
 					break;
 				case 4:
-					inst_op = SI::INST_TBUFFER_LOAD_FORMAT_XYZW;
+					inst_op = SI::Instruction::Opcode_TBUFFER_LOAD_FORMAT_XYZW;
 					break;
 				}
 
 				// Get corresponding buffer data format
-				enum SI::InstBufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
+				enum SI::Instruction::BufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
 
 				ArgVectorRegister *arg_addr_reg = dynamic_cast<ArgVectorRegister *>(arg_addr.get());
 				int arg_addr_vreg = arg_addr_reg->getId();
@@ -1217,10 +1217,10 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 					instruction->addMemoryAddress(new ArgLiteral(offset),
 							new ArgMaddrQual(true, false, 0),
 							buf_data_format,
-							SI::InstBufNumFormatFloat);
+							SI::Instruction::BufNumFormatFloat);
 					assert(instruction->hasValidArguments());		
 
-					instruction = addInstruction(SI::INST_S_WAITCNT);
+					instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 					instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 					assert(instruction->hasValidArguments());				
 				}
@@ -1249,12 +1249,12 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 			// Emit LDS load instruction.
 			//
 			// ds_read ret_vreg, arg_addr
-			Instruction *instruction = addInstruction(SI::INST_DS_READ_B32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_DS_READ_B32);
 			instruction->addVectorRegister(ret_vreg);
 			instruction->addArgument(std::move(arg_addr));
 			assert(instruction->hasValidArguments());
 
-			instruction = addInstruction(SI::INST_S_WAITCNT);
+			instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 			instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 			assert(instruction->hasValidArguments());
 		}
@@ -1298,13 +1298,13 @@ void BasicBlock::EmitLoad(llvm::LoadInst *llvm_inst)
 					// Emit LDS load instruction.
 					//
 					// ds_read dst_vreg, arg_addr
-					instruction = addInstruction(SI::INST_DS_READ_B32);
+					instruction = addInstruction(SI::Instruction::Opcode_DS_READ_B32);
 					instruction->addVectorRegister(dst_vreg);
 					instruction->addVectorRegister(src_vreg);
 					assert(instruction->hasValidArguments());
 				}
 
-				instruction = addInstruction(SI::INST_S_WAITCNT);
+				instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 				instruction->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
 				assert(instruction->hasValidArguments());
 			}
@@ -1387,7 +1387,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// s_mul_i32 ret_sreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_S_MUL_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_MUL_I32);
 		instruction->addScalarRegister(ret_sreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -1409,7 +1409,7 @@ void BasicBlock::EmitMul(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mul_lo_i32 ret_vreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MUL_LO_U32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -1497,7 +1497,7 @@ void BasicBlock::EmitPhi(llvm::PHINode *llvm_inst)
 	}
 
 	// Emit Phi instruction
-	Instruction *instruction = addInstruction(SI::INST_PHI);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_PHI);
 	for (auto &arg: arg_list)
 		instruction->addArgument(std::move(arg));
 	assert(instruction->hasValidArguments());
@@ -1532,7 +1532,7 @@ void BasicBlock::EmitRet(llvm::ReturnInst *llvm_inst)
 	//
 	// s_endpgm
 	//
-	addInstruction(SI::INST_S_ENDPGM);
+	addInstruction(SI::Instruction::Opcode_S_ENDPGM);
 }
 
 
@@ -1569,7 +1569,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -1611,17 +1611,17 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 			// 	s[sreg_uav,sreg_uav+3], 0 offen format:[BUF_DATA_FORMAT_32,
 			// 	BUF_NUM_FORMAT_FLOAT]
 			//
-			Instruction *instruction = addInstruction(SI::INST_TBUFFER_STORE_FORMAT_X);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_X);
 			instruction->addArgument(std::move(arg_data));
 			instruction->addArgument(std::move(arg_addr));
 			instruction->addScalarRegisterSeries(uav->getSReg(), uav->getSReg() + 3);
 			instruction->addMemoryAddress(new ArgLiteral(0),
 					new ArgMaddrQual(true, false, 0),
-					SI::InstBufDataFormat32,
-					SI::InstBufNumFormatFloat);
+					SI::Instruction::BufDataFormat32,
+					SI::Instruction::BufNumFormatFloat);
 			assert(instruction->hasValidArguments());
 
-			instruction = addInstruction(SI::INST_S_WAITCNT);
+			instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 			instruction->addWaitCounter(ArgWaitCounter::CounterTypeExpCnt);
 			assert(instruction->hasValidArguments());		
 		}
@@ -1643,20 +1643,20 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 				int offset_width = getLlvmTypeSize(elem_type) * num_elems_per_inst;
 
 				// Get corresponding instruction opcode
-				SI::InstOpcode inst_op;
+				SI::Instruction::Opcode inst_op;
 				switch (num_elems_per_inst)
 				{
 				case 1:
-					inst_op = SI::INST_TBUFFER_STORE_FORMAT_X;
+					inst_op = SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_X;
 					break;
 				case 2:
-					inst_op = SI::INST_TBUFFER_STORE_FORMAT_XY;
+					inst_op = SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XY;
 					break;
 				case 3:
 					throw misc::Panic("Vector 3 type store not supported");
 					break;
 				case 4:
-					inst_op = SI::INST_TBUFFER_STORE_FORMAT_XYZW;
+					inst_op = SI::Instruction::Opcode_TBUFFER_STORE_FORMAT_XYZW;
 					break;
 				default:
 					throw misc::Panic("Invalid buffer store format");
@@ -1664,7 +1664,7 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 				}
 
 				// Get corresponding buffer data format
-				enum SI::InstBufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
+				enum SI::Instruction::BufDataFormat buf_data_format = getBufDataFormat32(num_elems_per_inst);
 
 				// VGPR info
 				ArgVectorRegister *arg_addr_reg = dynamic_cast<ArgVectorRegister *>(arg_addr.get());
@@ -1694,10 +1694,10 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 					instruction->addMemoryAddress(new ArgLiteral(offset),
 							new ArgMaddrQual(true, false, 0),
 							buf_data_format,
-							SI::InstBufNumFormatFloat);
+							SI::Instruction::BufNumFormatFloat);
 					assert(instruction->hasValidArguments());
 
-					instruction = addInstruction(SI::INST_S_WAITCNT);
+					instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 					instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 					assert(instruction->hasValidArguments());
 				}
@@ -1721,12 +1721,12 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 			// Emit LDS store instruction.
 			//
 			// ds_store arg_addr_vreg, arg_data_vreg
-			Instruction *instruction = addInstruction(SI::INST_DS_WRITE_B32);
+			Instruction *instruction = addInstruction(SI::Instruction::Opcode_DS_WRITE_B32);
 			instruction->addArgument(std::move(arg_addr));
 			instruction->addArgument(std::move(arg_data));
 			assert(instruction->hasValidArguments());
 
-			instruction = addInstruction(SI::INST_S_WAITCNT);
+			instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 			instruction->addWaitCounter(ArgWaitCounter::CounterTypeVmCnt);
 			assert(instruction->hasValidArguments());
 		}
@@ -1756,13 +1756,13 @@ void BasicBlock::EmitStore(llvm::StoreInst *llvm_inst)
 					// Emit LDS load instruction.
 					//
 					// ds_read dst_vreg, arg_addr
-					instruction = addInstruction(SI::INST_DS_WRITE_B32);
+					instruction = addInstruction(SI::Instruction::Opcode_DS_WRITE_B32);
 					instruction->addVectorRegister(dst_vreg);
 					instruction->addVectorRegister(src_vreg);
 					assert(instruction->hasValidArguments());
 				}
 
-				instruction = addInstruction(SI::INST_S_WAITCNT);
+				instruction = addInstruction(SI::Instruction::Opcode_S_WAITCNT);
 				instruction->addWaitCounter(ArgWaitCounter::CounterTypeLgkmCnt);
 				assert(instruction->hasValidArguments());
 			}
@@ -1829,7 +1829,7 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 		//
 		// s_sub_i32 ret_sreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_S_SUB_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_SUB_I32);
 		instruction->addScalarRegister(ret_sreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -1851,9 +1851,9 @@ void BasicBlock::EmitSub(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_sub_i32 ret_vreg, vcc, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_SUB_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 		instruction->addVectorRegister(ret_vreg);
-		instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+		instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
 		assert(instruction->hasValidArguments());
@@ -1907,7 +1907,7 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_add_f32 ret_vreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_ADD_F32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_F32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -1941,7 +1941,7 @@ void BasicBlock::EmitFAdd(llvm::BinaryOperator *llvm_inst)
 			{
 				// Emit addition.
 				// v_add_f32 ret_vreg, arg_op1, arg_op2
-				Instruction *instruction = addInstruction(SI::INST_V_ADD_F32);
+				Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ADD_F32);
 				instruction->addVectorRegister(ret_vreg + inst_count);
 				instruction->addVectorRegister(arg1_vreg_base + inst_count);
 				instruction->addVectorRegister(arg2_vreg_base + inst_count);
@@ -1994,7 +1994,7 @@ void BasicBlock::EmitFSub(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_sub_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *instruction = addInstruction(SI::INST_V_SUB_F32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_SUB_F32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
@@ -2044,7 +2044,7 @@ void BasicBlock::EmitFMul(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_mul_f32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *instruction = addInstruction(SI::INST_V_MUL_F32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
@@ -2141,12 +2141,12 @@ void BasicBlock::EmitFDiv(llvm::BinaryOperator *llvm_inst)
 
 	int arg2_rcp_id = function->AllocVReg();
 
-	Instruction *instruction = addInstruction(SI::INST_V_RCP_F32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_RCP_F32);
 	instruction->addVectorRegister(arg2_rcp_id);
 	instruction->addArgument(std::move(arg2));
 	assert(instruction->hasValidArguments());
 
-	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addVectorRegister(arg2_rcp_id);
@@ -2188,7 +2188,7 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg1
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg1_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -2212,7 +2212,7 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_mov_b32 ret_vreg, arg2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addScalarRegister(arg2_scalar->getId());
 		assert(instruction->hasValidArguments());
@@ -2243,7 +2243,7 @@ void BasicBlock::EmitAnd(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_and_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *instruction = addInstruction(SI::INST_V_AND_B32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_AND_B32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
@@ -2286,7 +2286,7 @@ void BasicBlock::EmitOr(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_or_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *instruction = addInstruction(SI::INST_V_OR_B32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_OR_B32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
@@ -2329,7 +2329,7 @@ void BasicBlock::EmitXor(llvm::BinaryOperator *llvm_inst)
 	//
 	// v_xor_b32 ret_vreg, arg_op1, arg_op2
 	//
-	Instruction *instruction = addInstruction(SI::INST_V_XOR_B32);
+	Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_XOR_B32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addArgument(std::move(arg1));
 	instruction->addArgument(std::move(arg2));
@@ -2388,52 +2388,52 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	Instruction *instruction;
 	int numerator_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addArgument(std::move(arg1));
 	assert(instruction->hasValidArguments());
 
 	int divisor_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	instruction->addArgument(std::move(arg2));
 	assert(instruction->hasValidArguments());
 
 	int rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_RCP_F32);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	assert(instruction->hasValidArguments());
 
 	int numerator_mul_rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
 
 	int floor_x_div_y_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_FLOOR_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_FLOOR_F32);
 	instruction->addVectorRegister(floor_x_div_y_vreg);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
 
 	int uint_floor_x_div_y_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_U32_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_U32_F32);
 	instruction->addVectorRegister(uint_floor_x_div_y_vreg);
 	instruction->addVectorRegister(floor_x_div_y_vreg);
 	assert(instruction->hasValidArguments());
 
 	int floor_mul_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_I32_I24);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_I32_I24);
 	instruction->addVectorRegister(floor_mul_divisor_vreg);
 	instruction->addVectorRegister(uint_floor_x_div_y_vreg);
 	instruction->addVectorRegister(divisor_vreg);
 	assert(instruction->hasValidArguments());
 
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(ret_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addVectorRegister(numerator_vreg);
 	instruction->addVectorRegister(floor_mul_divisor_vreg);
 	assert(instruction->hasValidArguments());
@@ -2443,21 +2443,21 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// fdivisor = UINT_TO_FLT(Divisor)
 	Instruction *instruction;
 	int fdivisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(fdivisor_vreg);
 	instruction->addArgument(std::move(arg2));
 	assert(instruction->hasValidArguments());
 
 	// approx_frecip = RECIP(fdivisor)
 	int approx_frecip_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_RCP_F32);
 	instruction->addVectorRegister(approx_frecip_vreg);
 	instruction->addVectorRegister(fdivisor_vreg);
 	assert(instruction->hasValidArguments());
 
 	// scaled_frecip = MUL_V(approx_frecip, 2**32-1)
 	int scaled_frecip_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(scaled_frecip_vreg);
 	instruction->addLiteral(0x4f800000);
 	instruction->addVectorRegister(approx_frecip_vreg);
@@ -2465,14 +2465,14 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_recip = FLT_TO_UINT(scaled_frecip)
 	int approx_recip_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_U32_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_U32_F32);
 	instruction->addVectorRegister(approx_recip_vreg);
 	instruction->addVectorRegister(scaled_frecip_vreg);
 	assert(instruction->hasValidArguments());
 
 	// approx_one = MULLO_UINT(approx_recip,divisor);
 	int approx_one_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_LO_U32);
 	instruction->addVectorRegister(approx_one_vreg);
 	instruction->addVectorRegister(divisor_vreg);
 	instruction->addVectorRegister(approx_recip_vreg);
@@ -2480,7 +2480,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_one_hi = MULHI_UINT(approx_recip,divisor);
 	int approx_one_hi_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_HI_U32);
 	instruction->addVectorRegister(approx_one_hi_vreg);
 	instruction->addVectorRegister(divisor_vreg);
 	instruction->addVectorRegister(approx_recip_vreg);
@@ -2488,16 +2488,16 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// error = ~approx_one
 	int init_error_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(init_error_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(0);
 	instruction->addVectorRegister(approx_one_vreg);
 	assert(instruction->hasValidArguments());
 
 	// if (approx_one_hi == 0) error = error else error = approx_one
 	int cond_approx_one_hi_eq_zero_sreg = function->AllocSReg(2, 2);
-	instruction = addInstruction(SI::INST_V_CMP_NE_I32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CMP_NE_I32_VOP3a);
 	instruction->addScalarRegisterSeries(cond_approx_one_hi_eq_zero_sreg, 
 					     cond_approx_one_hi_eq_zero_sreg + 1);
 	instruction->addLiteral(0);
@@ -2507,7 +2507,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// Notice the condition is NE in previous instruction, 
 	// need to swap src0 and src1
 	int error_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(error_vreg);
 	instruction->addVectorRegister(init_error_vreg);
 	instruction->addVectorRegister(approx_one_vreg);
@@ -2517,7 +2517,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// recip_corrector = MULHI_UINT(error,approx_recip)
 	int recip_corrector_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_HI_U32);
 	instruction->addVectorRegister(recip_corrector_vreg);
 	instruction->addVectorRegister(error_vreg);
 	instruction->addVectorRegister(approx_recip_vreg);
@@ -2526,9 +2526,9 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// better_recip_1 = approx_recip - recip_corrector;
   	// if approx_recip is higher, need to subtract recip_corrector
   	int better_recip_1_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(better_recip_1_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addVectorRegister(approx_recip_vreg);
 	instruction->addVectorRegister(recip_corrector_vreg);
 	assert(instruction->hasValidArguments());
@@ -2536,9 +2536,9 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// better_recip_2 = approx_recip + recip_corrector;
   	// if approx_recip is lower, need to add recip_corrector
   	int better_recip_2_vreg = function->AllocVReg();
-  	instruction = addInstruction(SI::INST_V_ADD_I32);
+  	instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
   	instruction->addVectorRegister(better_recip_2_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
   	instruction->addVectorRegister(approx_recip_vreg);
 	instruction->addVectorRegister(recip_corrector_vreg);
 	assert(instruction->hasValidArguments());
@@ -2548,7 +2548,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// Notice the condition is NE in previous instruction, 
 	// need to swap src0 and src1
 	int better_recip_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(better_recip_vreg);
 	instruction->addVectorRegister(better_recip_2_vreg);
 	instruction->addVectorRegister(better_recip_1_vreg);
@@ -2558,7 +2558,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_Quotient = MULHI_UINT (Numerator,better_recip)
 	int approx_quotient_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_HI_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_HI_U32);
 	instruction->addVectorRegister(approx_quotient_vreg);
 	instruction->addVectorRegister(better_recip_vreg);
 	instruction->addVectorRegister(numerator_vreg);
@@ -2566,7 +2566,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_numerator =  MULLO_UINT(approx_Quotient,Divisor);
 	int approx_numerator_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_LO_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_LO_U32);
 	instruction->addVectorRegister(approx_numerator_vreg);
 	instruction->addVectorRegister(approx_quotient_vreg);
 	instruction->addVectorRegister(divisor_vreg);
@@ -2574,9 +2574,9 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_remainder = Numerator - approx_numerator;
 	int approx_remainder_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(approx_remainder_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addVectorRegister(numerator_vreg);
 	instruction->addVectorRegister(approx_numerator_vreg);
 	assert(instruction->hasValidArguments());
@@ -2584,7 +2584,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// rem_gtr_approx_rem = Numerator >= approx_numerator
 	int cond_numberator_ge_approx_numberator_sregs = 
 		function->AllocSReg(2, 2);	
-	instruction = addInstruction(SI::INST_V_CMP_GE_U32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CMP_GE_U32_VOP3a);
 	instruction->addScalarRegisterSeries(
 		cond_numberator_ge_approx_numberator_sregs,
 		cond_numberator_ge_approx_numberator_sregs + 1);
@@ -2594,9 +2594,9 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// remainder_decrement = approx_remainder - Divisor;
 	// int remainder_decrement_vreg = function->AllocVReg();
-	// instruction = addInstruction(SI::INST_V_SUB_I32);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	// instruction->addVectorRegister(remainder_decrement_vreg);
-	// instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	// instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	// instruction->addVectorRegister(approx_remainder_vreg);
 	// instruction->addVectorRegister(divisor_vreg);
 	// assert(instruction->hasValidArguments());
@@ -2604,7 +2604,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	// approx_remainder >= divisor
 	int cond_approx_remainder_ge_divisor_sregs = 
 		function->AllocSReg(2, 2);	
-	instruction = addInstruction(SI::INST_V_CMP_GE_U32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CMP_GE_U32_VOP3a);
 	instruction->addScalarRegisterSeries(
 		cond_approx_remainder_ge_divisor_sregs,
 		cond_approx_remainder_ge_divisor_sregs + 1);
@@ -2614,16 +2614,16 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_quotient +1
 	int approx_quotient_plus_one_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 	instruction->addVectorRegister(approx_quotient_plus_one_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(1);
 	instruction->addVectorRegister(approx_quotient_vreg);
 	assert(instruction->hasValidArguments());
 
 	// cond = aprox_remainder >= divisor && numerator >= approx numerator
 	int combined_cond_sregs = function->AllocSReg(2, 2);
-	instruction = addInstruction(SI::INST_S_AND_B64);
+	instruction = addInstruction(SI::Instruction::Opcode_S_AND_B64);
 	instruction->addScalarRegisterSeries(
 		combined_cond_sregs,
 		combined_cond_sregs + 1);
@@ -2637,9 +2637,9 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// approx_quotient -1
 	int approx_quotient_plus_negone_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_ADD_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 	instruction->addVectorRegister(approx_quotient_plus_negone_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(-1);
 	instruction->addVectorRegister(approx_quotient_vreg);
 	assert(instruction->hasValidArguments());
@@ -2648,7 +2648,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	//   Remainder = remainder_decrement;
 	// else Remainder = approx_remainder;
 	// int almost_remainder_vreg = function->AllocVReg();
-	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	// instruction->addVectorRegister(almost_remainder_vreg);
 	// instruction->addVectorRegister(remainder_decrement_vreg);
 	// instruction->addVectorRegister(approx_remainder_vreg);
@@ -2660,7 +2660,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	//   approx_quotient = approx_quotient
 	// else approx_quotient = approx_quotient + 1
 	int cnd1_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(cnd1_vreg);
 	instruction->addVectorRegister(approx_quotient_vreg);
 	instruction->addVectorRegister(approx_quotient_plus_one_vreg);
@@ -2672,7 +2672,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	//   approx_quotient = approx_quotient -1
 	// else approx_quotient = approx_quotient
 	int cnd2_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(cnd2_vreg);
 	instruction->addVectorRegister(approx_quotient_plus_negone_vreg);
 	instruction->addVectorRegister(cnd1_vreg);
@@ -2682,41 +2682,41 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 	assert(instruction->hasValidArguments());
 
 	//If (divisor == 0) Remainder = 0xffffffff; else Remainder = Remainder
-	instruction = addInstruction(SI::INST_V_CMP_NE_I32);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CMP_NE_I32);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(0);
 	instruction->addVectorRegister(divisor_vreg);
 	assert(instruction->hasValidArguments());
 
-	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	// instruction->addVectorRegister(ret_vreg);
 	// instruction->addLiteral(-1);
 	// instruction->addVectorRegister(almost_remainder_vreg);
-	// instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	// instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	// assert(instruction->hasValidArguments());
 
 
 	// 
 	int update_numerator_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(update_numerator_vreg);
 	instruction->addLiteral(-1);
 	instruction->addVectorRegister(cnd2_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	assert(instruction->hasValidArguments());
 
 	// mullo numerator
 	int mul_lo_numerator_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_LO_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_LO_I32);
 	instruction->addVectorRegister(mul_lo_numerator_vreg);
 	instruction->addVectorRegister(update_numerator_vreg);
 	instruction->addVectorRegister(numerator_vreg);
 	assert(instruction->hasValidArguments());
 
 	// Remainder sub
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(ret_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addVectorRegister(divisor_vreg);
 	instruction->addVectorRegister(mul_lo_numerator_vreg);
 	assert(instruction->hasValidArguments());
@@ -2725,7 +2725,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// // Assign remainder
 	// int remainder_vreg = function->AllocVReg();
-	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	// instruction->addVectorRegister(remainder_vreg);
 	// instruction->addVectorRegister(remainder_decrement_vreg);
 	// instruction->addVectorRegister(approx_remainder_vreg);
@@ -2735,15 +2735,15 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 	// // If (numerator < approx_numerator) Remainder += Divisor
 	// int remainder_plus_divisor_vreg = function->AllocVReg();
-	// instruction = addInstruction(SI::INST_V_ADD_I32);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_ADD_I32);
 	// instruction->addVectorRegister(remainder_plus_divisor_vreg);
-	// instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	// instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	// instruction->addVectorRegister(remainder_vreg);
 	// instruction->addVectorRegister(divisor_vreg);
 	// assert(instruction->hasValidArguments());
 
 	// int cond_numberator_lt_approx_numberator_sregs = function->AllocSReg(2, 2);
-	// instruction = addInstruction(SI::INST_V_CMP_LT_I32_VOP3a);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_CMP_LT_I32_VOP3a);
 	// instruction->addScalarRegisterSeries(cond_numberator_lt_approx_numberator_sregs,
 	// 	cond_numberator_lt_approx_numberator_sregs + 1);
 	// instruction->addVectorRegister(numerator_vreg);
@@ -2752,7 +2752,7 @@ void BasicBlock::EmitURem(llvm::BinaryOperator *llvm_inst)
 
 
 	// Return remainder
-	// instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	// instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	// instruction->addVectorRegister(ret_vreg);
 	// instruction->addVectorRegister(remainder_plus_divisor_vreg);
 	// instruction->addVectorRegister(remainder_vreg);
@@ -2798,31 +2798,31 @@ void BasicBlock::EmitUDiv(llvm::BinaryOperator *llvm_inst)
 	// TODO: use better algorithm 
 	Instruction *instruction;
 	int numerator_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addArgument(std::move(arg1));
 	assert(instruction->hasValidArguments());
 
 	int divisor_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	instruction->addArgument(std::move(arg2));
 	assert(instruction->hasValidArguments());
 
 	int rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_RCP_F32);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	assert(instruction->hasValidArguments());
 
 	int numerator_mul_rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
 
-	instruction = addInstruction(SI::INST_V_CVT_U32_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_U32_F32);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
@@ -2873,7 +2873,7 @@ void BasicBlock::EmitSDiv(llvm::BinaryOperator *llvm_inst)
 
 	// Convert to positive numerator/divisor
 	int numerator_lt_zero_sregs = function->AllocSReg(2, 2);
-	instruction = addInstruction(SI::INST_V_CMP_LT_I32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CMP_LT_I32_VOP3a);
 	instruction->addScalarRegisterSeries(numerator_lt_zero_sregs,
 		numerator_lt_zero_sregs + 1);
 	instruction->addVectorRegister(numerator_vreg);
@@ -2881,21 +2881,21 @@ void BasicBlock::EmitSDiv(llvm::BinaryOperator *llvm_inst)
 	assert(instruction->hasValidArguments());
 
 	int zero_sub_numerator_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_SUB_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
 	instruction->addVectorRegister(zero_sub_numerator_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(0);
 	instruction->addVectorRegister(numerator_vreg);
 	assert(instruction->hasValidArguments());
 
-	instruction = addInstruction(SI::INST_V_MAX_I32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MAX_I32);
 	instruction->addVectorRegister(numerator_vreg);
 	instruction->addVectorRegister(zero_sub_numerator_vreg);
 	instruction->addVectorRegister(numerator_vreg);
 	assert(instruction->hasValidArguments());
 
         int divisor_lt_zero_sregs = function->AllocSReg(2, 2);
-        instruction = addInstruction(SI::INST_V_CMP_LT_I32_VOP3a);
+        instruction = addInstruction(SI::Instruction::Opcode_V_CMP_LT_I32_VOP3a);
         instruction->addScalarRegisterSeries(divisor_lt_zero_sregs,
                 divisor_lt_zero_sregs + 1);
         instruction->addVectorRegister(divisor_vreg);
@@ -2903,14 +2903,14 @@ void BasicBlock::EmitSDiv(llvm::BinaryOperator *llvm_inst)
         assert(instruction->hasValidArguments());
 
         int zero_sub_divisor_vreg = function->AllocVReg();
-        instruction = addInstruction(SI::INST_V_SUB_I32);
+        instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
         instruction->addVectorRegister(zero_sub_divisor_vreg);
-        instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+        instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
         instruction->addLiteral(0);
         instruction->addVectorRegister(divisor_vreg);
         assert(instruction->hasValidArguments());
 
-        instruction = addInstruction(SI::INST_V_MAX_I32);
+        instruction = addInstruction(SI::Instruction::Opcode_V_MAX_I32);
         instruction->addVectorRegister(divisor_vreg);
         instruction->addVectorRegister(zero_sub_divisor_vreg);
         instruction->addVectorRegister(divisor_vreg);
@@ -2919,39 +2919,39 @@ void BasicBlock::EmitSDiv(llvm::BinaryOperator *llvm_inst)
 	// Same as UDiv
 	// TODO: use better algorithm 
 	int numerator_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addVectorRegister(numerator_vreg);
 	assert(instruction->hasValidArguments());
 
 	int divisor_to_float_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_F32_U32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_F32_U32);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	instruction->addVectorRegister(divisor_vreg);
 	assert(instruction->hasValidArguments());
 
 	int rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_RCP_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_RCP_F32);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	instruction->addVectorRegister(divisor_to_float_vreg);
 	assert(instruction->hasValidArguments());
 
 	int numerator_mul_rcp_divisor_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_MUL_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_MUL_F32);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	instruction->addVectorRegister(numerator_to_float_vreg);
 	instruction->addVectorRegister(rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
 
 	int pre_ret_vreg = function->AllocVReg();
-	instruction = addInstruction(SI::INST_V_CVT_U32_F32);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CVT_U32_F32);
 	instruction->addVectorRegister(pre_ret_vreg);
 	instruction->addVectorRegister(numerator_mul_rcp_divisor_vreg);
 	assert(instruction->hasValidArguments());
 
   	// If numerator/divisor is less than 0, the result is negative
   	int combined_cond_sregs = function->AllocSReg(2, 2);
-  	instruction = addInstruction(SI::INST_S_XOR_B64);
+  	instruction = addInstruction(SI::Instruction::Opcode_S_XOR_B64);
   	instruction->addScalarRegisterSeries(combined_cond_sregs, 
   		combined_cond_sregs + 1);
   	instruction->addScalarRegisterSeries(numerator_lt_zero_sregs,
@@ -2961,14 +2961,14 @@ void BasicBlock::EmitSDiv(llvm::BinaryOperator *llvm_inst)
   	assert(instruction->hasValidArguments());
 
   	int zero_sub_pre_ret_vreg = function->AllocVReg();
-  	instruction = addInstruction(SI::INST_V_SUB_I32);
+  	instruction = addInstruction(SI::Instruction::Opcode_V_SUB_I32);
   	instruction->addVectorRegister(zero_sub_pre_ret_vreg);
-	instruction->addSpecialRegister(SI::InstSpecialRegVcc);
+	instruction->addSpecialRegister(SI::Instruction::SpecialRegVcc);
 	instruction->addLiteral(0);
 	instruction->addVectorRegister(pre_ret_vreg);
 	assert(instruction->hasValidArguments());
 
-	instruction = addInstruction(SI::INST_V_CNDMASK_B32_VOP3a);
+	instruction = addInstruction(SI::Instruction::Opcode_V_CNDMASK_B32_VOP3a);
 	instruction->addVectorRegister(ret_vreg);
 	instruction->addVectorRegister(pre_ret_vreg);
 	instruction->addVectorRegister(zero_sub_pre_ret_vreg);
@@ -3023,7 +3023,7 @@ void BasicBlock::EmitShl(llvm::BinaryOperator *llvm_inst)
 		//
 		// s_lshl_b32 ret_sreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_S_LSHL_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_LSHL_B32);
 		instruction->addVectorRegister(ret_sreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -3045,7 +3045,7 @@ void BasicBlock::EmitShl(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_lshl_b32 ret_vreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_LSHL_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_LSHL_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg1));
 		instruction->addArgument(std::move(arg2));
@@ -3098,7 +3098,7 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 		//
 		// s_lshr_b32 ret_sreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_S_LSHR_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_LSHR_B32);
 		instruction->addVectorRegister(ret_sreg);
 		instruction->addArgument(std::move(arg2));
 		instruction->addArgument(std::move(arg1));
@@ -3120,7 +3120,7 @@ void BasicBlock::EmitLShr(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_lshr_b32 ret_vreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_LSHRREV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_LSHRREV_B32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg2));
 		instruction->addArgument(std::move(arg1));
@@ -3173,7 +3173,7 @@ void BasicBlock::EmitAShr(llvm::BinaryOperator *llvm_inst)
 		//
 		// s_ashr_i32 ret_sreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_S_ASHR_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_S_ASHR_I32);
 		instruction->addVectorRegister(ret_sreg);
 		instruction->addArgument(std::move(arg2));
 		instruction->addArgument(std::move(arg1));
@@ -3195,7 +3195,7 @@ void BasicBlock::EmitAShr(llvm::BinaryOperator *llvm_inst)
 		//
 		// v_ashr_i32 ret_vreg, arg_op1, arg_op2
 		//
-		Instruction *instruction = addInstruction(SI::INST_V_ASHRREV_I32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_ASHRREV_I32);
 		instruction->addVectorRegister(ret_vreg);
 		instruction->addArgument(std::move(arg2));
 		instruction->addArgument(std::move(arg1));
@@ -3327,7 +3327,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// v_mov_b32 dst_vreg, src_vreg
 		///
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(dst_vreg);
 		instruction->addVectorRegister(src_vreg);
 		assert(instruction->hasValidArguments());
@@ -3372,7 +3372,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 		//
 		// v_mov_b32 dst_vreg, src_vreg
 		///
-		Instruction *instruction = addInstruction(SI::INST_V_MOV_B32);
+		Instruction *instruction = addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 		instruction->addVectorRegister(dst_vreg);
 		instruction->addVectorRegister(src_vreg);
 		assert(instruction->hasValidArguments());		
@@ -3423,7 +3423,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 			// s_mov_b32 arg1, arg2
 			///
 			Instruction *instruction = 
-				addInstruction(SI::INST_S_MOV_B32);
+				addInstruction(SI::Instruction::Opcode_S_MOV_B32);
 			instruction->addArgument(std::move(arg1));
 			instruction->addArgument(std::move(arg2));
 			assert(instruction->hasValidArguments());
@@ -3444,7 +3444,7 @@ void BasicBlock::EmitInsertElement(llvm::InsertElementInst *llvm_inst)
 			// v_mov_b32 arg2, arg1
 			///
 			Instruction *instruction = 
-				addInstruction(SI::INST_V_MOV_B32);
+				addInstruction(SI::Instruction::Opcode_V_MOV_B32);
 			instruction->addArgument(std::move(arg2));
 			instruction->addArgument(std::move(arg1));
 			assert(instruction->hasValidArguments());

@@ -375,7 +375,7 @@ bool Token::isArgumentAllowed(Argument *arg)
 		ArgSpecialRegister *arg_special_register =
 				dynamic_cast<ArgSpecialRegister *>(arg);
 		return arg_special_register && arg_special_register->getReg() ==
-				SI::InstSpecialRegVcc;
+				SI::Instruction::SpecialRegVcc;
 	}
 	
 	case TokenWaitCnt:

@@ -33,22 +33,22 @@ namespace SI
 {
 
 // Macros for instruction format interpretation
-#define INST_SMRD   inst->getBytes()->smrd
-#define INST_SOPP   inst->getBytes()->sopp
-#define INST_SOPK   inst->getBytes()->sopk
-#define INST_SOPC   inst->getBytes()->sopc
-#define INST_SOP1   inst->getBytes()->sop1
-#define INST_SOP2   inst->getBytes()->sop2
-#define INST_VOP1   inst->getBytes()->vop1
-#define INST_VOP2   inst->getBytes()->vop2
-#define INST_VOPC   inst->getBytes()->vopc
-#define INST_VOP3b  inst->getBytes()->vop3b
-#define INST_VOP3a  inst->getBytes()->vop3a
-#define INST_VINTRP inst->getBytes()->vintrp
-#define INST_DS     inst->getBytes()->ds
-#define INST_MTBUF  inst->getBytes()->mtbuf
-#define INST_MUBUF  inst->getBytes()->mubuf
-#define INST_EXP    inst->getBytes()->exp
+#define INST_SMRD   instruction->getBytes()->smrd
+#define INST_SOPP   instruction->getBytes()->sopp
+#define INST_SOPK   instruction->getBytes()->sopk
+#define INST_SOPC   instruction->getBytes()->sopc
+#define INST_SOP1   instruction->getBytes()->sop1
+#define INST_SOP2   instruction->getBytes()->sop2
+#define INST_VOP1   instruction->getBytes()->vop1
+#define INST_VOP2   instruction->getBytes()->vop2
+#define INST_VOPC   instruction->getBytes()->vopc
+#define INST_VOP3b  instruction->getBytes()->vop3b
+#define INST_VOP3a  instruction->getBytes()->vop3a
+#define INST_VINTRP instruction->getBytes()->vintrp
+#define INST_DS     instruction->getBytes()->ds
+#define INST_MTBUF  instruction->getBytes()->mtbuf
+#define INST_MUBUF  instruction->getBytes()->mubuf
+#define INST_EXP    instruction->getBytes()->exp
 
 
 /*
@@ -56,7 +56,7 @@ namespace SI
  */
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
+void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -73,7 +73,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	unsigned addr = m_base + m_offset;
 
 	// Read value from global memory
-	InstReg value;
+	Instruction::Register value;
 	global_mem->Read(addr, 4, (char *)&value);
 
 	// Store the data in the destination register
@@ -92,7 +92,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -106,7 +106,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	InstReg value[2];
+	Instruction::Register value[2];
 	for (int i = 0; i < 2; i++)
 	{
 		// Read value from global memory
@@ -135,7 +135,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Inst *inst)
 
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -149,7 +149,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	InstReg value[4];
+	Instruction::Register value[4];
 	for (int i = 0; i < 4; i++)
 	{
 		// Read value from global memory
@@ -177,7 +177,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -191,7 +191,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	InstReg value[8];
+	Instruction::Register value[8];
 	for (int i = 0; i < 8; i++)
 	{
 		// Read value from global memory
@@ -219,7 +219,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
+void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -233,7 +233,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 	unsigned m_offset = (INST.imm) ? (INST.offset * 4) : ReadSReg(INST.offset);
 	unsigned addr = m_base + m_offset;
 
-	InstReg value[16];
+	Instruction::Register value[16];
 	for (int i = 0; i < 16; i++)
 	{
 		// Read value from global memory
@@ -261,7 +261,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
+void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -280,7 +280,7 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	InstReg value[2];
+	Instruction::Register value[2];
 	for (int i = 0; i < 2; i++)
 	{
 		// Read value from global memory		
@@ -307,7 +307,7 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Inst *inst)
 }
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
+void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -326,7 +326,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	InstReg value[4];
+	Instruction::Register value[4];
 	for (int i = 0; i < 4; i++)
 	{
 		// Read value from global memory		
@@ -354,7 +354,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
+void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -373,7 +373,7 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	InstReg value[8];
+	Instruction::Register value[8];
 	for (int i = 0; i < 8; i++)
 	{
 		// Read value from global memory		
@@ -401,7 +401,7 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_SMRD
-void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
+void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Instruction *instruction)
 {
 	// Record access
 	wavefront->setScalarMemRead(true);
@@ -420,7 +420,7 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 
 	assert(!(m_addr & 0x3));
 
-	InstReg value[16];
+	Instruction::Register value[16];
 	for (int i = 0; i < 16; i++)
 	{
 		// Read value from global memory		
@@ -453,12 +453,12 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Inst *inst)
 
 // D.u = S0.u + S1.u. SCC = carry out.
 #define INST INST_SOP2
-void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_ADD_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
-	InstReg carry;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
+	Instruction::Register carry;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -480,7 +480,7 @@ void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, carry.as_uint);
+	WriteSReg(Instruction::RegisterScc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -494,12 +494,12 @@ void WorkItem::ISA_S_ADD_U32_Impl(Inst *inst)
 
 // D.u = S0.i + S1.i. scc = overflow.
 #define INST INST_SOP2
-void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_ADD_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
-	InstReg ovf;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
+	Instruction::Register ovf;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -522,7 +522,7 @@ void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, ovf.as_uint);
+	WriteSReg(Instruction::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -535,12 +535,12 @@ void WorkItem::ISA_S_ADD_I32_Impl(Inst *inst)
 
 // D.u = S0.i - S1.i. scc = overflow.
 #define INST INST_SOP2
-void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_SUB_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg diff;
-	InstReg ovf;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register diff;
+	Instruction::Register ovf;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -563,7 +563,7 @@ void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, diff.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, ovf.as_uint);
+	WriteSReg(Instruction::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -576,12 +576,12 @@ void WorkItem::ISA_S_SUB_I32_Impl(Inst *inst)
 
 // D.u = (S0.u < S1.u) ? S0.u : S1.u, scc = 1 if S0 is min.
 #define INST INST_SOP2
-void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_MIN_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg min;
-	InstReg s0_min;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register min;
+	Instruction::Register s0_min;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -610,7 +610,7 @@ void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, min.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, s0_min.as_uint);
+	WriteSReg(Instruction::RegisterScc, s0_min.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -623,12 +623,12 @@ void WorkItem::ISA_S_MIN_U32_Impl(Inst *inst)
 
 // D.i = (S0.i > S1.i) ? S0.i : S1.i, scc = 1 if S0 is max.
 #define INST INST_SOP2
-void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_MAX_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg max;
-	InstReg s0_max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register max;
+	Instruction::Register s0_max;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -658,7 +658,7 @@ void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, max.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
+	WriteSReg(Instruction::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -671,12 +671,12 @@ void WorkItem::ISA_S_MAX_I32_Impl(Inst *inst)
 
 // D.u = (S0.u > S1.u) ? S0.u : S1.u, scc = 1 if S0 is max.
 #define INST INST_SOP2
-void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_MAX_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg max;
-	InstReg s0_max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register max;
+	Instruction::Register s0_max;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -705,7 +705,7 @@ void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, max.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, s0_max.as_uint);
+	WriteSReg(Instruction::RegisterScc, s0_max.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -718,12 +718,12 @@ void WorkItem::ISA_S_MAX_U32_Impl(Inst *inst)
 
 // D.u = SCC ? S0.u : S1.u
 #define INST INST_SOP2
-void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_CSELECT_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg scc;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register scc;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -735,7 +735,7 @@ void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
 		s1.as_uint = INST.lit_cnst;
 	else
 		s1.as_uint = ReadSReg(INST.ssrc1);
-	scc.as_uint = ReadSReg(Inst::RegisterScc);
+	scc.as_uint = ReadSReg(Instruction::RegisterScc);
 
 	// Calculate the result
 	result.as_uint = scc.as_uint ? s0.as_uint : s1.as_uint;
@@ -754,12 +754,12 @@ void WorkItem::ISA_S_CSELECT_B32_Impl(Inst *inst)
 
 // D.u = S0.u & S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_AND_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+	Instruction::Register nonzero;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -781,7 +781,7 @@ void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -794,18 +794,18 @@ void WorkItem::ISA_S_AND_B32_Impl(Inst *inst)
 
 // D.u = S0.u & S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_AND_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constants for a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg s1_lo;
-	InstReg s1_hi;
-	InstReg result_lo;
-	InstReg result_hi;
-	InstReg nonzero;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register s1_lo;
+	Instruction::Register s1_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -825,7 +825,7 @@ void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -839,12 +839,12 @@ void WorkItem::ISA_S_AND_B64_Impl(Inst *inst)
 
 // D.u = S0.u | S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_OR_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+	Instruction::Register nonzero;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -866,7 +866,7 @@ void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -879,18 +879,18 @@ void WorkItem::ISA_S_OR_B32_Impl(Inst *inst)
 
 // D.u = S0.u | S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_OR_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constants for a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg s1_lo;
-	InstReg s1_hi;
-	InstReg result_lo;
-	InstReg result_hi;
-	InstReg nonzero;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register s1_lo;
+	Instruction::Register s1_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -910,7 +910,7 @@ void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -924,18 +924,18 @@ void WorkItem::ISA_S_OR_B64_Impl(Inst *inst)
 
 // D.u = S0.u ^ S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_XOR_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constants for a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg s1_lo;
-	InstReg s1_hi;
-	InstReg result_lo;
-	InstReg result_hi;
-	InstReg nonzero;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register s1_lo;
+	Instruction::Register s1_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -955,7 +955,7 @@ void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -969,18 +969,18 @@ void WorkItem::ISA_S_XOR_B64_Impl(Inst *inst)
 
 // D.u = S0.u & ~S1.u. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_ANDN2_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constants for a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg s1_lo;
-	InstReg s1_hi;
-	InstReg result_lo;
-	InstReg result_hi;
-	InstReg nonzero;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register s1_lo;
+	Instruction::Register s1_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -1000,7 +1000,7 @@ void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1014,18 +1014,18 @@ void WorkItem::ISA_S_ANDN2_B64_Impl(Inst *inst)
 
 // D.u = ~(S0.u & S1.u). scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_NAND_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constants for a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF || INST.ssrc1 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg s1_lo;
-	InstReg s1_hi;
-	InstReg result_lo;
-	InstReg result_hi;
-	InstReg nonzero;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register s1_lo;
+	Instruction::Register s1_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -1045,7 +1045,7 @@ void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, result_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1059,12 +1059,12 @@ void WorkItem::ISA_S_NAND_B64_Impl(Inst *inst)
 
 // D.u = S0.u << S1.u[4:0]. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_LSHL_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+	Instruction::Register nonzero;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1095,7 +1095,7 @@ void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1108,12 +1108,12 @@ void WorkItem::ISA_S_LSHL_B32_Impl(Inst *inst)
 
 // D.u = S0.u >> S1.u[4:0]. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_LSHR_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+	Instruction::Register nonzero;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1144,7 +1144,7 @@ void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1157,12 +1157,12 @@ void WorkItem::ISA_S_LSHR_B32_Impl(Inst *inst)
 
 // D.i = signext(S0.i) >> S1.i[4:0]. scc = 1 if result is non-zero.
 #define INST INST_SOP2
-void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_ASHR_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+	Instruction::Register nonzero;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1193,7 +1193,7 @@ void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1206,11 +1206,11 @@ void WorkItem::ISA_S_ASHR_I32_Impl(Inst *inst)
 
 // D.i = S0.i * S1.i.
 #define INST INST_SOP2
-void WorkItem::ISA_S_MUL_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_MUL_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1241,14 +1241,14 @@ void WorkItem::ISA_S_MUL_I32_Impl(Inst *inst)
 /* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
  * S0=data, S1=field_offset, S2=field_width. */
 #define INST INST_SOP2
-void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_BFE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
-	InstReg full_reg;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
+	Instruction::Register full_reg;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
 	s0.as_uint = ReadSReg(INST.ssrc0);
@@ -1279,7 +1279,7 @@ void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, result.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 
 	// Print isa debug information.
@@ -1300,10 +1300,10 @@ void WorkItem::ISA_S_BFE_I32_Impl(Inst *inst)
 
 // D.i = signext(simm16).
 #define INST INST_SOPK
-void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_MOVK_I32_Impl(Instruction *instruction)
 {
-	InstReg simm16;
-	InstReg result;
+	Instruction::Register simm16;
+	Instruction::Register result;
 
 	// Load constant operand from instruction.
 	simm16.as_ushort[0] = INST.simm16;
@@ -1325,20 +1325,20 @@ void WorkItem::ISA_S_MOVK_I32_Impl(Inst *inst)
 
 //
 #define INST INST_SOPK
-void WorkItem::ISA_S_CMPK_LE_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMPK_LE_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.i = D.i + signext(SIMM16). scc = overflow.
 #define INST INST_SOPK
-void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_ADDK_I32_Impl(Instruction *instruction)
 {
-	InstReg simm16;
-	InstReg sum;
-	InstReg ovf;
-	InstReg dst;
+	Instruction::Register simm16;
+	Instruction::Register sum;
+	Instruction::Register ovf;
+	Instruction::Register dst;
 
 	int se_simm16;
 
@@ -1360,7 +1360,7 @@ void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, sum.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, ovf.as_uint);
+	WriteSReg(Instruction::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1373,12 +1373,12 @@ void WorkItem::ISA_S_ADDK_I32_Impl(Inst *inst)
 
 // D.i = D.i * signext(SIMM16). scc = overflow.
 #define INST INST_SOPK
-void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_MULK_I32_Impl(Instruction *instruction)
 {
-	InstReg simm16;
-	InstReg product;
-	InstReg ovf;
-	InstReg dst;
+	Instruction::Register simm16;
+	Instruction::Register product;
+	Instruction::Register ovf;
+	Instruction::Register dst;
 
 	int se_simm16;
 
@@ -1399,7 +1399,7 @@ void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
 		// Store the data in the destination register
 	WriteSReg(INST.sdst, product.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, ovf.as_uint);
+	WriteSReg(Instruction::RegisterScc, ovf.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1412,13 +1412,13 @@ void WorkItem::ISA_S_MULK_I32_Impl(Inst *inst)
 
 // D.u = S0.u.
 #define INST INST_SOP1
-void WorkItem::ISA_S_MOV_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_MOV_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constant with a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF));
 
-	InstReg s0_lo;
-	InstReg s0_hi;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
 
 	// Load operand from registers.
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
@@ -1445,9 +1445,9 @@ void WorkItem::ISA_S_MOV_B64_Impl(Inst *inst)
 
 // D.u = S0.u.
 #define INST INST_SOP1
-void WorkItem::ISA_S_MOV_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_MOV_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
+	Instruction::Register s0;
 
 	// Load operand from registers or as a literal constant.
 	if (INST.ssrc0 == 0xFF)
@@ -1469,10 +1469,10 @@ void WorkItem::ISA_S_MOV_B32_Impl(Inst *inst)
 
 // D.u = ~S0.u SCC = 1 if result non-zero.
 #define INST INST_SOP1
-void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
+void WorkItem::ISA_S_NOT_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg nonzero;
+	Instruction::Register s0;
+	Instruction::Register nonzero;
 
 	// Load operand from registers or as a literal constant.
 	if (INST.ssrc0 == 0xFF)
@@ -1485,7 +1485,7 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst, s0.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1497,18 +1497,18 @@ void WorkItem::ISA_S_NOT_B32_Impl(Inst *inst)
 
 #define INST INST_SOP1
 // D.u = WholeQuadMode(S0.u). SCC = 1 if result is non-zero.
-void WorkItem::ISA_S_WQM_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_WQM_B64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = PC + 4, PC = S0.u
 #define INST INST_SOP1
-void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_SWAPPC_B64_Impl(Instruction *instruction)
 {
-	InstReg s0_lo;
-	InstReg s0_hi;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
 
 	// FIXME: cuurently PC is implemented as 32-bit offset
 	// Load operands from registers
@@ -1538,22 +1538,22 @@ void WorkItem::ISA_S_SWAPPC_B64_Impl(Inst *inst)
 /* D.u = EXEC, EXEC = S0.u & EXEC. scc = 1 if the new value of EXEC is
  * non-zero. */
 #define INST INST_SOP1
-void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
+void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constant with a 64 bit instruction.
 	assert(!(INST.ssrc0 == 0xFF));
 
-	InstReg exec_lo;
-	InstReg exec_hi;
-	InstReg s0_lo;
-	InstReg s0_hi;
-	InstReg exec_new_lo;
-	InstReg exec_new_hi;
-	InstReg nonzero;
+	Instruction::Register exec_lo;
+	Instruction::Register exec_hi;
+	Instruction::Register s0_lo;
+	Instruction::Register s0_hi;
+	Instruction::Register exec_new_lo;
+	Instruction::Register exec_new_hi;
+	Instruction::Register nonzero;
 
 	// Load operands from registers.
-	exec_lo.as_uint = ReadSReg(Inst::RegisterExec);
-	exec_hi.as_uint = ReadSReg(Inst::RegisterExec + 1);
+	exec_lo.as_uint = ReadSReg(Instruction::RegisterExec);
+	exec_hi.as_uint = ReadSReg(Instruction::RegisterExec + 1);
 	s0_lo.as_uint = ReadSReg(INST.ssrc0);
 	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
 
@@ -1569,11 +1569,11 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 	// Store the data in the destination register
 	WriteSReg(INST.sdst + 1, exec_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterExec, exec_new_lo.as_uint);
+	WriteSReg(Instruction::RegisterExec, exec_new_lo.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterExec + 1, exec_new_hi.as_uint);
+	WriteSReg(Instruction::RegisterExec + 1, exec_new_hi.as_uint);
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, nonzero.as_uint);
+	WriteSReg(Instruction::RegisterScc, nonzero.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1593,11 +1593,11 @@ void WorkItem::ISA_S_AND_SAVEEXEC_B64_Impl(Inst *inst)
 
 // scc = (S0.i == S1.i).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_EQ_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1615,7 +1615,7 @@ void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1629,11 +1629,11 @@ void WorkItem::ISA_S_CMP_EQ_I32_Impl(Inst *inst)
 
 // scc = (S0.i > S1.i).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_GT_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1651,7 +1651,7 @@ void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1664,11 +1664,11 @@ void WorkItem::ISA_S_CMP_GT_I32_Impl(Inst *inst)
 
 // scc = (S0.i >= S1.i).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_GE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1686,7 +1686,7 @@ void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1698,11 +1698,11 @@ void WorkItem::ISA_S_CMP_GE_I32_Impl(Inst *inst)
 
 // scc = (S0.i < S1.i).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_LT_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1720,7 +1720,7 @@ void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1732,11 +1732,11 @@ void WorkItem::ISA_S_CMP_LT_I32_Impl(Inst *inst)
 
 // scc = (S0.i <= S1.i).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_LE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1754,7 +1754,7 @@ void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1766,11 +1766,11 @@ void WorkItem::ISA_S_CMP_LE_I32_Impl(Inst *inst)
 
 // scc = (S0.u > S1.u).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_GT_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1788,7 +1788,7 @@ void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1800,11 +1800,11 @@ void WorkItem::ISA_S_CMP_GT_U32_Impl(Inst *inst)
 
 // scc = (S0.u >= S1.u).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_GE_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1822,7 +1822,7 @@ void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1834,11 +1834,11 @@ void WorkItem::ISA_S_CMP_GE_U32_Impl(Inst *inst)
 
 // scc = (S0.u <= S1.u).
 #define INST INST_SOPC
-void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
+void WorkItem::ISA_S_CMP_LE_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	assert(!(INST.ssrc0 == 0xFF && INST.ssrc1 == 0xFF));
@@ -1856,7 +1856,7 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
 
 	// Write the results.
 	// Store the data in the destination register
-	WriteSReg(Inst::RegisterScc, result.as_uint);
+	WriteSReg(Instruction::RegisterScc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -1871,7 +1871,7 @@ void WorkItem::ISA_S_CMP_LE_U32_Impl(Inst *inst)
  */
 
 // End the program.
-void WorkItem::ISA_S_ENDPGM_Impl(Inst *inst)
+void WorkItem::ISA_S_ENDPGM_Impl(Instruction *instruction)
 {
 	wavefront->setFinished(true);
 	work_group->incWavefrontsCompletedEmu();
@@ -1879,7 +1879,7 @@ void WorkItem::ISA_S_ENDPGM_Impl(Inst *inst)
 
 // PC = PC + signext(SIMM16 * 4) + 4
 #define INST INST_SOPP
-void WorkItem::ISA_S_BRANCH_Impl(Inst *inst)
+void WorkItem::ISA_S_BRANCH_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
@@ -1889,18 +1889,18 @@ void WorkItem::ISA_S_BRANCH_Impl(Inst *inst)
 	se_simm16 = simm16;
 
 	// Relative jump
-	wavefront->incPC(se_simm16 * 4 + 4 - inst->getSize());
+	wavefront->incPC(se_simm16 * 4 + 4 - instruction->getSize());
 }
 #undef INST
 
 // if(SCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_SCC0_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_SCC0_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(Inst::RegisterScc))
+	if (!ReadSReg(Instruction::RegisterScc))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1909,7 +1909,7 @@ void WorkItem::ISA_S_CBRANCH_SCC0_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 	}
 }
 #undef INST
@@ -1917,18 +1917,18 @@ void WorkItem::ISA_S_CBRANCH_SCC0_Impl(Inst *inst)
 
 // if(SCC == 1) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	InstReg scc;
+	Instruction::Register scc;
 
-	scc.as_uint = ReadSReg(Inst::RegisterScc);
+	scc.as_uint = ReadSReg(Instruction::RegisterScc);
 
 	if (scc.as_uint)
 	{
-		assert(ReadSReg(Inst::RegisterScc) == 1);
+		assert(ReadSReg(Instruction::RegisterScc) == 1);
 
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1937,7 +1937,7 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 
 		// Print isa debug information.
 		if (Emulator::isa_debug)
@@ -1960,12 +1960,12 @@ void WorkItem::ISA_S_CBRANCH_SCC1_Impl(Inst *inst)
 
 // if(VCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_VCCZ_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_VCCZ_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	if (ReadSReg(Inst::RegisterVccz))
+	if (ReadSReg(Instruction::RegisterVccz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1974,19 +1974,19 @@ void WorkItem::ISA_S_CBRANCH_VCCZ_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 	}
 }
 #undef INST
 
 // if(VCC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_VCCNZ_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_VCCNZ_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(Inst::RegisterVccz))
+	if (!ReadSReg(Instruction::RegisterVccz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -1995,23 +1995,23 @@ void WorkItem::ISA_S_CBRANCH_VCCNZ_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 	}
 }
 #undef INST
 
 // if(EXEC == 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	InstReg exec;
-	InstReg execz;
+	Instruction::Register exec;
+	Instruction::Register execz;
 
-	exec.as_uint = ReadSReg(Inst::RegisterExec);
-	execz.as_uint = ReadSReg(Inst::RegisterExecz);
+	exec.as_uint = ReadSReg(Instruction::RegisterExec);
+	execz.as_uint = ReadSReg(Instruction::RegisterExecz);
 
 	if (execz.as_uint)
 	{
@@ -2022,7 +2022,7 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 
 		// Print isa debug information.
 		if (Emulator::isa_debug)
@@ -2048,12 +2048,12 @@ void WorkItem::ISA_S_CBRANCH_EXECZ_Impl(Inst *inst)
 
 // if(EXEC != 0) then PC = PC + signext(SIMM16 * 4) + 4; else nop.
 #define INST INST_SOPP
-void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Inst *inst)
+void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Instruction *instruction)
 {
 	short simm16;
 	int se_simm16;
 
-	if (!ReadSReg(Inst::RegisterExecz))
+	if (!ReadSReg(Instruction::RegisterExecz))
 	{
 		/* Load the short constant operand and sign extend into an
 		 * integer. */
@@ -2062,14 +2062,14 @@ void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Inst *inst)
 
 		// Determine the program counter to branch to.
 		wavefront->incPC(
-			se_simm16 * 4 + 4 - inst->getSize());
+			se_simm16 * 4 + 4 - instruction->getSize());
 	}
 }
 #undef INST
 
 /* Suspend current wavefront at the barrier. If all wavefronts in work-group
  * reached the barrier, wake them up */
-void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
+void WorkItem::ISA_S_BARRIER_Impl(Instruction *instruction)
 {
 	// Suspend current wavefront at the barrier
 	wavefront->setBarrierInst(true);
@@ -2099,15 +2099,15 @@ void WorkItem::ISA_S_BARRIER_Impl(Inst *inst)
 	}
 }
 
-void WorkItem::ISA_S_WAITCNT_Impl(Inst *inst)
+void WorkItem::ISA_S_WAITCNT_Impl(Instruction *instruction)
 {
 	// Nothing to do in emulation
 	wavefront->setMemWait(true);
 }
 
-void WorkItem::ISA_PHI_Impl(Inst *inst)
+void WorkItem::ISA_PHI_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 
 /*
@@ -2116,7 +2116,7 @@ void WorkItem::ISA_PHI_Impl(Inst *inst)
 
 // Do nothing
 #define INST INST_VOP1
-void WorkItem::ISA_V_NOP_Impl(Inst *inst)
+void WorkItem::ISA_V_NOP_Impl(Instruction *instruction)
 {
 	// Do nothing
 }
@@ -2124,9 +2124,9 @@ void WorkItem::ISA_V_NOP_Impl(Inst *inst)
 
 // D.u = S0.u.
 #define INST INST_VOP1
-void WorkItem::ISA_V_MOV_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_MOV_B32_Impl(Instruction *instruction)
 {
-	InstReg value;
+	Instruction::Register value;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2148,12 +2148,12 @@ void WorkItem::ISA_V_MOV_B32_Impl(Inst *inst)
 
 // Copy one VGPR value to one SGPR.
 #define INST INST_VOP1
-void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Instruction *instruction)
 {
-	InstReg value;
+	Instruction::Register value;
 
 	// Load operand from register.
-	assert(INST.src0 >= 256 || INST.src0 == Inst::RegisterM0);
+	assert(INST.src0 >= 256 || INST.src0 == Instruction::RegisterM0);
 	value.as_uint = ReadReg(INST.src0);
 
 	// Write the results.
@@ -2171,15 +2171,15 @@ void WorkItem::ISA_V_READFIRSTLANE_B32_Impl(Inst *inst)
 
 // D.i = (int)S0.d.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_I32_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_I32_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = (double)S0.i.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F64_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F64_I32_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -2187,9 +2187,9 @@ void WorkItem::ISA_V_CVT_F64_I32_Impl(Inst *inst)
 		unsigned as_reg[2];
 
 	} value;
-	InstReg s0;
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register s0;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2217,10 +2217,10 @@ void WorkItem::ISA_V_CVT_F64_I32_Impl(Inst *inst)
 
 // D.f = (float)S0.i.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F32_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F32_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg value;
+	Instruction::Register s0;
+	Instruction::Register value;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2243,10 +2243,10 @@ void WorkItem::ISA_V_CVT_F32_I32_Impl(Inst *inst)
 
 // D.f = (float)S0.u.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F32_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F32_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg value;
+	Instruction::Register s0;
+	Instruction::Register value;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2269,10 +2269,10 @@ void WorkItem::ISA_V_CVT_F32_U32_Impl(Inst *inst)
 
 // D.i = (uint)S0.f.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_U32_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_U32_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg value;
+	Instruction::Register s0;
+	Instruction::Register value;
 
 	float fvalue;
 
@@ -2309,10 +2309,10 @@ void WorkItem::ISA_V_CVT_U32_F32_Impl(Inst *inst)
 
 // D.i = (int)S0.f.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_I32_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_I32_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg value;
+	Instruction::Register s0;
+	Instruction::Register value;
 
 	float fvalue;
 
@@ -2351,7 +2351,7 @@ void WorkItem::ISA_V_CVT_I32_F32_Impl(Inst *inst)
 
 // D.f = (float)S0.d.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F32_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F32_F64_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -2359,7 +2359,7 @@ void WorkItem::ISA_V_CVT_F32_F64_Impl(Inst *inst)
 		unsigned as_reg[2];
 
 	} s0;
-	InstReg value;
+	Instruction::Register value;
 
 	assert(INST.src0 != 0xFF);
 
@@ -2385,17 +2385,17 @@ void WorkItem::ISA_V_CVT_F32_F64_Impl(Inst *inst)
 
 // D.d = (double)S0.f.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F64_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F64_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
+	Instruction::Register s0;
 	union
 	{
 		double as_double;
 		unsigned as_reg[2];
 
 	} value;
-	InstReg value_lo;
-	InstReg value_hi;
+	Instruction::Register value_lo;
+	Instruction::Register value_hi;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2423,18 +2423,18 @@ void WorkItem::ISA_V_CVT_F64_F32_Impl(Inst *inst)
 
 // D.d = (double)S0.u.
 #define INST INST_VOP1
-void WorkItem::ISA_V_CVT_F64_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_F64_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = trunc(S0.f), return integer part of S0.
 #define INST INST_VOP1
-void WorkItem::ISA_V_TRUNC_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_TRUNC_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg value;
+	Instruction::Register s0;
+	Instruction::Register value;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2459,26 +2459,26 @@ void WorkItem::ISA_V_TRUNC_F32_Impl(Inst *inst)
 
 // D.f = trunc(S0); if ((S0 < 0.0) && (S0 != D)) D += -1.0.
 #define INST INST_VOP1
-void WorkItem::ISA_V_FLOOR_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_FLOOR_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = log2(S0.f).
 #define INST INST_VOP1
-void WorkItem::ISA_V_LOG_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_LOG_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = 1.0 / S0.f.
 #define INST INST_VOP1
-void WorkItem::ISA_V_RCP_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_RCP_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg rcp;
+	Instruction::Register s0;
+	Instruction::Register rcp;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2502,26 +2502,26 @@ void WorkItem::ISA_V_RCP_F32_Impl(Inst *inst)
 
 // D.d = 1.0 / (S0.d).
 #define INST INST_VOP1
-void WorkItem::ISA_V_RCP_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_RCP_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = 1.0 / sqrt(S0.f).
 #define INST INST_VOP1
-void WorkItem::ISA_V_RSQ_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_RSQ_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = sqrt(S0.f).
 #define INST INST_VOP1
-void WorkItem::ISA_V_SQRT_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_SQRT_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg srt;
+	Instruction::Register s0;
+	Instruction::Register srt;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2545,10 +2545,10 @@ void WorkItem::ISA_V_SQRT_F32_Impl(Inst *inst)
 
 // D.f = sin(S0.f)
 #define INST INST_VOP1
-void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_SIN_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register result;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2584,10 +2584,10 @@ void WorkItem::ISA_V_SIN_F32_Impl(Inst *inst)
 
 // D.f = cos(S0.f)
 #define INST INST_VOP1
-void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_COS_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register result;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2623,10 +2623,10 @@ void WorkItem::ISA_V_COS_F32_Impl(Inst *inst)
 
 // D.u = ~S0.u.
 #define INST INST_VOP1
-void WorkItem::ISA_V_NOT_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_NOT_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register result;
 
 	// Load operand from register or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2651,25 +2651,25 @@ void WorkItem::ISA_V_NOT_B32_Impl(Inst *inst)
 
 // D.u = position of first 1 in S0 from MSB; D=0xFFFFFFFF if S0==0.
 #define INST INST_VOP1
-void WorkItem::ISA_V_FFBH_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_FFBH_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 
 // D.d = FRAC64(S0.d);
 #define INST INST_VOP1
-void WorkItem::ISA_V_FRACT_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_FRACT_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // VGPR[D.u + M0.u] = VGPR[S0.u].
 #define INST INST_VOP1
-void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_MOVRELD_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg m0;
+	Instruction::Register s0;
+	Instruction::Register m0;
 	
 	assert(INST.src0 != 0xFF);
 
@@ -2678,7 +2678,7 @@ void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
 		s0.as_uint = INST.lit_cnst;
 	else
 		s0.as_uint = ReadReg(INST.src0);
-	m0.as_uint = ReadReg(Inst::RegisterM0);
+	m0.as_uint = ReadReg(Instruction::RegisterM0);
 
 	// Write the results.
 	WriteVReg(INST.vdst+m0.as_uint, s0.as_uint);
@@ -2695,15 +2695,15 @@ void WorkItem::ISA_V_MOVRELD_B32_Impl(Inst *inst)
 
 // VGPR[D.u] = VGPR[S0.u + M0.u].
 #define INST INST_VOP1
-void WorkItem::ISA_V_MOVRELS_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_MOVRELS_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg m0;
+	Instruction::Register s0;
+	Instruction::Register m0;
 	
 	assert(INST.src0 != 0xFF);
 
 	// Load operand from register or as a literal constant.
-	m0.as_uint = ReadReg(Inst::RegisterM0);
+	m0.as_uint = ReadReg(Instruction::RegisterM0);
 	if (INST.src0 == 0xFF)
 		s0.as_uint = INST.lit_cnst;
 	else
@@ -2729,11 +2729,11 @@ void WorkItem::ISA_V_MOVRELS_B32_Impl(Inst *inst)
 /* D.u = VCC[i] ? S1.u : S0.u (i = threadID in wave); VOP3: specify VCC as a
  * scalar GPR in S2. */
 #define INST INST_VOP2
-void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_CNDMASK_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	int vcci;
 
@@ -2743,7 +2743,7 @@ void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
 	else
 		s0.as_uint = ReadReg(INST.src0);
 	s1.as_uint = ReadVReg(INST.vsrc1);
-	vcci = ReadBitmaskSReg(Inst::RegisterVcc);
+	vcci = ReadBitmaskSReg(Instruction::RegisterVcc);
 
 	// Calculate the result.
 	result.as_uint = (vcci) ? s1.as_uint : s0.as_uint;
@@ -2762,11 +2762,11 @@ void WorkItem::ISA_V_CNDMASK_B32_Impl(Inst *inst)
 
 // D.f = S0.f + S1.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_ADD_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_ADD_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2792,11 +2792,11 @@ void WorkItem::ISA_V_ADD_F32_Impl(Inst *inst)
 
 // D.f = S0.f - S1.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_SUB_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_SUB_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg dif;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register dif;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2822,11 +2822,11 @@ void WorkItem::ISA_V_SUB_F32_Impl(Inst *inst)
 
 // D.f = S1.f - S0.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_SUBREV_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_SUBREV_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg dif;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register dif;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2852,20 +2852,20 @@ void WorkItem::ISA_V_SUBREV_F32_Impl(Inst *inst)
 
 // D.f = S0.F * S1.f + D.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_MAC_LEGACY_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAC_LEGACY_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 
 // D.f = S0.f * S1.f (DX9 rules, 0.0*x = 0.0).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MUL_LEGACY_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_LEGACY_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg product;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register product;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2898,11 +2898,11 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_Impl(Inst *inst)
 
 // D.f = S0.f * S1.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_MUL_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg product;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register product;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2928,11 +2928,11 @@ void WorkItem::ISA_V_MUL_F32_Impl(Inst *inst)
 
 // D.i = S0.i[23:0] * S1.i[23:0].
 #define INST INST_VOP2
-void WorkItem::ISA_V_MUL_I32_I24_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_I32_I24_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg product;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register product;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2962,11 +2962,11 @@ void WorkItem::ISA_V_MUL_I32_I24_Impl(Inst *inst)
 
 // D.f = min(S0.f, S1.f).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MIN_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MIN_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg min;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register min;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -2999,11 +2999,11 @@ void WorkItem::ISA_V_MIN_F32_Impl(Inst *inst)
 
 // D.f = max(S0.f, S1.f).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MAX_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register max;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3036,11 +3036,11 @@ void WorkItem::ISA_V_MAX_F32_Impl(Inst *inst)
 
 // D.i = max(S0.i, S1.i).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MAX_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register max;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3073,11 +3073,11 @@ void WorkItem::ISA_V_MAX_I32_Impl(Inst *inst)
 
 // D.i = min(S0.i, S1.i).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MIN_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_MIN_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg min;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register min;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3110,11 +3110,11 @@ void WorkItem::ISA_V_MIN_I32_Impl(Inst *inst)
 
 // D.u = min(S0.u, S1.u).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MIN_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_MIN_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg min;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register min;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3147,11 +3147,11 @@ void WorkItem::ISA_V_MIN_U32_Impl(Inst *inst)
 
 // D.u = max(S0.u, S1.u).
 #define INST INST_VOP2
-void WorkItem::ISA_V_MAX_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register max;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3184,11 +3184,11 @@ void WorkItem::ISA_V_MAX_U32_Impl(Inst *inst)
 
 // D.u = S1.u >> S0.u[4:0].
 #define INST INST_VOP2
-void WorkItem::ISA_V_LSHRREV_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_LSHRREV_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3219,11 +3219,11 @@ void WorkItem::ISA_V_LSHRREV_B32_Impl(Inst *inst)
 
 // D.i = S1.i >> S0.i[4:0].
 #define INST INST_VOP2
-void WorkItem::ISA_V_ASHRREV_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_ASHRREV_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3254,11 +3254,11 @@ void WorkItem::ISA_V_ASHRREV_I32_Impl(Inst *inst)
 
 // D.u = S0.u << S1.u[4:0].
 #define INST INST_VOP2
-void WorkItem::ISA_V_LSHL_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_LSHL_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3284,11 +3284,11 @@ void WorkItem::ISA_V_LSHL_B32_Impl(Inst *inst)
 
 // D.u = S1.u << S0.u[4:0].
 #define INST INST_VOP2
-void WorkItem::ISA_V_LSHLREV_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_LSHLREV_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3319,11 +3319,11 @@ void WorkItem::ISA_V_LSHLREV_B32_Impl(Inst *inst)
 
 // D.u = S0.u & S1.u.
 #define INST INST_VOP2
-void WorkItem::ISA_V_AND_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_AND_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3353,11 +3353,11 @@ void WorkItem::ISA_V_AND_B32_Impl(Inst *inst)
 
 // D.u = S0.u | S1.u.
 #define INST INST_VOP2
-void WorkItem::ISA_V_OR_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_OR_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3384,11 +3384,11 @@ void WorkItem::ISA_V_OR_B32_Impl(Inst *inst)
 
 // D.u = S0.u ^ S1.u.
 #define INST INST_VOP2
-void WorkItem::ISA_V_XOR_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_XOR_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3414,20 +3414,20 @@ void WorkItem::ISA_V_XOR_B32_Impl(Inst *inst)
 
 //D.u = ((1<<S0.u[4:0])-1) << S1.u[4:0]; S0=bitfield_width, S1=bitfield_offset.
 #define INST INST_VOP2
-void WorkItem::ISA_V_BFM_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_BFM_B32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.f = S0.f * S1.f + D.f.
 #define INST INST_VOP2
-void WorkItem::ISA_V_MAC_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAC_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg dst;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register dst;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3454,12 +3454,12 @@ void WorkItem::ISA_V_MAC_F32_Impl(Inst *inst)
 
 // D.f = S0.f * K + S1.f; K is a 32-bit inline constant
 #define INST INST_VOP2
-void WorkItem::ISA_V_MADMK_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MADMK_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg K;
-	InstReg dst;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register K;
+	Instruction::Register dst;
 
 	// Load operands from registers or as a literal constant.
 	s0.as_uint = ReadReg(INST.src0);
@@ -3484,12 +3484,12 @@ void WorkItem::ISA_V_MADMK_F32_Impl(Inst *inst)
 
 // D.u = S0.u + S1.u, vcc = carry-out.
 #define INST INST_VOP2
-void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_ADD_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
-	InstReg carry;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
+	Instruction::Register carry;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3505,7 +3505,7 @@ void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, sum.as_uint);
-	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3519,12 +3519,12 @@ void WorkItem::ISA_V_ADD_I32_Impl(Inst *inst)
 
 // D.u = S0.u - S1.u; vcc = carry-out.
 #define INST INST_VOP2
-void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_SUB_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg dif;
-	InstReg carry;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register dif;
+	Instruction::Register carry;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3539,7 +3539,7 @@ void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, dif.as_uint);
-	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3553,12 +3553,12 @@ void WorkItem::ISA_V_SUB_I32_Impl(Inst *inst)
 
 // D.u = S1.u - S0.u; vcc = carry-out.
 #define INST INST_VOP2
-void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_SUBREV_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg dif;
-	InstReg carry;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register dif;
+	Instruction::Register carry;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3573,7 +3573,7 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 
 	// Write the results.
 	WriteVReg(INST.vdst, dif.as_uint);
-	WriteBitmaskSReg(Inst::RegisterVcc, carry.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, carry.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3587,7 +3587,7 @@ void WorkItem::ISA_V_SUBREV_I32_Impl(Inst *inst)
 
 // D = {flt32_to_flt16(S1.f),flt32_to_flt16(S0.f)}, with round-toward-zero.
 #define INST INST_VOP2
-void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Instruction *instruction)
 {
 	union hfpack
 	{
@@ -3599,8 +3599,8 @@ void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 		} as_f16f16;
 	};
 
-	InstReg s0;
-	InstReg s1;
+	Instruction::Register s0;
+	Instruction::Register s1;
 	unsigned short s0f;
 	unsigned short s1f;
 	union hfpack float_pack;
@@ -3637,11 +3637,11 @@ void WorkItem::ISA_V_CVT_PKRTZ_F16_F32_Impl(Inst *inst)
 
 // vcc = (S0.f < S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3654,7 +3654,7 @@ void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
 	result.as_uint = (s0.as_float < s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3667,11 +3667,11 @@ void WorkItem::ISA_V_CMP_LT_F32_Impl(Inst *inst)
 
 // vcc = (S0.f > S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3684,7 +3684,7 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 	result.as_uint = (s0.as_float > s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3697,19 +3697,19 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Inst *inst)
 
 // vcc = (S0.f >= S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GE_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GE_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = !(S0.f > S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NGT_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3722,7 +3722,7 @@ void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
 	result.as_uint = !(s0.as_float > s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3735,11 +3735,11 @@ void WorkItem::ISA_V_CMP_NGT_F32_Impl(Inst *inst)
 
 // vcc = !(S0.f == S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3752,7 +3752,7 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 	result.as_uint = !(s0.as_float == s1.as_float);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3765,68 +3765,68 @@ void WorkItem::ISA_V_CMP_NEQ_F32_Impl(Inst *inst)
 
 // vcc = (S0.d < S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LT_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = (S0.d == S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_EQ_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_EQ_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = (S0.d <= S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LE_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = (S0.d > S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GT_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = !(S0.d >= S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NGE_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NGE_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = !(S0.d == S1.d).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NEQ_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NEQ_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = !(S0.d < S1.d). 
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NLT_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NLT_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 
 // vcc = (S0.i < S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3839,7 +3839,7 @@ void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int < s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3852,11 +3852,11 @@ void WorkItem::ISA_V_CMP_LT_I32_Impl(Inst *inst)
 
 // vcc = (S0.i == S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_EQ_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3869,7 +3869,7 @@ void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int == s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3882,11 +3882,11 @@ void WorkItem::ISA_V_CMP_EQ_I32_Impl(Inst *inst)
 
 // vcc = (S0.i <= S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3899,7 +3899,7 @@ void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int <= s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3912,11 +3912,11 @@ void WorkItem::ISA_V_CMP_LE_I32_Impl(Inst *inst)
 
 // vcc = (S0.i > S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 255)
@@ -3929,7 +3929,7 @@ void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int > s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3942,11 +3942,11 @@ void WorkItem::ISA_V_CMP_GT_I32_Impl(Inst *inst)
 
 // vcc = (S0.i <> S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -3959,7 +3959,7 @@ void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int != s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -3972,11 +3972,11 @@ void WorkItem::ISA_V_CMP_NE_I32_Impl(Inst *inst)
 
 // D.u = (S0.i >= S1.i).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers.
 	if (INST.src0 == 0xFF)
@@ -3989,7 +3989,7 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 	result.as_uint = (s0.as_int >= s1.as_int);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -4002,19 +4002,19 @@ void WorkItem::ISA_V_CMP_GE_I32_Impl(Inst *inst)
 
 // D = IEEE numeric class function specified in S1.u, performed on S0.d.
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_CLASS_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_CLASS_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // vcc = (S0.u < S1.u).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -4027,7 +4027,7 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint < s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -4040,18 +4040,18 @@ void WorkItem::ISA_V_CMP_LT_U32_Impl(Inst *inst)
 
 // vcc = (S0.u == S1.u).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_EQ_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_EQ_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 
 // vcc = (S0.u <= S1.u).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -4064,7 +4064,7 @@ void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint <= s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -4077,11 +4077,11 @@ void WorkItem::ISA_V_CMP_LE_U32_Impl(Inst *inst)
 
 // vcc = (S0.u > S1.u).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	// Load operands from registers or as a literal constant.
 	if (INST.src0 == 0xFF)
@@ -4094,7 +4094,7 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 	result.as_uint = (s0.as_uint > s1.as_uint);
 
 	// Write the results.
-	WriteBitmaskSReg(Inst::RegisterVcc, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -4107,17 +4107,17 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Inst *inst)
 
 // D.u = (S0.f < S1.f).
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_NE_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NE_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 
 #define INST INST_VOPC
-void WorkItem::ISA_V_CMP_GE_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GE_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
@@ -4130,11 +4130,11 @@ void WorkItem::ISA_V_CMP_GE_U32_Impl(Inst *inst)
 /* D.u = VCC[i] ? S1.u : S0.u (i = threadID in wave); VOP3: specify VCC as a
  * scalar GPR in S2. */
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CNDMASK_B32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CNDMASK_B32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	int vcci;
 
@@ -4172,11 +4172,11 @@ void WorkItem::ISA_V_CNDMASK_B32_VOP3a_Impl(Inst *inst)
 
 // D.f = S0.f + S1.f.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_ADD_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_ADD_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4216,11 +4216,11 @@ void WorkItem::ISA_V_ADD_F32_VOP3a_Impl(Inst *inst)
 
 // D.f = S1.f - S0.f
 #define INST INST_VOP3a
-void WorkItem::ISA_V_SUBREV_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_SUBREV_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg diff;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register diff;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4260,11 +4260,11 @@ void WorkItem::ISA_V_SUBREV_F32_VOP3a_Impl(Inst *inst)
 
 // D.f = S0.f * S1.f (DX9 rules, 0.0*x = 0.0).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_LEGACY_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_LEGACY_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg product;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register product;
 
 	// Load operands from registers or as a literal constant.
 	s0.as_uint = ReadReg(INST.src0);
@@ -4294,11 +4294,11 @@ void WorkItem::ISA_V_MUL_LEGACY_F32_VOP3a_Impl(Inst *inst)
 
 // D.f = S0.f * S1.f.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4338,11 +4338,11 @@ void WorkItem::ISA_V_MUL_F32_VOP3a_Impl(Inst *inst)
 
 // D.f = S0. * S1..
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg product;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register product;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4374,11 +4374,11 @@ void WorkItem::ISA_V_MUL_I32_I24_VOP3a_Impl(Inst *inst)
 
 // D.f = max(S0.f, S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MAX_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4419,12 +4419,12 @@ void WorkItem::ISA_V_MAX_F32_VOP3a_Impl(Inst *inst)
 
 // D.f = S0.f * S1.f + S2.f.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MAD_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAD_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4467,12 +4467,12 @@ void WorkItem::ISA_V_MAD_F32_Impl(Inst *inst)
 
 // D.u = S0.u[23:0] * S1.u[23:0] + S2.u[31:0].
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MAD_U32_U24_Impl(Inst *inst)
+void WorkItem::ISA_V_MAD_U32_U24_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4505,12 +4505,12 @@ void WorkItem::ISA_V_MAD_U32_U24_Impl(Inst *inst)
 /* D.u = (S0.u >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
  * S0=data, S1=field_offset, S2=field_width. */
 #define INST INST_VOP3a
-void WorkItem::ISA_V_BFE_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_BFE_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4544,12 +4544,12 @@ void WorkItem::ISA_V_BFE_U32_Impl(Inst *inst)
 /* D.i = (S0.i >> S1.u[4:0]) & ((1 << S2.u[4:0]) - 1); bitfield extract,
  * S0=data, S1=field_offset, S2=field_width. */
 #define INST INST_VOP3a
-void WorkItem::ISA_V_BFE_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_BFE_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4593,12 +4593,12 @@ void WorkItem::ISA_V_BFE_I32_Impl(Inst *inst)
 
 // D.u = (S0.u & S1.u) | (~S0.u & S2.u).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_BFI_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_BFI_B32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4628,12 +4628,12 @@ void WorkItem::ISA_V_BFI_B32_Impl(Inst *inst)
 
 // D.f = S0.f * S1.f + S2.f
 #define INST INST_VOP3a
-void WorkItem::ISA_V_FMA_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_FMA_F32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4677,18 +4677,18 @@ void WorkItem::ISA_V_FMA_F32_Impl(Inst *inst)
 
 // D.d = S0.d * S1.d + S2.d
 #define INST INST_VOP3a
-void WorkItem::ISA_V_FMA_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_FMA_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = ({S0,S1} >> S2.u[4:0]) & 0xFFFFFFFF.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Inst *inst)
+void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Instruction *instruction)
 {
-	InstReg src2;
-	InstReg result;
+	Instruction::Register src2;
+	Instruction::Register result;
 
 	union
 	{
@@ -4729,14 +4729,14 @@ void WorkItem::ISA_V_ALIGNBIT_B32_Impl(Inst *inst)
  *D.d = Special case divide fixup and flags(s0.d = Quotient, s1.d = Denominator, s2.d = Numerator).
  */
 #define INST INST_VOP3a
-void WorkItem::ISA_V_DIV_FIXUP_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_DIV_FIXUP_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 #define INST INST_VOP3a
-void WorkItem::ISA_V_LSHL_B64_Impl(Inst *inst)
+void WorkItem::ISA_V_LSHL_B64_Impl(Instruction *instruction)
 {
 	// Input operands 
 	union
@@ -4747,8 +4747,8 @@ void WorkItem::ISA_V_LSHL_B64_Impl(Inst *inst)
 
 	} s0, s1, dst;
 
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4776,27 +4776,27 @@ void WorkItem::ISA_V_LSHL_B64_Impl(Inst *inst)
 
 // D.d = min(S0.d, S1.d).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MIN_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_MIN_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.d = max(S0.d, S1.d).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MAX_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = S0.u * S1.u.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_LO_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_LO_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4827,27 +4827,27 @@ void WorkItem::ISA_V_MUL_LO_U32_Impl(Inst *inst)
  *s2.d = Numerator).
  */
 #define INST INST_VOP3a
-void WorkItem::ISA_V_DIV_FMAS_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_DIV_FMAS_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.d = Look Up 2/PI (S0.d) with segment select S1.u[4:0].
 #define INST INST_VOP3a
-void WorkItem::ISA_V_TRIG_PREOP_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_TRIG_PREOP_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = (S0.u * S1.u)>>32
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_HI_U32_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_HI_U32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4877,11 +4877,11 @@ void WorkItem::ISA_V_MUL_HI_U32_Impl(Inst *inst)
 
 // D.i = S0.i * S1.i.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_LO_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_LO_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4910,10 +4910,10 @@ void WorkItem::ISA_V_MUL_LO_I32_Impl(Inst *inst)
 
 // D.f = S0.f - floor(S0.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_FRACT_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_FRACT_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4949,11 +4949,11 @@ void WorkItem::ISA_V_FRACT_F32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.f < S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LT_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -4994,11 +4994,11 @@ void WorkItem::ISA_V_CMP_LT_F32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.f == S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5039,18 +5039,18 @@ void WorkItem::ISA_V_CMP_EQ_F32_VOP3a_Impl(Inst *inst)
 
 // vcc = (S0.f <= S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LE_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_F32_VOP3a_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 
 // D.u = (S0.f > S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5091,19 +5091,19 @@ void WorkItem::ISA_V_CMP_GT_F32_VOP3a_Impl(Inst *inst)
 
 // D.u = !(S0.f <= S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_NLE_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NLE_F32_VOP3a_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = !(S0.f == S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_NEQ_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NEQ_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5144,11 +5144,11 @@ void WorkItem::ISA_V_CMP_NEQ_F32_VOP3a_Impl(Inst *inst)
 
 // D.u = !(S0.f < S1.f).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5189,19 +5189,19 @@ void WorkItem::ISA_V_CMP_NLT_F32_VOP3a_Impl(Inst *inst)
 
 // Comparison Operations
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_OP16_F64_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_OP16_F64_VOP3a_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = (S0.i < S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LT_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5242,11 +5242,11 @@ void WorkItem::ISA_V_CMP_LT_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i == S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_EQ_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_EQ_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5287,11 +5287,11 @@ void WorkItem::ISA_V_CMP_EQ_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i <= S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LE_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5332,11 +5332,11 @@ void WorkItem::ISA_V_CMP_LE_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i > S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_GT_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5377,11 +5377,11 @@ void WorkItem::ISA_V_CMP_GT_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i <> S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_NE_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_NE_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5422,11 +5422,11 @@ void WorkItem::ISA_V_CMP_NE_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i >= S1.i).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_GE_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GE_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5467,11 +5467,11 @@ void WorkItem::ISA_V_CMP_GE_I32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.i == S1.i). Also write EXEC
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5501,7 +5501,7 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 	WriteBitmaskSReg(INST.vdst, result.as_uint);
 
 	// Write EXEC
-	WriteBitmaskSReg(Inst::RegisterExec, result.as_uint);
+	WriteBitmaskSReg(Instruction::RegisterExec, result.as_uint);
 
 	// Print isa debug information.
 	if (Emulator::isa_debug)
@@ -5515,19 +5515,19 @@ void WorkItem::ISA_V_CMPX_EQ_I32_VOP3a_Impl(Inst *inst)
 
 // D = IEEE numeric class function specified in S1.u, performed on S0.d.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_CLASS_F64_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_CLASS_F64_VOP3a_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // D.u = (S0.u < S1.u).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LT_U32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_U32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5556,11 +5556,11 @@ void WorkItem::ISA_V_CMP_LT_U32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.u <= S1.u).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LE_U32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LE_U32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5589,11 +5589,11 @@ void WorkItem::ISA_V_CMP_LE_U32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.u > S1.u).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_GT_U32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GT_U32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5621,11 +5621,11 @@ void WorkItem::ISA_V_CMP_GT_U32_VOP3a_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LG_U32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LG_U32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5655,11 +5655,11 @@ void WorkItem::ISA_V_CMP_LG_U32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0.u >= S1.u).
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg result;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5688,20 +5688,20 @@ void WorkItem::ISA_V_CMP_GE_U32_VOP3a_Impl(Inst *inst)
 
 // D.u = (S0 < S1)
 #define INST INST_VOP3a
-void WorkItem::ISA_V_CMP_LT_U64_VOP3a_Impl(Inst *inst)
+void WorkItem::ISA_V_CMP_LT_U64_VOP3a_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // Max of three numbers.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_MAX3_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg max;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register max;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5748,12 +5748,12 @@ void WorkItem::ISA_V_MAX3_I32_Impl(Inst *inst)
 
 // Median of three numbers.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
+void WorkItem::ISA_V_MED3_I32_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg s2;
-	InstReg median;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register s2;
+	Instruction::Register median;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5806,7 +5806,7 @@ void WorkItem::ISA_V_MED3_I32_Impl(Inst *inst)
 
 // D = S0.u >> S1.u[4:0].
 #define INST INST_VOP3a
-void WorkItem::ISA_V_LSHR_B64_Impl(Inst *inst)
+void WorkItem::ISA_V_LSHR_B64_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -5815,9 +5815,9 @@ void WorkItem::ISA_V_LSHR_B64_Impl(Inst *inst)
 
 	} s0, value;
 
-	InstReg s1;
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register s1;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5853,7 +5853,7 @@ void WorkItem::ISA_V_LSHR_B64_Impl(Inst *inst)
 
 // D = S0.u >> S1.u[4:0] (Arithmetic shift)
 #define INST INST_VOP3a
-void WorkItem::ISA_V_ASHR_I64_Impl(Inst *inst)
+void WorkItem::ISA_V_ASHR_I64_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -5862,9 +5862,9 @@ void WorkItem::ISA_V_ASHR_I64_Impl(Inst *inst)
 
 	} s0, value;
 
-	InstReg s1;
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register s1;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -5900,7 +5900,7 @@ void WorkItem::ISA_V_ASHR_I64_Impl(Inst *inst)
 
 // D.d = S0.d + S1.d.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_ADD_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_ADD_F64_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -5909,8 +5909,8 @@ void WorkItem::ISA_V_ADD_F64_Impl(Inst *inst)
 
 	} s0, s1, value;
 
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -6015,7 +6015,7 @@ void WorkItem::ISA_V_ADD_F64_Impl(Inst *inst)
 
 // D.d = S0.d * S1.d.
 #define INST INST_VOP3a
-void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_MUL_F64_Impl(Instruction *instruction)
 {
 	union
 	{
@@ -6024,8 +6024,8 @@ void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
 
 	} s0, s1, value;
 
-	InstReg result_lo;
-	InstReg result_hi;
+	Instruction::Register result_lo;
+	Instruction::Register result_hi;
 
 	assert(!INST.clamp);
 	assert(!INST.omod);
@@ -6142,9 +6142,9 @@ void WorkItem::ISA_V_MUL_F64_Impl(Inst *inst)
 
 // D.d = Look Up 2/PI (S0.d) with segment select S1.u[4:0].
 #define INST INST_VOP3a
-void WorkItem::ISA_V_LDEXP_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_LDEXP_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
@@ -6155,13 +6155,13 @@ void WorkItem::ISA_V_LDEXP_F64_Impl(Inst *inst)
 /* D.u = S0.u + S1.u + VCC; VCC=carry-out (VOP3:sgpr=carry-out,
  * S2.u=carry-in). */
 #define INST INST_VOP3b
-void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Inst *inst)
+void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Instruction *instruction)
 {
-	InstReg s0;
-	InstReg s1;
-	InstReg sum;
-	InstReg carry_in;
-	InstReg carry_out;
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register sum;
+	Instruction::Register carry_in;
+	Instruction::Register carry_out;
 
 	assert(!INST.omod);
 	assert(!INST.neg); 
@@ -6197,9 +6197,9 @@ void WorkItem::ISA_V_ADDC_U32_VOP3b_Impl(Inst *inst)
  *s0 must equal s1 or s2.
  */
 #define INST INST_VOP3b
-void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Inst *inst)
+void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
@@ -6210,7 +6210,7 @@ void WorkItem::ISA_V_DIV_SCALE_F64_Impl(Inst *inst)
 
 // D = P10 * S + P0
 #define INST INST_VINTRP
-void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_INTERP_P1_F32_Impl(Instruction *instruction)
 {
 	// M0 must be intialized before using any VINTRP instruction
 	struct M0ForInterp
@@ -6226,15 +6226,15 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 		struct M0ForInterp for_vintrp;
 	};
 
-	InstReg s;
-	InstReg p0;
-	InstReg p10;
-	InstReg data;
+	Instruction::Register s;
+	Instruction::Register p0;
+	Instruction::Register p10;
+	Instruction::Register data;
 
 	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	m0_vintrp.as_uint = ReadReg(Inst::RegisterM0);
+	m0_vintrp.as_uint = ReadReg(Instruction::RegisterM0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
@@ -6267,7 +6267,7 @@ void WorkItem::ISA_V_INTERP_P1_F32_Impl(Inst *inst)
 
 // D = P20 * S + D
 #define INST INST_VINTRP
-void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_INTERP_P2_F32_Impl(Instruction *instruction)
 {
 	// M0 must be intialized before using any VINTRP instruction
 	struct M0ForInterp
@@ -6283,14 +6283,14 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 		struct M0ForInterp for_vintrp;
 	};
 
-	InstReg s;
-	InstReg p20;
-	InstReg data;
+	Instruction::Register s;
+	Instruction::Register p20;
+	Instruction::Register data;
 
 	union VInterpM0 m0_vintrp;
 
 	// Get lds offset and primitive mask information
-	m0_vintrp.as_uint = ReadReg(Inst::RegisterM0);
+	m0_vintrp.as_uint = ReadReg(Instruction::RegisterM0);
 
 	// Read barycentric coordinates stored in VGPR
 	s.as_uint = ReadVReg(INST.vsrc);
@@ -6321,9 +6321,9 @@ void WorkItem::ISA_V_INTERP_P2_F32_Impl(Inst *inst)
 
 // D = {P10,P20,P0}[S]
 #define INST INST_VINTRP
-void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
+void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
@@ -6334,29 +6334,29 @@ void WorkItem::ISA_V_INTERP_MOV_F32_Impl(Inst *inst)
 
 // DS[A] = DS[A] + D0; uint add.
 #define INST INST_DS
-void WorkItem::ISA_DS_ADD_U32_Impl(Inst *inst)
+void WorkItem::ISA_DS_ADD_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 
 // DS[A] = (DS[A] >= D0 ? 0 : DS[A] + 1); uint increment.
 #define INST INST_DS
-void WorkItem::ISA_DS_INC_U32_Impl(Inst *inst)
+void WorkItem::ISA_DS_INC_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 // DS[ADDR+offset0*4] = D0; DS[ADDR+offset1*4] = D1; Write 2 Dwords
 #define INST INST_DS
-void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
+void WorkItem::ISA_DS_WRITE2_B32_Impl(Instruction *instruction)
 {
-	InstReg addr0;
-	InstReg addr1;
-	InstReg data0;
-	InstReg data1;
+	Instruction::Register addr0;
+	Instruction::Register addr1;
+	Instruction::Register data0;
+	Instruction::Register data1;
 
 	assert(!INST.gds);
 
@@ -6369,12 +6369,12 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 	data1.as_uint = ReadVReg(INST.data1);
 
 	if (addr0.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
-		ReadSReg(Inst::RegisterM0)))
+		ReadSReg(Instruction::RegisterM0)))
 	{
 		throw Emulator::Error("Invalid local memory address");
 	}
 	if (addr1.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(),
-		ReadSReg(Inst::RegisterM0)))
+		ReadSReg(Instruction::RegisterM0)))
 	{
 		throw Emulator::Error("Invalid local memory address");
 	}
@@ -6431,10 +6431,10 @@ void WorkItem::ISA_DS_WRITE2_B32_Impl(Inst *inst)
 
 // DS[A] = D0; write a Dword.
 #define INST INST_DS
-void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
+void WorkItem::ISA_DS_WRITE_B32_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data0;
+	Instruction::Register addr;
+	Instruction::Register data0;
 
 	assert(!INST.offset0);
 	//assert(!INST.offset1);
@@ -6445,7 +6445,7 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 	data0.as_uint = ReadVReg(INST.data0);
 
 	if (addr.as_uint > std::min(work_group->getNDRange()->getLocalMemTop(), 
-		ReadSReg(Inst::RegisterM0)))
+		ReadSReg(Instruction::RegisterM0)))
 	{
 		throw Emulator::Error("Invalid local memory address");
 	}
@@ -6493,10 +6493,10 @@ void WorkItem::ISA_DS_WRITE_B32_Impl(Inst *inst)
 
 // DS[A] = D0[7:0]; byte write. 
 #define INST INST_DS
-void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
+void WorkItem::ISA_DS_WRITE_B8_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data0;
+	Instruction::Register addr;
+	Instruction::Register data0;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6549,10 +6549,10 @@ void WorkItem::ISA_DS_WRITE_B8_Impl(Inst *inst)
 
 // DS[A] = D0[15:0]; short write. 
 #define INST INST_DS
-void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
+void WorkItem::ISA_DS_WRITE_B16_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data0;
+	Instruction::Register addr;
+	Instruction::Register data0;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6606,10 +6606,10 @@ void WorkItem::ISA_DS_WRITE_B16_Impl(Inst *inst)
 
 // R = DS[A]; Dword read.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ_B32_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data;
+	Instruction::Register addr;
+	Instruction::Register data;
 
 	assert(!INST.offset0);
 	//assert(!INST.offset1);
@@ -6660,11 +6660,11 @@ void WorkItem::ISA_DS_READ_B32_Impl(Inst *inst)
 
 // R = DS[ADDR+offset0*4], R+1 = DS[ADDR+offset1*4]. Read 2 Dwords.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ2_B32_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data0;
-	InstReg data1;
+	Instruction::Register addr;
+	Instruction::Register data0;
+	Instruction::Register data1;
 
 	assert(!INST.gds);
 
@@ -6724,10 +6724,10 @@ void WorkItem::ISA_DS_READ2_B32_Impl(Inst *inst)
 
 // R = signext(DS[A][7:0]}; signed byte read.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ_I8_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data;
+	Instruction::Register addr;
+	Instruction::Register data;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6780,10 +6780,10 @@ void WorkItem::ISA_DS_READ_I8_Impl(Inst *inst)
 
 // R = {24’h0,DS[A][7:0]}; unsigned byte read.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ_U8_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data;
+	Instruction::Register addr;
+	Instruction::Register data;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6836,10 +6836,10 @@ void WorkItem::ISA_DS_READ_U8_Impl(Inst *inst)
 
 // R = signext(DS[A][15:0]}; signed short read.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ_I16_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data;
+	Instruction::Register addr;
+	Instruction::Register data;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6892,10 +6892,10 @@ void WorkItem::ISA_DS_READ_I16_Impl(Inst *inst)
 
 // R = {16’h0,DS[A][15:0]}; unsigned short read.
 #define INST INST_DS
-void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
+void WorkItem::ISA_DS_READ_U16_Impl(Instruction *instruction)
 {
-	InstReg addr;
-	InstReg data;
+	Instruction::Register addr;
+	Instruction::Register data;
 
 	assert(!INST.offset0);
 	assert(!INST.offset1);
@@ -6952,7 +6952,7 @@ void WorkItem::ISA_DS_READ_U16_Impl(Inst *inst)
  */
 
 #define INST INST_MUBUF
-void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
+void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -6962,7 +6962,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 	assert(!INST.lds);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7022,7 +7022,7 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MUBUF
-void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
+void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -7032,7 +7032,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 	assert(!INST.lds);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7092,7 +7092,7 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MUBUF
-void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
+void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -7101,7 +7101,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 	assert(!INST.lds);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7167,7 +7167,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MUBUF
-void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
+void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -7176,7 +7176,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 	assert(!INST.lds);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7237,7 +7237,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MUBUF
-void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
+void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -7246,8 +7246,8 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
 	assert(!INST.lds);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
-	InstReg prev_value;
+	Instruction::Register value;
+	Instruction::Register prev_value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7334,7 +7334,7 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Inst *inst)
  */
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
@@ -7342,7 +7342,7 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 	assert(!INST.slc);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	int bytes_to_read;
 
@@ -7415,13 +7415,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	int i;
 	int bytes_to_read;
@@ -7493,20 +7493,20 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZ_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZ_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	int i;
 	int bytes_to_read;
@@ -7581,13 +7581,13 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7650,13 +7650,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 
 	unsigned off_vgpr = 0;
@@ -7723,13 +7723,13 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Inst *inst)
 #undef INST
 
 #define INST INST_MTBUF
-void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
+void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Instruction *instruction)
 {
 
 	assert(!INST.addr64);
 
 	BufferDescriptor buffer_descriptor;
-	InstReg value;
+	Instruction::Register value;
 
 	unsigned off_vgpr = 0;
 	unsigned idx_vgpr = 0;
@@ -7801,16 +7801,16 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Inst *inst)
  */
 
 #define INST INST_MIMG
-void WorkItem::ISA_IMAGE_STORE_Impl(Inst *inst)
+void WorkItem::ISA_IMAGE_STORE_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
 #define INST INST_MIMG
-void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
+void WorkItem::ISA_IMAGE_SAMPLE_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 
@@ -7820,10 +7820,10 @@ void WorkItem::ISA_IMAGE_SAMPLE_Impl(Inst *inst)
  */
 
 #define INST INST_EXP
-void WorkItem::ISA_EXPORT_Impl(Inst *inst)
+void WorkItem::ISA_EXPORT_Impl(Instruction *instruction)
 {
 	// Left unimplemented because this instruction uses OpenGL
-	ISAUnimplemented(inst);
+	ISAUnimplemented(instruction);
 }
 #undef INST
 

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 
 #include "ComputeUnit.h"
@@ -69,12 +69,12 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 		{
 			// Get uop and instruction
 			Uop *uop = it->get();
-			Inst *inst = uop->getInstruction();
+			Instruction *instruction = uop->getInstruction();
 
 			// Only branch instructions
-			if (inst->getFormat() != InstFormatSOPP ||
-					inst->getBytes()->sopp.op <= 1 ||
-					inst->getBytes()->sopp.op >= 10)
+			if (instruction->getFormat() != Instruction::FormatSOPP ||
+					instruction->getBytes()->sopp.op <= 1 ||
+					instruction->getBytes()->sopp.op >= 10)
 				continue;
 
 			// Skip uops that have not completed fetch
@@ -101,7 +101,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 				oldest_uop);
 
 			/* Trace */
-			si_trace("si.inst id=%lld cu=%d wf=%d "
+			si_trace("si.instruction id=%lld cu=%d wf=%d "
 				"uop_id=%lld stg=\"i\"\n", 
 				oldest_uop->id_in_compute_unit, 
 				self->id, 
@@ -125,18 +125,18 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 			assert(uop);
 
 			/* Only evaluate scalar instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPP && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP1 && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOP2 && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPC && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatSOPK && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPP && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOP1 && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOP2 && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPC && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPK && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSMRD)
 			{	
 				continue;
 			}
-			if (SIInstWrapGetFormat(uop->inst) == SIInstFormatSOPP && 
-			    SIInstWrapGetBytes(uop->inst)->sopp.op > 1 && 
-				SIInstWrapGetBytes(uop->inst)->sopp.op < 10)
+			if (SIInstWrapGetFormat(uop->instruction) == SIInstFormatSOPP && 
+			    SIInstWrapGetBytes(uop->instruction)->sopp.op > 1 && 
+				SIInstWrapGetBytes(uop->instruction)->sopp.op < 10)
 			{
 				continue;
 			}
@@ -168,14 +168,14 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 				oldest_uop);
 
 			/* Trace */
-			si_trace("si.inst id=%lld cu=%d wf=%d "
+			si_trace("si.instruction id=%lld cu=%d wf=%d "
 				"uop_id=%lld stg=\"i\"\n", 
 				oldest_uop->id_in_compute_unit, 
 				self->id, 
 				oldest_uop->wavefront->id, 
 				oldest_uop->id_in_wavefront);
 
-			if (SIInstWrapGetFormat(oldest_uop->inst) == SIInstFormatSMRD)
+			if (SIInstWrapGetFormat(oldest_uop->instruction) == SIInstFormatSMRD)
 			{
 				self->scalar_mem_inst_count++;
 				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
@@ -203,11 +203,11 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 			assert(uop);
 
 			/* Only evaluate SIMD instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP2 && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP1 && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOPC && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3a && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatVOP3b)
+			if (SIInstWrapGetFormat(uop->instruction) != SIInstFormatVOP2 && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatVOP1 && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatVOPC && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatVOP3a && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatVOP3b)
 			{	
 				continue;
 			}
@@ -239,7 +239,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 				oldest_uop);
 
 			/* Trace */
-			si_trace("si.inst id=%lld cu=%d wf=%d "
+			si_trace("si.instruction id=%lld cu=%d wf=%d "
 				"uop_id=%lld stg=\"i\"\n", 
 				oldest_uop->id_in_compute_unit, 
 				self->id, 
@@ -263,8 +263,8 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 			assert(uop);
 
 			/* Only evaluate memory instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatMTBUF && 
-				SIInstWrapGetFormat(uop->inst) != SIInstFormatMUBUF)
+			if (SIInstWrapGetFormat(uop->instruction) != SIInstFormatMTBUF && 
+				SIInstWrapGetFormat(uop->instruction) != SIInstFormatMUBUF)
 			{	
 				continue;
 			}
@@ -296,7 +296,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 				oldest_uop);
 
 			/* Trace */
-			si_trace("si.inst id=%lld cu=%d wf=%d "
+			si_trace("si.instruction id=%lld cu=%d wf=%d "
 				"uop_id=%lld stg=\"i\"\n", 
 				oldest_uop->id_in_compute_unit, 
 				self->id, 
@@ -321,7 +321,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 			assert(uop);
 
 			/* Only evaluate LDS instructions */
-			if (SIInstWrapGetFormat(uop->inst) != SIInstFormatDS)
+			if (SIInstWrapGetFormat(uop->instruction) != SIInstFormatDS)
 			{	
 				continue;
 			}
@@ -353,7 +353,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 				oldest_uop);
 
 			/* Trace */
-			si_trace("si.inst id=%lld cu=%d wf=%d "
+			si_trace("si.instruction id=%lld cu=%d wf=%d "
 				"uop_id=%lld stg=\"i\"\n", 
 				oldest_uop->id_in_compute_unit, 
 				self->id, 
@@ -378,7 +378,7 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 			continue;
 		}
 
-		si_trace("si.inst id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
+		si_trace("si.instruction id=%lld cu=%d wf=%d uop_id=%lld stg=\"s\"\n", 
 			uop->id_in_compute_unit, self->id, 
 			uop->wavefront->id, uop->id_in_wavefront);
 	}
