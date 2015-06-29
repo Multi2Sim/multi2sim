@@ -26,7 +26,7 @@ namespace SI
 long long Uop::id_counter = 0;
 
 
-Uop::Uop()
+Uop::Uop(Wavefront *wavefront) : wavefront(wavefront)
 {
 	// Assign unique identifier
 	id = ++id_counter;
