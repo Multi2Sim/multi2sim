@@ -678,7 +678,6 @@ TEST(TestSystemEvents, config_0_evict_1)
 
 		// Set up network system
 		net::System *network_system = net::System::getInstance();
-		std::cout << "Cycle = " << network_system->getCycle() << std::endl;
 		network_system->ParseConfiguration(&ini_file_net);
 
 		// Set up memory system
