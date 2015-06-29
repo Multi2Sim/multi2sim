@@ -232,19 +232,20 @@ int Driver::CallMemFree(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	unsigned int device_ptr;                                                 
+	//unsigned int device_ptr;                                                 
 
 	// Read Arguments	
-	memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
+	//memory->Read(args_ptr, sizeof(unsigned), (char *) &device_ptr);
 	
 	// debug
-	debug << misc::fmt("\tdevice_ptr = %u\n", device_ptr);                         
+	//debug << misc::fmt("\tdevice_ptr = %u\n", device_ptr);                         
 
 	// For now, this call is ignored. No deallocation of global memory can   
 	// happen.
 
 	// Return device pointer                                           
-	return device_ptr; 
+	//return device_ptr; 
+	return 0;
 }
 
 
@@ -415,10 +416,14 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 	if (!arg || arg->getType() != ArgTypeValue)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
-	// Save value and size
-	auto value_ptr = misc::new_unique_array<char>(size);
+	// Dynamically allocate value_ptr and release it so ownership can be
+	// taken by the unique pointer in class Arg
+	auto value_ptr = misc::new_unique<char>(size);
 	memory->Read(host_ptr, size, value_ptr.get());
-	arg->setValue(value_ptr.get());
+	char *char_ptr = value_ptr.release();
+
+	// Save value and size
+	arg->setValue(char_ptr);
 	arg->setSize(size);
 	arg->setSetFlag(true);
 

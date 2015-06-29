@@ -890,13 +890,13 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 		case ArgTypeValue:
 		{
-			ArgValue &arg_value = dynamic_cast<ArgValue&>(*arg);
+			ArgValue *arg_value = dynamic_cast<ArgValue *>(arg.get());
 			// Value copied directly into device constant memory
-			assert(arg_value.getSize());
+			assert(arg_value->getSize());
 			ndrange->ConstantBufferWrite(
-				arg_value.getConstantBufferNum(),
-				arg_value.getConstantOffset(),
-				arg_value.getValuePtr(), arg_value.getSize());
+				arg_value->getConstantBufferNum(),
+				arg_value->getConstantOffset(),
+				arg_value->getValuePtr(), arg_value->getSize());
 			break;
 		}
 
