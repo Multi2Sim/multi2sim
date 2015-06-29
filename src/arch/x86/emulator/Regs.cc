@@ -19,7 +19,7 @@
 
 #include <cstring>
 
-#include <arch/x86/disassembler/Inst.h>
+#include <arch/x86/disassembler/Instruction.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 
@@ -29,7 +29,7 @@
 namespace x86
 {
 
-const Regs::Info Regs::info[InstRegCount] =
+const Regs::Info Regs::info[Instruction::RegCount] =
 {
 	{ 0, 0 },
 	{ 0, 4 },	// 1. eax
@@ -119,7 +119,7 @@ Regs::Regs()
 
 unsigned Regs::Read(int reg) const
 {
-	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
+	assert(misc::inRange(reg, Instruction::RegNone, Instruction::RegCount - 1));
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	return *value_ptr & mask[info[reg].size];
 }
@@ -127,7 +127,7 @@ unsigned Regs::Read(int reg) const
 
 void Regs::Write(int reg, unsigned value)
 {
-	assert(misc::inRange(reg, InstRegNone, InstRegCount - 1));
+	assert(misc::inRange(reg, Instruction::RegNone, Instruction::RegCount - 1));
 	unsigned mask = this->mask[info[reg].size];
 	unsigned *value_ptr = (unsigned *) ((char *) &eax + info[reg].offset);
 	*value_ptr = (*value_ptr & ~mask) | (value & mask);
@@ -213,13 +213,13 @@ void Regs::Dump(std::ostream &os) const
 	os << misc::fmt("  eip=%08x\n", eip);
 	os << misc::fmt("  flags=%04x (cf=%d  pf=%d  af=%d  zf=%d  sf=%d  df=%d  of=%d)\n",
 		eflags,
-		(eflags & (1 << InstFlagCF)) > 0,
-		(eflags & (1 << InstFlagPF)) > 0,
-		(eflags & (1 << InstFlagAF)) > 0,
-		(eflags & (1 << InstFlagZF)) > 0,
-		(eflags & (1 << InstFlagSF)) > 0,
-		(eflags & (1 << InstFlagDF)) > 0,
-		(eflags & (1 << InstFlagOF)) > 0);
+		(eflags & (1 << Instruction::FlagCF)) > 0,
+		(eflags & (1 << Instruction::FlagPF)) > 0,
+		(eflags & (1 << Instruction::FlagAF)) > 0,
+		(eflags & (1 << Instruction::FlagZF)) > 0,
+		(eflags & (1 << Instruction::FlagSF)) > 0,
+		(eflags & (1 << Instruction::FlagDF)) > 0,
+		(eflags & (1 << Instruction::FlagOF)) > 0);
 	
 	// Floating-point stack
 	os << "  fpu_stack (last=top): ";

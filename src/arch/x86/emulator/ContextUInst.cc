@@ -93,13 +93,13 @@ void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
 	// Emit micro-instruction
 	UInst *new_uinst = new UInst(UInstEffaddr);
 	new_uinst->setIDep(0, inst.getSegment() ?
-			inst.getSegment() - InstRegEs + UInstDepEs
+			inst.getSegment() - Instruction::RegEs + UInstDepEs
 			: UInstDepNone);
 	new_uinst->setIDep(1, inst.getEaBase() ?
-			inst.getEaBase() - InstRegEax + UInstDepEax
+			inst.getEaBase() - Instruction::RegEax + UInstDepEax
 			: UInstDepNone);
 	new_uinst->setIDep(2, inst.getEaIndex() ?
-			inst.getEaIndex() - InstRegEax + UInstDepEax
+			inst.getEaIndex() - Instruction::RegEax + UInstDepEax
 			: UInstDepNone);
 	new_uinst->setODep(0, UInstDepEa);
 	uinst_list.emplace_back(new_uinst);
@@ -124,21 +124,21 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 	case UInstDepEaseg:
 
 		uinst->setDep(index, inst.getSegment() ?
-				inst.getSegment() - InstRegEs + UInstDepEs
+				inst.getSegment() - Instruction::RegEs + UInstDepEs
 				: UInstDepNone);
 		break;
 
 	case UInstDepEabas:
 
 		uinst->setDep(index, inst.getEaBase() ?
-				inst.getEaBase() - InstRegEax + UInstDepEax
+				inst.getEaBase() - Instruction::RegEax + UInstDepEax
 				: UInstDepNone);
 		break;
 
 	case UInstDepEaidx:
 
 		uinst->setDep(index, inst.getEaIndex() ?
-				inst.getEaIndex() - InstRegEax + UInstDepEax
+				inst.getEaIndex() - Instruction::RegEax + UInstDepEax
 				: UInstDepNone);
 		break;
 

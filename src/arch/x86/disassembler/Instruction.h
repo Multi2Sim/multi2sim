@@ -31,136 +31,139 @@ namespace x86
 class Disassembler;
 
 
-
-/// List of unique x86 instruction identifiers
-enum InstOpcode
+/// x86 instruction
+class Instruction
 {
-	InstOpcodeInvalid = 0,
+public:
+
+	/// List of unique x86 instruction identifiers
+	enum Opcode
+	{
+		OpcodeInvalid = 0,
 
 #define DEFINST(name, op1, op2, op3, modrm, imm, prefixes) \
-	INST_##name,
-#include "Inst.def"
+	Opcode_##name,
+#include "Instruction.def"
 #undef DEFINST
 
-	// Max
-	InstOpcodeCount
-};
+		// Max
+		OpcodeCount
+	};
 
 
-/// x86 instruction prefixes
-enum InstPrefix
-{
-	InstPrefixNone = 0x00,
-	InstPrefixRep = 0x01,
-	InstPrefixRepz = 0x01,  // same value as rep
-	InstPrefixRepnz = 0x02,
-	InstPrefixLock = 0x04,
-	InstPrefixAddr = 0x08,  // address-size override
-	InstPrefixOp = 0x10  // operand-size override
-};
+	/// x86 instruction prefixes
+	enum Prefix
+	{
+		PrefixNone = 0x00,
+		PrefixRep = 0x01,
+		PrefixRepz = 0x01,  // same value as rep
+		PrefixRepnz = 0x02,
+		PrefixLock = 0x04,
+		PrefixAddr = 0x08,  // address-size override
+		PrefixOp = 0x10  // operand-size override
+	};
 
 
-// Registers
-extern misc::StringMap inst_reg_map;
-enum InstReg
-{
-	InstRegNone = 0,
+	// Registers
+	enum Reg
+	{
+		RegNone = 0,
 
-	InstRegEax,
-	InstRegEcx,
-	InstRegEdx,
-	InstRegEbx,
-	InstRegEsp,
-	InstRegEbp,
-	InstRegEsi,
-	InstRegEdi,
+		RegEax,
+		RegEcx,
+		RegEdx,
+		RegEbx,
+		RegEsp,
+		RegEbp,
+		RegEsi,
+		RegEdi,
 
-	InstRegAx,
-	InstRegCx,
-	InstRegDx,
-	InstRegBx,
-	InstRegSp,
-	InstRegBp,
-	InstRegSi,
-	InstRegDi,
+		RegAx,
+		RegCx,
+		RegDx,
+		RegBx,
+		RegSp,
+		RegBp,
+		RegSi,
+		RegDi,
 
-	InstRegAl,
-	InstRegCl,
-	InstRegDl,
-	InstRegBl,
-	InstRegAh,
-	InstRegCh,
-	InstRegDh,
-	InstRegBh,
+		RegAl,
+		RegCl,
+		RegDl,
+		RegBl,
+		RegAh,
+		RegCh,
+		RegDh,
+		RegBh,
 
-	InstRegEs,
-	InstRegCs,
-	InstRegSs,
-	InstRegDs,
-	InstRegFs,
-	InstRegGs,
+		RegEs,
+		RegCs,
+		RegSs,
+		RegDs,
+		RegFs,
+		RegGs,
 
-	InstRegCount
-};
+		RegCount
+	};
 
+	/// String map used for values of type Register
+	static const misc::StringMap reg_map;
 
-/// x86 flags in register \c eflags
-enum InstFlag
-{
-	InstFlagCF = 0,
-	InstFlagPF = 2,
-	InstFlagAF = 4,
-	InstFlagZF = 6,
-	InstFlagSF = 7,
-	InstFlagDF = 10,
-	InstFlagOF = 11
-};
+	/// x86 flags in register \c eflags
+	enum Flag
+	{
+		FlagCF = 0,
+		FlagPF = 2,
+		FlagAF = 4,
+		FlagZF = 6,
+		FlagSF = 7,
+		FlagDF = 10,
+		FlagOF = 11
+	};
 
+	/// This structure represents information for one x86 instruction
+	struct Info
+	{
+		Opcode opcode;
 
-/// This structure represents information for one x86 instruction
-struct InstInfo
-{
-	InstOpcode opcode;
+		unsigned int op1;
+		unsigned int op2;
+		unsigned int op3;
+		unsigned int modrm;
+		unsigned int imm;
 
-	unsigned int op1;
-	unsigned int op2;
-	unsigned int op3;
-	unsigned int modrm;
-	unsigned int imm;
+		// Mask of prefixes of type Prefix
+		int prefixes;
 
-	// Mask of prefixes of type InstPrefix
-	int prefixes;
+		// Format string
+		const char *fmt;
 
-	// Format string
-	const char *fmt;
+		// Derived fields
+		unsigned int match_mask;
+		unsigned int match_result;
 
-	// Derived fields
-	unsigned int match_mask;
-	unsigned int match_result;
+		unsigned int nomatch_mask;
+		unsigned int nomatch_result;
 
-	unsigned int nomatch_mask;
-	unsigned int nomatch_result;
-
-	int opindex_shift;  // Pos to shift inst to obtain index of op1/op2 if any
-	int impl_reg;  // Implied register in op1 (0-7)
-	int opcode_size;  // Size of opcode (1 or 2), not counting the modrm part.
-	int modrm_size;  // Size of modrm field (0 or 1)
-	int imm_size;  // Immediate size (0, 1, 2, or 4)
-};
-
-
-// Containers for instruction infos. We need this because an info can belong to
-// different lists when there are registers embedded in the opcodes.
-struct InstDecodeInfo
-{
-	InstInfo *info;
-	InstDecodeInfo *next;
-};
+		int opindex_shift;  // Pos to shift inst to obtain index of op1/op2 if any
+		int impl_reg;  // Implied register in op1 (0-7)
+		int opcode_size;  // Size of opcode (1 or 2), not counting the modrm part.
+		int modrm_size;  // Size of modrm field (0 or 1)
+		int imm_size;  // Immediate size (0, 1, 2, or 4)
+	};
 
 
-/// x86 instruction
-class Inst
-{
+	// Containers for instruction infos. We need this because an info can belong to
+	// different lists when there are registers embedded in the opcodes.
+	struct DecodeInfo
+	{
+		Info *info;
+		DecodeInfo *next;
+	};
+
+
+private:
+
 	// X86 assembler used to decode instruction
 	const Disassembler *disassembler;
 
@@ -169,7 +172,7 @@ class Inst
 
 	unsigned int eip;  // position inside the code
 	int size;  // number of instruction bytes
-	InstOpcode opcode;
+	Opcode opcode;
 	const char *format;  // format of the instruction
 	
 	// Size of fields
@@ -185,7 +188,7 @@ class Inst
 	int opindex;
 
 	// Prefixes
-	InstReg segment;  // Reg. used to override segment
+	Reg segment;  // Reg. used to override segment
 	int prefixes;  // Mask of prefixes of type 'X86InstPrefix'
 	int op_size;  // Operand size: 2 or 4, default 4
 	int addr_size;  // Address size: 2 or 4, default 4
@@ -211,12 +214,25 @@ class Inst
 	} imm;
 
 	// Effective address
-	InstReg ea_base;
-	InstReg ea_index;
+	Reg ea_base;
+	Reg ea_index;
 	unsigned int ea_scale;
 
 	// Register, same as modrm_reg
 	int reg;
+
+	// Data structure for 'modrm_table'
+	struct ModRMTableEntry
+	{
+		Instruction::Reg ea_base;
+		int disp_size;
+		int sib_size;
+	};
+
+	// Table indexed by pairs ModRM.mod and ModRM.rm, containing
+	// information about what will come next and effective address
+	// computation.
+	static const ModRMTableEntry modrm_table[32];
 
 	// Dump functions
 	void DumpMoffsAddr(std::ostream &os) const;
@@ -226,8 +242,9 @@ class Inst
 	void Clear();
 
 public:
+
 	/// Constructor
-	Inst();
+	Instruction();
 
 	/// Read the bytes in the beginning of \a buffer and decode the x86
 	/// instruction represented by them. The value given in \a address
@@ -235,10 +252,10 @@ public:
 	/// and used later for branch decoding purposes.
 	void Decode(const char *buffer, unsigned eip);
 
-	/// Return the instruction opcode, or \c InstOpcodeInvalid if the
+	/// Return the instruction opcode, or \c OpcodeInvalid if the
 	/// sequence of bytes failed to decode. This function must be invoked
 	/// after a previous call to Decode().
-	InstOpcode getOpcode() const
+	Opcode getOpcode() const
 	{
 		assert(decoded);
 		return opcode;
@@ -260,28 +277,23 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump instruction
-	friend std::ostream &operator<<(std::ostream &os, const Inst &inst)
+	friend std::ostream &operator<<(std::ostream &os, const Instruction &inst)
 	{
 		inst.Dump(os);
 		return os;
 	}
 
-
-	//
-	// Querying instruction fields
-	//
-
-	// Return the opcode index (value between 0 and 7)
+	/// Return the opcode index (value between 0 and 7)
 	int getOpIndex() const { return opindex; }
 
 	/// Return segment register
-	InstReg getSegment() const { return segment; }
+	Reg getSegment() const { return segment; }
 
 	/// Return the base register for the effective address computation
-	InstReg getEaBase() const { return ea_base; }
+	Reg getEaBase() const { return ea_base; }
 
 	/// Return the index register for the effective address computation
-	InstReg getEaIndex() const { return ea_index; }
+	Reg getEaIndex() const { return ea_index; }
 
 	/// Return the scale factor for the effective address computation
 	unsigned getEaScale() const { return ea_scale; }

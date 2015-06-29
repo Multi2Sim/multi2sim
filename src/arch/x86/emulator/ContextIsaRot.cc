@@ -65,7 +65,7 @@ void Context::ExecuteInst_##xxx##_rm8_1() \
 void Context::ExecuteInst_##xxx##_rm8_cl() \
 { \
 	unsigned char rm8 = LoadRm8(); \
-	unsigned char count = regs.Read(InstRegCl); \
+	unsigned char count = regs.Read(Instruction::RegCl); \
 	unsigned long flags = regs.getEflags(); \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
@@ -146,7 +146,7 @@ void Context::ExecuteInst_##xxx##_rm16_1() \
 void Context::ExecuteInst_##xxx##_rm16_cl() \
 { \
 	unsigned short rm16 = LoadRm16(); \
-	unsigned char count = regs.Read(InstRegCl); \
+	unsigned char count = regs.Read(Instruction::RegCl); \
 	unsigned long flags = regs.getEflags(); \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
@@ -227,7 +227,7 @@ void Context::ExecuteInst_##xxx##_rm32_1() \
 void Context::ExecuteInst_##xxx##_rm32_cl() \
 { \
 	unsigned int rm32 = LoadRm32(); \
-	unsigned char count = regs.Read(InstRegCl); \
+	unsigned char count = regs.Read(Instruction::RegCl); \
 	unsigned long flags = regs.getEflags(); \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
