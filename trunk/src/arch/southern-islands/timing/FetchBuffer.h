@@ -20,7 +20,8 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_FETCH_BUFFER_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_FETCH_BUFFER_H
 
-#include <queue>
+#include <memory>
+#include <list>
 
 #include "Uop.h"
 
@@ -39,14 +40,60 @@ class FetchBuffer
 	ComputeUnit *compute_unit;
 
 	// Buffer of instructions
-	std::queue<std::shared_ptr<Uop>> buffer;
+	std::list<std::shared_ptr<Uop>> buffer;
 
 public:
+	
+	//
+	// Static fields
+	//
+
+	/// Fetch latency in cycles
+	static int fetch_latency;
+
+	/// Number of instructions fetched per cycle
+	static int fetch_width;
+
+	/// Maximum capacity of fetch buffer in number of instructions
+	static int fetch_buffer_size;
+
+	/// Issue latency in cycles
+	static int issue_latency;
+
+	/// Maximum capacity of issue buffer in number of instructions
+	static int issue_width;
+
+	/// Maximum number of instructions issued in each cycle of each type
+	/// (vector, scalar, branch, ...)
+	static int max_instructions_issued_per_type;
+
+
+
+
+	//
+	// Class members
+	//
 
 	/// Constructor
 	FetchBuffer(ComputeUnit *compute_unit) : compute_unit(compute_unit)
 	{
 	}
+
+	/// Return an iterator to the first uop in the fetch buffer
+	std::list<std::shared_ptr<Uop>>::iterator begin()
+	{
+		return buffer.begin();
+	}
+
+	/// Return a past-the-end iterator to the fetch buffer
+	std::list<std::shared_ptr<Uop>>::iterator end()
+	{
+		return buffer.end();
+	}
+
+	/// Remove the uop pointed to by the given iterator, and return a
+	/// shared pointer reference to the removed entry.
+	std::shared_ptr<Uop> Remove(std::list<std::shared_ptr<Uop>>::iterator it);
 };
 
 }
