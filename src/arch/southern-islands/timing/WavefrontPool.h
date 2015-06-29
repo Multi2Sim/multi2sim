@@ -17,30 +17,35 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Gpu.h"
+#ifndef ARCH_SOUTHERN_ISLANDS_TIMING_WAVEFRONT_POOL_H
+#define ARCH_SOUTHERN_ISLANDS_TIMING_WAVEFRONT_POOL_H
 
 
 namespace SI
 {
 
-int Gpu::num_compute_units = 32;
+// Forward declarations
+class ComputeUnit;
 
 
-Gpu::Gpu()
+/// Class representing the wavefront pool in the compute unit front-end
+class WavefrontPool
 {
-	// Create compute units
-	compute_units.reserve(num_compute_units);
-	for (int i = 0; i < num_compute_units; i++)
-		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i));
+	// Compute unit that it belongs to, assigned in constructor
+	ComputeUnit *compute_unit;
+
+	// Number of instructions
+	long long num_instructions = 0;
+
+public:
+
+	/// Constructor
+	WavefrontPool(ComputeUnit *compute_unit) : compute_unit(compute_unit)
+	{
+	}
+};
+
 }
 
-
-void Gpu::Run()
-{
-	// Advance one cycle in each compute unit
-	for (auto &compute_unit : compute_units)
-		compute_unit->Run();
-}
-
-}
+#endif
 
