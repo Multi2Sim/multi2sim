@@ -584,7 +584,7 @@ void Network::Receive(EndNode *node, Message *message)
 	node->IncreaseReceivedBytes(message->getSize());
 
 	// Remove packets from their buffer
-	for (int i = 0; i < message->getSize(); i++)
+	for (int i = 0; i < message->getNumPackets(); i++)
 	{
 		Packet *packet = message->getPacket(i);
 		Buffer *buffer = packet->getBuffer();
