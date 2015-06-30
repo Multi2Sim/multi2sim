@@ -36,8 +36,8 @@ namespace net
 
 
 Network::Network(const std::string &name) :
-		name(name),
-		routing_table(this)
+				name(name),
+				routing_table(this)
 {
 }
 
@@ -275,13 +275,34 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						ini_file->getPath().c_str(), dst_name.c_str(),
 						link_name.c_str()));
 
-			// Get number of virtual channels
-			int num_virtual_channel = ini_file->ReadInt(section,
-					"VC");
+			// Make sure link has different source and destination
+			if (source == destination)
+			{
+				throw Error(misc::fmt("%s: Link '%s', source and destination"
+						" cannot be the same.\n", ini_file->getPath().c_str(),
+						link_name.c_str()));
+			}
 
 			// Bandwidth
 			int bandwidth = ini_file->ReadInt(section, "Bandwidth",
 					default_bandwidth);
+			if (bandwidth < 1)
+			{
+				throw Error(misc::fmt("%s: Link '%s', bandwidth cannot "
+						"be zero/negative.\n", ini_file->getPath().c_str(),
+						link_name.c_str()));
+			}
+
+			// Get number of virtual channels
+			int num_virtual_channel = ini_file->ReadInt(section,
+					"VC", 1);
+			if (num_virtual_channel < 1)
+			{
+				throw Error(misc::fmt("%s: Link '%s', virtual channel cannot "
+						"be zero/negative.\n", ini_file->getPath().c_str(),
+						link_name.c_str()));
+			}
+
 
 			// Add link
 			if (!strcasecmp(type.c_str(), "Bidirectional"))
