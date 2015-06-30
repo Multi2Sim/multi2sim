@@ -325,12 +325,48 @@ TEST(TestSystemConfiguration, section_section_unknown)
 	// FIXME
 	// regular Bracket in regex. \[ and \\[ result in regex_error
 	EXPECT_TRUE(std::regex_match(message, std::regex(
-			misc::fmt("%s: invalid section (.*anything.)",
+			misc::fmt("%s: invalid section (.Network\\.test\\.anything.)",
 						ini_file.getPath().c_str()))));
 }
 
-// FIXME
-// Add a test to check node without a network setup before that
+TEST(TestSystemConfiguration, section_section_no_net)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[Network.test.Node.N1]\n"
+			"Type = Switch\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	// FIXME
+	// This should produce an error saying network not defined
+	// but currently produces an error for each variable
+	// no matter they are valid or not.
+	EXPECT_TRUE(system->getNetworkByName("test") == nullptr);
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: section (.Network\\.test\\.Node\\.N1.), "
+					"invalid variable 'Type'",
+						ini_file.getPath().c_str()))));
+}
 
 TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 {
@@ -465,6 +501,58 @@ TEST(TestSystemConfiguration, section_link_type)
 	EXPECT_TRUE(std::regex_match(message, std::regex(
 			misc::fmt("%s: Link type 'anything' is not supported.\n.*",
 					ini_file.getPath().c_str()))));
+}
+
+TEST(TestSystemConfiguration, section_link_wrong_variable)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = EndNode\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Bidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"anything = S1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: section (.Network\\.test\\.Link\\.S1-S2.), invalid"
+					" variable 'anything'",
+								ini_file.getPath().c_str()))));
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_source)
@@ -669,4 +757,106 @@ TEST(TestSystemConfiguration, section_link_no_destination)
 								ini_file.getPath().c_str()))));
 }
 
+TEST(TestSystemConfiguration, section_link_same_src_dst)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = EndNode\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Link 'S1-S2', source "
+					"and destination cannot be the same.\n",
+					ini_file.getPath().c_str()))));
+}
+
+TEST(TestSystemConfiguration, section_link_bandwidth)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = EndNode\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"Bandwidth = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_TRUE(std::regex_match(message, std::regex(
+			misc::fmt("%s: Link 'S1-S2', bandwidth cannot "
+						"be zero/negative.\n",
+					ini_file.getPath().c_str()))));
+}
 }
