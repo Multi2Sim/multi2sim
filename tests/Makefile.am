@@ -41,7 +41,8 @@ src_network_test_LDADD = \
 	$(am__append_2) -lz
 
 src_network_test_SOURCES = \
-	src/network/TestNetwork.cc
+	src/network/TestNetworkConfig.cc \
+	src/network/TestNetworkEvents.cc
 
 
 src_arch_x86_timing_test_LDADD = \

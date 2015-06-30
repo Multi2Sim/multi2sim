@@ -29,33 +29,39 @@ namespace net
 
 Link::Link(Network *network,
 		const std::string &name,
+		const std::string &descriptive_name,
 		Node *src_node,
 		Node *dst_node,
 		int bandwidth,
 		int source_buffer_size,
 		int destination_buffer_size,
 		int num_virtual_channels) :
-		Connection(name, network, bandwidth),
-		source_node(src_node),
-		destination_node(dst_node),
-		num_virtual_channels(num_virtual_channels)
+				Connection(descriptive_name, network, bandwidth),
+				source_node(src_node),
+				destination_node(dst_node),
+				num_virtual_channels(num_virtual_channels),
+				descriptive_name(descriptive_name)
 {
-	// Create and add source buffer
-	Buffer *source_buffer = src_node->addOutputBuffer(source_buffer_size, 
-			this);
-	addSourceBuffer(source_buffer);
+	for (int i = 0; i < num_virtual_channels ; i++)
+	{
+		// Create and add source buffer
+		Buffer *source_buffer = src_node->addOutputBuffer(
+				source_buffer_size,	this);
+		addSourceBuffer(source_buffer);
 
-	// Create and add destination buffer
-	Buffer *destination_buffer = dst_node->addInputBuffer(
-			destination_buffer_size, this);
-	addDestinationBuffer(destination_buffer);
+		// Create and add destination buffer
+		Buffer *destination_buffer = dst_node->addInputBuffer(
+				destination_buffer_size, this);
+		addDestinationBuffer(destination_buffer);
+	}
+
 }
 
 
 void Link::Dump(std::ostream &os) const
 {
 	os << misc::fmt("\n***** Link %s *****\n", name.c_str());
-	
+
 	// Dump sources
 	for (auto buffer : source_buffers)
 	{
@@ -139,7 +145,7 @@ void Link::TransferPacket(Packet *packet)
 
 	// Check if the destination buffer is full
 	if (destination_buffer->getCount() + packet->getSize() > 
-			destination_buffer->getSize())
+	destination_buffer->getSize())
 	{
 		System::debug <<misc::fmt("[Network] [stall - dst buffer full] "
 				"message-->packet: %lld-->%d, at "

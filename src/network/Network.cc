@@ -347,6 +347,7 @@ void Network::addBidirectionalLink(const std::string name,
 		int dest_buffer_size,
 		int num_virtual_channels)
 {
+
 	addLink(name,
 			source_node,
 			dest_node,
@@ -645,9 +646,12 @@ Link *Network::addLink(
 		int dest_buffer_size,
 		int num_virtual_channels)
 {
+	std::string descriptive_name = "link_" + source_node->getName() +
+			"_" + dest_node->getName();
 	// Create link
 	connections.emplace_back(misc::new_unique<Link>(this,
 			name,
+			descriptive_name,
 			source_node,
 			dest_node,
 			bandwidth,
@@ -655,10 +659,6 @@ Link *Network::addLink(
 			dest_buffer_size,
 			num_virtual_channels));
 	Link *link = misc::cast<Link *>(connections.back().get());
-
-	// Create buffers
-	// source_node->addInputBuffer(source_buffer_size, link);
-	// dest_node->addOutputBuffer(dest_buffer_size, link);
 
 	// Return
 	return link;

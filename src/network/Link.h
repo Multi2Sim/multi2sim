@@ -41,6 +41,9 @@ class Link : public Connection
 	// Number of virtual channels on link
 	int num_virtual_channels;
 
+	// System assigned name
+	std::string descriptive_name;
+
 
 
 
@@ -74,6 +77,7 @@ public:
 	/// Constructor
 	Link(Network *network,
 			const std::string &name,
+			const std::string &link_name,
 			Node *src_node,
 			Node *dst_node,
 			int bandwidth,
