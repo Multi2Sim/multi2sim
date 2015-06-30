@@ -612,26 +612,23 @@ bool Module::FindBlock(unsigned address,
 
 
 void Module::FlushPages(esim::Frame *esim_frame)
-{
+{	
+	// Cast event frame
 	Frame *frame = misc::cast<Frame *>(esim_frame);
-
-	//page_start = stack->flush_page;
-	//page_end = (page_start + MEM_PAGE_SIZE - 1);
-
+	
+	// Flush all pages
 	for (int set = 0; set < directory_num_sets; set++)
 	{
 		for (int way = 0; way < directory_num_ways; way++)
 		{
 			// Get block
 			Cache::Block *block = cache->getBlock(set, way);
-
+			
+			// Continue if block has not already been invalidated 
 			if (block->getState() != Cache::BlockState::BlockInvalid)
 				continue;
-
-			// FIXME if the address is within the page range
-			//if (!(tag >= page_start && tag <= page_end))
-			//	continue;
-
+			
+			// Increase pending frames
 			frame->pending++;
 
 			esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -661,13 +658,11 @@ void Module::RecursiveFlush(esim::Frame *esim_frame)
 	{
 		// Module cannot be main memory
 		if (low_module->getType() != TypeMainMemory)
-		{
 			RecursiveFlush(frame);
-		}
+
 		else
-		{
 			FlushPages(frame);
-		}
+
 	}
 }
 

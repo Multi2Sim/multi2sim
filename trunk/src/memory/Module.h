@@ -246,6 +246,7 @@ private:
 
 	// List of next-level modules, closer to main memory
 	std::vector<Module *> low_modules;
+
 	
 
 
@@ -700,12 +701,12 @@ public:
 			int &tag,
 			Cache::BlockState &state);
 
-	/// Flush the pages
-	/// This function is invoked internally by RecursiveFlush
+	/// Flush the pages in the cache.
+	/// This function is invoked internally by RecursiveFlush().
 	void FlushPages(esim::Frame *esim_frame);
 
-	/// Recursively flush the cache utilizing FlushPages
-	/// This function is invoked internally by the memory flush handler
+	/// Recursively flush the cache utilizing FlushPages.
+	/// This function is invoked internally by the memory flush handler.
 	void RecursiveFlush(esim::Frame *esim_frame);
 
 	/// Return an iterator to the first element of the access list.
