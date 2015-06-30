@@ -3492,9 +3492,6 @@ void System::EventMessageHandler(esim::Event *event,
 		net::EndNode *destination_node = \
 				module->getLowNetworkNode();
 
-		// TODO Checks
-
-
 		// Send message
 		frame->message = network->TrySend(source_node,
 				destination_node,
@@ -3964,10 +3961,14 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		// Statistics
 		module->incAccesses();
 		if (frame->retry)
+		{
 			module->incRetryAccesses();
+		}
 
 		if (frame->read)
+		{
 			module->UpdateStats(frame);
+		}
 
 		else
 		{
@@ -3979,6 +3980,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 				frame->witness = nullptr;
 			}
 		}
+
 		// Schedule event
 		esim_engine->Next(event_local_find_and_lock_action,
 				module->getDataLatency());
@@ -4013,7 +4015,6 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 
 		// Schedule event
 		esim_engine->Next(event_local_find_and_lock_finish, 0);
-
 		return;
 	}
 
@@ -4033,7 +4034,8 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 				"state=\"%s:find_and_lock_finish\"\n",
 				frame->getId(),
 				module->getName().c_str());
-
+		
+		// Return esim engine
 		esim_engine->Return();
 		return;
 	}
