@@ -2411,7 +2411,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 		// Receive message
 		net::Network *network;
 		net::EndNode *node;
-		if (frame->request_direction == Frame::RequestDirectionDownUp)
+		if (frame->request_direction == Frame::RequestDirectionUpDown)
 		{
 			network = module->getLowNetwork();
 			node = module->getLowNetworkNode();

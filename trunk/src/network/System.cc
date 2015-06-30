@@ -201,9 +201,8 @@ void System::ProcessOptions()
 
 void System::UniformTrafficSimulation(Network *network)
 {
-	// Init a list of double for injection time
-	auto inject_time = misc::new_unique_array<double>(
-			network->getNumNodes());
+	// Initiate a list of double for injection time
+	auto inject_time = misc::new_unique_array<double>(network->getNumNodes());
 	for (int i = 0; i < network->getNumNodes(); i++)
 	{
 		inject_time[i] = 0.0f;

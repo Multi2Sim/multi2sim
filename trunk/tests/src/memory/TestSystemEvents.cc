@@ -1570,7 +1570,7 @@ TEST(TestSystemEvents, config_0_evict_6)
 
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 16);
 
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
