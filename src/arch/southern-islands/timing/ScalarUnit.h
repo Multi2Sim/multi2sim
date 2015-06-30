@@ -20,6 +20,8 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_SCALAR_UNIT_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_SCALAR_UNIT_H
 
+#include "ExecutionUnit.h"
+
 
 namespace SI
 {
@@ -29,23 +31,65 @@ class ComputeUnit;
 
 
 /// Class representing the scalar unit of a compute unit
-class ScalarUnit
+class ScalarUnit : public ExecutionUnit
 {
-	// Compute unit that it belongs to, assigned in constructor
-	ComputeUnit *compute_unit;
-
-	// Number of instructions
-	long long num_instructions = 0;
-
 public:
+	//
+	// Static fields
+	//
+
+	/// Size of the issue buffer in number of instructions
+	static int issue_buffer_size;
+
+	/// Decode latency in number of cycles
+	static int decode_latency;
+
+	/// Size of the decode buffer in number of instructions
+	static int decode_buffer_size;
+
+	/// Latency of the read stage in number of cycles
+	static int read_latency;
+
+	/// Size of the read buffer in number of instructions
+	static int read_buffer_size;
+
+	/// Latency of the execution stage in number of cycles
+	static int exec_latency;
+
+	/// Size of the execution buffer in number of instructions
+	static int exec_buffer_size;
+
+	/// Latency of the write stage in number of cycles
+	static int write_latency;
+
+	/// Size of the write buffer in number of cycles
+	static int write_buffer_size;
+
+
+
+
+	//
+	// Class members
+	//
 
 	/// Constructor
-	ScalarUnit(ComputeUnit *compute_unit) : compute_unit(compute_unit)
+	ScalarUnit(ComputeUnit *compute_unit) :
+			ExecutionUnit(compute_unit)
 	{
 	}
 
 	/// Run the actions occurring in one cycle
 	void Run();
+	
+	/// Return whether there is room in the issue buffer of the branch
+	/// unit to absorb a new instruction.
+	bool canIssue() const override
+	{
+		return getIssueBufferOccupancy() < issue_buffer_size;
+	}
+
+	/// Return whether the given uop is a scalar instruction.
+	bool isValidUop(Uop *uop) const override;
 };
 
 }

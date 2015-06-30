@@ -101,12 +101,10 @@ class Wavefront
 
 	// Fields introduced for timing simulation
 	int id_in_compute_unit;
-	int uop_id_counter;
-	struct si_wavefront_pool_entry_t *wavefront_pool_entry;
 	bool barrier_inst;
 
 	// Statistics
-	long long inst_count;  // Total number of instructions
+	long long inst_count;
 	long long scalar_mem_inst_count;
 	long long scalar_alu_inst_count;
 	long long branch_inst_count;
@@ -117,9 +115,13 @@ class Wavefront
 	long long export_inst_count;
 
 	// Statistics to measure simulation performance
-	long long emu_inst_count;  // Total emulated instructions
+	long long emu_inst_count;
 	long long emu_time_start;
 	long long emu_time_end;
+
+	// Counter for per-wavefront identifiers assigned to uops in the timing
+	// simulator.
+	long long uop_id_counter = 0;
 
 public:
 
@@ -300,6 +302,10 @@ public:
 	{
 		return work_items_end;
 	}
+
+	/// Return a new unique sequential identifier for a uop associated with
+	/// the wavefront. This function is used by the timing simulator.
+	long long getUopId() { return ++uop_id_counter; }
 };
 
 

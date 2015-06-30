@@ -27,6 +27,7 @@ namespace SI
 {
 
 // Forward declarations
+class ComputeUnit;
 class Wavefront;
 
 
@@ -51,20 +52,39 @@ class Uop
 	// Unique identifier of the instruction, assigned when created
 	long long id;
 
+	// Unique identifier of the instruction in the wavefront that it
+	// belongs to. This field is initialized in the constructor.
+	long long id_in_wavefront;
+
+	// Unitque identifier of the instruction in the compute unit that it
+	// belongs to. This field is initialized in the constructor.
+	long long id_in_compute_unit;
+
 	// Associated instruction
 	Instruction instruction;
 
 	// Associated wavefront, assigned in constructor
 	Wavefront *wavefront;
 
+	// Compute unit that the uop belongs to, assigned in constructor
+	ComputeUnit *compute_unit;
+
 public:
 
 	/// Constructor
-	Uop(Wavefront *wavefront);
+	Uop(Wavefront *wavefront, ComputeUnit *compute_unit);
 
 	/// Return the unique identifier assigned in sequential order to the
 	/// uop when it was created.
 	long long getId() const { return id; }
+
+	/// Return a unique sequential identifier of the uop in the wavefront
+	/// that it belongs to.
+	long long getIdInWavefront() const { return id_in_wavefront; }
+
+	/// Return a unique sequential identifier of the uop in the compute
+	/// unit that it belongs to.
+	long long getIdInComputeUnit() const { return id_in_compute_unit; }
 
 	/// Return the instruction associated with the uop
 	Instruction *getInstruction() { return &instruction; }
@@ -72,8 +92,15 @@ public:
 	/// Return the associated wavefront
 	Wavefront *getWavefront() { return wavefront; }
 
+	/// Return the associated compute unit
+	ComputeUnit *getComputeUnit() { return compute_unit; }
+
 	/// Cycle in which the uop is first ready after fetch
 	long long fetch_ready = 0;
+
+	/// Cycle in which the uop is first ready after being issued to its
+	/// corresponding execution unit
+	long long issue_ready = 0;
 };
 
 }
