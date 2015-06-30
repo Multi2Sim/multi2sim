@@ -147,7 +147,7 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 			buffer->getName().c_str());
 
 	// If the message is not at buffer head, process later
-	if (buffer->getBufferHead() == packet)
+	if (buffer->getBufferHead() != packet)
 	{
 		buffer->Wait(type);
 		return;
