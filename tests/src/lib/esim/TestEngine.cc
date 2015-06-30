@@ -30,7 +30,10 @@ namespace esim
 {
 
 // Cleanup pointer to singleton instance
-static void Cleanup() { Engine::Destroy(); }
+static void Cleanup() 
+{ 
+	Engine::Destroy(); 
+}
 
 ///
 /// Test 0
@@ -153,9 +156,7 @@ TEST(TestEngine, test_event_frame)
 
 		// Check that handler was executed
 		EXPECT_EQ(1, frame->counter);
-	
-		// Finalize
-		Engine::Destroy();
+
 	}
 	catch (misc::Exception &e)
 	{
@@ -250,8 +251,6 @@ TEST(TestEngine, test_frequency_domains)
 		//Check that handler has been called
 		EXPECT_TRUE(handler_called_2_1);
 
-		// Finalize
-		Engine::Destroy();
 	}
 	catch (misc::Exception &e)
 	{
@@ -380,8 +379,6 @@ TEST(TestEngine, test_event_queue)
 		//Check that handler has been called
 		EXPECT_TRUE(handler_called_3_3);
 	
-		// Finalize
-		Engine::Destroy();
 	}
 	catch (misc::Exception &e)
 	{
@@ -488,7 +485,7 @@ TEST(TestEngine, test_event_queue_priority)
 		// Schedule event for 5 cycles from now
 		engine->Call(event1, frame_4_0, nullptr, 5, 0);
 
-		// Schedule slow event 10 cycles from now
+		// Schedule event for 10 cycles from now
 		engine->Call(event2, frame_4_1, nullptr, 10, 0);
 
 		// Run simulation for 10 cycles
@@ -511,8 +508,6 @@ TEST(TestEngine, test_event_queue_priority)
 		//Check that handler has been called
 		EXPECT_TRUE(handler_called_4_3);
 
-		// Finalize
-		Engine::Destroy();
 	}
 	catch (misc::Exception &e)
 	{
