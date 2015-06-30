@@ -89,18 +89,6 @@ private:
 	// Static fields
 	//
 
-	// Max number of cycles
-	static long long max_cycles;
-
-	// Max number of instructions
-	static long long max_inst;
-
-	// Maximum number of kernels
-	static int max_kernels;
-
-	// Size of wavefront
-	static int wavefront_size;
-
 	// Debug file for ISA
 	static std::string isa_debug_file;
 	
@@ -131,11 +119,6 @@ private:
 	
 	// Will point to video_mem or shared_mem
 	mem::Memory *global_memory = nullptr;
-
-	int address_space_index = 0;
-
-	// Current ND-Range
-	NDRange *ndrange = nullptr;
 
 	// Number of OpenCL kernels executed
 	int ndrange_count = 0;              
@@ -254,21 +237,6 @@ public:
 	/// Run one iteration of the emulation loop
 	bool Run() override;
 
-	/// Return the maximum number of emulation cycles as set by the 
-	/// --si-max-cycles command-line option
-	long long getMaxCycles() { return max_cycles; }
-	
-	/// Return the maximum number of instructions as set by the 
-	/// --si-max-inst command-line option
-	long long getMaxInst() { return max_inst; }
-
-	/// Return the maximum number of kernels as set by the 
-	/// --si-max-kernels command-line option
-	int getMaxKernels() { return max_kernels; }
-
-	/// Return the size of the wavefront object
-	int getWavefrontSize() { return wavefront_size; }
-
 	/// Dump emulator state
 	void Dump(std::ostream &os = std::cout) const;
 
@@ -283,12 +251,6 @@ public:
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return ndrange_count++; }
 	
-	/// get current NDRange
-	NDRange *getNDRange() { return ndrange; }
-
-	/// Get a new address space index
-	unsigned getNewAddressSpaceIdx() { return address_space_index++; }
-
 	/// Get global memory
 	mem::Memory *getGlobalMemory() { return global_memory; }
 
@@ -304,7 +266,10 @@ public:
 	/// Set work_group_count
 	void setWorkGroupCount(long long count) { work_group_count = count; }
 
-	/// Increment ndranges_running
+	// FIXME - List of running NDRanges already exists. This might need to
+	// go if the x86 emulator does not need the number of ndranges like in
+	// the old C code.
+	/// Increment the number of running ND-ranges
 	void incNDRangesRunning() 
 	{ 
 		// Check number of ndranges running before incrementing

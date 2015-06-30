@@ -325,10 +325,7 @@ void NDRange::WaitingToRunning()
 	for (auto it = waiting_work_groups.begin(), 
 			e = waiting_work_groups.end(); 
 			it != e; ++it)
-	{
-		WorkGroup *work_group = addWorkGroup(*it);
-		running_work_groups.push_back(work_group);
-	}
+		addWorkGroup(*it);
 
 	// Erase elements in waiting_work_groups, they are now in 
 	// running_work_groups
@@ -343,37 +340,6 @@ void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 	waiting_work_groups.push_back(work_group_id);
 }
 			
-std::list<WorkGroup *>::iterator NDRange::RunningToCompleted(long work_group_id)
-{
-	// Add work-group to completed list
-	completed_work_groups.push_back(work_group_id);
-
-	for (auto it = RunningWorkGroupBegin(), 
-			e = RunningWorkGroupEnd(); 
-			it != e; ++it)
-	{
-		// Find work_group in the list with a matching ID
-		if ((*it)->getId() == work_group_id)
-		{
-			// Save pointer to work group
-			WorkGroup *work_group = *it;
-
-			// Remove work group from Running list
-			auto next_it = running_work_groups.erase(it);
-
-			// Remove work group from overall list
-			RemoveWorkGroup(work_group);
-
-			// Return if the work group was found and removed
-			return next_it;
-		}
-	}
-
-	// Throw an error if the work_group ID is not found
-	throw Emulator::Error(misc::fmt("%s: invalid work-group ID (%d)", 
-		__FUNCTION__, (int) work_group_id));
-}
-
 
 WorkGroup *NDRange::addWorkGroup(int id)
 {
@@ -390,10 +356,15 @@ WorkGroup *NDRange::addWorkGroup(int id)
 }
 
 
-void NDRange::RemoveWorkGroup(WorkGroup *work_group)
+std::list<std::unique_ptr<WorkGroup>>::iterator 
+		NDRange::RemoveWorkGroup(WorkGroup *work_group)
 {
+	// Erase work group
 	assert(work_group->work_groups_iterator != work_groups.end());
-	work_groups.erase(work_group->work_groups_iterator);
+	auto next_it = work_groups.erase(work_group->work_groups_iterator);
+
+	// Return next iterator
+	return next_it;
 }
 
 

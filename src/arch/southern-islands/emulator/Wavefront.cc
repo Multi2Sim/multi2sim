@@ -167,19 +167,30 @@ void Wavefront::Execute()
 	barrier_inst = false;
 	vector_mem_global_coherency = false;
 
+	// Make sure the program has not finished yet
 	assert(!finished);
 	
 	// Grab the instruction at PC and update the pointer 
+
+	// Make sure the program counter is not outside the instruction memory
 	unsigned total_inst_buffer_size = ndrange->getInstructionBufferSize();
 	assert(total_inst_buffer_size > pc);
 
+	// Find out the remaining size of the instruction memory
 	unsigned remaining_inst_buffer_size = total_inst_buffer_size - pc;
 
-	auto inst_buffer = misc::new_unique_array<char>(remaining_inst_buffer_size);
+	// Create a buffer based on the remaining instruction memory
+	auto inst_buffer = misc::new_unique_array<char>(
+			remaining_inst_buffer_size);
 	ndrange->getInstructionMemory()->Read(pc, remaining_inst_buffer_size, 
 			inst_buffer.get());
+
+	// Decode the next instruction in the instruction memory
+	// Note: We need to pass the whole buffer for a single instruction
+	// because we don't know the size of the next instruction yet
 	inst.Decode(inst_buffer.get(), pc);
 
+	// Extract the properties of the newest instruction
 	this->inst_size = inst.getSize();
 	Instruction::Opcode opcode = inst.getOpcode();
 	Instruction::Format format = inst.getFormat();
