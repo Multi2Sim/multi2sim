@@ -22,6 +22,7 @@
 
 #include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
+#include <lib/esim/Trace.h>
 
 #include "Gpu.h"
 
@@ -108,6 +109,9 @@ public:
 	/// Return the simulation level set by command-line option
 	/// '--si-sim-kind'.
 	static comm::Arch::SimKind getSimKind() { return sim_kind; }
+
+	/// Trace for visualization
+	static esim::Trace trace;
 
 
 

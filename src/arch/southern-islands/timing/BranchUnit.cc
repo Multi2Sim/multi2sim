@@ -18,13 +18,34 @@
  */
 
 #include "BranchUnit.h"
+#include "Timing.h"
 
 
 namespace SI
 {
 
+int BranchUnit::issue_buffer_size = 1;
+int BranchUnit::decode_latency = 1;
+int BranchUnit::decode_buffer_size = 1;
+int BranchUnit::read_latency = 1;
+int BranchUnit::read_buffer_size = 1;
+int BranchUnit::exec_latency = 16;
+int BranchUnit::exec_buffer_size = 16;
+int BranchUnit::write_latency = 1;
+int BranchUnit::write_buffer_size = 1;
+
+
 void BranchUnit::Run()
 {
+}
+
+
+bool BranchUnit::isValidUop(Uop *uop) const
+{
+	Instruction *instruction = uop->getInstruction();
+	return instruction->getFormat() != Instruction::FormatSOPP &&
+			instruction->getBytes()->sopp.op > 1 &&
+			instruction->getBytes()->sopp.op < 10;
 }
 
 }

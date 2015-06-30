@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emulator/Wavefront.h>
+
+#include "ComputeUnit.h"
 #include "Uop.h"
 
 
@@ -26,10 +29,14 @@ namespace SI
 long long Uop::id_counter = 0;
 
 
-Uop::Uop(Wavefront *wavefront) : wavefront(wavefront)
+Uop::Uop(Wavefront *wavefront, ComputeUnit *compute_unit) :
+		wavefront(wavefront),
+		compute_unit(compute_unit)
 {
 	// Assign unique identifier
 	id = ++id_counter;
+	id_in_wavefront = wavefront->getUopId();
+	id_in_compute_unit = compute_unit->getUopId();
 }
 
 }

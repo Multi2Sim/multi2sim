@@ -28,7 +28,13 @@ namespace SI
 {
 
 int ComputeUnit::num_wavefront_pools = 4;
-
+int ComputeUnit::fetch_latency = 1;
+int ComputeUnit::fetch_width = 1;
+int ComputeUnit::fetch_buffer_size = 10;
+int ComputeUnit::issue_latency = 1;
+int ComputeUnit::issue_width = 5;
+int ComputeUnit::max_instructions_issued_per_type = 1;
+	
 
 ComputeUnit::ComputeUnit(int index) :
 		index(index),
@@ -50,31 +56,29 @@ ComputeUnit::ComputeUnit(int index) :
 }
 
 
-void ComputeUnit::Issue(int fetch_buffer_id)
+void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
+		ExecutionUnit *execution_unit)
 {
-	// Get fetch buffer
-	assert(misc::inRange(fetch_buffer_id, 0, num_wavefront_pools - 1));
-	FetchBuffer *fetch_buffer = fetch_buffers[fetch_buffer_id].get();
-
-	// Branch unit
+	// Issue at most 'max_instructions_per_type'
 	for (int num_issued_instructions = 0;
-			num_issued_instructions < FetchBuffer::max_instructions_issued_per_type;
+			num_issued_instructions < max_instructions_issued_per_type;
 			num_issued_instructions++)
 	{
+		// Nothing if execution unit cannot absorb more instructions
+		if (!execution_unit->canIssue())
+			break;
+
+		// Find oldest uop
 		auto oldest_uop_iterator = fetch_buffer->end();
 		for (auto it = fetch_buffer->begin(),
 				e = fetch_buffer->end();
 				it != e;
 				++it)
 		{
-			// Get uop and instruction
+			// Discard uop if it is not suitable for this execution
+			// unit
 			Uop *uop = it->get();
-			Instruction *instruction = uop->getInstruction();
-
-			// Only branch instructions
-			if (instruction->getFormat() != Instruction::FormatSOPP ||
-					instruction->getBytes()->sopp.op <= 1 ||
-					instruction->getBytes()->sopp.op >= 10)
+			if (!execution_unit->isValidUop(uop))
 				continue;
 
 			// Skip uops that have not completed fetch
@@ -89,32 +93,39 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 		}
 
 		// Stop if no instruction found
-		/*if (odest_uop_iterator == fetch_buffer->end())
-			break;*/
+		if (oldest_uop_iterator == fetch_buffer->end())
+			break;
+
+		// Erase from fetch buffer, issue to execution unit
+		std::shared_ptr<Uop> uop = fetch_buffer->Remove(oldest_uop_iterator);
+		execution_unit->Issue(uop);
+
+		// Trace
+		Timing::trace << misc::fmt("si.instruction "
+				"id=%lld "
+				"cu=%d "
+				"wf=%d "
+				"uop_id=%lld "
+				"stg=\"i\"\n", 
+				uop->getIdInComputeUnit(),
+				index,
+				uop->getWavefront()->getId(),
+				uop->getIdInWavefront());
 	}
+}
+
+
+void ComputeUnit::Issue(int fetch_buffer_id)
+{
+	// Get fetch buffer
+	assert(misc::inRange(fetch_buffer_id, 0, num_wavefront_pools - 1));
+	FetchBuffer *fetch_buffer = fetch_buffers[fetch_buffer_id].get();
+
+	// Issue to branch unit
+	IssueToExecutionUnit(fetch_buffer, &branch_unit);
+
+	
 #if 0
-		/* Issue the oldest branch instruction */
-		if (oldest_uop &&
-			list_count(self->branch_unit.issue_buffer) < 
-				si_gpu_branch_unit_issue_buffer_size)
-		{
-			oldest_uop->issue_ready = asTiming(gpu)->cycle +
-				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], oldest_uop);
-			list_enqueue(self->branch_unit.issue_buffer, 
-				oldest_uop);
-
-			/* Trace */
-			si_trace("si.instruction id=%lld cu=%d wf=%d "
-				"uop_id=%lld stg=\"i\"\n", 
-				oldest_uop->id_in_compute_unit, 
-				self->id, 
-				oldest_uop->wavefront->id, 
-				oldest_uop->id_in_wavefront);
-
-			self->branch_inst_count++;
-		}
-	}
 
 	/* Scalar unit */
 	for (issued_insts = 0; 

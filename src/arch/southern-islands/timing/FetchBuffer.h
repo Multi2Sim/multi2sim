@@ -44,36 +44,6 @@ class FetchBuffer
 
 public:
 	
-	//
-	// Static fields
-	//
-
-	/// Fetch latency in cycles
-	static int fetch_latency;
-
-	/// Number of instructions fetched per cycle
-	static int fetch_width;
-
-	/// Maximum capacity of fetch buffer in number of instructions
-	static int fetch_buffer_size;
-
-	/// Issue latency in cycles
-	static int issue_latency;
-
-	/// Maximum capacity of issue buffer in number of instructions
-	static int issue_width;
-
-	/// Maximum number of instructions issued in each cycle of each type
-	/// (vector, scalar, branch, ...)
-	static int max_instructions_issued_per_type;
-
-
-
-
-	//
-	// Class members
-	//
-
 	/// Constructor
 	FetchBuffer(ComputeUnit *compute_unit) : compute_unit(compute_unit)
 	{
