@@ -17,20 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <cassert>
-
-#include "FetchBuffer.h"
+#include "BranchUnit.h"
+#include "Timing.h"
 
 
 namespace SI
 {
 
-std::shared_ptr<Uop> FetchBuffer::Remove(std::list<std::shared_ptr<Uop>>::iterator it)
+void ExecutionUnit::Issue(std::shared_ptr<Uop> uop)
 {
-	assert(it != buffer.end());
-	std::shared_ptr<Uop> uop = *it;
-	buffer.erase(it);
-	return uop;
+	// Insert into issue buffer
+	assert(canIssue());
+	issue_buffer.push_back(uop);
+
+	// Spend issue lantecy
+	Timing *timing = Timing::getInstance();
+	assert(uop->issue_ready == 0);
+	uop->issue_ready = timing->getCycle() + ComputeUnit::issue_latency;
 }
 
 }

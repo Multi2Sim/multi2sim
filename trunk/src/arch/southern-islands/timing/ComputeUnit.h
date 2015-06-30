@@ -44,26 +44,17 @@ class WorkGroup;
 /// Class representing one compute unit in the GPU device.
 class ComputeUnit
 {
-	//
-	// Static fields
-	//
-	
-	// Number of wavefront pools per compute unit, configured by the user
-	static int num_wavefront_pools;
-
-
-
-
-	//
-	// Class members
-	//
-
 	// Fetch an instruction from the given wavefront pool
 	void Fetch(int wavefront_pool_id);
 
 	// Issue an instruction from the given fetch buffer into the
 	// appropriate execution unit.
 	void Issue(int fetch_buffer_id);
+
+	// Issue a set of instructions from the given fetch buffer into the
+	// given execution unit.
+	void IssueToExecutionUnit(FetchBuffer *fetch_buffer,
+			ExecutionUnit *execution_unit);
 
 	// Associated timing simulator, saved for performance
 	Timing *timing = nullptr;
@@ -96,7 +87,42 @@ class ComputeUnit
 	// One instance of the vector memory unit
 	VectorMemoryUnit vector_memory_unit;
 
+	// Counter of identifiers assigned to uops in this compute unit
+	long long uop_id_counter = 0;
+
 public:
+
+	//
+	// Static fields
+	//
+	
+	/// Number of wavefront pools per compute unit, configured by the user
+	static int num_wavefront_pools;
+
+	/// Fetch latency in cycles
+	static int fetch_latency;
+
+	/// Number of instructions fetched per cycle
+	static int fetch_width;
+
+	/// Maximum capacity of fetch buffer in number of instructions
+	static int fetch_buffer_size;
+
+	/// Issue latency in cycles
+	static int issue_latency;
+
+	/// Maximum capacity of issue buffer in number of instructions
+	static int issue_width;
+
+	/// Maximum number of instructions issued in each cycle of each type
+	/// (vector, scalar, branch, ...)
+	static int max_instructions_issued_per_type;
+
+
+
+	//
+	// Class members
+	//
 
 	/// Constructor
 	ComputeUnit(int index);
@@ -106,6 +132,10 @@ public:
 
 	/// Return the index of this compute unit in the GPU
 	int getIndex() const { return index; }
+
+	/// Return a new unique sequential identifier for the next uop in the
+	/// compute unit.
+	long long getUopId() { return ++uop_id_counter; }
 
 	/// Cache used for vector data
 	mem::Module *vector_cache = nullptr;

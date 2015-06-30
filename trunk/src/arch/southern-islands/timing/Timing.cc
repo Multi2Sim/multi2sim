@@ -43,6 +43,8 @@ comm::Arch::SimKind Timing::sim_kind = comm::Arch::SimFunctional;
 
 std::string Timing::report_file;
 
+esim::Trace Timing::trace;
+
 const std::string Timing::help_message =
 	"The Southern Islands GPU configuration file is a plain text INI file\n"
 	"defining the parameters of the Southern Islands model for a detailed\n"

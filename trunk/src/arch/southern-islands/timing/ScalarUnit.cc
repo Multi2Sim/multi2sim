@@ -23,8 +23,39 @@
 namespace SI
 {
 
+int ScalarUnit::issue_buffer_size = 1;
+int ScalarUnit::decode_latency = 1;
+int ScalarUnit::decode_buffer_size = 1;
+int ScalarUnit::read_latency = 1;
+int ScalarUnit::read_buffer_size = 1;
+int ScalarUnit::exec_latency = 4;
+int ScalarUnit::exec_buffer_size = 32;
+int ScalarUnit::write_latency = 1;
+int ScalarUnit::write_buffer_size = 1;
+
+
 void ScalarUnit::Run()
 {
+}
+
+
+bool ScalarUnit::isValidUop(Uop *uop) const
+{
+	Instruction *instruction = uop->getInstruction();
+	if (instruction->getFormat() != Instruction::FormatSOPP &&
+			instruction->getFormat() != Instruction::FormatSOP1 &&
+			instruction->getFormat() != Instruction::FormatSOP2 &&
+			instruction->getFormat() != Instruction::FormatSOPC &&
+			instruction->getFormat() != Instruction::FormatSOPK &&
+			instruction->getFormat() != Instruction::FormatSMRD)
+		return false;
+	
+	if (instruction->getFormat() == Instruction::FormatSOPP && 
+			instruction->getBytes()->sopp.op > 1 && 
+			instruction->getBytes()->sopp.op < 10)
+		return false;
+
+	return true;
 }
 
 }
