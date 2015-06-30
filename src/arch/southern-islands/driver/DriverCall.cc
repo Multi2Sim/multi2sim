@@ -21,7 +21,6 @@
 
 #include <arch/southern-islands/disassembler/Arg.h>
 #include <arch/southern-islands/emulator/Emulator.h>
-#include <arch/x86/emulator/Context.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -416,6 +415,8 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 	if (!arg || arg->getType() != ArgTypeValue)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
+	debug << misc::fmt("\tname=%s\n", (arg->getName()).c_str());
+	
 	// Dynamically allocate value_ptr and release it so ownership can be
 	// taken by the unique pointer in class Arg
 	auto value_ptr = misc::new_unique<char>(size);
@@ -489,6 +490,7 @@ int Driver::CallKernelSetArgPointer(comm::Context *context,
 	if (!arg || arg->getType() != ArgTypePointer)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
+	debug << misc::fmt("\tname=%s\n", (arg->getName()).c_str());
 	// Save value 
 	arg->setSetFlag(true);
 	arg->setSize(size);
@@ -697,10 +699,6 @@ int Driver::CallNDRangeSendWorkGroups(comm::Context *context,
 			work_group_id++)                                                                                                                        
 		ndrange->AddWorkgroupIdToWaitingList(work_group_id);                                          
 
-	// Suspend x86 context until driver needs more work             
-	//ctx->Suspend(opencl_abi_si_ndrange_send_work_groups_can_wakeup,               
-	//		opencl_abi_si_ndrange_send_work_groups_wakeup);             
-
 	// Return
 	return 0;
 }
@@ -734,7 +732,7 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 
 	// If no work-groups are left in the queues, remove the nd-range         
 	// from the driver list                                           
-	if (!(ndrange->getNumRunningWorkgroups()) &&                         
+	if (!(ndrange->getNumWorkgroups()) &&                         
 			!(ndrange->getNumWaitingWorkgroups()))                       
 	{                                                                        
 		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);            
@@ -743,9 +741,6 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 	{                                                                        
 		debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n", 
 				ndrange_id);                                     
-		//X86ContextSuspend(ctx,                                           
-		//		opencl_abi_si_ndrange_finish_can_wakeup, ndrange,        
-		//		opencl_abi_si_ndrange_finish_wakeup, ndrange);           
 	}                                                                        
 
 	// Return
@@ -842,14 +837,13 @@ int Driver::CallNDRangeFlush(comm::Context *context,
 	SI::Emulator *emulator = SI::Emulator::getInstance();
 	
 	// TODO - add support for timing simulator
-
 	// If there's not a timing simulator, no need to flush
 	// if (!si_gpu)                                                             
 	//	return 0;                                                        
 
-	int ndrange_id;                                                          
 
 	// Read arguments
+	int ndrange_id;                                                          
 	memory->Read(args_ptr, sizeof(int), (char *) &ndrange_id);
 	
 	// Get NDRange
@@ -860,12 +854,9 @@ int Driver::CallNDRangeFlush(comm::Context *context,
 
 	debug << misc::fmt("\tndrange %d\n", ndrange_id);                             
 
+	// TODO - more support for the timing simulator
 	// Flush RW or WO buffers from this ND-Range                          
 	//opencl_si_kernel_flush_ndrange_buffers(ndrange, si_gpu, x86_emu);        
-
-	// X86ContextSuspend(ctx, opencl_abi_si_ndrange_flush_can_wakeup,           
-	//		&(ndrange->flushing), opencl_abi_si_ndrange_flush_wakeup,        
-	//		&(ndrange->flushing));                                           
 
 	// Return                                      
 	return 0;
@@ -911,16 +902,10 @@ int Driver::CallNDRangeStart(comm::Context *context,
 	// Get emulator instance
 	SI::Emulator *emulator = SI::Emulator::getInstance();
 
-	//X86Emu *x86_emu = ctx->emu;                                              
-	//OpenclDriver *driver = x86_emu->opencl_driver;                           
-
 	// Increment number of ndranges that are running
 	emulator->incNDRangesRunning();
 
-	// TODO - x86 emulator might need to keep track of ndranges running too
-	//if (driver->x86_cpu)                                                     
-	//	driver->x86_cpu->ndranges_running++;                             
-
+	// Return
 	return 0;
 }
 
@@ -935,18 +920,8 @@ int Driver::CallNDRangeEnd(comm::Context *context,
 	// Get emulator instance
 	SI::Emulator *emulator = SI::Emulator::getInstance();
 
-	//X86Emu *x86_emu = ctx->emu;                                              
-	//OpenclDriver *driver = x86_emu->opencl_driver;                           
-
 	// Decrement number of ndranges that are running
 	emulator->decNDRangesRunning();
-
-	// TODO - x86 emulator might need to keep track of ndranges
-	//if (driver->x86_cpu)                                                     
-	//{                                                                        
-	//	driver->x86_cpu->ndranges_running--;                             
-	//	assert(driver->ndranges_running >= 0);                           
-	//}                                                                        
 
 	// Return
 	return 0;

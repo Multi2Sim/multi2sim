@@ -99,32 +99,40 @@ bool Emulator::Run()
 		ndrange->WaitingToRunning();
 
 		// If there's no work groups to run, go to next nd-range 
-		if (ndrange->isRunningWorkGroupsEmpty())
+		if (ndrange->isWorkGroupsEmpty())
 			continue;
 
 		// Iterate over running work groups
-		for (auto wg_i = ndrange->RunningWorkGroupBegin(), 
-			wg_e = ndrange->RunningWorkGroupEnd(); 
+		for (auto wg_i = ndrange->WorkGroupBegin(), 
+			wg_e = ndrange->WorkGroupEnd(); 
 			wg_i != wg_e;)
 		{
-			
-			for (auto wf_i = (*wg_i)->getWavefrontsBegin(), 
-					wf_e = (*wg_i)->getWavefrontsEnd();
+			// Get current work group
+			WorkGroup *work_group = (*wg_i).get();
+
+			// Execute an instruction for each wavefront
+			for (auto wf_i = work_group->getWavefrontsBegin(), 
+					wf_e = work_group->getWavefrontsEnd();
 					wf_i != wf_e;
 					++wf_i)
-				(*wf_i)->Execute();
-
-			if ((*wg_i)->getFinishedEmu())
+			{
+				// Get current wavefront and execute it
+				Wavefront *wavefront = (*wf_i).get();
+				wavefront->Execute();
+			}
+			// Check if the work group has finished
+			if (work_group->getFinishedEmu())
 			{
 				// Move work group to the completed list
-				wg_i = ndrange->RunningToCompleted(
-						(*wg_i)->getId());
-				
+				wg_i = ndrange->RemoveWorkGroup(work_group);
+
 				// Re-evaluate end iterator
-				wg_e = ndrange->RunningWorkGroupEnd();
+				wg_e = ndrange->WorkGroupEnd();
 			}
 			else
 			{
+				// If the work group hasn't finished, increment
+				// the iterator
 				++wg_i;
 			}
 		}
@@ -381,7 +389,7 @@ NDRange *Emulator::getNDRangeById(unsigned id)
 	assert(id >= 0 && id < (unsigned) getNumNDRanges());
 
 	// Iterate through NDRange list
-	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it !=e; ++it)
+	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it != e; ++it)
 	{
 		// Get NDRange
 		NDRange *ndrange = it->get();

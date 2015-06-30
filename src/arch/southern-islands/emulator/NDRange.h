@@ -128,10 +128,8 @@ private:
 	// Work-groups allocated for this ND-Range
 	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
-	// Work-group lists, IDs only
+	// Work-group list of pending work groups, IDs only
 	std::vector<long> waiting_work_groups;
-	std::list<WorkGroup *> running_work_groups;
-	std::vector<long> completed_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent = false;
@@ -299,7 +297,12 @@ public:
 
 	/// Remove a work-group from the list of work-groups and free it. All
 	/// references to this work-group will be invalidates after this call.
-	void RemoveWorkGroup(WorkGroup *work_group);
+	///
+	/// \return Returns an iterator to the nex element in the list. If there
+	/// are no more elements, a past-the-end iterator is returned.
+	///
+	std::list<std::unique_ptr<WorkGroup>>::iterator 
+			RemoveWorkGroup(WorkGroup *work_group);
 
 	/// Get stage of NDRange
 	Stage getStage() const { return stage; }
@@ -308,10 +311,7 @@ public:
 	unsigned getNumWaitingWorkgroups() const { return waiting_work_groups.size(); }
 
 	/// Return the number of running work-groups
-	unsigned getNumRunningWorkgroups() const { return running_work_groups.size(); }
-
-	/// Return the number of completed work-groups
-	unsigned getNumCompletedWorkgroups() const { return completed_work_groups.size(); }
+	unsigned getNumWorkgroups() const { return work_groups.size(); }
 
 	/// Get id of NDRange
 	int getId() const { return id; }
@@ -382,18 +382,18 @@ public:
 	unsigned getVertexBufferTableAddr() const { return vertex_buffer_table; }
 
 	/// Get count of running_work_groups
-	bool isRunningWorkGroupsEmpty() const { return running_work_groups.empty(); }
+	bool isWorkGroupsEmpty() const { return work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
-	std::list<WorkGroup *>::iterator RunningWorkGroupBegin()
+	std::list<std::unique_ptr<WorkGroup>>::iterator WorkGroupBegin()
 	{ 
-		return running_work_groups.begin();
+		return work_groups.begin();
 	}
 
 	// Return an iterator to the past-to-end iterator in the running_work_group list.
-	std::list<WorkGroup *>::iterator RunningWorkGroupEnd()
+	std::list<std::unique_ptr<WorkGroup>>::iterator WorkGroupEnd()
 	{ 
-		return running_work_groups.end();
+		return work_groups.end();
 	}
 
 	/// Set local_mem_top
@@ -519,18 +519,6 @@ public:
 	/// will move all the work groups in the waiting list to the running
 	/// list
 	void WaitingToRunning();	
-	
-	/// Move work groups in the running list to the completed list.
-	/// Note that this function only takes a single work group id.
-	///
-	/// \param work_group_id 
-	/// 	ID of work group to move to the completed list
-	///
-	/// \return An iterator to the next element in the running list is
-	/// returned. If the moved element was the last in the runnning list, 
-	/// then a past-the-end iterator is returned. If the work group ID was
-	/// not found, an exception is thrown.
-	std::list<WorkGroup *>::iterator RunningToCompleted(long work_group_id);
 	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);

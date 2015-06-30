@@ -278,7 +278,9 @@ public:
 	unsigned getLocalId() const { return id_in_work_group; }
 
 	/// Get id_in_work_group_3d
+	///
 	/// \param dim Local id dimention
+	///
 	unsigned getLocalId3D(unsigned dim) const 
 	{ 
 		assert(dim >= 0 && dim <= 2);
@@ -296,8 +298,11 @@ public:
 	//
 
 	/// Set workitem 3D global identifier
+	///
 	/// \param dim Goblal dimention of identifier
+	///
 	/// \param id 3D Identifier
+	///
 	void setGlobalId3D(unsigned dim, unsigned id) 
 	{
 		assert(dim >= 0 && dim <= 2);
@@ -305,12 +310,17 @@ public:
 	}
 
 	/// Set unique identifier of workitem
+	///
 	/// \param id Identifier of workitem 
+	///
 	void setGlobalId(unsigned id) { this->id = id; }
 
 	/// Set workitem 3D local identifier
+	///
 	/// \param dim Local id dimention
+	///
 	/// \param id 3D Identifier
+	///
 	void setLocalId3D(unsigned dim, unsigned id) 
 	{
 		assert(dim >= 0 && dim <= 2);
@@ -318,23 +328,33 @@ public:
 	}
 
 	/// Set identifier of workitem in workgroup scope
+	///
 	/// \param id Identifier of workitem 
+	///
 	void setLocalId(unsigned id) { id_in_work_group = id; }	
 
 	/// Set identifier of a workitem, wavefront scope
+	///
 	/// \param id Identifier of workitem in a wavefront
+	///
 	void setIdInWavefront(unsigned id) { id_in_wavefront = id; }
 
 	/// Set wavefront it belongs
+	///
 	/// \param wf Pointer of wavefront where it belongs
+	///
 	void setWavefront(Wavefront *wf) { wavefront = wf; }
 
 	/// Set work-group it belongs
+	///
 	/// \param wg Pointer of work-group where it belongs
+	///
 	void setWorkGroup(WorkGroup *wg) { work_group = wg; }
 
 	/// Set global memory
+	///
 	/// \param memory Pointer to global memory
+	///
 	void setGlobalMemory(mem::Memory *memory) { global_mem = memory; }
 	
 	// FIXME - probably most functions below can be inline
@@ -343,44 +363,67 @@ public:
 	void Execute(Instruction::Opcode opcode, Instruction *inst);
 
 	/// Get value of a scalar register
+	///
 	/// \param sreg Scalar register identifier
+	///
 	unsigned ReadSReg(int sreg);
 
 	/// Set value of a scalar register
+	///
 	/// \param sreg Scalar register identifier
+	///
 	/// \param value Value given as an \a unsigned typed value
+	///
 	void WriteSReg(int sreg, unsigned value);
 
 	/// Get value of a vector register
+	///
 	/// \param vreg Vector register identifier
+	///
 	unsigned ReadVReg(int vreg);
 
 	/// Set value of a vector register
+	///
 	/// \param vreg Vector register idendifier
+	///
 	/// \param value Value given as an \a unsigned typed value
+	///
 	void WriteVReg(int vreg, unsigned value);
 
 	/// Get value of a register, register type unspecified
+	///
 	/// \param reg Register identifier
+	///
 	unsigned ReadReg(int reg);
 
 	/// Set bitmask of scalar registers
+	///
 	/// \param sreg Scalar register identifier
+	///
 	/// \param value Value given as an \a unsigned typed value
+	///
 	void WriteBitmaskSReg(int sreg, unsigned value);
 
 	/// Get bitmask from scalar registers
+	///
 	/// \param sreg Scalar register identifier
+	///
 	int ReadBitmaskSReg(int sreg);
 
 	/// Get buffer resource descriptor from 4 successive scalar registers
+	///
 	/// \param sreg Scalar register identifier of the 1st scalar registers
+	///
 	/// \param &buffer_desc Reference of a buffer resource descriptor
+	///
 	void ReadBufferResource(int sreg, BufferDescriptor &buffer_desc); 
 	
 	/// Get memory pointer from 2 succesive scalar registers
+	///
 	/// \param sreg Sclalar register identifier of the 1st scalar registers
+	///
 	/// \param mem_ptr Reference of a memory pointer descripter
+	///
 	void ReadMemPtr(int sreg, MemoryPointer &memory_pointer);
 
 };
