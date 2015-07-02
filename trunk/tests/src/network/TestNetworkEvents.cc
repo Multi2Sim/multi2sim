@@ -38,7 +38,7 @@ static void Cleanup()
 	System::Destroy();
 }
 
-TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
+TEST(TestSystemConfiguration, event_0_same_src_dest_not_allowed)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -90,41 +90,16 @@ TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
 
 	// Set up network instance
 	System *network_system = System::getInstance();
-	EXPECT_TRUE(network_system != nullptr);
 
 	try
 	{
 		// Parse the configuration file
 		network_system->ParseConfiguration(&ini_file);
 
-		// Assert the system
-		ASSERT_NE(network_system, nullptr);
-
-		// Assert the network
-		Network * net0 = network_system->getNetworkByName("net0");
-		ASSERT_NE(net0, nullptr);
-
-		// Assert the nodes
-		ASSERT_NE(net0->getNodeByName("n0"), nullptr);
-		ASSERT_NE(net0->getNodeByName("n1"), nullptr);
-		ASSERT_NE(net0->getNodeByName("n2"), nullptr);
-		ASSERT_NE(net0->getNodeByName("n3"), nullptr);
-		ASSERT_NE(net0->getNodeByName("s0"), nullptr);
-		ASSERT_EQ(net0->getNumNodes(), 5);
-
-		// Assert the links
-		ASSERT_NE(net0->getConnectionByName("link_n0_s0"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_s0_n0"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_n1_s0"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_s0_n1"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_n2_s0"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_s0_n2"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_n3_s0"), nullptr);
-		ASSERT_NE(net0->getConnectionByName("link_s0_n3"), nullptr);
-		ASSERT_EQ(net0->getNumberConnections(), 8);
-
 		// FIXME
-		// Figure out how to inject messages without implementing commands
+		// Get one node and transfer from that node to itself.
+		// This should produce an error
+
 	}
 	catch (misc::Exception &e)
 	{

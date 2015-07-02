@@ -115,7 +115,7 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Default Frequency
 	std::string section = "General";
-	frequency = ini_file->ReadInt(section, "Frequency", 1000);
+	frequency = ini_file->ReadInt(section, "Frequency", frequency);
 	if (!esim::Engine::isValidFrequency(frequency))
 		throw Error(misc::fmt("%s: The value for 'Frequency' "
 				"must be between 1MHz and 1000GHz.\n%s",

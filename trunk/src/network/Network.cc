@@ -646,8 +646,10 @@ Link *Network::addLink(
 		int dest_buffer_size,
 		int num_virtual_channels)
 {
+	// Creating a unique name for unidirectional link
 	std::string descriptive_name = "link_" + source_node->getName() +
 			"_" + dest_node->getName();
+
 	// Create link
 	connections.emplace_back(misc::new_unique<Link>(this,
 			name,
