@@ -40,8 +40,9 @@ static void Cleanup()
 
 TEST(TestSystemConfiguration, section_general_frequency)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
+
 	// Setup configuration file
 	std::string config =
 			"[ General ]\n"
@@ -79,6 +80,8 @@ TEST(TestSystemConfiguration, section_network_two_defaults_missing)
 
 	// Setup configuration file
 	std::string config =
+			"[ General ]\n"
+			"Frequency = 1000\n"
 			"[ Network.test ]\n"
 			"DefaultInputBufferSize = 10";
 
@@ -100,15 +103,16 @@ TEST(TestSystemConfiguration, section_network_two_defaults_missing)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: test:\nDefault values can not be"
-						" zero/non-existent.\n.*",
-						ini_file.getPath().c_str()))));
+					" zero/non-existent.\n.*",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_missing_over_negative)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -135,15 +139,16 @@ TEST(TestSystemConfiguration, section_network_missing_over_negative)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: test:\nDefault values can not be"
-						" zero/non-existent.\n.*",
-						ini_file.getPath().c_str()))));
+					" zero/non-existent.\n.*",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_non_existant_default)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -170,15 +175,16 @@ TEST(TestSystemConfiguration, section_network_non_existant_default)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: test:\nDefault values can not be"
-						" zero/non-existent.\n.*",
-						ini_file.getPath().c_str()))));
+					" zero/non-existent.\n.*",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_default_negative)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -206,9 +212,10 @@ TEST(TestSystemConfiguration, section_network_default_negative)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: test:\nDefault values can not be negative.\n.*",
-						ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_network_negative_packet_size)
@@ -242,14 +249,15 @@ TEST(TestSystemConfiguration, section_network_negative_packet_size)
 	{
 		message = error.getMessage();
 	}
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: test:\nDefault values can not be negative.\n.*",
-						ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_node_unknown_type)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -282,15 +290,16 @@ TEST(TestSystemConfiguration, section_node_unknown_type)
 		message = error.getMessage();
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Node type 'anything' is not "
-						"supported.\n.*",
-						ini_file.getPath().c_str()))));
+					"supported.\n.*",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_section_unknown)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -322,16 +331,15 @@ TEST(TestSystemConfiguration, section_section_unknown)
 		message = error.getMessage();
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
-	// FIXME
-	// regular Bracket in regex. \[ and \\[ result in regex_error
-	EXPECT_TRUE(std::regex_match(message, std::regex(
-			misc::fmt("%s: invalid section (.Network\\.test\\.anything.)",
-						ini_file.getPath().c_str()))));
+	EXPECT_REGEX_MATCH(misc::fmt(
+			"%s: invalid section (.Network\\.test\\.anything.)",
+			ini_file.getPath().c_str()).c_str(), message.c_str());
+
 }
 
-TEST(TestSystemConfiguration, section_section_no_net)
+TEST(TestSystemConfiguration, section_node_no_preset_net)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -362,15 +370,16 @@ TEST(TestSystemConfiguration, section_section_no_net)
 	// but currently produces an error for each variable
 	// no matter they are valid or not.
 	EXPECT_TRUE(system->getNetworkByName("test") == nullptr);
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: section (.Network\\.test\\.Node\\.N1.), "
 					"invalid variable 'Type'",
-						ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -404,9 +413,10 @@ TEST(TestSystemConfiguration, section_node_buffer_size_vs_msg_size)
 		message = error.getMessage();
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Invalid argument for Node 'N1'\n.*",
-						ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_node_switch_bandwidth)
@@ -450,14 +460,15 @@ TEST(TestSystemConfiguration, section_node_switch_bandwidth)
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_FALSE(network->getNodeByName("S1") != nullptr);
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Invalid argument for Node 'S1'\n.*",
-						ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_type)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -498,14 +509,15 @@ TEST(TestSystemConfiguration, section_link_type)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Link type 'anything' is not supported.\n.*",
-					ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_variable)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -549,15 +561,16 @@ TEST(TestSystemConfiguration, section_link_wrong_variable)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: section (.Network\\.test\\.Link\\.S1-S2.), invalid"
 					" variable 'anything'",
-								ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_source)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -600,15 +613,16 @@ TEST(TestSystemConfiguration, section_link_wrong_source)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Source node 'anything' is invalid"
-								" for link 'S1-S2'.\n",
-								ini_file.getPath().c_str()))));
+					" for link 'S1-S2'.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_no_source)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -650,15 +664,16 @@ TEST(TestSystemConfiguration, section_link_no_source)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Source node is not provided "
-								"for link 'S1-S2'.\n",
-								ini_file.getPath().c_str()))));
+					"for link 'S1-S2'.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_wrong_destination)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -701,15 +716,16 @@ TEST(TestSystemConfiguration, section_link_wrong_destination)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Destination node 'anything' is "
-						"invalid for link 'S1-S2'.\n",
-						ini_file.getPath().c_str()))));
+					"invalid for link 'S1-S2'.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_no_destination)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -751,15 +767,16 @@ TEST(TestSystemConfiguration, section_link_no_destination)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Destination node is not provided "
-								"for link 'S1-S2'.\n",
-								ini_file.getPath().c_str()))));
+					"for link 'S1-S2'.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_same_src_dst)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -802,15 +819,16 @@ TEST(TestSystemConfiguration, section_link_same_src_dst)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Link 'S1-S2', source "
 					"and destination cannot be the same.\n",
-					ini_file.getPath().c_str()))));
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
 
 TEST(TestSystemConfiguration, section_link_bandwidth)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
 	// Setup configuration file
@@ -854,9 +872,95 @@ TEST(TestSystemConfiguration, section_link_bandwidth)
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
-	EXPECT_TRUE(std::regex_match(message, std::regex(
+	EXPECT_REGEX_MATCH(
 			misc::fmt("%s: Link 'S1-S2', bandwidth cannot "
-						"be zero/negative.\n",
-					ini_file.getPath().c_str()))));
+					"be zero/negative.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
 }
+TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	std::string net_config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 2\n"
+			"\n"
+			"[ Network.net0.Node.n0 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.n1 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.n2 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.n3 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.s0 ]\n"
+			"Type = Switch\n"
+			"\n"
+			"[ Network.net0.Link.n0-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n0\n"
+			"Dest = s0\n"
+			"\n"
+			"[ Network.net0.Link.n1-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n1\n"
+			"Dest = s0\n"
+			"\n"
+			"[ Network.net0.Link.n2-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n2\n"
+			"Dest = s0\n"
+			"\n"
+			"[ Network.net0.Link.n3-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n3\n"
+			"Dest = s0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(net_config);
+
+	// Set up network instance
+	System *network_system = System::getInstance();
+
+
+	// Parse the configuration file
+	network_system->ParseConfiguration(&ini_file);
+
+	// Assert the system
+	EXPECT_TRUE(network_system != nullptr);
+
+	// Assert the network
+	Network * net0 = network_system->getNetworkByName("net0");
+	EXPECT_TRUE(net0 != nullptr);
+
+	// Assert the nodes
+	EXPECT_TRUE(net0->getNodeByName("n0") != nullptr);
+	EXPECT_TRUE(net0->getNodeByName("n1") != nullptr);
+	EXPECT_TRUE(net0->getNodeByName("n2") != nullptr);
+	EXPECT_TRUE(net0->getNodeByName("n3") != nullptr);
+	EXPECT_TRUE(net0->getNodeByName("s0") != nullptr);
+	EXPECT_TRUE(net0->getNumNodes() == 5);
+
+	// Assert the links
+	EXPECT_TRUE(net0->getConnectionByName("link_n0_s0") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_s0_n0") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_n1_s0") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_s0_n1") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_n2_s0") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_s0_n2") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_n3_s0") != nullptr);
+	EXPECT_TRUE(net0->getConnectionByName("link_s0_n3") != nullptr);
+	EXPECT_TRUE(net0->getNumberConnections() == 8);
+
+}
+
 }
