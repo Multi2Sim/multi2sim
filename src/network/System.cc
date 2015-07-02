@@ -203,10 +203,6 @@ void System::UniformTrafficSimulation(Network *network)
 {
 	// Initiate a list of double for injection time
 	auto inject_time = misc::new_unique_array<double>(network->getNumNodes());
-	for (int i = 0; i < network->getNumNodes(); i++)
-	{
-		inject_time[i] = 0.0f;
-	}
 
 	// Loop from the beginning to the end the simulation
 	while (1)
@@ -231,14 +227,15 @@ void System::UniformTrafficSimulation(Network *network)
 				continue;
 
 			// Get a random destination node
-			EndNode * dst_node = nullptr;
+			EndNode *destination_node = nullptr;
 			while (1)
 			{
 				int num_nodes = network->getNumNodes();
 				int index = random() % num_nodes;
-				dst_node = dynamic_cast<EndNode *>(
+				destination_node = dynamic_cast<EndNode *>(
 						network->getNode(index));
-				if (dst_node && dst_node != node)
+				if (destination_node && destination_node != 
+						node)
 					break;
 			}
 
@@ -251,7 +248,7 @@ void System::UniformTrafficSimulation(Network *network)
 						"%s to node %s.\n",
 						cycle,
 						node->getName().c_str(),
-						dst_node->getName().c_str());
+						destination_node->getName().c_str());
 
 				// Schedule next injection
 				inject_time[i] += RandomExponential(
@@ -263,9 +260,9 @@ void System::UniformTrafficSimulation(Network *network)
 						inject_time[i]);
 
 				// Send the packet
-				if (network->CanSend(node, dst_node,
+				if (network->CanSend(node, destination_node,
 					System::message_size))
-					network->Send(node, dst_node,
+					network->Send(node, destination_node,
 							System::message_size);
 			}
 		}

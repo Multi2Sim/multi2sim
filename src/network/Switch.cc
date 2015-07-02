@@ -223,7 +223,7 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 	
 		// There must be enough space left in the output buffer
 		if (output_buffer->getCount() + packet->getSize() > 
-			output_buffer->getSize())
+				output_buffer->getSize())
 			continue;
 
 		// All conditions satisfied - schedule
