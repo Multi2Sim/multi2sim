@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "ComputeUnit.h"
 #include "ScalarUnit.h"
 
 
@@ -56,6 +57,27 @@ bool ScalarUnit::isValidUop(Uop *uop) const
 		return false;
 
 	return true;
+}
+
+
+void ScalarUnit::Issue(std::shared_ptr<Uop> uop)
+{
+	// One more instruction of this kind
+	ComputeUnit *compute_unit = getComputeUnit();
+	if (uop->getInstruction()->getFormat() == Instruction::FormatSMRD)
+	{
+		compute_unit->num_scalar_memory_instructions++;
+		uop->getWavefrontPoolEntry()->lgkm_cnt++;
+	}
+	else
+	{
+		// Scalar ALU instructions must complete before the next
+		// instruction can be fetched.
+		compute_unit->num_scalar_alu_instructions++;
+	}
+
+	// Issue it
+	ExecutionUnit::Issue(uop);
 }
 
 }

@@ -3272,6 +3272,9 @@ void System::EventInvalidateHandler(esim::Event *event,
 				// One more pending request
 				frame->pending++;
 				
+				// One more pending request
+				frame->pending++;
+
 				// Send write request upwards if beginning of block
 				auto new_frame = misc::new_shared<Frame>(
 						frame->getId(),
