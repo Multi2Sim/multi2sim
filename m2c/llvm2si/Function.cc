@@ -66,18 +66,20 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 
 		case 1:
 		{
-			arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
+			arg.reset(new SI::PointerArgument(name, 
+					getDataType(llvm_type),
 					getNumElements(llvm_type), 0, 0, 
-					SI::ArgScopeUAV, 0, 0, 
-					SI::ArgAccessTypeReadWrite));
+					SI::Argument::ScopeUAV, 0, 0, 
+					SI::Argument::AccessTypeReadWrite));
 			break;
 		}
 		case 3:
 		{
-			arg.reset(new SI::ArgPointer(name, getDataType(llvm_type),
+			arg.reset(new SI::PointerArgument(name, 
+					getDataType(llvm_type),
 					getNumElements(llvm_type), 0, 0, 
-					SI::ArgScopeHwLocal, 0, 0, 
-					SI::ArgAccessTypeReadWrite));
+					SI::Argument::ScopeHwLocal, 0, 0, 
+					SI::Argument::AccessTypeReadWrite));
 			break;
 		}
 		default:
@@ -88,13 +90,13 @@ FunctionArg::FunctionArg(llvm::Argument *llvm_arg) :
 	}
 	else
 	{
-		arg.reset(new SI::ArgValue(name, getDataType(llvm_type),
+		arg.reset(new SI::ValueArgument(name, getDataType(llvm_type),
 				getNumElements(llvm_type), 0, 0));
 	}
 }
 
 
-SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
+SI::Argument::DataType FunctionArg::getDataType(llvm::Type *llvm_type)
 {
 	// Get vector element type
 	if (llvm_type->isVectorTy())
@@ -106,11 +108,11 @@ SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 		int bit_width = llvm_type->getIntegerBitWidth();
 		switch (bit_width)
 		{
-		case 1: return SI::ArgDataTypeInt1;
-		case 8: return SI::ArgDataTypeInt8;
-		case 16: return SI::ArgDataTypeInt16;
-		case 32: return SI::ArgDataTypeInt32;
-		case 64: return SI::ArgDataTypeInt64;
+		case 1: return SI::Argument::DataTypeInt1;
+		case 8: return SI::Argument::DataTypeInt8;
+		case 16: return SI::Argument::DataTypeInt16;
+		case 32: return SI::Argument::DataTypeInt32;
+		case 64: return SI::Argument::DataTypeInt64;
 
 		default:
 
@@ -120,7 +122,7 @@ SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 	}
 	else if (llvm_type->isFloatTy())
 	{
-		return SI::ArgDataTypeFloat;
+		return SI::Argument::DataTypeFloat;
 	}
 	else
 	{
@@ -129,7 +131,7 @@ SI::ArgDataType FunctionArg::getDataType(llvm::Type *llvm_type)
 	}
 
 	// Unreachable
-	return SI::ArgDataTypeInvalid;
+	return SI::Argument::DataTypeInvalid;
 }
 
 
@@ -147,21 +149,22 @@ void FunctionArg::Dump(std::ostream &os)
 	switch (arg->getType())
 	{
 
-	case SI::ArgTypePointer:
+	case SI::Argument::TypePointer:
 	{
-		SI::ArgScope arg_scope = 
-			(dynamic_cast<SI::ArgPointer *>(arg.get()))->getScope();
+		SI::Argument::Scope arg_scope = 
+			(dynamic_cast<SI::PointerArgument *>(
+			arg.get()))->getScope();
 		
 		switch (arg_scope)
 		{
 
-		case SI::ArgScopeUAV:
+		case SI::Argument::ScopeUAV:
 		{
 			os << '\t' << *arg << ' ' << index * 16
 					<< " uav" << uav_index + 10 << '\n';
 			break;
 		}
-		case SI::ArgScopeHwLocal:
+		case SI::Argument::ScopeHwLocal:
 		{
 			os << '\t' << *arg << ' ' << index * 16
 					<< " hl" << '\n';
@@ -175,7 +178,7 @@ void FunctionArg::Dump(std::ostream &os)
 		break;
 	}
 
-	case SI::ArgTypeValue:
+	case SI::Argument::TypeValue:
 	{
 		os << '\t' << *arg << ' ' << index * 16 << '\n';
 		break;
@@ -331,9 +334,9 @@ int Function::AddArg(FunctionArg *arg, int num_elem, int offset)
 
 	// If argument is an object in global memory, create a UAV
 	// associated with it.
-	SI::ArgPointer *pointer = dynamic_cast<SI::ArgPointer *>
+	SI::PointerArgument *pointer = dynamic_cast<SI::PointerArgument *>
 			(arg->arg.get());
-	if (pointer && pointer->getScope() == SI::ArgScopeUAV)
+	if (pointer && pointer->getScope() == SI::Argument::ScopeUAV)
 	{
 		// New UAV
 		FunctionUAV *uav = new FunctionUAV();

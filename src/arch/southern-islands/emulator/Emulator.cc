@@ -148,7 +148,7 @@ bool Emulator::Run()
 
 
 void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
-		int num_elems, ArgDataType data_type, 
+		int num_elems, Argument::DataType data_type, 
 		WorkItem::BufferDescriptor *buffer_descriptor)
 {
 	int num_format;                                                          
@@ -165,8 +165,8 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 	// Set num_format and data_format
 	switch (data_type)                                                       
 	{                                                                        
-	case ArgDataTypeInt8:                                                          
-	case ArgDataTypeUInt8:                                                         
+	case Argument::DataTypeInt8:                                                          
+	case Argument::DataTypeUInt8:                                                         
 
 		num_format = BufDescNumFmtSint;                           
 		switch (num_elems)                                               
@@ -194,8 +194,8 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		elem_size = 1 * num_elems;                                       
 		break; 
 
-	case ArgDataTypeInt16:                                                         
-	case ArgDataTypeUInt16:                                                        
+	case Argument::DataTypeInt16:                                                         
+	case Argument::DataTypeUInt16:                                                        
 
 		num_format = BufDescNumFmtSint;                           
 		switch (num_elems)                                               
@@ -223,8 +223,8 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		elem_size = 2 * num_elems;                                       
 		break;    
 
-	case ArgDataTypeInt32:                                                         
-	case ArgDataTypeUInt32:                                                        
+	case Argument::DataTypeInt32:                                                         
+	case Argument::DataTypeUInt32:                                                        
 
 		num_format = BufDescNumFmtSint;                           
 		switch (num_elems)                                               
@@ -257,7 +257,7 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		elem_size = 4 * num_elems;                                       
 		break;
 
-	case ArgDataTypeFloat:                                                         
+	case Argument::DataTypeFloat:                                                         
 
 		num_format = BufDescNumFmtFloat;                          
 		switch (num_elems)                                               
@@ -290,7 +290,7 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		elem_size = 4 * num_elems;                                       
 		break;
 
-	case ArgDataTypeDouble:                                                        
+	case Argument::DataTypeDouble:                                                        
 
 		num_format = BufDescNumFmtFloat;                          
 		switch (num_elems)                                               
@@ -313,7 +313,7 @@ void Emulator::createBufferDesc(unsigned base_addr, unsigned size,
 		elem_size = 8 * num_elems;                                       
 		break;   
 
-	case ArgDataTypeStruct:                                                        
+	case Argument::DataTypeStruct:                                                        
 
 		num_format = BufDescNumFmtUint;                           
 		data_format = BufDescDataFmt8;                            

@@ -24,7 +24,7 @@
 #include <memory>
 #include <list>
 
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 #include <llvm/IR/Argument.h>
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Type.h>
@@ -48,7 +48,7 @@ class FunctionArg
 {
 	friend class Function;
 
-	std::unique_ptr<SI::Arg> arg;
+	std::unique_ptr<SI::Argument> arg;
 
 	std::string name;
 	
@@ -91,7 +91,7 @@ public:
 	}
 
 	/// Return a Southern Islands argument type from an LLVM type.
-	static SI::ArgDataType getDataType(llvm::Type *llvm_type);
+	static SI::Argument::DataType getDataType(llvm::Type *llvm_type);
 
 	/// Return the number of elements in a vector type, or 1 if the LLVM
 	/// type passed is not a vector type.

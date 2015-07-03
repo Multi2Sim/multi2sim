@@ -2,8 +2,8 @@ lib_LIBRARIES = libdisassembler.a
 
 libdisassembler_a_SOURCES = \
 	\
-	Arg.cc \
-	Arg.h \
+	Argument.cc \
+	Argument.h \
 	\
 	Binary.cc \
 	Binary.h \

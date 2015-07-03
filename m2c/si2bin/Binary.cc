@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 #include <arch/southern-islands/disassembler/Binary.h>
 #include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>

@@ -25,7 +25,7 @@
 #include <memory>
 
 #include <arch/common/Emulator.h>
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/Error.h>
 #include <memory/Memory.h>
@@ -179,7 +179,7 @@ public:
 
 	/// Initialize a buffer description of type EmuBufferDesc
 	static void createBufferDesc(unsigned base_addr, unsigned size,
-			int num_elems, ArgDataType data_type, 
+			int num_elems, Argument::DataType data_type, 
 			WorkItem::BufferDescriptor *buffer_descriptor);
 
 	/// Get the only instance of the Southern Islands emulator. If the

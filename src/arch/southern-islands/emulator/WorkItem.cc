@@ -247,6 +247,11 @@ WorkItem::WorkItem(Wavefront *wavefront, int id)
 	ISAInstFuncTable[Instruction::OpcodeCount] = nullptr;
 }
 
+void WorkItem::setWorkGroup(WorkGroup *wg)
+{ 
+	work_group = wg; 
+	lds = wg->getLocalMemory(); 
+}
 
 void WorkItem::Execute(Instruction::Opcode opcode, Instruction *inst)
 {
