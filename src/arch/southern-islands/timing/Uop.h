@@ -29,6 +29,7 @@ namespace SI
 // Forward declarations
 class ComputeUnit;
 class Wavefront;
+class WavefrontPoolEntry;
 
 
 /// Class representing an instruction flowing through the pipelines of the
@@ -69,10 +70,13 @@ class Uop
 	// Compute unit that the uop belongs to, assigned in constructor
 	ComputeUnit *compute_unit;
 
+	// Associated wavefront pool entry, assigned in constructor
+	WavefrontPoolEntry *wavefront_pool_entry;
+
 public:
 
 	/// Constructor
-	Uop(Wavefront *wavefront, ComputeUnit *compute_unit);
+	Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry);
 
 	/// Return the unique identifier assigned in sequential order to the
 	/// uop when it was created.
@@ -90,10 +94,16 @@ public:
 	Instruction *getInstruction() { return &instruction; }
 
 	/// Return the associated wavefront
-	Wavefront *getWavefront() { return wavefront; }
+	Wavefront *getWavefront() const { return wavefront; }
 
 	/// Return the associated compute unit
-	ComputeUnit *getComputeUnit() { return compute_unit; }
+	ComputeUnit *getComputeUnit() const { return compute_unit; }
+
+	/// Return the associated wavefront pool entry
+	WavefrontPoolEntry *getWavefrontPoolEntry() const
+	{
+		return wavefront_pool_entry;
+	}
 
 	/// Cycle in which the uop is first ready after fetch
 	long long fetch_ready = 0;

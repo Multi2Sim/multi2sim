@@ -121,90 +121,13 @@ void ComputeUnit::Issue(int fetch_buffer_id)
 	assert(misc::inRange(fetch_buffer_id, 0, num_wavefront_pools - 1));
 	FetchBuffer *fetch_buffer = fetch_buffers[fetch_buffer_id].get();
 
-	// Issue to branch unit
+	// Issue instructions to branch unit
 	IssueToExecutionUnit(fetch_buffer, &branch_unit);
 
-	
+	// Issue instructions to scalar unit
+	IssueToExecutionUnit(fetch_buffer, &scalar_unit);
+
 #if 0
-
-	/* Scalar unit */
-	for (issued_insts = 0; 
-		issued_insts < si_gpu_fe_max_inst_issued_per_type;
-		issued_insts++)
-	{
-		list_entries = list_count(self->fetch_buffers[active_fb]);
-		oldest_uop = NULL;
-		for (i = 0; i < list_entries; i++)
-		{
-			uop = list_get(self->fetch_buffers[active_fb], i);
-			assert(uop);
-
-			/* Only evaluate scalar instructions */
-			if (SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPP && 
-				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOP1 && 
-				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOP2 && 
-				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPC && 
-				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSOPK && 
-				SIInstWrapGetFormat(uop->instruction) != SIInstFormatSMRD)
-			{	
-				continue;
-			}
-			if (SIInstWrapGetFormat(uop->instruction) == SIInstFormatSOPP && 
-			    SIInstWrapGetBytes(uop->instruction)->sopp.op > 1 && 
-				SIInstWrapGetBytes(uop->instruction)->sopp.op < 10)
-			{
-				continue;
-			}
-
-			/* Skip all uops that have not yet completed 
-			 * the fetch */
-			if (asTiming(gpu)->cycle < uop->fetch_ready)
-			{
-				continue;
-			}
-
-			/* Save the oldest uop */
-			if (!oldest_uop || 
-				uop->wavefront->id < oldest_uop->wavefront->id)
-			{
-				oldest_uop = uop;
-			}
-		}
-
-		/* Issue the oldest scalar instruction */
-		if (oldest_uop &&
-			list_count(self->scalar_unit.issue_buffer) < 
-				si_gpu_scalar_unit_issue_buffer_size)
-		{
-			oldest_uop->issue_ready = asTiming(gpu)->cycle +
-				si_gpu_fe_issue_latency;
-			list_remove(self->fetch_buffers[active_fb], oldest_uop);
-			list_enqueue(self->scalar_unit.issue_buffer, 
-				oldest_uop);
-
-			/* Trace */
-			si_trace("si.instruction id=%lld cu=%d wf=%d "
-				"uop_id=%lld stg=\"i\"\n", 
-				oldest_uop->id_in_compute_unit, 
-				self->id, 
-				oldest_uop->wavefront->id, 
-				oldest_uop->id_in_wavefront);
-
-			if (SIInstWrapGetFormat(oldest_uop->instruction) == SIInstFormatSMRD)
-			{
-				self->scalar_mem_inst_count++;
-				oldest_uop->wavefront_pool_entry->lgkm_cnt++;
-			}
-			else
-			{
-				/* Scalar ALU instructions have to
-				 * complete before the next 
-				 * instruction can be fetched */
-				self->scalar_alu_inst_count++;
-			}
-		}
-	}
-
 	/* SIMD unit */
 	for (issued_insts = 0; 
 		issued_insts < si_gpu_fe_max_inst_issued_per_type;

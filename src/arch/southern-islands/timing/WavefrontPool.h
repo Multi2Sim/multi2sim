@@ -26,6 +26,35 @@ namespace SI
 
 // Forward declarations
 class ComputeUnit;
+class WavefrontPool;
+
+
+/// Wavefront pool entry
+class WavefrontPoolEntry
+{
+	// Wavefront pool that it belongs to
+	WavefrontPool *wavefront_pool;
+
+public:
+
+	/// Constructor
+	WavefrontPoolEntry(WavefrontPool *wavefront_pool) :
+			wavefront_pool(wavefront_pool)
+	{
+	}
+
+	/// Return the wavefront pool that it belongs to
+	WavefrontPool *getWavefrontPool() const { return wavefront_pool; }
+
+	/// Number of outstanding vector memory accesses
+	int vm_cnt = 0;
+
+	/// Number of outstanding export memory accesses
+	int exp_cnt = 0;
+
+	/// Number of outstanding LDS, GLDS, or constant memory accesses
+	int lgkm_cnt = 0;
+};
 
 
 /// Class representing the wavefront pool in the compute unit front-end
@@ -43,6 +72,9 @@ public:
 	WavefrontPool(ComputeUnit *compute_unit) : compute_unit(compute_unit)
 	{
 	}
+
+	/// Return the associated compute unit
+	ComputeUnit *getComputeUnit() const { return compute_unit; }
 };
 
 }

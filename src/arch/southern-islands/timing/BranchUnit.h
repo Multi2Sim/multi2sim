@@ -94,6 +94,9 @@ public:
 	
 	/// Return whether the given uop is a branch instruction.
 	bool isValidUop(Uop *uop) const override;
+
+	/// Issue the given instruction into the branch unit.
+	void Issue(std::shared_ptr<Uop> uop) override;
 };
 
 }
