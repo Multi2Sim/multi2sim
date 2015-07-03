@@ -187,6 +187,9 @@ public:
 	/// Get finished_emu flag
 	bool getFinishedEmu() { return finished_emu; }
 
+	/// Get a pointer to the local memory of the work group
+	mem::Memory *getLocalMemory() { return &local_memory; }
+
 
 
 

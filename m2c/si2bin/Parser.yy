@@ -25,7 +25,7 @@
 #include <cassert>
 #include <cstring>
 
-//#include <arch/southern-islands/disassembler/Arg.h>
+//#include <arch/southern-islands/disassembler/Argument.h>
 #include <arch/southern-islands/disassembler/Binary.h>
 #include <lib/cpp/ELFWriter.h>
 #include <lib/cpp/Misc.h>
@@ -48,7 +48,7 @@
 %code requires {
 	#include <string>
 	#include <vector>
-	#include <arch/southern-islands/disassembler/Arg.h>
+	#include <arch/southern-islands/disassembler/Argument.h>
 	#include "Argument.h"
 	#include "Instruction.h"
 	#include "Context.h"
@@ -62,7 +62,7 @@
 	si2bin::Instruction *inst;
 	struct si_label_t *label;
 	si2bin::Argument *arg;
-	SI::Arg *si_arg;
+	SI::Argument *si_arg;
 	std::vector<si2bin::Argument *> *list;
 }
 
@@ -520,18 +520,18 @@ args_stmt_list
 args_stmt
 	: TOK_ID TOK_ID TOK_DECIMAL val_stmt_list
 	{
-		SI::Arg *arg = $4;
-		SI::ArgValue *arg_val = dynamic_cast<SI::ArgValue *>(arg);
+		SI::Argument *arg = $4;
+		SI::ValueArgument *arg_val = dynamic_cast<SI::ValueArgument *>(arg);
 		bool err;
 
 		
 		// Set argument name
-		arg_val->setName($2);
+		arg_val->name = $2;
 		
 		// Set arg fields
 		arg_val->setDataType(
-			static_cast<SI::ArgDataType>(
-			SI::arg_data_type_map.MapString($1, err)));
+			static_cast<SI::Argument::DataType>(
+			SI::Argument::data_type_map.MapString($1, err)));
 		if(err)
 			si2bin_yyerror_fmt("Unrecognized data type: %s", $1);
 
@@ -542,17 +542,17 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_ID TOK_DECIMAL val_stmt_list
 	{
-		SI::Arg *arg = $7;
-		SI::ArgValue *arg_val = dynamic_cast<SI::ArgValue *>(arg);
+		SI::Argument *arg = $7;
+		SI::ValueArgument *arg_val = dynamic_cast<SI::ValueArgument *>(arg);
 		bool err;
 
 		// Set argument name
-		arg_val->setName($5);
+		arg_val->name = $5;
 		
 		// Set argument fields
 		arg_val->setDataType(
-			static_cast<SI::ArgDataType>(
-			SI::arg_data_type_map.MapString($1, err)));
+			static_cast<SI::Argument::DataType>(
+			SI::Argument::data_type_map.MapString($1, err)));
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized data type: %s", $1);
 		
@@ -563,18 +563,18 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
-		SI::Arg *arg = $5;
-		SI::ArgPointer *arg_ptr = dynamic_cast<SI::ArgPointer *>(arg);
+		SI::Argument *arg = $5;
+		SI::PointerArgument *arg_ptr = dynamic_cast<SI::PointerArgument *>(arg);
 		bool err;
 
 		// Set new argument name
-		arg_ptr->setName($3);
+		arg_ptr->name = $3;
 		
 		// Initialize argument
 		arg_ptr->setNumElems(1);
 		arg_ptr->setDataType(
-			static_cast<SI::ArgDataType>(
-			SI::arg_data_type_map.MapString($1, err)));
+			static_cast<SI::Argument::DataType>(
+			SI::Argument::data_type_map.MapString($1, err)));
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized data type: %s", $1);
 
@@ -584,18 +584,18 @@ args_stmt
 	} TOK_NEW_LINE
 	| TOK_ID TOK_OBRA TOK_DECIMAL TOK_CBRA TOK_STAR TOK_ID TOK_DECIMAL ptr_stmt_list
 	{
-		SI::Arg *arg = $8;
-		SI::ArgPointer *arg_ptr = dynamic_cast<SI::ArgPointer *>(arg);
+		SI::Argument *arg = $8;
+		SI::PointerArgument *arg_ptr = dynamic_cast<SI::PointerArgument *>(arg);
 		bool err;
 
 		// Set new argument name
-		arg_ptr->setName($6);
+		arg_ptr->name = $6;
 		
 		// Initialize argument
 		arg_ptr->setNumElems($3);
 		arg_ptr->setDataType(
-			static_cast<SI::ArgDataType>(
-			SI::arg_data_type_map.MapString($1, err)));
+			static_cast<SI::Argument::DataType>(
+			SI::Argument::data_type_map.MapString($1, err)));
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized data type: %s", $1);
 		
@@ -609,7 +609,7 @@ args_stmt
 val_stmt_list
 	:
 	{
-		SI::Arg *arg;
+		SI::Argument *arg;
 		
 		// Get context instance
 		si2bin::Context *context;
@@ -617,16 +617,16 @@ val_stmt_list
 
 		/* Create an argument with defaults*/
 		arg = context->getMetadata()->newArgValue("arg",
-			static_cast<SI::ArgDataType>(0), 0, 0, 0);
+			static_cast<SI::Argument::DataType>(0), 0, 0, 0);
 
 		$$ = arg;
 	}
 	| val_stmt_list TOK_CONST
 	{
-		SI::Arg *arg = $1;
+		SI::Argument *arg = $1;
 
 		// set constarg field to true
-		arg->setConstArg(true);
+		arg->constarg = true;
 		
 		// Return argument
 		$$ = arg;
@@ -636,7 +636,7 @@ val_stmt_list
 ptr_stmt_list
 	:
 	{
-		SI::Arg *arg;
+		SI::Argument *arg;
 		
 		// Get context instance
 		si2bin::Context *context;
@@ -644,20 +644,20 @@ ptr_stmt_list
 
 		/* Create an argument with defaults*/
 		arg = context->getMetadata()->newArgPointer("arg", 
-			static_cast<SI::ArgDataType>(0), 0, 0, 0, 
-			SI::ArgScopeUAV, 12, 0, SI::ArgAccessTypeReadWrite);
+			static_cast<SI::Argument::DataType>(0), 0, 0, 0, 
+			SI::Argument::ScopeUAV, 12, 0, SI::Argument::AccessTypeReadWrite);
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_ID
 	{
-		SI::Arg *arg = $1;
-		SI::ArgPointer *arg_ptr = dynamic_cast<SI::ArgPointer *>(arg);
+		SI::Argument *arg = $1;
+		SI::PointerArgument *arg_ptr = dynamic_cast<SI::PointerArgument *>(arg);
 		bool err;
 
 		// Translate access type
 		arg_ptr->setAccessType(
-			static_cast<SI::ArgAccessType>(
-			SI::arg_access_type_map.MapString($2, err)));
+			static_cast<SI::Argument::AccessType>(
+			SI::Argument::access_type_map.MapString($2, err)));
 		if (err)
 			si2bin_yyerror_fmt("Unrecognized access type: %s", $2);
 		
@@ -665,22 +665,22 @@ ptr_stmt_list
 	}
 	| ptr_stmt_list TOK_UAV
 	{
-		SI::Arg *arg = $1;
-		SI::ArgPointer *arg_ptr = dynamic_cast<SI::ArgPointer *>(arg);
+		SI::Argument *arg = $1;
+		SI::PointerArgument *arg_ptr = dynamic_cast<SI::PointerArgument *>(arg);
 		
 		// Obtain UAV index
-		arg_ptr->setScope(SI::ArgScopeUAV);
+		arg_ptr->setScope(SI::Argument::ScopeUAV);
 		arg_ptr->setBufferNum(atoi($2 + 3));
 
 		$$ = arg;
 	}
 	| ptr_stmt_list TOK_HL
 	{
-		SI::Arg *arg = $1;
-		SI::ArgPointer *arg_ptr = dynamic_cast<SI::ArgPointer *>(arg);
+		SI::Argument *arg = $1;
+		SI::PointerArgument *arg_ptr = dynamic_cast<SI::PointerArgument *>(arg);
 	
 		// Set scope to hl
-		arg_ptr->setScope(SI::ArgScopeHwLocal);
+		arg_ptr->setScope(SI::Argument::ScopeHwLocal);
 		arg_ptr->setBufferNum(1);
 
 		// Return argument
@@ -688,10 +688,10 @@ ptr_stmt_list
 	}
 	| ptr_stmt_list TOK_CONST
 	{
-		SI::Arg *arg = $1;
+		SI::Argument *arg = $1;
 	
 		// set constarg field to true
-		arg->setConstArg(true);
+		arg->constarg = true;
 
 		// Return argument
 		$$ = arg;

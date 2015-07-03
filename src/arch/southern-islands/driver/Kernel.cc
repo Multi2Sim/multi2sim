@@ -130,9 +130,13 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
-			const char *data_type_string = (*token_list.begin()).c_str();
-			int data_type_int = arg_data_type_map.MapString(*token_list.begin(), err);
-			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
+			const char *data_type_string = 
+					(*token_list.begin()).c_str();
+			int data_type_int = Argument::data_type_map.MapString(
+					*token_list.begin(), err);
+			Argument::DataType data_type = 
+					static_cast<Argument::DataType>(
+					data_type_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid data "
 						"type: %s.\n%s",
@@ -149,22 +153,26 @@ void Kernel::LoadMetaDataV3()
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = misc::StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(
+					*token_list.begin());
 
 			// Token 5 - Constant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = misc::StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(
+					*token_list.begin());
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgValue(name, data_type, num_elems,
-				constant_buffer_num, constant_offset));
+			std::unique_ptr<SI::Argument> arg(
+					new SI::ValueArgument(
+					name, data_type, num_elems,
+					constant_buffer_num, constant_offset));
 
 			// Debug
-			Driver::debug << misc::fmt("\targument '%s' - value stored in "
-				"constant buffer %d at offset %d\n",
-				name.c_str(), constant_buffer_num,
-				constant_offset);
+			Driver::debug << misc::fmt("\targument '%s' - "
+				"value stored in constant buffer %d at "
+				"offset %d\n", name.c_str(), 
+				constant_buffer_num, constant_offset);
 
 			// Add argument and clear token list
 			arguments.push_back(std::move(arg));
@@ -186,9 +194,13 @@ void Kernel::LoadMetaDataV3()
 		
 			// Token 2 - Data type
 			token_list.erase(token_list.begin());
-			const char *data_type_string = (*token_list.begin()).c_str();
-			int data_type_int = arg_data_type_map.MapString(*token_list.begin(), err);
-			ArgDataType data_type = static_cast<ArgDataType>(data_type_int);
+			const char *data_type_string = 
+					(*token_list.begin()).c_str();
+			int data_type_int = Argument::data_type_map.MapString(
+					*token_list.begin(), err);
+			Argument::DataType data_type = 
+					static_cast<Argument::DataType>(
+					data_type_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid data "
 						"type: %s\n%s",
@@ -207,18 +219,24 @@ void Kernel::LoadMetaDataV3()
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = misc::StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(
+					*token_list.begin());
 
 			// Token 5 - Constant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = misc::StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(
+					*token_list.begin());
 
 			// Token 6 - Memory scope
 			token_list.erase(token_list.begin());
-			const char *arg_scope_string = (*token_list.begin()).c_str();
-			int arg_scope_int = arg_scope_map.MapString(*token_list.begin(), err);
-			ArgScope arg_scope = static_cast<ArgScope>(arg_scope_int);
+			const char *arg_scope_string = (
+					*token_list.begin()).c_str();
+			int arg_scope_int = Argument::scope_map.MapString(
+					*token_list.begin(), err);
+			Argument::Scope arg_scope = 
+					static_cast<Argument::Scope>(
+					arg_scope_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid scope: "
 						"%s\n%s", arg_scope_string,
@@ -236,12 +254,18 @@ void Kernel::LoadMetaDataV3()
 
 			// Token 9 - Access type
 			token_list.erase(token_list.begin());
-			const char *arg_access_type_string = (*token_list.begin()).c_str();
-			int access_type_int = arg_access_type_map.MapString(*token_list.begin(), err);
-			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
+			const char *arg_access_type_string = 
+					(*token_list.begin()).c_str();
+			int access_type_int = 
+					Argument::access_type_map.MapString(
+					*token_list.begin(), err);
+			Argument::AccessType access_type = 
+					static_cast<Argument::AccessType>(
+					access_type_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid access "
-						"type: %s\n%s", arg_access_type_string,
+						"type: %s\n%s", 
+						arg_access_type_string,
 						OpenCLErrSIKernelMetadata));
 
 			// Token 10 - ???
@@ -253,15 +277,18 @@ void Kernel::LoadMetaDataV3()
 			Expect(token_list, "0");
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgPointer(name, data_type, num_elems,
-				constant_buffer_num, constant_offset, arg_scope, buffer_num, alignment,
-				access_type));
+			std::unique_ptr<SI::Argument> 
+					arg(new SI::PointerArgument(name, 
+					data_type, num_elems, 
+					constant_buffer_num, constant_offset, 
+					arg_scope, buffer_num, alignment, 
+					access_type));
 			
 			// Debug
-			Driver::debug << misc::fmt("\targument '%s' - Pointer stored in "
-				"constant buffer %d at offset %d\n",
-				name.c_str(), constant_buffer_num,
-				constant_offset);
+			Driver::debug << misc::fmt("\targument '%s' - "
+				"Pointer stored in constant buffer %d at "
+				"offset %d\n", name.c_str(), 
+				constant_buffer_num, constant_offset);
 
 			// Add argument and clear token list
 			arguments.push_back(std::move(arg));
@@ -282,7 +309,9 @@ void Kernel::LoadMetaDataV3()
 			// Token 2 - Dimension
 			token_list.erase(token_list.begin());
 			int dimension = misc::StringToInt(*token_list.begin());
-			const char*dimension_string = arg_dimension_map.MapValue(dimension, err);
+			const char*dimension_string = 
+					Argument::dimension_map.MapValue(
+					dimension, err);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid image "
 						"dimensions: %s\n%s",
@@ -292,7 +321,9 @@ void Kernel::LoadMetaDataV3()
 			// Token 3 - Access type
 			token_list.erase(token_list.begin());
 			int access_type_int = misc::StringToInt(*token_list.begin());
-			ArgAccessType access_type = static_cast<ArgAccessType>(access_type_int);
+			Argument::AccessType access_type = 
+					static_cast<Argument::AccessType>(
+					access_type_int);
 			if (err)
 				throw Driver::Error(misc::fmt("Invalid access "
 						"type: %s\n%s", token.c_str(),
@@ -307,16 +338,19 @@ void Kernel::LoadMetaDataV3()
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
 			Expect(token_list, "1");
-			int constant_buffer_num = misc::StringToInt(*token_list.begin());
+			int constant_buffer_num = misc::StringToInt(
+					*token_list.begin());
 
-			// Token 6 - Conastant offset
+			// Token 6 - Constant offset
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			int constant_offset = misc::StringToInt(*token_list.begin());
+			int constant_offset = misc::StringToInt(
+					*token_list.begin());
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgImage(name, dimension, access_type,
-				uav, constant_buffer_num, constant_offset));
+			std::unique_ptr<SI::Argument> arg(new SI::ImageArgument(
+					name, dimension, access_type,uav, 
+					constant_buffer_num, constant_offset));
 
 			// Debug
 			Driver::debug << misc::fmt("\targument '%s' - Image stored in "
@@ -356,8 +390,9 @@ void Kernel::LoadMetaDataV3()
 			int value = misc::StringToInt(*token_list.begin());
 
 			// Create argument object
-			std::unique_ptr<SI::Arg> arg(new SI::ArgSampler(name, id, location,
-				value));
+			std::unique_ptr<SI::Argument> arg(
+					new SI::SamplerArgument(name, id, 
+					location, value));
 
 			// Add argument and clear token list
 			arguments.push_back(std::move(arg));
@@ -400,7 +435,8 @@ void Kernel::LoadMetaDataV3()
 				// Token 2 - Size of local memory
 				token_list.erase(token_list.begin());
 				ExpectInt(token_list);
-				this->local_memory_size = misc::StringToInt(*token_list.begin());
+				this->local_memory_size = misc::StringToInt(
+						*token_list.begin());
 			}
 			else if (token_list.front() == "datareqd")
 			{
@@ -439,7 +475,8 @@ void Kernel::LoadMetaDataV3()
 			// Token 2 - Function ID
 			token_list.erase(token_list.begin());
 			ExpectInt(token_list);
-			this->func_uniqueid = misc::StringToInt(*token_list.begin());
+			this->func_uniqueid = misc::StringToInt(
+					*token_list.begin());
 
 			// Next
 			token_list.clear();
@@ -580,7 +617,7 @@ void Kernel::LoadMetaData()
 void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		unsigned size,
 		int num_elems,
-		ArgDataType data_type,
+		Argument::DataType data_type,
 		WorkItem::BufferDescriptor *buffer_descriptor)
 {
 	int num_format;
@@ -597,8 +634,8 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 	switch (data_type)
 	{
 
-	case ArgDataTypeInt8:
-	case ArgDataTypeUInt8:
+	case Argument::DataTypeInt8:
+	case Argument::DataTypeUInt8:
 
 		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
@@ -623,8 +660,8 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		elem_size = 1 * num_elems;
 		break;
 
-	case ArgDataTypeInt16:
-	case ArgDataTypeUInt16:
+	case Argument::DataTypeInt16:
+	case Argument::DataTypeUInt16:
 
 		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
@@ -650,8 +687,8 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		elem_size = 2 * num_elems;
 		break;
 
-	case ArgDataTypeInt32:
-	case ArgDataTypeUInt32:
+	case Argument::DataTypeInt32:
+	case Argument::DataTypeUInt32:
 
 		num_format = Emulator::BufDescNumFmtSint;
 		switch (num_elems)
@@ -681,7 +718,7 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case ArgDataTypeFloat:
+	case Argument::DataTypeFloat:
 
 		num_format = Emulator::BufDescNumFmtFloat;
 		switch (num_elems)
@@ -710,7 +747,7 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		elem_size = 4 * num_elems;
 		break;
 
-	case ArgDataTypeDouble:
+	case Argument::DataTypeDouble:
 
 		num_format = Emulator::BufDescNumFmtFloat;
 		switch (num_elems)
@@ -730,7 +767,7 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 		}
 		elem_size = 8 * num_elems;
 		break;
-	case ArgDataTypeStruct:
+	case Argument::DataTypeStruct:
 
 		num_format = Emulator::BufDescNumFmtUint;
 		data_format = Emulator::BufDescDataFmt8;
@@ -772,11 +809,14 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 				name.c_str(), OpenCLErrSIKernelSymbol));
 
 	Driver::debug << misc::fmt("\tmetadata symbol: offset=0x%x, size=%u\n",
-			(unsigned)metadata_symbol->getValue(), (unsigned)metadata_symbol->getSize());
+			(unsigned)metadata_symbol->getValue(), 
+			(unsigned)metadata_symbol->getSize());
 	Driver::debug << misc::fmt("\theader symbol: offset=0x%x, size=%u\n",
-			(unsigned)header_symbol->getValue(), (unsigned)header_symbol->getSize());
+			(unsigned)header_symbol->getValue(), 
+			(unsigned)header_symbol->getSize());
 	Driver::debug << misc::fmt("\tkernel symbol: offset=0x%x, size=%u\n",
-			(unsigned)kernel_symbol->getValue(), (unsigned)kernel_symbol->getSize());
+			(unsigned)kernel_symbol->getValue(), 
+			(unsigned)kernel_symbol->getSize());
 
 	// Create and parse kernel binary (internal ELF).
 	// The internal ELF is contained in the buffer pointer to by
@@ -841,7 +881,8 @@ void Kernel::CreateNDRangeConstantBuffers(NDRange *ndrange)
 	mem::Memory *video_memory = emulator->getVideoMemory();                       
 
 	// Map new pages                                                         
-	video_memory->Map(emulator->getVideoMemoryTop(), NDRange::TotalConstBufSize,      
+	video_memory->Map(emulator->getVideoMemoryTop(), 
+			NDRange::TotalConstBufSize,    
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);     
 
 	// TODO - setup for timing simulator                                     
@@ -874,41 +915,46 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 	{
 		// Check that argument was set
 		assert(arg);
-		if (!arg->isSet())
+		if (!(arg->set))
 			throw Driver::Error(misc::fmt("Kernel '%s': "
 					"Argument '%s' is not set",
 					getName().c_str(),
-					arg->getName().c_str()));
+					arg->name.c_str()));
 
 		// Debug
 		Driver::debug << misc::fmt("\targ[%d] = %s ",
-				index, arg->getName().c_str());
+				index, arg->name.c_str());
 
 		// Process argument depending on its type
 		switch (arg->getType())
 		{
 
-		case ArgTypeValue:
+		case Argument::TypeValue:
 		{
-			ArgValue *arg_value = dynamic_cast<ArgValue *>(arg.get());
+			ValueArgument *arg_value = 
+					dynamic_cast<ValueArgument *>(
+					arg.get());
+
 			// Value copied directly into device constant memory
-			assert(arg_value->getSize());
+			assert(arg_value->size);
 			ndrange->ConstantBufferWrite(
 				arg_value->getConstantBufferNum(),
 				arg_value->getConstantOffset(),
-				arg_value->getValuePtr(), arg_value->getSize());
+				arg_value->getValue(), arg_value->size);
 			break;
 		}
 
-		case ArgTypePointer:
+		case Argument::TypePointer:
 		{
-			ArgPointer *arg_ptr = dynamic_cast<ArgPointer *>(arg.get());
+			PointerArgument *arg_ptr = 
+					dynamic_cast<PointerArgument *>(
+					arg.get());
 
 			switch (arg_ptr->getScope())
 			{
 
 			// Hardware local memory
-			case ArgScopeHwLocal:
+			case Argument::ScopeHwLocal:
 
 				// Pointer in __local scope.
 				// Argument value is always NULL, just assign
@@ -918,22 +964,24 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 					arg_ptr->getConstantOffset(),
 					ndrange->getLocalMemTopPtr(), 4);
 
-				Driver::debug << misc::fmt("%u bytes at 0x%x", arg_ptr->getSize(),
+				Driver::debug << misc::fmt("%u bytes at 0x%x", 
+					arg_ptr->size, 
 					ndrange->getLocalMemTop());
 
-				ndrange->incLocalMemTop(arg_ptr->getSize());
+				ndrange->incLocalMemTop(arg_ptr->size);
 
 				break;
 
 			// UAV
-			case ArgScopeUAV:
+			case Argument::ScopeUAV:
 			{
-				Driver::debug << misc::fmt("(0x%x)", arg_ptr->getDevicePtr());
+				Driver::debug << misc::fmt("(0x%x)", 
+						arg_ptr->getDevicePtr());
 
 				// Create descriptor for argument
 				CreateBufferDescriptor(
 					arg_ptr->getDevicePtr(),
-					arg_ptr->getSize(),
+					arg_ptr->size,
 					arg_ptr->getNumElems(),
 					arg_ptr->getDataType(), &buffer_descriptor);
 
@@ -952,13 +1000,14 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			}
 
 			// Hardware constant memory
-			case ArgScopeHwConstant:
+			case Argument::ScopeHwConstant:
 			{
 				CreateBufferDescriptor(
 					arg_ptr->getDevicePtr(),
-					arg_ptr->getSize(),
+					arg_ptr->size,
 					arg_ptr->getNumElems(),
-					arg_ptr->getDataType(), &buffer_descriptor);
+					arg_ptr->getDataType(), 
+					&buffer_descriptor);
 
 				// Data stored in hw constant memory
 				// uses a 4-byte stride
@@ -986,11 +1035,11 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 			break;
 		}
 
-		case ArgTypeImage:
+		case Argument::TypeImage:
 
 			throw misc::Panic("Type 'image' not implemented");
 
-		case ArgTypeSampler:
+		case Argument::TypeSampler:
 
 			throw misc::Panic("Type 'sampler' not implemented");
 
@@ -1057,14 +1106,14 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	// Constant buffer 0
 	CreateBufferDescriptor(ndrange->getConstBufferAddr(0),
 			NDRange::ConstBuf0Size,
-			1, ArgDataTypeInt32, &buffer_descriptor);
+			1, Argument::DataTypeInt32, &buffer_descriptor);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_descriptor, 0);
 
 	// Constant buffer 1
 	CreateBufferDescriptor(ndrange->getConstBufferAddr(1),
 			NDRange::ConstBuf1Size,
-			1, ArgDataTypeInt32, &buffer_descriptor);
+			1, Argument::DataTypeInt32, &buffer_descriptor);
 
 	ndrange->InsertBufferIntoConstantBufferTable(&buffer_descriptor, 1);
 
@@ -1093,7 +1142,7 @@ void Kernel::SetupNDRangeConstantBuffers(NDRange *ndrange)
 	ndrange->ConstantBufferWrite(0, 24,
 		ndrange->getLocalSizePtr(2), 4);
 
-	// 0 
+	// 0 `
 	ndrange->ConstantBufferWrite(0, 28, &zero, 4);
 
 	// CB0 bytes 32:47

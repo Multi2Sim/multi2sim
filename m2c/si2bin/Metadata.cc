@@ -20,7 +20,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 
 #include "Metadata.h"
 

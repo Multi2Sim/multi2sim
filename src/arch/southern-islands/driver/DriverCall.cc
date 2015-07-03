@@ -19,7 +19,7 @@
 
 #include <cassert>
 
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 #include <arch/southern-islands/emulator/Emulator.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
@@ -411,11 +411,12 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 		throw Error(misc::fmt("Invalid kernel ID (%d)", kernel_id));
 
 	// Get argument 
-	ArgValue *arg = dynamic_cast<ArgValue *>(kernel->getArgByIndex(index));
-	if (!arg || arg->getType() != ArgTypeValue)
+	ValueArgument *arg = dynamic_cast<ValueArgument *>(
+			kernel->getArgByIndex(index));
+	if (!arg || arg->getType() != Argument::TypeValue)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
-	debug << misc::fmt("\tname=%s\n", (arg->getName()).c_str());
+	debug << misc::fmt("\tname=%s\n", (arg->name).c_str());
 	
 	// Dynamically allocate value_ptr and release it so ownership can be
 	// taken by the unique pointer in class Arg
@@ -425,8 +426,8 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 
 	// Save value and size
 	arg->setValue(char_ptr);
-	arg->setSize(size);
-	arg->setSetFlag(true);
+	arg->size = size;
+	arg->set = true;
 
 	// No return value 
 	return 0;
@@ -486,14 +487,15 @@ int Driver::CallKernelSetArgPointer(comm::Context *context,
 		throw Error(misc::fmt("Invalid kernel ID (%d)", kernel_id));
 
 	// Get argument 
-	ArgPointer *arg = dynamic_cast<ArgPointer *>(kernel->getArgByIndex(index));
-	if (!arg || arg->getType() != ArgTypePointer)
+	PointerArgument *arg = dynamic_cast<PointerArgument *>(
+			kernel->getArgByIndex(index));
+	if (!arg || arg->getType() != Argument::TypePointer)
 		throw Error(misc::fmt("Invalid type for argument %d", index));
 
-	debug << misc::fmt("\tname=%s\n", (arg->getName()).c_str());
+	debug << misc::fmt("\tname=%s\n", (arg->name).c_str());
 	// Save value 
-	arg->setSetFlag(true);
-	arg->setSize(size);
+	arg->set = true;
+	arg->size = size;
 	arg->setDevicePtr(device_ptr);
 
 	// No return value 
