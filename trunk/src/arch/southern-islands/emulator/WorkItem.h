@@ -349,7 +349,7 @@ public:
 	///
 	/// \param wg Pointer of work-group where it belongs
 	///
-	void setWorkGroup(WorkGroup *wg) { work_group = wg; }
+	void setWorkGroup(WorkGroup *wg);
 
 	/// Set global memory
 	///

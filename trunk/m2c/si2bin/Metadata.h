@@ -23,7 +23,7 @@
 #include <memory>
 #include <vector>
 
-#include <arch/southern-islands/disassembler/Arg.h>
+#include <arch/southern-islands/disassembler/Argument.h>
 
 
 namespace si2bin
@@ -37,7 +37,7 @@ class Metadata
 {
 	friend class OuterBin;
 
-	std::vector<std::unique_ptr<SI::Arg>> arg_list;
+	std::vector<std::unique_ptr<SI::Argument>> arg_list;
 	
 	int uniqueid;
 	int uavprivate;
@@ -53,10 +53,10 @@ public:
 	/* Add args */
 
 	/* getters */
-	SI::Arg *getArg(unsigned int index) { return index < arg_list.size() ? 
+	SI::Argument *getArg(unsigned int index) { return index < arg_list.size() ? 
 			arg_list[index].get() : nullptr; }	
 	unsigned int getArgCount() { return arg_list.size(); }
-	const std::vector<std::unique_ptr<SI::Arg>> &getArgList() { return arg_list; }
+	const std::vector<std::unique_ptr<SI::Argument>> &getArgList() { return arg_list; }
 	int getUniqueId() { return uniqueid; }
 	int getUAVPrivate() { return uavprivate; }
 	int getHWRegion() { return hwregion; }
@@ -68,22 +68,27 @@ public:
 	void setHWRegion(int hwregion) { this->hwregion = hwregion; }
 	void setHWLocal(int hwlocal) { this->hwlocal = hwlocal; }
 	
-	SI::Arg *newArgValue(const std::string &name, SI::ArgDataType data_type,
-			int num_elems, int constant_buffer_num, int constant_offset)
+	SI::Argument *newArgValue(const std::string &name, 
+			SI::Argument::DataType data_type, int num_elems, 
+			int constant_buffer_num, int constant_offset)
 	{
-		arg_list.push_back(std::unique_ptr<SI::Arg>(new SI::ArgValue(name, data_type,
-				num_elems, constant_buffer_num, constant_offset)));
+		arg_list.push_back(std::unique_ptr<SI::Argument>(
+				new SI::ValueArgument(name, data_type,
+				num_elems, constant_buffer_num, 
+				constant_offset)));
 		return arg_list.back().get();
 	}
 	
-	SI::Arg *newArgPointer(const std::string &name, SI::ArgDataType data_type,
-			int num_elems, int constant_buffer_num, int constant_offset,
-			SI::ArgScope scope, int buffer_num, int alignment,
-			SI::ArgAccessType access_type)
+	SI::Argument *newArgPointer(const std::string &name, 
+			SI::Argument::DataType data_type, int num_elems, 
+			int constant_buffer_num, int constant_offset,
+			SI::Argument::Scope scope, int buffer_num, int alignment,
+			SI::Argument::AccessType access_type)
 	{
-		arg_list.push_back(std::unique_ptr<SI::Arg>(new SI::ArgPointer(name, data_type,
-				num_elems, constant_buffer_num, constant_offset, scope, buffer_num,
-				alignment, access_type)));
+		arg_list.push_back(std::unique_ptr<SI::Argument>(
+				new SI::PointerArgument(name, data_type, 
+				num_elems, constant_buffer_num, constant_offset,
+				scope, buffer_num, alignment, access_type)));
 		return arg_list.back().get();
 	}
 };

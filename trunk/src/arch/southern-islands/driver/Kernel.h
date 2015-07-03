@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include <src/arch/southern-islands/disassembler/Arg.h>
+#include <src/arch/southern-islands/disassembler/Argument.h>
 #include <src/arch/southern-islands/disassembler/Binary.h>
 #include <src/arch/southern-islands/emulator/WorkItem.h>
 
@@ -53,7 +53,7 @@ class Kernel
 	ELFReader::Symbol *kernel_symbol = nullptr;
 
 	// List of kernel arguments
-	std::vector<std::unique_ptr<Arg>> arguments;
+	std::vector<std::unique_ptr<Argument>> arguments;
 
 	// AMD kernel binary (internal ELF)
 	std::unique_ptr<Binary> binary_file;
@@ -85,7 +85,7 @@ class Kernel
 			unsigned base_addr, 
 			unsigned size, 
 			int num_elems,
-			ArgDataType data_type,
+			Argument::DataType data_type,
 			WorkItem::BufferDescriptor *buffer_descriptor);
 
 public:
@@ -104,10 +104,10 @@ public:
 	Program *getProgram() const { return program; }
 
 	/// Get reference of arguments list
-	std::vector<std::unique_ptr<Arg>> &getArgs() { return arguments; }
+	std::vector<std::unique_ptr<Argument>> &getArgs() { return arguments; }
 
 	/// Get pointer of an argument by index in arguments list
-	Arg *getArgByIndex(unsigned idx) { return arguments[idx].get(); }
+	Argument *getArgByIndex(unsigned idx) { return arguments[idx].get(); }
 
 	/// Get count of arguments
 	unsigned getNumArguments() const { return arguments.size(); }

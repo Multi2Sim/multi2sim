@@ -22,113 +22,114 @@
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Misc.h>
 
-#include "Arg.h"
+#include "Argument.h"
 #include "Disassembler.h"
 
 
 namespace SI
 {
 
-misc::StringMap arg_dimension_map =
+// String map of the argument's access type
+const misc::StringMap Argument::access_type_map = 
+{
+	{ "RO", AccessTypeReadOnly },
+	{ "WO", AccessTypeWriteOnly },
+	{ "RW", AccessTypeReadWrite }
+};
+
+// String map of the argument's scope
+const misc::StringMap Argument::scope_map = 
+{
+	{ "g", ScopeGlobal },
+	{ "p", ScopeEmuPrivate },
+	{ "l", ScopeEmuLocal },
+	{ "uav", ScopeUAV },
+	{ "c", ScopeEmuConstant },
+	{ "r", ScopeEmuGDS },
+	{ "hl", ScopeHwLocal },
+	{ "hp", ScopeHwPrivate },
+	{ "hc", ScopeHwConstant },
+	{ "hr", ScopeHwGDS }
+};
+
+// String map of the argument's data type
+const misc::StringMap Argument::data_type_map = 
+{
+	{ "i1", DataTypeInt1 },
+	{ "i8", DataTypeInt8 },
+	{ "i16", DataTypeInt16 },
+	{ "i32", DataTypeInt32 },
+	{ "i64", DataTypeInt64 },
+	{ "u1", DataTypeUInt1 },
+	{ "u8", DataTypeUInt8 },
+	{ "u16", DataTypeUInt16 },
+	{ "u32", DataTypeUInt32 },
+	{ "u64", DataTypeUInt64 },
+	{ "float", DataTypeFloat },
+	{ "double", DataTypeDouble },
+	{ "struct", DataTypeStruct },
+	{ "union", DataTypeUnion },
+	{ "event", DataTypeEvent },
+	{ "opaque", DataTypeOpaque }
+};
+
+// String map of the argument's dimension (2D or 3D)
+const misc::StringMap Argument::dimension_map =
 {
 	{ "2D", 2 },
 	{ "3D", 3 }
 };
 
-
-misc::StringMap arg_access_type_map =
+// String map of the argument's reflection for each data type
+// FIXME: Still need to figure out reflection for i1 and u1
+const misc::StringMap Argument::reflection_map =
 {
-	{ "RO", ArgAccessTypeReadOnly },
-	{ "WO", ArgAccessTypeWriteOnly },
-	{ "RW", ArgAccessTypeReadWrite }
-};
-
-
-misc::StringMap arg_data_type_map =
-{
-	{ "i1", ArgDataTypeInt1 },
-	{ "i8", ArgDataTypeInt8 },
-	{ "i16", ArgDataTypeInt16 },
-	{ "i32", ArgDataTypeInt32 },
-	{ "i64", ArgDataTypeInt64 },
-	{ "u1", ArgDataTypeUInt1 },
-	{ "u8", ArgDataTypeUInt8 },
-	{ "u16", ArgDataTypeUInt16 },
-	{ "u32", ArgDataTypeUInt32 },
-	{ "u64", ArgDataTypeUInt64 },
-	{ "float", ArgDataTypeFloat },
-	{ "double", ArgDataTypeDouble },
-	{ "struct", ArgDataTypeStruct },
-	{ "union", ArgDataTypeUnion },
-	{ "event", ArgDataTypeEvent },
-	{ "opaque", ArgDataTypeOpaque }
-};
-
-
-misc::StringMap arg_scope_map =
-{
-	{ "g", ArgScopeGlobal },
-	{ "p", ArgScopeEmuPrivate },
-	{ "l", ArgScopeEmuLocal },
-	{ "uav", ArgScopeUAV },
-	{ "c", ArgScopeEmuConstant },
-	{ "r", ArgScopeEmuGDS },
-	{ "hl", ArgScopeHwLocal },
-	{ "hp", ArgScopeHwPrivate },
-	{ "hc", ArgScopeHwConstant },
-	{ "hr", ArgScopeHwGDS }
-};
-
-
-/* FIXME: Still need to figure out reflection for i1 and u1 */
-misc::StringMap arg_reflection_map =
-{
-	{ "char", ArgDataTypeInt8 },
-	{ "short", ArgDataTypeInt16 },
-	{ "int", ArgDataTypeInt32 },
-	{ "long", ArgDataTypeInt64 },
-	{ "uchar", ArgDataTypeUInt8 },
-	{ "ushort", ArgDataTypeUInt16 },
-	{ "uint", ArgDataTypeUInt32 },
-	{ "ulong", ArgDataTypeUInt64 },
-	{ "float", ArgDataTypeFloat },
-	{ "double", ArgDataTypeDouble },
-	{ "struct", ArgDataTypeStruct },
-	{ "union", ArgDataTypeUnion },
-	{ "event", ArgDataTypeEvent },
-	{ "opaque", ArgDataTypeOpaque }
+	{ "char", DataTypeInt8 },
+	{ "short", DataTypeInt16 },
+	{ "int", DataTypeInt32 },
+	{ "long", DataTypeInt64 },
+	{ "uchar", DataTypeUInt8 },
+	{ "ushort", DataTypeUInt16 },
+	{ "uint", DataTypeUInt32 },
+	{ "ulong", DataTypeUInt64 },
+	{ "float", DataTypeFloat },
+	{ "double", DataTypeDouble },
+	{ "struct", DataTypeStruct },
+	{ "union", DataTypeUnion },
+	{ "event", DataTypeEvent },
+	{ "opaque", DataTypeOpaque }
 };
 
 
 /* Infer argument size from its data type */
-int Arg::getDataSize(ArgDataType data_type)
+int Argument::getDataSize(DataType data_type)
 {
 	switch (data_type)
 	{
 
-	case ArgDataTypeInt8:
-	case ArgDataTypeUInt8:
-	case ArgDataTypeStruct:
-	case ArgDataTypeUnion:
-	case ArgDataTypeEvent:
-	case ArgDataTypeOpaque:
+	case DataTypeInt8:
+	case DataTypeUInt8:
+	case DataTypeStruct:
+	case DataTypeUnion:
+	case DataTypeEvent:
+	case DataTypeOpaque:
 
 		return 1;
 
-	case ArgDataTypeInt16:
-	case ArgDataTypeUInt16:
+	case DataTypeInt16:
+	case DataTypeUInt16:
 
 		return 2;
 
-	case ArgDataTypeInt32:
-	case ArgDataTypeUInt32:
-	case ArgDataTypeFloat:
+	case DataTypeInt32:
+	case DataTypeUInt32:
+	case DataTypeFloat:
 
 		return 4;
 
-	case ArgDataTypeInt64:
-	case ArgDataTypeUInt64:
-	case ArgDataTypeDouble:
+	case DataTypeInt64:
+	case DataTypeUInt64:
+	case DataTypeDouble:
 
 		return 8;
 
@@ -140,15 +141,15 @@ int Arg::getDataSize(ArgDataType data_type)
 }
 
 
-void ArgPointer::Dump(std::ostream &os)
+void PointerArgument::Dump(std::ostream &os)
 {
-	os << arg_data_type_map.MapValue(data_type);
+	os << data_type_map.MapValue(data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
-	os << "* " << getName();
+	os << "* " << name;
 }
 
-void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+void PointerArgument::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
 	std::string data_type_str;
@@ -160,14 +161,14 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 	int data_size;
 
 
-	data_type_str = arg_data_type_map.MapValue(getDataType());
-	data_size = Arg::getDataSize(data_type) * num_elems;
-	scope_str = arg_scope_map.MapValue(getScope());
-	access_type_str = arg_access_type_map.MapValue(getAccessType());
+	data_type_str = data_type_map.MapValue(getDataType());
+	data_size = Argument::getDataSize(data_type) * num_elems;
+	scope_str = scope_map.MapValue(getScope());
+	access_type_str = access_type_map.MapValue(getAccessType());
 
 	line =
 		";pointer:" + 
-		getName() + ":" + data_type_str + ":1:" +
+		name + ":" + data_type_str + ":1:" +
 		std::to_string(constant_buffer_num) + ":" +
 		std::to_string(constant_offset) + ":" + scope_str + ":" +
 		std::to_string(buffer_num) + ":" + std::to_string(data_size) + ":" +
@@ -179,13 +180,13 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 		throw Disassembler::Error(misc::fmt("16 byte alignment not maintained "
 				"in argument: %s - Expected offset of %d or "
 				"higher",
-				getName().c_str(),
+				name.c_str(),
 				offset + 16));
 
 	offset = constant_offset;
 
 	/* Mark which uav's are being used */
-	if (scope == ArgScopeUAV
+	if (scope == ScopeUAV
 			&& !(uav[buffer_num]))
 	{
 		uav[buffer_num] = 1;
@@ -194,20 +195,21 @@ void ArgPointer::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 	buffer->Write(line.c_str(), line.size());
 
 	/* Include const_arg line only if pointer is marked with "const" */
-	if (getConstArg())
+	if (constarg)
 	{
-		line = ";constarg:" + std::to_string(index) + ":" + getName() + "\n";
+		line = ";constarg:" + std::to_string(index) + ":" + name + "\n";
 		buffer->Write(line.c_str(), line.size());
 	}
 
 }
 
-void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+void PointerArgument::WriteReflection(ELFWriter::Buffer *buffer, 
+		unsigned int index)
 {
 	std::string line;
 	std::string reflection;
 
-	reflection = arg_reflection_map.MapValue(getDataType());
+	reflection = reflection_map.MapValue(getDataType());
 
 	if (num_elems == 1)
 	{
@@ -225,33 +227,33 @@ void ArgPointer::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	else
 	{
 		throw Disassembler::Error("Invalid number of elements in argument " +
-				getName());
+				name);
 	}
 
 	buffer->Write(line.c_str(), line.size());
 
 }
 
-void ArgValue::Dump(std::ostream &os)
+void ValueArgument::Dump(std::ostream &os)
 {
-	os << arg_data_type_map.MapValue(data_type);
+	os << data_type_map.MapValue(data_type);
 	if (num_elems > 1)
 		os << '[' << num_elems << ']';
-	os << ' ' << getName();
+	os << ' ' << name;
 }
 
 
-void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+void ValueArgument::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
 	
 	std::string data_type_str;
 	std::string line;
 
-	data_type_str = arg_data_type_map.MapValue(getDataType());
+	data_type_str = data_type_map.MapValue(getDataType());
 
 	line = 
-		";value:" + getName() + ":" +
+		";value:" + name + ":" +
 		data_type_str + ":" + std::to_string(num_elems) + ":" +
 		std::to_string(constant_buffer_num) + ":" +
 		std::to_string(constant_offset) + "\n";
@@ -261,7 +263,7 @@ void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 		throw Disassembler::Error(misc::fmt("16 byte alignment not maintained "
 				"in argument: %s - Expected offset of %d or "
 				"higher",
-				getName().c_str(),
+				name.c_str(),
 				offset + 16));
 
 	offset = constant_offset;
@@ -269,22 +271,22 @@ void ArgValue::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index,
 	buffer->Write(line.c_str(), line.size());
 
 	/* Include const_arg line only if pointer is marked with "const" */
-	if (getConstArg())
+	if (constarg)
 	{
-		line = ";constarg:" + std::to_string(index) + ":" + getName() + "\n";
+		line = ";constarg:" + std::to_string(index) + ":" + name + "\n";
 
 		buffer->Write(line.c_str(), line.size());
 	}
 
 }
 
-void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+void ValueArgument::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 {
 
 	std::string line;
 	std::string reflection;
 
-	reflection = arg_reflection_map.MapValue(getDataType());
+	reflection = reflection_map.MapValue(getDataType());
 
 	if (num_elems == 1)
 	{
@@ -302,7 +304,7 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 	else
 	{
 		throw Disassembler::Error("Invalid number of elements in argument "
-				+ getName());
+				+ name);
 	}
 
 	buffer->Write(line.c_str(), line.size());
@@ -310,42 +312,42 @@ void ArgValue::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 }
 
 
-void ArgImage::Dump(std::ostream &os)
+void ImageArgument::Dump(std::ostream &os)
 {
-	os << arg_dimension_map.MapValue(dimension);
+	os << dimension_map.MapValue(dimension);
 	if (dimension > 1)
 		os << '[' << dimension << ']';
-	os << ' ' << getName();
+	os << ' ' << name;
 }
 
 
-void ArgImage::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+void ImageArgument::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
 	throw misc::Panic("Not implemented");
 }
 
 
-void ArgImage::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+void ImageArgument::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 {
 	throw misc::Panic("Not implemented");
 }
 
 
-void ArgSampler::Dump(std::ostream &os)
+void SamplerArgument::Dump(std::ostream &os)
 {
 	throw misc::Panic("Not implemented");
 }
 
 
-void ArgSampler::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
+void SamplerArgument::WriteInfo(ELFWriter::Buffer *buffer, unsigned int index, 
 		unsigned int &offset, int *uav)
 {
 	throw misc::Panic("Not implemented");
 }
 
 
-void ArgSampler::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
+void SamplerArgument::WriteReflection(ELFWriter::Buffer *buffer, unsigned int index)
 {
 	throw misc::Panic("Not implemented");
 }
@@ -385,4 +387,4 @@ SIArg * SIArgCopy(SIArg *original)
 }
 #endif
 
-}  /* namespace SI */
+}  // namespace SI
