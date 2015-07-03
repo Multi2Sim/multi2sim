@@ -145,8 +145,10 @@ bool Emulator::Run()
 			}
 			thread_block.get()->setFinishedEmu(true);
 			grid->PopRunningThreadBlock();
-			grid->PushFinishedThreadBlock
-				(std::move(std::unique_ptr<ThreadBlock>(thread_block.release())));
+			// Fixme Delete directly?
+			//grid->PushFinishedThreadBlock
+			//(std::move(std::unique_ptr<ThreadBlock>(thread_block.release())));
+			thread_block.reset(); // free the memory of thread block
 		}
 		finished_grids.push_back(grid);
 	}
