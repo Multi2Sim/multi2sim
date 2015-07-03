@@ -463,6 +463,23 @@ struct InstBytesIADD
 };
 
 
+// IADD32I
+struct InstBytesIADD32I
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src: 		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int imm32: 	 	 32; // 54:23
+	unsigned long long int cc: 			  1; // 55
+	unsigned long long int x:			  1; // 56
+	unsigned long long int sat:			  1; // 57
+	unsigned long long int po:			  2; // 59:58
+	unsigned long long int op1:			  4; // 63:60
+};
+
+
 // IMUL
 struct InstBytesIMUL
 {
@@ -519,6 +536,149 @@ struct InstBytesISAD
 };
 
 
+// I2F
+struct InstBytesI2F
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int d_fmt:	  	  2; // 11:10
+	unsigned long long int s_fmt:		  2; // 13:12
+	unsigned long long int unused1:		  1; // 14
+	unsigned long long int src_signed: 	  1; // 15
+	unsigned long long int unused2:       2; // 17:16
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src: 	 	 19; // 41:23
+	unsigned long long int round:         2; // 43:42
+	unsigned long long int extract: 	  2; // 45:44
+	unsigned long long int unused3:       2; // 47:46
+	unsigned long long int src_negate:    1; // 48
+	unsigned long long int unused4:       1; // 49
+	unsigned long long int cc:            1; // 50
+	unsigned long long int unused5: 	  1; // 51
+	unsigned long long int src_abs:		  1; // 52
+	unsigned long long int unused6:       1; // 53
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// I2I
+struct InstBytesI2I
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int d_fmt:	  	  2; // 11:10
+	unsigned long long int s_fmt:		  2; // 13:12
+	unsigned long long int dst_signed:	  1; // 14
+	unsigned long long int src_signed: 	  1; // 15
+	unsigned long long int unused1:       2; // 17:16
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src: 	 	 19; // 41:23
+	unsigned long long int unused2:       2; // 43:42
+	unsigned long long int extract: 	  2; // 45:44
+	unsigned long long int unused3:       2; // 47:46
+	unsigned long long int src_negate:    1; // 48
+	unsigned long long int unused4:       1; // 49
+	unsigned long long int cc:            1; // 50
+	unsigned long long int unused5: 	  1; // 51
+	unsigned long long int src_abs:		  1; // 52
+	unsigned long long int sat:           1; // 53
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// F2I
+struct InstBytesF2I
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int d_fmt:	  	  2; // 11:10
+	unsigned long long int s_fmt:		  2; // 13:12
+	unsigned long long int dst_singed:	  1; // 14
+	unsigned long long int unused1: 	  3; // 17:15
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src: 	 	 19; // 41:23
+	unsigned long long int round:         2; // 43:42
+	unsigned long long int extract: 	  1; // 44
+	unsigned long long int unused3:       2; // 46:45
+	unsigned long long int ftz:			  1; // 47
+	unsigned long long int src_negate:    1; // 48
+	unsigned long long int unused4:       1; // 49
+	unsigned long long int cc:            1; // 50
+	unsigned long long int unused5: 	  1; // 51
+	unsigned long long int src_abs:		  1; // 52
+	unsigned long long int unused6:       1; // 53
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// F2F
+struct InstBytesF2F
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int d_fmt:	  	  2; // 11:10
+	unsigned long long int s_fmt:		  2; // 13:12
+	unsigned long long int unused1:		  4; // 17:14
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src: 	 	 19; // 41:23
+	unsigned long long int round:         2; // 43:42
+	unsigned long long int extract: 	  1; // 44
+	unsigned long long int pass:          1; // 45
+	unsigned long long int unused2:       1; // 46
+	unsigned long long int ftz:           1; // 47
+	unsigned long long int src_negate:    1; // 48
+	unsigned long long int unused3:       1; // 49
+	unsigned long long int cc:            1; // 50
+	unsigned long long int unused4: 	  1; // 51
+	unsigned long long int src_abs:		  1; // 52
+	unsigned long long int sat:           1; // 53
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// MUFU
+struct InstBytesMUFU
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src:			  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int mufu_op:       4; // 26:23
+	unsigned long long int unused1:      22; // 48:27
+	unsigned long long int src_abs:       1; // 49
+	unsigned long long int unused2:       1; // 50
+	unsigned long long int src_negate:    1; // 51
+	unsigned long long int unused3:       1; // 52
+	unsigned long long int sat:           1; // 53
+	unsigned long long int op1:	          5; // 58:54
+	unsigned long long int op2:			  5; // 63:59
+};
+
+
+// SEL
+struct InstBytesSEL
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2:         19; // 41:23
+	unsigned long long int pred_src:      4; // 45:42
+	unsigned long long int unused1:       8; // 53:46
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
 union InstBytes
 {
 	unsigned char as_uchar[8];
@@ -541,9 +701,16 @@ union InstBytes
 	InstBytesPCNT	  pcnt;
 	InstBytesCAL      cal;
 	InstBytesIADD     iadd;
+	InstBytesIADD32I  iadd32i;
 	InstBytesIMUL     imul;
 	InstBytesISAD     isad;
 	InstBytesISCADD   iscadd;
+	InstBytesI2F      i2f;
+	InstBytesI2I      i2i;
+	InstBytesF2F	  f2f;
+	InstBytesF2I	  f2i;
+	InstBytesMUFU     mufu;
+	InstBytesSEL      sel;
 };
 
 
