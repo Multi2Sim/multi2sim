@@ -3268,6 +3268,9 @@ void System::EventInvalidateHandler(esim::Event *event,
 				// Skip mid-block sub-blocks
 				if (directory_entry_tag % sharer->getBlockSize())
 					continue;
+
+				// One more pending request
+				frame->pending++;
 				
 				// Send write request upwards if beginning of block
 				auto new_frame = misc::new_shared<Frame>(
@@ -3355,7 +3358,7 @@ void System::EventMessageHandler(esim::Event *event,
 		parent_frame->error = false;
 
 		// Checks
-		assert(frame->message);
+		assert(frame->message_type != Frame::MessageNone);
 
 		// Get source and destination node
 		net::Network *network = module->getLowNetwork();
