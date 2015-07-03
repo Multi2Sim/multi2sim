@@ -100,7 +100,12 @@ DEFINST(IADD_B,
                 0x00,
                 0x02)
 
-
+DEFINST(IADD32I,
+		"IADD32I",
+		0x01,
+		0x01,
+		0x00)
+		
 DEFINST(ISETP_A,
 		"%pred0 ISETP%f%U32%x%and%s %pred1, %pred2, %srcA, %srcB, %pred3;",
 		0x02,
@@ -162,8 +167,77 @@ DEFINST(MOV32I,
 		0x06,
 		0x04,
 		0x00)
+		
+DEFINST(SEL_A,
+		"SEL_A",
+		0x01,
+		0x03,
+		0x00,
+		0x14)	
+		
+DEFINST(SEL_B,
+		"SEL_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x14)
+		
+DEFINST(I2F_A,
+		"I2F_A",
+		0x01,
+		0x03,
+		0x00,
+		0x17)
+			
+DEFINST(I2F_B,
+		"I2F_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x17)
+		
+DEFINST(I2I_A,
+		"I2I_A",
+		0x01,
+		0x03,
+		0x00,
+		0x18)
+		
+DEFINST(I2I_B,
+		"I2I_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x18)
 
+DEFINST(F2I_A,
+		"F2I_A",
+		0x01,
+		0x03,
+		0x00,
+		0x16)
 
+DEFINST(F2I_B,
+		"F2I_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x16)
+		
+DEFINST(F2F_A,
+		"F2F_A",
+		0x01,
+		0x03,
+		0x00,
+		0x15)
+
+DEFINST(F2F_B,
+		"F2F_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x15)
+				
 /* Load/Store catogory instructions:
  * LD, ST
  */
@@ -243,6 +317,16 @@ DEFINST(FADD,
 		0x0c,
 		0x0b)
 
+DEFINST(MUFU,
+		"MUFU",
+		0x02,
+		0x01,
+		0x00,
+		0x02,
+		0x00,
+		0x01,
+		0x00)
+		
 /* Misc catogory instructions:
  * S2R, NOP
  */
