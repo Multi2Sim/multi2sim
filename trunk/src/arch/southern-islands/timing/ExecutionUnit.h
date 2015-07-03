@@ -67,8 +67,10 @@ public:
 	/// implement.
 	virtual bool canIssue() const = 0;
 
-	/// Issue the given uop into the execution unit
-	void Issue(std::shared_ptr<Uop> uop);
+	/// Issue the given uop into the execution unit. Child classes can
+	/// override this function to extend its behavior, but should invoke the
+	/// parent class function, too.
+	virtual void Issue(std::shared_ptr<Uop> uop);
 
 	/// Return the number of instructions currently present in the isseu
 	/// buffer.

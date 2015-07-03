@@ -21,6 +21,7 @@
 
 #include "ComputeUnit.h"
 #include "Uop.h"
+#include "WavefrontPool.h"
 
 
 namespace SI
@@ -29,13 +30,14 @@ namespace SI
 long long Uop::id_counter = 0;
 
 
-Uop::Uop(Wavefront *wavefront, ComputeUnit *compute_unit) :
+Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry) :
 		wavefront(wavefront),
-		compute_unit(compute_unit)
+		wavefront_pool_entry(wavefront_pool_entry)
 {
 	// Assign unique identifier
 	id = ++id_counter;
 	id_in_wavefront = wavefront->getUopId();
+	compute_unit = wavefront_pool_entry->getWavefrontPool()->getComputeUnit();
 	id_in_compute_unit = compute_unit->getUopId();
 }
 

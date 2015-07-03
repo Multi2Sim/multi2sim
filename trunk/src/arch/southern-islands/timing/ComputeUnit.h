@@ -142,6 +142,21 @@ public:
 
 	/// Cache used for scalar data
 	mem::Module *scalar_cache = nullptr;
+
+
+
+	//
+	// Statistics
+	//
+
+	// Number of issued branch instructions
+	long long num_branch_instructions = 0;
+
+	// Number of issued scalar memory instructions
+	long long num_scalar_memory_instructions = 0;
+
+	// Number of issued scalar ALU instructions
+	long long num_scalar_alu_instructions = 0;
 };
 
 }
