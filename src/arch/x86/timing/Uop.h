@@ -32,6 +32,7 @@ namespace x86
 {
 
 // Forward declarations
+class Core;
 class Thread;
 
 
@@ -40,17 +41,34 @@ class Uop
 {
 private:
 
-	// Unique ID
-	long long id = 0;
+	//
+	// Static fields
+	//
 
-	// Unique ID in core
-	long long id_in_core = 0;
+	// Counter used to assign unique global uop identifiers
+	static long long id_counter;
 
-	// Thread the Uop belongs to
-	Thread *thread = nullptr;
+
+
+
+	//
+	// Class members
+	//
+
+	// Globally unique uop identifier, initialized in constructor
+	long long id;
+
+	// Unique identifier of uop in core, initialized in constructor
+	long long id_in_core;
+
+	// Thread that the uop belongs to, initialized in constructor
+	Thread *thread;
+
+	// Core that the uop belongs to, initialized in constructor
+	Core *core;
 
 	// Micro-instruction
-	UInst *uinst = nullptr;
+	Uinst *uinst = nullptr;
 
 	// Context
 	Context *context = nullptr;
@@ -79,15 +97,6 @@ private:
 
 	// Flag telling if micro-operation is in speculative mode
 	bool speculative_mode = false;
-
-	// Physical address of memory access to fetch this instruction
-	unsigned int fetch_address = 0;
-
-	// Access identifier to fetch this instruction
-	long long fetch_access_id = 0;
-
-	// Flag telling if uop came from trace cache
-	bool is_from_trace_cache = false;
 
 
 
@@ -128,11 +137,6 @@ private:
 	// Physical mappings
 	//
 
-	// Input dependency count for Physical INT/FP/XMM registers
-	int phy_int_idep_count = 0;
-	int phy_fp_idep_count = 0;
-	int phy_xmm_idep_count = 0;
-
 	// Output dependency count for Physical INT/FP/XMM registers
 	int phy_int_odep_count = 0;
 	int phy_fp_odep_count = 0;
@@ -146,37 +150,6 @@ private:
 
 	// Old output dependency physical register table
 	int phy_oodep[UInstMaxODeps];
-
-
-
-
-	//
-	// Queues where instruction is
-	//
-
-	// Is in fetch queue
-	bool in_fetch_queue = false;
-
-	// Is in Uop queue
-	bool in_uop_queue = false;
-
-	// Is in instruction queue
-	bool in_instruction_queue = false;
-
-	// Is in load queue
-	bool in_load_queue = false;
-
-	// Is in store queue
-	bool in_store_queue = false;
-
-	// Is in event queue
-	bool in_event_queue = false;
-
-	// Is in reorder buffer
-	bool in_reorder_buffer = false;
-
-	// Is in Uop trace list
-	bool in_uop_trace_list = false;
 
 
 
@@ -242,8 +215,8 @@ public:
 	/// Constructor for Unit test
 	Uop();
 
-	/// Override constructor
-	Uop(int id, int id_in_core, Thread *thread);
+	/// Constructor
+	Uop(Thread *thread);
 
 	/// Dump Uop information
 	void Dump();
@@ -258,22 +231,10 @@ public:
 	//
 
 	/// Set micro-instruction associated with this Uop
-	void setThread(Thread *thread) {this->thread = thread; }
-
-	/// Set micro-instruction associated with this Uop
-	void setUInst(UInst *uinst) {this->uinst = uinst; }
-
-	/// Set micro-instruction associated with this Uop
-	void setContext(Context *context) {this->context = context; }
+	void setUInst(Uinst *uinst) {this->uinst = uinst; }
 
 	/// Set flags
 	void setFlags(int flags) { this->flags = flags; }
-
-	/// Set ID
-	void setID(int id) { this->id = id; }
-
-	/// set ID in core
-	void setIdInCore(int id_in_core) { this->id_in_core = id_in_core; }
 
 	/// Set global prediction
 	void setPrediction(BranchPredictor::Prediction pred)
@@ -287,23 +248,8 @@ public:
 	/// Set EIP
 	void setEip(unsigned int eip) { this->eip = eip; }
 
-	/// Set predicted next EIP
-	void setPredictedNeip(unsigned int addr) { this->predicted_neip = addr; }
-
-	/// Set Target EIP
-	void setTargetNeip(unsigned int addr) { this->target_neip = addr; }
-
 	/// Set Macro-Operation size
 	void setMopSize(int mop_size) { this->mop_size = mop_size; }
-
-	/// Set Uop counts of a particular Macro-operation
-	void setMopCount(int mop_count) { this->mop_count = mop_count; }
-
-	/// Set Macro-Operation index
-	void setMopIndex(int mop_index) { this->mop_index = mop_index; }
-
-	/// Set Macro-Operation ID
-	void setMopId(long long mop_id) { this->mop_id = mop_id;}
 
 	/// Set bimodal index
 	void setBimodIndex(int bimod_index) { this->bimod_index = bimod_index; }
@@ -338,33 +284,6 @@ public:
 		this->choice_pred = pred;
 	}
 
-	/// Set speculative mode
-	void setSpeculativeMode(bool speculative_mode) { this->speculative_mode = speculative_mode; }
-
-	/// Set fetch address
-	void setFetchAddress(int fetch_address) { this->fetch_address = fetch_address; }
-
-	/// set fetch access identifier
-	void setFetchAccessId(long long fetch_access_id) { this->fetch_access_id = fetch_access_id; }
-
-	/// Set input dependency count of INT physical register
-	void setPhyRegIntIdepCount(int phy_int_idep_count) { this->phy_int_idep_count = phy_int_idep_count; }
-
-	/// Set output dependency count of INT physical register
-	void setPhyRegIntOdepCount(int phy_int_odep_count) { this->phy_int_odep_count = phy_int_odep_count; }
-
-	/// Set input dependency count of FP physical register
-	void setPhyRegFpIdepCount(int phy_fp_idep_count) { this->phy_fp_idep_count = phy_fp_idep_count; }
-
-	/// Set output dependency count of FP physical register
-	void setPhyRegFpOdepCount(int phy_fp_odep_count) { this->phy_fp_odep_count = phy_fp_odep_count; }
-
-	/// Set input dependency count of XMM physical register
-	void setPhyRegXmmIdepCount(int phy_xmm_idep_count) { this->phy_xmm_idep_count = phy_xmm_idep_count; }
-
-	/// Set output dependency count of XMM physical register
-	void setPhyRegXmmOdepCount(int phy_xmm_odep_count) { this->phy_xmm_odep_count = phy_xmm_odep_count; }
-
 	/// Set physical register in the input dependency table
 	void setPhyRegIdep(int index, int reg_no) { phy_idep[index] = reg_no; }
 
@@ -374,69 +293,11 @@ public:
 	/// Set physical register in the old output dependency table
 	void setPhyRegOOdep(int index, int reg_no) { phy_oodep[index] = reg_no; }
 
-	/// Set flag of indicating whether uop is in reorder buffer
-	void setInReorderBuffer(bool in_reorder_buffer) { this->in_reorder_buffer = in_reorder_buffer; }
-
-
-	/// Set flag that indicates whether instruction is in fetch queue
-	void setInFetchQueue(bool in_fetch_queue) { this->in_fetch_queue = in_fetch_queue; }
-
-	/// Set flag that indicates whether instruction is from trace cache
-	void setIsFromTraceCache(bool is_from_trace_cache)
-	{
-		this->is_from_trace_cache = is_from_trace_cache;
-	}
-
-	/// Set flag that indicates whether instruction is in instruction queue
-	void setInInstructionQueue(bool in_instruction_queue)
-	{
-		this->in_instruction_queue = in_instruction_queue;
-	}
-
-	/// Set flag that indicates whether instruction is in load queue
-	void setInLoadQueue(bool in_load_queue)
-	{
-		this->in_load_queue = in_load_queue;
-	}
-
-	/// Set flag that indicates whether instruction is in store queue
-	void setInStoreQueue(bool in_store_queue)
-	{
-		this->in_store_queue = in_store_queue;
-	}
-
-	/// Set flag that indicates whether instruction is in uop queue
-	void setInUopQueue(bool in_uop_queue)
-	{
-		this->in_uop_queue = in_uop_queue;
-	}
-
-	/// Set flag that indicates whether instruction is in event queue
-	void setInEventQueue(bool in_event_queue)
-	{
-		this->in_event_queue = in_event_queue;
-	}
-
 	/// Set first cycle when functional unit is tried to be reserved
 	void setFirstCycleTryReserve(long long first_cycle_try_reserve)
 	{
 		this->first_cycle_try_reserve = first_cycle_try_reserve;
 	}
-
-	/// Set the cycle when the uop is ready
-	void setReadyWhen(long long ready_when)
-	{
-		this->ready_when = ready_when;
-	}
-
-	/// Set the cycle when the uop is issued
-	void setIssueWhen(long long issue_when)
-	{
-		this->issue_when = issue_when;
-	}
-
-	/// Set the physical address of Uop
-	void setPhyAddr(unsigned int phy_addr) { this->phy_addr = phy_addr; }
 
 
 
@@ -445,14 +306,20 @@ public:
 	// Getters
 	//
 
-	/// Get associated thread
+	/// Get thread that the uop belongs to
 	Thread *getThread() const { return thread; }
 
-	/// Get micro-instruction associated with this Uop
-	UInst *getUinst() { return uinst; }
+	/// Get core that the uop belongs to
+	Core *getCore() const { return core; }
 
-	/// Get the Uop ID
-	int getID() const { return id; }
+	/// Get micro-instruction associated with this Uop
+	Uinst *getUinst() { return uinst; }
+
+	/// Return a globally unique identifier for the uop
+	int getId() const { return id; }
+
+	/// Return a unique identifier of the uop in the core
+	int getIdInCore() const { return id_in_core; }
 
 	/// Get flags
 	int getFlags() const { return flags; }
@@ -511,26 +378,11 @@ public:
 	/// Get speculative mode
 	bool getSpeculativeMode() const { return speculative_mode; }
 
-	/// Get fetch address
-	int getFetchAddress() { return fetch_address; }
-
-	/// Get fetch access identifier
-	long long getFetchAccessId() { return fetch_access_id; }
-
-	/// Get input dependency count of INT physical register
-	int getPhyRegIntIdepCount() const { return phy_int_idep_count; }
-
 	/// Get output dependency count of INT physical register
 	int getPhyRegIntOdepCount() const { return phy_int_odep_count; }
 
-	/// Get input dependency count of FP physical register
-	int getPhyRegFpIdepCount() const { return phy_fp_idep_count; }
-
 	/// Get output dependency count of FP physical register
 	int getPhyRegFpOdepCount() const { return phy_fp_odep_count; }
-
-	/// Get input dependency count of XMM physical register
-	int getPhyRegXmmIdepCount() const { return phy_xmm_idep_count; }
 
 	/// Get output dependency count of XMM physical register
 	int getPhyRegXmmOdepCount() const { return phy_xmm_odep_count; }
@@ -544,41 +396,11 @@ public:
 	/// Get physical register in the old output dependency table
 	int getPhyRegOOdep(int index) { return phy_oodep[index]; }
 
-	/// Get flag of indicating whether uop is in reorder buffer
-	bool getInReorderBuffer() { return in_reorder_buffer; }
-
-	/// Get flag that indicates whether instruction is in fetch queue
-	bool isInFetchQueue() { return in_fetch_queue; }
-
-	/// Get flag that indicates whether instruction is from trace cache
-	bool isFromTraceCache() { return is_from_trace_cache; }
-
-	/// Get flag that indicates whether instruction is in instruction queue
-	bool isInInstructionQueue() { return in_instruction_queue; }
-
-	/// Get flag that indicates whether instruction is in load queue
-	bool isInLoadQueue() { return in_load_queue; }
-
-	/// Get flag that indicates whether instruction is in store queue
-	bool isInStoreQueue() { return in_store_queue; }
-
-	/// Get flag that indicates whether instruction is in uop queue
-	bool isInUopQueue() { return in_uop_queue; }
-
-	/// Get flag that indicates whether instruction is in event queue
-	bool isInEventQueue() { return in_event_queue; }
-
 	/// Get first cycle when functional unit is tried to be reserved
 	long long getFirstCycleTryReserve() { return first_cycle_try_reserve; }
 
 	/// Get the cycle when the uop is ready
 	long long getReadyWhen() { return ready_when; }
-
-	/// Get the cycle when the uop is issued
-	long long getIssueWhen() { return issue_when; }
-
-	/// Get the physical address of Uop
-	unsigned int getPhyAddr() { return phy_addr; }
 
 	/// Uop comparison based on ready time or unique ID
 	///
@@ -590,6 +412,28 @@ public:
 	///	> 0: Uop given in the argument comes first
 	///
 	int Compare(Uop *uop);
+
+
+
+
+
+	//
+	// Queues and iterators
+	//
+
+	// True is the instruction is currently in the fetch queue
+	bool in_fetch_queue = false;
+
+	// Position of the uop in the core's fetch queue, or past-the-end
+	// iterator if not present.
+	std::list<std::shared_ptr<Uop>>::iterator fetch_queue_iterator;
+
+	// True if the instruction is currently in the core's event queue
+	bool in_event_queue = false;
+
+	// Position of the uop in the core's event queue, or past-the-end
+	// iterator to this queue if not present.
+	std::list<std::shared_ptr<Uop>>::iterator event_queue_iterator;
 };
 
 }

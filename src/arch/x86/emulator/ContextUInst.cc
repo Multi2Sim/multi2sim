@@ -26,7 +26,7 @@
 namespace x86
 {
 
-int Context::getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep)
+int Context::getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep)
 {
 	// Get dependence
 	assert(misc::inRange(index, 0, UInstMaxDeps - 1));
@@ -80,7 +80,7 @@ int Context::getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep)
 	}
 }
 
-void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
+void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 {
 	// Check if it is a memory dependence
 	UInstDep mem_std_dep;
@@ -91,7 +91,7 @@ void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
 	uinst_effaddr_emitted = true;
 	
 	// Emit micro-instruction
-	UInst *new_uinst = new UInst(UInstEffaddr);
+	Uinst *new_uinst = new Uinst(UInstEffaddr);
 	new_uinst->setIDep(0, inst.getSegment() ?
 			inst.getSegment() - Instruction::RegEs + UInstDepEs
 			: UInstDepNone);
@@ -105,12 +105,12 @@ void Context::EmitUInstEffectiveAddress(UInst *uinst, int index)
 	uinst_list.emplace_back(new_uinst);
 }
 
-void Context::ParseUInstDep(UInst *uinst, int index)
+void Context::ParseUInstDep(Uinst *uinst, int index)
 {
 	// Regular dependence */
 	assert(misc::inRange(index, 0, UInstMaxDeps - 1));
 	UInstDep dep = uinst->getDep(index);
-	if (UInst::isValidDep(dep))
+	if (Uinst::isValidDep(dep))
 		return;
 
 	// Instruction dependent
@@ -216,7 +216,7 @@ void Context::ParseUInstDep(UInst *uinst, int index)
 }
 
 
-void Context::ParseUInstIDep(UInst *uinst, int index)
+void Context::ParseUInstIDep(Uinst *uinst, int index)
 {
 	// Get dependence
 	assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
@@ -242,7 +242,7 @@ void Context::ParseUInstIDep(UInst *uinst, int index)
 		}
 
 		// Load
-		UInst *new_uinst = new UInst(UInstLoad);
+		Uinst *new_uinst = new Uinst(UInstLoad);
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setODep(0, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
@@ -257,7 +257,7 @@ void Context::ParseUInstIDep(UInst *uinst, int index)
 	ParseUInstDep(uinst, index);
 }
 
-void Context::ParseUInstODep(UInst *uinst, int index)
+void Context::ParseUInstODep(Uinst *uinst, int index)
 {
 	// Convert index into global dependence index
 	assert(misc::inRange(index, 0, UInstMaxODeps - 1));
@@ -288,7 +288,7 @@ void Context::ParseUInstODep(UInst *uinst, int index)
 		}
 
 		// Store
-		UInst *new_uinst = new UInst(UInstStore);
+		Uinst *new_uinst = new Uinst(UInstStore);
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setIDep(1, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
@@ -304,7 +304,7 @@ void Context::ParseUInstODep(UInst *uinst, int index)
 
 }
 
-void Context::ProcessNewUInst(UInst *uinst)
+void Context::ProcessNewUInst(Uinst *uinst)
 {
 	// Emit effective address computation if needed.
 	for (int i = 0; !uinst_effaddr_emitted && i < UInstMaxDeps; i++)

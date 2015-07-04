@@ -74,9 +74,6 @@ private:
 	// Event queue
 	std::list<std::shared_ptr<Uop>> event_queue;
 
-	// Functional unit
-	std::unique_ptr<FunctionalUnit> functional_unit;
-
 
 
 
@@ -84,8 +81,8 @@ private:
 	// Counters per core
 	//
 
-	// Counter for uop ID assignment
-	long long num_uop = 0;
+	// Counter used to assign per-core identifiers to uops
+	long long uop_id_counter = 0;
 
 	// Counter for uop ID assignment
 	long long dispatch_seq = 0;
@@ -108,27 +105,6 @@ private:
 
 
 
-	//
-	// Reorder Buffer 
-	//
-
-	// Actual reorder buffer in core
-	std::vector<std::unique_ptr<Uop>> reorder_buffer;
-
-	// Micro-operation number in the reorder buffer
-	int uop_count_in_rob = 0;
-
-	// Total reorder buffer size
-	int reorder_buffer_total_size = 0;
-
-	// Reorder buffer head index
-	int reorder_buffer_head = 0;
-
-	// Reorder buffer tail index
-	int reorder_buffer_tail = 0;
-
-
-
 
 	//
 	// Stages
@@ -137,17 +113,7 @@ private:
 	// Currently fetching thread
 	int current_fetch_thread = 0;
 
-	// Currently decoding thread
-	int current_decode_thread = 0;
 
-	// Currently dispatching thread
-	int current_dispatch_thread = 0;
-
-	// Currently issuing thread
-	int current_issue_thread = 0;
-
-	// Currently committing thread
-	int current_commit_thread = 0;
 
 
 
@@ -236,8 +202,8 @@ public:
 	/// Get core index within the CPU
 	int getId() const { return id; }
 
-	/// Get number of uops
-	int getNumUop() { return num_uop; }
+	/// Return a new unique identifier for a uop in this core
+	long long getUopId() { return ++uop_id_counter; }
 
 	/// Get event queue
 	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
@@ -263,9 +229,6 @@ public:
 	//
 	// Increment counters
 	//
-
-	/// Increment the number of Uop
-	void incNumUop() { num_uop++; }
 
 	/// Increment the number of occupied physical integer registers
 	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
@@ -307,52 +270,14 @@ public:
 
 
 
-
-	//
-	// Reorder Buffer Functions
-	//
-
-	/// Initialze the reorder buffer
-	void InitializeReorderBuffer();
-
-	/// Trim the reorder buffer by excluding the entry containing only nullptr
-	void TrimReorderBuffer();
-
-	/// Check whether or not the ROB can be enqueued
-	bool CanEnqueueInReorderBuffer(Uop *uop);
-
-	/// Enqueue Uop to reorder buffer
-	void EnqueueInReorderBuffer(Uop *uop);
-
-	/// Check whether or not Uop can be dequeued from ROB
-	bool CanDequeueFromReorderBuffer(int thread_id);
-
-	/// Get head Uop of the ROB
-	Uop *getReorderBufferHead(int thread_id);
-
-	/// Remove the head Uop of the ROB
-	void RemoveReorderBufferHead(int thread_id);
-
-	/// get tail Uop of the ROB
-	Uop *getReorderBufferTail(int thread_id);
-
-	/// Remove tail Uop of the ROB
-	void RemoveReorderBufferTail(int thread_id);
-
-	/// Get ROB entry based on the index
-	Uop *getReorderBufferEntry(int index, int thread_id);
-
-
-
-
 	//
 	// Event queue functions
 	//
 
-	/// Insert Uop into event queue
+	/// Insert uop into event queue
 	void InsertInEventQueue(std::shared_ptr<Uop> uop);
 
-	/// Extract Uop from event queue
+	/// Extract uop from event queue
 	std::shared_ptr<Uop> ExtractFromEventQueue();
 
 

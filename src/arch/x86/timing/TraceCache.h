@@ -32,11 +32,39 @@ class TraceCache
 {
 private:
 
+	//
+	// Static fields
+	//
+
+	// Flag indicating whether trace cache is present
+	static bool present;
+
+	// Number of sets in trace cache
+	static int num_sets;
+
+	// Trace cache associativity
+	static int num_ways;
+
+	// Maximum size of the trace
+	static int trace_size;
+
+	// Maximum number of branches per trace
+	static int branch_max;
+
+	// Trace queue size
+	static int queue_size;
+
+
+
+	//
+	// Class members
+	//
+
 	// Name of the trace cache
 	std::string name;
 
 	// structure of trace cache entry
-	struct TraceCacheEntry
+	struct Entry
 	{
 		// LRU counter 
 		int counter;
@@ -69,7 +97,6 @@ private:
 		// Address of the target address of the last branch in the trace 
 		unsigned int target;
 
-		// This field has to be the last in the structure.
 		// It is a list composed of 'trace_size' elements.
 		// Each element contains the address of the micro-instructions in the trace.
 		// Only if each single micro-instructions comes from a different macro-
@@ -78,11 +105,11 @@ private:
 	};
 
 	// Trace cache lines ('sets' * 'assoc' elements) 
-	std::unique_ptr<TraceCacheEntry[]> entry;
+	std::unique_ptr<Entry[]> entry;
 
 	// Temporary trace, progressively filled up in the commit stage,
 	// and dumped into the trace cache when full.
-	std::unique_ptr<TraceCacheEntry> temp;
+	std::unique_ptr<Entry> temp;
 
 	// Statistics 
 	long long accesses = 0;
@@ -94,14 +121,6 @@ private:
 	long long num_squashed_uinst = 0;
 	long long trace_length_acc = 0;
 	long long trace_length_count = 0;
-
-	// Trace cache parameters
-	static int present;
-	static int num_sets;
-	static int assoc;
-	static int trace_size;
-	static int branch_max;
-	static int queue_size;
 
 public:
 
@@ -128,14 +147,10 @@ public:
 	/// Configuration getters
 	static bool getPresent() { return present; }
 	static int getNumSets() { return num_sets; }
-	static int getAssoc() { return assoc; }
+	static int getAssoc() { return num_ways; }
 	static int getTraceSize() { return trace_size; }
 	static int getMaxNumBranch() { return branch_max; }
 	static int getQueuesize() { return queue_size; }
-
-	/// Statistic setters
-
-	/// Statistic getters
 
 	/// Increment number of fetched Uinst in trace cache
 	void incNumFetchedUinst() { num_fetched_uinst++; }
@@ -164,7 +179,8 @@ public:
 	/// \return
 	/// 	Whether or not the entry is found
 	bool Lookup(unsigned int eip, int pred,
-			TraceCacheEntry &return_entry, unsigned int &neip);
+			Entry &return_entry,
+			unsigned int &neip);
 
 	/// Flush temporary trace of committed instructions back into the trace cache
 	void Flush();

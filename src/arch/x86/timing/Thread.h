@@ -63,48 +63,6 @@ private:
 
 
 
-
-	//
-	// List of mapped contexts
-	//
-
-	// Mapped context list
-	std::list<std::unique_ptr<Context>> mapped_contexts_list;
-
-	// Context currently running in this thread. This is a context present
-	// in the thread's 'mapped' list.
-	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
-
-	// Count of context in the list
-	int mapped_list_count = 0;
-
-	// The maximum number of context in the list
-	int mapped_list_max = 0;
-
-
-
-
-	//
-	// Reorder buffer parameters
-	//
-
-	// Micro-operation number in the reorder buffer
-	int uop_count_in_rob = 0;
-
-	// Left bound of the reorder buffer
-	int reorder_buffer_left_bound = 0;
-
-	// Right bound of the reorder buffer
-	int reorder_buffer_right_bound = 0;
-
-	// Reorder buffer head index
-	int reorder_buffer_head = 0;
-
-	// Reorder buffer tail index
-	int reorder_buffer_tail = 0;
-
-
-
 	//
 	// Number of uops in private structures
 	//
@@ -138,13 +96,13 @@ private:
 	std::deque<std::shared_ptr<Uop>> uop_queue;
 
 	// Instruction queue
-	std::deque<std::shared_ptr<Uop>> instruction_queue;
+	std::list<std::shared_ptr<Uop>> instruction_queue;
 
 	// Load queue
-	std::deque<std::shared_ptr<Uop>> load_queue;
+	std::list<std::shared_ptr<Uop>> load_queue;
 
 	// Store queue
-	std::deque<std::shared_ptr<Uop>> store_queue;
+	std::list<std::shared_ptr<Uop>> store_queue;
 
 
 
@@ -291,7 +249,16 @@ private:
 public:
 
 	/// Constructor
-	Thread(Core *core, int index);
+	Thread(Core *core, int id_in_core);
+
+	/// Return the core that this thread belongs to
+	Core *getCore() const { return core; }
+
+	/// Get thread index within the core
+	int getIdInCore() const { return id_in_core; }
+
+	/// Get the thread index within the CPU
+	int getIdInCpu() const { return id_in_cpu; }
 
 
 
@@ -299,9 +266,6 @@ public:
 	//
 	// Increment counters
 	//
-
-	/// Increment the Uop count in reorder buffer
-	void incUopCountInRob() { uop_count_in_rob++; }
 
 	/// Increment the number of occupied physical integer registers
 	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
@@ -330,21 +294,6 @@ public:
 	/// Increment the write count of Register Aliasing Table for XMM registers
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
-	/// Increment reorder buffer head index
-	void incReorderBufferHead()
-	{
-		reorder_buffer_head == reorder_buffer_right_bound ?
-				reorder_buffer_head = reorder_buffer_left_bound :
-				reorder_buffer_head++;
-	}
-
-	/// Increment reorder buffer tail index
-	void incReorderBufferTail()
-	{
-		reorder_buffer_tail == reorder_buffer_right_bound ?
-				reorder_buffer_tail = reorder_buffer_left_bound :
-				reorder_buffer_tail++;
-	}
 
 
 
@@ -352,9 +301,6 @@ public:
 	//
 	// Decrement counters
 	//
-
-	/// Decrement the Uop count in reorder buffer
-	void decUopCountInRob() { uop_count_in_rob--; }
 
 	/// Decrement the number of occupied physical integer registers
 	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
@@ -387,42 +333,8 @@ public:
 
 
 	//
-	// Setters
-	//
-
-	/// Set Tail of reorder buffer
-	void setReorderBufferTail(int reorder_buffer_tail)
-	{
-		this->reorder_buffer_tail = reorder_buffer_tail;
-	}
-
-	/// Set cycle until which fetch is stalled
-	void setFetchStallUntil(long long fetch_stall_until)
-	{
-		this->fetch_stall_until = fetch_stall_until;
-	}
-
-	/// Set number of fetched micro-instructions
-	void setNumFetchedUinst(long long num_fetched_uinst)
-	{
-		this->num_fetched_uinst = num_fetched_uinst;
-	}
-
-
-
-
-	//
 	// Getters
 	//
-
-	/// Get thread index within the core
-	int getIdInCore() const { return id_in_core; }
-
-	/// Get the thread index within the CPU
-	int getIdInCpu() const { return id_in_cpu; }
-
-	/// Get the Uop count in reorder buffer
-	int getUopCountInRob() const { return uop_count_in_rob; }
 
 	/// Get the number of occupied physical integer registers
 	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
@@ -450,18 +362,6 @@ public:
 
 	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatXmmWrites() { return rat_xmm_writes; }
-
-	/// Get reorder buffer head index
-	int getReorderBufferHead() { return reorder_buffer_head; }
-
-	/// Get reorder buffer tail index
-	int getReorderBufferTail() { return reorder_buffer_tail; }
-
-	/// Get reorder buffer left bound
-	int getReorderBufferLeftBound() { return reorder_buffer_left_bound; }
-
-	/// Get reorder buffer right bound
-	int getReorderBufferRightBound() { return reorder_buffer_right_bound; }
 
 	/// Get cycle until which fetch is stalled
 	long long getFetchStallUntil() { return fetch_stall_until; }
@@ -501,92 +401,11 @@ public:
 
 
 	//
-	// Fetch queue functions
-	//
-
-	/// Recover fetch queue
-	void RecoverFetchQueue();
-
-
-
-
-	//
-	// Instruction queue functions
-	//
-
-	/// Check whether Uop can be inserted in the inst queue
-	bool CanInsertInInstructionQueue();
-
-	/// Insert Uop into the inst queue
-	void InsertInInstructionQueue(std::shared_ptr<Uop> &uop);
-
-	/// Remove Uop from the inst queue
-	void RemoveFromInstructionQueue(int index);
-
-	/// Recover inst queue
-	void RecoverInstructionQueue();
-
-
-
-
-	//
-	// Load/Store queue functions
-	//
-
-	/// Check whether Uop can be inserted in the load/store queue
-	bool CanInsertInLoadStoreQueue();
-
-	/// Insert Uop into the load/store queue
-	void InsertInLoadStoreQueue(std::shared_ptr<Uop> &uop);
-
-	/// Remove Uop from the load/store queue
-	void RemoveFromLoadQueue(int index);
-
-	/// Remove Uop from the load/store queue
-	void RemoveFromStoreQueue(int index);
-
-	// Remove Uop from the prefetch queue
-	void RemoveFromPrefetchQueue(int index);
-
-	/// Recover load/store queue
-	void RecoverLoadStoreQueue();
-
-
-
-
-	//
-	// Uop queue functions
-	//
-
-	/// Recover Uop queue
-	void RecoverUopQueue();
-
-
-
-
-
-	//
-	// Event queue functions
-	//
-
-	/// Check whether there is uop within current thread with long latency
-	bool isLongLatencyInEventQueue();
-
-	/// Check whether there is uop within current thread that caused cache miss
-	bool isCacheMissInEventQueue();
-
-	/// Recover the event queue
-	void RecoverEventQueue();
-
-
-
-
-	//
 	// Fetch stages
 	//
 
 	/// Check whether or not the fecth is allowed
-	bool CanFetch();
+	bool canFetch();
 
 	/// Fetch instructions
 	/// Run the emulation of one x86 macro-instruction and create its uops.
