@@ -35,7 +35,7 @@ namespace x86
 
 // Forward declaration
 class Timing;
-class CPU;
+class Cpu;
 
 // Class Core
 class Core
@@ -62,13 +62,13 @@ private:
 	// name of this Core
 	std::string name;
 
-	// CPU that it belongs to 
-	CPU *cpu;
+	// Cpu that it belongs to 
+	Cpu *cpu;
 
 	// Array of threads 
 	std::vector<std::unique_ptr<Thread>> threads;
 
-	// Unique ID in CPU 
+	// Unique ID in Cpu 
 	int id;
 
 	// Event queue
@@ -136,9 +136,6 @@ private:
 
 	// Currently fetching thread
 	int current_fetch_thread = 0;
-
-	// Cycle for last thread switch (for SwitchOnEvent)
-	long long fetch_switch_when = 0;
 
 	// Currently decoding thread
 	int current_decode_thread = 0;
@@ -221,7 +218,7 @@ private:
 public:
 
 	/// Constructor
-	Core(const std::string &name, CPU *cpu, int id);
+	Core(Cpu *cpu, int index);
 
 	/// Return the number of threads
 	int getNumThreads() const { return threads.size(); }
@@ -232,6 +229,33 @@ public:
 		assert(index >= 0 && index < (int) threads.size());
 		return threads[index].get();
 	}
+
+	/// Get the CPU object that this core belongs to
+	Cpu *getCpu() const { return cpu; }
+
+	/// Get core index within the CPU
+	int getId() const { return id; }
+
+	/// Get number of uops
+	int getNumUop() { return num_uop; }
+
+	/// Get event queue
+	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
+
+	/// Get the number of occupied physical integer registers
+	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
+
+	/// Get the number of occupied physical float point registers
+	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
+
+	/// Get the number of occupied physical xmm registers
+	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
+
+	/// Get the Uop count in instruction queue
+	int getInstructionQueueCount() { return instruction_queue_count; }
+
+	/// Get the Uop count in load/store queue
+	int getLoadStoreQueueCount() { return load_store_queue_count; }
 
 
 
@@ -280,36 +304,6 @@ public:
 	/// Decrement the Uop count in load/store queue
 	void decLoadStoreQueueCount() { load_store_queue_count--; }
 
-
-
-
-	//
-	// Getters
-	//
-
-	/// Get core ID
-	int getID() { return id; }
-
-	/// Get number of Uop
-	int getNumUop() { return num_uop; }
-
-	/// Get event queue
-	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
-
-	/// Get the number of occupied physical integer registers
-	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
-
-	/// Get the number of occupied physical float point registers
-	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
-
-	/// Get the number of occupied physical xmm registers
-	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
-
-	/// Get the Uop count in instruction queue
-	int getInstructionQueueCount() { return instruction_queue_count; }
-
-	/// Get the Uop count in load/store queue
-	int getLoadStoreQueueCount() { return load_store_queue_count; }
 
 
 
@@ -367,6 +361,9 @@ public:
 	//
 	// Pipeline stages
 	//
+
+	/// Run one simulation cycle for all pipeline stages of the core.
+	void Run();
 
 	/// Fetch stage
 	void Fetch();

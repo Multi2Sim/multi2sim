@@ -17,116 +17,103 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "CPU.h"
+#include "Cpu.h"
+
 
 namespace x86
 {
 
-//
-// String maps
-//
-
-misc::StringMap CPU::recover_kind_map =
+misc::StringMap Cpu::recover_kind_map =
 {
 	{"Writeback", RecoverKindWriteback},
 	{"Commit", RecoverKindCommit}
 };
 
-misc::StringMap CPU::fetch_kind_map =
+misc::StringMap Cpu::fetch_kind_map =
 {
 	{"Shared", FetchKindShared},
-	{"TimeSlice", FetchKindTimeslice},
-	{"SwitchOnEvent", FetchKindSwitchonevent},
+	{"TimeSlice", FetchKindTimeslice}
 };
 
-misc::StringMap CPU::dispatch_kind_map =
+misc::StringMap Cpu::dispatch_kind_map =
 {
 	{"Shared", DispatchKindShared},
 	{"TimeSlice", DispatchKindTimeslice},
 };
 
-misc::StringMap CPU::issue_kind_map =
+misc::StringMap Cpu::issue_kind_map =
 {
 	{"Shared", IssueKindShared},
 	{"TimeSlice", IssueKindTimeslice},
 };
 
-misc::StringMap CPU::commit_kind_map =
+misc::StringMap Cpu::commit_kind_map =
 {
 	{"Shared", CommitKindShared},
 	{"TimeSlice", CommitKindTimeslice},
 };
 
-misc::StringMap CPU::reorder_buffer_kind_map =
+misc::StringMap Cpu::reorder_buffer_kind_map =
 {
 	{"Private", ReorderBufferKindPrivate},
 	{"Shared", ReorderBufferKindShared},
 };
 
-misc::StringMap CPU::instruction_queue_kind_map =
+misc::StringMap Cpu::instruction_queue_kind_map =
 {
 	{"Shared", InstructionQueueKindShared},
 	{"Private", InstructionQueueKindPrivate},
 };
 
-misc::StringMap CPU::load_store_queue_kind_map =
+misc::StringMap Cpu::load_store_queue_kind_map =
 {
 	{"Shared", LoadStoreQueueKindShared},
 	{"Private", LoadStoreQueueKindPrivate},
 };
 
-//
-// static member
-//
+int Cpu::num_cores = 1;
+int Cpu::num_threads = 1;
+int Cpu::context_quantum;
+int Cpu::thread_quantum;
+int Cpu::thread_switch_penalty;
+int Cpu::recover_penalty;
+Cpu::RecoverKind Cpu::recover_kind;
+Cpu::FetchKind Cpu::fetch_kind;
+int Cpu::decode_width;
+int Cpu::dispatch_width;
+Cpu::DispatchKind Cpu::dispatch_kind;
+int Cpu::issue_width;
+Cpu::IssueKind Cpu::issue_kind;
+int Cpu::commit_width;
+Cpu::CommitKind Cpu::commit_kind;
+bool Cpu::process_prefetch_hints;
+bool Cpu::use_nc_store;
+int Cpu::prefetch_history_size;
+bool Cpu::occupancy_stats;
+int Cpu::reorder_buffer_size;
+Cpu::ReorderBufferKind Cpu::reorder_buffer_kind;
+int Cpu::fetch_queue_size;
+Cpu::InstructionQueueKind Cpu::instruction_queue_kind;
+int Cpu::instruction_queue_size;
+Cpu::LoadStoreQueueKind Cpu::load_store_queue_kind;
+int Cpu::load_store_queue_size;
+int Cpu::uop_queue_size;
 
-int CPU::num_cores = 1;
-int CPU::num_threads = 1;
-int CPU::context_quantum;
-int CPU::thread_quantum;
-int CPU::thread_switch_penalty;
-int CPU::recover_penalty;
-CPU::RecoverKind CPU::recover_kind;
-CPU::FetchKind CPU::fetch_kind;
-int CPU::decode_width;
-int CPU::dispatch_width;
-CPU::DispatchKind CPU::dispatch_kind;
-int CPU::issue_width;
-CPU::IssueKind CPU::issue_kind;
-int CPU::commit_width;
-CPU::CommitKind CPU::commit_kind;
-bool CPU::process_prefetch_hints;
-bool CPU::use_nc_store;
-int CPU::prefetch_history_size;
-bool CPU::occupancy_stats;
-int CPU::reorder_buffer_size;
-CPU::ReorderBufferKind CPU::reorder_buffer_kind;
-int CPU::fetch_queue_size;
-CPU::InstructionQueueKind CPU::instruction_queue_kind;
-int CPU::instruction_queue_size;
-CPU::LoadStoreQueueKind CPU::load_store_queue_kind;
-int CPU::load_store_queue_size;
-int CPU::uop_queue_size;
 
-CPU::CPU()
+Cpu::Cpu()
 {
-	// The prefix for each core
-	std::string prefix = "Core";
-	std::string core_name;
-
 	// Initialize
 	emulator = Emulator::getInstance();
 	mmu = misc::new_unique<mem::MMU>("x86");
 
 	// Create cores
+	cores.reserve(num_cores);
 	for (int i = 0; i < num_cores; i++)
-	{
-		core_name = prefix + misc::fmt("%d", i);
-		cores.emplace_back(misc::new_unique<Core>(core_name, this, i));
-	}
+		cores.emplace_back(misc::new_unique<Core>(this, i));
 }
 
 
-void CPU::ParseConfiguration(misc::IniFile *ini_file)
+void Cpu::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Local variable
 	std::string section;
@@ -183,11 +170,11 @@ void CPU::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
-void CPU::Fetch()
+void Cpu::Run()
 {
-	stage = "Fetch";
-	for (int i = 0; i < num_cores; i++)
-		cores[i]->Fetch();
+	// Run all cores
+	for (auto &core : cores)
+		core->Run();
 }
 
 }

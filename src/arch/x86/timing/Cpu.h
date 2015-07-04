@@ -38,8 +38,8 @@ namespace x86
 // Forward declaration
 class Timing;
 
-// Class CPU
-class CPU
+// Class Cpu
+class Cpu
 {
 public:
 
@@ -141,7 +141,7 @@ private:
 	// Array of cores 
 	std::vector<std::unique_ptr<Core>> cores;
 
-	// MMU used by this CPU 
+	// MMU used by this Cpu 
 	std::shared_ptr<mem::MMU> mmu;
 
 	// Number of Uop
@@ -211,7 +211,7 @@ private:
 
 
 	//
-	// CPU parameters
+	// Cpu parameters
 	//
 
 	// Number of Cores
@@ -233,7 +233,7 @@ private:
 
 
 	//
-	// CPU stage parameters
+	// Cpu stage parameters
 	//
 
 	// Recover penalty
@@ -242,10 +242,10 @@ private:
 	// Recover penalty kind
 	static RecoverKind recover_kind;
 
-	// CPU fetch parameter
+	// Cpu fetch parameter
 	static FetchKind fetch_kind;
 
-	// CPU decode stage parameter
+	// Cpu decode stage parameter
 	static int decode_width;
 
 	// Dispatch width
@@ -270,19 +270,19 @@ private:
 
 
 	//
-	// Other CPU parameters
+	// Other Cpu parameters
 	//
 
-	// Flag that indicates CPU ignore any prefetch hints/instructions
+	// Flag that indicates Cpu ignore any prefetch hints/instructions
 	static bool process_prefetch_hints;
 
-	// Flag that indicates CPU to reduce protocol overhead
+	// Flag that indicates Cpu to reduce protocol overhead
 	static bool use_nc_store;
 
 	// Prefetch history size
 	static int prefetch_history_size;
 
-	// Flag that indicates CPU to calculate structures occupancy statistics
+	// Flag that indicates Cpu to calculate structures occupancy statistics
 	static bool occupancy_stats;
 
 
@@ -318,14 +318,8 @@ private:
 
 public:
 
-	/// CPU constructor
-	CPU();
-
-
-
-
 	//
-	// Static member getters
+	// Static functions
 	//
 
 	/// Get number of cores
@@ -369,13 +363,19 @@ public:
 
 	/// Get fetch kind
 	static FetchKind getFetchKind() { return fetch_kind; }
+	
+	/// Read branch predictor configuration from configuration file
+	static void ParseConfiguration(misc::IniFile *ini_file);
 
 
 
 
 	//
-	// Getters
+	// Class members
 	//
+
+	/// Constructor
+	Cpu();
 
 	/// Return the core with the given index
 	Core *getCore(int index) const
@@ -410,10 +410,8 @@ public:
 	void DumpUopReport(long long &uop_stats,
 			std::string &prefix, int peak_ipc);
 
-	/// Run functions
-	int Run();
-	void RunStages();
-	void FastForward();
+	/// Simulate one cycle of the CPU for all its cores and threads.
+	void Run();
 
 	/// Trace functions
 	void AddToTraceList(Uop &uop);
@@ -421,19 +419,6 @@ public:
 
 	/// Update Occupancy statistic
 	void UpdateOccupancyStats();
-
-	/// Read branch predictor configuration from configuration file
-	static void ParseConfiguration(misc::IniFile *ini_file);
-
-
-
-
-	//
-	// Pipeline stages
-	//
-
-	/// Fetch stage
-	void Fetch();
 };
 
 }

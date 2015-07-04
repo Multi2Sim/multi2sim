@@ -34,7 +34,6 @@
 #include <arch/x86/emulator/Emulator.h>
 #include <arch/x86/emulator/Signal.h>
 #include <arch/x86/timing/Timing.h>
-#include <arch/x86/timing/CPU.h>
 #include <arch/hsa/disassembler/Disassembler.h>
 #include <arch/hsa/driver/Driver.h>
 #include <arch/hsa/emulator/Emulator.h>

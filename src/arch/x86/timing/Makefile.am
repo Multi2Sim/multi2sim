@@ -23,8 +23,8 @@ libtiming_a_SOURCES = \
 	Core.h \
 	Core.cc \
 	\
-	CPU.h \
-	CPU.cc \
+	Cpu.h \
+	Cpu.cc \
 	\
 	Timing.h \
 	Timing.cc
