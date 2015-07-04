@@ -23,6 +23,7 @@
 #include <regex>
 #include <exception>
 #include <network/System.h>
+#include <network/EndNode.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
@@ -91,22 +92,31 @@ TEST(TestSystemConfiguration, event_0_same_src_dest_not_allowed)
 	// Set up network instance
 	System *network_system = System::getInstance();
 
+	// Test body
+	std::string message;
 	try
 	{
 		// Parse the configuration file
 		network_system->ParseConfiguration(&ini_file);
 
-		// FIXME
-		// Get one node and transfer from that node to itself.
-		// This should produce an error
+		// Getting the network
+		Network *network = network_system->getNetworkByName("net0");
+
+		// Getting the node
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		
+		// Sending from the node to itself
+		network->TrySend(src, src, 1);
 
 	}
-	catch (misc::Exception &e)
+	catch (misc::Error &e)
 	{
-		e.Dump();
-		FAIL();
+		message = e.getMessage();
+		fprintf(stderr, "%s\n", message.c_str());
 	}
 
+	EXPECT_REGEX_MATCH(misc::fmt("Source and destination cannot "
+			"be the same\\.").c_str(), message.c_str());
 }
 
 }
