@@ -23,7 +23,7 @@
 #include <unistd.h>
 
 #include <arch/common/Arch.h>
-#include <arch/x86/timing/CPU.h>
+#include <arch/x86/timing/Cpu.h>
 #include <arch/x86/timing/Timing.h>
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/Misc.h>
@@ -267,8 +267,8 @@ std::string Context::OpenProcCPUInfo()
 	if ((fd = mkstemp(path)) == -1 || (f = fdopen(fd, "wt")) == NULL)
 		throw misc::Panic("Cannot create temporary file");
 
-	int num_cores = CPU::getNumCores();
-	int num_threads = CPU::getNumThreads();
+	int num_cores = Cpu::getNumCores();
+	int num_threads = Cpu::getNumThreads();
 	for (int i = 0; i < num_cores; i++)
 	{
 		for (int j = 0; j < num_threads; j++)

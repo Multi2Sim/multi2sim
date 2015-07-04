@@ -48,36 +48,29 @@ std::string Timing::mmu_report_file;
 
 // Message to display with '--x86-help'
 const std::string Timing::help_message =
-		"The x86 CPU configuration file is a plain text INI file, defining\n"
-		"the parameters of the CPU model used for a detailed (architectural) simulation.\n"
+		"The x86 Cpu configuration file is a plain text INI file, defining\n"
+		"the parameters of the Cpu model used for a detailed (architectural) simulation.\n"
 		"This configuration file is passed to Multi2Sim with option '--x86-config <file>,\n"
 		"which must be accompanied by option '--x86-sim detailed'.\n"
 		"\n"
-		"The following is a list of the sections allowed in the CPU configuration file,\n"
+		"The following is a list of the sections allowed in the Cpu configuration file,\n"
 		"along with the list of variables for each section.\n"
 		"\n"
 		"Section '[ General ]':\n"
 		"\n"
 		"  Frequency = <freq> (Default = 1000 MHz)\n"
-		"      Frequency in MHz for the x86 CPU. Value between 1 and 10K.\n"
+		"      Frequency in MHz for the x86 Cpu. Value between 1 and 10K.\n"
 		"  Cores = <num_cores> (Default = 1)\n"
 		"      Number of cores.\n"
 		"  Threads = <num_threads> (Default = 1)\n"
 		"      Number of hardware threads per core. The total number of computing nodes\n"
-		"      in the CPU model is equals to Cores * Threads.\n"
+		"      in the Cpu model is equals to Cores * Threads.\n"
 		"  FastForward = <num_inst> (Default = 0)\n"
 		"      Number of x86 instructions to run with a fast functional simulation before\n"
 		"      the architectural simulation starts.\n"
 		"  ContextQuantum = <cycles> (Default = 100k)\n"
 		"      If ContextSwitch is true, maximum number of cycles that a context can occupy\n"
-		"      a CPU hardware thread before it is replaced by other pending context.\n"
-		"  ThreadQuantum = <cycles> (Default = 1k)\n"
-		"      For multithreaded processors (Threads > 1) configured as coarse-grain multi-\n"
-		"      threading (FetchKind = SwitchOnEvent), number of cycles in which instructions\n"
-		"      are fetched from the same thread before switching.\n"
-		"  ThreadSwitchPenalty = <cycles> (Default = 0)\n"
-		"      For coarse-grain multithreaded processors (FetchKind = SwitchOnEvent), number\n"
-		"      of cycles that the fetch stage stalls after a thread switch.\n"
+		"      a Cpu hardware thread before it is replaced by other pending context.\n"
 		"  RecoverKind = {Writeback|Commit} (Default = Writeback)\n"
 		"      On branch misprediction, stage in the execution of the mispredicted branch\n"
 		"      when processor recovery is triggered.\n"
@@ -97,17 +90,16 @@ const std::string Timing::help_message =
 		"      respectively, where every access results in a hit. If set to false, the\n"
 		"      parameters of the caches are given in the memory configuration file\n"
 		"  UseNCStore = {t|f} (Default = False)\n"
-		"      Normally the CPU uses cohnerency-enabled Store commands.  Setting this to True\n"
-		"      causes the CPU to issue NCStore commands to reduce protocol overhead.\n"
+		"      Normally the Cpu uses cohnerency-enabled Store commands.  Setting this to True\n"
+		"      causes the Cpu to issue NCStore commands to reduce protocol overhead.\n"
 		"      When True, Cores and Threads must be set to 1.\n"
 		"\n"
 		"Section '[ Pipeline ]':\n"
 		"\n"
-		"  FetchKind = {Shared|TimeSlice|SwitchOnEvent} (Default = TimeSlice)\n"
+		"  FetchKind = {Shared|TimeSlice} (Default = TimeSlice)\n"
 		"      Policy for fetching instruction from different threads. A shared fetch stage\n"
 		"      fetches instructions from different threads in the same cycle; a time-slice\n"
-		"      fetch switches between threads in a round-robin fashion; option SwitchOnEvent\n"
-		"      switches thread fetch on long-latency operations or thread quantum expiration.\n"
+		"      fetch switches between threads in a round-robin fashion.\n"
 		"  DecodeWidth = <num_inst> (Default = 4)\n"
 		"      Number of x86 instructions decoded per cycle.\n"
 		"  DispatchKind = {Shared|TimeSlice} (Default = TimeSlice)\n"
@@ -131,7 +123,7 @@ const std::string Timing::help_message =
 		"  OccupancyStats = {t|f} (Default = False)\n"
 		"      Calculate structures occupancy statistics. Since this computation requires\n"
 		"      additional overhead, the option needs to be enabled explicitly. These statistics\n"
-		"      will be attached to the CPU report.\n"
+		"      will be attached to the Cpu report.\n"
 		"\n"
 		"Section '[ Queues ]':\n"
 		"\n"
@@ -267,7 +259,11 @@ Timing *Timing::getInstance()
 
 bool Timing::Run()
 {
-	return false;
+	// Run stages
+	cpu.Run();
+
+	// Still simulating
+	return true;
 }
 
 
@@ -290,7 +286,7 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 	ini_file->WriteString(section, "Policy", "LRU");
 
 	// L1 caches and entries
-	for (int i = 0; i < CPU::getNumCores(); i++)
+	for (int i = 0; i < Cpu::getNumCores(); i++)
 	{
 		// L1 cache
 		std::string module_name = misc::fmt("x86-l1-%d", i);
@@ -301,7 +297,7 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 		ini_file->WriteString(section, "LowModules", "x86-l2");
 
 		// Entry
-		for (int j = 0; j < CPU::getNumThreads(); j++)
+		for (int j = 0; j < Cpu::getNumThreads(); j++)
 		{
 			section = misc::fmt("Entry x86-core-%d-thread-%d", i, j);
 			ini_file->WriteString(section, "Arch", "x86");
@@ -380,8 +376,8 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 				section.c_str()));
 
 	// Check bounds
-	if (core_index >= CPU::getNumCores() ||
-			thread_index >= CPU::getNumThreads())
+	if (core_index >= Cpu::getNumCores() ||
+			thread_index >= Cpu::getNumThreads())
 	{
 		misc::Warning("%s: section [%s] ignored, referring to x86 Core "
 				"%d, Thread %d.\n"
@@ -514,7 +510,7 @@ void Timing::RegisterOptions()
 
 	// Option --x86-config <file>
 	command_line->RegisterString("--x86-config <file>", config_file,
-			"Configuration file for the x86 CPU timing model, including parameters"
+			"Configuration file for the x86 Cpu timing model, including parameters"
 			"describing stage bandwidth, structures size, and other parameters of"
 			"processor cores and threads. Type 'm2s --x86-help' for details on the file"
 			"format.");
@@ -522,18 +518,18 @@ void Timing::RegisterOptions()
 	// Option --x86-mmu-report <file>
 	command_line->RegisterString("--x86-mmu-report <file>", mmu_report_file,
 			"File to dump a report of the x86 MMU. Use together with a detailed"
-			"CPU simulation (option '--x86-sim detailed').");
+			"Cpu simulation (option '--x86-sim detailed').");
 
 	// Option --x86-report <file>
 	command_line->RegisterString("--x86-report <file>", report_file,
-			"File to dump a report of the x86 CPU pipeline, including statistics such"
+			"File to dump a report of the x86 Cpu pipeline, including statistics such"
 			"as the number of instructions handled in every pipeline stage, read/write"
 			"accesses performed on pipeline queues, etc. This option is only valid for"
 			"detailed x86 simulation (option '--x86-sim detailed').");
 
 	// Option --x86-help
 	command_line->RegisterBool("--x86-help", help,
-			"Display a help message describing the format of the x86 CPU context"
+			"Display a help message describing the format of the x86 Cpu context"
 			"configuration file.");
 
 	// Option --x86-debug-trace-cache <file>
@@ -582,8 +578,8 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 				"must be between 1MHz and 1000GHz.\n",
 				ini_file->getPath().c_str()));
 
-	// Parse CPU configuration by their sections
-	CPU::ParseConfiguration(ini_file);
+	// Parse Cpu configuration by their sections
+	Cpu::ParseConfiguration(ini_file);
 
 	// Parse Register File configuration by their sections
 	RegisterFile::ParseConfiguration(ini_file);

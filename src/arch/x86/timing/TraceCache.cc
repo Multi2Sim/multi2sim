@@ -18,7 +18,7 @@
  */
 
 #include "Core.h"
-#include "CPU.h"
+#include "Cpu.h"
 #include "TraceCache.h"
 #include "Uop.h"
 #include "Thread.h"

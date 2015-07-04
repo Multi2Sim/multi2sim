@@ -29,14 +29,15 @@
 #include <arch/common/Timing.h>
 
 #include "BranchPredictor.h"
+#include "Cpu.h"
 #include "TraceCache.h"
-#include "CPU.h"
+
 
 namespace x86
 {
 
 // Forward declaration
-class CPU;
+class Cpu;
 
 // Class Timing
 class Timing : public comm::Timing
@@ -77,8 +78,8 @@ class Timing : public comm::Timing
 	// Member fields
 	//
 
-	// CPU instance of this timing simulator
-	CPU cpu;
+	// Cpu instance of this timing simulator
+	Cpu cpu;
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
@@ -105,8 +106,8 @@ public:
 	/// Constructor
 	Timing();
 
-	/// get CPU instance pointer
-	CPU *getCPU() { return &cpu; }
+	/// Get CPU instance pointer
+	Cpu *getCpu() { return &cpu; }
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful

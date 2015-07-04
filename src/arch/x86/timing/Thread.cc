@@ -17,30 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Thread.h"
-#include "CPU.h"
+#include "Cpu.h"
 #include "Timing.h"
+#include "Thread.h"
+
 
 namespace x86
 {
 
-Thread::Thread(const std::string &name,
-		CPU *cpu, Core *core, int id_in_core)
-		:
-		name(name),
-		cpu(cpu),
+Thread::Thread(Core *core,
+		int id_in_core) :
 		core(core),
 		id_in_core(id_in_core)
 {
+	// Assign name
+	name = misc::fmt("Core %d Thread %d", core->getId(), id_in_core);
+
+	// Global index in CPU
+	id_in_cpu = core->getId() * Cpu::getNumThreads() + id_in_core;
+
 	// Initialize Uop queue
-	uop_queue.resize(CPU::getUopQueueSize());
+	uop_queue.resize(Cpu::getUopQueueSize());
 
 	// Initialize fetch queue
-	fetch_queue.resize(CPU::getFetchQueueSize());
+	fetch_queue.resize(Cpu::getFetchQueueSize());
 
 	// Initialize reorder buffer
-	reorder_buffer_left_bound = this->id_in_core * CPU::getReorderBufferSize();
-	reorder_buffer_right_bound = (this->id_in_core + 1) * CPU::getReorderBufferSize() - 1;
+	reorder_buffer_left_bound = this->id_in_core * Cpu::getReorderBufferSize();
+	reorder_buffer_right_bound = (this->id_in_core + 1) * Cpu::getReorderBufferSize() - 1;
 	reorder_buffer_head = reorder_buffer_left_bound;
 	reorder_buffer_tail = reorder_buffer_left_bound;
 
@@ -101,14 +105,14 @@ bool Thread::CanInsertInInstructionQueue()
 	int size;
 
 	// Get the size of the queue and the Uop count in the queue
-	if (CPU::getInstructionQueueKind() == CPU::InstructionQueueKindPrivate)
+	if (Cpu::getInstructionQueueKind() == Cpu::InstructionQueueKindPrivate)
 	{
-		size = CPU::getInstructionQueueSize();
+		size = Cpu::getInstructionQueueSize();
 		count = uop_count_in_instruction_queue;
 	}
 	else
 	{
-		size = CPU::getInstructionQueueSize() * CPU::getNumThreads();
+		size = Cpu::getInstructionQueueSize() * Cpu::getNumThreads();
 		count = core->getInstructionQueueCount();
 	}
 
@@ -188,14 +192,14 @@ bool Thread::CanInsertInLoadStoreQueue()
 	int size;
 
 	// Get the size of the queue and the Uop count in the queue
-	if (CPU::getLoadStoreQueueKind() == CPU::LoadStoreQueueKindPrivate)
+	if (Cpu::getLoadStoreQueueKind() == Cpu::LoadStoreQueueKindPrivate)
 	{
-		size = CPU::getLoadStoreQueueSize();
+		size = Cpu::getLoadStoreQueueSize();
 		count = uop_count_in_load_store_queue;
 	}
 	else
 	{
-		size = CPU::getLoadStoreQueueSize() * CPU::getNumThreads();
+		size = Cpu::getLoadStoreQueueSize() * Cpu::getNumThreads();
 		count = core->getLoadStoreQueueCount();
 	}
 
@@ -415,7 +419,7 @@ bool Thread::CanFetch()
 
 	// Fetch queue must have not exceeded the limit of stored bytes
 	// to be able to store new macro-instructions.
-	if (num_bytes_in_fetch_queue >= CPU::getFetchQueueSize())
+	if (num_bytes_in_fetch_queue >= Cpu::getFetchQueueSize())
 		return false;
 
 	// If the next fetch address belongs to a new block, cache system
