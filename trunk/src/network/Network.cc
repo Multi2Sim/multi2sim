@@ -464,6 +464,11 @@ bool Network::CanSend(EndNode *source_node,
 			destination_node);
 	Buffer *output_buffer = entry->getBuffer();
 
+	// Check if source and destination are different
+	if (source_node == destination_node)
+		throw Error(misc::fmt("Source and destination cannot "
+			"be the same."));
+
 	// Check if route exist
 	if (!output_buffer)
 		throw Error(misc::fmt("No route from '%s' to '%s'",
