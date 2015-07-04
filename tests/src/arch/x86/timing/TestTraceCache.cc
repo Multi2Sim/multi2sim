@@ -34,10 +34,10 @@ enum UopInstanceType
 };
 
 // Set up a static branch instruction
-static UInst uinst_branch(UInstBranch);
+static Uinst uinst_branch(UInstBranch);
 
 // Set up a static move instruction
-static UInst uinst_move(UInstMove);
+static Uinst uinst_move(UInstMove);
 
 static std::vector<std::unique_ptr<Uop>> uop_list;
 

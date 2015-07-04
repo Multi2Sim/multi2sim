@@ -26,9 +26,9 @@
 namespace x86
 {
 
-int TraceCache::present;
+bool TraceCache::present;
 int TraceCache::num_sets;
-int TraceCache::assoc;
+int TraceCache::num_ways;
 int TraceCache::trace_size;
 int TraceCache::branch_max;
 int TraceCache::queue_size;
@@ -40,22 +40,17 @@ std::string TraceCache::debug_file;
 misc::Debug TraceCache::debug;
 
 
-TraceCache::TraceCache(const std::string &name)
-	:
-	name(name)
+TraceCache::TraceCache(const std::string &name) :
+		name(name)
 {
 	// Initialize 
-	this->entry = misc::new_unique_array<TraceCacheEntry>(num_sets * assoc);
-	this->temp = misc::new_unique<TraceCacheEntry>();
+	entry = misc::new_unique_array<Entry>(num_sets * num_ways);
+	temp = misc::new_unique<Entry>();
 
 	// Initialize LRU counter 
 	for (int set = 0; set < num_sets; set++)
-	{
-		for (int way = 0; way < assoc; way++)
-		{
-			entry[set * assoc + way].counter = way;
-		}
-	}
+		for (int way = 0; way < num_ways; way++)
+			entry[set * num_ways + way].counter = way;
 }
 
 
@@ -65,9 +60,9 @@ void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 	std::string section = "TraceCache";
 
 	// Read variables
-	present = ini_file->ReadBool(section, "Present", 0);
+	present = ini_file->ReadBool(section, "Present", false);
 	num_sets = ini_file->ReadInt(section, "Sets", 64);
-	assoc = ini_file->ReadInt(section, "Assoc", 4);
+	num_ways = ini_file->ReadInt(section, "Assoc", 4);
 	trace_size = ini_file->ReadInt(section, "TraceSize", 16);
 	branch_max = ini_file->ReadInt(section, "BranchMax", 3);
 	queue_size = ini_file->ReadInt(section, "QueueSize", 32);
@@ -75,7 +70,7 @@ void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 	// Integrity checks
 	if ((num_sets & (num_sets - 1)) || !num_sets)
 		throw Error(misc::fmt("%s: 'Sets' must be a power of 2 greater than 0", section.c_str()));
-	if ((assoc & (assoc - 1)) || !assoc)
+	if ((num_ways & (num_ways - 1)) || !num_ways)
 		throw Error(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
 	if (!trace_size)
 		throw Error(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
@@ -94,7 +89,7 @@ void TraceCache::DumpConfiguration(std::ostream &os)
 	os << misc::fmt("\n***** TraceCache *****\n");
 	os << misc::fmt("\tPresent: %d\n", present);
 	os << misc::fmt("\tSets: %d\n", num_sets);
-	os << misc::fmt("\tAssoc: %d\n", assoc);
+	os << misc::fmt("\tAssoc: %d\n", num_ways);
 	os << misc::fmt("\tTraceSize: %d\n", trace_size);
 	os << misc::fmt("\tBranchMax: %d\n", branch_max);
 	os << misc::fmt("\tQueueSize: %d\n", queue_size);
@@ -113,7 +108,7 @@ void TraceCache::RecordUop(Uop &uop)
 	// If there is not enough space for macro-instruction, commit trace.
 	assert(!uop.getSpeculativeMode());
 	assert(uop.getEip());
-	assert(uop.getID() == uop.getMopId());
+	assert(uop.getId() == uop.getMopId());
 	if (temp->uop_count + uop.getMopCount() > trace_size)
 		Flush();
 
@@ -150,11 +145,11 @@ void TraceCache::RecordUop(Uop &uop)
 
 
 bool TraceCache::Lookup(unsigned int eip, int pred,
-		TraceCacheEntry &return_entry, unsigned int &neip)
+		Entry &return_entry, unsigned int &neip)
 {
 	// Local variable declaration
-	TraceCacheEntry *entry_ptr;
-	TraceCacheEntry *found_entry = nullptr;
+	Entry *entry_ptr;
+	Entry *found_entry = nullptr;
 	int set, way;
 	bool taken;
 
@@ -165,9 +160,9 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 
 	// Look for trace cache line
 	set = eip % num_sets;
-	for (way = 0; way < assoc; way++)
+	for (way = 0; way < num_ways; way++)
 	{
-		entry_ptr = &entry[set * assoc + way];
+		entry_ptr = &entry[set * num_ways + way];
 		if (entry_ptr->tag == eip && ((pred & entry_ptr->branch_mask) == entry_ptr->branch_flags))
 		{
 			found_entry = entry_ptr;
@@ -212,8 +207,8 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 void TraceCache::Flush()
 {
 	// Local variable declaration
-	TraceCacheEntry *entry_ptr;
-	TraceCacheEntry *found_entry = nullptr;
+	Entry *entry_ptr;
+	Entry *found_entry = nullptr;
 	int found_way = -1;
 
 	// There must be something to commit
@@ -235,12 +230,12 @@ void TraceCache::Flush()
 	// Allocate new line for the trace. If trace is already in the cache,
 	// do nothing. If there is any invalid entry, choose it.
 	int set = temp->tag % num_sets;
-	for (int way = 0; way < assoc; way++)
+	for (int way = 0; way < num_ways; way++)
 	{
 		// Invalid entry found. Since an invalid entry should appear
 		// consecutively and at the end of the set, there is no hope
 		// that the trace will be in a later way. Stop here.
-		TraceCacheEntry *entry_ptr = &entry[set * assoc + way];
+		Entry *entry_ptr = &entry[set * num_ways + way];
 		if (!entry_ptr->tag)
 		{
 			found_entry = entry_ptr;
@@ -261,13 +256,13 @@ void TraceCache::Flush()
 	// If no invalid entry found, look for LRU.
 	if (!found_entry)
 	{
-		for (int way = 0; way < assoc; way++)
+		for (int way = 0; way < num_ways; way++)
 		{
-			entry_ptr = &entry[set * assoc + way];
+			entry_ptr = &entry[set * num_ways + way];
 			entry_ptr->counter--;
 			if (entry_ptr->counter < 0)
 			{
-				entry_ptr->counter = assoc - 1;
+				entry_ptr->counter = num_ways - 1;
 				found_entry = entry_ptr;
 				found_way = way;
 			}
@@ -279,9 +274,9 @@ void TraceCache::Flush()
 	assert(found_entry);
 	assert(found_way >= 0);
 	temp->counter = found_entry->counter;
-	TraceCacheEntry *temp_ptr = temp.get();
-	memcpy(found_entry, temp_ptr, sizeof(TraceCacheEntry));
-	memset(temp_ptr, 0, sizeof(TraceCacheEntry));
+	Entry *temp_ptr = temp.get();
+	memcpy(found_entry, temp_ptr, sizeof(Entry));
+	memset(temp_ptr, 0, sizeof(Entry));
 
 	// Debug
 	debug << misc::fmt("** Commit trace **\n");

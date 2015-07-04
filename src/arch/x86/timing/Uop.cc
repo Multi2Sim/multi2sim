@@ -17,30 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Core.h"
 #include "Uop.h"
+#include "Thread.h"
+
 
 namespace x86
 {
 
+long long Uop::id_counter = 0;
+
+
 Uop::Uop()
 {
-
 }
 
 
-Uop::Uop(int id, int id_in_core, Thread *thread)
-	:
-	id(id),
-	id_in_core(id_in_core),
-	thread(thread)
+Uop::Uop(Thread *thread) : thread(thread)
 {
-
+	// Initialize
+	core = thread->getCore();
+	id = ++id_counter;
+	id_in_core = core->getUopId();
 }
 
 
 void Uop::CountDependencies()
 {
-
 }
 
 
@@ -49,8 +52,9 @@ int Uop::Compare(Uop *uop)
 	// If the time when is ready for these two Uops is different, then return the time difference
 	// If the time when is ready for these two Uops is same, then return the ID difference
 	// (Uop with smaller ID should be handled first)
-	return this->ready_when != uop->getReadyWhen() ? this->ready_when - uop->getReadyWhen()
-			: this->id - uop->getID();
+	return ready_when != uop->ready_when ?
+			ready_when - uop->ready_when :
+			id - uop->id;
 }
 
 }

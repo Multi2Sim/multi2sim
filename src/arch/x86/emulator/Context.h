@@ -459,7 +459,7 @@ private:
 
 	// List of micro-instructions produced during the emulation of the last
 	// x86 macro-instruction.
-	std::vector<std::unique_ptr<UInst>> uinst_list;
+	std::vector<std::unique_ptr<Uinst>> uinst_list;
 
 	// Clear the list of micro-instructions
 	void ClearUInstList() {
@@ -471,29 +471,29 @@ private:
 	// associated standard dependence in \a std_dep and its size as the
 	// return value of the function. The function returns 0 if the
 	// dependence is not a memory dependence.
-	int getMemoryDepSize(UInst *uinst, int index, UInstDep &std_dep);
+	int getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep);
 
 	// Emit the effective address computation micro-instructions. Argument
 	// \a index is the dependency index, a value between 0 and
 	// UInstMaxDeps - 1
-	void EmitUInstEffectiveAddress(UInst *uinst, int index);
+	void EmitUInstEffectiveAddress(Uinst *uinst, int index);
 
 	// Parse regular dependence, given as a global dependence index. The
 	// value in \a index must be between 0 and UInstMaxDeps -1
-	void ParseUInstDep(UInst *uinst, int index);
+	void ParseUInstDep(Uinst *uinst, int index);
 
 	// Parse input dependences. Argument \a index is a value between 0 and
 	// UInstMaxIDeps - 1
-	void ParseUInstIDep(UInst *uinst, int index);
+	void ParseUInstIDep(Uinst *uinst, int index);
 	
 	// Parse output dependence. Argument \a index is a value between 0 and
 	// UInstMaxODeps - 1
-	void ParseUInstODep(UInst *uinst, int index);
+	void ParseUInstODep(Uinst *uinst, int index);
 
 	// Process a newly created micro-instruction. The object must have been
 	// allocated with \c new. This function will insert it into \c
 	// uinst_list, and assign it to a smart pointer for automatic release.
-	void ProcessNewUInst(UInst *uinst);
+	void ProcessNewUInst(Uinst *uinst);
 
 	// Add a new memory micro-instruction to the list only if we're running
 	// in timing simulation mode. This function can be invoked directly by
@@ -508,7 +508,7 @@ private:
 			return;
 
 		// Create micro-instruction
-		UInst *uinst = new UInst(opcode);
+		Uinst *uinst = new Uinst(opcode);
 		uinst->setMemoryAccess(address, size);
 		uinst->setIDep(0, idep0);
 		uinst->setIDep(1, idep1);
@@ -909,7 +909,7 @@ public:
 	Instruction &getInst() { return inst; }
 
 	/// Return a reference of Uinst list
-	std::vector<std::unique_ptr<UInst>> &getUinstList()
+	std::vector<std::unique_ptr<Uinst>> &getUinstList()
 	{
 		return uinst_list;
 	}

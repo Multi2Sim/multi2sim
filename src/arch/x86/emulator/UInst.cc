@@ -111,7 +111,7 @@ misc::StringMap uinst_dep_map
 
 
 // Information related with a micro-instruction opcode
-UInstInfo UInst::info[UInstOpcodeCount] =
+UInstInfo Uinst::info[UInstOpcodeCount] =
 {
 	{ "nop", 0 },
 
@@ -191,7 +191,7 @@ UInstInfo UInst::info[UInstOpcodeCount] =
 };
 
 
-UInst::UInst(UInstOpcode opcode)
+Uinst::Uinst(UInstOpcode opcode)
 {
 	// Pointers
 	idep = dep;
@@ -208,7 +208,7 @@ UInst::UInst(UInstOpcode opcode)
 }
 
 
-bool UInst::addIDep(UInstDep dep)
+bool Uinst::addIDep(UInstDep dep)
 {
 	// Find free index
 	int index;
@@ -225,7 +225,7 @@ bool UInst::addIDep(UInstDep dep)
 	return true;
 }
 
-bool UInst::addODep(UInstDep dep)
+bool Uinst::addODep(UInstDep dep)
 {
 	// Find free index
 	int index;
@@ -243,7 +243,7 @@ bool UInst::addODep(UInstDep dep)
 }
 
 
-void UInst::Dump(std::ostream &os) const
+void Uinst::Dump(std::ostream &os) const
 {
 	// Name
 	os << info[opcode].name << ' ';
