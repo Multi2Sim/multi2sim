@@ -91,7 +91,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// First micro-operation (Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	UInst uinst_1(UInstBranch);
+	Uinst uinst_1(UInstBranch);
 	uop->setUInst(&uinst_1);
 	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
 	uop->setEip(branch_addr);
@@ -101,7 +101,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Second micro-operation (Not Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	UInst uinst_2(UInstBranch);
+	Uinst uinst_2(UInstBranch);
 	uop->setUInst(&uinst_2);
 	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
 	uop->setEip(branch_addr);
@@ -111,7 +111,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Third micro-operation (Not Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	UInst uinst_3(UInstBranch);
+	Uinst uinst_3(UInstBranch);
 	uop->setUInst(&uinst_3);
 	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
 	uop->setEip(branch_addr);
@@ -199,7 +199,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> mock_uop_list;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	UInst uinst(UInstBranch);
+	Uinst uinst(UInstBranch);
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)
@@ -375,7 +375,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> mock_uop_list;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	UInst uinst(UInstBranch);
+	Uinst uinst(UInstBranch);
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)

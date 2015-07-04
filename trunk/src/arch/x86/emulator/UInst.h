@@ -276,7 +276,7 @@ const int UInstMaxDeps = UInstMaxIDeps + UInstMaxODeps;
 
 
 /// Class representing an x86 micro-instruction
-class UInst
+class Uinst
 {
 	// Table of micro-instruction information, index by a micro-instruction
 	// opcode.
@@ -327,7 +327,7 @@ public:
 			return uinst_dep_map.MapValue(dep); }
 
 	/// Create a micro-instruction with a given \a opcode
-	UInst(UInstOpcode opcode);
+	Uinst(UInstOpcode opcode);
 	
 	/// Return the micro-instruction opcode
 	UInstOpcode getOpcode() const { return opcode; }
@@ -404,7 +404,7 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Short-hand invocation to Dump()
-	friend std::ostream &operator<<(std::ostream &os, const UInst &uinst) {
+	friend std::ostream &operator<<(std::ostream &os, const Uinst &uinst) {
 		uinst.Dump(os);
 		return os;
 	}
