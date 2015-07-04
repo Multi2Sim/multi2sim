@@ -29,15 +29,16 @@
 
 #include "Uop.h"
 #include "BranchPredictor.h"
-#include "TraceCache.h"
 #include "RegisterFile.h"
+#include "TraceCache.h"
+
 
 namespace x86
 {
 
 // Forward declarations
 class Core;
-class CPU;
+class Cpu;
 class Timing;
 
 /// X86 Thread
@@ -45,32 +46,20 @@ class Thread
 {
 private:
 
-	// Name
+	// Name, assigned in constructor
 	std::string name;
 
+	// Cpu the thread belongs to, assigned in constructor
+	Cpu *cpu;
 
-
-	//
-	// Timing simulator, CPU and Core that it belongs to
-	//
-
-	// CPU the thread belongs to
-	CPU *cpu;
-
-	// Core the thread belongs to
+	// Core the thread belongs to, assigned in constructor
 	Core *core;
 
+	// Thread index in the core, assigned in constructor
+	int id_in_core;
 
-
-	//
-	// IDs
-	//
-
-	// Thread ID in the core
-	int id_in_core = 0;
-
-	// Global thread ID in the cpu
-	int id_in_cpu = 0;
+	// Global thread ID in the CPU, assigned in constructor
+	int id_in_cpu;
 
 
 
@@ -179,8 +168,11 @@ private:
 	// Fetch
 	//
 
-	// eip and next eip
-	unsigned int fetch_eip = 0, fetch_neip = 0;
+	// Current instruction pointer
+	unsigned int fetch_eip = 0;
+	
+	// Next instruction pointer
+	unsigned int fetch_neip = 0;
 
 	// Number of bytes occupied in the fetch queue
 	int num_bytes_in_fetch_queue  = 0;
@@ -253,6 +245,7 @@ private:
 	//
 	// Statistics for structures
 	//
+
 	long long rob_occupancy = 0;
 	long long rob_full = 0;
 	long long rob_reads = 0;
@@ -298,8 +291,7 @@ private:
 public:
 
 	/// Constructor
-	Thread(const std::string &name, CPU *cpu,
-			Core *core, int id_in_core);
+	Thread(Core *core, int index);
 
 
 
@@ -423,8 +415,11 @@ public:
 	// Getters
 	//
 
-	/// Get thread ID in core
-	int getIDInCore() const { return id_in_core; }
+	/// Get thread index within the core
+	int getIdInCore() const { return id_in_core; }
+
+	/// Get the thread index within the CPU
+	int getIdInCpu() const { return id_in_cpu; }
 
 	/// Get the Uop count in reorder buffer
 	int getUopCountInRob() const { return uop_count_in_rob; }
@@ -609,4 +604,5 @@ public:
 
 }
 
-#endif // ARCH_X86_TIMING_THREAD_H
+#endif
+

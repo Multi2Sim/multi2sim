@@ -27,29 +27,24 @@
 
 #include "BranchPredictor.h"
 
+
 namespace x86
 {
 
 // Forward declarations
 class Thread;
 
+
 // Class Uop
 class Uop
 {
 private:
-
-	//
-	// IDs
-	//
 
 	// Unique ID
 	long long id = 0;
 
 	// Unique ID in core
 	long long id_in_core = 0;
-
-
-
 
 	// Thread the Uop belongs to
 	Thread *thread = nullptr;
@@ -134,10 +129,14 @@ private:
 	//
 
 	// Input dependency count for Physical INT/FP/XMM registers
-	int phy_int_idep_count = 0, phy_fp_idep_count = 0, phy_xmm_idep_count = 0;
+	int phy_int_idep_count = 0;
+	int phy_fp_idep_count = 0;
+	int phy_xmm_idep_count = 0;
 
 	// Output dependency count for Physical INT/FP/XMM registers
-	int phy_int_odep_count = 0, phy_fp_odep_count = 0, phy_xmm_odep_count = 0;
+	int phy_int_odep_count = 0;
+	int phy_fp_odep_count = 0;
+	int phy_xmm_odep_count = 0;
 
 	// Input dependency physical register table
 	int phy_idep[UInstMaxIDeps];
@@ -194,9 +193,6 @@ private:
 
 	// Is Uop completed
 	bool completed = false;
-
-
-
 
 	// Physical address for memory uops
 	unsigned int phy_addr = 0;
@@ -584,20 +580,19 @@ public:
 	/// Get the physical address of Uop
 	unsigned int getPhyAddr() { return phy_addr; }
 
-
-
-
-	/// Compare with other Uop based on its ready time or unique ID
+	/// Uop comparison based on ready time or unique ID
 	///
-	/// \ param uop
-	///	One other uop that is used to compare with current one
+	/// \param uop
+	///	Uop to compare with
 	///
 	/// \return
-	///	< 0: Current uop should be fetched in a queue before the other uop
-	///	> 0: Current uop should be fetched in a queue after the other uop
+	///	< 0: Current uop comes first
+	///	> 0: Uop given in the argument comes first
+	///
 	int Compare(Uop *uop);
 };
 
 }
 
-#endif // ARCH_X86_TIMING_UOP_H
+#endif
+

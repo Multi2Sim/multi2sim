@@ -17,23 +17,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Timing.h"
-#include "CPU.h"
 #include "Core.h"
+#include "Cpu.h"
+#include "Timing.h"
 
 
 namespace x86
 {
 
-Core::Core(const std::string &name, CPU *cpu, int id)
-	:
-	name(name),
-	cpu(cpu),
-	id(id)
+Core::Core(Cpu *cpu,
+		int id) :
+		cpu(cpu),
+		id(id)
 {
-	// The prefix for each core
-	std::string prefix = name + "Thread";
-	std::string thread_name;
+	// Assign name
+	name = misc::fmt("Core %d", id);
 
 	// Initialize ROB
 	InitializeReorderBuffer();
@@ -42,19 +40,16 @@ Core::Core(const std::string &name, CPU *cpu, int id)
 	functional_unit = misc::new_unique<FunctionalUnit>();
 
 	// Create threads
-	for (int i = 0; i < CPU::getNumThreads(); i++)
-	{
-		thread_name = prefix + misc::fmt("%d", i);
-		threads.emplace_back(misc::new_unique<Thread>(thread_name,
-				this->cpu, this, i));
-	}
+	threads.reserve(Cpu::getNumThreads());
+	for (int i = 0; i < Cpu::getNumThreads(); i++)
+		threads.emplace_back(misc::new_unique<Thread>(this, i));
 }
 
 
 void Core::InitializeReorderBuffer()
 {
 	// Create empty reorder buffer
-	reorder_buffer_total_size = CPU::getReorderBufferSize() * CPU::getNumThreads();
+	reorder_buffer_total_size = Cpu::getReorderBufferSize() * Cpu::getNumThreads();
 	reorder_buffer.resize(reorder_buffer_total_size);
 }
 
@@ -91,16 +86,16 @@ void Core::TrimReorderBuffer()
 
 bool Core::CanEnqueueInReorderBuffer(Uop *uop)
 {
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
-		if (uop->getThread()->getUopCountInRob() < CPU::getReorderBufferSize())
+		if (uop->getThread()->getUopCountInRob() < Cpu::getReorderBufferSize())
 			return true;
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -119,19 +114,20 @@ bool Core::CanEnqueueInReorderBuffer(Uop *uop)
 
 void Core::EnqueueInReorderBuffer(Uop *uop)
 {
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
-		assert(uop->getThread()->getUopCountInRob() < CPU::getReorderBufferSize());
+		assert(uop->getThread()->getUopCountInRob() < Cpu::getReorderBufferSize());
 		assert(!reorder_buffer[uop->getThread()->getReorderBufferTail()]);
 		reorder_buffer[uop->getThread()->getReorderBufferTail()].reset(uop);
 		uop->getThread()->incReorderBufferTail();
 		uop->getThread()->incUopCountInRob();
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -149,7 +145,7 @@ void Core::EnqueueInReorderBuffer(Uop *uop)
 		throw misc::Panic("The reorder buffer kind is invalid\n");
 	}
 
-	//Instruction is in the ROB
+	// Instruction is in the ROB
 	uop->setInReorderBuffer(true);
 }
 
@@ -163,9 +159,10 @@ bool Core::CanDequeueFromReorderBuffer(int thread_id)
 	Thread *thread = getThread(thread_id);
 
 	// Check according to ROB kind
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
 		if (thread->getUopCountInRob() > 0)
@@ -173,7 +170,7 @@ bool Core::CanDequeueFromReorderBuffer(int thread_id)
 
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -192,6 +189,7 @@ bool Core::CanDequeueFromReorderBuffer(int thread_id)
 	return false;
 }
 
+
 Uop *Core::getReorderBufferHead(int thread_id)
 {
 	// Local variable declaration
@@ -202,9 +200,9 @@ Uop *Core::getReorderBufferHead(int thread_id)
 	Thread *thread = getThread(thread_id);
 
 	// Get head according to ROB kind
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
 		if (thread->getUopCountInRob() > 0)
@@ -214,7 +212,7 @@ Uop *Core::getReorderBufferHead(int thread_id)
 		}
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -238,6 +236,7 @@ Uop *Core::getReorderBufferHead(int thread_id)
 	return nullptr;
 }
 
+
 void Core::RemoveReorderBufferHead(int thread_id)
 {
 	// Local variable declaration
@@ -248,9 +247,9 @@ void Core::RemoveReorderBufferHead(int thread_id)
 	Thread *thread = getThread(thread_id);
 
 	// Remove Uop according to the ROB kind
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
 		assert(thread->getUopCountInRob() > 0);
@@ -261,7 +260,7 @@ void Core::RemoveReorderBufferHead(int thread_id)
 		thread->decUopCountInRob();
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -299,9 +298,9 @@ Uop *Core::getReorderBufferTail(int thread_id)
 	Thread *thread = getThread(thread_id);
 
 	// Get tail according to ROB kind
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
 		if (thread->getUopCountInRob() > 0)
@@ -315,7 +314,7 @@ Uop *Core::getReorderBufferTail(int thread_id)
 		}
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// in core domain
 		TrimReorderBuffer();
@@ -338,6 +337,7 @@ Uop *Core::getReorderBufferTail(int thread_id)
 	return nullptr;
 }
 
+
 void Core::RemoveReorderBufferTail(int thread_id)
 {
 	// Local variable declaration
@@ -348,10 +348,10 @@ void Core::RemoveReorderBufferTail(int thread_id)
 	Thread *thread = getThread(thread_id);
 
 	// Remove tail according to ROB kind
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
 
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		// In thread domain
 		assert(thread->getUopCountInRob() > 0);
@@ -366,7 +366,7 @@ void Core::RemoveReorderBufferTail(int thread_id)
 		thread->decUopCountInRob();;
 		break;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		// In core domain
 		TrimReorderBuffer();
@@ -393,6 +393,7 @@ void Core::RemoveReorderBufferTail(int thread_id)
 	uop->setInReorderBuffer(false);
 }
 
+
 Uop *Core::getReorderBufferEntry(int index, int thread_id)
 {
 	// Local declaration
@@ -405,9 +406,9 @@ Uop *Core::getReorderBufferEntry(int index, int thread_id)
 	if (index < 0 || index >= thread->getUopCountInRob())
 		return nullptr;
 
-	switch (CPU::getReorderBufferKind())
+	switch (Cpu::getReorderBufferKind())
 	{
-	case CPU::ReorderBufferKindPrivate:
+	case Cpu::ReorderBufferKindPrivate:
 
 		index += thread->getReorderBufferHead();
 		if (index > thread->getReorderBufferRightBound())
@@ -417,7 +418,7 @@ Uop *Core::getReorderBufferEntry(int index, int thread_id)
 		assert(uop);
 		return uop;
 
-	case CPU::ReorderBufferKindShared:
+	case Cpu::ReorderBufferKindShared:
 
 		TrimReorderBuffer();
 		index = (reorder_buffer_head + index) % reorder_buffer_total_size;
@@ -483,106 +484,51 @@ std::shared_ptr<Uop> Core::ExtractFromEventQueue()
 void Core::Fetch()
 {
 	// Invoke fetch stage function according to the kind
-	switch (CPU::getFetchKind())
+	switch (Cpu::getFetchKind())
 	{
 
-	case CPU::FetchKindShared:
+	case Cpu::FetchKindShared:
 	{
 		// Fetch from all threads
-		for (int i = 0; i < CPU::getNumThreads(); i++)
+		for (int i = 0; i < Cpu::getNumThreads(); i++)
 			if (threads[i]->CanFetch())
 				threads[i]->Fetch();
 		break;
 	}
 
-	case CPU::FetchKindTimeslice:
+	case Cpu::FetchKindTimeslice:
 	{
 		// Round-robin fetch
-		Thread *thread;
-		for (int i = 0; i < CPU::getNumThreads(); i++)
+		for (int i = 0; i < Cpu::getNumThreads(); i++)
 		{
-			current_fetch_thread = (current_fetch_thread + 1) % CPU::getNumThreads();
-			thread = threads[current_fetch_thread].get();
+			// Next thread
+			current_fetch_thread = (current_fetch_thread + 1)
+					% Cpu::getNumThreads();
+
+			// Try to fetch from this thread
+			Thread *thread = threads[current_fetch_thread].get();
 			if (thread->CanFetch())
 			{
 				thread->Fetch();
 				break;
 			}
 		}
-		break;
-	}
 
-	case CPU::FetchKindSwitchonevent:
-	{
-		// If current thread is stalled, it means that we just switched to it.
-		// No fetching and no switching either.
-		Thread *thread = threads[current_fetch_thread].get();
-		if (thread->getFetchStallUntil() >= Timing::getInstance()->getCycle())
-			break;
-
-		// Switch thread if:
-		// - Quantum expired for current thread.
-		// - Long latency instruction is in progress.
-		bool must_switch = !thread->CanFetch();
-		must_switch = must_switch || Timing::getInstance()->getCycle() - fetch_switch_when >
-				CPU::getThreadQuantum() + CPU::getThreadSwitchPenalty();
-		must_switch = must_switch || thread->isLongLatencyInEventQueue();
-
-		// Switch thread
-		if (must_switch)
-		{
-			// Find a new thread to switch to
-			Thread *new_thread;
-			int new_index;
-			for (new_index = (thread->getIDInCore() + 1) % CPU::getNumThreads();
-					new_index != thread->getIDInCore();
-					new_index = (new_index + 1) % CPU::getNumThreads())
-			{
-				// Do not choose it if it is not eligible for fetching
-				new_thread = threads[new_index].get();
-				if (!new_thread->CanFetch())
-					continue;
-
-				// Do not choose it if it is unfair
-				if (new_thread->getNumFetchedUinst() >
-					thread->getNumFetchedUinst() + 100000)
-					continue;
-
-				// Do not choose it if it is stalled
-				if (new_thread->isLongLatencyInEventQueue())
-					continue;
-
-				// Choose it if we need to switch
-				if (new_thread->CanFetch())
-					break;
-			}
-
-			if (new_index != thread->getIDInCore())
-			{
-				// Thread switch successful
-				current_fetch_thread = new_index;
-				fetch_switch_when = Timing::getInstance()->getCycle();
-				new_thread->setFetchStallUntil(Timing::getInstance()->getCycle() +
-						CPU::getThreadSwitchPenalty() - 1);
-			}
-			else
-			{
-				// Thread switch fail
-				break;
-			}
-		}
-
-		// Fetch
-		thread = threads[current_fetch_thread].get();
-		if (thread->CanFetch())
-			thread->Fetch();
+		// Done
 		break;
 	}
 
 	default:
 
-		throw misc::Panic("wrong fetch policy");
+		throw misc::Panic("Invalid fetch policy");
 	}
 }
 
+
+void Core::Run()
+{
+	Fetch();
 }
+
+}
+
