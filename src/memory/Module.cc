@@ -630,58 +630,84 @@ bool Module::FindBlock(unsigned address,
 }
 
 
-void Module::FlushPages(esim::Frame *esim_frame)
-{	
-	// Cast event frame
-	Frame *frame = misc::cast<Frame *>(esim_frame);
+void Module::Flush(int *witness)
+{
+	// Get pointer to esim engine
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+
+	// Create a new event frame
+	auto new_frame = misc::new_shared<Frame>(
+			Frame::getNewId(),
+			this,
+			0);
+	new_frame->witness = witness;
+
+	// Set up event
+	esim::Event *event = System::event_flush;
+
+	// Schedule event
+	esim_engine->Call(event, new_frame);
+}
+
+
+void Module::RecursiveFlush()
+{
+	// Iterate through low_modules
+	for (Module *low_module : low_modules)
+	{
+		// Skips main memory as it should not be flushed
+		if (low_module->getType() != Module::TypeMainMemory)
+			low_module->RecursiveFlush();
+
+		else
+			low_module->FlushCache();
+	}
+}
+
+
+void Module::FlushCache()
+{
+	// Get pointer to event frame
+	Frame *frame = misc::cast<Frame *>(frame);
 	
-	// Flush all pages
+	// Set up variables
+	unsigned tag;
+	Cache::BlockState state;
+
+	// Invalidate all blocks
 	for (int set = 0; set < directory_num_sets; set++)
 	{
 		for (int way = 0; way < directory_num_ways; way++)
 		{
 			// Get block
-			Cache::Block *block = cache->getBlock(set, way);
-			
-			// Continue if block has not already been invalidated 
-			if (block->getState() != Cache::BlockState::BlockInvalid)
+			cache->getBlock(set, way, tag, state);
+
+			// Ignore if block has already been invalidated
+			if (state == Cache::BlockState::BlockInvalid)
 				continue;
-			
-			// Increase pending frames
+
+			// One more pending request
 			frame->pending++;
 
+			// Get pointer to engine
 			esim::Engine *esim_engine = esim::Engine::getInstance();
+
+			// Create new frame
 			auto new_frame = misc::new_shared<Frame>(
 					frame->getId(),
 					this,
 					frame->tag);
-
 			new_frame->set = set;
 			new_frame->way = way;
 			new_frame->witness = frame->witness;
 
-			esim_engine->Call(System::event_invalidate,
-				new_frame, nullptr, 0);
+			// Set up event
+			esim::Event *event = System::event_invalidate;
+
+			// Schedule event
+			esim_engine->Call(event,
+				new_frame);
 		}
-	}
-}
-
-
-void Module::RecursiveFlush(esim::Frame *esim_frame)
-{
-	// Get pointer
-	Frame *frame = misc::cast<Frame *>(esim_frame);
-
-	// Iterate through low_modules
-	for (Module *low_module : low_modules)
-	{
-		// Module cannot be main memory
-		if (low_module->getType() != TypeMainMemory)
-			RecursiveFlush(frame);
-
-		else
-			FlushPages(frame);
-
 	}
 }
 
