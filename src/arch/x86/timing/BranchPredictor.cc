@@ -158,7 +158,7 @@ BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
 	}
 
 	// An internal branch (string operations) is always predicted taken
-	if (uop.getUinst()->getOpcode() == UInstIbranch)
+	if (uop.getUinst()->getOpcode() == Uinst::OpcodeIbranch)
 	{
 		uop.setPrediction(PredictionTaken);
 		return PredictionTaken;
@@ -284,7 +284,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	// Stats
 	accesses++;
-	if (uop.getNeip() == uop.getPredictedNeip())
+	if (uop.neip == uop.predicted_neip)
 		hits++;
 
 	// Update predictors. This is only done for conditional branches. Thus,
@@ -351,7 +351,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 		return uop.getNeip();
 
 	// Internal branch (string operations) always predicted to jump to itself
-	if (uop.getUinst()->getOpcode() == UInstIbranch)
+	if (uop.getUinst()->getOpcode() == Uinst::OpcodeIbranch)
 		return uop.getEip();
 
 	// Search address in BTB
@@ -369,7 +369,8 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	// If there was a hit, we know whether branch is a call.
 	// In this case, push return address into RAS. To avoid
 	// updates at recovery, do it only for non-spec instructions.
-	if (hit && uop.getUinst()->getOpcode() == UInstCall && !uop.getSpeculativeMode())
+	if (hit && uop.getUinst()->getOpcode() == Uinst::OpcodeCall
+			&& !uop.getSpeculativeMode())
 	{
 		ras[ras_index] = uop.getEip() + uop.getMopSize();
 		ras_index = (ras_index + 1) % ras_size;
@@ -377,7 +378,8 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 
 	// If there was a hit, we know whether branch is a ret. In this case,
 	// pop target from the RAS, and ignore target obtained from BTB.
-	if (hit && uop.getUinst()->getOpcode() == UInstRet && !uop.getSpeculativeMode())
+	if (hit && uop.getUinst()->getOpcode() == Uinst::OpcodeRet
+			&& !uop.getSpeculativeMode())
 	{
 		ras_index = (ras_index + ras_size - 1) % ras_size;
 		target = ras[ras_index];

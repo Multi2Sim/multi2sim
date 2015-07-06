@@ -124,6 +124,10 @@ private:
 
 public:
 
+	//
+	// Error class
+	//
+
 	/// Exception for X86 trace cache
 	class Error : public misc::Error
 	{
@@ -135,22 +139,53 @@ public:
 		}
 	};
 
-	/// Constructor
-	TraceCache(const std::string &name = "");
+
+
+	//
+	// Static fields
+	//
 
 	/// Read trace cache configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Return whether the trace cache was configured as present
+	static bool isPresent() { return present; }
+
+	/// Return the number of sets, as configured by the user
+	static int getNumSets() { return num_sets; }
+
+	/// Return the number of ways, as configured by the user
+	static int getNumWays() { return num_ways; }
+
+	/// Return the trace size, as configured by the user
+	static int getTraceSize() { return trace_size; }
+	
+	/// Return the maximum number of branches in a trace, as configured
+	/// by the user
+	static int getMaxNumBranch() { return branch_max; }
+
+	/// Return the trace queue size
+	static int getQueueSize() { return queue_size; }
+	
+	/// Debugger files
+	static std::string debug_file;
+
+	/// Debugger for trace cache
+	static misc::Debug debug;
+
+
+
+
+
+	//
+	// Class members
+	//
+
+	/// Constructor
+	TraceCache(const std::string &name = "");
+
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
-
-	/// Configuration getters
-	static bool getPresent() { return present; }
-	static int getNumSets() { return num_sets; }
-	static int getAssoc() { return num_ways; }
-	static int getTraceSize() { return trace_size; }
-	static int getMaxNumBranch() { return branch_max; }
-	static int getQueuesize() { return queue_size; }
 
 	/// Increment number of fetched Uinst in trace cache
 	void incNumFetchedUinst() { num_fetched_uinst++; }
@@ -184,13 +219,6 @@ public:
 
 	/// Flush temporary trace of committed instructions back into the trace cache
 	void Flush();
-
-	/// Debugger files
-	static std::string debug_file;
-
-	/// Debugger for trace cache
-	static misc::Debug debug;
-
 };
 
 }

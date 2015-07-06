@@ -111,7 +111,7 @@ misc::StringMap uinst_dep_map
 
 
 // Information related with a micro-instruction opcode
-UInstInfo Uinst::info[UInstOpcodeCount] =
+UInstInfo Uinst::info[Uinst::OpcodeCount] =
 {
 	{ "nop", 0 },
 
@@ -191,7 +191,7 @@ UInstInfo Uinst::info[UInstOpcodeCount] =
 };
 
 
-Uinst::Uinst(UInstOpcode opcode)
+Uinst::Uinst(Uinst::Opcode opcode)
 {
 	// Pointers
 	idep = dep;

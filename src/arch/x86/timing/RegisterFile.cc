@@ -250,12 +250,12 @@ void RegisterFile::Rename(Uop &uop)
 	//// assert(uop->thread == self);
 
 	// Update floating-point top of stack
-	if (uop.getUinst()->getOpcode() == UInstFpPop)
+	if (uop.getUinst()->getOpcode() == Uinst::OpcodeFpPop)
 	{
 		// Pop floating-point stack
 		fp_top_of_stack = (fp_top_of_stack + 1) % 8;
 	}
-	else if (uop.getUinst()->getOpcode() == UInstFpPush)
+	else if (uop.getUinst()->getOpcode() == Uinst::OpcodeFpPush)
 	{
 		// Push floating-point stack
 		fp_top_of_stack = (fp_top_of_stack + 7) % 8;
@@ -520,12 +520,12 @@ void RegisterFile::UndoUop(Uop &uop)
 	}
 
 	// Undo modification in floating-point top of stack
-	if (uop.getUinst()->getOpcode() == UInstFpPop)
+	if (uop.getUinst()->getOpcode() == Uinst::OpcodeFpPop)
 	{
 		// Inverse-pop floating-point stack
 		fp_top_of_stack = (fp_top_of_stack + 7) % 8;
 	}
-	else if (uop.getUinst()->getOpcode() == UInstFpPush)
+	else if (uop.getUinst()->getOpcode() == Uinst::OpcodeFpPush)
 	{
 		// Inverse-push floating-point stack
 		fp_top_of_stack = (fp_top_of_stack + 1) % 8;
