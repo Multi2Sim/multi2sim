@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_UINST_H
-#define ARCH_X86_EMU_UINST_H
+#ifndef ARCH_X86_EMULATOR_UINST_H
+#define ARCH_X86_EMULATOR_UINST_H
 
 #include <cassert>
 #include <iostream>
@@ -169,94 +169,6 @@ enum UInstFlag
 };
 
 
-// Micro-instruction opcodes.
-// WARNING: when the set of micro-instructions is modified, also update:
-//   - Variable UInst::info (file UInst.cc).
-//   - Variable 'fu_class_table' (src/arch/x86/timing/fu.c).
-//   - Multi2Sim Guide (CISC instruction decoding)
-enum UInstOpcode
-{
-	UInstNop = 0,
-
-	UInstMove,
-	UInstAdd,
-	UInstSub,
-	UInstMult,
-	UInstDiv,
-	UInstEffaddr,
-
-	UInstAnd,
-	UInstOr,
-	UInstXor,
-	UInstNot,
-	UInstShift,
-	UInstSign,
-
-	UInstFpMove,
-	UInstFpSign,
-	UInstFpRound,
-
-	UInstFpAdd,
-	UInstFpSub,
-	UInstFpComp,
-	UInstFpMult,
-	UInstFpDiv,
-
-	UInstFpExp,
-	UInstFpLog,
-	UInstFpSin,
-	UInstFpCos,
-	UInstFpSincos,
-	UInstFpTan,
-	UInstFpAtan,
-	UInstFpSqrt,
-
-	UInstFpPush,
-	UInstFpPop,
-
-	UInstXmmAnd,
-	UInstXmmOr,
-	UInstXmmXor,
-	UInstXmmNot,
-	UInstXmmNand,
-	UInstXmmShift,
-	UInstXmmSign,
-
-	UInstXmmAdd,
-	UInstXmmSub,
-	UInstXmmComp,
-	UInstXmmMult,
-	UInstXmmDiv,
-
-	UInstXmmFpAdd,
-	UInstXmmFpSub,
-	UInstXmmFpComp,
-	UInstXmmFpMult,
-	UInstXmmFpDiv,
-
-	UInstXmmFpSqrt,
-
-	UInstXmmMove,
-	UInstXmmShuf,
-	UInstXmmConv,
-
-	UInstLoad,
-	UInstStore,
-	UInstPrefetch,
-
-	UInstCall,
-	UInstRet,
-	UInstJump,
-	UInstBranch,
-	UInstIbranch,
-
-	UInstSyscall,
-
-	// Last element
-	UInstOpcodeCount
-};
-
-
 /// Information about a micro-instruction. Table UInst::info contains elements
 /// of this type.
 struct UInstInfo
@@ -278,12 +190,103 @@ const int UInstMaxDeps = UInstMaxIDeps + UInstMaxODeps;
 /// Class representing an x86 micro-instruction
 class Uinst
 {
+public:
+
+	// Micro-instruction opcodes.
+	// WARNING: when the set of micro-instructions is modified, also update:
+	//   - Variable UInst::info (file UInst.cc).
+	//   - ALU timing information (src/arch/x86/timing/ALU.cc).
+	//   - Multi2Sim Guide (CISC instruction decoding)
+	enum Opcode
+	{
+		OpcodeNop = 0,
+
+		OpcodeMove,
+		OpcodeAdd,
+		OpcodeSub,
+		OpcodeMult,
+		OpcodeDiv,
+		OpcodeEffaddr,
+
+		OpcodeAnd,
+		OpcodeOr,
+		OpcodeXor,
+		OpcodeNot,
+		OpcodeShift,
+		OpcodeSign,
+
+		OpcodeFpMove,
+		OpcodeFpSign,
+		OpcodeFpRound,
+
+		OpcodeFpAdd,
+		OpcodeFpSub,
+		OpcodeFpComp,
+		OpcodeFpMult,
+		OpcodeFpDiv,
+
+		OpcodeFpExp,
+		OpcodeFpLog,
+		OpcodeFpSin,
+		OpcodeFpCos,
+		OpcodeFpSincos,
+		OpcodeFpTan,
+		OpcodeFpAtan,
+		OpcodeFpSqrt,
+
+		OpcodeFpPush,
+		OpcodeFpPop,
+
+		OpcodeXmmAnd,
+		OpcodeXmmOr,
+		OpcodeXmmXor,
+		OpcodeXmmNot,
+		OpcodeXmmNand,
+		OpcodeXmmShift,
+		OpcodeXmmSign,
+
+		OpcodeXmmAdd,
+		OpcodeXmmSub,
+		OpcodeXmmComp,
+		OpcodeXmmMult,
+		OpcodeXmmDiv,
+
+		OpcodeXmmFpAdd,
+		OpcodeXmmFpSub,
+		OpcodeXmmFpComp,
+		OpcodeXmmFpMult,
+		OpcodeXmmFpDiv,
+
+		OpcodeXmmFpSqrt,
+
+		OpcodeXmmMove,
+		OpcodeXmmShuf,
+		OpcodeXmmConv,
+
+		OpcodeLoad,
+		OpcodeStore,
+		OpcodePrefetch,
+
+		OpcodeCall,
+		OpcodeRet,
+		OpcodeJump,
+		OpcodeBranch,
+		OpcodeIbranch,
+
+		OpcodeSyscall,
+
+		// Last element
+		OpcodeCount
+	};
+
+private:
+
 	// Table of micro-instruction information, index by a micro-instruction
 	// opcode.
-	static UInstInfo info[UInstOpcodeCount];
+	static UInstInfo info[OpcodeCount];
 
 	// Unique identifier
-	UInstOpcode opcode;
+	Opcode opcode;
 
 	// All dependences
 	UInstDep dep[UInstMaxDeps];
@@ -298,6 +301,10 @@ class Uinst
 	int size;
 
 public:
+
+	//
+	// Static functions
+	//
 
 	/// Return \c true if a micro-instruction dependency is an integer
 	/// register
@@ -326,32 +333,42 @@ public:
 	static const char *getDepName(UInstDep dep) {
 			return uinst_dep_map.MapValue(dep); }
 
+
+
+
+	//
+	// Member functions
+	//
+
 	/// Create a micro-instruction with a given \a opcode
-	Uinst(UInstOpcode opcode);
+	Uinst(Opcode opcode);
 	
 	/// Return the micro-instruction opcode
-	UInstOpcode getOpcode() const { return opcode; }
+	Opcode getOpcode() const { return opcode; }
 
 	/// Modify the micro-instruction opcode
-	void setOpcode(UInstOpcode opcode) { this->opcode = opcode; }
+	void setOpcode(Opcode opcode) { this->opcode = opcode; }
 
 	/// Return a dependence at position \a index, which must be a value
 	/// between 0 and UInstMaxDeps.
-	UInstDep getDep(int index) const {
+	UInstDep getDep(int index) const
+	{
 		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
 		return dep[index];
 	}
 
 	/// Return an input dependence. Argument \a index must be a value
 	/// between 0 and UInstMaxIDeps - 1.
-	UInstDep getIDep(int index) const {
+	UInstDep getIDep(int index) const
+	{
 		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
 		return idep[index];
 	}
 
 	/// Return an output dependence. Argument \a index must be a value
 	/// between 0 and UInstMaxODeps - 1.
-	UInstDep getODep(int index) const {
+	UInstDep getODep(int index) const
+	{
 		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
 		return odep[index];
 	}
@@ -365,14 +382,16 @@ public:
 	/// Set an input dependence. Argument \a index must be a value between
 	/// 0 and UInstMaxIDeps - 1. Argument \a dep should be an \c UInstDepXXX
 	/// constant.
-	void setIDep(int index, int dep) {
+	void setIDep(int index, int dep)
+	{
 		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
 		idep[index] = (UInstDep) dep;
 	}
 
 	/// Set an output dependence. Argument \a index must be a value between
 	/// 0 and UInstMaxODeps - 1.
-	void setODep(int index, int dep) {
+	void setODep(int index, int dep)
+	{
 		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
 		odep[index] = (UInstDep) dep;
 	}
@@ -380,7 +399,8 @@ public:
 	/// Set a dependence using a global index. Argument \a index must be a
 	/// value between 0 and UInstMaxDeps - 1. Argument \a dep should be an
 	/// \c UInstDepXXX constant.
-	void setDep(int index, int dep) {
+	void setDep(int index, int dep)
+	{
 		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
 		this->dep[index] = (UInstDep) dep;
 	}
@@ -394,7 +414,8 @@ public:
 	bool addODep(UInstDep dep);
 
 	/// Set the address and size of a memory access micro-instruction
-	void setMemoryAccess(unsigned address, int size) {
+	void setMemoryAccess(unsigned address, int size)
+	{
 		this->address = address;
 		this->size = size;
 		assert(size != 0);
@@ -404,7 +425,8 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Short-hand invocation to Dump()
-	friend std::ostream &operator<<(std::ostream &os, const Uinst &uinst) {
+	friend std::ostream &operator<<(std::ostream &os, const Uinst &uinst)
+	{
 		uinst.Dump(os);
 		return os;
 	}

@@ -520,15 +520,15 @@ void Context::ExecuteInst_##stdop##_r32_rm32() \
 
 
 /* Generate all standard arithmetic instructions. */
-op_stdop_all(adc, 1, 1, UInstAdd)
-op_stdop_all(add, 1, 0, UInstAdd)
-op_stdop_all(and, 1, 0, UInstAnd)
-op_stdop_all(cmp, 0, 0, UInstSub)
-op_stdop_all(or, 1, 0, UInstOr)
-op_stdop_all(sbb, 1, 1, UInstSub)
-op_stdop_all(sub, 1, 0, UInstSub)
-op_stdop_all(test, 0, 0, UInstAnd)
-op_stdop_all(xor, 1, 0, UInstXor)
+op_stdop_all(adc, 1, 1, Uinst::OpcodeAdd)
+op_stdop_all(add, 1, 0, Uinst::OpcodeAdd)
+op_stdop_all(and, 1, 0, Uinst::OpcodeAnd)
+op_stdop_all(cmp, 0, 0, Uinst::OpcodeSub)
+op_stdop_all(or, 1, 0, Uinst::OpcodeOr)
+op_stdop_all(sbb, 1, 1, Uinst::OpcodeSub)
+op_stdop_all(sub, 1, 0, Uinst::OpcodeSub)
+op_stdop_all(test, 0, 0, Uinst::OpcodeAnd)
+op_stdop_all(xor, 1, 0, Uinst::OpcodeXor)
 
 
 }  // namespace x86

@@ -288,7 +288,8 @@ private:
 
 	// Host thread function
 	void HostThreadSuspend();
-	static void *HostThreadSuspend(void *data) {
+	static void *HostThreadSuspend(void *data)
+	{
 		((Context *) data)->HostThreadSuspend();
 		return nullptr;
 	}
@@ -460,7 +461,8 @@ private:
 	std::vector<std::unique_ptr<Uinst>> uinst_list;
 
 	// Clear the list of micro-instructions
-	void ClearUInstList() {
+	void ClearUInstList()
+	{
 		uinst_list.clear();
 		uinst_effaddr_emitted = false;
 	}
@@ -497,9 +499,16 @@ private:
 	// in timing simulation mode. This function can be invoked directly by
 	// the instruction emulation functions. This function is written inline
 	// to avoid passing the high number of arguments.
-	void newMemoryUInst(UInstOpcode opcode, unsigned address, int size,
-			int idep0, int idep1, int idep2,
-			int odep0, int odep1, int odep2, int odep3)
+	void newMemoryUInst(Uinst::Opcode opcode,
+			unsigned address,
+			int size,
+			int idep0,
+			int idep1,
+			int idep2,
+			int odep0,
+			int odep1,
+			int odep2,
+			int odep3)
 	{
 		// Discard if we're in function simulation mode
 		if (!uinst_active)
@@ -524,8 +533,14 @@ private:
 	// in timing simulation mode, omitting the \a address and \a size
 	// arguments. This function can be invoked directly by the instruction
 	// emulation functions.
-	void newUInst(UInstOpcode opcode, int idep0, int idep1, int idep2,
-			int odep0, int odep1, int odep2, int odep3)
+	void newUInst(Uinst::Opcode opcode,
+			int idep0,
+			int idep1,
+			int idep2,
+			int odep0,
+			int odep1,
+			int odep2,
+			int odep3)
 	{
 		newMemoryUInst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
 				odep2, odep3);
@@ -903,8 +918,8 @@ public:
 	/// Return a reference of the register file
 	Regs &getRegs() { return regs; }
 
-	/// Return a reference of instruction
-	Instruction &getInst() { return inst; }
+	/// Return the last emulated instruction.
+	Instruction *getInstruction() { return &inst; }
 
 	/// Return a reference of Uinst list
 	std::vector<std::unique_ptr<Uinst>> &getUinstList()

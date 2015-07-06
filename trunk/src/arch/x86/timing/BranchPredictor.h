@@ -188,15 +188,17 @@ public:
 	/// 	No value is returned
 	void UpdateBranchPredictor(Uop &uop);
 
-	/// Lookup BTB. If it contains the uop address, return target. The BTB also contains
-	/// information about the type of branch, i.e., jump, call, ret, or conditional. If
-	/// instruction is call or ret, access RAS instead of BTB.
+	/// Lookup BTB. If it contains the uop address, return target. The BTB
+	/// also contains information about the type of branch, i.e., jump,
+	/// call, ret, or conditional. If instruction is call or ret, access RAS
+	/// instead of BTB.
 	///
 	/// \param uop
 	/// 	Micro-opertion including all the information regarding a micro instruction
 	///
 	/// \return
 	/// 	Target address
+	///
 	unsigned int LookupBTB(Uop &uop);
 
 	/// Update the BTB

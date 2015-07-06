@@ -80,6 +80,7 @@ int Context::getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep)
 	}
 }
 
+
 void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 {
 	// Check if it is a memory dependence
@@ -89,9 +90,12 @@ void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 
 	// Label occurrence of effective address computation
 	uinst_effaddr_emitted = true;
+
+	// Create micro-instruction
+	uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeEffaddr));
+	Uinst *new_uinst = uinst_list.back().get();
 	
 	// Emit micro-instruction
-	Uinst *new_uinst = new Uinst(UInstEffaddr);
 	new_uinst->setIDep(0, inst.getSegment() ?
 			inst.getSegment() - Instruction::RegEs + UInstDepEs
 			: UInstDepNone);
@@ -102,8 +106,8 @@ void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 			inst.getEaIndex() - Instruction::RegEax + UInstDepEax
 			: UInstDepNone);
 	new_uinst->setODep(0, UInstDepEa);
-	uinst_list.emplace_back(new_uinst);
 }
+
 
 void Context::ParseUInstDep(Uinst *uinst, int index)
 {
@@ -233,20 +237,20 @@ void Context::ParseUInstIDep(Uinst *uinst, int index)
 	{
 		// If uinst is 'move', just convert it into a 'load'.
 		// Replace 'rmXXX' by 'ea' dependence
-		if (uinst->getOpcode() == UInstMove)
+		if (uinst->getOpcode() == Uinst::OpcodeMove)
 		{
-			uinst->setOpcode(UInstLoad);
+			uinst->setOpcode(Uinst::OpcodeLoad);
 			uinst->setDep(index, UInstDepEa);
 			uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 			return;
 		}
 
 		// Load
-		Uinst *new_uinst = new Uinst(UInstLoad);
+		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeLoad));
+		Uinst *new_uinst = uinst_list.back().get();
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setODep(0, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
-		uinst_list.emplace_back(new_uinst);
 
 		// Input dependence of instruction is converted into UInstDepData
 		uinst->setDep(index, mem_std_dep);
@@ -274,12 +278,12 @@ void Context::ParseUInstODep(Uinst *uinst, int index)
 	if (mem_dep_size)
 	{
 		// If uinst is 'move', just convert it into a 'store'
-		if (uinst->getOpcode() == UInstMove)
+		if (uinst->getOpcode() == Uinst::OpcodeMove)
 		{
 			// Try to add 'ea' as an input dependence
 			if (uinst->addIDep(UInstDepEa))
 			{
-				uinst->setOpcode(UInstStore);
+				uinst->setOpcode(Uinst::OpcodeStore);
 				uinst->setDep(index, UInstDepNone);
 				uinst->setMemoryAccess(last_effective_address,
 						mem_dep_size);
@@ -288,11 +292,11 @@ void Context::ParseUInstODep(Uinst *uinst, int index)
 		}
 
 		// Store
-		Uinst *new_uinst = new Uinst(UInstStore);
+		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeStore));
+		Uinst *new_uinst = uinst_list.back().get();
 		new_uinst->setIDep(0, UInstDepEa);
 		new_uinst->setIDep(1, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
-		uinst_list.emplace_back(new_uinst);
 
 		// Output dependence of instruction is UInstDepData
 		uinst->setDep(index, mem_std_dep);
