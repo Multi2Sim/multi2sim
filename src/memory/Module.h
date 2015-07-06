@@ -701,13 +701,21 @@ public:
 			int &tag,
 			Cache::BlockState &state);
 
-	/// Flush the pages in the cache.
-	/// This function is invoked internally by RecursiveFlush().
-	void FlushPages(esim::Frame *esim_frame);
+	/// Flush the module.
+	///
+	/// \param witness
+	///	Pointer to an integer variable that will be incremented once
+	///	the access has completed.
+	///
+	void Flush(int *witness);
 
-	/// Recursively flush the cache utilizing FlushPages.
-	/// This function is invoked internally by the memory flush handler.
-	void RecursiveFlush(esim::Frame *esim_frame);
+	/// Recursively flush the cache utilizing FlushCache.
+	/// This function must be invoked internally by a event handler.
+	void RecursiveFlush();
+
+	/// Flush every block in the cache.
+	/// This function is invoked internally by RecursiveFlush().
+	void FlushCache();
 
 	/// Return an iterator to the first element of the access list.
 	std::list<Frame *>::iterator getAccessListBegin()
