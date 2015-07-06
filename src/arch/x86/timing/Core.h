@@ -126,13 +126,13 @@ private:
 	long long num_dispatch_stall[DispatchStallReasonMax] = { };
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[UInstOpcodeCount] = { };
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[UInstOpcodeCount] = { };
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[UInstOpcodeCount] = { };
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;

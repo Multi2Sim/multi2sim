@@ -66,8 +66,8 @@ void Context::StartRepInst()
 		newUInst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(UInstSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(UInstIbranch, UInstDepEcx, 0, 0, 0, 0, 0, 0); \
+		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
+		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, 0, 0, 0, 0, 0, 0); \
 	}
 
 
@@ -87,8 +87,8 @@ void Context::StartRepInst()
 		newUInst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(UInstSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(UInstIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
+		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
+		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
 	}
 
 
@@ -108,8 +108,8 @@ void Context::StartRepInst()
 		newUInst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(UInstSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(UInstIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
+		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
+		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
 	}
 
 
@@ -121,12 +121,12 @@ void Context::StartRepInst()
 
 void Context::newUInst_cmpsb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(UInstLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
-	newUInst(UInstSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
+	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
 
-	newUInst(UInstAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 
@@ -175,12 +175,12 @@ void Context::ExecuteInst_cmpsb()
 
 void Context::newUInst_cmpsd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(UInstLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
-	newUInst(UInstSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
+	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
 
-	newUInst(UInstAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 
@@ -345,11 +345,11 @@ void Context::ExecuteStringInst_movsb()
 
 void Context::newUInst_movsb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(UInstStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
 
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
 }
 
 
@@ -381,11 +381,11 @@ void Context::ExecuteStringInst_movsw()
 
 void Context::newUInst_movsw(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(UInstStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
 
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
 }
 
 
@@ -416,11 +416,11 @@ void Context::ExecuteStringInst_movsd()
 
 void Context::newUInst_movsd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(UInstStore, edi, 4, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeStore, edi, 4, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
 
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
 }
 
 
@@ -519,9 +519,9 @@ void Context::ExecuteStringInst_scasb()
 
 void Context::newUInst_scasb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
-	newUInst(UInstSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
+	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 
@@ -567,9 +567,9 @@ void Context::ExecuteStringInst_scasd()
 
 void Context::newUInst_scasd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
-	newUInst(UInstSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
+	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 
@@ -597,8 +597,8 @@ void Context::ExecuteStringInst_stosb()
 
 void Context::newUInst_stosb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstStore, edi, 1, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 
@@ -627,8 +627,8 @@ void Context::ExecuteStringInst_stosd()
 
 void Context::newUInst_stosd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(UInstStore, edi, 4, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
-	newUInst(UInstAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUInst(Uinst::OpcodeStore, edi, 4, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
 }
 
 

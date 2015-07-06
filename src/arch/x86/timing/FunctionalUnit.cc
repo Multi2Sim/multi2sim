@@ -90,42 +90,42 @@ FunctionalUnit::ReservationPool FunctionalUnit::reservation_pool[TypeCount] =
 		{ 1, 22, 14 }  // XmmFloatComplex
 };
 
-FunctionalUnit::Type FunctionalUnit::type_table[UInstOpcodeCount] =
+FunctionalUnit::Type FunctionalUnit::type_table[Uinst::OpcodeCount] =
 {
-		TypeNone,  // UInstNop
+	TypeNone,  // UInstNop
 
-		TypeNone,  // UInstMove
-		TypeIntAdd,  // UInstAdd
-		TypeIntAdd,  // UInstSub
-		TypeIntMult,  // UInstMult
-		TypeIntDiv,  // UInstDiv
-		TypeEffaddr,  // UInstEffaddr
+	TypeNone,  // UInstMove
+	TypeIntAdd,  // UInstAdd
+	TypeIntAdd,  // UInstSub
+	TypeIntMult,  // UInstMult
+	TypeIntDiv,  // UInstDiv
+	TypeEffaddr,  // UInstEffaddr
 
-		TypeLogic,  // UInstAnd
-		TypeLogic,  // UInstOr
-		TypeLogic,  // UInstXor
-		TypeLogic,  // UInstNot
-		TypeLogic,  // UInstShift
-		TypeLogic,  // UInstSign
+	TypeLogic,  // UInstAnd
+	TypeLogic,  // UInstOr
+	TypeLogic,  // UInstXor
+	TypeLogic,  // UInstNot
+	TypeLogic,  // UInstShift
+	TypeLogic,  // UInstSign
 
-		TypeNone,  // UInstFpMove
-		TypeFloatSimple,  // UInstFpSign
-		TypeFloatSimple,  // UInstFpRound
+	TypeNone,  // UInstFpMove
+	TypeFloatSimple,  // UInstFpSign
+	TypeFloatSimple,  // UInstFpRound
 
-		TypeFloatAdd,  // UInstFpAdd
-		TypeFloatAdd,  // UInstFpSub
-		TypeFloatComp,  // UInstFpComp
-		TypeFloatMult,  // UInstFpMult
-		TypeFloatDiv,  // UInstFpDiv
+	TypeFloatAdd,  // UInstFpAdd
+	TypeFloatAdd,  // UInstFpSub
+	TypeFloatComp,  // UInstFpComp
+	TypeFloatMult,  // UInstFpMult
+	TypeFloatDiv,  // UInstFpDiv
 
-		TypeFloatComplex,  // UInstFpExp
-		TypeFloatComplex,  // UInstFpLog
-		TypeFloatComplex,  // UInstFpSin
-		TypeFloatComplex,  // UInstFpCos
-		TypeFloatComplex,  // UInstFpSincos
-		TypeFloatComplex,  // UInstFpTan
-		TypeFloatComplex,  // UInstFpAtan
-		TypeFloatComplex,  // UInstFpSqrt
+	TypeFloatComplex,  // UInstFpExp
+	TypeFloatComplex,  // UInstFpLog
+	TypeFloatComplex,  // UInstFpSin
+	TypeFloatComplex,  // UInstFpCos
+	TypeFloatComplex,  // UInstFpSincos
+	TypeFloatComplex,  // UInstFpTan
+	TypeFloatComplex,  // UInstFpAtan
+	TypeFloatComplex,  // UInstFpSqrt
 };
 
 

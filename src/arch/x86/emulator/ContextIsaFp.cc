@@ -59,7 +59,14 @@ void Context::ExecuteInst_f2xm1()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpExp, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpExp,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -86,7 +93,14 @@ void Context::ExecuteInst_fabs()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSign, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSign,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -116,7 +130,14 @@ void Context::ExecuteInst_fadd_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpAdd, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpAdd,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -146,7 +167,14 @@ void Context::ExecuteInst_fadd_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpAdd, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpAdd,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -175,7 +203,14 @@ void Context::ExecuteInst_fadd_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpAdd, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpAdd,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -204,7 +239,14 @@ void Context::ExecuteInst_fadd_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpAdd, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpAdd,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -213,7 +255,14 @@ void Context::ExecuteInst_faddp_sti_st0()
 	ExecuteInst_fadd_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -240,7 +289,14 @@ void Context::ExecuteInst_fchs()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSign, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSign,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -251,7 +307,14 @@ void Context::ExecuteInst_fcmovb_st0_sti()
 	if (regs.getFlag(Instruction::FlagCF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepCf,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -262,7 +325,14 @@ void Context::ExecuteInst_fcmove_st0_sti()
 	if (regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepZps,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -273,7 +343,14 @@ void Context::ExecuteInst_fcmovbe_st0_sti()
 	if (regs.getFlag(Instruction::FlagCF) || regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepCf,
+			UInstDepZps,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -284,7 +361,14 @@ void Context::ExecuteInst_fcmovu_st0_sti()
 	if (regs.getFlag(Instruction::FlagPF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepZps,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -295,7 +379,14 @@ void Context::ExecuteInst_fcmovnb_st0_sti()
 	if (!regs.getFlag(Instruction::FlagCF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepCf,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -306,7 +397,14 @@ void Context::ExecuteInst_fcmovne_st0_sti()
 	if (!regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepZps,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -317,7 +415,14 @@ void Context::ExecuteInst_fcmovnbe_st0_sti()
 	if (!regs.getFlag(Instruction::FlagCF) && !regs.getFlag(Instruction::FlagZF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepCf, UInstDepZps, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepCf,
+			UInstDepZps,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -328,7 +433,14 @@ void Context::ExecuteInst_fcmovnu_st0_sti()
 	if (!regs.getFlag(Instruction::FlagPF))
 		StoreFpu(0, sti);
 
-	newUInst(UInstFpMove, UInstDepSti, UInstDepZps, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			UInstDepZps,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -355,7 +467,14 @@ void Context::ExecuteInst_fcom_m32()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepMem32, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -382,7 +501,14 @@ void Context::ExecuteInst_fcom_m64()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepMem64, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -409,7 +535,14 @@ void Context::ExecuteInst_fcom_sti()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -418,7 +551,14 @@ void Context::ExecuteInst_fcomp_m32()
 	ExecuteInst_fcom_m32();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -427,7 +567,14 @@ void Context::ExecuteInst_fcomp_m64()
 	ExecuteInst_fcom_m64();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -436,7 +583,14 @@ void Context::ExecuteInst_fcomp_sti()
 	ExecuteInst_fcom_sti();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -465,9 +619,23 @@ void Context::ExecuteInst_fcompp()
 	PopFpu(nullptr);
 	PopFpu(nullptr);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSt1, 0, UInstDepFpst, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -496,7 +664,14 @@ void Context::ExecuteInst_fcomi_st0_sti()
 
 	regs.setEflags(flags);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepZps, UInstDepCf, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepZps,
+			UInstDepCf,
+			0,
+			0);
 }
 
 
@@ -505,7 +680,14 @@ void Context::ExecuteInst_fcomip_st0_sti()
 	ExecuteInst_fcomi_st0_sti();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -534,7 +716,14 @@ void Context::ExecuteInst_fucomi_st0_sti()
 
 	regs.setEflags(flags);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepZps, UInstDepCf, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepZps,
+			UInstDepCf,
+			0,
+			0);
 }
 
 
@@ -543,7 +732,14 @@ void Context::ExecuteInst_fucomip_st0_sti()
 	ExecuteInst_fucomi_st0_sti();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -570,7 +766,14 @@ void Context::ExecuteInst_fcos()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpCos, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpCos,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -600,7 +803,14 @@ void Context::ExecuteInst_fdiv_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -630,7 +840,14 @@ void Context::ExecuteInst_fdiv_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -659,7 +876,14 @@ void Context::ExecuteInst_fdiv_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -688,7 +912,14 @@ void Context::ExecuteInst_fdiv_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -697,7 +928,14 @@ void Context::ExecuteInst_fdivp_sti_st0()
 	ExecuteInst_fdiv_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -727,7 +965,14 @@ void Context::ExecuteInst_fdivr_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -757,7 +1002,14 @@ void Context::ExecuteInst_fdivr_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -786,7 +1038,14 @@ void Context::ExecuteInst_fdivr_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeDiv,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -815,7 +1074,14 @@ void Context::ExecuteInst_fdivr_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstDiv, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeDiv,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -824,7 +1090,14 @@ void Context::ExecuteInst_fdivrp_sti_st0()
 	ExecuteInst_fdivr_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -846,8 +1119,15 @@ void Context::ExecuteInst_fild_m16()
 
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem16, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem16, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -869,8 +1149,15 @@ void Context::ExecuteInst_fild_m32()
 
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -892,8 +1179,15 @@ void Context::ExecuteInst_fild_m64()
 
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -915,7 +1209,14 @@ void Context::ExecuteInst_fist_m16()
 
 	MemoryWrite(getEffectiveAddress(), 2, &m16);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem16, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem16,
+			0,
+			0,
+			0);
 }
 
 
@@ -937,7 +1238,14 @@ void Context::ExecuteInst_fist_m32()
 
 	MemoryWrite(getEffectiveAddress(), 4, &m32);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem32, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem32,
+			0,
+			0,
+			0);
 }
 
 
@@ -959,7 +1267,14 @@ void Context::ExecuteInst_fist_m64()
 
 	MemoryWrite(getEffectiveAddress(), 8, &m64);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem64, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem64,
+			0,
+			0,
+			0);
 }
 
 
@@ -968,7 +1283,14 @@ void Context::ExecuteInst_fistp_m16()
 	ExecuteInst_fist_m16();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -977,7 +1299,14 @@ void Context::ExecuteInst_fistp_m32()
 	ExecuteInst_fist_m32();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -986,7 +1315,14 @@ void Context::ExecuteInst_fistp_m64()
 	ExecuteInst_fist_m64();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1004,8 +1340,15 @@ void Context::ExecuteInst_fld1()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1023,8 +1366,15 @@ void Context::ExecuteInst_fldl2e()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1042,8 +1392,15 @@ void Context::ExecuteInst_fldl2t()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1061,8 +1418,15 @@ void Context::ExecuteInst_fldpi()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1080,8 +1444,15 @@ void Context::ExecuteInst_fldlg2()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1099,8 +1470,15 @@ void Context::ExecuteInst_fldln2()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1118,8 +1496,15 @@ void Context::ExecuteInst_fldz()
 
 	PushFpu(v);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, 0, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1132,8 +1517,15 @@ void Context::ExecuteInst_fld_m32()
 	Extended::FloatToExtended(m32, e);
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem32, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1146,8 +1538,15 @@ void Context::ExecuteInst_fld_m64()
 	Extended::DoubleToExtended(m64, e);
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem64, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1158,8 +1557,15 @@ void Context::ExecuteInst_fld_m80()
 	LoadExtended(e);
 	PushFpu(e);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepMem80, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpMove, UInstDepMem80, 0, 0, UInstDepSt0, 0, 0, 0);
 }
 
 
@@ -1169,9 +1575,23 @@ void Context::ExecuteInst_fld_sti()
 	LoadFpu(inst.getOpIndex(), sti);
 	PushFpu(sti);
 
-	newUInst(UInstFpMove, UInstDepSti, 0, 0, UInstDepFpaux, 0, 0, 0);
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpMove, UInstDepFpaux, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSti,
+			0,
+			0,
+			UInstDepFpaux,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPush, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepFpaux,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1194,7 +1614,14 @@ void Context::ExecuteInst_fldcw_m16()
 	emulator->isa_debug << misc::fmt(" fpcw<=0x%x", value);
 
 	// Micro-instructions
-	newUInst(UInstFpMove, UInstDepMem16, 0, 0, UInstDepFpcw, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepMem16,
+			0,
+			0,
+			UInstDepFpcw,
+			0,
+			0,
+			0);
 }
 
 
@@ -1224,7 +1651,14 @@ void Context::ExecuteInst_fmul_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpMult, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMult,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1254,7 +1688,14 @@ void Context::ExecuteInst_fmul_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpMult, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMult,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1283,7 +1724,14 @@ void Context::ExecuteInst_fmul_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpMult, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMult,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1312,7 +1760,14 @@ void Context::ExecuteInst_fmul_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpMult, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMult,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -1321,7 +1776,14 @@ void Context::ExecuteInst_fmulp_sti_st0()
 	ExecuteInst_fmul_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1336,7 +1798,14 @@ void Context::ExecuteInst_fnstsw_ax()
 	unsigned short status = LoadFpuStatus();
 	regs.Write(Instruction::RegAx, status);
 
-	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepFpst,
+			0,
+			0,
+			UInstDepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -1366,8 +1835,15 @@ void Context::ExecuteInst_fpatan()
 	PopFpu(nullptr);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpAtan, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpAtan,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt1,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1397,7 +1873,14 @@ void Context::ExecuteInst_fprem()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1427,7 +1910,14 @@ void Context::ExecuteInst_fprem1()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpDiv, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpDiv,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1454,7 +1944,14 @@ void Context::ExecuteInst_fptan()
 
 	StoreFpu(0, st0);
 
-	newUInst(UInstFpTan, UInstDepSt0, 0, 0, UInstDepSt0, UInstDepSt1, 0, 0);
+	newUInst(Uinst::OpcodeFpTan,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			0);
 
 	ExecuteInst_fld1();
 	StoreFpuCode(status);
@@ -1484,7 +1981,14 @@ void Context::ExecuteInst_frndint()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpRound, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpRound,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1514,7 +2018,14 @@ void Context::ExecuteInst_fscale()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpExp, UInstDepSt0, UInstDepSt1, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpExp,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1541,7 +2052,14 @@ void Context::ExecuteInst_fsin()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSin, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSin,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1572,8 +2090,15 @@ void Context::ExecuteInst_fsincos()
 	PushFpu(vcos);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpPush, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpSincos, UInstDepSt1, 0, 0, UInstDepSt0, UInstDepSt1, 0, 0);
+	newUInst(Uinst::OpcodeFpPush,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpSincos, UInstDepSt1, 0, 0, UInstDepSt0, UInstDepSt1, 0, 0);
 }
 
 
@@ -1600,7 +2125,14 @@ void Context::ExecuteInst_fsqrt()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSqrt, UInstDepSt0, 0, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSqrt,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1613,7 +2145,14 @@ void Context::ExecuteInst_fst_m32()
 	m32 = Extended::ExtendedToFloat(st0);
 	StoreFloat(m32);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem32, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1626,7 +2165,14 @@ void Context::ExecuteInst_fst_m64()
 	m64 = Extended::ExtendedToDouble(st0);
 	StoreDouble(m64);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem64, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem64,
+			0,
+			0,
+			0);
 }
 
 
@@ -1637,7 +2183,14 @@ void Context::ExecuteInst_fst_sti()
 	LoadFpu(0, st0);
 	StoreFpu(inst.getOpIndex(), st0);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -1646,7 +2199,14 @@ void Context::ExecuteInst_fstp_m32()
 	ExecuteInst_fst_m32();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1655,7 +2215,14 @@ void Context::ExecuteInst_fstp_m64()
 	ExecuteInst_fst_m64();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1666,8 +2233,15 @@ void Context::ExecuteInst_fstp_m80()
 	PopFpu(m80);
 	StoreExtended(m80);
 
-	newUInst(UInstFpMove, UInstDepSt0, 0, 0, UInstDepMem80, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepMem80,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -1676,7 +2250,14 @@ void Context::ExecuteInst_fstp_sti()
 	ExecuteInst_fst_sti();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1685,7 +2266,14 @@ void Context::ExecuteInst_fstsw_ax()
 	unsigned short status = LoadFpuStatus();
 	regs.Write(Instruction::RegAx, status);
 
-	newUInst(UInstFpMove, UInstDepFpst, 0, 0, UInstDepEax, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepFpst,
+			0,
+			0,
+			UInstDepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -1715,7 +2303,14 @@ void Context::ExecuteInst_fsub_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub,	UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1745,7 +2340,14 @@ void Context::ExecuteInst_fsub_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1774,7 +2376,14 @@ void Context::ExecuteInst_fsub_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1803,7 +2412,14 @@ void Context::ExecuteInst_fsub_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -1812,7 +2428,14 @@ void Context::ExecuteInst_fsubp_sti_st0()
 	ExecuteInst_fsub_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1842,7 +2465,14 @@ void Context::ExecuteInst_fsubr_m32()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem32, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepMem32,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1872,7 +2502,14 @@ void Context::ExecuteInst_fsubr_m64()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepMem64, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepMem64,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1901,7 +2538,14 @@ void Context::ExecuteInst_fsubr_st0_sti()
 	StoreFpu(0, st0);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1930,7 +2574,14 @@ void Context::ExecuteInst_fsubr_sti_st0()
 	StoreFpu(inst.getOpIndex(), sti);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpSub, UInstDepSt0, UInstDepSti, 0, UInstDepSti, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpSub,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSti,
+			0,
+			0,
+			0);
 }
 
 
@@ -1939,7 +2590,14 @@ void Context::ExecuteInst_fsubrp_sti_st0()
 	ExecuteInst_fsubr_sti_st0();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1953,7 +2611,14 @@ void Context::ExecuteInst_fstcw_m16()
 	emulator->isa_debug << misc::fmt(" [0x%x]<=0x%x", address, value);
 
 	// Micro-instructions
-	newUInst(UInstFpMove, UInstDepFpcw, 0, 0, UInstDepMem32, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepFpcw,
+			0,
+			0,
+			UInstDepMem32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1979,7 +2644,14 @@ void Context::ExecuteInst_ftst()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, 0, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -2006,7 +2678,14 @@ void Context::ExecuteInst_fucom_sti()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSti, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -2015,7 +2694,14 @@ void Context::ExecuteInst_fucomp_sti()
 	ExecuteInst_fucom_sti();
 	PopFpu(nullptr);
 
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -2044,9 +2730,23 @@ void Context::ExecuteInst_fucompp()
 	PopFpu(nullptr);
 	PopFpu(nullptr);
 
-	newUInst(UInstFpComp, UInstDepSt0, UInstDepSt1, 0, UInstDepFpst, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -2072,7 +2772,14 @@ void Context::ExecuteInst_fxam()
 
 	StoreFpuCode(status);
 
-	newUInst(UInstFpComp, UInstDepSt0, 0, 0, UInstDepFpst, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpComp,
+			UInstDepSt0,
+			0,
+			0,
+			UInstDepFpst,
+			0,
+			0,
+			0);
 }
 
 
@@ -2084,7 +2791,14 @@ void Context::ExecuteInst_fxch_sti()
 	StoreFpu(0, sti);
 	StoreFpu(inst.getOpIndex(), st0);
 
-	newUInst(UInstFpMove, UInstDepSt0, UInstDepSti, 0, UInstDepSt0, UInstDepSti, 0, 0);
+	newUInst(Uinst::OpcodeFpMove,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			UInstDepSt0,
+			UInstDepSti,
+			0,
+			0);
 }
 
 
@@ -2114,8 +2828,15 @@ void Context::ExecuteInst_fyl2x()
 	PopFpu(nullptr);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpLog, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpLog,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt1,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop, 0, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -2145,8 +2866,22 @@ void Context::ExecuteInst_fyl2xp1()
 	PopFpu(nullptr);
 	StoreFpuCode(status);
 
-	newUInst(UInstFpLog, UInstDepSt0, UInstDepSt1, 0, UInstDepSt1, 0, 0, 0);
-	newUInst(UInstFpPop, 0, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeFpLog,
+			UInstDepSt0,
+			UInstDepSt1,
+			0,
+			UInstDepSt1,
+			0,
+			0,
+			0);
+	newUInst(Uinst::OpcodeFpPop,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 }  // namespace x86

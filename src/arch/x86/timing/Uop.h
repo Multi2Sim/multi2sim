@@ -39,8 +39,6 @@ class Thread;
 // Class Uop
 class Uop
 {
-private:
-
 	//
 	// Static fields
 	//
@@ -75,28 +73,6 @@ private:
 
 	// Uop flags
 	int flags = 0;
-
-
-
-
-	//
-	// Fetch info
-	//
-
-	// Address of x86 macro-instruction
-	unsigned int eip = 0;
-
-	// Address of next non-speculative x86 macro-instruction
-	unsigned int neip = 0;
-
-	// Address of next predicted x86 macro-instruction (for branches)
-	unsigned int predicted_neip = 0;
-
-	// Address of target x86 macro-instruction assuming branch taken (for branches)
-	unsigned int target_neip = 0;
-
-	// Flag telling if micro-operation is in speculative mode
-	bool speculative_mode = false;
 
 
 
@@ -335,9 +311,6 @@ public:
 	/// Get EIP
 	unsigned int getEip() const { return eip; }
 
-	/// Get predicted next EIP
-	unsigned int getPredictedNeip() const { return predicted_neip; }
-
 	/// Get Target EIP
 	unsigned int getTargetNeip() const { return target_neip; }
 
@@ -436,6 +409,32 @@ public:
 	// Position of the uop in the core's event queue, or past-the-end
 	// iterator to this queue if not present.
 	std::list<std::shared_ptr<Uop>>::iterator event_queue_iterator;
+
+
+
+	
+	//
+	// Fetch info
+	//
+
+	// Address of x86 macro-instruction
+	unsigned int eip = 0;
+
+	// Address of next non-speculative x86 macro-instruction
+	unsigned int neip = 0;
+
+	// Address of next predicted x86 macro-instruction (for branches)
+	unsigned int predicted_neip = 0;
+
+	// Address of target x86 macro-instruction assuming branch taken (for branches)
+	unsigned int target_neip = 0;
+
+	// Flag telling if micro-operation is in speculative mode
+	bool speculative_mode = false;
+
+
+
+
 };
 
 }

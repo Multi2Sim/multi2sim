@@ -171,13 +171,13 @@ private:
 	long long num_fetched_uinst = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[UInstOpcodeCount] = { };
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[UInstOpcodeCount] = { };
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[UInstOpcodeCount] = { };
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Committed micro-instructions
 	long long num_committed_uinst = 0;

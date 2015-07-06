@@ -20,6 +20,7 @@
 #include "Cpu.h"
 #include "Timing.h"
 #include "Thread.h"
+#include "TraceCache.h"
 
 
 namespace x86
@@ -41,7 +42,7 @@ Thread::Thread(Core *core,
 			".BranchPredictor");
 
 	// Initialize trace cache
-	if (TraceCache::getPresent())
+	if (TraceCache::isPresent())
 		trace_cache = misc::new_unique<TraceCache>(name +
 				".TraceCache");
 
@@ -83,7 +84,7 @@ bool Thread::canFetch()
 }
 
 
-std::shared_ptr<Uop> Thread::FetchInstruction(bool fetch_from_trace_cache)
+Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 {
 	throw misc::Panic("Not implemented");
 }
@@ -97,7 +98,89 @@ bool Thread::FetchFromTraceCache()
 
 void Thread::Fetch()
 {
+	// Sanity
+	assert(context);
 
+	// Try to fetch from trace cache first
+	if (TraceCache::isPresent() && FetchFromTraceCache())
+		return;
+	
+	// If new block to fetch is not the same as the previously fetched (and
+	// stored) block, access the instruction cache.
+	unsigned block_address = fetch_neip & ~(instruction_module->getBlockSize() - 1);
+	if (block_address != fetch_block_address)
+	{
+		// Translate address
+		unsigned physical_address = context->mmu->TranslateVirtualAddress(
+				context->mmu_space,
+				fetch_neip);
+
+		// Save last fetched block
+		fetch_block_address = block_address;
+		fetch_address = physical_address;
+		
+		// Access instruction cache
+		assert(instruction_module->canAccess(physical_address));
+		fetch_address = instruction_module->Access(
+				mem::Module::AccessLoad,
+				physical_address);
+		
+		// Stats
+		btb_reads++;
+	}
+
+	// Fetch all instructions within the block up to the first predict-taken
+	// branch
+	while ((fetch_neip & ~(instruction_module->getBlockSize() - 1))
+			== block_address)
+	{
+		// If instruction caused context to suspend or finish
+		if (!context->getState(Context::StateRunning))
+			break;
+	
+		// If fetch queue is full, stop fetching
+		if (fetch_queue_occupancy >= Cpu::getFetchQueueSize())
+			break;
+		
+		// Insert macro-instruction into the fetch queue. Since the
+		// macro-instruction information is only available at this
+		// point, we use it to decode instruction now and insert uops
+		// into the fetch queue. However, the fetch queue occupancy is
+		// increased with the macro-instruction size.
+		Uop *uop = FetchInstruction(false);
+
+		// Invalid x86 instruction, no forward progress in loop
+		if (!context->getInstruction()->getSize())
+			break;
+		
+		// No uop was produced by this macro-instruction
+		if (!uop)
+			continue;
+
+		// Instructions detected as branches by the BTB are checked for
+		// branch direction in the branch predictor. If they are
+		// predicted taken, stop fetching from this block and set new
+		// fetch address.
+		if (uop->getFlags() & UInstFlagCtrl)
+		{
+			// Look up BTB
+			unsigned target = branch_predictor->LookupBTB(*uop);
+
+			// Look up branch predictor
+			BranchPredictor::Prediction prediction = branch_predictor
+					->LookupBranchPrediction(*uop);
+			bool taken = prediction == BranchPredictor::PredictionTaken
+					&& target;
+
+			// Set next instruction pointer
+			if (taken)
+			{
+				fetch_neip = target;
+				uop->predicted_neip = target;
+				break;
+			}
+		}
+	}
 }
 
 }

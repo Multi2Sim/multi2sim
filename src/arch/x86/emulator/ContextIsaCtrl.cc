@@ -68,7 +68,7 @@ void Context::ExecuteInst_set##cc##_rm8() \
 		StoreRm8(1); \
 	else \
 		StoreRm8(0); \
-	newUInst(UInstMove, idep1, idep2, 0, UInstDepRm8, 0, 0, 0); \
+	newUInst(Uinst::OpcodeMove, idep1, idep2, 0, UInstDepRm8, 0, 0, 0); \
 }
 
 
@@ -78,7 +78,7 @@ void Context::ExecuteInst_j##cc##_rel8() \
 	target_eip = regs.getEip() + (char) inst.getImmByte(); \
 	if (cc_##cc) \
 		regs.setEip(target_eip); \
-	newUInst(UInstBranch, idep1, idep2, 0, 0, 0, 0, 0); \
+	newUInst(Uinst::OpcodeBranch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
 
@@ -88,7 +88,7 @@ void Context::ExecuteInst_j##cc##_rel32() \
 	target_eip = regs.getEip() + inst.getImmDWord(); \
 	if (cc_##cc) \
 		regs.setEip(target_eip); \
-	newUInst(UInstBranch, idep1, idep2, 0, 0, 0, 0, 0); \
+	newUInst(Uinst::OpcodeBranch, idep1, idep2, 0, 0, 0, 0, 0); \
 }
 
 
@@ -97,7 +97,7 @@ void Context::ExecuteInst_cmov##cc##_r16_rm16() \
 { \
 	if (cc_##cc) \
 		StoreR16(LoadRm16()); \
-	newUInst(UInstMove, idep1, idep2, UInstDepRm16, UInstDepR16, 0, 0, 0); \
+	newUInst(Uinst::OpcodeMove, idep1, idep2, UInstDepRm16, UInstDepR16, 0, 0, 0); \
 }
 
 
@@ -106,7 +106,7 @@ void Context::ExecuteInst_cmov##cc##_r32_rm32() \
 { \
 	if (cc_##cc) \
 		StoreR32(LoadRm32()); \
-	newUInst(UInstMove, idep1, idep2, UInstDepRm32, UInstDepR32, 0, 0, 0); \
+	newUInst(Uinst::OpcodeMove, idep1, idep2, UInstDepRm32, UInstDepR32, 0, 0, 0); \
 }
 
 
@@ -141,7 +141,7 @@ void Context::ExecuteInst_jecxz_rel8()
 	target_eip = regs.getEip() + inst.getImmByte();
 	if (!regs.Read(Instruction::RegEcx))
 		regs.setEip(target_eip);
-	newUInst(UInstBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -150,7 +150,7 @@ void Context::ExecuteInst_jcxz_rel8()
 	target_eip = regs.getEip() + inst.getImmByte();
 	if (!regs.Read(Instruction::RegCx))
 		regs.setEip(target_eip);
-	newUInst(UInstBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
+	newUInst(Uinst::OpcodeBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
 }
 
 

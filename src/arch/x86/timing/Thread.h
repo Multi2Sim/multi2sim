@@ -170,13 +170,13 @@ private:
 	long long num_fetched_uinst = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[UInstOpcodeCount] = { };
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[UInstOpcodeCount] = { };
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[UInstOpcodeCount] = { };
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
@@ -372,11 +372,21 @@ public:
 	/// Check whether or not the fecth is allowed
 	bool canFetch();
 
-	/// Fetch instructions
-	/// Run the emulation of one x86 macro-instruction and create its uops.
-	/// If any of the uops is a control uop, this uop will be the return value of
-	/// the function. Otherwise, the first decoded uop is returned
-	std::shared_ptr<Uop> FetchInstruction(bool fetch_from_trace_cache);
+	/// Fetch one x86 macro-instruction, run emulation for it, and create
+	/// its corresponding set of uops, which are stored at the end of the
+	/// fetch queue.
+	///
+	/// \param fetch_from_trace_cache
+	///	Flag indicating whether the uops for the fetched macro-
+	///	instruction are considered to come from the trace cache (true)
+	///	or from instruction memory (false).
+	///
+	/// \return
+	///	If any of the uops is a branch, the function returns that uop.
+	///	Otherwise, it returns the first uop created, or nullptr if no
+	///	uop was created.
+	///
+	Uop *FetchInstruction(bool fetch_from_trace_cache);
 
 	/// Try to fetch instruction from trace cache.
 	/// Return true if there was a hit and fetching succeeded.

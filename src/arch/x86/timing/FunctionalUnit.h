@@ -105,7 +105,7 @@ private:
 	static ReservationPool reservation_pool[TypeCount];
 
 	// Functional Unit type table
-	static Type type_table[UInstOpcodeCount];
+	static Type type_table[Uinst::OpcodeCount];
 
 public:
 
