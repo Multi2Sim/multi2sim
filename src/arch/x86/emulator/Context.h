@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_CONTEXT_H
-#define ARCH_X86_EMU_CONTEXT_H
+#ifndef ARCH_X86_EMULATOR_CONTEXT_H
+#define ARCH_X86_EMULATOR_CONTEXT_H
 
 #include <memory>
 
@@ -29,6 +29,7 @@
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
+#include <memory/MMU.h>
 #include <memory/SpecMem.h>
 
 #include "Regs.h"
@@ -155,9 +156,6 @@ private:
 
 	// Emulator that it belongs to
 	Emulator *emulator;
-
-	// Virtual memory address space index
-	int address_space_index;
 
 	// Context state, expressed as a bitmap of flags, e.g.,
 	// ContextSuspended | ContextFutex
@@ -915,14 +913,16 @@ public:
 	}
 
 	/// Return a constant reference of the memory
-	mem::Memory &getMem() {
+	mem::Memory &getMem()
+	{
 		assert(memory.get());
 		return *memory;
 	}
 
 	/// Return a pointer of the memory. This is used when an hsa environment
 	/// is created and the hsa emulator uses the host programs memory object
-	std::shared_ptr<mem::Memory> __getMemSharedPtr() {
+	std::shared_ptr<mem::Memory> __getMemSharedPtr()
+	{
 		assert(memory.get());
 		return memory;
 	}
@@ -932,11 +932,25 @@ public:
 	/// starts, which will end on the next call to 'recover' function
 	void ForceEip(unsigned int eip);
 
-	/// Recover the context
+	/// Recover the context from speculative mode
 	void Recover();
 
 	/// Get Target EIP
 	int getTargetEip() { return target_eip; }
+
+
+
+	
+	//
+	// Public fields
+	//
+
+	// Memory management unit, which can be shared by multiple contexts.
+	// The MMU is used for timing simulation purposes.
+	std::shared_ptr<mem::MMU> mmu;
+
+	// Address space within the mmu;
+	mem::MMU::Space *mmu_space = nullptr;
 };
 
 }  // namespace x86

@@ -199,7 +199,9 @@ private:
 	BranchPredictor::Prediction bimod_pred = BranchPredictor::PredictionNotTaken;
 
 	// Two level branch predictor BHT and PHT indices
-	int twolevel_bht_index = 0, twolevel_pht_row = 0, twolevel_pht_col = 0;
+	int twolevel_bht_index = 0;
+	int twolevel_pht_row = 0;
+	int twolevel_pht_col = 0;
 
 	// Twolevel Branch prediction
 	BranchPredictor::Prediction twolevel_pred = BranchPredictor::PredictionNotTaken;

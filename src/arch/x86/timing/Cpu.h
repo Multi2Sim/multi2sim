@@ -141,7 +141,7 @@ private:
 	// Array of cores 
 	std::vector<std::unique_ptr<Core>> cores;
 
-	// MMU used by this Cpu 
+	// MMU used by this CPU
 	std::shared_ptr<mem::MMU> mmu;
 
 	// Number of Uop
@@ -298,7 +298,7 @@ private:
 	// reorder buffer kind
 	static ReorderBufferKind reorder_buffer_kind;
 
-	// Fetch queue
+	// Fetch queue size in bytes
 	static int fetch_queue_size;
 
 	// Instruction queue kind
@@ -343,7 +343,7 @@ public:
 	/// Get reorder buffer kind
 	static ReorderBufferKind getReorderBufferKind() { return reorder_buffer_kind; }
 
-	/// Get fetch queue size
+	/// Return the size of the fetch queue in bytes
 	static int getFetchQueueSize() { return fetch_queue_size; }
 
 	/// Get instruction queue kind

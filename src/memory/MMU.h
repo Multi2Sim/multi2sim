@@ -164,16 +164,28 @@ private:
 
 public:
 
+	//
+	// Static members
+	//
+
 	/// Register command-line options
 	static void RegisterOptions();
 
 	/// Process command-line options
 	static void ProcessOptions();
 
+
+
+
+	//
+	// Class members
+	//
+
 	/// Constructor
 	///
 	/// \param name
 	///	Name of the MMU used for debugging purposes.
+	///
 	MMU(const std::string &name);
 
 	/// Return the name of the MMU
@@ -183,6 +195,7 @@ public:
 	///
 	/// \param name
 	///	Name of the virtual address space used for debugging purposes.
+	///
 	Space *newSpace(const std::string &name);
 
 	/// Translate virtual to physical address.
@@ -197,6 +210,7 @@ public:
 	///	Associated physical address. If no page is currently allocated
 	///	for this virtual address, a new one is internally created. A
 	///	valid physical address is returned in all cases.
+	///
 	unsigned TranslateVirtualAddress(Space *space,
 			unsigned virtual_address);
 
@@ -219,6 +233,7 @@ public:
 	///	The function returns `true` only if the physical memory address
 	///	is associated to a valid virtual address and the translation was
 	///	successful.
+	///
 	bool TranslatePhysicalAddress(unsigned physical_address,
 			Space *&space,
 			unsigned &virtual_address);
