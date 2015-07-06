@@ -119,13 +119,13 @@ class Uop
 	int phy_xmm_odep_count = 0;
 
 	// Input dependency physical register table
-	int phy_idep[UInstMaxIDeps];
+	int phy_idep[Uinst::MaxIDeps];
 
 	// Output dependency physical register table
-	int phy_odep[UInstMaxODeps];
+	int phy_odep[Uinst::MaxODeps];
 
 	// Old output dependency physical register table
-	int phy_oodep[UInstMaxODeps];
+	int phy_oodep[Uinst::MaxODeps];
 
 
 

@@ -23,6 +23,11 @@
 namespace x86
 {
 
+const int Uinst::MaxIDeps;
+const int Uinst::MaxODeps;
+const int Uinst::MaxDeps;
+
+
 misc::StringMap uinst_dep_map
 {
 	{ "-", UInstDepNone },
@@ -195,7 +200,7 @@ Uinst::Uinst(Uinst::Opcode opcode)
 {
 	// Pointers
 	idep = dep;
-	odep = dep + UInstMaxIDeps;
+	odep = dep + MaxIDeps;
 
 	// Initialize
 	this->opcode = opcode;
@@ -203,7 +208,7 @@ Uinst::Uinst(Uinst::Opcode opcode)
 	address = 0;
 
 	// Dependences
-	for (int i = 0; i < UInstMaxDeps; i++)
+	for (int i = 0; i < MaxDeps; i++)
 		dep[i] = UInstDepNone;
 }
 
@@ -212,12 +217,12 @@ bool Uinst::addIDep(UInstDep dep)
 {
 	// Find free index
 	int index;
-	for (index = 0; index < UInstMaxIDeps; index++)
+	for (index = 0; index < MaxIDeps; index++)
 		if (!idep[index])
 			break;
 	
 	// Return false if no room for new dependency
-	if (index == UInstMaxIDeps)
+	if (index == MaxIDeps)
 		return false;
 	
 	// Set new dependence
@@ -229,12 +234,12 @@ bool Uinst::addODep(UInstDep dep)
 {
 	// Find free index
 	int index;
-	for (index = 0; index < UInstMaxODeps; index++)
+	for (index = 0; index < MaxODeps; index++)
 		if (!odep[index])
 			break;
 	
 	// Return false if no room for new dependency
-	if (index == UInstMaxODeps)
+	if (index == MaxODeps)
 		return false;
 	
 	// Set new dependence
@@ -251,7 +256,7 @@ void Uinst::Dump(std::ostream &os) const
 	// Outputs
 	std::string comma = "";
 	int dep_count = 0;
-	for (int i = 0; i < UInstMaxODeps; i++)
+	for (int i = 0; i < MaxODeps; i++)
 	{
 		UInstDep dep = odep[i];
 		if (!dep)
@@ -269,7 +274,7 @@ void Uinst::Dump(std::ostream &os) const
 	/* Input operands */
 	comma = "";
 	dep_count = 0;
-	for (int i = 0; i < UInstMaxODeps; i++)
+	for (int i = 0; i < MaxODeps; i++)
 	{
 		UInstDep dep = idep[i];
 		if (!dep)

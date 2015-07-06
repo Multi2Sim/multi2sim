@@ -181,12 +181,6 @@ struct UInstInfo
 };
 
 
-// Constants
-const int UInstMaxIDeps = 3;
-const int UInstMaxODeps = 4;
-const int UInstMaxDeps = UInstMaxIDeps + UInstMaxODeps;
-
-
 /// Class representing an x86 micro-instruction
 class Uinst
 {
@@ -279,6 +273,16 @@ public:
 		OpcodeCount
 	};
 
+	/// Maximum number of input dependencies
+	static const int MaxIDeps = 3;
+
+	/// Maximum number of output dependencies
+	static const int MaxODeps = 4;
+
+	/// Total number of dependencies
+	static const int MaxDeps = MaxIDeps + MaxODeps;
+
+
 private:
 
 	// Table of micro-instruction information, index by a micro-instruction
@@ -289,7 +293,7 @@ private:
 	Opcode opcode;
 
 	// All dependences
-	UInstDep dep[UInstMaxDeps];
+	UInstDep dep[MaxDeps];
 
 	// Pointers to input and output dependences, pointing to internal
 	// positions of 'dep'.
@@ -350,26 +354,26 @@ public:
 	void setOpcode(Opcode opcode) { this->opcode = opcode; }
 
 	/// Return a dependence at position \a index, which must be a value
-	/// between 0 and UInstMaxDeps.
+	/// between 0 and MaxDeps.
 	UInstDep getDep(int index) const
 	{
-		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+		assert(misc::inRange(index, 0, MaxDeps - 1));
 		return dep[index];
 	}
 
 	/// Return an input dependence. Argument \a index must be a value
-	/// between 0 and UInstMaxIDeps - 1.
+	/// between 0 and MaxIDeps - 1.
 	UInstDep getIDep(int index) const
 	{
-		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
+		assert(misc::inRange(index, 0, MaxIDeps - 1));
 		return idep[index];
 	}
 
 	/// Return an output dependence. Argument \a index must be a value
-	/// between 0 and UInstMaxODeps - 1.
+	/// between 0 and MaxODeps - 1.
 	UInstDep getODep(int index) const
 	{
-		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
+		assert(misc::inRange(index, 0, MaxODeps - 1));
 		return odep[index];
 	}
 
@@ -380,28 +384,28 @@ public:
 	int getSize() const { return size; }
 
 	/// Set an input dependence. Argument \a index must be a value between
-	/// 0 and UInstMaxIDeps - 1. Argument \a dep should be an \c UInstDepXXX
+	/// 0 and MaxIDeps - 1. Argument \a dep should be an \c UInstDepXXX
 	/// constant.
 	void setIDep(int index, int dep)
 	{
-		assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
+		assert(misc::inRange(index, 0, MaxIDeps - 1));
 		idep[index] = (UInstDep) dep;
 	}
 
 	/// Set an output dependence. Argument \a index must be a value between
-	/// 0 and UInstMaxODeps - 1.
+	/// 0 and MaxODeps - 1.
 	void setODep(int index, int dep)
 	{
-		assert(misc::inRange(index, 0, UInstMaxODeps - 1));
+		assert(misc::inRange(index, 0, MaxODeps - 1));
 		odep[index] = (UInstDep) dep;
 	}
 
 	/// Set a dependence using a global index. Argument \a index must be a
-	/// value between 0 and UInstMaxDeps - 1. Argument \a dep should be an
+	/// value between 0 and MaxDeps - 1. Argument \a dep should be an
 	/// \c UInstDepXXX constant.
 	void setDep(int index, int dep)
 	{
-		assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+		assert(misc::inRange(index, 0, MaxDeps - 1));
 		this->dep[index] = (UInstDep) dep;
 	}
 
