@@ -3572,7 +3572,7 @@ void System::EventFlushHandler(esim::Event *event,
 		if (module->getType() == Module::TypeCache)
 		{
 			// Flush the cache
-			module->RecursiveFlush(frame);	
+			module->RecursiveFlush();	
 		}
 
 		// Schedule event
