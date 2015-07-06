@@ -24,9 +24,9 @@
 namespace x86
 {
 
-const int RegisterFile::MinINTSize = UInstDepIntCount + UInstMaxODeps;
-const int RegisterFile::MinFPSize = UInstDepFpCount + UInstMaxODeps;
-const int RegisterFile::MinXMMSize = UInstDepXmmCount + UInstMaxODeps;
+const int RegisterFile::MinINTSize = UInstDepIntCount + Uinst::MaxODeps;
+const int RegisterFile::MinFPSize = UInstDepFpCount + Uinst::MaxODeps;
+const int RegisterFile::MinXMMSize = UInstDepXmmCount + Uinst::MaxODeps;
 
 misc::StringMap RegisterFile::KindMap =
 {
@@ -262,9 +262,9 @@ void RegisterFile::Rename(Uop &uop)
 	}
 
 	// Rename input int/FP/XMM registers
-	for (int dep = 0; dep < UInstMaxIDeps; dep++)
+	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
-		logical_reg = (int)uop.getUinst()->getIDep(dep);
+		logical_reg = (int) uop.getUinst()->getIDep(dep);
 		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
 		{
 			phy_reg = int_rat[logical_reg - UInstDepIntFirst];
@@ -298,7 +298,7 @@ void RegisterFile::Rename(Uop &uop)
 	// Rename output int/FP/XMM registers (not flags)
 	int flag_phy_reg = -1;
 	int flag_count = 0;
-	for (int dep = 0; dep < UInstMaxODeps; dep++)
+	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		logical_reg = (int)uop.getUinst()->getODep(dep);
 		if (logical_reg >= UInstDepFlagFirst && logical_reg <= UInstDepFlagLast)
@@ -367,7 +367,7 @@ void RegisterFile::Rename(Uop &uop)
 	if (flag_count > 0) {
 		if (flag_phy_reg < 0)
 			flag_phy_reg = RequestIntRegister();
-		for (int dep = 0; dep < UInstMaxODeps; dep++)
+		for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 		{
 			logical_reg = (int)uop.getUinst()->getODep(dep);
 			if (!(logical_reg >= UInstDepFlagFirst && logical_reg <= UInstDepFlagLast))
@@ -390,7 +390,7 @@ bool RegisterFile::IsUopReady(Uop &uop)
 	int phy_reg;
 
 	//// assert(uop->thread == self);
-	for (int dep = 0; dep < UInstMaxIDeps; dep++)
+	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
 		logical_reg = (int)uop.getUinst()->getIDep(dep);
 		phy_reg = uop.getPhyRegIdep(dep);
@@ -415,9 +415,9 @@ void RegisterFile::WriteUop(Uop &uop)
 	int phy_reg;
 
 	// assert(uop->thread == self);
-	for (int dep = 0; dep < UInstMaxODeps; dep++)
+	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
-		logical_reg = (int)uop.getUinst()->getODep(dep);
+		logical_reg = (int) uop.getUinst()->getODep(dep);
 		phy_reg = uop.getPhyRegOdep(dep);
 		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
 			int_phy_reg[phy_reg].pending = 0;
@@ -441,7 +441,7 @@ void RegisterFile::UndoUop(Uop &uop)
 	// duplicated output dependence.
 	// assert(uop->thread == self);
 	assert(uop.getSpeculativeMode());
-	for (int dep = UInstMaxODeps - 1; dep >= 0; dep--)
+	for (int dep = Uinst::MaxODeps - 1; dep >= 0; dep--)
 	{
 		logical_reg = (int)uop.getUinst()->getODep(dep);
 		phy_reg = uop.getPhyRegOdep(dep);
@@ -539,7 +539,7 @@ void RegisterFile::CommitUop(Uop &uop)
 
 	assert(!uop.getSpeculativeMode());
 	// assert(uop->thread == self);
-	for (int dep = 0; dep < UInstMaxODeps; dep++)
+	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		logical_reg = (int)uop.getUinst()->getODep(dep);
 		phy_reg = uop.getPhyRegOdep(dep);

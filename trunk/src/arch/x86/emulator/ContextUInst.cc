@@ -29,7 +29,7 @@ namespace x86
 int Context::getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep)
 {
 	// Get dependence
-	assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+	assert(misc::inRange(index, 0, Uinst::MaxDeps - 1));
 	UInstDep dep = uinst->getDep(index);
 	std_dep = dep;
 
@@ -112,7 +112,7 @@ void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 void Context::ParseUInstDep(Uinst *uinst, int index)
 {
 	// Regular dependence */
-	assert(misc::inRange(index, 0, UInstMaxDeps - 1));
+	assert(misc::inRange(index, 0, Uinst::MaxDeps - 1));
 	UInstDep dep = uinst->getDep(index);
 	if (Uinst::isValidDep(dep))
 		return;
@@ -223,7 +223,7 @@ void Context::ParseUInstDep(Uinst *uinst, int index)
 void Context::ParseUInstIDep(Uinst *uinst, int index)
 {
 	// Get dependence
-	assert(misc::inRange(index, 0, UInstMaxIDeps - 1));
+	assert(misc::inRange(index, 0, Uinst::MaxIDeps - 1));
 	UInstDep dep = uinst->getIDep(index);
 
 	// No action if no dependence
@@ -264,8 +264,8 @@ void Context::ParseUInstIDep(Uinst *uinst, int index)
 void Context::ParseUInstODep(Uinst *uinst, int index)
 {
 	// Convert index into global dependence index
-	assert(misc::inRange(index, 0, UInstMaxODeps - 1));
-	index += UInstMaxIDeps;
+	assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
+	index += Uinst::MaxIDeps;
 
 	// Nothing is dependency is empty
 	UInstDep dep = uinst->getDep(index);
@@ -311,18 +311,18 @@ void Context::ParseUInstODep(Uinst *uinst, int index)
 void Context::ProcessNewUInst(Uinst *uinst)
 {
 	// Emit effective address computation if needed.
-	for (int i = 0; !uinst_effaddr_emitted && i < UInstMaxDeps; i++)
+	for (int i = 0; !uinst_effaddr_emitted && i < Uinst::MaxDeps; i++)
 		EmitUInstEffectiveAddress(uinst, i);
 	
 	// Parse input dependences
-	for (int i = 0; i < UInstMaxIDeps; i++)
+	for (int i = 0; i < Uinst::MaxIDeps; i++)
 		ParseUInstIDep(uinst, i);
 	
 	// Add micro-instruction to list
 	uinst_list.emplace_back(uinst);
 	
 	// Parse output dependences
-	for (int i = 0; i < UInstMaxODeps; i++)
+	for (int i = 0; i < Uinst::MaxODeps; i++)
 		ParseUInstODep(uinst, i);
 }
 
