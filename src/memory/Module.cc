@@ -135,6 +135,25 @@ Module *Module::getOwner(int set_id, int way_id, int sub_block_id)
 }
 
 
+bool Module::canAccess(int address) const
+{
+	// There must be a free port
+	assert(num_locked_ports <= num_ports);
+	if (num_locked_ports == num_ports)
+		return false;
+
+	// If no MSHR is given, module can be accessed
+	if (!mshr_size)
+		return true;
+
+	// Module can be accessed if number of non-coalesced in-flight accesses
+	// is smaller than the MSHR size.
+	int num_non_coalesced_accesses = access_list.size() -
+			access_list_coalesced_count;
+	return num_non_coalesced_accesses < mshr_size;
+}
+
+
 long long Module::Access(AccessType access_type,
 		unsigned address,
 		int *witness)

@@ -53,7 +53,33 @@ Thread::Thread(Core *core,
 
 bool Thread::canFetch()
 {
-	throw misc::Panic("Not implemented");
+	// There must be a context mapped to this thread
+	if (!context)
+		return false;
+	
+	// The context must be running
+	if (!context->getState(Context::StateRunning))
+		return false;
+
+	// Fetch queue must have not exceeded the limit of stored bytes to be
+	// able to store new macro-instructions.
+	if (fetch_queue_occupancy >= Cpu::getFetchQueueSize())
+		return false;
+
+	// If the next fetch address belongs to a new block, cache system
+	// must be accessible to read it.
+	unsigned block_address = fetch_neip & ~(instruction_module->getBlockSize() - 1);
+	if (block_address != fetch_block_address)
+	{
+		unsigned physical_address = context->mmu->TranslateVirtualAddress(
+				context->mmu_space,
+				fetch_neip);
+		if (!instruction_module->canAccess(physical_address))
+			return false;
+	}
+	
+	// We can fetch
+	return true;
 }
 
 

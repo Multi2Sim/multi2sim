@@ -354,21 +354,20 @@ void Context::Load(const std::vector<std::string> &args,
 	
 	// Create new memory image
 	assert(!memory.get());
-	memory.reset(new mem::Memory());
-	address_space_index = emulator->getAddressSpaceIndex();
+	memory = misc::new_shared<mem::Memory>();
 
 	// Create signal handler table
-	signal_handler_table.reset(new SignalHandlerTable());
+	signal_handler_table = misc::new_shared<SignalHandlerTable>();
 
 	// Create speculative memory, and link it with the real memory
-	spec_mem.reset(new mem::SpecMem(memory.get()));
+	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());
 
 	// Create file descriptor table
-	file_table.reset(new comm::FileTable());
+	file_table = misc::new_shared<comm::FileTable>();
 	
 	// Create new loader info
 	assert(!loader.get());
-	loader.reset(new Loader());
+	loader = misc::new_shared<Loader>();
 	loader->exe = misc::getFullPath(args[0], cwd);
 	loader->args = args;
 	loader->cwd = cwd.empty() ? misc::getCwd() : cwd;
@@ -383,7 +382,7 @@ void Context::Load(const std::vector<std::string> &args,
 		loader->env.emplace_back(var);
 	
 	// Create call stack
-	call_stack.reset(new comm::CallStack(loader->exe));
+	call_stack = misc::new_unique<comm::CallStack>(loader->exe);
 
 	// Load the binary
 	LoadBinary();
@@ -398,11 +397,10 @@ void Context::Clone(Context *parent)
 	// The memory image of the cloned context if the same. The memory
 	// structure must be only freed by the parent when all its children have
 	// been killed. The set of signal handlers is the same, too.
-	address_space_index = parent->address_space_index;
 	memory = parent->memory;
 	
 	// Create speculative memory, linked with the real memory
-	spec_mem.reset(new mem::SpecMem(memory.get()));
+	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());
 
 	// Reference to parent's loader
 	loader = parent->loader;
@@ -426,19 +424,18 @@ void Context::Fork(Context *parent)
 	regs = parent->regs;
 
 	// Memory
-	address_space_index = emulator->getAddressSpaceIndex();
-	memory.reset(new mem::Memory());
+	memory = misc::new_shared<mem::Memory>();
 	memory->Clone(*parent->memory);
 	
 	// Create speculative memory, linked with the real memory
-	spec_mem.reset(new mem::SpecMem(memory.get()));
+	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());
 
 	// Reference to parent's loader
 	loader = parent->loader;
 
 	// Signal handlers and file descriptor table
-	signal_handler_table.reset(new SignalHandlerTable());
-	file_table.reset(new comm::FileTable());
+	signal_handler_table = misc::new_shared<SignalHandlerTable>();
+	file_table = misc::new_shared<comm::FileTable>();
 
 	// Libc segment
 	glibc_segment_base = parent->glibc_segment_base;
