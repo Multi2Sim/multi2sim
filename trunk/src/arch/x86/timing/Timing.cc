@@ -394,9 +394,9 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 
 	// Check that entry has not been assigned before
 	Thread *thread = cpu.getThread(core_index, thread_index);
-	if (thread->getDataModule() || thread->getInstModule())
+	if (thread->data_module || thread->instruction_module)
 	{
-		assert(thread->getDataModule() && thread->getInstModule());
+		assert(thread->data_module && thread->instruction_module);
 		throw Error(misc::fmt("%s: section [%s]: entry from Core %d, "
 				"Thread %d already assigned.\n"
 				"\tA different [Entry <name>] section in the "
@@ -412,17 +412,17 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 
 	// Read modules
 	std::string data_module_name;
-	std::string inst_module_name;
+	std::string instruction_module_name;
 	if (data_inst_present)
 	{
 		data_module_name = ini_file->ReadString(section, "DataModule");
-		inst_module_name = ini_file->ReadString(section, "InstModule");
+		instruction_module_name = ini_file->ReadString(section, "InstModule");
 		assert(!data_module_name.empty());
-		assert(!inst_module_name.empty());
+		assert(!instruction_module_name.empty());
 	}
 	else
 	{
-		data_module_name = inst_module_name = ini_file->ReadString(
+		data_module_name = instruction_module_name = ini_file->ReadString(
 				section, "Module");
 		assert(!data_module_name.empty());
 	}
@@ -430,7 +430,7 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 	// Assign data module
 	mem::System *memory_system = mem::System::getInstance();
 	mem::Module *data_module = memory_system->getModule(data_module_name);
-	thread->setDataModule(data_module);
+	thread->data_module = data_module;
 	if (!data_module)
 		throw Error(misc::fmt("%s: section [%s]: '%s' is not a valid "
 				"module name.\n"
@@ -442,9 +442,9 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 				data_module_name.c_str()));
 
 	// Assign instruction module
-	mem::Module *inst_module = memory_system->getModule(inst_module_name);
-	thread->setInstModule(inst_module);
-	if (!inst_module)
+	mem::Module *instruction_module = memory_system->getModule(instruction_module_name);
+	thread->instruction_module = instruction_module;
+	if (!instruction_module)
 		throw Error(misc::fmt("%s: section [%s]: '%s' is not a valid "
 				"module name.\n"
 				"\tThe given module name must match a module "
@@ -452,19 +452,19 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 				"memory configuration file.\n",
 				ini_file->getPath().c_str(),
 				section.c_str(),
-				inst_module_name.c_str()));
+				instruction_module_name.c_str()));
 	
 	// Add modules to entry list
 	entry_modules.push_back(data_module);
-	if (data_module != inst_module)
-		entry_modules.push_back(inst_module);
+	if (data_module != instruction_module)
+		entry_modules.push_back(instruction_module);
 
 	// Debug
 	mem::System::debug <<
 			"\tx86 Core " << core_index << ", "
 			"Thread " << thread_index << '\n' <<
 			"\t\tEntry for instructions -> " <<
-			inst_module->getName() << '\n' <<
+			instruction_module->getName() << '\n' <<
 			"\t\tEntry for data -> " << 
 			data_module->getName() << '\n' <<
 			'\n';
@@ -480,7 +480,7 @@ void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 		for (int j = 0; j < core->getNumThreads(); j++)
 		{
 			Thread *thread = core->getThread(j);
-			if (!thread->getDataModule() || !thread->getInstModule())
+			if (!thread->data_module || !thread->instruction_module)
 				throw Error(misc::fmt("%s: x86 Core %d, Thread %d "
 						"lacks a data/instruction entry to memory.\n"
 						"\tPlease add a new [Entry <name>] section "

@@ -220,7 +220,7 @@ private:
 	std::list<Frame *> write_access_list;
 	
 	// Number of in-flight coalesced accesses. This is a number
-	// between 0 and access_list.getSize() at all times.
+	// between 0 and access_list.size() at all times.
 	int access_list_coalesced_count = 0;
 
 	// Hash table of accesses, indexed by a block address (that is, a
@@ -362,7 +362,7 @@ public:
 
 	/// Return whether the module can be accessed. A module can be accessed
 	/// if there are available ports and enough room in the MSHR register.
-	bool canAccess(int address) { return true; } //FIXME;
+	bool canAccess(int address) const;
 
 	/// Return module name
 	const std::string &getName() const { return name; }

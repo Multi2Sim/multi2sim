@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_EMU_EMU_H
-#define ARCH_X86_EMU_EMU_H
+#ifndef ARCH_X86_EMULATOR_EMULATOR_H
+#define ARCH_X86_EMULATOR_EMULATOR_H
 
 #include <pthread.h>
 
@@ -102,11 +102,6 @@ class Emulator : public comm::Emulator
 	// increasing order, using function Emu::getPid()
 	int pid = 100;
 	
-	// Index of virtual memory space assigned to new contexts. A new ID
-	// can be retrieved in increasing order by using function
-	// Emu::getAddressSpaceIndex()
-	int address_space_index = 0;
-	
 	// Emulator mutex, used to access shared variables between main program
 	// and child host threads.
 	pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -174,10 +169,6 @@ public:
 	/// Return a unique process ID. Contexts can call this function when
 	/// created to obtain their unique identifier.
 	int getPid() { return pid++; }
-
-	/// Return a unique increasing ID for a virtual memory space for
-	/// contexts.
-	int getAddressSpaceIndex() { return address_space_index++; }
 
 	/// Get reference to the main context list
 	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }

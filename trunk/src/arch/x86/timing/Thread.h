@@ -63,6 +63,7 @@ private:
 
 
 
+
 	//
 	// Number of uops in private structures
 	//
@@ -122,9 +123,13 @@ private:
 
 
 
+
 	//
-	// Fetch
+	// Fetch stage
 	//
+
+	// Current occupancy of the fetch queue in bytes
+	int fetch_queue_occupancy = 0;
 
 	// Current instruction pointer
 	unsigned int fetch_eip = 0;
@@ -138,8 +143,9 @@ private:
 	// Number of uops occupied in the trace cache queue
 	int num_uop_in_trace_cache_queue  = 0;
 
-	// Virtual address of last fetched block
-	unsigned int fetch_block = 0;
+	// Virtual base address of the first byte in the cache block that was
+	// fetched last
+	unsigned int fetch_block_address = -1;
 
 	// Physical address of last instruction fetch
 	unsigned int fetch_address = 0;
@@ -149,22 +155,6 @@ private:
 
 	// Cycle until which fetching is stalled (inclusive)
 	long long fetch_stall_until = 0;
-
-
-
-
-	//
-	// Entries to the memory system
-	//
-
-	// Data memory module entry
-	mem::Module *data_module = nullptr;
-
-	// Instructions memory module entry
-	mem::Module *inst_module = nullptr;
-
-
-
 
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
@@ -369,31 +359,6 @@ public:
 	/// Get number of fetched micro-instructions
 	long long getNumFetchedUinst() { return num_fetched_uinst; }
 
-
-
-
-	/// Return the entry module to the memory hierarchy for data
-	mem::Module *getDataModule() const { return data_module; }
-
-	/// Assign the entry module to the memory hierarchy for data. This
-	/// function should be invoked only once.
-	void setDataModule(mem::Module *data_module)
-	{
-		assert(!this->data_module);
-		this->data_module = data_module;
-	}
-
-	/// Return the entry module to the memory hierarchy for instructions
-	mem::Module *getInstModule() const { return inst_module; }
-
-	/// Assign the entry module to the memory hierarchy for instructions.
-	/// This function should be invoked only once.
-	void setInstModule(mem::Module *inst_module)
-	{
-		assert(!this->inst_module);
-		this->inst_module = inst_module;
-	}
-
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();
 
@@ -419,6 +384,23 @@ public:
 
 	/// Fetch stage function
 	void Fetch();
+
+
+
+	//
+	// Public fields
+	//
+
+	/// Software context currently mapped to this hardware thread
+	Context *context = nullptr;
+
+	/// Memory module used as an entry in the memory hierarchy for data
+	/// accesses
+	mem::Module *data_module = nullptr;
+
+	/// Memory module used as an entry in the memory hierarchy for
+	/// instruction accesses
+	mem::Module *instruction_module = nullptr;
 };
 
 }
