@@ -41,11 +41,12 @@ class Timing;
 class WorkGroup;
 
 
+
 /// Class representing one compute unit in the GPU device.
 class ComputeUnit
 {
 	// Fetch an instruction from the given wavefront pool
-	void Fetch(int wavefront_pool_id);
+	void Fetch(WavefrontPool *wavefront_pool);
 
 	// Issue an instruction from the given fetch buffer into the
 	// appropriate execution unit.
@@ -157,6 +158,15 @@ public:
 
 	// Number of issued scalar ALU instructions
 	long long num_scalar_alu_instructions = 0;
+
+	// Number of issued SIMD instructions
+	long long num_simd_instructions = 0;
+
+	// Number of issued vector memory instructions
+	long long num_vector_memory_instructions = 0;
+
+	// Number of issued LDS instructions
+	long long num_lds_instructions = 0;
 };
 
 }

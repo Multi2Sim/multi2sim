@@ -72,7 +72,7 @@ public:
 	/// parent class function, too.
 	virtual void Issue(std::shared_ptr<Uop> uop);
 
-	/// Return the number of instructions currently present in the isseu
+	/// Return the number of instructions currently present in the issue
 	/// buffer.
 	int getIssueBufferOccupancy() const { return issue_buffer.size(); }
 

@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_VECTOR_MEMORY_UNIT_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_VECTOR_MEMORY_UNIT_H
 
+#include "ExecutionUnit.h"
 
 namespace SI
 {
@@ -29,23 +30,63 @@ class ComputeUnit;
 
 
 /// Class representing the vector memory unit of a compute unit
-class VectorMemoryUnit
+class VectorMemoryUnit : public ExecutionUnit
 {
-	// Compute unit that it belongs to, assigned in constructor
-	ComputeUnit *compute_unit;
-
-	// Number of instructions
-	long long num_instructions = 0;
-
 public:
+	//
+	// Static fields
+	//
+
+	/// Size of the issue buffer in number of instructions
+	static int issue_buffer_size;
+
+	/// Decode latency in number of cycles
+	static int decode_latency;
+
+	/// Size of the decode buffer in number of instructions
+	static int decode_buffer_size;
+
+	/// Latency of the read stage in number of cycles
+	static int read_latency;
+
+	/// Size of the read buffer in number of instructions
+	static int read_buffer_size;
+
+	/// Latency of the write stage in number of cycles
+	static int write_latency;
+
+	/// Size of the write buffer in number of cycles
+	static int write_buffer_size;
+
+
+
+
+	//
+	// Class members
+	//
 
 	/// Constructor
-	VectorMemoryUnit(ComputeUnit *compute_unit) : compute_unit(compute_unit)
+	VectorMemoryUnit(ComputeUnit *compute_unit) :
+			ExecutionUnit(compute_unit)
 	{
 	}
 
 	/// Run the actions occurring in one cycle
 	void Run();
+
+	/// Return whether there is room in the issue buffer of the
+	/// vector memory unit to absorb a new instruction.
+	bool canIssue() const override
+	{
+		return getIssueBufferOccupancy() < issue_buffer_size;
+	}
+
+	/// Return whether the given uop is a vector memory unit
+	/// instruction.
+	bool isValidUop(Uop *uop) const override;
+
+	/// Issue the given instruction into the vector memory unit
+	void Issue(std::shared_ptr<Uop> uop) override;
 };
 
 }

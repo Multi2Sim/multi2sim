@@ -18,14 +18,51 @@
  */
 
 #include "VectorMemoryUnit.h"
+#include "ComputeUnit.h"
 
 
 namespace SI
 {
 
+int VectorMemoryUnit::issue_buffer_size = 1;
+int VectorMemoryUnit::decode_latency = 1;
+int VectorMemoryUnit::decode_buffer_size = 1;
+int VectorMemoryUnit::read_latency = 1;
+int VectorMemoryUnit::read_buffer_size = 1;
+int VectorMemoryUnit::write_latency = 1;
+int VectorMemoryUnit::write_buffer_size = 1;
+
+
 void VectorMemoryUnit::Run()
 {
 }
+
+bool VectorMemoryUnit::isValidUop(Uop *uop) const
+{
+	// Get instruction
+	Instruction *instruction = uop->getInstruction();
+
+	// Determine if vector memory instruction
+	if (instruction->getFormat() != Instruction::FormatMTBUF &&
+			instruction->getFormat() != Instruction::FormatMUBUF)
+		return false;
+
+	return true;
+}
+
+void VectorMemoryUnit::Issue(std::shared_ptr<Uop> uop)
+{
+	// One more instruction of this kind
+	ComputeUnit *compute_unit = getComputeUnit();
+
+	// One more instruction of this kind
+	compute_unit->num_vector_memory_instructions++;
+	uop->getWavefrontPoolEntry()->lgkm_cnt++;
+
+	// Issue it
+	ExecutionUnit::Issue(uop);
+}
+
 
 }
 
