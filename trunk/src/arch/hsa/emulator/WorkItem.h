@@ -144,9 +144,10 @@ private:
  	template<typename T> void Inst_ST_Aux();
  	template<typename T> void Inst_LDI_Aux();
 
- 	// Get the value of the index-th operand
- 	template <typename Type>
- 	Type getOperandValue(unsigned int index)
+ 	// Get the value of the index-th operand, stores the result in 
+	// the \a buffer 
+  	template <typename Type>
+ 	void getOperandValue(unsigned int index, Type *buffer)
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
@@ -161,32 +162,69 @@ private:
  			BrigImmed immed(operand->getBytes(),
  					inst->getOperandType(index));
  			Type value = immed.getImmedValue<Type>();
- 			return value;
+			*buffer = value;
+ 			return;
  		}
 
  		case BRIG_KIND_OPERAND_WAVESIZE:
 
- 			return 1;
+			*buffer = 1;
+ 			return;
 
  		case BRIG_KIND_OPERAND_REGISTER:
 
  		{
  			std::string register_name = operand->getRegisterName();
- 			return stack_top->getRegisterValue<Type>(register_name);
+ 			*buffer = stack_top->getRegisterValue<Type>(
+					register_name);
+			return;
  		}
+
+		case BRIG_KIND_OPERAND_OPERAND_LIST:
+
+		{
+			// Get the vector modifier
+			unsigned vector_size = inst->getVectorModifier();
+			for (int i = 0; i < vector_size; i++)
+			{
+				auto op_item = operand->getOperandElement(i);	
+				switch (op_item->getKind())
+				{
+				case BRIG_KIND_OPERAND_REGISTER:
+
+				{
+					std::string register_name = 
+							op_item->
+							getRegisterName();
+					*(buffer + i) = stack_top->
+							getRegisterValue<Type>
+							(register_name);
+					break;
+				}
+
+				default:
+					throw misc::Panic(misc::fmt(
+							"Unsupported operand "
+							"type in operand list")
+							);
+				}
+			}
+			break;
+		}
 
  		default:
 
  			throw misc::Panic("Unsupported operand type "
  					"for getOperandValue");
  			break;
+
  		}
- 		return 0;
  	}
 
- 	// Store the value into registers marked by the operand
+ 	// Store the value into registers marked by the operand, from the 
+	// value pointer
  	template <typename Type>
- 	void storeOperandValue(unsigned int index, Type value)
+ 	void storeOperandValue(unsigned int index, Type *value)
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
@@ -201,9 +239,42 @@ private:
 
  		{
  			std::string register_name = operand->getRegisterName();
- 			stack_top->setRegisterValue<Type>(register_name, value);
+ 			stack_top->setRegisterValue<Type>(register_name, 
+					*value);
  			break;
  		}
+
+		case BRIG_KIND_OPERAND_OPERAND_LIST:
+
+		{
+			// Get the vector modifier
+			unsigned vector_size = inst->getVectorModifier();
+			for (int i = 0; i < vector_size; i++)
+			{
+				auto op_item = operand->getOperandElement(i);	
+				switch (op_item->getKind())
+				{
+				case BRIG_KIND_OPERAND_REGISTER:
+
+				{
+					std::string register_name = 
+							op_item->
+							getRegisterName();
+					stack_top->setRegisterValue<Type>
+							(register_name, 
+							 *(value + i));
+					break;
+				}
+
+				default:
+					throw misc::Panic(misc::fmt(
+							"Unsupported operand "
+							"type in operand list")
+							);
+				}
+			}
+			break;
+		}
 
  		default:
 
@@ -225,8 +296,11 @@ private:
  	// Memory related fields and function
  	//
 
+	// Translate inner address to flat address
+	unsigned getFlatAddress(BrigSegment segment, unsigned address);
+
  	// Return buffer in host memory
- 	char *getVariableBuffer(unsigned char segment,
+ 	char *getVariableBuffer(BrigSegment segment,
  			const std::string &name);
 
  	// Allocate memory for variable
