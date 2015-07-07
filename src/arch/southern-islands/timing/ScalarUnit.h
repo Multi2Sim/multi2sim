@@ -81,7 +81,7 @@ public:
 	/// Run the actions occurring in one cycle
 	void Run();
 	
-	/// Return whether there is room in the issue buffer of the branch
+	/// Return whether there is room in the issue buffer of the scalar
 	/// unit to absorb a new instruction.
 	bool canIssue() const override
 	{
@@ -91,7 +91,7 @@ public:
 	/// Return whether the given uop is a scalar instruction.
 	bool isValidUop(Uop *uop) const override;
 	
-	/// Issue the given instruction into the branch unit.
+	/// Issue the given instruction into the scalar unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
 };
 
