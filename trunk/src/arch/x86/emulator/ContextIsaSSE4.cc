@@ -71,7 +71,14 @@ void Context::ExecuteInst_pcmpeqq_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmComp,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 
 #else
 	throw misc::Panic(x86_isa_err_sse4);

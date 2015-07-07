@@ -20,60 +20,60 @@
 #include <lib/cpp/Misc.h>
 
 #include "Context.h"
-#include "UInst.h"
+#include "Uinst.h"
 
 
 namespace x86
 {
 
-int Context::getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep)
+int Context::getMemoryDepSize(Uinst *uinst, int index, Uinst::Dep &std_dep)
 {
 	// Get dependence
 	assert(misc::inRange(index, 0, Uinst::MaxDeps - 1));
-	UInstDep dep = uinst->getDep(index);
+	Uinst::Dep dep = uinst->getDep(index);
 	std_dep = dep;
 
 	// Check type
 	switch (dep)
 	{
 
-	case UInstDepRm8:
-	case UInstDepRm16:
-	case UInstDepRm32:
+	case Uinst::DepRm8:
+	case Uinst::DepRm16:
+	case Uinst::DepRm32:
 
 		// The 'modrm_mod' field of the instruction bytes indicates
 		// whether it's actually a memory dependence or a register
 		if (inst.getModRmMod() == 3)
 			return 0;
 
-		std_dep = UInstDepData;
-		return 1 << (dep - UInstDepRm8);
+		std_dep = Uinst::DepData;
+		return 1 << (dep - Uinst::DepRm8);
 
-	case UInstDepMem8:
-	case UInstDepMem16:
-	case UInstDepMem32:
-	case UInstDepMem64:
-	case UInstDepMem128:
+	case Uinst::DepMem8:
+	case Uinst::DepMem16:
+	case Uinst::DepMem32:
+	case Uinst::DepMem64:
+	case Uinst::DepMem128:
 
-		std_dep = UInstDepData;
-		return 1 << (dep - UInstDepMem8);
+		std_dep = Uinst::DepData;
+		return 1 << (dep - Uinst::DepMem8);
 
-	case UInstDepMem80:
+	case Uinst::DepMem80:
 
-		std_dep = UInstDepData;
+		std_dep = Uinst::DepData;
 		return 10;
 
-	case UInstDepXmmm32:
-	case UInstDepXmmm64:
-	case UInstDepXmmm128:
+	case Uinst::DepXmmm32:
+	case Uinst::DepXmmm64:
+	case Uinst::DepXmmm128:
 
 		// The 'modrm_mod' field indicates whether it's actually a memory
 		// dependence or a register.
 		if (inst.getModRmMod() == 3)
 			return 0;
 
-		std_dep = UInstDepXmmData;
-		return 1 << (dep - UInstDepXmmm32 + 2);
+		std_dep = Uinst::DepXmmData;
+		return 1 << (dep - Uinst::DepXmmm32 + 2);
 
 	default:
 		return 0;
@@ -81,10 +81,10 @@ int Context::getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep)
 }
 
 
-void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
+void Context::EmitUinstEffectiveAddress(Uinst *uinst, int index)
 {
 	// Check if it is a memory dependence
-	UInstDep mem_std_dep;
+	Uinst::Dep mem_std_dep;
 	if (!getMemoryDepSize(uinst, index, mem_std_dep))
 		return;
 
@@ -97,23 +97,23 @@ void Context::EmitUInstEffectiveAddress(Uinst *uinst, int index)
 	
 	// Emit micro-instruction
 	new_uinst->setIDep(0, inst.getSegment() ?
-			inst.getSegment() - Instruction::RegEs + UInstDepEs
-			: UInstDepNone);
+			inst.getSegment() - Instruction::RegEs + Uinst::DepEs
+			: Uinst::DepNone);
 	new_uinst->setIDep(1, inst.getEaBase() ?
-			inst.getEaBase() - Instruction::RegEax + UInstDepEax
-			: UInstDepNone);
+			inst.getEaBase() - Instruction::RegEax + Uinst::DepEax
+			: Uinst::DepNone);
 	new_uinst->setIDep(2, inst.getEaIndex() ?
-			inst.getEaIndex() - Instruction::RegEax + UInstDepEax
-			: UInstDepNone);
-	new_uinst->setODep(0, UInstDepEa);
+			inst.getEaIndex() - Instruction::RegEax + Uinst::DepEax
+			: Uinst::DepNone);
+	new_uinst->setODep(0, Uinst::DepEa);
 }
 
 
-void Context::ParseUInstDep(Uinst *uinst, int index)
+void Context::ParseUinstDep(Uinst *uinst, int index)
 {
 	// Regular dependence */
 	assert(misc::inRange(index, 0, Uinst::MaxDeps - 1));
-	UInstDep dep = uinst->getDep(index);
+	Uinst::Dep dep = uinst->getDep(index);
 	if (Uinst::isValidDep(dep))
 		return;
 
@@ -121,96 +121,96 @@ void Context::ParseUInstDep(Uinst *uinst, int index)
 	switch (dep)
 	{
 
-	case UInstDepNone:
+	case Uinst::DepNone:
 
 		break;
 
-	case UInstDepEaseg:
+	case Uinst::DepEaseg:
 
 		uinst->setDep(index, inst.getSegment() ?
-				inst.getSegment() - Instruction::RegEs + UInstDepEs
-				: UInstDepNone);
+				inst.getSegment() - Instruction::RegEs + Uinst::DepEs
+				: Uinst::DepNone);
 		break;
 
-	case UInstDepEabas:
+	case Uinst::DepEabas:
 
 		uinst->setDep(index, inst.getEaBase() ?
-				inst.getEaBase() - Instruction::RegEax + UInstDepEax
-				: UInstDepNone);
+				inst.getEaBase() - Instruction::RegEax + Uinst::DepEax
+				: Uinst::DepNone);
 		break;
 
-	case UInstDepEaidx:
+	case Uinst::DepEaidx:
 
 		uinst->setDep(index, inst.getEaIndex() ?
-				inst.getEaIndex() - Instruction::RegEax + UInstDepEax
-				: UInstDepNone);
+				inst.getEaIndex() - Instruction::RegEax + Uinst::DepEax
+				: Uinst::DepNone);
 		break;
 
 	// If we reached this point, 'rmXXX' dependences are actually registers.
 	// Otherwise, they would have been handled by ParseUInstIDep() or
 	// ParseUInstODep() functions.
-	case UInstDepRm8:
+	case Uinst::DepRm8:
 
 		assert(inst.getModRmMod() == 3);
 		uinst->setDep(index, inst.getModRmRm() < 4 ?
-				UInstDepEax + inst.getModRmRm()
-				: UInstDepEax + inst.getModRmRm() - 4);
+				Uinst::DepEax + inst.getModRmRm()
+				: Uinst::DepEax + inst.getModRmRm() - 4);
 		break;
 
-	case UInstDepRm16:
-	case UInstDepRm32:
+	case Uinst::DepRm16:
+	case Uinst::DepRm32:
 
 		assert(inst.getModRmMod() == 3);
-		uinst->setDep(index, UInstDepEax + inst.getModRmRm());
+		uinst->setDep(index, Uinst::DepEax + inst.getModRmRm());
 		break;
 
-	case UInstDepR8:
+	case Uinst::DepR8:
 
 		uinst->setDep(index, inst.getModRmReg() < 4 ?
-				UInstDepEax + inst.getModRmReg()
-				: UInstDepEax + inst.getModRmReg() - 4);
+				Uinst::DepEax + inst.getModRmReg()
+				: Uinst::DepEax + inst.getModRmReg() - 4);
 		break;
 
-	case UInstDepR16:
-	case UInstDepR32:
+	case Uinst::DepR16:
+	case Uinst::DepR32:
 
-		uinst->setDep(index, UInstDepEax + inst.getModRmReg());
+		uinst->setDep(index, Uinst::DepEax + inst.getModRmReg());
 		break;
 
-	case UInstDepIr8:
+	case Uinst::DepIr8:
 
 		uinst->setDep(index, inst.getOpIndex() < 4 ?
-				UInstDepEax + inst.getOpIndex()
-				: UInstDepEax + inst.getOpIndex() - 4);
+				Uinst::DepEax + inst.getOpIndex()
+				: Uinst::DepEax + inst.getOpIndex() - 4);
 		break;
 
-	case UInstDepIr16:
-	case UInstDepIr32:
+	case Uinst::DepIr16:
+	case Uinst::DepIr32:
 
-		uinst->setDep(index, UInstDepEax + inst.getOpIndex());
+		uinst->setDep(index, Uinst::DepEax + inst.getOpIndex());
 		break;
 
-	case UInstDepSreg:
+	case Uinst::DepSreg:
 
-		uinst->setDep(index, UInstDepEs + inst.getModRmReg());
+		uinst->setDep(index, Uinst::DepEs + inst.getModRmReg());
 		break;
 
-	case UInstDepSti:
+	case Uinst::DepSti:
 
-		uinst->setDep(index, UInstDepSt0 + inst.getOpIndex());
+		uinst->setDep(index, Uinst::DepSt0 + inst.getOpIndex());
 		break;
 
-	case UInstDepXmmm32:
-	case UInstDepXmmm64:
-	case UInstDepXmmm128:
+	case Uinst::DepXmmm32:
+	case Uinst::DepXmmm64:
+	case Uinst::DepXmmm128:
 
 		assert(inst.getModRmMod() == 3);
-		uinst->setDep(index, UInstDepXmm0 + inst.getModRmRm());
+		uinst->setDep(index, Uinst::DepXmm0 + inst.getModRmRm());
 		break;
 
-	case UInstDepXmm:
+	case Uinst::DepXmm:
 
-		uinst->setDep(index, UInstDepXmm0 + inst.getModRmReg());
+		uinst->setDep(index, Uinst::DepXmm0 + inst.getModRmReg());
 		break;
 
 	default:
@@ -220,18 +220,18 @@ void Context::ParseUInstDep(Uinst *uinst, int index)
 }
 
 
-void Context::ParseUInstIDep(Uinst *uinst, int index)
+void Context::ParseUinstIDep(Uinst *uinst, int index)
 {
 	// Get dependence
 	assert(misc::inRange(index, 0, Uinst::MaxIDeps - 1));
-	UInstDep dep = uinst->getIDep(index);
+	Uinst::Dep dep = uinst->getIDep(index);
 
 	// No action if no dependence
-	if (dep == UInstDepNone)
+	if (dep == Uinst::DepNone)
 		return;
 
 	// Memory dependence
-	UInstDep mem_std_dep;
+	Uinst::Dep mem_std_dep;
 	int mem_dep_size = getMemoryDepSize(uinst, index, mem_std_dep);
 	if (mem_dep_size)
 	{
@@ -240,7 +240,7 @@ void Context::ParseUInstIDep(Uinst *uinst, int index)
 		if (uinst->getOpcode() == Uinst::OpcodeMove)
 		{
 			uinst->setOpcode(Uinst::OpcodeLoad);
-			uinst->setDep(index, UInstDepEa);
+			uinst->setDep(index, Uinst::DepEa);
 			uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 			return;
 		}
@@ -248,32 +248,32 @@ void Context::ParseUInstIDep(Uinst *uinst, int index)
 		// Load
 		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeLoad));
 		Uinst *new_uinst = uinst_list.back().get();
-		new_uinst->setIDep(0, UInstDepEa);
+		new_uinst->setIDep(0, Uinst::DepEa);
 		new_uinst->setODep(0, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 
-		// Input dependence of instruction is converted into UInstDepData
+		// Input dependence of instruction is converted into Uinst::DepData
 		uinst->setDep(index, mem_std_dep);
 		return;
 	}
 
 	// Regular dependence
-	ParseUInstDep(uinst, index);
+	ParseUinstDep(uinst, index);
 }
 
-void Context::ParseUInstODep(Uinst *uinst, int index)
+void Context::ParseUinstODep(Uinst *uinst, int index)
 {
 	// Convert index into global dependence index
 	assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
 	index += Uinst::MaxIDeps;
 
 	// Nothing is dependency is empty
-	UInstDep dep = uinst->getDep(index);
+	Uinst::Dep dep = uinst->getDep(index);
 	if (!dep)
 		return;
 
 	// Memory dependence
-	UInstDep mem_std_dep;
+	Uinst::Dep mem_std_dep;
 	int mem_dep_size = getMemoryDepSize(uinst, index, mem_std_dep);
 	if (mem_dep_size)
 	{
@@ -281,10 +281,10 @@ void Context::ParseUInstODep(Uinst *uinst, int index)
 		if (uinst->getOpcode() == Uinst::OpcodeMove)
 		{
 			// Try to add 'ea' as an input dependence
-			if (uinst->addIDep(UInstDepEa))
+			if (uinst->addIDep(Uinst::DepEa))
 			{
 				uinst->setOpcode(Uinst::OpcodeStore);
-				uinst->setDep(index, UInstDepNone);
+				uinst->setDep(index, Uinst::DepNone);
 				uinst->setMemoryAccess(last_effective_address,
 						mem_dep_size);
 				return;
@@ -294,36 +294,36 @@ void Context::ParseUInstODep(Uinst *uinst, int index)
 		// Store
 		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeStore));
 		Uinst *new_uinst = uinst_list.back().get();
-		new_uinst->setIDep(0, UInstDepEa);
+		new_uinst->setIDep(0, Uinst::DepEa);
 		new_uinst->setIDep(1, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
 
-		// Output dependence of instruction is UInstDepData
+		// Output dependence of instruction is Uinst::DepData
 		uinst->setDep(index, mem_std_dep);
 		return;
 	}
 
 	// Regular dependence
-	ParseUInstDep(uinst, index);
+	ParseUinstDep(uinst, index);
 
 }
 
-void Context::ProcessNewUInst(Uinst *uinst)
+void Context::ProcessNewUinst(Uinst *uinst)
 {
 	// Emit effective address computation if needed.
 	for (int i = 0; !uinst_effaddr_emitted && i < Uinst::MaxDeps; i++)
-		EmitUInstEffectiveAddress(uinst, i);
+		EmitUinstEffectiveAddress(uinst, i);
 	
 	// Parse input dependences
 	for (int i = 0; i < Uinst::MaxIDeps; i++)
-		ParseUInstIDep(uinst, i);
+		ParseUinstIDep(uinst, i);
 	
 	// Add micro-instruction to list
 	uinst_list.emplace_back(uinst);
 	
 	// Parse output dependences
 	for (int i = 0; i < Uinst::MaxODeps; i++)
-		ParseUInstODep(uinst, i);
+		ParseUinstODep(uinst, i);
 }
 
 

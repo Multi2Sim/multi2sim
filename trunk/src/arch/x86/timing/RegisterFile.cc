@@ -24,9 +24,9 @@
 namespace x86
 {
 
-const int RegisterFile::MinINTSize = UInstDepIntCount + Uinst::MaxODeps;
-const int RegisterFile::MinFPSize = UInstDepFpCount + Uinst::MaxODeps;
-const int RegisterFile::MinXMMSize = UInstDepXmmCount + Uinst::MaxODeps;
+const int RegisterFile::MinINTSize = Uinst::DepIntCount + Uinst::MaxODeps;
+const int RegisterFile::MinFPSize = Uinst::DepFpCount + Uinst::MaxODeps;
+const int RegisterFile::MinXMMSize = Uinst::DepXmmCount + Uinst::MaxODeps;
 
 misc::StringMap RegisterFile::KindMap =
 {
@@ -43,9 +43,9 @@ int RegisterFile::fp_local_size;
 int RegisterFile::xmm_local_size;
 
 
-RegisterFile::RegisterFile(Core *core, Thread *thread)
-	:
-	core(core), thread(thread)
+RegisterFile::RegisterFile(Core *core, Thread *thread) :
+		core(core),
+		thread(thread)
 {
 	// Integer register file
 	int_phy_reg_count = int_local_size;
@@ -127,10 +127,10 @@ void RegisterFile::InitRegisterFile()
 	// and map all flags to the first allocated physical register.
 	// FIXME Not consistent with M2S doc.
 	int flag_phy_reg = -1;
-	for (int dep = 0; dep < UInstDepIntCount; dep++)
+	for (int dep = 0; dep < Uinst::DepIntCount; dep++)
 	{
-		dependency = dep + UInstDepIntFirst;
-		if (dependency >= UInstDepFlagFirst && dependency <= UInstDepFlagLast)
+		dependency = dep + Uinst::DepIntFirst;
+		if (dependency >= Uinst::DepFlagFirst && dependency <= Uinst::DepFlagLast)
 		{
 			assert(flag_phy_reg >= 0);
 			phy_reg = flag_phy_reg;
@@ -145,7 +145,7 @@ void RegisterFile::InitRegisterFile()
 	}
 
 	// Initial mapping for floating-point registers.
-	for (int dep = 0; dep < UInstDepFpCount; dep++)
+	for (int dep = 0; dep < Uinst::DepFpCount; dep++)
 	{
 		phy_reg = RequestFPRegister();
 		fp_phy_reg[phy_reg].busy++;
@@ -153,7 +153,7 @@ void RegisterFile::InitRegisterFile()
 	}
 
 	// Initial mapping for xmm registers.
-	for (int dep = 0; dep < UInstDepXmmCount; dep++)
+	for (int dep = 0; dep < Uinst::DepXmmCount; dep++)
 	{
 		phy_reg = RequestXMMRegister();
 		xmm_phy_reg[phy_reg].busy++;
@@ -265,27 +265,27 @@ void RegisterFile::Rename(Uop &uop)
 	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
 		logical_reg = (int) uop.getUinst()->getIDep(dep);
-		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+		if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 		{
-			phy_reg = int_rat[logical_reg - UInstDepIntFirst];
+			phy_reg = int_rat[logical_reg - Uinst::DepIntFirst];
 			uop.setPhyRegIdep(dep, phy_reg);
 			thread->incRatIntReads();
 		}
-		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+		else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 		{
 			// Convert to top-of-stack relative
-			stack_reg = (logical_reg - UInstDepFpFirst + fp_top_of_stack) % 8
-					+ UInstDepFpFirst;
-			assert(stack_reg >= UInstDepFpFirst && stack_reg <= UInstDepFpLast);
+			stack_reg = (logical_reg - Uinst::DepFpFirst + fp_top_of_stack) % 8
+					+ Uinst::DepFpFirst;
+			assert(stack_reg >= Uinst::DepFpFirst && stack_reg <= Uinst::DepFpLast);
 
 			// Rename it.
-			phy_reg = fp_rat[stack_reg - UInstDepFpFirst];
+			phy_reg = fp_rat[stack_reg - Uinst::DepFpFirst];
 			uop.setPhyRegIdep(dep, phy_reg);
 			thread->incRatFpReads();
 		}
-		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+		else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 		{
-			phy_reg = xmm_rat[logical_reg - UInstDepXmmFirst];
+			phy_reg = xmm_rat[logical_reg - Uinst::DepXmmFirst];
 			uop.setPhyRegIdep(dep, phy_reg);
 			thread->incRatXmmReads();
 		}
@@ -301,58 +301,58 @@ void RegisterFile::Rename(Uop &uop)
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		logical_reg = (int)uop.getUinst()->getODep(dep);
-		if (logical_reg >= UInstDepFlagFirst && logical_reg <= UInstDepFlagLast)
+		if (logical_reg >= Uinst::DepFlagFirst && logical_reg <= Uinst::DepFlagLast)
 		{
 			// Record a new flag
 			flag_count++;
 		}
-		else if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+		else if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 		{
 			// Reclaim a free integer register
 			phy_reg = RequestIntRegister();
 			int_phy_reg[phy_reg].busy++;
 			int_phy_reg[phy_reg].pending = 1;
-			ophy_reg = int_rat[logical_reg - UInstDepIntFirst];
+			ophy_reg = int_rat[logical_reg - Uinst::DepIntFirst];
 			if (flag_phy_reg < 0)
 				flag_phy_reg = phy_reg;
 
 			// Allocate it
 			uop.setPhyRegOdep(dep, phy_reg);
 			uop.setPhyRegOOdep(dep, ophy_reg);
-			int_rat[logical_reg - UInstDepIntFirst] = phy_reg;
+			int_rat[logical_reg - Uinst::DepIntFirst] = phy_reg;
 			thread->incRatIntWrites();
 		}
-		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+		else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 		{
 			// Convert to top-of-stack relative
-			stack_reg = (logical_reg - UInstDepFpFirst + fp_top_of_stack) % 8
-					+ UInstDepFpFirst;
-			assert(stack_reg >= UInstDepFpFirst && stack_reg <= UInstDepFpLast);
+			stack_reg = (logical_reg - Uinst::DepFpFirst + fp_top_of_stack) % 8
+					+ Uinst::DepFpFirst;
+			assert(stack_reg >= Uinst::DepFpFirst && stack_reg <= Uinst::DepFpLast);
 
 			// Reclaim a free FP register
 			phy_reg = RequestFPRegister();
 			fp_phy_reg[phy_reg].busy++;
 			fp_phy_reg[phy_reg].pending = 1;
-			ophy_reg = fp_rat[stack_reg - UInstDepFpFirst];
+			ophy_reg = fp_rat[stack_reg - Uinst::DepFpFirst];
 
 			// Allocate it
 			uop.setPhyRegOdep(dep, phy_reg);
 			uop.setPhyRegOOdep(dep, ophy_reg);
-			fp_rat[stack_reg - UInstDepFpFirst] = phy_reg;
+			fp_rat[stack_reg - Uinst::DepFpFirst] = phy_reg;
 			thread->incRatFpWrites();
 		}
-		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+		else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 		{
 			// Reclaim a free xmm register
 			phy_reg = RequestXMMRegister();
 			xmm_phy_reg[phy_reg].busy++;
 			xmm_phy_reg[phy_reg].pending = 1;
-			ophy_reg = xmm_rat[logical_reg - UInstDepXmmFirst];
+			ophy_reg = xmm_rat[logical_reg - Uinst::DepXmmFirst];
 
 			// Allocate it
 			uop.setPhyRegOdep(dep, phy_reg);
 			uop.setPhyRegOOdep(dep, ophy_reg);
-			xmm_rat[logical_reg - UInstDepXmmFirst] = phy_reg;
+			xmm_rat[logical_reg - Uinst::DepXmmFirst] = phy_reg;
 			thread->incRatXmmWrites();
 		}
 		else
@@ -370,14 +370,14 @@ void RegisterFile::Rename(Uop &uop)
 		for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 		{
 			logical_reg = (int)uop.getUinst()->getODep(dep);
-			if (!(logical_reg >= UInstDepFlagFirst && logical_reg <= UInstDepFlagLast))
+			if (!(logical_reg >= Uinst::DepFlagFirst && logical_reg <= Uinst::DepFlagLast))
 				continue;
 			int_phy_reg[flag_phy_reg].busy++;
 			int_phy_reg[flag_phy_reg].pending = 1;
-			ophy_reg = int_rat[logical_reg - UInstDepIntFirst];
+			ophy_reg = int_rat[logical_reg - Uinst::DepIntFirst];
 			uop.setPhyRegOdep(dep, flag_phy_reg);
 			uop.setPhyRegOOdep(dep, ophy_reg);
-			int_rat[logical_reg - UInstDepFlagFirst] = flag_phy_reg;
+			int_rat[logical_reg - Uinst::DepFlagFirst] = flag_phy_reg;
 		}
 	}
 }
@@ -394,13 +394,13 @@ bool RegisterFile::IsUopReady(Uop &uop)
 	{
 		logical_reg = (int)uop.getUinst()->getIDep(dep);
 		phy_reg = uop.getPhyRegIdep(dep);
-		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast
+		if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast
 				&& int_phy_reg[phy_reg].pending)
 			return false;
-		if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast
+		if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast
 				&& fp_phy_reg[phy_reg].pending)
 			return false;
-		if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast
+		if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast
 				&& xmm_phy_reg[phy_reg].pending)
 			return false;
 	}
@@ -419,11 +419,11 @@ void RegisterFile::WriteUop(Uop &uop)
 	{
 		logical_reg = (int) uop.getUinst()->getODep(dep);
 		phy_reg = uop.getPhyRegOdep(dep);
-		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+		if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 			int_phy_reg[phy_reg].pending = 0;
-		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+		else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 			fp_phy_reg[phy_reg].pending = 0;
-		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+		else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 			xmm_phy_reg[phy_reg].pending = 0;
 	}
 }
@@ -446,7 +446,7 @@ void RegisterFile::UndoUop(Uop &uop)
 		logical_reg = (int)uop.getUinst()->getODep(dep);
 		phy_reg = uop.getPhyRegOdep(dep);
 		ophy_reg = uop.getPhyRegOOdep(dep);
-		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+		if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 		{
 			// Decrease busy counter and free if 0.
 			assert(int_phy_reg[phy_reg].busy > 0);
@@ -463,15 +463,15 @@ void RegisterFile::UndoUop(Uop &uop)
 			}
 
 			// Return to previous mapping
-			int_rat[logical_reg - UInstDepIntFirst] = ophy_reg;
+			int_rat[logical_reg - Uinst::DepIntFirst] = ophy_reg;
 			assert(int_phy_reg[ophy_reg].busy);
 		}
-		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+		else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 		{
 			// Convert to top-of-stack relative
-			stack_reg = (logical_reg - UInstDepFpFirst + fp_top_of_stack) % 8
-					+ UInstDepFpFirst;
-			assert(stack_reg >= UInstDepFpFirst && stack_reg <= UInstDepFpLast);
+			stack_reg = (logical_reg - Uinst::DepFpFirst + fp_top_of_stack) % 8
+					+ Uinst::DepFpFirst;
+			assert(stack_reg >= Uinst::DepFpFirst && stack_reg <= Uinst::DepFpLast);
 
 			// Decrease busy counter and free if 0.
 			assert(fp_phy_reg[phy_reg].busy > 0);
@@ -488,10 +488,10 @@ void RegisterFile::UndoUop(Uop &uop)
 			}
 
 			// Return to previous mapping
-			fp_rat[stack_reg - UInstDepFpFirst] = ophy_reg;
+			fp_rat[stack_reg - Uinst::DepFpFirst] = ophy_reg;
 			assert(fp_phy_reg[ophy_reg].busy);
 		}
-		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+		else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 		{
 			// Decrease busy counter and free if 0.
 			assert(xmm_phy_reg[phy_reg].busy > 0);
@@ -508,7 +508,7 @@ void RegisterFile::UndoUop(Uop &uop)
 			}
 
 			// Return to previous mapping
-			xmm_rat[logical_reg - UInstDepXmmFirst] = ophy_reg;
+			xmm_rat[logical_reg - Uinst::DepXmmFirst] = ophy_reg;
 			assert(xmm_phy_reg[ophy_reg].busy);
 		}
 		else
@@ -545,7 +545,7 @@ void RegisterFile::CommitUop(Uop &uop)
 		phy_reg = uop.getPhyRegOdep(dep);
 		ophy_reg = uop.getPhyRegOOdep(dep);
 
-		if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+		if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 		{
 			// Decrease counter of previous mapping and free if 0.
 			assert(int_phy_reg[ophy_reg].busy > 0);
@@ -561,7 +561,7 @@ void RegisterFile::CommitUop(Uop &uop)
 				thread->decNumIntegerRegistersOccupied();
 			}
 		}
-		else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+		else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 		{
 			// Decrease counter of previous mapping and free if 0.
 			assert(fp_phy_reg[ophy_reg].busy > 0);
@@ -577,7 +577,7 @@ void RegisterFile::CommitUop(Uop &uop)
 				thread->decNumFloatPointRegistersOccupied();
 			}
 		}
-		else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+		else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 		{
 			// Decrease counter of previous mapping and free if 0.
 			assert(xmm_phy_reg[ophy_reg].busy > 0);
@@ -630,19 +630,19 @@ void RegisterFile::CheckRegisterFile()
 	}
 
 	// Check that all mapped registers are busy
-	for (int logical_reg = UInstDepIntFirst; logical_reg <= UInstDepIntLast; logical_reg++)
+	for (int logical_reg = Uinst::DepIntFirst; logical_reg <= Uinst::DepIntLast; logical_reg++)
 	{
-		phy_reg = int_rat[logical_reg - UInstDepIntFirst];
+		phy_reg = int_rat[logical_reg - Uinst::DepIntFirst];
 		assert(int_phy_reg[phy_reg].busy);
 	}
-	for (int logical_reg = UInstDepFpFirst; logical_reg <= UInstDepFpLast; logical_reg++)
+	for (int logical_reg = Uinst::DepFpFirst; logical_reg <= Uinst::DepFpLast; logical_reg++)
 	{
-		phy_reg = fp_rat[logical_reg - UInstDepFpFirst];
+		phy_reg = fp_rat[logical_reg - Uinst::DepFpFirst];
 		assert(fp_phy_reg[phy_reg].busy);
 	}
-	for (int logical_reg = UInstDepXmmFirst; logical_reg <= UInstDepXmmLast; logical_reg++)
+	for (int logical_reg = Uinst::DepXmmFirst; logical_reg <= Uinst::DepXmmLast; logical_reg++)
 	{
-		phy_reg = xmm_rat[logical_reg - UInstDepXmmFirst];
+		phy_reg = xmm_rat[logical_reg - Uinst::DepXmmFirst];
 		assert(xmm_phy_reg[phy_reg].busy);
 	}
 
@@ -659,17 +659,17 @@ void RegisterFile::CheckRegisterFile()
 			logical_reg = uop->uinst->odep[dep];
 			phy_reg = uop->ph_odep[dep];
 			ophy_reg = uop->ph_oodep[dep];
-			if (logical_reg >= UInstDepIntFirst && logical_reg <= UInstDepIntLast)
+			if (logical_reg >= Uinst::DepIntFirst && logical_reg <= Uinst::DepIntLast)
 			{
 				assert(int_phy_reg[phy_reg].busy);
 				assert(int_phy_reg[ophy_reg].busy);
 			}
-			else if (logical_reg >= UInstDepFpFirst && logical_reg <= UInstDepFpLast)
+			else if (logical_reg >= Uinst::DepFpFirst && logical_reg <= Uinst::DepFpLast)
 			{
 				assert(fp_phy_reg[phy_reg].busy);
 				assert(fp_phy_reg[ophy_reg].busy);
 			}
-			else if (logical_reg >= UInstDepXmmFirst && logical_reg <= UInstDepXmmLast)
+			else if (logical_reg >= Uinst::DepXmmFirst && logical_reg <= Uinst::DepXmmLast)
 			{
 				assert(xmm_phy_reg[phy_reg].busy);
 				assert(xmm_phy_reg[ophy_reg].busy);

@@ -34,7 +34,7 @@
 
 #include "Regs.h"
 #include "Signal.h"
-#include "UInst.h"
+#include "Uinst.h"
 
 
 extern int x86_cpu_num_threads;
@@ -442,7 +442,7 @@ private:
 	///////////////////////////////////////////////////////////////////////
 	//
 	// Functions related with x86 micro-instructions. These functions are
-	// implemented in file ContextUInst.cc
+	// implemented in file ContextUinst.cc
 	//
 	///////////////////////////////////////////////////////////////////////
 
@@ -461,7 +461,7 @@ private:
 	std::vector<std::unique_ptr<Uinst>> uinst_list;
 
 	// Clear the list of micro-instructions
-	void ClearUInstList()
+	void ClearUinstList()
 	{
 		uinst_list.clear();
 		uinst_effaddr_emitted = false;
@@ -471,35 +471,35 @@ private:
 	// associated standard dependence in \a std_dep and its size as the
 	// return value of the function. The function returns 0 if the
 	// dependence is not a memory dependence.
-	int getMemoryDepSize(Uinst *uinst, int index, UInstDep &std_dep);
+	int getMemoryDepSize(Uinst *uinst, int index, Uinst::Dep &std_dep);
 
 	// Emit the effective address computation micro-instructions. Argument
 	// \a index is the dependency index, a value between 0 and
-	// UInstMaxDeps - 1
-	void EmitUInstEffectiveAddress(Uinst *uinst, int index);
+	// UinstMaxDeps - 1
+	void EmitUinstEffectiveAddress(Uinst *uinst, int index);
 
 	// Parse regular dependence, given as a global dependence index. The
-	// value in \a index must be between 0 and UInstMaxDeps -1
-	void ParseUInstDep(Uinst *uinst, int index);
+	// value in \a index must be between 0 and UinstMaxDeps -1
+	void ParseUinstDep(Uinst *uinst, int index);
 
 	// Parse input dependences. Argument \a index is a value between 0 and
-	// UInstMaxIDeps - 1
-	void ParseUInstIDep(Uinst *uinst, int index);
+	// UinstMaxIDeps - 1
+	void ParseUinstIDep(Uinst *uinst, int index);
 	
 	// Parse output dependence. Argument \a index is a value between 0 and
-	// UInstMaxODeps - 1
-	void ParseUInstODep(Uinst *uinst, int index);
+	// UinstMaxODeps - 1
+	void ParseUinstODep(Uinst *uinst, int index);
 
 	// Process a newly created micro-instruction. The object must have been
 	// allocated with \c new. This function will insert it into \c
 	// uinst_list, and assign it to a smart pointer for automatic release.
-	void ProcessNewUInst(Uinst *uinst);
+	void ProcessNewUinst(Uinst *uinst);
 
 	// Add a new memory micro-instruction to the list only if we're running
 	// in timing simulation mode. This function can be invoked directly by
 	// the instruction emulation functions. This function is written inline
 	// to avoid passing the high number of arguments.
-	void newMemoryUInst(Uinst::Opcode opcode,
+	void newMemoryUinst(Uinst::Opcode opcode,
 			unsigned address,
 			int size,
 			int idep0,
@@ -526,14 +526,14 @@ private:
 		uinst->setODep(3, odep3);
 
 		// Process it
-		ProcessNewUInst(uinst);
+		ProcessNewUinst(uinst);
 	}
 
 	// Add a new micro-instruction to the list only if we're running
 	// in timing simulation mode, omitting the \a address and \a size
 	// arguments. This function can be invoked directly by the instruction
 	// emulation functions.
-	void newUInst(Uinst::Opcode opcode,
+	void newUinst(Uinst::Opcode opcode,
 			int idep0,
 			int idep1,
 			int idep2,
@@ -542,7 +542,7 @@ private:
 			int odep2,
 			int odep3)
 	{
-		newMemoryUInst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
+		newMemoryUinst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
 				odep2, odep3);
 	}
 
@@ -590,21 +590,21 @@ private:
 
 	// Functions used in ContextIsaStr.cc to generate micro-instructions
 	// for string operations
-	void newUInst_cmpsb(unsigned int esi, unsigned int edi);
-	void newUInst_cmpsd(unsigned int esi, unsigned int edi);
-	void newUInst_insb(unsigned int esi, unsigned int edi);
-	void newUInst_insd(unsigned int esi, unsigned int edi);
-	void newUInst_lodsb(unsigned int esi, unsigned int edi);
-	void newUInst_lodsd(unsigned int esi, unsigned int edi);
-	void newUInst_movsb(unsigned int esi, unsigned int edi);
-	void newUInst_movsw(unsigned int esi, unsigned int edi);
-	void newUInst_movsd(unsigned int esi, unsigned int edi);
-	void newUInst_outsb(unsigned int esi, unsigned int edi);
-	void newUInst_outsd(unsigned int esi, unsigned int edi);
-	void newUInst_scasb(unsigned int esi, unsigned int edi);
-	void newUInst_scasd(unsigned int esi, unsigned int edi);
-	void newUInst_stosb(unsigned int esi, unsigned int edi);
-	void newUInst_stosd(unsigned int esi, unsigned int edi);
+	void newUinst_cmpsb(unsigned int esi, unsigned int edi);
+	void newUinst_cmpsd(unsigned int esi, unsigned int edi);
+	void newUinst_insb(unsigned int esi, unsigned int edi);
+	void newUinst_insd(unsigned int esi, unsigned int edi);
+	void newUinst_lodsb(unsigned int esi, unsigned int edi);
+	void newUinst_lodsd(unsigned int esi, unsigned int edi);
+	void newUinst_movsb(unsigned int esi, unsigned int edi);
+	void newUinst_movsw(unsigned int esi, unsigned int edi);
+	void newUinst_movsd(unsigned int esi, unsigned int edi);
+	void newUinst_outsb(unsigned int esi, unsigned int edi);
+	void newUinst_outsd(unsigned int esi, unsigned int edi);
+	void newUinst_scasb(unsigned int esi, unsigned int edi);
+	void newUinst_scasd(unsigned int esi, unsigned int edi);
+	void newUinst_stosb(unsigned int esi, unsigned int edi);
+	void newUinst_stosd(unsigned int esi, unsigned int edi);
 
 	// Functions used in ContextIsaStr.cc for execution of string
 	// instructions

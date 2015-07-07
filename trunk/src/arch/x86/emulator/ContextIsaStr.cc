@@ -63,11 +63,25 @@ void Context::StartRepInst()
 			regs.decEip(inst.getSize()); \
 		} \
 		\
-		newUInst_##X( \
+		newUinst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, 0, 0, 0, 0, 0, 0); \
+		newUinst(Uinst::OpcodeSub, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				0); \
+		newUinst(Uinst::OpcodeIbranch, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				0, \
+				0, \
+				0, \
+				0); \
 	}
 
 
@@ -84,11 +98,25 @@ void Context::StartRepInst()
 				regs.decEip(inst.getSize()); \
 		} \
 		\
-		newUInst_##X( \
+		newUinst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
+		newUinst(Uinst::OpcodeSub, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				0); \
+		newUinst(Uinst::OpcodeIbranch, \
+				Uinst::DepEcx, \
+				Uinst::DepZps, \
+				0, \
+				0, \
+				0, \
+				0, \
+				0); \
 	}
 
 
@@ -105,11 +133,25 @@ void Context::StartRepInst()
 				regs.decEip(inst.getSize()); \
 		} \
 		\
-		newUInst_##X( \
+		newUinst_##X( \
 			str_op_esi + str_op_count * (SIZE) * str_op_dir, \
 			str_op_edi + str_op_count * (SIZE) * str_op_dir); \
-		newUInst(Uinst::OpcodeSub, UInstDepEcx, 0, 0, UInstDepEcx, 0, 0, 0); \
-		newUInst(Uinst::OpcodeIbranch, UInstDepEcx, UInstDepZps, 0, 0, 0, 0, 0); \
+		newUinst(Uinst::OpcodeSub, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				Uinst::DepEcx, \
+				0, \
+				0, \
+				0); \
+		newUinst(Uinst::OpcodeIbranch, \
+				Uinst::DepEcx, \
+				Uinst::DepZps, \
+				0, \
+				0, \
+				0, \
+				0, \
+				0); \
 	}
 
 
@@ -119,14 +161,53 @@ void Context::StartRepInst()
 // CMPSB
 //
 
-void Context::newUInst_cmpsb(unsigned int esi, unsigned int edi)
+void Context::newUinst_cmpsb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
-	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			esi,
+			1,
+			Uinst::DepEsi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			edi,
+			1,
+			Uinst::DepEdi,
+			0,
+			0,
+			Uinst::DepAux2,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepAux,
+			Uinst::DepAux2,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			Uinst::DepCf,
+			0);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEsi,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
@@ -162,7 +243,7 @@ void Context::ExecuteStringInst_cmpsb()
 
 void Context::ExecuteInst_cmpsb()
 {
-	newUInst_cmpsb(regs.getEsi(), regs.getEdi());
+	newUinst_cmpsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_cmpsb();
 }
 
@@ -173,14 +254,53 @@ void Context::ExecuteInst_cmpsb()
 // CMPSD
 //
 
-void Context::newUInst_cmpsd(unsigned int esi, unsigned int edi)
+void Context::newUinst_cmpsd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux2, 0, 0, 0);
-	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepAux2, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			esi,
+			4,
+			Uinst::DepEsi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			edi,
+			4,
+			Uinst::DepEdi,
+			0,
+			0,
+			Uinst::DepAux2,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepAux,
+			Uinst::DepAux2,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			Uinst::DepCf,
+			0);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEsi,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
@@ -216,7 +336,7 @@ void Context::ExecuteStringInst_cmpsd()
 
 void Context::ExecuteInst_cmpsd()
 {
-	newUInst_cmpsd(regs.getEsi(), regs.getEdi());
+	newUinst_cmpsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_cmpsd();
 }
 
@@ -233,7 +353,7 @@ void Context::ExecuteStringInst_insb()
 }
 
 
-void Context::newUInst_insb(unsigned int esi, unsigned int edi)
+void Context::newUinst_insb(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -241,7 +361,7 @@ void Context::newUInst_insb(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_insb()
 {
-	newUInst_insb(regs.getEsi(), regs.getEdi());
+	newUinst_insb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insb();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -259,7 +379,7 @@ void Context::ExecuteStringInst_insd()
 }
 
 
-void Context::newUInst_insd(unsigned int esi, unsigned int edi)
+void Context::newUinst_insd(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -267,7 +387,7 @@ void Context::newUInst_insd(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_insd()
 {
-	newUInst_insd(regs.getEsi(), regs.getEdi());
+	newUinst_insd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_insd();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -285,7 +405,7 @@ void Context::ExecuteStringInst_lodsb()
 }
 
 
-void Context::newUInst_lodsb(unsigned int esi, unsigned int edi)
+void Context::newUinst_lodsb(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -293,7 +413,7 @@ void Context::newUInst_lodsb(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_lodsb()
 {
-	newUInst_lodsb(regs.getEsi(), regs.getEdi());
+	newUinst_lodsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsb();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -311,7 +431,7 @@ void Context::ExecuteStringInst_lodsd()
 }
 
 
-void Context::newUInst_lodsd(unsigned int esi, unsigned int edi)
+void Context::newUinst_lodsd(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -319,7 +439,7 @@ void Context::newUInst_lodsd(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_lodsd()
 {
-	newUInst_lodsd(regs.getEsi(), regs.getEdi());
+	newUinst_lodsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_lodsd();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -343,19 +463,51 @@ void Context::ExecuteStringInst_movsb()
 }
 
 
-void Context::newUInst_movsb(unsigned int esi, unsigned int edi)
+void Context::newUinst_movsb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			esi,
+			1,
+			Uinst::DepEsi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			edi,
+			1,
+			Uinst::DepEdi,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEsi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_movsb()
 {
-	newUInst_movsb(regs.getEsi(), regs.getEdi());
+	newUinst_movsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_movsb();
 }
 
@@ -379,19 +531,51 @@ void Context::ExecuteStringInst_movsw()
 }
 
 
-void Context::newUInst_movsw(unsigned int esi, unsigned int edi)
+void Context::newUinst_movsw(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, esi, 1, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			esi,
+			1,
+			Uinst::DepEsi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			edi,
+			1,
+			Uinst::DepEdi,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEsi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_movsw()
 {
-	newUInst_movsw(regs.getEsi(), regs.getEdi());
+	newUinst_movsw(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_movsw();
 }
 
@@ -414,19 +598,51 @@ void Context::ExecuteStringInst_movsd()
 }
 
 
-void Context::newUInst_movsd(unsigned int esi, unsigned int edi)
+void Context::newUinst_movsd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, esi, 4, UInstDepEsi, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, edi, 4, UInstDepEdi, UInstDepAux, 0, 0, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			esi,
+			4,
+			Uinst::DepEsi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			edi,
+			4,
+			Uinst::DepEdi,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsi, UInstDepDf, 0, UInstDepEsi, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEsi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_movsd()
 {
-	newUInst_movsd(regs.getEsi(), regs.getEdi());
+	newUinst_movsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_movsd();
 }
 
@@ -443,7 +659,7 @@ void Context::ExecuteStringInst_outsb()
 }
 
 
-void Context::newUInst_outsb(unsigned int esi, unsigned int edi)
+void Context::newUinst_outsb(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -451,7 +667,7 @@ void Context::newUInst_outsb(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_outsb()
 {
-	newUInst_outsb(regs.getEsi(), regs.getEdi());
+	newUinst_outsb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsb();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -469,7 +685,7 @@ void Context::ExecuteStringInst_outsd()
 }
 
 
-void Context::newUInst_outsd(unsigned int esi, unsigned int edi)
+void Context::newUinst_outsd(unsigned int esi, unsigned int edi)
 {
 	// Not implemented
 }
@@ -477,7 +693,7 @@ void Context::newUInst_outsd(unsigned int esi, unsigned int edi)
 
 void Context::ExecuteInst_outsd()
 {
-	newUInst_outsd(regs.getEsi(), regs.getEdi());
+	newUinst_outsd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_outsd();
 	throw misc::Panic("Unimplemented instruction");
 }
@@ -517,17 +733,40 @@ void Context::ExecuteStringInst_scasb()
 }
 
 
-void Context::newUInst_scasb(unsigned int esi, unsigned int edi)
+void Context::newUinst_scasb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, edi, 1, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
-	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			edi,
+			1,
+			Uinst::DepEdi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepAux,
+			Uinst::DepEax,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			Uinst::DepCf,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_scasb()
 {
-	newUInst_scasb(regs.getEsi(), regs.getEdi());
+	newUinst_scasb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_scasb();
 }
 
@@ -565,17 +804,40 @@ void Context::ExecuteStringInst_scasd()
 }
 
 
-void Context::newUInst_scasd(unsigned int esi, unsigned int edi)
+void Context::newUinst_scasd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeLoad, edi, 4, UInstDepEdi, 0, 0, UInstDepAux, 0, 0, 0);
-	newUInst(Uinst::OpcodeSub, UInstDepAux, UInstDepEax, 0, UInstDepZps, UInstDepOf, UInstDepCf, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			edi,
+			4,
+			Uinst::DepEdi,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepAux,
+			Uinst::DepEax,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			Uinst::DepCf,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_scasd()
 {
-	newUInst_scasd(regs.getEsi(), regs.getEdi());
+	newUinst_scasd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_scasd();
 }
 
@@ -595,16 +857,32 @@ void Context::ExecuteStringInst_stosb()
 }
 
 
-void Context::newUInst_stosb(unsigned int esi, unsigned int edi)
+void Context::newUinst_stosb(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeStore, edi, 1, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			edi,
+			1,
+			Uinst::DepEdi,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_stosb()
 {
-	newUInst_stosb(regs.getEsi(), regs.getEdi());
+	newUinst_stosb(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_stosb();
 }
 
@@ -625,16 +903,32 @@ void Context::ExecuteStringInst_stosd()
 }
 
 
-void Context::newUInst_stosd(unsigned int esi, unsigned int edi)
+void Context::newUinst_stosd(unsigned int esi, unsigned int edi)
 {
-	newMemoryUInst(Uinst::OpcodeStore, edi, 4, UInstDepEdi, UInstDepEax, 0, 0, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEdi, UInstDepDf, 0, UInstDepEdi, 0, 0, 0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			edi,
+			4,
+			Uinst::DepEdi,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEdi,
+			Uinst::DepDf,
+			0,
+			Uinst::DepEdi,
+			0,
+			0,
+			0);
 }
 
 
 void Context::ExecuteInst_stosd()
 {
-	newUInst_stosd(regs.getEsi(), regs.getEdi());
+	newUinst_stosd(regs.getEsi(), regs.getEdi());
 	ExecuteStringInst_stosd();
 }
 

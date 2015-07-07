@@ -38,7 +38,7 @@ void Context::ExecuteInst_##stdop##_al_imm8() \
 	unsigned char al = regs.Read(Instruction::RegAl); \
 	unsigned char imm8 = inst.getImmByte(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -55,11 +55,23 @@ void Context::ExecuteInst_##stdop##_al_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(Instruction::RegAl, al); \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, \
+				Uinst::DepEax, \
+				cin_dep, \
+				0, \
+				Uinst::DepEax, \
+				Uinst::DepZps, \
+				Uinst::DepCf, \
+				Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, \
+				Uinst::DepEax, \
+				cin_dep, \
+				0, \
+				Uinst::DepZps, \
+				Uinst::DepCf, \
+				Uinst::DepOf, \
+				0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -71,7 +83,7 @@ void Context::ExecuteInst_##stdop##_ax_imm16() \
 	unsigned short ax = regs.Read(Instruction::RegAx); \
 	unsigned short imm16 = inst.getImmWord(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -88,11 +100,11 @@ void Context::ExecuteInst_##stdop##_ax_imm16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(Instruction::RegAx, ax); \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepEax, cin_dep, 0, Uinst::DepEax, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepEax, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -104,7 +116,7 @@ void Context::ExecuteInst_##stdop##_eax_imm32() \
 	unsigned int eax = regs.Read(Instruction::RegEax); \
 	unsigned int imm32 = inst.getImmDWord(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -121,11 +133,11 @@ void Context::ExecuteInst_##stdop##_eax_imm32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		regs.Write(Instruction::RegEax, eax); \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepEax, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepEax, cin_dep, 0, Uinst::DepEax, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepEax, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepEax, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -137,7 +149,7 @@ void Context::ExecuteInst_##stdop##_rm8_imm8() \
 	unsigned char rm8 = LoadRm8(); \
 	unsigned char imm8 = inst.getImmByte(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -154,11 +166,11 @@ void Context::ExecuteInst_##stdop##_rm8_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm8(rm8); \
-		newUInst(uinst, UInstDepRm8, cin_dep, 0, UInstDepRm8, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm8, cin_dep, 0, Uinst::DepRm8, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm8, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm8, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -170,7 +182,7 @@ void Context::ExecuteInst_##stdop##_rm16_imm16() \
 	unsigned short rm16 = LoadRm16(); \
 	unsigned short imm16 = inst.getImmWord(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -187,11 +199,11 @@ void Context::ExecuteInst_##stdop##_rm16_imm16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm16(rm16); \
-		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepRm16, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm16, cin_dep, 0, Uinst::DepRm16, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm16, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -203,7 +215,7 @@ void Context::ExecuteInst_##stdop##_rm32_imm32() \
 	unsigned int rm32 = LoadRm32(); \
 	unsigned int imm32 = inst.getImmDWord(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -220,11 +232,11 @@ void Context::ExecuteInst_##stdop##_rm32_imm32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm32(rm32); \
-		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepRm32, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm32, cin_dep, 0, Uinst::DepRm32, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm32, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -236,7 +248,7 @@ void Context::ExecuteInst_##stdop##_rm16_imm8() \
 	unsigned short rm16 = LoadRm16(); \
 	unsigned short imm8 = (char) inst.getImmByte(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -253,11 +265,11 @@ void Context::ExecuteInst_##stdop##_rm16_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm16(rm16); \
-		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepRm16, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm16, cin_dep, 0, Uinst::DepRm16, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm16, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm16, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -269,7 +281,7 @@ void Context::ExecuteInst_##stdop##_rm32_imm8() \
 	unsigned int rm32 = LoadRm32(); \
 	unsigned int imm8 = (char) inst.getImmByte(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -286,11 +298,11 @@ void Context::ExecuteInst_##stdop##_rm32_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm32(rm32); \
-		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepRm32, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm32, cin_dep, 0, Uinst::DepRm32, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm32, cin_dep, 0, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm32, cin_dep, 0, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -302,7 +314,7 @@ void Context::ExecuteInst_##stdop##_rm8_r8() \
 	unsigned char rm8 = LoadRm8(); \
 	unsigned char r8 = LoadR8(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -319,11 +331,11 @@ void Context::ExecuteInst_##stdop##_rm8_r8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm8(rm8); \
-		newUInst(uinst, UInstDepRm8, UInstDepR8, cin_dep, UInstDepRm8, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm8, Uinst::DepR8, cin_dep, Uinst::DepRm8, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm8, UInstDepR8, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm8, Uinst::DepR8, cin_dep, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -335,7 +347,7 @@ void Context::ExecuteInst_##stdop##_rm16_r16() \
 	unsigned short rm16 = LoadRm16(); \
 	unsigned short r16 = LoadR16(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -352,11 +364,11 @@ void Context::ExecuteInst_##stdop##_rm16_r16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm16(rm16); \
-		newUInst(uinst, UInstDepRm16, UInstDepR16, cin_dep, UInstDepRm16, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm16, Uinst::DepR16, cin_dep, Uinst::DepRm16, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepRm16, UInstDepR16, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm16, Uinst::DepR16, cin_dep, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -368,7 +380,7 @@ void Context::ExecuteInst_##stdop##_rm32_r32() \
 	unsigned int rm32 = LoadRm32(); \
 	unsigned int r32 = LoadR32(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -385,11 +397,11 @@ void Context::ExecuteInst_##stdop##_rm32_r32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreRm32(rm32); \
-		newUInst(uinst, UInstDepRm32, UInstDepR32, cin_dep, UInstDepRm32, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepRm32, Uinst::DepR32, cin_dep, Uinst::DepRm32, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else  { \
-		newUInst(uinst, UInstDepRm32, UInstDepR32, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepRm32, Uinst::DepR32, cin_dep, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -401,7 +413,7 @@ void Context::ExecuteInst_##stdop##_r8_rm8() \
 	unsigned char r8 = LoadR8(); \
 	unsigned char rm8 = LoadRm8(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -418,11 +430,11 @@ void Context::ExecuteInst_##stdop##_r8_rm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreR8(r8); \
-		newUInst(uinst, UInstDepR8, UInstDepRm8, cin_dep, UInstDepR8, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepR8, Uinst::DepRm8, cin_dep, Uinst::DepR8, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepR8, UInstDepRm8, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepR8, Uinst::DepRm8, cin_dep, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -434,7 +446,7 @@ void Context::ExecuteInst_##stdop##_r16_rm16() \
 	unsigned short r16 = LoadR16(); \
 	unsigned short rm16 = LoadRm16(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -451,11 +463,11 @@ void Context::ExecuteInst_##stdop##_r16_rm16() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreR16(r16); \
-		newUInst(uinst, UInstDepR16, UInstDepRm16, cin_dep, UInstDepR16, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, Uinst::DepR16, Uinst::DepRm16, cin_dep, Uinst::DepR16, \
+				Uinst::DepZps, Uinst::DepCf, Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepR16, UInstDepRm16, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, Uinst::DepR16, Uinst::DepRm16, cin_dep, Uinst::DepZps, \
+				Uinst::DepCf, Uinst::DepOf, 0); \
 	} \
 	regs.setEflags(flags); \
 }
@@ -467,7 +479,7 @@ void Context::ExecuteInst_##stdop##_r32_rm32() \
 	unsigned int r32 = LoadR32(); \
 	unsigned int rm32 = LoadRm32(); \
 	unsigned long flags = regs.getEflags(); \
-	UInstDep cin_dep = cin ? UInstDepCf : UInstDepNone; \
+	Uinst::Dep cin_dep = cin ? Uinst::DepCf : Uinst::DepNone; \
 	__X86_CONTEXT_SAVE_FLAGS__ \
 	asm volatile ( \
 		"push %4\n\t" \
@@ -484,11 +496,23 @@ void Context::ExecuteInst_##stdop##_r32_rm32() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	if (wb) { \
 		StoreR32(r32); \
-		newUInst(uinst, UInstDepR32, UInstDepRm32, cin_dep, UInstDepR32, \
-				UInstDepZps, UInstDepCf, UInstDepOf); \
+		newUinst(uinst, \
+				Uinst::DepR32, \
+				Uinst::DepRm32, \
+				cin_dep, \
+				Uinst::DepR32, \
+				Uinst::DepZps, \
+				Uinst::DepCf, \
+				Uinst::DepOf); \
 	} else { \
-		newUInst(uinst, UInstDepR32, UInstDepRm32, cin_dep, UInstDepZps, \
-				UInstDepCf, UInstDepOf, 0); \
+		newUinst(uinst, \
+				Uinst::DepR32, \
+				Uinst::DepRm32, \
+				cin_dep, \
+				Uinst::DepZps, \
+				Uinst::DepCf, \
+				Uinst::DepOf, \
+				0); \
 	} \
 	regs.setEflags(flags); \
 }
