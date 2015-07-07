@@ -62,7 +62,14 @@ void Context::ExecuteInst_addps_xmm_xmmm128()
 
 	this->StoreXMM(dest);
 
-	this->newUInst(Uinst::OpcodeFpAdd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	this->newUinst(Uinst::OpcodeFpAdd,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -96,7 +103,14 @@ void Context::ExecuteInst_addss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpAdd, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpAdd,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -122,7 +136,14 @@ void Context::ExecuteInst_andps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmAnd, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmAnd,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -173,7 +194,14 @@ void Context::ExecuteInst_cmppd_xmm_xmmm128_imm8()
 	}
 
 	StoreXMM(dest);
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -211,7 +239,14 @@ void Context::ExecuteInst_cmpps_xmm_xmmm128_imm8()
 	}
 
 	StoreXMM(dest);
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -245,7 +280,14 @@ void Context::ExecuteInst_cvtsi2ss_xmm_rm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmConv, UInstDepXmm, UInstDepRm32, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmConv,
+			Uinst::DepXmm,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -276,7 +318,14 @@ void Context::ExecuteInst_cvttss2si_r32_xmmm32()
 
 	StoreR32(r32);
 
-	newUInst(Uinst::OpcodeXmmConv, UInstDepXmmm32, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmConv,
+			Uinst::DepXmmm32,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -310,7 +359,14 @@ void Context::ExecuteInst_divps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpDiv, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpDiv,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -344,7 +400,14 @@ void Context::ExecuteInst_divss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpDiv, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpDiv,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -384,7 +447,14 @@ void Context::ExecuteInst_maxps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -418,7 +488,14 @@ void Context::ExecuteInst_maxss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -452,7 +529,14 @@ void Context::ExecuteInst_minps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -486,7 +570,14 @@ void Context::ExecuteInst_minss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -497,7 +588,14 @@ void Context::ExecuteInst_movaps_xmm_xmmm128()
 	LoadXMMM128(xmm);
 	StoreXMM(xmm);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -508,7 +606,14 @@ void Context::ExecuteInst_movaps_xmmm128_xmm()
 	LoadXMM(xmm);
 	StoreXMMM128(xmm);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmm,
+			0,
+			0,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			0);
 }
 
 
@@ -522,7 +627,14 @@ void Context::ExecuteInst_movhlps_xmm_xmmm128()
 	xmm1.setAsUInt64(0, xmm2.getAsUInt64(1));
 	StoreXMM(xmm1);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -536,7 +648,14 @@ void Context::ExecuteInst_movlhps_xmm_xmmm128()
 	xmm1.setAsUInt64(1, xmm2.getAsUInt64(0));
 	StoreXMM(xmm1);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -553,7 +672,14 @@ void Context::ExecuteInst_movss_xmm_xmmm32()
 	LoadXMMM32(value);
 	StoreXMM(value);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmmm32, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmmm32,
+			0,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -566,7 +692,14 @@ void Context::ExecuteInst_movss_xmmm32_xmm()
 	LoadXMM(value);
 	StoreXMMM32(value);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm32, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmm,
+			0,
+			0,
+			Uinst::DepXmmm32,
+			0,
+			0,
+			0);
 }
 
 
@@ -577,7 +710,14 @@ void Context::ExecuteInst_movups_xmm_xmmm128()
 	LoadXMMM128(xmm);
 	StoreXMM(xmm);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmmm128, 0, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -588,7 +728,14 @@ void Context::ExecuteInst_movups_xmmm128_xmm()
 	LoadXMM(xmm);
 	StoreXMMM128(xmm);
 
-	newUInst(Uinst::OpcodeXmmMove, UInstDepXmm, 0, 0, UInstDepXmmm128, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmMove,
+			Uinst::DepXmm,
+			0,
+			0,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			0);
 }
 
 
@@ -622,7 +769,14 @@ void Context::ExecuteInst_mulps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpMult, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpMult,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -656,7 +810,14 @@ void Context::ExecuteInst_mulss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpMult, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpMult,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -682,7 +843,14 @@ void Context::ExecuteInst_orps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmOr, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmOr,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -703,7 +871,14 @@ void Context::ExecuteInst_pextrw_r32_xmmm128_imm8()
 	result = xmm.getAsUShort(imm8);
 	StoreR32(result);
 
-	newUInst(Uinst::OpcodeXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShift,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -721,7 +896,14 @@ void Context::ExecuteInst_pinsrw_xmm_r32m16_imm8()
 	xmm.setAsUShort(imm8, r32m16);
 	StoreXMM(xmm);
 
-	newUInst(Uinst::OpcodeXmmShift, UInstDepXmm, UInstDepRm32, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShift,
+			Uinst::DepXmm,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -745,7 +927,14 @@ void Context::ExecuteInst_pmovmskb_r32_xmmm128()
 
 	StoreR32(r32);
 
-	newUInst(Uinst::OpcodeXmmShift, UInstDepXmmm128, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShift,
+			Uinst::DepXmmm128,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -766,7 +955,14 @@ void Context::ExecuteInst_shufps_xmm_xmmm128_imm8()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShuf,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -800,7 +996,14 @@ void Context::ExecuteInst_sqrtps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpSqrt, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpSqrt,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -834,7 +1037,14 @@ void Context::ExecuteInst_sqrtss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpSqrt, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpSqrt,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -874,7 +1084,14 @@ void Context::ExecuteInst_subps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpSub, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpSub,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -908,7 +1125,14 @@ void Context::ExecuteInst_subss_xmm_xmmm32()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmFpSub, UInstDepXmmm32, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmFpSub,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -949,7 +1173,14 @@ void Context::ExecuteInst_ucomisd_xmm_xmmm64()
 	StoreXMM(dest);
 	regs.setEflags(eflags);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm64, UInstDepXmm, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm64,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -990,7 +1221,14 @@ void Context::ExecuteInst_ucomiss_xmm_xmmm32()
 	StoreXMM(dest);
 	regs.setEflags(eflags);
 
-	newUInst(Uinst::OpcodeXmmFpComp, UInstDepXmmm32, UInstDepXmm, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeXmmFpComp,
+			Uinst::DepXmmm32,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -1024,7 +1262,14 @@ void Context::ExecuteInst_unpckhps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShuf,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -1058,7 +1303,14 @@ void Context::ExecuteInst_unpcklps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmShuf, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmShuf,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 
@@ -1084,7 +1336,14 @@ void Context::ExecuteInst_xorps_xmm_xmmm128()
 
 	StoreXMM(dest);
 
-	newUInst(Uinst::OpcodeXmmXor, UInstDepXmmm128, UInstDepXmm, 0, UInstDepXmm, 0, 0, 0);
+	newUinst(Uinst::OpcodeXmmXor,
+			Uinst::DepXmmm128,
+			Uinst::DepXmm,
+			0,
+			Uinst::DepXmm,
+			0,
+			0,
+			0);
 }
 
 }  // namespace x86

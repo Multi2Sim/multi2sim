@@ -21,7 +21,7 @@
 #define ARCH_X86_TIMING_REGISTER_FILE_H
 
 #include <lib/cpp/IniFile.h>
-#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Uinst.h>
 
 #include "Uop.h"
 
@@ -66,7 +66,7 @@ private:
 	};
 
 	// Integer registers 
-	int int_rat[UInstDepIntCount]; // Int register aliasing table
+	int int_rat[Uinst::DepIntCount]; // Int register aliasing table
 	std::unique_ptr<PhysicalRegister[]> int_phy_reg;
 	int int_phy_reg_count = 0;
 	std::unique_ptr<int[]> int_free_phy_reg;
@@ -74,14 +74,14 @@ private:
 
 	// FP registers 
 	int fp_top_of_stack = 0;  // Value between 0 and 7
-	int fp_rat[UInstDepFpCount]; // Fp register aliasing table
+	int fp_rat[Uinst::DepFpCount]; // Fp register aliasing table
 	std::unique_ptr<PhysicalRegister[]> fp_phy_reg;
 	int fp_phy_reg_count = 0;
 	std::unique_ptr<int[]> fp_free_phy_reg;
 	int fp_free_phy_reg_count = 0;
 
 	// XMM registers 
-	int xmm_rat[UInstDepXmmCount]; // Xmm register aliasing table
+	int xmm_rat[Uinst::DepXmmCount]; // Xmm register aliasing table
 	std::unique_ptr<PhysicalRegister[]> xmm_phy_reg;
 	int xmm_phy_reg_count = 0;
 	std::unique_ptr<int[]> xmm_free_phy_reg;

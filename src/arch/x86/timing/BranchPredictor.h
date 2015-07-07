@@ -22,7 +22,7 @@
 
 #include <string>
 
-#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Uinst.h>
 #include <lib/cpp/Error.h>
 #include <lib/cpp/IniFile.h>
 

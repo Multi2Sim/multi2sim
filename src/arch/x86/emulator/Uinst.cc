@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "UInst.h"
+#include "Uinst.h"
 
 
 namespace x86
@@ -28,90 +28,90 @@ const int Uinst::MaxODeps;
 const int Uinst::MaxDeps;
 
 
-misc::StringMap uinst_dep_map
+const misc::StringMap Uinst::dep_map
 {
-	{ "-", UInstDepNone },
+	{ "-", DepNone },
 
-	{ "eax", UInstDepEax },
-	{ "ecx", UInstDepEcx },
-	{ "edx", UInstDepEdx },
-	{ "ebx", UInstDepEbx },
-	{ "esp", UInstDepEsp },
-	{ "ebp", UInstDepEbp },
-	{ "esi", UInstDepEsi },
-	{ "edi", UInstDepEdi },
+	{ "eax", DepEax },
+	{ "ecx", DepEcx },
+	{ "edx", DepEdx },
+	{ "ebx", DepEbx },
+	{ "esp", DepEsp },
+	{ "ebp", DepEbp },
+	{ "esi", DepEsi },
+	{ "edi", DepEdi },
 
-	{ "es", UInstDepEs },
-	{ "cs", UInstDepCs },
-	{ "ss", UInstDepSs },
-	{ "ds", UInstDepDs },
-	{ "fs", UInstDepFs },
-	{ "gs", UInstDepGs },
+	{ "es", DepEs },
+	{ "cs", DepCs },
+	{ "ss", DepSs },
+	{ "ds", DepDs },
+	{ "fs", DepFs },
+	{ "gs", DepGs },
 
-	{ "zps", UInstDepZps },
-	{ "of", UInstDepOf },
-	{ "cf", UInstDepCf },
-	{ "df", UInstDepDf },
+	{ "zps", DepZps },
+	{ "of", DepOf },
+	{ "cf", DepCf },
+	{ "df", DepDf },
 
-	{ "aux", UInstDepAux },
-	{ "aux2", UInstDepAux2 },
-	{ "ea", UInstDepEa },
-	{ "data", UInstDepData },
+	{ "aux", DepAux },
+	{ "aux2", DepAux2 },
+	{ "ea", DepEa },
+	{ "data", DepData },
 
-	{ "st0", UInstDepSt0 },
-	{ "st1", UInstDepSt1 },
-	{ "st2", UInstDepSt2 },
-	{ "st3", UInstDepSt3 },
-	{ "st4", UInstDepSt4 },
-	{ "st5", UInstDepSt5 },
-	{ "st6", UInstDepSt6 },
-	{ "st7", UInstDepSt7 },
-	{ "fpst", UInstDepFpst },
-	{ "fpcw", UInstDepFpcw },
-	{ "fpaux", UInstDepFpaux },
+	{ "st0", DepSt0 },
+	{ "st1", DepSt1 },
+	{ "st2", DepSt2 },
+	{ "st3", DepSt3 },
+	{ "st4", DepSt4 },
+	{ "st5", DepSt5 },
+	{ "st6", DepSt6 },
+	{ "st7", DepSt7 },
+	{ "fpst", DepFpst },
+	{ "fpcw", DepFpcw },
+	{ "fpaux", DepFpaux },
 
-	{ "xmm0", UInstDepXmm0 },
-	{ "xmm1", UInstDepXmm1 },
-	{ "xmm2", UInstDepXmm2 },
-	{ "xmm3", UInstDepXmm3 },
-	{ "xmm4", UInstDepXmm4 },
-	{ "xmm5", UInstDepXmm5 },
-	{ "xmm6", UInstDepXmm6 },
-	{ "xmm7", UInstDepXmm7 },
-	{ "xmm_data", UInstDepXmmData },
+	{ "xmm0", DepXmm0 },
+	{ "xmm1", DepXmm1 },
+	{ "xmm2", DepXmm2 },
+	{ "xmm3", DepXmm3 },
+	{ "xmm4", DepXmm4 },
+	{ "xmm5", DepXmm5 },
+	{ "xmm6", DepXmm6 },
+	{ "xmm7", DepXmm7 },
+	{ "xmm_data", DepXmmData },
 
-	{ "rm8*", UInstDepRm8 },
-	{ "rm16*", UInstDepRm16 },
-	{ "rm32*", UInstDepRm32 },
+	{ "rm8*", DepRm8 },
+	{ "rm16*", DepRm16 },
+	{ "rm32*", DepRm32 },
 
-	{ "ir8*", UInstDepIr8 },
-	{ "ir16*", UInstDepIr16 },
-	{ "ir32*", UInstDepIr32 },
+	{ "ir8*", DepIr8 },
+	{ "ir16*", DepIr16 },
+	{ "ir32*", DepIr32 },
 
-	{ "r8*", UInstDepR8 },
-	{ "r16*", UInstDepR16 },
-	{ "r32*", UInstDepR32 },
+	{ "r8*", DepR8 },
+	{ "r16*", DepR16 },
+	{ "r32*", DepR32 },
 
-	{ "sreg*", UInstDepSreg },
+	{ "sreg*", DepSreg },
 
-	{ "mem8*", UInstDepMem8 },
-	{ "mem16*", UInstDepMem16 },
-	{ "mem32*", UInstDepMem32 },
-	{ "mem64*", UInstDepMem64 },
-	{ "mem80*", UInstDepMem80 },
-	{ "mem128*", UInstDepMem128 },
+	{ "mem8*", DepMem8 },
+	{ "mem16*", DepMem16 },
+	{ "mem32*", DepMem32 },
+	{ "mem64*", DepMem64 },
+	{ "mem80*", DepMem80 },
+	{ "mem128*", DepMem128 },
 
-	{ "easeg*", UInstDepEaseg },
-	{ "eabas*", UInstDepEabas },
-	{ "eaidx*", UInstDepEaidx },
+	{ "easeg*", DepEaseg },
+	{ "eabas*", DepEabas },
+	{ "eaidx*", DepEaidx },
 
-	{ "sti*", UInstDepSti },
+	{ "sti*", DepSti },
 
-	{ "xmmm32*", UInstDepXmmm32 },
-	{ "xmmm64*", UInstDepXmmm64 },
-	{ "xmmm128*", UInstDepXmmm128 },
+	{ "xmmm32*", DepXmmm32 },
+	{ "xmmm64*", DepXmmm64 },
+	{ "xmmm128*", DepXmmm128 },
 
-	{ "xmm*", UInstDepXmm }
+	{ "xmm*", DepXmm }
 };
 
 
@@ -196,7 +196,7 @@ Uinst::Info Uinst::info[Uinst::OpcodeCount] =
 };
 
 
-bool Uinst::addIDep(UInstDep dep)
+bool Uinst::addIDep(Dep dep)
 {
 	// Find free index
 	int index;
@@ -214,7 +214,7 @@ bool Uinst::addIDep(UInstDep dep)
 }
 
 
-bool Uinst::addODep(UInstDep dep)
+bool Uinst::addODep(Dep dep)
 {
 	// Find free index
 	int index;
@@ -242,7 +242,7 @@ void Uinst::Dump(std::ostream &os) const
 	int dep_count = 0;
 	for (int i = 0; i < MaxODeps; i++)
 	{
-		UInstDep dep = odep[i];
+		Dep dep = odep[i];
 		if (!dep)
 			continue;
 		dep_count++;
@@ -260,7 +260,7 @@ void Uinst::Dump(std::ostream &os) const
 	dep_count = 0;
 	for (int i = 0; i < MaxODeps; i++)
 	{
-		UInstDep dep = idep[i];
+		Dep dep = idep[i];
 		if (!dep)
 			continue;
 		dep_count++;
