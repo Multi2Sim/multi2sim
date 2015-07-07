@@ -745,7 +745,7 @@ void Context::Execute()
 	// Clear existing list of microinstructions, though the architectural
 	// simulator might have cleared it already. A new list will be generated
 	// for the next executed x86 instruction.
-	ClearUInstList();
+	ClearUinstList();
 
 	// Set last, current, and target instruction addresses
 	last_eip = current_eip;

@@ -25,7 +25,7 @@
 
 #include <memory/MMU.h>
 #include <arch/x86/emulator/Emulator.h>
-#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Uinst.h>
 
 #include "Core.h"
 #include "Thread.h"

@@ -72,7 +72,14 @@ void Context::ExecuteInst_bsf_r32_rm32()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, 0, 0, UInstDepR32, UInstDepZps, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			Uinst::DepZps,
+			0,
+			0);
 }
 
 void Context::ExecuteInst_tzcnt_r32_rm32()
@@ -99,7 +106,14 @@ void Context::ExecuteInst_tzcnt_r32_rm32()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, 0, 0, UInstDepR32, UInstDepZps, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			Uinst::DepZps,
+			0,
+			0);
 }
 
 
@@ -127,7 +141,14 @@ void Context::ExecuteInst_bsr_r32_rm32()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, 0, 0, UInstDepR32, UInstDepZps, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			Uinst::DepZps,
+			0,
+			0);
 }
 
 
@@ -148,7 +169,14 @@ void Context::ExecuteInst_bswap_ir32()
 
 	StoreIR32(ir32);
 
-	newUInst(Uinst::OpcodeShift, UInstDepIr32, 0, 0, UInstDepIr32, 0, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepIr32,
+			0,
+			0,
+			Uinst::DepIr32,
+			0,
+			0,
+			0);
 }
 
 
@@ -175,7 +203,14 @@ void Context::ExecuteInst_bt_rm32_r32()
 
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, UInstDepR32, 0, UInstDepCf, 0, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			Uinst::DepCf,
+			0,
+			0,
+			0);
 }
 
 
@@ -202,7 +237,14 @@ void Context::ExecuteInst_bt_rm32_imm8()
 
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, 0, 0, UInstDepCf, 0, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepCf,
+			0,
+			0,
+			0);
 }
 
 
@@ -231,7 +273,14 @@ void Context::ExecuteInst_bts_rm32_imm8()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, 0, 0, UInstDepRm32, UInstDepCf, 0, 0);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepCf,
+			0,
+			0);
 }
 
 
@@ -249,10 +298,40 @@ void Context::ExecuteInst_call_rel32()
 		call_stack->Call(target_eip, regs.getEsp());
 
 	// Micro-instructions
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
-	newUInst(Uinst::OpcodeCall, 0, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeCall,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -270,10 +349,40 @@ void Context::ExecuteInst_call_rm32()
 		call_stack->Call(target_eip, regs.getEsp());
 
 	// Micro-instructions
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
-	newUInst(Uinst::OpcodeCall, UInstDepRm32, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeCall,
+			Uinst::DepRm32,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -282,7 +391,14 @@ void Context::ExecuteInst_cbw()
 	unsigned short ax = (char) regs.Read(Instruction::RegAl);
 	regs.Write(Instruction::RegAx, ax);
 
-	newUInst(Uinst::OpcodeSign, UInstDepEax, 0, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepEax,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -292,7 +408,14 @@ void Context::ExecuteInst_cdq()
 
 	regs.setEdx(signed_eax < 0 ? -1 : 0);
 
-	newUInst(Uinst::OpcodeSign, UInstDepEax, 0, 0, UInstDepEdx, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepEax,
+			0,
+			0,
+			Uinst::DepEdx,
+			0,
+			0,
+			0);
 }
 
 
@@ -300,7 +423,14 @@ void Context::ExecuteInst_cld()
 {
 	regs.clearFlag(Instruction::FlagDF);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, 0, UInstDepDf, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			0,
+			Uinst::DepDf,
+			0,
+			0);
 }
 
 
@@ -333,9 +463,30 @@ void Context::ExecuteInst_cmpxchg_rm32_r32()
 	regs.Write(Instruction::RegEax, eax);
 	StoreRm32(rm32);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEax, UInstDepRm32, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
-	newUInst(Uinst::OpcodeMove, UInstDepZps, UInstDepR32, 0, UInstDepRm32, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, UInstDepCf, UInstDepRm32, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEax,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepZps,
+			Uinst::DepR32,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepCf,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -364,14 +515,42 @@ void Context::ExecuteInst_cmpxchg8b_m64()
 		regs.setEax(m64);
 	}
 
-	newMemoryUInst(Uinst::OpcodeLoad, getEffectiveAddress(), 8, 0, 0, 0,
-		UInstDepAux, 0, 0, 0);  // Load m64
-	newUInst(Uinst::OpcodeSub, UInstDepEdx, UInstDepEax, UInstDepAux,
-		UInstDepZps, 0, 0, 0);  // Compare edx-eax with m64
-	newMemoryUInst(Uinst::OpcodeStore, getEffectiveAddress(), 8, UInstDepZps, UInstDepEcx, UInstDepEbx,
-		UInstDepMem64, 0, 0, 0);  // Conditionally store m64
-	newUInst(Uinst::OpcodeMove, UInstDepZps, 0, 0,
-		UInstDepEdx, UInstDepEax, 0, 0);  // Conditionaly store edx-eax
+	newMemoryUinst(Uinst::OpcodeLoad,
+			getEffectiveAddress(),
+			8,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);  // Load m64
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEdx,
+			Uinst::DepEax,
+			Uinst::DepAux,
+			Uinst::DepZps,
+			0,
+			0,
+			0);  // Compare edx-eax with m64
+	newMemoryUinst(Uinst::OpcodeStore,
+			getEffectiveAddress(),
+			8,
+			Uinst::DepZps,
+			Uinst::DepEcx,
+			Uinst::DepEbx,
+			Uinst::DepMem64,
+			0,
+			0,
+			0);  // Conditionally store m64
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepZps,
+			0,
+			0,
+			Uinst::DepEdx,
+			Uinst::DepEax,
+			0,
+			0);  // Conditionaly store edx-eax
 }
 
 
@@ -484,10 +663,38 @@ void Context::ExecuteInst_cpuid()
 				regs.getEax()));
 	}
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepEax, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepEbx, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepEcx, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepEdx, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepEbx,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepEcx,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepEdx,
+			0,
+			0,
+			0);
 }
 
 
@@ -496,7 +703,14 @@ void Context::ExecuteInst_cwde()
 	unsigned int eax = (short) regs.Read(Instruction::RegAx);
 	regs.Write(Instruction::RegEax, eax);
 
-	newUInst(Uinst::OpcodeSign, UInstDepEax, 0, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepEax,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -523,7 +737,14 @@ void Context::ExecuteInst_dec_rm8()
 	StoreRm8(rm8);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepRm8, 0, 0, UInstDepRm8, UInstDepZps, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm8,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -550,7 +771,14 @@ void Context::ExecuteInst_dec_rm16()
 	StoreRm16(rm16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepRm16, 0, 0, UInstDepRm16, UInstDepZps, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepRm16,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -577,7 +805,14 @@ void Context::ExecuteInst_dec_rm32()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepRm32, 0, 0, UInstDepRm32, UInstDepZps, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -604,7 +839,14 @@ void Context::ExecuteInst_dec_ir16()
 	StoreIR16(ir16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepIr16, 0, 0, UInstDepIr16, UInstDepZps, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepIr16,
+			0,
+			0,
+			Uinst::DepIr16,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -631,7 +873,14 @@ void Context::ExecuteInst_dec_ir32()
 	StoreIR32(ir32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepIr32, 0, 0, UInstDepIr32, UInstDepZps, UInstDepOf, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepIr32,
+			0,
+			0,
+			Uinst::DepIr32,
+			Uinst::DepZps,
+			Uinst::DepOf,
+			0);
 }
 
 
@@ -669,7 +918,14 @@ void Context::ExecuteInst_div_rm8()
 
 	regs.Write(Instruction::RegAx, ax);
 
-	newUInst(Uinst::OpcodeDiv, UInstDepEax, UInstDepRm8, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeDiv,
+			Uinst::DepEax,
+			Uinst::DepRm8,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -711,7 +967,14 @@ void Context::ExecuteInst_div_rm32()
 	regs.Write(Instruction::RegEax, eax);
 	regs.Write(Instruction::RegEdx, edx);
 
-	newUInst(Uinst::OpcodeDiv, UInstDepEdx, UInstDepEax, UInstDepRm32, UInstDepEax, UInstDepEdx, 0, 0);
+	newUinst(Uinst::OpcodeDiv,
+			Uinst::DepEdx,
+			Uinst::DepEax,
+			Uinst::DepRm32,
+			Uinst::DepEax,
+			Uinst::DepEdx,
+			0,
+			0);
 }
 
 
@@ -764,7 +1027,14 @@ void Context::ExecuteInst_idiv_rm32()
 	regs.Write(Instruction::RegEax, eax);
 	regs.Write(Instruction::RegEdx, edx);
 
-	newUInst(Uinst::OpcodeDiv, UInstDepRm32, UInstDepEax, 0, UInstDepEax, UInstDepEdx, 0, 0);
+	newUinst(Uinst::OpcodeDiv,
+			Uinst::DepRm32,
+			Uinst::DepEax,
+			0,
+			Uinst::DepEax,
+			Uinst::DepEdx,
+			0,
+			0);
 }
 
 
@@ -796,7 +1066,14 @@ void Context::ExecuteInst_imul_rm32()
 	regs.Write(Instruction::RegEdx, edx);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepRm32, UInstDepEax, 0, UInstDepEax, UInstDepEdx, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepRm32,
+			Uinst::DepEax,
+			0,
+			Uinst::DepEax,
+			Uinst::DepEdx,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -825,7 +1102,14 @@ void Context::ExecuteInst_imul_r16_rm16()
 	StoreR16(r16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepR16, UInstDepRm16, 0, UInstDepR16, 0, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepR16,
+			Uinst::DepRm16,
+			0,
+			Uinst::DepR16,
+			0,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -854,7 +1138,14 @@ void Context::ExecuteInst_imul_r32_rm32()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepR32, UInstDepRm32, 0, UInstDepR32, 0, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepR32,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepR32,
+			0,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -884,7 +1175,14 @@ void Context::ExecuteInst_imul_r32_rm32_imm8()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepRm32, 0, 0, UInstDepR32, 0, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -914,7 +1212,14 @@ void Context::ExecuteInst_imul_r32_rm32_imm32()
 	StoreR32(r32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepRm32, 0, 0, UInstDepR32, 0, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -941,7 +1246,14 @@ void Context::ExecuteInst_inc_rm8()
 	StoreRm8(rm8);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepRm8, 0, 0, UInstDepRm8, 0, UInstDepZps, UInstDepOf);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm8,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf);
 }
 
 
@@ -968,7 +1280,14 @@ void Context::ExecuteInst_inc_rm16()
 	StoreRm16(rm16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepRm16, 0, 0, UInstDepRm16, 0, UInstDepZps, UInstDepOf);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepRm16,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf);
 }
 
 
@@ -995,7 +1314,14 @@ void Context::ExecuteInst_inc_rm32()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepRm32, 0, 0, UInstDepRm32, 0, UInstDepZps, UInstDepOf);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf);
 }
 
 
@@ -1022,7 +1348,14 @@ void Context::ExecuteInst_inc_ir16()
 	StoreIR16(ir16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepIr16, 0, 0, UInstDepIr16, 0, UInstDepZps, UInstDepOf);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepIr16,
+			0,
+			0,
+			Uinst::DepIr16,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf);
 }
 
 
@@ -1049,7 +1382,14 @@ void Context::ExecuteInst_inc_ir32()
 	StoreIR32(ir32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepIr32, 0, 0, UInstDepIr32, 0, UInstDepZps, UInstDepOf);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepIr32,
+			0,
+			0,
+			Uinst::DepIr32,
+			0,
+			Uinst::DepZps,
+			Uinst::DepOf);
 }
 
 
@@ -1080,7 +1420,14 @@ void Context::ExecuteInst_int_imm8()
 	if (!spec_mode)
 		ExecuteSyscall();
 
-	newUInst(Uinst::OpcodeSyscall, 0, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSyscall,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1096,7 +1443,14 @@ void Context::ExecuteInst_jmp_rel8()
 	target_eip = regs.getEip() + (char) inst.getImmByte();
 	regs.setEip(target_eip);
 
-	newUInst(Uinst::OpcodeJump, 0, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeJump,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1105,7 +1459,14 @@ void Context::ExecuteInst_jmp_rel32()
 	target_eip = regs.getEip() + inst.getImmDWord();
 	regs.setEip(target_eip);
 
-	newUInst(Uinst::OpcodeJump, 0, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeJump,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1114,7 +1475,14 @@ void Context::ExecuteInst_jmp_rm32()
 	target_eip = LoadRm32();
 	regs.setEip(target_eip);
 
-	newUInst(Uinst::OpcodeJump, UInstDepRm32, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeJump,
+			Uinst::DepRm32,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1127,7 +1495,14 @@ void Context::ExecuteInst_lea_r32_m()
 
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEaseg, UInstDepEabas, UInstDepEaidx, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEaseg,
+			Uinst::DepEabas,
+			Uinst::DepEaidx,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1143,10 +1518,40 @@ void Context::ExecuteInst_leave()
 	regs.incEsp(4);
 	regs.Write(Instruction::RegEbp, value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepEbp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepEbp, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepEbp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepEbp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
 }
 
 
@@ -1160,7 +1565,14 @@ void Context::ExecuteInst_mov_rm8_imm8()
 	unsigned char value = inst.getImmByte();
 	StoreRm8(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepRm8, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepRm8,
+			0,
+			0,
+			0);
 }
 
 
@@ -1169,7 +1581,14 @@ void Context::ExecuteInst_mov_r8_rm8()
 	unsigned char value = LoadRm8();
 	StoreR8(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm8, 0, 0, UInstDepR8, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepR8,
+			0,
+			0,
+			0);
 }
 
 
@@ -1178,7 +1597,14 @@ void Context::ExecuteInst_mov_rm8_r8()
 	unsigned char value = LoadR8();
 	StoreRm8(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepR8, 0, 0, UInstDepRm8, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepR8,
+			0,
+			0,
+			Uinst::DepRm8,
+			0,
+			0,
+			0);
 }
 
 
@@ -1187,7 +1613,14 @@ void Context::ExecuteInst_mov_rm16_r16()
 	unsigned short value = LoadR16();
 	StoreRm16(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepR16, 0, 0, UInstDepRm16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepR16,
+			0,
+			0,
+			Uinst::DepRm16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1196,7 +1629,14 @@ void Context::ExecuteInst_mov_rm32_r32()
 	unsigned int value = LoadR32();
 	StoreRm32(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepR32, 0, 0, UInstDepRm32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepR32,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1205,7 +1645,14 @@ void Context::ExecuteInst_mov_r16_rm16()
 	unsigned short value = LoadRm16();
 	StoreR16(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm16, 0, 0, UInstDepR16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepR16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1214,7 +1661,14 @@ void Context::ExecuteInst_mov_r32_rm32()
 	unsigned int value = LoadRm32();
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm32, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1225,8 +1679,24 @@ void Context::ExecuteInst_mov_al_moffs8()
 	MemoryRead(getMoffsAddress(), 1, &value);
 	regs.Write(Instruction::RegAl, value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, getMoffsAddress(), 1, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			getMoffsAddress(),
+			1,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -1237,8 +1707,24 @@ void Context::ExecuteInst_mov_ax_moffs16()
 	MemoryRead(getMoffsAddress(), 2, &value);
 	regs.Write(Instruction::RegAx, value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, getMoffsAddress(), 2, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			getMoffsAddress(),
+			2,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -1249,8 +1735,24 @@ void Context::ExecuteInst_mov_eax_moffs32()
 	MemoryRead(getMoffsAddress(), 4, &value);
 	regs.Write(Instruction::RegEax, value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, getMoffsAddress(), 4, UInstDepAux, 0, 0, UInstDepEax, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			getMoffsAddress(),
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepEax,
+			0,
+			0,
+			0);
 }
 
 
@@ -1259,8 +1761,24 @@ void Context::ExecuteInst_mov_moffs8_al()
 	unsigned char value = regs.Read(Instruction::RegAl);
 	MemoryWrite(getMoffsAddress(), 1, &value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, getMoffsAddress(), 1, UInstDepAux, UInstDepEax, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			getMoffsAddress(),
+			1,
+			Uinst::DepAux,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1269,8 +1787,24 @@ void Context::ExecuteInst_mov_moffs16_ax()
 	unsigned short value = regs.Read(Instruction::RegAx);
 	MemoryWrite(getMoffsAddress(), 2, &value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, getMoffsAddress(), 2, UInstDepAux, UInstDepEax, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			getMoffsAddress(),
+			2,
+			Uinst::DepAux,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1279,8 +1813,24 @@ void Context::ExecuteInst_mov_moffs32_eax()
 	unsigned int value = regs.Read(Instruction::RegEax);
 	MemoryWrite(getMoffsAddress(), 4, &value);
 
-	newUInst(Uinst::OpcodeEffaddr, 0, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, getMoffsAddress(), 4, UInstDepAux, UInstDepEax, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			0,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			getMoffsAddress(),
+			4,
+			Uinst::DepAux,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1289,7 +1839,14 @@ void Context::ExecuteInst_mov_ir8_imm8()
 	unsigned char value = inst.getImmByte();
 	StoreIR8(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepIr8, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepIr8,
+			0,
+			0,
+			0);
 }
 
 
@@ -1298,7 +1855,14 @@ void Context::ExecuteInst_mov_ir16_imm16()
 	unsigned short value = inst.getImmWord();
 	StoreIR16(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepIr16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepIr16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1307,7 +1871,14 @@ void Context::ExecuteInst_mov_ir32_imm32()
 	unsigned int value = inst.getImmDWord();
 	StoreIR32(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepIr32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepIr32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1316,7 +1887,14 @@ void Context::ExecuteInst_mov_rm16_imm16()
 	unsigned short value = inst.getImmWord();
 	StoreRm16(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepRm16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepRm16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1325,7 +1903,14 @@ void Context::ExecuteInst_mov_rm32_imm32()
 	unsigned int value = inst.getImmDWord();
 	StoreRm32(value);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepRm32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1336,7 +1921,14 @@ void Context::ExecuteInst_mov_rm16_sreg()
 		throw misc::Panic("Not supported for sreg != gs");
 	StoreRm16(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepSreg, 0, 0, UInstDepRm16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepSreg,
+			0,
+			0,
+			Uinst::DepRm16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1353,7 +1945,14 @@ void Context::ExecuteInst_mov_sreg_rm16()
 		throw misc::Panic("Not supported for sreg != gs");
 	StoreSReg(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm16, 0, 0, UInstDepSreg, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepSreg,
+			0,
+			0,
+			0);
 }
 
 
@@ -1368,7 +1967,14 @@ void Context::ExecuteInst_movsx_r16_rm8()
 	unsigned short value = (char) LoadRm8();
 	StoreR16(value);
 
-	newUInst(Uinst::OpcodeSign, UInstDepRm8, 0, 0, UInstDepR16, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepR16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1377,7 +1983,14 @@ void Context::ExecuteInst_movsx_r32_rm8()
 	unsigned int value = (char) LoadRm8();
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeSign, UInstDepRm8, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1386,7 +1999,14 @@ void Context::ExecuteInst_movsx_r32_rm16()
 	unsigned int value = (short) LoadRm16();
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeSign, UInstDepRm16, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeSign,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1395,7 +2015,14 @@ void Context::ExecuteInst_movzx_r16_rm8()
 	unsigned char value = LoadRm8();
 	StoreR16(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm8, 0, 0, UInstDepR16, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepR16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1404,7 +2031,14 @@ void Context::ExecuteInst_movzx_r32_rm8()
 	unsigned char value = LoadRm8();
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm8, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1413,7 +2047,14 @@ void Context::ExecuteInst_movzx_r32_rm16()
 	unsigned short value = LoadRm16();
 	StoreR32(value);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm16, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm16,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1445,7 +2086,14 @@ void Context::ExecuteInst_mul_rm32()
 	regs.Write(Instruction::RegEdx, edx);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeMult, UInstDepRm32, UInstDepEax, 0, UInstDepEdx, UInstDepEax, UInstDepOf, UInstDepCf);
+	newUinst(Uinst::OpcodeMult,
+			Uinst::DepRm32,
+			Uinst::DepEax,
+			0,
+			Uinst::DepEdx,
+			Uinst::DepEax,
+			Uinst::DepOf,
+			Uinst::DepCf);
 }
 
 
@@ -1472,7 +2120,14 @@ void Context::ExecuteInst_neg_rm8()
 	StoreRm8(rm8);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepRm8, 0, 0, UInstDepRm8, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm8,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1499,7 +2154,14 @@ void Context::ExecuteInst_neg_rm32()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepRm32, 0, 0, UInstDepRm32, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepRm32,
+			0,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1525,7 +2187,14 @@ void Context::ExecuteInst_not_rm8()
 	value = ~value;
 	StoreRm8(value);
 
-	newUInst(Uinst::OpcodeNot, UInstDepRm8, 0, 0, UInstDepRm8, 0, 0, 0);
+	newUinst(Uinst::OpcodeNot,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm8,
+			0,
+			0,
+			0);
 }
 
 
@@ -1535,7 +2204,14 @@ void Context::ExecuteInst_not_rm16()
 	value = ~value;
 	StoreRm16(value);
 
-	newUInst(Uinst::OpcodeNot, UInstDepRm8, 0, 0, UInstDepRm16, 0, 0, 0);
+	newUinst(Uinst::OpcodeNot,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm16,
+			0,
+			0,
+			0);
 }
 
 
@@ -1545,7 +2221,14 @@ void Context::ExecuteInst_not_rm32()
 	value = ~value;
 	StoreRm32(value);
 
-	newUInst(Uinst::OpcodeNot, UInstDepRm8, 0, 0, UInstDepRm32, 0, 0, 0);
+	newUinst(Uinst::OpcodeNot,
+			Uinst::DepRm8,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
 }
 
 
@@ -1598,9 +2281,32 @@ void Context::ExecuteInst_pop_rm32()
 	regs.incEsp(4);
 	StoreRm32(value);
 
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepRm32, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
 }
 
 
@@ -1615,9 +2321,32 @@ void Context::ExecuteInst_pop_ir32()
 	regs.incEsp(4);
 	StoreIR32(value);
 
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepIr32, 0, 0, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepIr32,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
 }
 
 
@@ -1637,9 +2366,32 @@ void Context::ExecuteInst_popf()
 	regs.setEflags(eflags);
 
 	// Micro-instructions
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepZps, UInstDepCf, UInstDepOf, 0);
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf,
+			0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
 }
 
 
@@ -1650,8 +2402,24 @@ void Context::ExecuteInst_prefetcht0_m8()
 		return;
 
 	unsigned eff_addr = getEffectiveAddress();
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEaseg, UInstDepEabas, UInstDepEaidx, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodePrefetch, eff_addr, 1, UInstDepAux, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEaseg,
+			Uinst::DepEabas,
+			Uinst::DepEaidx,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodePrefetch,
+			eff_addr,
+			1,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1677,9 +2445,32 @@ void Context::ExecuteInst_push_imm8()
 	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1690,9 +2481,32 @@ void Context::ExecuteInst_push_imm32()
 	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1703,9 +2517,32 @@ void Context::ExecuteInst_push_rm32()
 	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, UInstDepRm32, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			Uinst::DepRm32,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1716,9 +2553,32 @@ void Context::ExecuteInst_push_ir32()
 	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &value);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, UInstDepIr32, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			Uinst::DepIr32,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1728,10 +2588,40 @@ void Context::ExecuteInst_pushf()
 	regs.Write(Instruction::RegEsp, regs.getEsp() - 4);
 	MemoryWrite(regs.getEsp(), 4, &eflags);
 
-	newUInst(Uinst::OpcodeSub, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, UInstDepZps, UInstDepCf, UInstDepOf, UInstDepAux2, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeStore, regs.getEsp(), 4, UInstDepAux, UInstDepAux2, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeSub,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf,
+			Uinst::DepAux2,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeStore,
+			regs.getEsp(),
+			4,
+			Uinst::DepAux,
+			Uinst::DepAux2,
+			0,
+			0,
+			0,
+			0,
+			0);
 }
 
 
@@ -1753,7 +2643,14 @@ void Context::ExecuteInst_rdtsc()
 	regs.Write(Instruction::RegEdx, edx);
 	regs.Write(Instruction::RegEax, eax);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, UInstDepEax, UInstDepEdx, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			Uinst::DepEax,
+			Uinst::DepEdx,
+			0,
+			0);
 }
 
 
@@ -1772,10 +2669,40 @@ void Context::ExecuteInst_ret()
 		call_stack->Return(regs.getEip(), regs.getEsp());
 
 	// Micro-instrutcions
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4, 4, UInstDepAux, 0, 0, UInstDepAux, 0, 0, 0);  // pop aux
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);  // add esp, 4
-	newUInst(Uinst::OpcodeRet, UInstDepAux, 0, 0, 0, 0, 0, 0);  // jmp aux
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);  // pop aux
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);  // add esp, 4
+	newUinst(Uinst::OpcodeRet,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);  // jmp aux
 }
 
 
@@ -1801,10 +2728,40 @@ void Context::ExecuteInst_ret_imm16()
 		call_stack->Return(regs.getEip(), regs.getEsp());
 
 	// Micro-instructions
-	newUInst(Uinst::OpcodeEffaddr, UInstDepEsp, 0, 0, UInstDepAux, 0, 0, 0);
-	newMemoryUInst(Uinst::OpcodeLoad, regs.getEsp() - 4 - pop, 4, UInstDepAux, 0, 0, UInstDepAux, 0, 0, 0);  // pop aux
-	newUInst(Uinst::OpcodeAdd, UInstDepEsp, 0, 0, UInstDepEsp, 0, 0, 0);  // add esp, 4
-	newUInst(Uinst::OpcodeRet, UInstDepAux, 0, 0, 0, 0, 0, 0);  // jmp aux
+	newUinst(Uinst::OpcodeEffaddr,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);
+	newMemoryUinst(Uinst::OpcodeLoad,
+			regs.getEsp() - 4 - pop,
+			4,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepAux,
+			0,
+			0,
+			0);  // pop aux
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepEsp,
+			0,
+			0,
+			Uinst::DepEsp,
+			0,
+			0,
+			0);  // add esp, 4
+	newUinst(Uinst::OpcodeRet,
+			Uinst::DepAux,
+			0,
+			0,
+			0,
+			0,
+			0,
+			0);  // jmp aux
 }
 
 
@@ -1815,7 +2772,14 @@ void Context::ExecuteInst_sahf()
 	regs.setEflags(regs.getEflags() & ~0x28);
 	regs.setEflags(regs.getEflags() | 0x2);
 
-	newUInst(Uinst::OpcodeMove, UInstDepEax, 0, 0, 0, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepEax,
+			0,
+			0,
+			0,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1851,7 +2815,14 @@ void Context::ExecuteInst_shld_rm16_r16_imm8()
 	StoreRm16(rm16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm16, UInstDepR16, 0, UInstDepRm16, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm16,
+			Uinst::DepR16,
+			0,
+			Uinst::DepRm16,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1882,8 +2853,14 @@ void Context::ExecuteInst_shld_rm16_r16_cl()
 	StoreRm16(rm16);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm16, UInstDepR16, UInstDepEcx,
-		UInstDepRm16, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm16,
+			Uinst::DepR16,
+			Uinst::DepEcx,
+			Uinst::DepRm16,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1914,7 +2891,14 @@ void Context::ExecuteInst_shld_rm32_r32_imm8()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, UInstDepR32, 0, UInstDepRm32, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1945,8 +2929,14 @@ void Context::ExecuteInst_shld_rm32_r32_cl()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, UInstDepR32, UInstDepEcx,
-		UInstDepRm32, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			Uinst::DepEcx,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -1977,7 +2967,14 @@ void Context::ExecuteInst_shrd_rm32_r32_imm8()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, UInstDepR32, 0, UInstDepRm32, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -2008,8 +3005,14 @@ void Context::ExecuteInst_shrd_rm32_r32_cl()
 	StoreRm32(rm32);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeShift, UInstDepRm32, UInstDepR32, UInstDepEcx,
-		UInstDepRm32, UInstDepZps, UInstDepCf, UInstDepOf);
+	newUinst(Uinst::OpcodeShift,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			Uinst::DepEcx,
+			Uinst::DepRm32,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
 }
 
 
@@ -2017,7 +3020,14 @@ void Context::ExecuteInst_std()
 {
 	regs.setFlag(Instruction::FlagDF);
 
-	newUInst(Uinst::OpcodeMove, 0, 0, 0, 0, UInstDepDf, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			0,
+			0,
+			0,
+			0,
+			Uinst::DepDf,
+			0,
+			0);
 }
 
 
@@ -2047,9 +3057,30 @@ void Context::ExecuteInst_xadd_rm8_r8()
 	StoreRm8(sum);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepRm8, UInstDepR8, 0, UInstDepAux, UInstDepZps, UInstDepCf, UInstDepOf);
-	newUInst(Uinst::OpcodeMove, UInstDepAux, 0, 0, UInstDepRm8, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, UInstDepAux, 0, 0, UInstDepR8, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepRm8,
+			Uinst::DepR8,
+			0,
+			Uinst::DepAux,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepRm8,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepR8,
+			0,
+			0,
+			0);
 }
 
 
@@ -2079,9 +3110,30 @@ void Context::ExecuteInst_xadd_rm32_r32()
 	StoreRm32(sum);
 	regs.setEflags(flags);
 
-	newUInst(Uinst::OpcodeAdd, UInstDepRm32, UInstDepR32, 0, UInstDepAux, UInstDepZps, UInstDepCf, UInstDepOf);
-	newUInst(Uinst::OpcodeMove, UInstDepAux, 0, 0, UInstDepRm32, 0, 0, 0);
-	newUInst(Uinst::OpcodeMove, UInstDepAux, 0, 0, UInstDepR32, 0, 0, 0);
+	newUinst(Uinst::OpcodeAdd,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			Uinst::DepAux,
+			Uinst::DepZps,
+			Uinst::DepCf,
+			Uinst::DepOf);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepRm32,
+			0,
+			0,
+			0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepAux,
+			0,
+			0,
+			Uinst::DepR32,
+			0,
+			0,
+			0);
 }
 
 
@@ -2094,7 +3146,14 @@ void Context::ExecuteInst_xchg_ir16_ax()
 	regs.Write(Instruction::RegAx, ir16);
 	StoreIR16(ax);
 
-	newUInst(Uinst::OpcodeMove, UInstDepIr16, UInstDepEax, 0, UInstDepIr16, UInstDepEax, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepIr16,
+			Uinst::DepEax,
+			0,
+			Uinst::DepIr16,
+			Uinst::DepEax,
+			0,
+			0);
 }
 
 
@@ -2107,7 +3166,14 @@ void Context::ExecuteInst_xchg_ir32_eax()
 	regs.Write(Instruction::RegEax, ir32);
 	StoreIR32(eax);
 
-	newUInst(Uinst::OpcodeMove, UInstDepIr32, UInstDepEax, 0, UInstDepIr32, UInstDepEax, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepIr32,
+			Uinst::DepEax,
+			0,
+			Uinst::DepIr32,
+			Uinst::DepEax,
+			0,
+			0);
 }
 
 
@@ -2121,7 +3187,14 @@ void Context::ExecuteInst_xchg_rm8_r8()
 	StoreRm8(r8);
 	StoreR8(rm8);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm8, UInstDepR8, 0, UInstDepRm8, UInstDepR8, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm8,
+			Uinst::DepR8,
+			0,
+			Uinst::DepRm8,
+			Uinst::DepR8,
+			0,
+			0);
 }
 
 
@@ -2135,7 +3208,14 @@ void Context::ExecuteInst_xchg_rm16_r16()
 	StoreRm16(r16);
 	StoreR16(rm16);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm16, UInstDepR16, 0, UInstDepRm16, UInstDepR16, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm16,
+			Uinst::DepR16,
+			0,
+			Uinst::DepRm16,
+			Uinst::DepR16,
+			0,
+			0);
 }
 
 
@@ -2149,7 +3229,14 @@ void Context::ExecuteInst_xchg_rm32_r32()
 	StoreRm32(r32);
 	StoreR32(rm32);
 
-	newUInst(Uinst::OpcodeMove, UInstDepRm32, UInstDepR32, 0, UInstDepRm32, UInstDepR32, 0, 0);
+	newUinst(Uinst::OpcodeMove,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			Uinst::DepRm32,
+			Uinst::DepR32,
+			0,
+			0);
 }
 
 

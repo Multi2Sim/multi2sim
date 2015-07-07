@@ -68,7 +68,14 @@ void Context::ExecuteInst_set##cc##_rm8() \
 		StoreRm8(1); \
 	else \
 		StoreRm8(0); \
-	newUInst(Uinst::OpcodeMove, idep1, idep2, 0, UInstDepRm8, 0, 0, 0); \
+	newUinst(Uinst::OpcodeMove, \
+			idep1, \
+			idep2, \
+			0, \
+			Uinst::DepRm8, \
+			0, \
+			0, \
+			0); \
 }
 
 
@@ -78,7 +85,14 @@ void Context::ExecuteInst_j##cc##_rel8() \
 	target_eip = regs.getEip() + (char) inst.getImmByte(); \
 	if (cc_##cc) \
 		regs.setEip(target_eip); \
-	newUInst(Uinst::OpcodeBranch, idep1, idep2, 0, 0, 0, 0, 0); \
+	newUinst(Uinst::OpcodeBranch, \
+			idep1, \
+			idep2, \
+			0, \
+			0, \
+			0, \
+			0, \
+			0); \
 }
 
 
@@ -88,7 +102,14 @@ void Context::ExecuteInst_j##cc##_rel32() \
 	target_eip = regs.getEip() + inst.getImmDWord(); \
 	if (cc_##cc) \
 		regs.setEip(target_eip); \
-	newUInst(Uinst::OpcodeBranch, idep1, idep2, 0, 0, 0, 0, 0); \
+	newUinst(Uinst::OpcodeBranch, \
+			idep1, \
+			idep2, \
+			0, \
+			0, \
+			0, \
+			0, \
+			0); \
 }
 
 
@@ -97,7 +118,14 @@ void Context::ExecuteInst_cmov##cc##_r16_rm16() \
 { \
 	if (cc_##cc) \
 		StoreR16(LoadRm16()); \
-	newUInst(Uinst::OpcodeMove, idep1, idep2, UInstDepRm16, UInstDepR16, 0, 0, 0); \
+	newUinst(Uinst::OpcodeMove, \
+			idep1, \
+			idep2, \
+			Uinst::DepRm16, \
+			Uinst::DepR16, \
+			0, \
+			0, \
+			0); \
 }
 
 
@@ -106,27 +134,34 @@ void Context::ExecuteInst_cmov##cc##_r32_rm32() \
 { \
 	if (cc_##cc) \
 		StoreR32(LoadRm32()); \
-	newUInst(Uinst::OpcodeMove, idep1, idep2, UInstDepRm32, UInstDepR32, 0, 0, 0); \
+	newUinst(Uinst::OpcodeMove, \
+			idep1, \
+			idep2, \
+			Uinst::DepRm32, \
+			Uinst::DepR32, \
+			0, \
+			0, \
+			0); \
 }
 
 
 #define op_cc_all(ccop) \
-	op_##ccop(a, UInstDepCf, UInstDepZps) \
-	op_##ccop(ae, UInstDepCf, 0) \
-	op_##ccop(b, UInstDepCf, 0) \
-	op_##ccop(be, UInstDepCf, UInstDepZps) \
-	op_##ccop(e, UInstDepZps, 0) \
-	op_##ccop(g, UInstDepZps, UInstDepOf) \
-	op_##ccop(ge, UInstDepZps, UInstDepOf) \
-	op_##ccop(l, UInstDepZps, UInstDepOf) \
-	op_##ccop(le, UInstDepZps, UInstDepOf) \
-	op_##ccop(ne, UInstDepZps, 0) \
-	op_##ccop(no, UInstDepOf, 0) \
-	op_##ccop(np, UInstDepZps, 0) \
-	op_##ccop(ns, UInstDepZps, 0) \
-	op_##ccop(o, UInstDepOf, 0) \
-	op_##ccop(p, UInstDepZps, 0) \
-	op_##ccop(s, UInstDepZps, 0)
+	op_##ccop(a, Uinst::DepCf, Uinst::DepZps) \
+	op_##ccop(ae, Uinst::DepCf, 0) \
+	op_##ccop(b, Uinst::DepCf, 0) \
+	op_##ccop(be, Uinst::DepCf, Uinst::DepZps) \
+	op_##ccop(e, Uinst::DepZps, 0) \
+	op_##ccop(g, Uinst::DepZps, Uinst::DepOf) \
+	op_##ccop(ge, Uinst::DepZps, Uinst::DepOf) \
+	op_##ccop(l, Uinst::DepZps, Uinst::DepOf) \
+	op_##ccop(le, Uinst::DepZps, Uinst::DepOf) \
+	op_##ccop(ne, Uinst::DepZps, 0) \
+	op_##ccop(no, Uinst::DepOf, 0) \
+	op_##ccop(np, Uinst::DepZps, 0) \
+	op_##ccop(ns, Uinst::DepZps, 0) \
+	op_##ccop(o, Uinst::DepOf, 0) \
+	op_##ccop(p, Uinst::DepZps, 0) \
+	op_##ccop(s, Uinst::DepZps, 0)
 
 
 op_cc_all(setcc)
@@ -141,7 +176,7 @@ void Context::ExecuteInst_jecxz_rel8()
 	target_eip = regs.getEip() + inst.getImmByte();
 	if (!regs.Read(Instruction::RegEcx))
 		regs.setEip(target_eip);
-	newUInst(Uinst::OpcodeBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeBranch, Uinst::DepEcx, 0, 0, 0, 0, 0, 0);
 }
 
 
@@ -150,7 +185,7 @@ void Context::ExecuteInst_jcxz_rel8()
 	target_eip = regs.getEip() + inst.getImmByte();
 	if (!regs.Read(Instruction::RegCx))
 		regs.setEip(target_eip);
-	newUInst(Uinst::OpcodeBranch, UInstDepEcx, 0, 0, 0, 0, 0, 0);
+	newUinst(Uinst::OpcodeBranch, Uinst::DepEcx, 0, 0, 0, 0, 0, 0);
 }
 
 

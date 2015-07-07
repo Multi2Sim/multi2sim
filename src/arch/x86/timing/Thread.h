@@ -24,7 +24,7 @@
 #include <string>
 
 #include <memory/Module.h>
-#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Uinst.h>
 #include <arch/x86/emulator/Context.h>
 
 #include "Uop.h"

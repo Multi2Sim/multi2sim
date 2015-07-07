@@ -18,7 +18,7 @@ libemulator_a_SOURCES = \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextSyscall.cc \
-	ContextUInst.cc \
+	ContextUinst.cc \
 	Context.h \
 	\
 	Emulator.cc \
@@ -33,8 +33,8 @@ libemulator_a_SOURCES = \
 	Signal.cc \
 	Signal.h \
 	\
-	UInst.cc \
-	UInst.h \
+	Uinst.cc \
+	Uinst.h \
 	\
 	XMMValue.cc \
 	XMMValue.h

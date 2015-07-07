@@ -57,7 +57,14 @@ void Context::ExecuteInst_##xxx##_rm8_1() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm8(rm8); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm8, 0, UInstDepRm8, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm8, \
+			0, \
+			Uinst::DepRm8, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -84,7 +91,14 @@ void Context::ExecuteInst_##xxx##_rm8_cl() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm8(rm8); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm8, UInstDepEcx, UInstDepRm8, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm8, \
+			Uinst::DepEcx, \
+			Uinst::DepRm8, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -111,7 +125,14 @@ void Context::ExecuteInst_##xxx##_rm8_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm8(rm8); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm8, 0, UInstDepRm8, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm8, \
+			0, \
+			Uinst::DepRm8, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -138,7 +159,14 @@ void Context::ExecuteInst_##xxx##_rm16_1() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm16(rm16); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm16, 0, UInstDepRm16, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm16, \
+			0, \
+			Uinst::DepRm16, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -165,7 +193,14 @@ void Context::ExecuteInst_##xxx##_rm16_cl() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm16(rm16); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm16, UInstDepEcx, UInstDepRm16, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm16, \
+			Uinst::DepEcx, \
+			Uinst::DepRm16, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -192,7 +227,14 @@ void Context::ExecuteInst_##xxx##_rm16_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm16(rm16); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm16, 0, UInstDepRm16, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm16, \
+			0, \
+			Uinst::DepRm16, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -219,7 +261,14 @@ void Context::ExecuteInst_##xxx##_rm32_1() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm32(rm32); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm32, 0, UInstDepRm32, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm32, \
+			0, \
+			Uinst::DepRm32, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -246,7 +295,14 @@ void Context::ExecuteInst_##xxx##_rm32_cl() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm32(rm32); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm32, UInstDepEcx, UInstDepRm32, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm32, \
+			Uinst::DepEcx, \
+			Uinst::DepRm32, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -273,7 +329,14 @@ void Context::ExecuteInst_##xxx##_rm32_imm8() \
 	__X86_CONTEXT_RESTORE_FLAGS__ \
 	StoreRm32(rm32); \
 	regs.setEflags(flags); \
-	newUInst(Uinst::OpcodeShift, idep, UInstDepRm32, 0, UInstDepRm32, UInstDepCf, UInstDepOf, 0); \
+	newUinst(Uinst::OpcodeShift, \
+			idep, \
+			Uinst::DepRm32, \
+			0, \
+			Uinst::DepRm32, \
+			Uinst::DepCf, \
+			Uinst::DepOf, \
+			0); \
 }
 
 
@@ -292,8 +355,8 @@ void Context::ExecuteInst_##xxx##_rm32_imm8() \
 
 
 // Implementation for rotation and shift instructions
-op_xxx_all(rcl, UInstDepCf)
-op_xxx_all(rcr, UInstDepCf)
+op_xxx_all(rcl, Uinst::DepCf)
+op_xxx_all(rcr, Uinst::DepCf)
 op_xxx_all(rol, 0)
 op_xxx_all(ror, 0)
 
