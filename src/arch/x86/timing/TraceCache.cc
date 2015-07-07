@@ -130,7 +130,7 @@ void TraceCache::RecordUop(Uop &uop)
 
 	// Instruction is branch. If maximum number of branches is reached,
 	// commit trace.
-	if (uop.getFlags() & UInstFlagCtrl)
+	if (uop.getFlags() & Uinst::FlagCtrl)
 	{
 		taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
 		temp->branch_mask |= 1 << temp->branch_count;

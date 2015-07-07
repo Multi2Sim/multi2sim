@@ -156,31 +156,6 @@ enum UInstDep
 extern misc::StringMap uinst_dep_map;
 
 
-enum UInstFlag
-{
-	UInstFlagInt		= 0x001,  // Arithmetic integer instruction
-	UInstFlagLogic		= 0x002,  // Logic computation
-	UInstFlagFp		= 0x004,  // Floating-point micro-instruction
-	UInstFlagMem		= 0x008,  // Memory micro-instructions
-	UInstFlagCtrl		= 0x010,  // Micro-instruction affecting control flow
-	UInstFlagCond		= 0x020,  // Conditional branch
-	UInstFlagUncond		= 0x040,  // Unconditional jump
-	UInstFlagXmm		= 0x080   // XMM micro-instruction
-};
-
-
-/// Information about a micro-instruction. Table UInst::info contains elements
-/// of this type.
-struct UInstInfo
-{
-	/// Name
-	std::string name;
-
-	/// Flags, specified as a bitmap of element enumerated in UInstFlag
-	unsigned flags;
-};
-
-
 /// Class representing an x86 micro-instruction
 class Uinst
 {
@@ -273,6 +248,30 @@ public:
 		OpcodeCount
 	};
 
+	/// Flags providing information about micro-instructions
+	enum Flag
+	{
+		FlagInt		= 0x001,  // Arithmetic integer instruction
+		FlagLogic	= 0x002,  // Logic computation
+		FlagFp		= 0x004,  // Floating-point micro-instruction
+		FlagMem		= 0x008,  // Memory micro-instructions
+		FlagCtrl	= 0x010,  // Micro-instruction affecting control flow
+		FlagCond	= 0x020,  // Conditional branch
+		FlagUncond	= 0x040,  // Unconditional jump
+		FlagXmm		= 0x080   // XMM micro-instruction
+	};
+
+	/// Information about a micro-instruction. Table UInst::info contains
+	/// elements of this type.
+	struct Info
+	{
+		/// Name
+		std::string name;
+
+		/// Flags, specified as a bitmap of element enumerated in Flag
+		unsigned flags;
+	};
+
 	/// Maximum number of input dependencies
 	static const int MaxIDeps = 3;
 
@@ -287,22 +286,26 @@ private:
 
 	// Table of micro-instruction information, index by a micro-instruction
 	// opcode.
-	static UInstInfo info[OpcodeCount];
+	static Info info[OpcodeCount];
 
-	// Unique identifier
+	// Unique identifier for micro-instruction, initialized in constructor
 	Opcode opcode;
 
 	// All dependences
-	UInstDep dep[MaxDeps];
+	UInstDep dep[MaxDeps] = {};
 
 	// Pointers to input and output dependences, pointing to internal
-	// positions of 'dep'.
-	UInstDep *idep;
-	UInstDep *odep;
+	// positions of 'dep', and initialized in constructor
+	UInstDep *idep = dep;
+	UInstDep *odep = dep + MaxIDeps;
 
-	// Memory accesses
-	unsigned address;
-	int size;
+	// Address of the last memory access for this instruction, if it is
+	// a memory micro-instruction
+	unsigned address = 0;
+
+	// Size of the memory access, if the micro-instruction is a memory
+	// access.
+	int size = 0;
 
 public:
 
@@ -312,30 +315,51 @@ public:
 
 	/// Return \c true if a micro-instruction dependency is an integer
 	/// register
-	static bool isDepIntReg(UInstDep dep) { return dep >= UInstDepIntFirst
-			&& dep <= UInstDepIntLast; }
+	static bool isDepIntReg(UInstDep dep)
+	{
+		return dep >= UInstDepIntFirst
+				&& dep <= UInstDepIntLast;
+	}
 
 	/// Return \c true if a micro-instruction dependency is a floating-point
 	/// register.
-	static bool isDepFpReg(UInstDep dep) { return dep >= UInstDepFpFirst
-			&& dep <= UInstDepFpLast; }
+	static bool isDepFpReg(UInstDep dep)
+	{
+		return dep >= UInstDepFpFirst
+				&& dep <= UInstDepFpLast;
+	}
 
 	/// Return \c true if a micro-instruction dependency is an XMM register
-	static bool isDepXmmReg(UInstDep dep) { return dep >= UInstDepXmmFirst
-			&& dep <= UInstDepXmmLast; }
+	static bool isDepXmmReg(UInstDep dep)
+	{
+		return dep >= UInstDepXmmFirst
+				&& dep <= UInstDepXmmLast;
+	}
 	
 	/// Return \c true if a micro-instruction dependency is a flag
-	static bool isDepFlag(UInstDep dep) { return dep >= UInstDepFlagFirst
-			&& dep <= UInstDepFlagLast; }
+	static bool isDepFlag(UInstDep dep)
+	{
+		return dep >= UInstDepFlagFirst
+				&& dep <= UInstDepFlagLast;
+	}
 	
 	/// Return \c true if a micro-instruction dependency is valid
-	static bool isValidDep(UInstDep dep) { return isDepIntReg(dep) &&
-			isDepFpReg(dep) && isDepXmmReg(dep); }
+	static bool isValidDep(UInstDep dep)
+	{
+		return isDepIntReg(dep) &&
+				isDepFpReg(dep) &&
+				isDepXmmReg(dep);
+	}
 
 	/// Return the name of a dependence. This is equivalent to querying
 	/// string map \c uinst_dep_map.
-	static const char *getDepName(UInstDep dep) {
-			return uinst_dep_map.MapValue(dep); }
+	static const char *getDepName(UInstDep dep)
+	{
+		return uinst_dep_map.MapValue(dep);
+	}
+	
+	/// Get micro-instruction information
+	static Info *getInfo() { return info; }
 
 
 
@@ -345,7 +369,9 @@ public:
 	//
 
 	/// Create a micro-instruction with a given \a opcode
-	Uinst(Opcode opcode);
+	Uinst(Opcode opcode) : opcode(opcode)
+	{
+	}
 	
 	/// Return the micro-instruction opcode
 	Opcode getOpcode() const { return opcode; }
@@ -434,10 +460,6 @@ public:
 		uinst.Dump(os);
 		return os;
 	}
-
-	/// Get micro-instruction information
-	UInstInfo *getInfo() { return &info[0]; }
-
 };
 
 }  // namespace UInst
