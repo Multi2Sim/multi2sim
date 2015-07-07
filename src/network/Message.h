@@ -74,7 +74,7 @@ public:
 	/// not pop the packet from the buffer.
 	bool Assemble(Packet *packet);
 
-	/// Get id of the node
+	/// Get id of the message
 	long long getId() const { return id; }
 
 	/// Get the network

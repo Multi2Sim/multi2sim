@@ -22,8 +22,10 @@
 #include <string>
 #include <regex>
 #include <exception>
-#include <network/System.h>
 #include <network/EndNode.h>
+#include <network/Message.h>
+#include <network/Network.h>
+#include <network/System.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
@@ -124,7 +126,7 @@ TEST(TestSystemConfiguration, event_0_no_route)
 		// Getting the destination node
 		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
 
-		// Sending from the node to itself
+		// Sending from the source to destination
 		network->TrySend(src, dst, 8);
 	}
 	catch (misc::Error &e)
@@ -188,7 +190,7 @@ TEST(TestSystemConfiguration, event_0_message_too_big)
 		// Getting the destination node
 		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
 
-		// Sending from the node to itself
+		// Sending from the source to destination
 		network->TrySend(src, dst, 8);
 	}
 	catch (misc::Error &e)
@@ -253,7 +255,7 @@ TEST(TestSystemConfiguration, event_0_packetized_message_too_big)
 		// Getting the destination node
 		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
 
-		// Sending from the node to itself
+		// Sending from the source to destination
 		network->TrySend(src, dst, 4);
 	}
 	catch (misc::Error &e)
@@ -262,6 +264,79 @@ TEST(TestSystemConfiguration, event_0_packetized_message_too_big)
 	}
 	EXPECT_REGEX_MATCH(misc::fmt("Buffer too small for the "
 			"message size\\.").c_str(), message.c_str());
+}
+
+TEST(TestSystemConfiguration, event_0_message_sent_cycle_1)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	std::string net_config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 3\n"
+			"\n"
+			"[ Network.net0.Node.n0 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.n1 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.s0 ]\n"
+			"Type = Switch\n"
+			"\n"
+			"[ Network.net0.Link.n0-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n0\n"
+			"Dest = s0\n"
+			"\n"
+			"[ Network.net0.Link.n1-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n1\n"
+			"Dest = s0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(net_config);
+
+	// Set up network instance
+	System *network_system = System::getInstance();
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Parse the configuration file
+		network_system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = network_system->getNetworkByName("net0");
+
+		// Getting the source and destination nodes
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
+
+		// Creating the message
+		Message *msg = network->newMessage(src, dst, 1);
+
+		// Sending from the source to destination
+		network->TrySend(src, dst, msg->getSize());
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+
+		// Receive event
+		network->Receive(dst, msg);
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("Packet 0 of the message 0 has "
+					"not arrived.").c_str(), message.c_str());
 }
 
 }
