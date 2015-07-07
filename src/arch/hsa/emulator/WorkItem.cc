@@ -153,8 +153,8 @@ bool WorkItem::ReturnFunction()
 		Function *function = callee_frame->getFunction();
 		BrigCodeEntry *inst = caller_frame->getPc();
 		function->PassBackByValue(caller_frame, callee_frame, inst);
-
-		if (getAbsoluteFlattenedId() == 0) {
+		if (getAbsoluteFlattenedId() == 0) 
+		{
 			if (Emulator::isa_debug)
 			{
 				Emulator::isa_debug << "Caller frame \n";
@@ -170,9 +170,7 @@ bool WorkItem::ReturnFunction()
 
 	// When stack gets empty, the work item have finished its task.
 	if (stack.empty())
-	{
 		return false;
-	}
 	else
 	{
 		// When return to the caller, the pc in caller is still
@@ -282,13 +280,72 @@ void WorkItem::ExecuteDirective()
 }
 
 
-char *WorkItem::getVariableBuffer(unsigned char segment,
+unsigned WorkItem::getFlatAddress(BrigSegment segment, unsigned address)
+{
+	// Declare the flat address to return
+	unsigned flat_address = 0;
+	switch (segment) 
+	{
+	case BRIG_SEGMENT_FLAT:
+
+		// Do nothing, simply return the address
+		flat_address = address;
+		break;
+	
+	case BRIG_SEGMENT_GLOBAL:
+
+		// Global memory is always the same with flat memory address
+		flat_address = address;
+		break;
+	
+	case BRIG_SEGMENT_GROUP:
+	
+	{
+		// Get group segment manager and translate address
+		SegmentManager *segment = work_group->getGroupSegment();
+		flat_address = segment->getFlatAddress(address);
+		break;
+	}
+
+	case BRIG_SEGMENT_PRIVATE:
+
+		// Get private segment manager and translate address
+		flat_address = private_segment->getFlatAddress(address);	
+		break;
+
+	case BRIG_SEGMENT_KERNARG:
+
+	{
+		// Get the grid
+		Grid *grid = work_group->getGrid();
+		SegmentManager *segment = grid->getKernargSegment();
+		flat_address = segment->getFlatAddress(address);
+		break;
+	}
+	
+	default:
+
+		// Segment net supported
+		throw misc::Panic("Unsupported segment");
+
+	}
+
+	// Leave debug information
+	// Emulator::isa_debug << misc::fmt("Converting address %d to flat address "
+	//		"%d.\n", address, flat_address);
+	
+	// Return the flat address
+	return flat_address;
+}
+
+
+char *WorkItem::getVariableBuffer(BrigSegment segment,
 		const std::string &name)
 {
 	// Get stack top frame
 	StackFrame *stack_top = stack.back().get();
 
-	//
+	// Perform different action according to different section
 	switch (segment)
 	{
 	case BRIG_SEGMENT_NONE:
@@ -313,29 +370,33 @@ char *WorkItem::getVariableBuffer(unsigned char segment,
 
 	case BRIG_SEGMENT_KERNARG:
 
+	{
+		VariableScope *kernel_arguments = work_group->
+				getGrid()->getKernelArguments();
+		char *buffer;
+		if (kernel_arguments)
 		{
-			VariableScope *kernel_arguments = work_group->
-					getGrid()->getKernelArguments();
-			char *buffer;
-			if (kernel_arguments)
-			{
-				buffer = kernel_arguments->getBuffer(name);
-			}
-
-			return buffer;
-			break;
+			buffer = kernel_arguments->getBuffer(name);
 		}
+
+		return buffer;
 		break;
+	}
+	break;
 
 	case BRIG_SEGMENT_READONLY:
 
+	{
 		throw misc::Panic("Unsupported segment READONLY.");
 		break;
+	}
 
 	case BRIG_SEGMENT_SPILL:
 
+	{
 		throw misc::Panic("Unsupported segment SPILL.");
 		break;
+	}
 
 	case BRIG_SEGMENT_ARG:
 

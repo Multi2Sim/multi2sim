@@ -197,9 +197,7 @@ void BrigOperandEntry::DumpListOfOperand(BrigDataEntry *operands,
 	for (unsigned i = 0; i < size; i++)
 	{
 		if (i > 0) os << ", ";
-		unsigned int offset = *(unsigned int *)(operands->getBytes() + 
-				i * 4);
-		auto operand = getBinary()->getOperandByOffset(offset);
+		auto operand = getOperandElement(i);
 		operand->Dump(type, os);
 	}
 }
@@ -399,6 +397,18 @@ std::unique_ptr<BrigCodeEntry> BrigOperandEntry::getElement(unsigned int index) 
 			*(unsigned int *)(data_entry->getBytes() + 
 			index * 4);
 	return getBinary()->getCodeEntryByOffset(offset);
+}
+
+
+std::unique_ptr<BrigOperandEntry> BrigOperandEntry::getOperandElement(unsigned int index) const
+{
+	if (index >= getElementCount())
+		throw misc::Panic("GetElement out of range");
+	auto data_entry = getElements();
+	unsigned int offset = 
+			*(unsigned int *)(data_entry->getBytes() + 
+			index * 4);
+	return getBinary()->getOperandByOffset(offset);
 }
 
 }  // namespace HSA

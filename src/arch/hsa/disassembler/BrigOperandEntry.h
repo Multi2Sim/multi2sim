@@ -115,6 +115,10 @@ public:
 	/// Return a certain element
 	std::unique_ptr<BrigCodeEntry> getElement(unsigned int index) const;
 
+	/// Return a certain element, this function is only used for getting 
+	/// operand element
+	std::unique_ptr<BrigOperandEntry> getOperandElement(unsigned int index) const;
+
 };
 
 }  // namespace HSA
