@@ -489,10 +489,17 @@ bool Network::CanSend(EndNode *source_node,
 		return false;
 	}
 
-	// Check if output buffer is large enough
+	// Get the least required size in the buffer
 	int required_size = size;
 	if (packet_size != 0)
 		required_size = ((size - 1) / packet_size + 1) * packet_size;
+
+	// Check if the buffer can fit one message
+	if (required_size > output_buffer->getSize())
+		throw Error(misc::fmt("Buffer too small for the "
+			"message size."));
+	
+	// Check if the buffer has enough space for the current message
 	if (output_buffer->getCount() + required_size >
 			output_buffer->getSize())
 	{
@@ -651,6 +658,13 @@ Link *Network::addLink(
 		int dest_buffer_size,
 		int num_virtual_channels)
 {
+	// Check if the nodes are not both end-nodes
+	if ((dynamic_cast<EndNode *>(source_node))
+		&& (dynamic_cast<EndNode *>(dest_node)))
+		throw Error(misc::fmt("Network '%s': Link '%s' cannot "
+			"connect two end-nodes.", this->name.c_str(),
+			name.c_str()));
+
 	// Creating a unique name for unidirectional link
 	std::string descriptive_name = "link_" + source_node->getName() +
 			"_" + dest_node->getName();
