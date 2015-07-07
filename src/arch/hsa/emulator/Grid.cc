@@ -127,7 +127,14 @@ bool Grid::Execute()
 	// Send completion signal when finished execution
 	if (!active)
 	{
-		packet->setCompletionSignal(0);
+		Signal *completion_signal = 
+				(Signal *)packet->getCompletionSignal();
+		unsigned long long signal_value = completion_signal->getValue();
+		Emulator::isa_debug << misc::fmt("Kernel execution finished, "
+				"reducing completion signal from %lld to %lld",
+				signal_value, signal_value - 1);
+		signal_value--;
+		completion_signal->setValue(signal_value);
 	}
 
 	return active;

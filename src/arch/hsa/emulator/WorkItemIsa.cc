@@ -1755,7 +1755,7 @@ void WorkItem::Inst_CMP_Aux()
 	SrcType src1;
 	SrcType src2;
 	getOperandValue<SrcType>(1, &src1);
-	getOperandValue<SrcType>(1, &src2);
+	getOperandValue<SrcType>(2, &src2);
 	DstType dst = 0;
 
 	switch (inst->getCompareOperation()){
