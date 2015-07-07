@@ -161,7 +161,7 @@ void Thread::Fetch()
 		// branch direction in the branch predictor. If they are
 		// predicted taken, stop fetching from this block and set new
 		// fetch address.
-		if (uop->getFlags() & UInstFlagCtrl)
+		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			// Look up BTB
 			unsigned target = branch_predictor->LookupBTB(*uop);
