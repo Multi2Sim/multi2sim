@@ -116,101 +116,84 @@ misc::StringMap uinst_dep_map
 
 
 // Information related with a micro-instruction opcode
-UInstInfo Uinst::info[Uinst::OpcodeCount] =
+Uinst::Info Uinst::info[Uinst::OpcodeCount] =
 {
 	{ "nop", 0 },
 
-	{ "move", UInstFlagInt },
-	{ "add", UInstFlagInt },
-	{ "sub", UInstFlagInt },
-	{ "mult", UInstFlagInt },
-	{ "div", UInstFlagInt },
-	{ "effaddr", UInstFlagInt },
+	{ "move", FlagInt },
+	{ "add", FlagInt },
+	{ "sub", FlagInt },
+	{ "mult", FlagInt },
+	{ "div", FlagInt },
+	{ "effaddr", FlagInt },
 
-	{ "and", UInstFlagLogic },
-	{ "or", UInstFlagLogic },
-	{ "xor", UInstFlagLogic },
-	{ "not", UInstFlagLogic },
-	{ "shift", UInstFlagLogic },
-	{ "sign", UInstFlagLogic },
+	{ "and", FlagLogic },
+	{ "or", FlagLogic },
+	{ "xor", FlagLogic },
+	{ "not", FlagLogic },
+	{ "shift", FlagLogic },
+	{ "sign", FlagLogic },
 
-	{ "fmove", UInstFlagFp },
-	{ "fsign", UInstFlagFp },
-	{ "fround", UInstFlagFp },
+	{ "fmove", FlagFp },
+	{ "fsign", FlagFp },
+	{ "fround", FlagFp },
 
-	{ "fadd", UInstFlagFp },
-	{ "fsub", UInstFlagFp },
-	{ "fcomp", UInstFlagFp },
-	{ "fmult", UInstFlagFp },
-	{ "fdiv", UInstFlagFp },
+	{ "fadd", FlagFp },
+	{ "fsub", FlagFp },
+	{ "fcomp", FlagFp },
+	{ "fmult", FlagFp },
+	{ "fdiv", FlagFp },
 
-	{ "fexp", UInstFlagFp },
-	{ "flog", UInstFlagFp },
-	{ "fsin", UInstFlagFp },
-	{ "fcos", UInstFlagFp },
-	{ "fsincos", UInstFlagFp },
-	{ "ftan", UInstFlagFp },
-	{ "fatan", UInstFlagFp },
-	{ "fsqrt", UInstFlagFp },
+	{ "fexp", FlagFp },
+	{ "flog", FlagFp },
+	{ "fsin", FlagFp },
+	{ "fcos", FlagFp },
+	{ "fsincos", FlagFp },
+	{ "ftan", FlagFp },
+	{ "fatan", FlagFp },
+	{ "fsqrt", FlagFp },
 
-	{ "fpush", UInstFlagFp },
-	{ "fpop", UInstFlagFp },
+	{ "fpush", FlagFp },
+	{ "fpop", FlagFp },
 
-	{ "x-and", UInstFlagXmm },
-	{ "x-or", UInstFlagXmm },
-	{ "x-xor", UInstFlagXmm },
-	{ "x-not", UInstFlagXmm },
-	{ "x-nand", UInstFlagXmm },
-	{ "x-shift", UInstFlagXmm },
-	{ "x-sign", UInstFlagXmm },
+	{ "x-and", FlagXmm },
+	{ "x-or", FlagXmm },
+	{ "x-xor", FlagXmm },
+	{ "x-not", FlagXmm },
+	{ "x-nand", FlagXmm },
+	{ "x-shift", FlagXmm },
+	{ "x-sign", FlagXmm },
 
-	{ "x-add", UInstFlagXmm },
-	{ "x-sub", UInstFlagXmm },
-	{ "x-comp", UInstFlagXmm },
-	{ "x-mult", UInstFlagXmm },
-	{ "x-div", UInstFlagXmm },
+	{ "x-add", FlagXmm },
+	{ "x-sub", FlagXmm },
+	{ "x-comp", FlagXmm },
+	{ "x-mult", FlagXmm },
+	{ "x-div", FlagXmm },
 
-	{ "x-fadd", UInstFlagXmm },
-	{ "x-fsub", UInstFlagXmm },
-	{ "x-fcomp", UInstFlagXmm },
-	{ "x-fmult", UInstFlagXmm },
-	{ "x-fdiv", UInstFlagXmm },
+	{ "x-fadd", FlagXmm },
+	{ "x-fsub", FlagXmm },
+	{ "x-fcomp", FlagXmm },
+	{ "x-fmult", FlagXmm },
+	{ "x-fdiv", FlagXmm },
 
-	{ "x-fsqrt", UInstFlagXmm },
+	{ "x-fsqrt", FlagXmm },
 
-	{ "x-move", UInstFlagXmm },
-	{ "x-shuf", UInstFlagXmm },
-	{ "x-conv", UInstFlagXmm },
+	{ "x-move", FlagXmm },
+	{ "x-shuf", FlagXmm },
+	{ "x-conv", FlagXmm },
 
-	{ "load", UInstFlagMem },
-	{ "store", UInstFlagMem },
-	{ "prefetch", UInstFlagMem },
+	{ "load", FlagMem },
+	{ "store", FlagMem },
+	{ "prefetch", FlagMem },
 
-	{ "call", UInstFlagCtrl | UInstFlagUncond },
-	{ "ret", UInstFlagCtrl | UInstFlagUncond },
-	{ "jump", UInstFlagCtrl | UInstFlagUncond },
-	{ "branch", UInstFlagCtrl | UInstFlagCond },
-	{ "ibranch", UInstFlagCtrl | UInstFlagCond },
+	{ "call", FlagCtrl | FlagUncond },
+	{ "ret", FlagCtrl | FlagUncond },
+	{ "jump", FlagCtrl | FlagUncond },
+	{ "branch", FlagCtrl | FlagCond },
+	{ "ibranch", FlagCtrl | FlagCond },
 
 	{ "syscall", 0 }
 };
-
-
-Uinst::Uinst(Uinst::Opcode opcode)
-{
-	// Pointers
-	idep = dep;
-	odep = dep + MaxIDeps;
-
-	// Initialize
-	this->opcode = opcode;
-	size = 0;
-	address = 0;
-
-	// Dependences
-	for (int i = 0; i < MaxDeps; i++)
-		dep[i] = UInstDepNone;
-}
 
 
 bool Uinst::addIDep(UInstDep dep)
@@ -229,6 +212,7 @@ bool Uinst::addIDep(UInstDep dep)
 	idep[index] = dep;
 	return true;
 }
+
 
 bool Uinst::addODep(UInstDep dep)
 {

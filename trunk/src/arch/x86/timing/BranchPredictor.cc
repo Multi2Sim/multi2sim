@@ -150,8 +150,8 @@ BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
 	// provides information about the branch, i.e., target address and whether it
 	// is a call, ret, jump, or conditional branch. Thus, branches other than
 	// conditional ones are always predicted taken.
-	assert(uop.getFlags() & UInstFlagCtrl);
-	if (uop.getFlags() & UInstFlagUncond)
+	assert(uop.getFlags() & Uinst::FlagCtrl);
+	if (uop.getFlags() & Uinst::FlagUncond)
 	{
 		uop.setPrediction(PredictionTaken);
 		return PredictionTaken;
@@ -279,7 +279,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	char *choice_ptr;
 
 	assert(!uop.getSpeculativeMode());
-	assert(uop.getFlags() & UInstFlagCtrl);
+	assert(uop.getFlags() & Uinst::FlagCtrl);
 	taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
 
 	// Stats
@@ -292,7 +292,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	// No update is performed in a perfect branch predictor either.
 	if (kind == KindPerfect)
 		return;
-	if (uop.getFlags() & UInstFlagUncond)
+	if (uop.getFlags() & Uinst::FlagUncond)
 		return;
 
 	// Bimodal predictor was used
@@ -344,7 +344,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	bool hit = false;
 
 	// Assertion
-	assert(uop.getFlags() & UInstFlagCtrl);
+	assert(uop.getFlags() & Uinst::FlagCtrl);
 
 	// Perfect branch predictor
 	if (kind == KindPerfect)
