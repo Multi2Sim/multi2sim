@@ -530,7 +530,7 @@ TEST(TestSystemConfiguration, section_link_wrong_variable)
 			"[Network.test.Node.S1]\n"
 			"Type = EndNode\n"
 			"[Network.test.Node.S2]\n"
-			"Type = EndNode\n"
+			"Type = Switch\n"
 			"[Network.test.Link.S1-S2]\n"
 			"Type = Bidirectional\n"
 			"Source = S1\n"
@@ -841,7 +841,7 @@ TEST(TestSystemConfiguration, section_link_bandwidth)
 			"[Network.test.Node.S1]\n"
 			"Type = EndNode\n"
 			"[Network.test.Node.S2]\n"
-			"Type = EndNode\n"
+			"Type = Switch\n"
 			"[Network.test.Link.S1-S2]\n"
 			"Type = Unidirectional\n"
 			"Source = S1\n"
@@ -878,11 +878,64 @@ TEST(TestSystemConfiguration, section_link_bandwidth)
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
 }
-TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
+
+TEST(TestSystemConfiguration, section_link_between_end_nodes)
 {
-	// cleanup singleton instance
+	// Cleanup singleton instance
 	Cleanup();
 
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = EndNode\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("Network 'test': Link 'S1-S2' cannot connect "
+					"two end-nodes.").c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setting up the configuration file
 	std::string net_config =
 			"[ Network.net0 ]\n"
 			"DefaultInputBufferSize = 4\n"
@@ -960,7 +1013,6 @@ TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
 	EXPECT_TRUE(net0->getConnectionByName("link_n3_s0") != nullptr);
 	EXPECT_TRUE(net0->getConnectionByName("link_s0_n3") != nullptr);
 	EXPECT_TRUE(net0->getNumberConnections() == 8);
-
 }
 
 }
