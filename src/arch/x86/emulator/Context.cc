@@ -745,7 +745,7 @@ void Context::Execute()
 	// Clear existing list of microinstructions, though the architectural
 	// simulator might have cleared it already. A new list will be generated
 	// for the next executed x86 instruction.
-	ClearUinstList();
+	ClearUinsts();
 
 	// Set last, current, and target instruction addresses
 	last_eip = current_eip;
@@ -921,7 +921,7 @@ Context *Context::getZombie(int pid)
 }
 
 
-void Context::ForceEip(unsigned int eip)
+void Context::setEip(unsigned int eip)
 {
 	// Entering specmode
 	if (regs.getEip() != eip && !getState(StateSpecMode))

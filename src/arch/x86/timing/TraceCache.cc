@@ -102,41 +102,41 @@ void TraceCache::RecordUop(Uop &uop)
 	bool taken = false;
 
 	// Only the first micro-instruction of a macro-instruction is inserted.
-	if (uop.getMopIndex())
+	if (uop.mop_index)
 		return;
 
 	// If there is not enough space for macro-instruction, commit trace.
-	assert(!uop.getSpeculativeMode());
-	assert(uop.getEip());
-	assert(uop.getId() == uop.getMopId());
-	if (temp->uop_count + uop.getMopCount() > trace_size)
+	assert(!uop.speculative_mode);
+	assert(uop.eip);
+	assert(uop.getId() == uop.mop_id);
+	if (temp->uop_count + uop.mop_count > trace_size)
 		Flush();
 
 	// If even after flushing the current trace, the number of micro-instructions
 	// does not fit in a trace line, this macro-instruction cannot be stored.
-	if (uop.getMopCount() > trace_size)
+	if (uop.mop_count > trace_size)
 		return;
 
 	// First instruction. Store trace tag.
 	if (!temp->uop_count)
-		temp->tag = uop.getEip();
+		temp->tag = uop.eip;
 
 	// Add eip to list
-	temp->mop_array[temp->mop_count] = uop.getEip();
+	temp->mop_array[temp->mop_count] = uop.eip;
 	temp->mop_count++;
-	temp->uop_count += uop.getMopCount();
+	temp->uop_count += uop.mop_count;
 	temp->is_last_instruction_branch = false;
-	temp->fall_through = uop.getEip() + uop.getMopSize();
+	temp->fall_through = uop.eip + uop.mop_size;
 
 	// Instruction is branch. If maximum number of branches is reached,
 	// commit trace.
 	if (uop.getFlags() & Uinst::FlagCtrl)
 	{
-		taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
+		taken = uop.neip != uop.eip + uop.mop_size;
 		temp->branch_mask |= 1 << temp->branch_count;
 		temp->branch_flags |= taken << temp->branch_count;
 		temp->branch_count++;
-		temp->target = uop.getTargetNeip();
+		temp->target = uop.target_neip;
 		temp->is_last_instruction_branch = true;
 		if (temp->branch_count == branch_max)
 			Flush();

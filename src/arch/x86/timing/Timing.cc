@@ -26,8 +26,9 @@
 namespace x86
 {
 
-// Singleton instance
 std::unique_ptr<Timing> Timing::instance;
+
+esim::Trace Timing::trace;
 
 
 
