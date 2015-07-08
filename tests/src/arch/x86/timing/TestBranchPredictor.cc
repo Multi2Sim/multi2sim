@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Shi Dong (dong.sh@husky.neu.edu)
+ *  Copyright (C) 2015  Shi Dong (dong.sh@husky.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,9 +22,10 @@
 #include <vector>
 
 #include <lib/cpp/IniFile.h>
-#include <arch/x86/emulator/UInst.h>
+#include <arch/x86/emulator/Uinst.h>
 #include <arch/x86/timing/BranchPredictor.h>
 #include <arch/x86/timing/Uop.h>
+
 
 namespace x86
 {
@@ -91,9 +92,9 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// First micro-operation (Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	Uinst uinst_1(UInstBranch);
+	Uinst uinst_1(Uinst::OpcodeBranch);
 	uop->setUInst(&uinst_1);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 	uop->setEip(branch_addr);
 	uop->setNeip(branch_addr + branch_target_distance);
 	uop->setMopSize(branch_inst_size);
@@ -101,9 +102,9 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Second micro-operation (Not Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	Uinst uinst_2(UInstBranch);
+	Uinst uinst_2(Uinst::OpcodeBranch);
 	uop->setUInst(&uinst_2);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 	uop->setEip(branch_addr);
 	uop->setNeip(branch_addr + branch_inst_size);
 	uop->setMopSize(branch_inst_size);
@@ -111,9 +112,9 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Third micro-operation (Not Taken)
 	mock_uop_list.emplace_back(misc::new_unique<Uop>());
 	uop = mock_uop_list.back().get();
-	Uinst uinst_3(UInstBranch);
+	Uinst uinst_3(Uinst::OpcodeBranch);
 	uop->setUInst(&uinst_3);
-	uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+	uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 	uop->setEip(branch_addr);
 	uop->setNeip(branch_addr + branch_inst_size);
 	uop->setMopSize(branch_inst_size);
@@ -149,7 +150,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		// Look up predictor and verify prediction
-		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
+		branch_predictor.Lookup(mock_uop_list[i].get());
 		pred = mock_uop_list[i]->getPrediction();
 		EXPECT_EQ(pred_result[i], pred);
 
@@ -157,7 +158,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 		EXPECT_EQ(bimod_index[i], mock_uop_list[i]->getBimodIndex());
 
 		// Update predictor and verify the bimodal status
-		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
+		branch_predictor.Update(mock_uop_list[i].get());
 		bimod_status = branch_predictor.getBimodStatus(mock_uop_list[i]->getBimodIndex());
 		EXPECT_EQ(bimod_status_trace[i], (int)bimod_status);
 	}
@@ -199,7 +200,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> mock_uop_list;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	Uinst uinst(UInstBranch);
+	Uinst uinst(Uinst::OpcodeBranch);
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)
@@ -209,7 +210,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_target_distance);
 		uop->setMopSize(branch_inst_size);
@@ -219,7 +220,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_inst_size);
 		uop->setMopSize(branch_inst_size);
@@ -229,7 +230,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_inst_size);
 		uop->setMopSize(branch_inst_size);
@@ -314,7 +315,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		// Look up predictor and verify prediction
-		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
+		branch_predictor.Lookup(mock_uop_list[i].get());
 		pred = mock_uop_list[i]->getPrediction();
 		EXPECT_EQ(pred_result[i], pred);
 
@@ -324,7 +325,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		EXPECT_EQ(pht_col[i], mock_uop_list[i]->getTwolevelPHTCol());
 
 		// Update predictor and verify the two-level branch predictor status
-		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
+		branch_predictor.Update(mock_uop_list[i].get());
 		bht_status = branch_predictor.getTwolevelBHTStatus(mock_uop_list[i]->getTwolevelBHTIndex());
 		pht_status = branch_predictor.getTwolevelPHTStatus(mock_uop_list[i]->getTwolevelPHTRow(),
 				mock_uop_list[i]->getTwolevelPHTCol());
@@ -375,7 +376,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> mock_uop_list;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	Uinst uinst(UInstBranch);
+	Uinst uinst(Uinst::OpcodeBranch);
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)
@@ -385,7 +386,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_target_distance);
 		uop->setMopSize(branch_inst_size);
@@ -395,7 +396,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_inst_size);
 		uop->setMopSize(branch_inst_size);
@@ -405,7 +406,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		mock_uop_list.emplace_back(misc::new_unique<Uop>());
 		uop = mock_uop_list.back().get();
 		uop->setUInst(&uinst);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(branch_addr);
 		uop->setNeip(branch_addr + branch_inst_size);
 		uop->setMopSize(branch_inst_size);
@@ -545,7 +546,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	for (unsigned int i = 0; i < mock_uop_list.size(); i++)
 	{
 		// Look up predictor and verify prediction
-		branch_predictor.LookupBranchPrediction(*(mock_uop_list[i]));
+		branch_predictor.Lookup(mock_uop_list[i].get());
 		twolevel_pred = mock_uop_list[i]->getTwolevelPrediction();
 		bimodal_pred = mock_uop_list[i]->getBimodPrediction();
 		pred = mock_uop_list[i]->getPrediction();
@@ -554,7 +555,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		EXPECT_EQ(choice_pred_result[i], pred);
 
 		// Update predictor and verify the two-level branch predictor status
-		branch_predictor.UpdateBranchPredictor(*(mock_uop_list[i]));
+		branch_predictor.Update(mock_uop_list[i].get());
 		bht_status = branch_predictor.getTwolevelBHTStatus(mock_uop_list[i]->getTwolevelBHTIndex());
 		pht_status = branch_predictor.getTwolevelPHTStatus(mock_uop_list[i]->getTwolevelPHTRow(),
 				mock_uop_list[i]->getTwolevelPHTCol());

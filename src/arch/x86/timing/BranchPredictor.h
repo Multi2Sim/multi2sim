@@ -62,14 +62,57 @@ public:
 
 private:
 
+	//
+	// Static fields
+	//
+
+	// Branch predictor kind
+	static Kind kind;
+
+	// Number of sets in the BTB
+	static int btb_sets;
+
+	// Associativity of the BTB
+	static int btb_assoc;
+
+	// Size of the return address stack
+	static int ras_size;
+
+	// Size of the bimodal predictor
+	static int bimod_size;
+
+	// Size of the choice predictor
+	static int choice_size;
+
+	// Size of the level 1 table of the two-level predictor
+	static int twolevel_l1size;
+
+	// Size of the level 2 table of the two-level predictor
+	static int twolevel_l2size;
+
+	// Prediction history size
+	static int twolevel_history_size;
+
+	// Height of the level 2 table of the two-level predictor
+	static int twolevel_l2height;
+
+
+
+
+	//
+	// Class members
+	//
+
 	// The defined name
 	std::string name;
 
 	// Return address stack
 	std::unique_ptr<int[]> ras;
+
+	// Top of the return address stack
 	int ras_index = 0;
 
-	// BTB Entry (Branch Target Buffer)
+	// Branch Target Buffer entry
 	struct BTBEntry
 	{
 		unsigned int source;  // eip
@@ -77,8 +120,7 @@ private:
 		int counter;  // LRU counter
 	};
 
-	// BTB - array of btb_sets*btb_assoc entries of
-	// type BTBEntry.
+	// BTB - array of btb_sets * btb_assoc entries of type BTBEntry.
 	std::unique_ptr<BTBEntry[]> btb;
 
 	// bimod - array of bimodal counters indexed by PC
@@ -100,19 +142,11 @@ private:
 	long long accesses = 0;
 	long long hits = 0;
 
-	// Branch predictor parameters
-	static Kind kind;
-	static int btb_sets;
-	static int btb_assoc;
-	static int ras_size;
-	static int bimod_size;
-	static int choice_size;
-	static int twolevel_l1size;
-	static int twolevel_l2size;
-	static int twolevel_history_size;
-	static int twolevel_l2height;
-
 public:
+
+	//
+	// Class Error
+	//
 
 	/// Exception for X86 branch predictor
 	class Error : public misc::Error
@@ -125,6 +159,39 @@ public:
 		}
 	};
 
+
+
+	//
+	// Static functions
+	//
+
+	static Kind getKind() { return kind; }
+
+	static int getBTBSets() { return btb_sets; }
+
+	static int getBTBAssociativity() { return btb_assoc; }
+
+	static int getRasSize() { return ras_size; }
+
+	static int getBimodSize() { return bimod_size; }
+
+	static int getChoiceSize() { return choice_size; }
+
+	static int getTwolevelL1size() { return twolevel_l1size; }
+
+	static int getTwolevelL2size() { return twolevel_l2size; }
+
+	static int getTwolevelHistorySize() { return twolevel_history_size; }
+
+	static int getTwolevelL2hight() { return twolevel_l2height; }
+
+
+
+
+	//
+	// Class members
+	//
+
 	/// Constructor
 	BranchPredictor(const std::string &name = "");
 
@@ -134,25 +201,15 @@ public:
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
 
-	/// Configuration getters
-	static Kind getKind() { return kind; }
-	static int getBTBSets() { return btb_sets; }
-	static int getBTBAssociativity() { return btb_assoc; }
-	static int getRasSize() { return ras_size; }
-	static int getBimodSize() { return bimod_size; }
-	static int getChoiceSize() { return choice_size; }
-	static int getTwolevelL1size() { return twolevel_l1size; }
-	static int getTwolevelL2size() { return twolevel_l2size; }
-	static int getTwolevelHistorySize() { return twolevel_history_size; }
-	static int getTwolevelL2hight() { return twolevel_l2height; }
-
-	/// Getters
 	char getBimodStatus(int index) const { return bimod[index]; }
+
 	int getTwolevelBHTStatus(int index) const { return twolevel_bht[index]; }
+
 	char getTwolevelPHTStatus(int row, int col) const
 	{
 		return twolevel_pht[row * twolevel_l2size + col];
 	}
+
 	int getChoiceStatus(int index) const { return choice[index]; }
 
 	/// Return prediction for an address (0=not taken, 1=taken)
@@ -162,7 +219,8 @@ public:
 	///
 	/// \return
 	/// 	Global prediction result
-	Prediction LookupBranchPrediction(Uop &uop);
+	///
+	Prediction Lookup(Uop *uop);
 
 	/// Return multiple predictions for an address. This can only be done for two-level
 	/// adaptive predictors, since they use global history. The prediction of the
@@ -177,7 +235,8 @@ public:
 	///
 	/// \return
 	/// 	Global prediction result
-	int LookupBranchPredictionMultiple(unsigned int eip, int count);
+	///
+	int LookupMultiple(unsigned int eip, int count);
 
 	/// Update the parameter inside branch predictor
 	///
@@ -186,7 +245,8 @@ public:
 	///
 	/// \return
 	/// 	No value is returned
-	void UpdateBranchPredictor(Uop &uop);
+	///
+	void Update(Uop *uop);
 
 	/// Lookup BTB. If it contains the uop address, return target. The BTB
 	/// also contains information about the type of branch, i.e., jump,
@@ -199,7 +259,7 @@ public:
 	/// \return
 	/// 	Target address
 	///
-	unsigned int LookupBTB(Uop &uop);
+	unsigned int LookupBTB(Uop *uop);
 
 	/// Update the BTB
 	///
@@ -208,12 +268,13 @@ public:
 	///
 	/// \return
 	/// 	No value is returned
-	void UpdateBTB(Uop &uop);
+	void UpdateBTB(Uop *uop);
 
 	/// Find address of next branch after eip within current block.
-	/// This is useful for accessing the trace
-	/// cache. At that point, the uop is not ready to call \c LookupBTB(), since
-	/// functional simulation has not happened yet.
+	/// This is useful for accessing the trace cache. At that point, the
+	/// uop is not ready to call \c LookupBTB(), since functional simulation
+	/// has not happened yet.
+	///
 	/// \param eip
 	/// 	The instruction address
 	///
@@ -222,7 +283,8 @@ public:
 	///
 	/// \return
 	/// 	Next branch address
-	unsigned int GetNextBranch(unsigned int eip, unsigned int block_size);
+	///
+	unsigned int getNextBranch(unsigned int eip, unsigned int block_size);
 };
 
 }
