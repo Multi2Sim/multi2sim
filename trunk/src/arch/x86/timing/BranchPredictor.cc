@@ -141,7 +141,7 @@ void BranchPredictor::DumpConfiguration(std::ostream &os)
 }
 
 
-BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
+BranchPredictor::Prediction BranchPredictor::Lookup(Uop *uop)
 {
 	// Local variable
 	Prediction pred;
@@ -150,88 +150,88 @@ BranchPredictor::Prediction BranchPredictor::LookupBranchPrediction(Uop &uop)
 	// provides information about the branch, i.e., target address and whether it
 	// is a call, ret, jump, or conditional branch. Thus, branches other than
 	// conditional ones are always predicted taken.
-	assert(uop.getFlags() & Uinst::FlagCtrl);
-	if (uop.getFlags() & Uinst::FlagUncond)
+	assert(uop->getFlags() & Uinst::FlagCtrl);
+	if (uop->getFlags() & Uinst::FlagUncond)
 	{
-		uop.setPrediction(PredictionTaken);
+		uop->setPrediction(PredictionTaken);
 		return PredictionTaken;
 	}
 
 	// An internal branch (string operations) is always predicted taken
-	if (uop.getUinst()->getOpcode() == Uinst::OpcodeIbranch)
+	if (uop->getUinst()->getOpcode() == Uinst::OpcodeIbranch)
 	{
-		uop.setPrediction(PredictionTaken);
+		uop->setPrediction(PredictionTaken);
 		return PredictionTaken;
 	}
 
 	// Perfect predictor
 	if (kind == KindPerfect)
 	{
-		if (uop.getNeip() != uop.getEip() + uop.getMopSize())
+		if (uop->getNeip() != uop->getEip() + uop->getMopSize())
 			pred = PredictionTaken;
 		else
 			pred = PredictionNotTaken;
-		uop.setPrediction(pred);
+		uop->setPrediction(pred);
 	}
 
 	// Taken predictor
 	if (kind == KindTaken)
 	{
-		uop.setPrediction(PredictionTaken);
+		uop->setPrediction(PredictionTaken);
 	}
 
 	// Not-taken predictor
 	if (kind == KindNottaken)
 	{
-		uop.setPrediction(PredictionNotTaken);
+		uop->setPrediction(PredictionNotTaken);
 	}
 
 	// Bimodal predictor
 	if (kind == KindBimod || kind == KindCombined)
 	{
-		int bimod_index = uop.getEip() & (bimod_size - 1);
+		int bimod_index = uop->getEip() & (bimod_size - 1);
 		Prediction bimod_pred = bimod[bimod_index] > 1 ?
 				PredictionTaken : PredictionNotTaken;
-		uop.setBimodIndex(bimod_index);
-		uop.setBimodPrediction(bimod_pred);
-		uop.setPrediction(bimod_pred);
+		uop->setBimodIndex(bimod_index);
+		uop->setBimodPrediction(bimod_pred);
+		uop->setPrediction(bimod_pred);
 	}
 
 	// Two-level adaptive
 	if (kind == KindTwolevel || kind == KindCombined)
 	{
-		int twolevel_bht_index = uop.getEip() & (twolevel_l1size - 1);
+		int twolevel_bht_index = uop->getEip() & (twolevel_l1size - 1);
 		int twolevel_pht_row = twolevel_bht[twolevel_bht_index];
 		assert(twolevel_pht_row < twolevel_l2height);
-		int twolevel_pht_col = uop.getEip() & (twolevel_l2size - 1);
+		int twolevel_pht_col = uop->getEip() & (twolevel_l2size - 1);
 		Prediction twolevel_pred = twolevel_pht[twolevel_pht_row * twolevel_l2size + twolevel_pht_col] > 1 ?
 				PredictionTaken : PredictionNotTaken;
-		uop.setTwolevelBHTIndex(twolevel_bht_index);
-		uop.setTwolevelPHTRow(twolevel_pht_row);
-		uop.setTwolevelPHTCol(twolevel_pht_col);
-		uop.setTwolevelPrediction(twolevel_pred);
-		uop.setPrediction(twolevel_pred);
+		uop->setTwolevelBHTIndex(twolevel_bht_index);
+		uop->setTwolevelPHTRow(twolevel_pht_row);
+		uop->setTwolevelPHTCol(twolevel_pht_col);
+		uop->setTwolevelPrediction(twolevel_pred);
+		uop->setPrediction(twolevel_pred);
 	}
 
 	// Combined
 	if (kind == KindCombined)
 	{
-		int choice_index = uop.getEip() & (choice_size - 1);
+		int choice_index = uop->getEip() & (choice_size - 1);
 		Prediction choice_pred = choice[choice_index] > 1 ?
-				uop.getTwolevelPrediction() : uop.getBimodPrediction();
-		uop.setChoiceIndex(choice_index);
-		uop.setChoicePrediction(choice_pred);
-		uop.setPrediction(choice_pred);
+				uop->getTwolevelPrediction() : uop->getBimodPrediction();
+		uop->setChoiceIndex(choice_index);
+		uop->setChoicePrediction(choice_pred);
+		uop->setPrediction(choice_pred);
 	}
 
 	// Return prediction
-	assert(uop.getPrediction() == PredictionTaken ||
-			uop.getPrediction() == PredictionNotTaken);
-	return uop.getPrediction();
+	assert(uop->getPrediction() == PredictionTaken ||
+			uop->getPrediction() == PredictionNotTaken);
+	return uop->getPrediction();
 }
 
 
-int BranchPredictor::LookupBranchPredictionMultiple(unsigned int eip, int count)
+int BranchPredictor::LookupMultiple(unsigned int eip, int count)
 {
 	// Local variable declaration
 	int pred, temp_pred;
@@ -261,7 +261,7 @@ int BranchPredictor::LookupBranchPredictionMultiple(unsigned int eip, int count)
 }
 
 
-void BranchPredictor::UpdateBranchPredictor(Uop &uop)
+void BranchPredictor::Update(Uop *uop)
 {
 	// Taken/NotTaken flag
 	bool taken;
@@ -278,13 +278,13 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	// pointer to combined branch prediction table
 	char *choice_ptr;
 
-	assert(!uop.getSpeculativeMode());
-	assert(uop.getFlags() & Uinst::FlagCtrl);
-	taken = uop.getNeip() != uop.getEip() + uop.getMopSize();
+	assert(!uop->getSpeculativeMode());
+	assert(uop->getFlags() & Uinst::FlagCtrl);
+	taken = uop->getNeip() != uop->getEip() + uop->getMopSize();
 
 	// Stats
 	accesses++;
-	if (uop.neip == uop.predicted_neip)
+	if (uop->neip == uop->predicted_neip)
 		hits++;
 
 	// Update predictors. This is only done for conditional branches. Thus,
@@ -292,14 +292,14 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 	// No update is performed in a perfect branch predictor either.
 	if (kind == KindPerfect)
 		return;
-	if (uop.getFlags() & Uinst::FlagUncond)
+	if (uop->getFlags() & Uinst::FlagUncond)
 		return;
 
 	// Bimodal predictor was used
 	if (kind == KindBimod ||
-			(kind == KindCombined && uop.getChoicePrediction() == PredictionNotTaken))
+			(kind == KindCombined && uop->getChoicePrediction() == PredictionNotTaken))
 	{
-		bimod_ptr = &bimod[uop.getBimodIndex()];
+		bimod_ptr = &bimod[uop->getBimodIndex()];
 		if (taken)
 			*bimod_ptr = *bimod_ptr + 1 > 3 ? 3 : *bimod_ptr + 1;
 		else
@@ -308,15 +308,15 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	// Two-level adaptive predictor was used
 	if (kind == KindTwolevel ||
-			(kind == KindCombined && uop.getChoicePrediction() == PredictionTaken))
+			(kind == KindCombined && uop->getChoicePrediction() == PredictionTaken))
 	{
 		// Shift entry in BHT (level 1), and append direction
-		bht_ptr = &twolevel_bht[uop.getTwolevelBHTIndex()];
+		bht_ptr = &twolevel_bht[uop->getTwolevelBHTIndex()];
 		*bht_ptr = ((*bht_ptr << 1) | taken) & (twolevel_l2height - 1);
 
 		// Update counter in PHT (level 2) as per direction
-		pht_ptr = &twolevel_pht[uop.getTwolevelPHTRow() *
-		                            twolevel_l2size + uop.getTwolevelPHTCol()];
+		pht_ptr = &twolevel_pht[uop->getTwolevelPHTRow() *
+		                            twolevel_l2size + uop->getTwolevelPHTCol()];
 		if (taken)
 			*pht_ptr = *pht_ptr + 1 > 3 ? 3 : *pht_ptr + 1;
 		else
@@ -325,10 +325,10 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 
 	// Choice predictor - update only if bimodal and two-level
 	// predictions differ.
-	if (kind == KindCombined && uop.getBimodPrediction() != uop.getTwolevelPrediction())
+	if (kind == KindCombined && uop->getBimodPrediction() != uop->getTwolevelPrediction())
 	{
-		choice_ptr = &choice[uop.getChoiceIndex()];
-		if (uop.getBimodPrediction() == PredictionTaken)
+		choice_ptr = &choice[uop->getChoiceIndex()];
+		if (uop->getBimodPrediction() == PredictionTaken)
 			*choice_ptr = *choice_ptr - 1 < 0 ? 0 : *choice_ptr - 1;
 		else
 			*choice_ptr = *choice_ptr + 1 > 3 ? 3 : *choice_ptr + 1;
@@ -336,7 +336,7 @@ void BranchPredictor::UpdateBranchPredictor(Uop &uop)
 }
 
 
-unsigned int BranchPredictor::LookupBTB(Uop &uop)
+unsigned int BranchPredictor::LookupBTB(Uop *uop)
 {
 	// Local variable
 	BTBEntry *entry;
@@ -344,22 +344,22 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	bool hit = false;
 
 	// Assertion
-	assert(uop.getFlags() & Uinst::FlagCtrl);
+	assert(uop->getFlags() & Uinst::FlagCtrl);
 
 	// Perfect branch predictor
 	if (kind == KindPerfect)
-		return uop.getNeip();
+		return uop->getNeip();
 
 	// Internal branch (string operations) always predicted to jump to itself
-	if (uop.getUinst()->getOpcode() == Uinst::OpcodeIbranch)
-		return uop.getEip();
+	if (uop->getUinst()->getOpcode() == Uinst::OpcodeIbranch)
+		return uop->getEip();
 
 	// Search address in BTB
-	int set = uop.getEip() & (btb_sets - 1);
+	int set = uop->getEip() & (btb_sets - 1);
 	for (int way = 0; way < btb_assoc; way++)
 	{
 		entry = &btb[set * btb_assoc + way];
-		if (entry->source != uop.getEip())
+		if (entry->source != uop->getEip())
 			continue;
 		target = entry->target;
 		hit = true;
@@ -369,17 +369,17 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 	// If there was a hit, we know whether branch is a call.
 	// In this case, push return address into RAS. To avoid
 	// updates at recovery, do it only for non-spec instructions.
-	if (hit && uop.getUinst()->getOpcode() == Uinst::OpcodeCall
-			&& !uop.getSpeculativeMode())
+	if (hit && uop->getUinst()->getOpcode() == Uinst::OpcodeCall
+			&& !uop->getSpeculativeMode())
 	{
-		ras[ras_index] = uop.getEip() + uop.getMopSize();
+		ras[ras_index] = uop->getEip() + uop->getMopSize();
 		ras_index = (ras_index + 1) % ras_size;
 	}
 
 	// If there was a hit, we know whether branch is a ret. In this case,
 	// pop target from the RAS, and ignore target obtained from BTB.
-	if (hit && uop.getUinst()->getOpcode() == Uinst::OpcodeRet
-			&& !uop.getSpeculativeMode())
+	if (hit && uop->getUinst()->getOpcode() == Uinst::OpcodeRet
+			&& !uop->getSpeculativeMode())
 	{
 		ras_index = (ras_index + ras_size - 1) % ras_size;
 		target = ras[ras_index];
@@ -390,7 +390,7 @@ unsigned int BranchPredictor::LookupBTB(Uop &uop)
 }
 
 
-void BranchPredictor::UpdateBTB(Uop &uop)
+void BranchPredictor::UpdateBTB(Uop *uop)
 {
 	// Local variable
 	BTBEntry *entry;
@@ -402,11 +402,11 @@ void BranchPredictor::UpdateBTB(Uop &uop)
 		return;
 
 	// Search address in BTB
-	int set = uop.getEip() & (btb_sets - 1);
+	int set = uop->getEip() & (btb_sets - 1);
 	for (int way = 0; way < btb_assoc; way++)
 	{
 		entry = &btb[set * btb_assoc + way];
-		if (entry->source == uop.getEip())
+		if (entry->source == uop->getEip())
 		{
 			found = true;
 			found_entry = entry;
@@ -423,8 +423,8 @@ void BranchPredictor::UpdateBTB(Uop &uop)
 			entry->counter--;
 			if (entry->counter < 0) {
 				entry->counter = btb_assoc - 1;
-				entry->source = uop.getEip();
-				entry->target = uop.getNeip();
+				entry->source = uop->getEip();
+				entry->target = uop->getNeip();
 			}
 		}
 	}
@@ -439,12 +439,12 @@ void BranchPredictor::UpdateBTB(Uop &uop)
 				entry->counter--;
 		}
 		found_entry->counter = btb_assoc - 1;
-		found_entry->target = uop.getNeip();
+		found_entry->target = uop->getNeip();
 	}
 }
 
 
-unsigned int BranchPredictor::GetNextBranch(unsigned int eip, unsigned int block_size)
+unsigned int BranchPredictor::getNextBranch(unsigned int eip, unsigned int block_size)
 {
 	// Local variable
 	BTBEntry *entry;

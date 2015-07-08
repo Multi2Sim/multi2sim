@@ -34,10 +34,10 @@ enum UopInstanceType
 };
 
 // Set up a static branch instruction
-static Uinst uinst_branch(UInstBranch);
+static Uinst uinst_branch(Uinst::OpcodeBranch);
 
 // Set up a static move instruction
-static Uinst uinst_move(UInstMove);
+static Uinst uinst_move(Uinst::OpcodeMove);
 
 static std::vector<std::unique_ptr<Uop>> uop_list;
 
@@ -55,7 +55,7 @@ void ParseUopInstance(UopInstanceType instance_type, int address,
 		uop_list.push_back(misc::new_unique<Uop>());
 		uop = uop_list.back().get();
 		uop->setUInst(&uinst_branch);
-		uop->setFlags(UInstFlagCtrl | UInstFlagCond);
+		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
 		uop->setEip(address);
 		if (taken)
 			uop->setNeip(address + target_distance);
@@ -69,7 +69,7 @@ void ParseUopInstance(UopInstanceType instance_type, int address,
 		uop_list.push_back(misc::new_unique<Uop>());
 		uop = uop_list.back().get();
 		uop->setUInst(&uinst_move);
-		uop->setFlags(UInstFlagInt);
+		uop->setFlags(Uinst::FlagInt);
 		uop->setEip(address);
 		uop->setMopSize(instruction_size);
 		break;
@@ -101,12 +101,12 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	TraceCache::ParseConfiguration(&ini_file);
 
 	// Assertions
-	EXPECT_EQ(true, TraceCache::getPresent());
+	EXPECT_EQ(true, TraceCache::isPresent());
 	EXPECT_EQ(128, TraceCache::getNumSets());
-	EXPECT_EQ(8, TraceCache::getAssoc());
+	EXPECT_EQ(8, TraceCache::getNumWays());
 	EXPECT_EQ(32, TraceCache::getTraceSize());
 	EXPECT_EQ(5, TraceCache::getMaxNumBranch());
-	EXPECT_EQ(64, TraceCache::getQueuesize());
+	EXPECT_EQ(64, TraceCache::getQueueSize());
 }
 
 TEST(TestTraceCache, test_multiple_branch_predictor)

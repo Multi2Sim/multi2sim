@@ -8,20 +8,17 @@ AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
 	     $(GTEST_LIBS) $(GTEST_LDFLAGS) -pthread
 
 
-TESTS = 
-TESTS += \
+TESTS = \
+	src_arch_x86_timing_test \
 	src_lib_esim_test \
-	\
-	src_network_test \
-	\
-	src_memory_test
+	src_memory_test \
+	src_network_test
 
 check_PROGRAMS = \
+	src_arch_x86_timing_test \
 	src_lib_esim_test \
-	\
-	src_network_test \
-	\
-	src_memory_test
+	src_memory_test \
+	src_network_test
 
 
 
