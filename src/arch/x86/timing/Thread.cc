@@ -164,11 +164,11 @@ void Thread::Fetch()
 		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			// Look up BTB
-			unsigned target = branch_predictor->LookupBTB(*uop);
+			unsigned target = branch_predictor->LookupBTB(uop);
 
 			// Look up branch predictor
-			BranchPredictor::Prediction prediction = branch_predictor
-					->LookupBranchPrediction(*uop);
+			BranchPredictor::Prediction prediction =
+					branch_predictor->Lookup(uop);
 			bool taken = prediction == BranchPredictor::PredictionTaken
 					&& target;
 
