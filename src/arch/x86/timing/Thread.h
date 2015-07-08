@@ -131,6 +131,9 @@ private:
 	// Current occupancy of the fetch queue in bytes
 	int fetch_queue_occupancy = 0;
 
+	// Current occupancy of the trace cache queue in bytes
+	int trace_cache_queue_occupancy = 0;
+
 	// Current instruction pointer
 	unsigned int fetch_eip = 0;
 	
@@ -167,7 +170,7 @@ private:
 	//
 
 	// Number of fectched micro-instructions
-	long long num_fetched_uinst = 0;
+	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
 	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
@@ -355,9 +358,6 @@ public:
 
 	/// Get cycle until which fetch is stalled
 	long long getFetchStallUntil() { return fetch_stall_until; }
-
-	/// Get number of fetched micro-instructions
-	long long getNumFetchedUinst() { return num_fetched_uinst; }
 
 	/// Check whether the pipeline is empty
 	bool IsPipelineEmpty();

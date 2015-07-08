@@ -377,6 +377,13 @@ public:
 	/// Modify the micro-instruction opcode
 	void setOpcode(Opcode opcode) { this->opcode = opcode; }
 
+	/// Return the flags associated with the micro-instruction. Each opcode
+	/// has a fixed set of associated flags.
+	int getFlags() const { return info[opcode].flags; }
+
+	/// Return the micor-instruction name. Each opcode has a fixed name.
+	const std::string &getName() const { return info[opcode].name; }
+
 	/// Return a dependence at position \a index, which must be a value
 	/// between 0 and MaxDeps.
 	Dep getDep(int index) const

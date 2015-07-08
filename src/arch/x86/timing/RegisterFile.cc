@@ -219,20 +219,20 @@ bool RegisterFile::CanRename(Uop &uop)
 	//// assert(uop->thread == self);
 	if (kind == KindPrivate)
 	{
-		if (thread->getNumIntegerRegistersOccupied() + uop.getPhyRegIntOdepCount() > int_local_size)
+		if (thread->getNumIntegerRegistersOccupied() + uop.getPhyIntOdepCount() > int_local_size)
 			return false;
-		if (thread->getNumFloatPointRegistersOccupied() + uop.getPhyRegFpOdepCount() > fp_local_size)
+		if (thread->getNumFloatPointRegistersOccupied() + uop.getPhyFpOdepCount() > fp_local_size)
 			return false;
-		if (thread->getNumXmmRegistersOccupied() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
+		if (thread->getNumXmmRegistersOccupied() + uop.getPhyXmmOdepCount() > xmm_local_size)
 			return false;
 	}
 	else
 	{
-		if (core->getNumIntegerRegistersOccupied() + uop.getPhyRegIntOdepCount() > int_local_size)
+		if (core->getNumIntegerRegistersOccupied() + uop.getPhyIntOdepCount() > int_local_size)
 			return false;
-		if (core->getNumFloatPointRegistersOccupied() + uop.getPhyRegFpOdepCount() > fp_local_size)
+		if (core->getNumFloatPointRegistersOccupied() + uop.getPhyFpOdepCount() > fp_local_size)
 			return false;
-		if (core->getNumXmmRegistersOccupied() + uop.getPhyRegXmmOdepCount() > xmm_local_size)
+		if (core->getNumXmmRegistersOccupied() + uop.getPhyXmmOdepCount() > xmm_local_size)
 			return false;
 	}
 
@@ -440,7 +440,7 @@ void RegisterFile::UndoUop(Uop &uop)
 	// Undo mappings in reverse order, in case an instruction has a
 	// duplicated output dependence.
 	// assert(uop->thread == self);
-	assert(uop.getSpeculativeMode());
+	assert(uop.speculative_mode);
 	for (int dep = Uinst::MaxODeps - 1; dep >= 0; dep--)
 	{
 		logical_reg = (int)uop.getUinst()->getODep(dep);
@@ -537,7 +537,7 @@ void RegisterFile::CommitUop(Uop &uop)
 {
 	int logical_reg, phy_reg, ophy_reg;
 
-	assert(!uop.getSpeculativeMode());
+	assert(!uop.speculative_mode);
 	// assert(uop->thread == self);
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
