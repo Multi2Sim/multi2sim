@@ -20,6 +20,7 @@
 #ifndef ARCH_X86_EMULATOR_CONTEXT_H
 #define ARCH_X86_EMULATOR_CONTEXT_H
 
+#include <deque>
 #include <memory>
 
 #include <arch/common/CallStack.h>
@@ -325,12 +326,9 @@ private:
 
 
 
-	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions implemented in ContextLoader.cc. These are the functions
-	// related with the program loading process.
+	// Program loading (ContextLoader.cc)
 	//
-	///////////////////////////////////////////////////////////////////////
 
 	/// Structure containing information initialized by the program loader,
 	/// associated with a context. When a context is created from a program
@@ -415,13 +413,12 @@ private:
 	// Load ELF binary, as already decoded in 'loader.binary'
 	void LoadBinary();
 
+
+
 	
-	///////////////////////////////////////////////////////////////////////
 	//
-	// Fields and functions related with signal handling. The functions are
-	// implemented in ContextSignal.cc.
+	// Signal handling (ContextSignal.cc)
 	//
-	///////////////////////////////////////////////////////////////////////
 
 	// Table of signal handlers, possibly shared by multiple contexts
 	std::shared_ptr<SignalHandlerTable> signal_handler_table;
@@ -439,16 +436,13 @@ private:
 	
 	
 	
-	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions related with x86 micro-instructions. These functions are
-	// implemented in file ContextUinst.cc
+	// Micro-instructions (ContextUinst.cc)
 	//
-	///////////////////////////////////////////////////////////////////////
 
-	// True if we are in timing simulation and need to active
+	// True if we are in timing simulation and need to activate
 	// micro-instructions.
-	bool uinst_active;
+	bool uinst_active = false;
 
 	// True if the effective address computation for the current macro-
 	// instruction has already been emitted. This flag is used to avoid
@@ -458,12 +452,12 @@ private:
 
 	// List of micro-instructions produced during the emulation of the last
 	// x86 macro-instruction.
-	std::vector<std::unique_ptr<Uinst>> uinst_list;
+	std::deque<std::shared_ptr<Uinst>> uinsts;
 
 	// Clear the list of micro-instructions
-	void ClearUinstList()
+	void ClearUinsts()
 	{
-		uinst_list.clear();
+		uinsts.clear();
 		uinst_effaddr_emitted = false;
 	}
 
@@ -490,71 +484,12 @@ private:
 	// UinstMaxODeps - 1
 	void ParseUinstODep(Uinst *uinst, int index);
 
-	// Process a newly created micro-instruction. The object must have been
-	// allocated with \c new. This function will insert it into \c
-	// uinst_list, and assign it to a smart pointer for automatic release.
-	void ProcessNewUinst(Uinst *uinst);
-
-	// Add a new memory micro-instruction to the list only if we're running
-	// in timing simulation mode. This function can be invoked directly by
-	// the instruction emulation functions. This function is written inline
-	// to avoid passing the high number of arguments.
-	void newMemoryUinst(Uinst::Opcode opcode,
-			unsigned address,
-			int size,
-			int idep0,
-			int idep1,
-			int idep2,
-			int odep0,
-			int odep1,
-			int odep2,
-			int odep3)
-	{
-		// Discard if we're in function simulation mode
-		if (!uinst_active)
-			return;
-
-		// Create micro-instruction
-		Uinst *uinst = new Uinst(opcode);
-		uinst->setMemoryAccess(address, size);
-		uinst->setIDep(0, idep0);
-		uinst->setIDep(1, idep1);
-		uinst->setIDep(2, idep2);
-		uinst->setODep(0, odep0);
-		uinst->setODep(1, odep1);
-		uinst->setODep(2, odep2);
-		uinst->setODep(3, odep3);
-
-		// Process it
-		ProcessNewUinst(uinst);
-	}
-
-	// Add a new micro-instruction to the list only if we're running
-	// in timing simulation mode, omitting the \a address and \a size
-	// arguments. This function can be invoked directly by the instruction
-	// emulation functions.
-	void newUinst(Uinst::Opcode opcode,
-			int idep0,
-			int idep1,
-			int idep2,
-			int odep0,
-			int odep1,
-			int odep2,
-			int odep3)
-	{
-		newMemoryUinst(opcode, 0, 0, idep0, idep1, idep2, odep0, odep1,
-				odep2, odep3);
-	}
 
 
 
-
-	///////////////////////////////////////////////////////////////////////
 	//
-	// Functions and fields related with x86 instruction emulation,
-	// implemented in ContextIsaXXX.cc files
+	// Instruction emulation (ContextIsaXXX.cc)
 	//
-	///////////////////////////////////////////////////////////////////////
 
 	// Prototype of a member function of class Context devoted to the
 	// execution of ISA instructions. The emulator has a table indexed by an
@@ -921,12 +856,6 @@ public:
 	/// Return the last emulated instruction.
 	Instruction *getInstruction() { return &inst; }
 
-	/// Return a reference of Uinst list
-	std::vector<std::unique_ptr<Uinst>> &getUinstList()
-	{
-		return uinst_list;
-	}
-
 	/// Return a constant reference of the memory
 	mem::Memory &getMem()
 	{
@@ -942,16 +871,76 @@ public:
 		return memory;
 	}
 
-	/// Force a new 'eip' value for the context. The forced value should be the same as
-	/// the current 'eip' under normal circumstances. If it is not, speculative execution
-	/// starts, which will end on the next call to 'recover' function
-	void ForceEip(unsigned int eip);
+	/// Force a new 'eip' value for the context. The forced value should be
+	/// the same as the current 'eip' under normal circumstances. If it is
+	/// not, speculative execution starts, which will end on the next call
+	/// to 'recover' function.
+	void setEip(unsigned int eip);
 
 	/// Recover the context from speculative mode
 	void Recover();
 
 	/// Get Target EIP
 	int getTargetEip() { return target_eip; }
+
+
+
+	//
+	// Micro-instructions
+	//
+
+	/// Add a new memory micro-instruction to the list only if we're running
+	/// in timing simulation mode.
+	void newMemoryUinst(Uinst::Opcode opcode,
+			unsigned address,
+			int size,
+			int idep0,
+			int idep1,
+			int idep2,
+			int odep0,
+			int odep1,
+			int odep2,
+			int odep3);
+
+	/// Add a new micro-instruction to the list only if we're running
+	/// in timing simulation mode, omitting the \a address and \a size
+	/// arguments.
+	void newUinst(Uinst::Opcode opcode,
+			int idep0,
+			int idep1,
+			int idep2,
+			int odep0,
+			int odep1,
+			int odep2,
+			int odep3)
+	{
+		newMemoryUinst(opcode,
+				0,
+				0,
+				idep0,
+				idep1,
+				idep2,
+				odep0,
+				odep1,
+				odep2,
+				odep3);
+	}
+
+	/// Return the number of micro-instructions produced by the emulation of
+	/// the last x86 instruction with an invocation to Context::Execute().
+	int getNumUinsts() const { return uinsts.size(); }
+
+	/// Extract the micro-instruction at the head of the micro-instruction
+	/// list, and return an ownership reference to it. If the result is not
+	/// immediately captured by a shared pointer, the micro-instruction will
+	/// be freed.
+	std::shared_ptr<Uinst> ExtractUinst()
+	{
+		assert(uinsts.size() > 0);
+		std::shared_ptr<Uinst> uinst = uinsts.front();
+		uinsts.pop_front();
+		return uinst;
+	}
 
 
 

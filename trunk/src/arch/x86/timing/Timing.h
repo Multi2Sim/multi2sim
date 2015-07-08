@@ -61,9 +61,8 @@ class Timing : public comm::Timing
 	// MMU report file name
 	static std::string mmu_report_file;
 
-	// If true
-	// how a message describing the format for the x86 configuration file
-	// Passed with option --x86-help
+	// If true, show a message describing the format for the x86
+	// configuration file. Passed with option --x86-help.
 	static bool help;
 
 	// Message to display with '--x86-help'
@@ -86,6 +85,10 @@ class Timing : public comm::Timing
 
 public:
 
+	//
+	// Class Error
+	//
+
 	/// Exception for X86 timing simulator
 	class Error : public misc::Error
 	{
@@ -97,12 +100,29 @@ public:
 		}
 	};
 
+
+
+
+	//
+	// Static members
+	//
+
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
 
 	/// Destroy the singleton if allocated.
 	static void Destroy() { instance = nullptr; }
 	
+	/// Timing simulator trace
+	static esim::Trace trace;
+
+
+
+
+	//
+	// Class members
+	//
+
 	/// Constructor
 	Timing();
 

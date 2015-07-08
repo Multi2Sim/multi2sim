@@ -92,8 +92,8 @@ void Context::EmitUinstEffectiveAddress(Uinst *uinst, int index)
 	uinst_effaddr_emitted = true;
 
 	// Create micro-instruction
-	uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeEffaddr));
-	Uinst *new_uinst = uinst_list.back().get();
+	uinsts.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeEffaddr));
+	Uinst *new_uinst = uinsts.back().get();
 	
 	// Emit micro-instruction
 	new_uinst->setIDep(0, inst.getSegment() ?
@@ -246,8 +246,8 @@ void Context::ParseUinstIDep(Uinst *uinst, int index)
 		}
 
 		// Load
-		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeLoad));
-		Uinst *new_uinst = uinst_list.back().get();
+		uinsts.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeLoad));
+		Uinst *new_uinst = uinsts.back().get();
 		new_uinst->setIDep(0, Uinst::DepEa);
 		new_uinst->setODep(0, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
@@ -292,8 +292,8 @@ void Context::ParseUinstODep(Uinst *uinst, int index)
 		}
 
 		// Store
-		uinst_list.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeStore));
-		Uinst *new_uinst = uinst_list.back().get();
+		uinsts.emplace_back(misc::new_unique<Uinst>(Uinst::OpcodeStore));
+		Uinst *new_uinst = uinsts.back().get();
 		new_uinst->setIDep(0, Uinst::DepEa);
 		new_uinst->setIDep(1, mem_std_dep);
 		new_uinst->setMemoryAccess(last_effective_address, mem_dep_size);
@@ -308,24 +308,51 @@ void Context::ParseUinstODep(Uinst *uinst, int index)
 
 }
 
-void Context::ProcessNewUinst(Uinst *uinst)
+
+void Context::newMemoryUinst(
+		Uinst::Opcode opcode,
+		unsigned address,
+		int size,
+		int idep0,
+		int idep1,
+		int idep2,
+		int odep0,
+		int odep1,
+		int odep2,
+		int odep3)
 {
+	// Discard if we're in function simulation mode
+	if (!uinst_active)
+		return;
+
+	// Create micro-instruction
+	auto uinst = misc::new_shared<Uinst>(opcode);
+
+	// Initialize
+	uinst->setMemoryAccess(address, size);
+	uinst->setIDep(0, idep0);
+	uinst->setIDep(1, idep1);
+	uinst->setIDep(2, idep2);
+	uinst->setODep(0, odep0);
+	uinst->setODep(1, odep1);
+	uinst->setODep(2, odep2);
+	uinst->setODep(3, odep3);
+
 	// Emit effective address computation if needed.
 	for (int i = 0; !uinst_effaddr_emitted && i < Uinst::MaxDeps; i++)
-		EmitUinstEffectiveAddress(uinst, i);
+		EmitUinstEffectiveAddress(uinst.get(), i);
 	
 	// Parse input dependences
 	for (int i = 0; i < Uinst::MaxIDeps; i++)
-		ParseUinstIDep(uinst, i);
+		ParseUinstIDep(uinst.get(), i);
 	
 	// Add micro-instruction to list
-	uinst_list.emplace_back(uinst);
+	uinsts.emplace_back(uinst);
 	
 	// Parse output dependences
 	for (int i = 0; i < Uinst::MaxODeps; i++)
-		ParseUinstODep(uinst, i);
+		ParseUinstODep(uinst.get(), i);
 }
 
-
-}  // namespace x86
+}
 

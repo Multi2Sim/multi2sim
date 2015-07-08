@@ -111,15 +111,30 @@ private:
 	// and dumped into the trace cache when full.
 	std::unique_ptr<Entry> temp;
 
+
+
+
+	//
 	// Statistics 
+	//
+
 	long long accesses = 0;
+
 	long long hits = 0;
-	long long num_fetched_uinst = 0;
+
+	// Number of fetched micro-instructions
+	long long num_fetched_uinsts = 0;
+
 	long long num_dispatched_uinst = 0;
+
 	long long num_issued_uinst = 0;
+
 	long long num_committed_uinst = 0;
+
 	long long num_squashed_uinst = 0;
+
 	long long trace_length_acc = 0;
+
 	long long trace_length_count = 0;
 
 public:
@@ -187,9 +202,6 @@ public:
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
 
-	/// Increment number of fetched Uinst in trace cache
-	void incNumFetchedUinst() { num_fetched_uinst++; }
-
 	/// Dump functions
 	/// Dump the trace cache report
 	void DumpReport(std::ostream &os = std::cout);
@@ -219,6 +231,16 @@ public:
 
 	/// Flush temporary trace of committed instructions back into the trace cache
 	void Flush();
+	
+	
+	
+
+	//
+	// Statistics
+	//
+
+	/// Increment number of fetched Uinst in trace cache
+	void incNumFetchedUinsts() { num_fetched_uinsts++; }
 };
 
 }

@@ -28,22 +28,71 @@ namespace x86
 long long Uop::id_counter = 0;
 
 
-Uop::Uop()
-{
-}
-
-
-Uop::Uop(Thread *thread) : thread(thread)
+Uop::Uop(Thread *thread,
+		Context *context,
+		std::shared_ptr<Uinst> uinst) :
+		thread(thread),
+		context(context),
+		uinst(uinst)
 {
 	// Initialize
 	core = thread->getCore();
 	id = ++id_counter;
 	id_in_core = core->getUopId();
+
+	// Assign flags from associated micro-instruction
+	flags = uinst->getFlags();
+
+	// Populate dependency fields
+	CountDependencies();
 }
 
 
 void Uop::CountDependencies()
 {
+	// Output dependences
+	int int_count = 0;
+	int fp_count = 0;
+	int flag_count = 0;
+	int xmm_count = 0;
+	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
+	{
+		Uinst::Dep loreg = uinst->getODep(dep);
+		if (Uinst::isDepFlag(loreg))
+			flag_count++;
+		else if (Uinst::isDepIntReg(loreg))
+			int_count++;
+		else if (Uinst::isDepFpReg(loreg))
+			fp_count++;
+		else if (Uinst::isDepXmmReg(loreg))
+			xmm_count++;
+	}
+	odep_count = flag_count + int_count + fp_count + xmm_count;
+	phy_int_odep_count = flag_count && !int_count ? 1 : int_count;
+	phy_fp_odep_count = fp_count;
+	phy_xmm_odep_count = xmm_count;
+
+	// Input dependences
+	int_count = 0;
+	fp_count = 0;
+	flag_count = 0;
+	xmm_count = 0;
+	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
+	{
+		Uinst::Dep loreg = uinst->getIDep(dep);
+		if (Uinst::isDepFlag(loreg))
+			flag_count++;
+		else if (Uinst::isDepIntReg(loreg))
+			int_count++;
+		else if (Uinst::isDepFpReg(loreg))
+			fp_count++;
+		else if (Uinst::isDepXmmReg(loreg))
+			xmm_count++;
+	}
+	idep_count = flag_count + int_count + fp_count + xmm_count;
+	phy_int_idep_count = flag_count + int_count;
+	phy_fp_idep_count = fp_count;
+	phy_xmm_idep_count = xmm_count;
 }
 
 

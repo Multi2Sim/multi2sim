@@ -135,6 +135,32 @@ public:
 
 private:
 
+	//
+	// Static fields
+	//
+
+	// Number of Cores
+	static int num_cores;
+
+	// Number of Threads
+	static int num_threads;
+
+	// Context quantum
+	static int context_quantum;
+
+	// Thread quantum
+	static int thread_quantum;
+
+	// Thread swtich penalty
+	static int thread_switch_penalty;
+
+
+
+
+	//
+	// Class members
+	//
+
 	// Associated emulator 
 	Emulator *emulator;
 
@@ -168,7 +194,7 @@ private:
 	//
 
 	// Number of fectched micro-instructions
-	long long num_fetched_uinst = 0;
+	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
 	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
@@ -206,28 +232,6 @@ private:
 
 	// IPC since last dump
 	long long last_dump = 0;
-
-
-
-
-	//
-	// Cpu parameters
-	//
-
-	// Number of Cores
-	static int num_cores;
-
-	// Number of Threads
-	static int num_threads;
-
-	// Context quantum
-	static int context_quantum;
-
-	// Thread quantum
-	static int thread_quantum;
-
-	// Thread swtich penalty
-	static int thread_switch_penalty;
 
 
 
@@ -400,8 +404,8 @@ public:
 	/// Increment the number of Uop
 	void incNumUop() { num_uop++; }
 
-	/// Increment the number of fetched Uinst
-	void incNumFetchedUinst() { num_fetched_uinst++; }
+	/// Increment the number of fetched micro-instructions
+	void incNumFetchedUinsts() { num_fetched_uinsts++; }
 
 	/// Dump functions
 	void Dump();
