@@ -38,7 +38,7 @@ TEST(TestISAVOP2, V_ADD_I32)
 	
 	// Build instruction -  v_add_i32 v2, vcc, v0, v1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesVOP2 inst_bytes = 
+	Instruction::BytesVOP2 inst_bytes = 
 	{
 		// src0 - v0
 		256,
