@@ -40,7 +40,7 @@ Link::Link(Network *network,
 						source_node(src_node),
 						destination_node(dst_node),
 						num_virtual_channels(num_virtual_channels),
-						descriptive_name(descriptive_name)
+						name(name)
 {
 	for (int i = 0; i < num_virtual_channels ; i++)
 	{
@@ -60,18 +60,41 @@ Link::Link(Network *network,
 
 void Link::Dump(std::ostream &os) const
 {
-	// Dumping first line
-	os << misc::fmt("\n***** Link %s *****\n", name.c_str());
+	// Dumping user assigned name
+	os << misc::fmt("[ Network.%s.Link.%s ]\n", network->getName().c_str(),
+			name.c_str());
 
-	// Dump sources
+	// Dump source buffers
+	os << misc::fmt("Source buffers = ");
 	for (auto buffer : source_buffers)
-		os << misc::fmt("%s \t->", 
-				buffer->getNode()->getName().c_str());
+		os << misc::fmt("%s:%s \t",
+				buffer->getNode()->getName().c_str(),
+				buffer->getName().c_str());
+	os << "\n" ;
 
-	// Dump destinations
+	// Dump destination buffers
+	os << misc::fmt("Destination buffers = ");
 	for (auto buffer : destination_buffers)
-		os << misc::fmt(" \t %s", 
-				buffer->getNode()->getName().c_str());
+		os << misc::fmt("%s:%s \t",
+				buffer->getNode()->getName().c_str(),
+				buffer->getName().c_str());
+	os << "\n" ;
+
+	// Dump statistics
+	os << misc::fmt("Bandwidth = %d\n", bandwidth);
+	os << misc::fmt("TransferredPackets = %lld\n", transferred_packets);
+	os << misc::fmt("TransferredBytes = %lld\n", transferred_bytes);
+	os << misc::fmt("BusyCycles = %lld\n", busy_cycles);
+
+	// Statistics that depends on the cycle
+	long long cycle = System::getInstance()->getCycle();
+	os << misc::fmt("BytesPerCycle = %0.4f\n", cycle ?
+			(double) transferred_bytes / cycle : 0.0);
+	os << misc::fmt("Utilization = %0.4f\n", cycle ?
+			(double) transferred_bytes / (cycle * bandwidth) : 0.0);
+
+	// Creating and empty line in dump
+	os << "\n";
 }
 
 
@@ -141,7 +164,8 @@ void Link::TransferPacket(Packet *packet)
 	}
 
 	// Check if the destination buffer is full
-	if ((destination_buffer->getCount() + packet->getSize()) >
+	int packet_size = packet->getSize();
+	if ((destination_buffer->getCount() + packet_size) >
 			destination_buffer->getSize())
 	{
 		System::debug <<misc::fmt("[Network] [stall - dst buffer full] "
@@ -158,21 +182,30 @@ void Link::TransferPacket(Packet *packet)
 		return;
 	}
 
-	// Calculate latency and occypy resources
+	// Calculate latency and occupied resources
 	int latency = (packet->getSize() - 1) / bandwidth + 1;
 	source_buffer->setReadBusy(cycle + latency - 1);
 	busy = cycle + latency - 1;
 	destination_buffer->setWriteBusy(cycle + latency - 1);
 
 	// Transfer message to next input buffer
-	source_buffer->PopPacket();		
+	source_buffer->ExtractPacket();
 	destination_buffer->InsertPacket(packet);
 	packet->setNode(destination_buffer->getNode());
 	packet->setBuffer(destination_buffer);
 	packet->setBusy(cycle + latency - 1);
 
+	// Statistics
+	busy_cycles += latency;
+	transferred_bytes += packet_size;
+	transferred_packets ++;
+	source_node->IncreaseSentBytes(packet_size);
+	source_node->IncreaseSentPackets();
+	destination_node->IncreaseReceivedBytes(packet_size);
+	destination_node->IncreaseReceivedPackets();
+
 	// Schedule input buffer event	
-	esim_engine->Next(System::event_input_buffer);
+	esim_engine->Next(System::event_input_buffer, latency);
 }
 
 }

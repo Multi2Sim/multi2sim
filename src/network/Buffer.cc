@@ -46,6 +46,9 @@ void Buffer::InsertPacket(Packet *packet)
 	// Update count
 	count += packet->getSize();
 
+	// Update statistics
+	UpdateOccupancyInformation();
+
 	// Insert the packet into buffer
 	packets.push_back(packet);
 }
@@ -69,8 +72,23 @@ void Buffer::RemovePacket(Packet *packet)
 		event_queue.WakeupAll();
 }
 
+void Buffer::UpdateOccupancyInformation()
+{
+	// Getting the current cycle
+	long long cycle = System::getInstance()->getCycle();
 
-void Buffer::PopPacket()
+	// Accumulate previous values
+	long long cycles = cycle - occupancy_measured_cycles;
+	occupancy_accumulated_packets += occupancy_packet_value * cycles;
+	occupancy_accumulated_bytes += occupancy_byte_value * cycles;
+
+	// Storing the new samples for next use
+	occupancy_byte_value = count;
+	occupancy_packet_value = packets.size();
+	occupancy_measured_cycles = cycle;
+}
+
+void Buffer::ExtractPacket()
 {
 	// Check if there is a packet to be poped
 	if (packets.size() == 0)
@@ -82,12 +100,33 @@ void Buffer::PopPacket()
 	// Remove the packet from the queue
 	packets.pop_front();
 
+	// Updating the statistics
+	UpdateOccupancyInformation();
+
 	// Reduce the count of the packet
 	count -= packet->getSize();
 
 	// Wake up the buffer event queue
 	if (!event_queue.isEmpty())
 		event_queue.WakeupOne();
+}
+
+void Buffer::Dump(std::ostream &os)
+{
+	// Update the occupancy information before the report
+	UpdateOccupancyInformation();
+
+	// Dump buffer's name
+	os << misc::fmt("%s.size = %d\n", name.c_str(), size);
+
+	// Dump information related to cycle
+	long long cycle = System::getInstance()->getCycle();
+	os << misc::fmt("%s.PacketOccupancy = %.2f\n", name.c_str(), cycle ?
+			(double) occupancy_accumulated_packets / cycle : 0.0);
+	os << misc::fmt("%s.ByteOccupancy = %.2f\n", name.c_str(), cycle ?
+			(double) occupancy_accumulated_bytes / cycle : 0.0);
+	os << misc::fmt("%s.Utilization = %.2f\n", name.c_str(), cycle ?
+			(double) occupancy_accumulated_bytes / cycle / size : 0.0);
 }
 
 }  // namespace net

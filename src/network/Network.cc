@@ -410,34 +410,37 @@ Node *Network::getNodeByUserData(void *user_data) const
 void Network::Dump(std::ostream &os) const
 {
 	// Dump network information
-	os << misc::fmt("\n***** Network %s *****\n", name.c_str());
-	os << misc::fmt("\tDefault input buffer size: %d\n", 
-			default_input_buffer_size);
-	os << misc::fmt("\tDefault output buffer size: %d\n", 
-			default_output_buffer_size);
-	os << misc::fmt("\tDefault bandwidth: %d\n", 
-			default_bandwidth);
-
-	// Print node information
-	for (auto &node : nodes)
-		node->Dump(os);
+	os << misc::fmt("[ Network.%s ]\n", name.c_str());
+	os << misc::fmt("Transfers = %lld\n", transfers);
+	os << misc::fmt("AverageMessageSize = %0.2f\n", transfers ?
+			(double) accumulated_bytes / transfers : 0.0);
+	os << misc::fmt("TranssferredBytes = %lld\n", accumulated_bytes);
+	os << misc::fmt("AverageLatency = %.4f\n", transfers ?
+			(double) accumulated_latency / transfers : 0.0);
 
 	// Print links
 	for (auto &link : connections)
 		link->Dump(os);
 
-	// Print routing table
-	this->routing_table.Dump(os);	
+	// Print node information
+	for (auto &node : nodes)
+		node->Dump(os);
+
+	//Creating an empty line in the dump
+	os << "\n";
 }
 
 
 Message *Network::newMessage(EndNode *source_node, EndNode *destination_node,
 		int size)
 {
+	// get the current cycle
+	long long cycle = System::getInstance()->getCycle();
+
 	// Insert the created message into the hashtable
 	message_table.emplace(message_id_counter, misc::new_unique<Message>(
 			message_id_counter, this, source_node,
-			destination_node, size));
+			destination_node, size, cycle));
 
 	// Get the pointer to the newly created messag
 	Message *message = message_table[message_id_counter].get();
@@ -466,8 +469,8 @@ bool Network::CanSend(EndNode *source_node,
 
 	// Check if source and destination are different
 	if (source_node == destination_node)
-		throw Error(misc::fmt("Source and destination cannot "
-			"be the same."));
+		throw Error("Source and destination cannot "
+			"be the same.");
 
 	// Check if route exist
 	if (!output_buffer)
@@ -496,8 +499,8 @@ bool Network::CanSend(EndNode *source_node,
 
 	// Check if the buffer can fit one message
 	if (required_size > output_buffer->getSize())
-		throw Error(misc::fmt("Buffer too small for the "
-			"message size."));
+		throw Error("Buffer too small for the "
+			"message size.");
 	
 	// Check if the buffer has enough space for the current message
 	if (output_buffer->getCount() + required_size >
@@ -554,9 +557,6 @@ Message *Network::Send(EndNode *source_node,
 
 		// Schedule send event
 		esim_engine->Call(System::event_send, frame, receive_event);
-
-		// Update statistics
-		source_node->IncreaseSentBytes(size);
 	}
 
 	// Return message
@@ -587,14 +587,18 @@ void Network::Receive(EndNode *node, Message *message)
 		Packet *packet = message->getPacket(i);
 		Node *packet_node = packet->getNode();
 		if (packet_node != node)
-			throw misc::Panic(misc::fmt(
+			throw Error(misc::fmt(
 					"Packet %d of the message %lld has "
 					"not arrived.", packet->getSessionId(), 
 					message->getId()));
 	}
 
-	// Update statistics
-	node->IncreaseReceivedBytes(message->getSize());
+	// Update network Statistics
+	long long cycle = System::getInstance()->getCycle();
+	this->transfers++;
+	this->accumulated_bytes += message->getSize();
+	this->accumulated_latency += cycle - message->getSendCycle();
+
 
 	// Remove packets from their buffer
 	for (int i = 0; i < message->getNumPackets(); i++)
@@ -660,10 +664,11 @@ Link *Network::addLink(
 {
 	// Check if the nodes are not both end-nodes
 	if ((dynamic_cast<EndNode *>(source_node))
-		&& (dynamic_cast<EndNode *>(dest_node)))
-		throw Error(misc::fmt("Network '%s': Link '%s' cannot "
-			"connect two end-nodes.", this->name.c_str(),
-			name.c_str()));
+			&& (dynamic_cast<EndNode *>(dest_node)))
+				throw Error(misc::fmt("Network '%s': Link "
+				"'%s' cannot connect two end-nodes.", 
+				this->name.c_str(),
+				name.c_str()));
 
 	// Creating a unique name for unidirectional link
 	std::string descriptive_name = "link_" + source_node->getName() +

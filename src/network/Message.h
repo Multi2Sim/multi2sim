@@ -54,12 +54,15 @@ class Message
 	// A list of received packets
 	std::vector<Packet *> received_packets;
 
+	// Cycle when the message was sent
+	long long send_cycle;
+
 public:
 
 	/// Constructor
 	Message(long long id, Network *network, 
 			Node *source_node, Node *destination_node,
-			int size);
+			int size, long long cycle);
 
 	/// Packetize
 	void Packetize(int packet_size);
@@ -88,6 +91,9 @@ public:
 
 	/// Get message size
 	int getSize() const { return size; }
+
+	/// Get the cycle that message was sent
+	long long getSendCycle() const { return send_cycle; }
 
 	/// Get number of packets belongs to the message
 	int getNumPackets() const { return packets.size(); }
