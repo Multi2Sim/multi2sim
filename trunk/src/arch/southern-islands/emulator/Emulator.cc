@@ -116,10 +116,17 @@ bool Emulator::Run()
 					wf_i != wf_e;
 					++wf_i)
 			{
-				// Get current wavefront and execute it
+				// Get current wavefront
 				Wavefront *wavefront = (*wf_i).get();
+
+				// Check if the wavefront is finished or not
+				if (wavefront->getFinished())
+					continue;
+				
+				// Execute the wavefront
 				wavefront->Execute();
 			}
+
 			// Check if the work group has finished
 			if (work_group->getFinishedEmu())
 			{

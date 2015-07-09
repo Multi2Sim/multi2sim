@@ -125,6 +125,15 @@ int Driver::CallMemRead(comm::Context *context,
 	// Read memory from host to device
 	auto buffer = misc::new_unique_array<char>(size);
 	video_memory->Read(device_ptr, size, buffer.get());
+
+	std::cout<<"\n\n";
+
+	for (unsigned i = 0; i < size; i++)
+		printf("%02x ", buffer.get()[i]);
+
+	std::cout<<"\n\n";
+
+
 	memory->Write(host_ptr, size, buffer.get());
 	
 	// Return                                                         
@@ -420,12 +429,15 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 	
 	// Dynamically allocate value_ptr and release it so ownership can be
 	// taken by the unique pointer in class Arg
-	auto value_ptr = misc::new_unique<char>(size);
-	memory->Read(host_ptr, size, value_ptr.get());
-	char *char_ptr = value_ptr.release();
+	
+	auto value = misc::new_unique_array<char>(size);
+	memory->Read(host_ptr, size, value.get());
+	
+	//auto value = misc::new_unique<char>(size);
+	//memory->Read(host_ptr, size, value.get());
 
 	// Save value and size
-	arg->setValue(char_ptr);
+	arg->setValue(std::move(value));
 	arg->size = size;
 	arg->set = true;
 
