@@ -27,6 +27,7 @@ namespace SI
 // Forward declarations
 class ComputeUnit;
 class WavefrontPool;
+class Wavefront;
 
 
 /// Wavefront pool entry
@@ -34,6 +35,9 @@ class WavefrontPoolEntry
 {
 	// Wavefront pool that it belongs to
 	WavefrontPool *wavefront_pool;
+
+	// Wavefront that belongs to this entry
+	Wavefront *wavefront;
 
 public:
 
@@ -46,6 +50,9 @@ public:
 	/// Return the wavefront pool that it belongs to
 	WavefrontPool *getWavefrontPool() const { return wavefront_pool; }
 
+	/// Return the associated wavefront
+	Wavefront *getWavefront() const { return wavefront; }
+
 	/// Number of outstanding vector memory accesses
 	int vm_cnt = 0;
 
@@ -54,6 +61,13 @@ public:
 
 	/// Number of outstanding LDS, GLDS, or constant memory accesses
 	int lgkm_cnt = 0;
+
+	// Flags updated during wavefront execution
+	bool ready = false;
+	bool ready_next_cycle = false;
+	bool wavefront_completed = false;
+	bool wait_for_barrier = false;
+	bool wavefront_finished = false;
 };
 
 
@@ -66,11 +80,26 @@ class WavefrontPool
 	// Number of instructions
 	long long num_instructions = 0;
 
+	// Wavefront pool entries that belong to this pool
+	std::vector<std::unique_ptr<WavefrontPoolEntry>> wavefront_pool_entries;
 public:
 
 	/// Constructor
 	WavefrontPool(ComputeUnit *compute_unit) : compute_unit(compute_unit)
 	{
+	}
+
+	/// Return an iterator to the first wavefront pool entry
+	/// in wavefront_pool_entries
+	std::vector<std::unique_ptr<WavefrontPoolEntry>>::iterator begin()
+	{
+		return wavefront_pool_entries.begin();
+	}
+
+	/// Return a past-the-end iterator to wavefront_pool_entries
+	std::vector<std::unique_ptr<WavefrontPoolEntry>>::iterator end()
+	{
+		return wavefront_pool_entries.end();
 	}
 
 	/// Return the associated compute unit
