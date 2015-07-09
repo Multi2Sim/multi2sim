@@ -49,6 +49,15 @@ public:
 	{
 	}
 
+	/// Return the number of uops in the fetch buffer
+	int getSize() { return buffer.size(); }
+
+	/// Add instruction to the end of the buffer
+	void addUop(std::shared_ptr<SI::Uop> uop)
+	{
+		buffer.push_back(uop);
+	}
+
 	/// Return an iterator to the first uop in the fetch buffer
 	std::list<std::shared_ptr<Uop>>::iterator begin()
 	{
