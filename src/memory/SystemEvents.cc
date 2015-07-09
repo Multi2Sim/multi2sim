@@ -3569,11 +3569,9 @@ void System::EventFlushHandler(esim::Event *event,
 		// Set pending replies to 1
 		frame->pending = 1;
 
-		if (module->getType() == Module::TypeCache)
-		{
-			// Flush the cache
+		// Flush the cache if the module is a cache
+                if (module->getType() == Module::TypeCache)
 			module->RecursiveFlush();	
-		}
 
 		// Schedule event
 		esim_engine->Next(event_flush_finish, 0);
