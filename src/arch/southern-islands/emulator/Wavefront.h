@@ -100,7 +100,7 @@ class Wavefront
 	bool lds_write;
 	bool mem_wait;
 	bool at_barrier;
-	bool finished;
+	bool finished = false;
 	bool vector_mem_global_coherency;
 
 	// Fields introduced for timing simulation
