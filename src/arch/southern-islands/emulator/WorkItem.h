@@ -384,7 +384,7 @@ public:
 
 	/// Set value of a vector register
 	///
-	/// \param vreg Vector register idendifier
+	/// \param vreg Vector register identifier
 	///
 	/// \param value Value given as an \a unsigned typed value
 	///
@@ -418,11 +418,11 @@ public:
 	///
 	void ReadBufferResource(int sreg, BufferDescriptor &buffer_desc); 
 	
-	/// Get memory pointer from 2 succesive scalar registers
+	/// Get memory pointer from 2 successive scalar registers
 	///
-	/// \param sreg Sclalar register identifier of the 1st scalar registers
+	/// \param sreg Scalar register identifier of the 1st scalar registers
 	///
-	/// \param mem_ptr Reference of a memory pointer descripter
+	/// \param mem_ptr Reference of a memory pointer descriptor
 	///
 	void ReadMemPtr(int sreg, MemoryPointer &memory_pointer);
 

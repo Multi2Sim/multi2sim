@@ -46,11 +46,11 @@ class WorkGroup;
 class ComputeUnit
 {
 	// Fetch an instruction from the given wavefront pool
-	void Fetch(WavefrontPool *wavefront_pool);
+	void Fetch(FetchBuffer *fetch_buffer, WavefrontPool *wavefront_pool);
 
 	// Issue an instruction from the given fetch buffer into the
 	// appropriate execution unit.
-	void Issue(int fetch_buffer_id);
+	void Issue(FetchBuffer *fetch_buffer);
 
 	// Issue a set of instructions from the given fetch buffer into the
 	// given execution unit.
@@ -149,6 +149,9 @@ public:
 	//
 	// Statistics
 	//
+
+	// Number of total instructions
+	long long num_total_instructions = 0;
 
 	// Number of issued branch instructions
 	long long num_branch_instructions = 0;

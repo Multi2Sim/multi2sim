@@ -30,6 +30,7 @@ namespace SI
 
 class WorkGroup;
 class WorkItem;
+class WavefrontPoolEntry;
 
 /// Polymorphic class used to attach data to a work-group. The timing simulator
 /// can use an object derived from this class, instead of adding fields to the
@@ -87,6 +88,9 @@ class Wavefront
 	// Scalar registers
 	Instruction::Register sreg[256];
 
+	// Associated wavefront pool entry
+	WavefrontPoolEntry *wavefront_pool_entry;
+
 	// Flags updated during instruction execution
 	bool vector_mem_read;
 	bool vector_mem_write;
@@ -119,10 +123,6 @@ class Wavefront
 	long long emu_time_start;
 	long long emu_time_end;
 
-	// Counter for per-wavefront identifiers assigned to uops in the timing
-	// simulator.
-	long long uop_id_counter = 0;
-
 public:
 
 	/// Constructor
@@ -134,6 +134,10 @@ public:
 	///	Global 1D identifier of the wavefront
 	///
 	Wavefront(WorkGroup *work_group, int id);
+
+	// Counter for per-wavefront identifiers assigned to uops in the timing
+	// simulator.
+	long long uop_id_counter = 0;
 
 	/// Getters
 	///
@@ -153,15 +157,62 @@ public:
 		return work_items_begin[id_in_wavefront].get();
 	}
 
+	/// Return the associated wavefront pool entry
+	WavefrontPoolEntry *getWavefrontPoolEntry() const
+	{
+		return wavefront_pool_entry;
+	}
+
 	/// Return pointer to the workgroup this wavefront belongs to
 	WorkGroup *getWorkGroup() const { return work_group; }
 
 	/// Get work_item_count
 	unsigned getWorkItemCount() const { return work_item_count; }
 
+	/// Get the associated instruction
+	Instruction *getInst() const { return inst; }
+
+	/// Returns true if the instruction has performed a
+	/// Vector mem read operation
+	bool isVectorMemRead() const { return vector_mem_read; }
+
+	/// Returns true if the instruction has performed a
+	/// Vector mem write operation
+	bool isVectorMemWrite() const { return vector_mem_write; }
+
+	/// Returns true if the instruction has performed a
+	/// Atomic vector memory operation
+	bool isVectorMemAtomic() const { return vector_mem_atomic; }
+
+	/// Returns true if the instruction has performed a
+	/// Scalar mem read operation
+	bool isScalarMemRead() const { return scalar_mem_read; }
+
+	/// Returns true if the instruction has performed a LDS
+	/// read operation
+	bool isLdsRead() const { return lds_read; }
+
+	/// Returns true if the instruction performed a LDS
+	/// write operation
+	bool isLdsWrite() const { return lds_write; }
+
 	/// Return true if work-item is active. The work-item identifier is
 	/// given relative to the first work-item in the wavefront
 	bool isWorkItemActive(int id_in_wavefront);
+
+	/// Return true if the wavefront has completed
+	bool getFinished() const { return finished; }
+
+	/// Return true if the instruction performed a memory
+	/// wait operation
+	bool isMemWait() const { return mem_wait; }
+
+	bool isBarrierInst() const { return barrier_inst; }
+
+	bool isVectorMemGlobalCoherency() const
+	{
+		return vector_mem_global_coherency;
+	}
 
 
 
