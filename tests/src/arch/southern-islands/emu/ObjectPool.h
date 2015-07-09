@@ -26,7 +26,7 @@
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/WorkItem.h>
 #include <arch/southern-islands/disassembler/Disassembler.h>
-#include <arch/southern-islands/disassembler/Inst.h>
+#include <arch/southern-islands/disassembler/Instruction.h>
 #include <gtest/gtest.h>
 
 namespace SI

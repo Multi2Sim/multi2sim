@@ -37,7 +37,7 @@ TEST(TestISASOP2, S_ADD_U32)
 
 	// Build instruction -  S_add_U32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesSOP2 inst_bytes = 
+	Instruction::BytesSOP2 inst_bytes = 
 	{
 		// ssrc0 - s0
 		0,
@@ -137,7 +137,7 @@ TEST(TestISASOP2, S_ADD_I32)
 	
 	// Build instruction -  S_add_I32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesSOP2 inst_bytes = 
+	Instruction::BytesSOP2 inst_bytes = 
 	{
 		// ssrc0 - s0
 		0,
@@ -237,7 +237,7 @@ TEST(TestISASOP2, S_SUB_I32)
 	
 	// Build instruction -  S_SUB_I32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesSOP2 inst_bytes = 
+	Instruction::BytesSOP2 inst_bytes = 
 	{
 		// ssrc0 - s0
 		0,
@@ -337,7 +337,7 @@ TEST(TestISASOP2, S_MIN_U32)
 	
 	// Build instruction -  S_MIN_U32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesSOP2 inst_bytes = 
+	Instruction::BytesSOP2 inst_bytes = 
 	{
 		// ssrc0 - s0
 		0,
@@ -431,7 +431,7 @@ TEST(TestISASOP2, S_MAX_I32)
 	
 	// Build instruction -  S_MAX_I32 s2, scc, s0, s1
 	// inst_bytes fields are defined in southern-islands/asm/Inst.h
-	InstBytesSOP2 inst_bytes = 
+	Instruction::BytesSOP2 inst_bytes = 
 	{
 		// ssrc0 - s0
 		0,
