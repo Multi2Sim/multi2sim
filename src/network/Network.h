@@ -117,7 +117,7 @@ class Network
 	long long accumulated_latency = 0;
 
 	// Accumulation of size of all messages in the network
-	long long offered_bandwidth = 0;
+	long long accumulated_bytes = 0;
 
 public:
 

@@ -44,9 +44,6 @@ protected:
 	// Connection Latency
 	int latency = 0;
 
-	// Number of cycles that the connection was busy
-	long long busy_cycles = -1;
-
 	// List of the source buffers connected to the bus
 	std::vector<Buffer *> source_buffers;
 

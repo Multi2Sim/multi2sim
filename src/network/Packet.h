@@ -79,6 +79,9 @@ public:
 	/// Update the cycle until which the packet is in transit
 	void setBusy(long long busy) { this->busy = busy; }
 
+	/// Get the cycle which the packet is busy
+	long long getBusy() { return busy; }
+
 };
 
 }  // namespace net

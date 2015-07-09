@@ -56,7 +56,9 @@ protected:
 
 	// Statistics
 	long long received_bytes = 0;
+	long long received_packets = 0;
 	long long sent_bytes = 0;
+	long long sent_packets = 0;
 
 	// User data, used by the memory system to attach information about
 	// which module is associated with this network node.
@@ -133,6 +135,9 @@ public:
 	/// Increase the number of bytes sent
 	void IncreaseSentBytes(long long bytes) { sent_bytes += bytes; }
 
+	/// Increase the number of packets sent
+	void IncreaseSentPackets() { sent_packets++; }
+
 	/// Return the incoming traffic into this node in number of bytes, as
 	/// the sum of the bytes received through all its input links.
 	long long getReceivedBytes() const { return received_bytes; }
@@ -142,6 +147,9 @@ public:
 	{ 
 		received_bytes += bytes; 
 	}
+
+	/// Increase the number of packets received
+	void IncreaseReceivedPackets() { received_packets++; }
 };
 
 

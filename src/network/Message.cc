@@ -35,12 +35,14 @@ Message::Message(long long id,
 		Network *network,
 		Node *source_node, 
 		Node *destination_node, 
-		int size) :
+		int size,
+		long long cycle) :
 		id(id),
 		network(network),
 		source_node(source_node),
 		destination_node(destination_node),
-		size(size)
+		size(size),
+		send_cycle(cycle)
 {
 }
 
