@@ -113,8 +113,22 @@ class Emulator : public comm::Emulator
 
 public:
 
+	//
+	// Static functions
+	//
+
 	/// Get instance of singleton
 	static Emulator *getInstance();
+
+	/// Destroy the singleton if it existed
+	static void Destroy() { instance = nullptr; }
+
+
+
+
+	//
+	// Class members
+	//
 	
 	/// Constructor
 	Emulator() : comm::Emulator("x86") { }

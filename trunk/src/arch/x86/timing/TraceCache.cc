@@ -30,7 +30,7 @@ bool TraceCache::present;
 int TraceCache::num_sets;
 int TraceCache::num_ways;
 int TraceCache::trace_size;
-int TraceCache::branch_max;
+int TraceCache::max_branches;
 int TraceCache::queue_size;
 
 // Debug file
@@ -44,13 +44,13 @@ TraceCache::TraceCache(const std::string &name) :
 		name(name)
 {
 	// Initialize 
-	entry = misc::new_unique_array<Entry>(num_sets * num_ways);
+	entries = misc::new_unique_array<Entry>(num_sets * num_ways);
 	temp = misc::new_unique<Entry>();
 
 	// Initialize LRU counter 
 	for (int set = 0; set < num_sets; set++)
 		for (int way = 0; way < num_ways; way++)
-			entry[set * num_ways + way].counter = way;
+			entries[set * num_ways + way].counter = way;
 }
 
 
@@ -64,7 +64,7 @@ void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 	num_sets = ini_file->ReadInt(section, "Sets", 64);
 	num_ways = ini_file->ReadInt(section, "Assoc", 4);
 	trace_size = ini_file->ReadInt(section, "TraceSize", 16);
-	branch_max = ini_file->ReadInt(section, "BranchMax", 3);
+	max_branches = ini_file->ReadInt(section, "BranchMax", 3);
 	queue_size = ini_file->ReadInt(section, "QueueSize", 32);
 
 	// Integrity checks
@@ -74,11 +74,11 @@ void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 		throw Error(misc::fmt("%s: 'Assoc' must be a power of 2 greater than 0", section.c_str()));
 	if (!trace_size)
 		throw Error(misc::fmt("%s: Invalid value for 'TraceSize'", section.c_str()));
-	if (!branch_max)
+	if (!max_branches)
 		throw Error(misc::fmt("%s: Invalid value for 'BranchMax'", section.c_str()));
-	if (branch_max > trace_size)
+	if (max_branches > trace_size)
 		throw Error(misc::fmt("%s: 'BranchMax' must be equal or less than 'TraceSize'", section.c_str()));
-	if (branch_max > 31)
+	if (max_branches > 31)
 		throw Error(misc::fmt("%s: Maximum value for 'BranchMax' is 31", section.c_str()));
 }
 
@@ -91,81 +91,78 @@ void TraceCache::DumpConfiguration(std::ostream &os)
 	os << misc::fmt("\tSets: %d\n", num_sets);
 	os << misc::fmt("\tAssoc: %d\n", num_ways);
 	os << misc::fmt("\tTraceSize: %d\n", trace_size);
-	os << misc::fmt("\tBranchMax: %d\n", branch_max);
+	os << misc::fmt("\tBranchMax: %d\n", max_branches);
 	os << misc::fmt("\tQueueSize: %d\n", queue_size);
 }
 
 
-void TraceCache::RecordUop(Uop &uop)
+void TraceCache::RecordUop(Uop *uop)
 {
 	// Local variable
 	bool taken = false;
 
 	// Only the first micro-instruction of a macro-instruction is inserted.
-	if (uop.mop_index)
+	if (uop->mop_index)
 		return;
 
 	// If there is not enough space for macro-instruction, commit trace.
-	assert(!uop.speculative_mode);
-	assert(uop.eip);
-	assert(uop.getId() == uop.mop_id);
-	if (temp->uop_count + uop.mop_count > trace_size)
+	assert(!uop->speculative_mode);
+	assert(uop->eip);
+	assert(uop->getId() == uop->mop_id);
+	if (temp->uop_count + uop->mop_count > trace_size)
 		Flush();
 
 	// If even after flushing the current trace, the number of micro-instructions
 	// does not fit in a trace line, this macro-instruction cannot be stored.
-	if (uop.mop_count > trace_size)
+	if (uop->mop_count > trace_size)
 		return;
 
 	// First instruction. Store trace tag.
 	if (!temp->uop_count)
-		temp->tag = uop.eip;
+		temp->tag = uop->eip;
 
 	// Add eip to list
-	temp->mop_array[temp->mop_count] = uop.eip;
-	temp->mop_count++;
-	temp->uop_count += uop.mop_count;
+	temp->macro_instructions.push_back(uop->eip);
+	temp->uop_count += uop->mop_count;
 	temp->is_last_instruction_branch = false;
-	temp->fall_through = uop.eip + uop.mop_size;
+	temp->fall_through = uop->eip + uop->mop_size;
 
 	// Instruction is branch. If maximum number of branches is reached,
 	// commit trace.
-	if (uop.getFlags() & Uinst::FlagCtrl)
+	if (uop->getFlags() & Uinst::FlagCtrl)
 	{
-		taken = uop.neip != uop.eip + uop.mop_size;
+		taken = uop->neip != uop->eip + uop->mop_size;
 		temp->branch_mask |= 1 << temp->branch_count;
 		temp->branch_flags |= taken << temp->branch_count;
 		temp->branch_count++;
-		temp->target = uop.target_neip;
+		temp->target = uop->target_neip;
 		temp->is_last_instruction_branch = true;
-		if (temp->branch_count == branch_max)
+		if (temp->branch_count == max_branches)
 			Flush();
 	}
 }
 
 
-bool TraceCache::Lookup(unsigned int eip, int pred,
-		Entry &return_entry, unsigned int &neip)
+bool TraceCache::Lookup(unsigned int eip,
+		int pred,
+		Entry *&found_entry,
+		unsigned int &neip)
 {
-	// Local variable declaration
-	Entry *entry_ptr;
-	Entry *found_entry = nullptr;
-	int set, way;
-	bool taken;
-
 	// Debug
 	debug << misc::fmt("** Lookup **\n");
 	debug << misc::fmt("eip = 0x%x, pred = ", eip);
 	debug << misc::fmt("\n");
 
 	// Look for trace cache line
-	set = eip % num_sets;
+	int way;
+	int set = eip % num_sets;
+	found_entry = nullptr;
 	for (way = 0; way < num_ways; way++)
 	{
-		entry_ptr = &entry[set * num_ways + way];
-		if (entry_ptr->tag == eip && ((pred & entry_ptr->branch_mask) == entry_ptr->branch_flags))
+		Entry *entry = &entries[set * num_ways + way];
+		if (entry->tag == eip && ((pred & entry->branch_mask) == entry->branch_flags))
 		{
-			found_entry = entry_ptr;
+			found_entry = entry;
 			break;
 		}
 	}
@@ -186,7 +183,7 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	// Calculate address of the next instruction to fetch after this trace.
 	// The 'neip' value will be the trace 'target' if the last instruction in
 	// the trace is a branch and 'pred' predicts it taken.
-	taken = found_entry->target && (pred & (1 << found_entry->branch_count));
+	bool taken = found_entry->target && (pred & (1 << found_entry->branch_count));
 	neip = taken ? found_entry->target : found_entry->fall_through;
 
 	// Debug
@@ -195,10 +192,6 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 	debug << misc::fmt("Next fetch address = 0x%x\n", neip);
 	debug << misc::fmt("\n");
 
-
-	// Return entry
-	return_entry = *found_entry;
-
 	// Hit
 	return true;
 }
@@ -206,11 +199,6 @@ bool TraceCache::Lookup(unsigned int eip, int pred,
 
 void TraceCache::Flush()
 {
-	// Local variable declaration
-	Entry *entry_ptr;
-	Entry *found_entry = nullptr;
-	int found_way = -1;
-
 	// There must be something to commit
 	if (!temp->uop_count)
 		return;
@@ -230,24 +218,26 @@ void TraceCache::Flush()
 	// Allocate new line for the trace. If trace is already in the cache,
 	// do nothing. If there is any invalid entry, choose it.
 	int set = temp->tag % num_sets;
+	Entry *found_entry = nullptr;
+	int found_way = -1;
 	for (int way = 0; way < num_ways; way++)
 	{
 		// Invalid entry found. Since an invalid entry should appear
 		// consecutively and at the end of the set, there is no hope
 		// that the trace will be in a later way. Stop here.
-		Entry *entry_ptr = &entry[set * num_ways + way];
-		if (!entry_ptr->tag)
+		Entry *entry = &entries[set * num_ways + way];
+		if (!entry->tag)
 		{
-			found_entry = entry_ptr;
+			found_entry = entry;
 			found_way = way;
 			break;
 		}
 
 		// Hit
-		if (entry_ptr->tag == temp->tag && entry_ptr->branch_mask == temp->branch_mask
-				&& entry_ptr->branch_flags == temp->branch_flags)
+		if (entry->tag == temp->tag && entry->branch_mask == temp->branch_mask
+				&& entry->branch_flags == temp->branch_flags)
 		{
-			found_entry = entry_ptr;
+			found_entry = entry;
 			found_way = way;
 			break;
 		}
@@ -258,12 +248,12 @@ void TraceCache::Flush()
 	{
 		for (int way = 0; way < num_ways; way++)
 		{
-			entry_ptr = &entry[set * num_ways + way];
-			entry_ptr->counter--;
-			if (entry_ptr->counter < 0)
+			Entry *entry = &entries[set * num_ways + way];
+			entry->counter--;
+			if (entry->counter < 0)
 			{
-				entry_ptr->counter = num_ways - 1;
-				found_entry = entry_ptr;
+				entry->counter = num_ways - 1;
+				found_entry = entry;
 				found_way = way;
 			}
 		}

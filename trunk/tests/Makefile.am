@@ -45,8 +45,13 @@ src_network_test_SOURCES = \
 src_arch_x86_timing_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
 	$(top_builddir)/src/arch/x86/emulator/libemulator.a \
+	$(top_builddir)/src/arch/x86/disassembler/libdisassembler.a \
 	$(top_builddir)/src/arch/common/libcommon.a \
-	$(top_builddir)/src/lib/cpp/libcpp.a
+	$(top_builddir)/src/memory/libmemory.a \
+	$(top_builddir)/src/network/libnetwork.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a \
+	-lz
 
 src_arch_x86_timing_test_SOURCES = \
 	src/arch/x86/timing/TestBranchPredictor.cc \

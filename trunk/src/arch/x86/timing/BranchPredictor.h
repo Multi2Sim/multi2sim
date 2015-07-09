@@ -222,10 +222,11 @@ public:
 	///
 	Prediction Lookup(Uop *uop);
 
-	/// Return multiple predictions for an address. This can only be done for two-level
-	/// adaptive predictors, since they use global history. The prediction of the
-	/// primary branch is stored in the least significant bit (bit 0), whereas the prediction
-	/// of the last branch is stored in bit 'count-1'.
+	/// Return multiple predictions for an address. This can only be done
+	/// for two-level adaptive predictors, since they use global history.
+	/// The prediction of the primary branch is stored in the least
+	/// significant bit (bit 0), whereas the prediction of the last branch
+	/// is stored in bit 'count - 1'.
 	///
 	/// \param eip
 	/// 	The instruction address

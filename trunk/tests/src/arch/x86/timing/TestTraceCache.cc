@@ -27,6 +27,7 @@
 namespace x86
 {
 
+/*
 enum UopInstanceType
 {
 	UopInstanceTypeBranch = 0,
@@ -113,5 +114,7 @@ TEST(TestTraceCache, test_multiple_branch_predictor)
 {
 
 }
+
+*/
 
 }
