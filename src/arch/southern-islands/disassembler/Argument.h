@@ -291,7 +291,7 @@ class ValueArgument : public Argument
 	int constant_offset;
 
 	// Value set by user
-	std::unique_ptr<void> value;
+	std::unique_ptr<char[]> value;
 
 public:
 	ValueArgument(const std::string &name,
@@ -351,7 +351,7 @@ public:
 	/// Set the value 
 	///
 	/// \param value A void pointer to the buffer holding the value
-	void setValue(void *value) { this->value.reset(value); }
+	void setValue(std::unique_ptr<char[]> &&value) { this->value = std::move(value); }
 
 	/// Dump 
 	void Dump(std::ostream &os = std::cout);

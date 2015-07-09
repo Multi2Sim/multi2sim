@@ -70,7 +70,7 @@ class WorkGroup
 	unsigned wavefronts_completed_timing = 0;
 
 	// Flag indicating whether the work-group has finished emulation
-	bool finished_emu;
+	bool finished_emu = false;
 
 	// Flag indicating whether the work-group has finished timing simulation
 	bool finished_timing;

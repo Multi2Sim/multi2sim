@@ -10,22 +10,28 @@ AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
 
 TESTS = \
 	src_arch_x86_timing_test \
+	\
 	src_arch_southern_islands_emu_test \
 	\
 	src_arch_southern_islands_timing_test \
 	\
 	src_lib_esim_test \
+	\
 	src_memory_test \
+	\
 	src_network_test
 
 check_PROGRAMS = \
 	src_arch_x86_timing_test \
+	\
 	src_arch_southern_islands_emu_test \
 	\
 	src_arch_southern_islands_timing_test \
 	\
 	src_lib_esim_test \
+	\
 	src_memory_test \
+	\
 	src_network_test
 
 
@@ -81,14 +87,16 @@ src_arch_southern_islands_emu_test_SOURCES = \
 	src/arch/southern-islands/emu/TestISASOP2.cc 
 
 src_arch_southern_islands_timing_test_LDADD = \
-	$(top_builddir)/src/memory/libmemory.a \
 	$(top_builddir)/src/arch/southern-islands/timing/libtiming.a \
-	$(top_builddir)/src/arch/common/libcommon.a \
-	$(top_builddir)/src/lib/esim/libesim.a \
-	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
 	$(top_builddir)/src/arch/southern-islands/emulator/libemulator.a \
-	$(top_builddir)/src/lib/cpp/libcpp.a 
-
+	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
+	$(top_builddir)/src/arch/common/libcommon.a \
+	$(top_builddir)/src/memory/libmemory.a \
+	$(top_builddir)/src/network/libnetwork.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a \
+	-lz
+	
 src_arch_southern_islands_timing_test_SOURCES = \
 	src/arch/southern-islands/timing/TestTiming.cc
 
