@@ -642,11 +642,8 @@ void Module::Flush(int *witness)
 			0);
 	new_frame->witness = witness;
 
-	// Set up event
-	esim::Event *event = System::event_flush;
-
 	// Schedule event
-	esim_engine->Call(event, new_frame);
+	esim_engine->Call(System::event_flush, new_frame);
 }
 
 
@@ -658,7 +655,6 @@ void Module::RecursiveFlush()
 		// Skips main memory as it should not be flushed
 		if (low_module->getType() != Module::TypeMainMemory)
 			low_module->RecursiveFlush();
-
 		else
 			low_module->FlushCache();
 	}
