@@ -41,8 +41,8 @@ class Link : public Connection
 	// Number of virtual channels on link
 	int num_virtual_channels;
 
-	// System assigned name
-	std::string descriptive_name;
+	// user assigned name
+	std::string name;
 
 
 
@@ -58,7 +58,7 @@ class Link : public Connection
 	// arbitration
 	long long scheduled_when = -1;
 
-	// Last buffer that was has the ownership of physical link in virtual
+	// Last buffer that has the ownership of physical link in virtual
 	// channel arbitration
 	Buffer *scheduled_buffer = nullptr;
 
@@ -71,6 +71,12 @@ class Link : public Connection
 
 	// Number of bytes that was transfered through the links
 	long long transferred_bytes = 0;
+
+	// Number of cycles that the link was busy
+	long long busy_cycles = 0;
+
+	// Number of packets that traversed the link
+	long long transferred_packets = 0;
 
 public:
 
@@ -99,6 +105,12 @@ public:
 
 	/// Set destination node
 	void setDestinationNode(Node* node) { this->destination_node = node; }
+
+	/// Get the number of busy cycles
+	long long getBusyCycle() { return busy_cycles; }
+
+	/// Get th amount of transfered bytes
+	long long getTransferredBytes() { return transferred_bytes; }
 
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }

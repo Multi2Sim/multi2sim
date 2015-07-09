@@ -25,9 +25,36 @@ namespace net
 
 void Switch::Dump(std::ostream &os) const
 {
-	os << misc::fmt("\n***** %s: %s *****\n", 
-			"Switch",
+	// Dumping the swtich name
+	os << misc::fmt("[ Network.%s.Node.%s ]\n", network->getName().c_str(),
 			getName().c_str());
+
+	// Dumping the switch bandwidth
+	os << misc::fmt("Bandwidth = %d\n", bandwidth);
+
+	// Getting the current cycle
+	long long cycle = System::getInstance()->getCycle();
+
+	// Dumping the statistics information
+	os << misc::fmt("SentBytes = %lld\n", sent_bytes);
+	os << misc::fmt("SentPackets = %lld\n", sent_packets);
+	os << misc::fmt("SendRate = %0.4f\n", cycle ?
+			(double) sent_bytes / cycle : 0.0 );
+	os << misc::fmt("ReceivedBytes = %lld\n", received_bytes);
+	os << misc::fmt("ReceivedPackets = %lld\n", received_packets);
+	os << misc::fmt("RecieveRate = %0.4f\n", cycle ?
+			(double) received_bytes / cycle : 0.0 );
+
+	// Dumping input buffers' information
+	for (auto &buffer : input_buffers)
+		buffer->Dump();
+
+	// Dumping output buffers' information
+	for (auto &buffer : output_buffers)
+		buffer->Dump();
+
+	// Creating an empty line in the dump
+	os << "\n";
 }
 
 
@@ -135,7 +162,7 @@ void Switch::Forward(Packet *packet)
 	output_buffer->setWriteBusy(cycle + latency - 1);
 
 	// Transfer message to next output buffer
-	input_buffer->PopPacket();
+	input_buffer->ExtractPacket();
 	output_buffer->InsertPacket(packet);
 	packet->setBuffer(output_buffer);
 	packet->setBusy(cycle + latency - 1);

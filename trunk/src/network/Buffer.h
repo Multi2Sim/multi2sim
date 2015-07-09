@@ -74,6 +74,27 @@ class Buffer
 	// A list of packets in the buffer
 	std::list<Packet *> packets;
 
+
+
+	//
+	// Statistics
+	//
+
+	// Current byte occupancy of the buffer
+	int occupancy_byte_value = 0;
+
+	// current packet occupancy of the buffer
+	int occupancy_packet_value = 0;
+
+	// Last time buffer occupancy was measured
+	long long occupancy_measured_cycles = 0;
+
+	// Accumulated bytes that occupied the buffer
+	long long occupancy_accumulated_bytes = 0;
+
+	// Accumulated packets that occupied the buffer
+	long long occupancy_accumulated_packets = 0;
+
 public:
 
 	/// Constructor
@@ -116,7 +137,7 @@ public:
 	{
 		this->read_busy = read_busy;
 	}
-	
+
 	/// Get the scheduled cycle
 	long long getScheduledCycle() const { return scheduled_cycle; }
 
@@ -155,7 +176,7 @@ public:
 	/// Pop the packet at the head of the buffer. The packet is not 
 	/// destoryed. The message still keeps the ownership of the packet.
 	/// When the message is destroyed, the packet is destroyed together.
-	void PopPacket();
+	void ExtractPacket();
 
 	/// Get number of packets in the buffer
 	int getNumPacket()
@@ -171,8 +192,13 @@ public:
 		return packets.front();
 	}
 
-	/// Remove a certain packet from the buffer.
+	/// Remove a certain packet from the buffer
 	void RemovePacket(Packet *packet);
+
+	/// Updating the buffer statistics
+	void UpdateOccupancyInformation();
+	/// Dump the buffer information
+	void Dump(std::ostream &os = std::cout);
 
 };
 

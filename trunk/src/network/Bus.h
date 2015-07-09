@@ -33,7 +33,6 @@ public:
 
 	class Lane
 	{
-	protected:
 
 		// lane owner
 		Buffer* owner = nullptr;
@@ -53,8 +52,6 @@ public:
 		int getLaneIndex() const { return this->index; }
 
 	};
-
-protected:
 
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
