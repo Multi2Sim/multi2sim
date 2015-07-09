@@ -230,21 +230,21 @@ BranchPredictor::Prediction BranchPredictor::Lookup(Uop *uop)
 
 int BranchPredictor::LookupMultiple(unsigned int eip, int count)
 {
-	// Local variable declaration
-	int prediction, temp_prediction;
 
-	// First make a regular prediction. This updates the necessary fields in the
-	// uop for a later call to UpdateBranchPredictor(), and makes the first prediction
-	// considering known characteristics of the primary branch.
+	// First make a regular prediction. This updates the necessary fields in
+	// the uop for a later call to UpdateBranchPredictor(), and makes the
+	// first prediction considering known characteristics of the primary
+	// branch.
 	assert(kind == KindTwolevel);
 	int bht_index = eip & (twolevel_l1size - 1);
 	int pht_row = twolevel_bht[bht_index];
 	assert(pht_row < twolevel_l2height);
 	int pht_col = eip & (twolevel_l2size - 1);
-	prediction = temp_prediction = twolevel_pht[pht_row * twolevel_l2size + pht_col] > 1 ?
+	int prediction = twolevel_pht[pht_row * twolevel_l2size + pht_col] > 1 ?
 			PredictionTaken : PredictionNotTaken;
 
 	// Make the rest of predictions
+	int temp_prediction = prediction;
 	for (int i = 1; i < count; i++)
 	{
 		pht_row = ((pht_row << 1) | temp_prediction) & (twolevel_l2height - 1);
@@ -441,24 +441,21 @@ void BranchPredictor::UpdateBTB(Uop *uop)
 }
 
 
-unsigned int BranchPredictor::getNextBranch(unsigned int eip, unsigned int block_size)
+unsigned int BranchPredictor::getNextBranch(unsigned int eip,
+		unsigned int block_size)
 {
-	// Local variable
-	BTBEntry *entry;
-	int set;
-	unsigned int ret_addr = 0;
-
-	// Argument sanity check
+	// Sanity check
 	assert(!(block_size & (block_size - 1)));
 
 	// Trying to find the next branch address within one block size
+	unsigned int ret_addr = 0;
 	unsigned int limit = (eip + block_size) & ~(block_size - 1);
 	while (eip < limit)
 	{
-		set = eip & (btb_sets - 1);
+		int set = eip & (btb_sets - 1);
 		for (int way = 0; way < btb_assoc; way++)
 		{
-			entry = &btb[set * btb_assoc + way];
+			BTBEntry *entry = &btb[set * btb_assoc + way];
 			if (entry->source == eip)
 			{
 				ret_addr = eip;
