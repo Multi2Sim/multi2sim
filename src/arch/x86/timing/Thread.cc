@@ -204,6 +204,56 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 
 bool Thread::FetchFromTraceCache()
 {
+	// No room in trace cache queue
+	assert(TraceCache::isPresent());
+	if (trace_cache_queue_occupancy >= TraceCache::getQueueSize())
+		return false;
+	
+	// Access BTB, branch predictor, and trace cache
+	unsigned eip_branch = branch_predictor->getNextBranch(fetch_neip,
+			instruction_module->getBlockSize());
+	int prediction = eip_branch ?
+			branch_predictor->LookupMultiple(eip_branch,
+					TraceCache::getMaxBranches()) :
+			0;
+	TraceCache::Entry *entry;
+	unsigned neip;
+	bool hit = trace_cache->Lookup(fetch_neip,
+			prediction,
+			entry,
+			neip);
+	if (!hit)
+		return 0;
+	
+	// Fetch instruction in trace cache line.
+	for (int i = 0; i < entry->getNumMacroInstructions(); i++)
+	{
+		// If instruction caused context to suspend or finish
+		if (!context->getState(Context::StateRunning))
+			break;
+		
+		// Insert decoded uops into the trace cache queue. In the
+		// simulation, the uop is inserted into the fetch queue, but its
+		// occupancy is not increased.
+		fetch_neip = entry->getMacroInstruction(i);
+		Uop *uop = FetchInstruction(true);
+
+		// No uop was produced by this macro-instruction
+		if (!uop)
+			continue;
+
+		// If instruction is a branch, access branch predictor just in
+		// order to have the necessary information to update it at commit.
+		if (uop->getFlags() & Uinst::FlagCtrl)
+		{
+			branch_predictor->Lookup(uop);
+			uop->predicted_neip = i == entry->getNumMacroInstructions() - 1 ?
+					neip : entry->getMacroInstruction(i + 1);
+		}
+	}
+
+	// Set next fetch address as returned by the trace cache, and exit.
+	fetch_neip = neip;
 	return true;
 }
 

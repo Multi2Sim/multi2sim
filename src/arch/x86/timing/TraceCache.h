@@ -30,6 +30,68 @@ namespace x86
 // Trace cache class
 class TraceCache
 {
+public:
+
+	// Trace cache entry
+	class Entry
+	{
+		// The trace cache can freely access the entry
+		friend class TraceCache;
+
+		// LRU counter 
+		int counter;
+
+		// Address of the first instruction in the trace 
+		unsigned int tag;
+
+		// Number of micro-instructions in the cache line 
+		int uop_count;
+
+		// Number of branches in the trace 
+		int branch_count;
+
+		// Bit mask of 'branch_count' bits, with all bits set to one. 
+		int branch_mask;
+
+		// Bit mask of 'branch_count' bits. A bit set to one represents
+		// taken branch. The MSB corresponds to the last branch in the
+		// trace. The LSB corresponds to the first branch in the trace.
+		int branch_flags;
+
+		// Flag that indicates whether the last instruction is a branch
+		// or not.
+		bool is_last_instruction_branch = false;
+
+		// Address of the instruction following the last instruction in the
+		// trace.
+		unsigned int fall_through;
+
+		// Address of the target address of the last branch in the trace 
+		unsigned int target;
+
+		// It is a list composed of at most 'trace_size' elements. Each
+		// element contains the address of the micro-instructions in the
+		// trace. Only if each single micro-instructions comes from a
+		// different macro-instruction can this array be full.
+		std::vector<unsigned int> macro_instructions;
+	
+	public:
+
+		/// Return the number of macro-instructions in the trace
+		int getNumMacroInstructions() const
+		{
+			return macro_instructions.size();
+		}
+
+		/// Return the address of the macro-instruction with the given
+		/// index.
+		unsigned getMacroInstruction(int index) const
+		{
+			assert(misc::inRange(index, 0, macro_instructions.size() - 1));
+			return macro_instructions[index];
+		}
+	};
+
 private:
 
 	//
@@ -49,7 +111,7 @@ private:
 	static int trace_size;
 
 	// Maximum number of branches per trace
-	static int branch_max;
+	static int max_branches;
 
 	// Trace queue size
 	static int queue_size;
@@ -63,49 +125,8 @@ private:
 	// Name of the trace cache
 	std::string name;
 
-	// structure of trace cache entry
-	struct Entry
-	{
-		// LRU counter 
-		int counter;
-
-		// Address of the first instruction in the trace 
-		unsigned int tag;
-
-		// Number of micro- and macro-instructions in the cache line 
-		int uop_count;
-		int mop_count;
-
-		// Number of branches in the trace 
-		int branch_count;
-
-		// Bit mask of 'branch_count' bits, with all bits set to one. 
-		int branch_mask;
-
-		// Bit mask of 'branch_count' bits. A bit set to one represents a
-		// taken branch. The MSB corresponds to the last branch in the trace.
-		// The LSB corresponds to the first branch in the trace.
-		int branch_flags;
-
-		// Flag that indicates whether the last instruction is a branch or not
-		bool is_last_instruction_branch = false;
-
-		// Address of the instruction following the last instruction in the
-		// trace.
-		unsigned int fall_through;
-
-		// Address of the target address of the last branch in the trace 
-		unsigned int target;
-
-		// It is a list composed of 'trace_size' elements.
-		// Each element contains the address of the micro-instructions in the trace.
-		// Only if each single micro-instructions comes from a different macro-
-		// instruction can this array be full.
-		std::vector<unsigned int> mop_array;
-	};
-
-	// Trace cache lines ('sets' * 'assoc' elements) 
-	std::unique_ptr<Entry[]> entry;
+	// Trace cache lines (num_sets * num_ways elements) 
+	std::unique_ptr<Entry[]> entries;
 
 	// Temporary trace, progressively filled up in the commit stage,
 	// and dumped into the trace cache when full.
@@ -177,7 +198,7 @@ public:
 	
 	/// Return the maximum number of branches in a trace, as configured
 	/// by the user
-	static int getMaxNumBranch() { return branch_max; }
+	static int getMaxBranches() { return max_branches; }
 
 	/// Return the trace queue size
 	static int getQueueSize() { return queue_size; }
@@ -206,8 +227,8 @@ public:
 	/// Dump the trace cache report
 	void DumpReport(std::ostream &os = std::cout);
 
-	/// Record the Uop in trace cache
-	void RecordUop(Uop &uop);
+	/// Record the uop in trace cache
+	void RecordUop(Uop *uop);
 
 	/// Look up cache entry in the trace cache
 	///
@@ -217,19 +238,23 @@ public:
 	/// \param pred
 	/// 	The prediction of this branch instruction
 	///
-	/// \param return_entry
-	/// 	The found cache entry
+	/// \param entry
+	/// 	The found cache entry if there was a hit, or nullptr if there
+	///	was a miss.
 	///
 	/// \param neip
 	/// 	The next instruction address
 	///
 	/// \return
 	/// 	Whether or not the entry is found
-	bool Lookup(unsigned int eip, int pred,
-			Entry &return_entry,
+	///
+	bool Lookup(unsigned int eip,
+			int pred,
+			Entry *&entry,
 			unsigned int &neip);
 
-	/// Flush temporary trace of committed instructions back into the trace cache
+	/// Flush temporary trace of committed instructions back into the trace
+	/// cache.
 	void Flush();
 	
 	
