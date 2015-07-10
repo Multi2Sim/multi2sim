@@ -19,9 +19,6 @@ libemulator_a_SOURCES = \
 		Emulator.h \
 		Emulator.cc \
 		\
-		ProgramLoader.h \
-		ProgramLoader.cc \
-		\
 		SegmentManager.h \
 		SegmentManager.cc \
 		\

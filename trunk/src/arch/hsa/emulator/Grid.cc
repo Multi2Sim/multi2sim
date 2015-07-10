@@ -23,7 +23,6 @@
 #include <arch/hsa/driver/HsaExecutable.h>
 #include <arch/hsa/driver/HsaExecutableSymbol.h>
 
-#include "ProgramLoader.h"
 #include "WorkGroup.h"
 #include "WorkItem.h"
 #include "Grid.h"

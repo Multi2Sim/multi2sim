@@ -21,12 +21,12 @@
 
 #include <lib/cpp/String.h>
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
+#include <arch/hsa/disassembler/BrigFile.h>
 #include <arch/hsa/disassembler/BrigOperandEntry.h>
 #include <arch/hsa/disassembler/AsmService.h>
 
 #include "Emulator.h"
 #include "AQLQueue.h"
-#include "ProgramLoader.h"
 #include "Function.h"
 #include "StackFrame.h"
 

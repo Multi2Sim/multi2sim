@@ -29,7 +29,6 @@
 
 #include "Emulator.h"
 #include "Function.h"
-#include "ProgramLoader.h"
 #include "StackFrame.h"
 #include "WorkGroup.h"
 
