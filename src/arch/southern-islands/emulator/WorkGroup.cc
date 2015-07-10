@@ -84,6 +84,7 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 			WorkItem *work_item = work_items.back().get();
 			work_item->setWorkGroup(this);
 			work_item->setGlobalMemory(emulator->getGlobalMemory());
+			work_item->setIdInWavefront(j);
 		}
 	}
 
@@ -174,8 +175,8 @@ WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)
 				else if (work_item->getIdInWavefront() < 64)
 				{
 					unsigned exec_mask = wavefront->getSregUint(Instruction::RegisterExec + 1);
-					exec_mask |= 1 << work_item->getIdInWavefront();
-					wavefront->setSregUint(Instruction::RegisterExec, exec_mask);
+					exec_mask |= 1 << (work_item->getIdInWavefront() - 32);
+					wavefront->setSregUint(Instruction::RegisterExec + 1, exec_mask);
 				}
 				else 
 				{
