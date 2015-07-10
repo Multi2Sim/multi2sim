@@ -74,6 +74,9 @@ public:
 /// Class representing the wavefront pool in the compute unit front-end
 class WavefrontPool
 {
+	// Global identifier for the wavefront pool, assigned in constructor
+	int id;
+
 	// Compute unit that it belongs to, assigned in constructor
 	ComputeUnit *compute_unit;
 
@@ -85,9 +88,10 @@ class WavefrontPool
 public:
 
 	/// Constructor
-	WavefrontPool(ComputeUnit *compute_unit) : compute_unit(compute_unit)
-	{
-	}
+	WavefrontPool(ComputeUnit *compute_unit, int id);
+
+	/// Return the identifier for this wavefront pool
+	int getId() const { return id; }
 
 	/// Return an iterator to the first wavefront pool entry
 	/// in wavefront_pool_entries

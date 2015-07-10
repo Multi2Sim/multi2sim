@@ -91,18 +91,7 @@ class Wavefront
 	// Associated wavefront pool entry
 	WavefrontPoolEntry *wavefront_pool_entry;
 
-	// Flags updated during instruction execution
-	bool vector_mem_read;
-	bool vector_mem_write;
-	bool vector_mem_atomic;
-	bool scalar_mem_read;
-	bool lds_read;
-	bool lds_write;
-	bool mem_wait;
-	bool at_barrier;
-	bool finished = false;
-	bool vector_mem_global_coherency;
-
+	// Fields introduced for timing simulation
 	// Fields introduced for timing simulation
 	int id_in_compute_unit;
 	bool barrier_inst;
@@ -139,6 +128,18 @@ public:
 	// simulator.
 	long long uop_id_counter = 0;
 
+	// Flags updated during instruction execution
+	bool vector_mem_read;
+	bool vector_mem_write;
+	bool vector_mem_atomic;
+	bool scalar_mem_read;
+	bool lds_read;
+	bool lds_write;
+	bool mem_wait;
+	bool at_barrier;
+	bool finished = false;
+	bool vector_mem_global_coherency;
+
 	/// Getters
 	///
 	/// Return the global wavefront 1D identifier
@@ -171,30 +172,6 @@ public:
 
 	/// Get the associated instruction
 	Instruction *getInst() const { return inst; }
-
-	/// Returns true if the instruction has performed a
-	/// Vector mem read operation
-	bool isVectorMemRead() const { return vector_mem_read; }
-
-	/// Returns true if the instruction has performed a
-	/// Vector mem write operation
-	bool isVectorMemWrite() const { return vector_mem_write; }
-
-	/// Returns true if the instruction has performed a
-	/// Atomic vector memory operation
-	bool isVectorMemAtomic() const { return vector_mem_atomic; }
-
-	/// Returns true if the instruction has performed a
-	/// Scalar mem read operation
-	bool isScalarMemRead() const { return scalar_mem_read; }
-
-	/// Returns true if the instruction has performed a LDS
-	/// read operation
-	bool isLdsRead() const { return lds_read; }
-
-	/// Returns true if the instruction performed a LDS
-	/// write operation
-	bool isLdsWrite() const { return lds_write; }
 
 	/// Return true if work-item is active. The work-item identifier is
 	/// given relative to the first work-item in the wavefront
