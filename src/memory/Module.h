@@ -650,6 +650,10 @@ public:
 	/// write. Return `nullptr` if there is no in-flight write.
 	Frame *getInFlightWrite(Frame *older_than_frame = nullptr);
 
+	/// Given a block address, return whether the access is currently in
+	/// flight in the module.
+	bool isInFlightAccess(unsigned address);
+
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,
 	/// check if it can be coalesced with any in-flight access. If it can,

@@ -362,11 +362,14 @@ public:
 	/// Get load/store queue size
 	static int getLoadStoreQueueSize() { return load_store_queue_size; }
 
-	/// Get uop queue size
+	/// Return the size of the uop queue, as configured by the user
 	static int getUopQueueSize() { return uop_queue_size; }
 
-	/// Get fetch kind
+	/// Return the type of instruction fetch, as configured by the user
 	static FetchKind getFetchKind() { return fetch_kind; }
+
+	/// Return the decode width, as configured by the user
+	static int getDecodeWidth() { return decode_width; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
