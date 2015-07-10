@@ -50,8 +50,8 @@ ComputeUnit::ComputeUnit(int index) :
 	simd_units.reserve(num_wavefront_pools);
 	for (int i = 0; i < num_wavefront_pools; i++)
 	{
-		wavefront_pools[i] = misc::new_unique<WavefrontPool>(this, i);
-		fetch_buffers[i] = misc::new_unique<FetchBuffer>(this, i);
+		wavefront_pools[i] = misc::new_unique<WavefrontPool>(i, this);
+		fetch_buffers[i] = misc::new_unique<FetchBuffer>(i, this);
 		simd_units[i] = misc::new_unique<SimdUnit>(this);
 	}
 }
@@ -279,13 +279,13 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		misc::StringSingleSpaces(inst_str);
 
 		// Trace
-		Timing::trace << misc::fmt("si.new_instruction "
+		Timing::trace << misc::fmt("si.new_inst "
 				"id=%lld "
 				"cu=%d "
-				"ib=%d"
+				"ib=%d "
 				"wf=%d "
 				"uop_id=%lld "
-				"stg=\"i\"\n"
+				"stg=\"i\" "
 				"asm=\"%s\"\n",
 				uop->getIdInComputeUnit(),
 				index,
@@ -305,15 +305,15 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 			WorkItem *work_item = it->get();
 
 			// Get uop work item info
-			Uop::work_item_info_t *work_item_info;
+			Uop::WorkItemInfo *work_item_info;
 			work_item_info =
 				&uop->work_item_info_list[work_item->getIdInWavefront()];
 
 			// Global memory
 			work_item_info->global_mem_access_addr =
-				work_item->global_mem_access_addr;
+					work_item->global_mem_access_addr;
 			work_item_info->global_mem_access_size =
-				work_item->global_mem_access_size;
+					work_item->global_mem_access_size;
 
 			// LDS
 			work_item_info->lds_access_count =

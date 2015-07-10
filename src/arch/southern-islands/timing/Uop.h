@@ -63,9 +63,6 @@ class Uop
 	// belongs to. This field is initialized in the constructor.
 	long long id_in_compute_unit;
 
-	// Unique identifier of the associated wavefront pool
-	int wavefront_pool_id;
-
 	// Associated instruction
 	Instruction instruction;
 
@@ -78,11 +75,14 @@ class Uop
 	// Associated wavefront pool entry, assigned in constructor
 	WavefrontPoolEntry *wavefront_pool_entry;
 
+	// Cycle Uop was created
+	long long cycle_created;
+
 	// Associated work group
 	WorkGroup *work_group;
 
-	// Cycle Uop was created
-	long long cycle_created;
+	// Unique identifier of the associated wavefront pool
+	int wavefront_pool_id;
 
 public:
 
@@ -92,7 +92,7 @@ public:
 			WorkGroup *work_group,
 			int wavefront_pool_id);
 
-	// Flags updated during instruction execution
+	/// Flags updated during instruction execution
 	bool vector_mem_read;
 	bool vector_mem_write;
 	bool vector_mem_atomic;
@@ -106,7 +106,7 @@ public:
 	bool wavefront_last_instruction;
 
 	/// Part of a GPU instruction specific for each work-item within wavefront
-	struct work_item_info_t
+	struct WorkItemInfo
 	{
 		// For global memory accesses
 		unsigned int global_mem_access_addr;
@@ -124,7 +124,7 @@ public:
 	/// Vector containing work item specific information.  Indices of this
 	/// vector must be the same as the corresponding work item's id
 	/// in wavefront.
-	std::vector<work_item_info_t> work_item_info_list;
+	std::vector<WorkItemInfo> work_item_info_list;
 
 	/// Return the unique identifier assigned in sequential order to the
 	/// uop when it was created.

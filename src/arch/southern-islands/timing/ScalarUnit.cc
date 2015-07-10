@@ -24,7 +24,8 @@
 namespace SI
 {
 
-int ScalarUnit::issue_buffer_size = 1;
+int ScalarUnit::width = 1;
+int ScalarUnit::issue_buffer_size = 4;
 int ScalarUnit::decode_latency = 1;
 int ScalarUnit::decode_buffer_size = 1;
 int ScalarUnit::read_latency = 1;

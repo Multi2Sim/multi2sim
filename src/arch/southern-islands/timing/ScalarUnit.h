@@ -38,6 +38,9 @@ public:
 	// Static fields
 	//
 
+	/// Maximum number of instructions processed per cycle
+	static int width;
+
 	/// Size of the issue buffer in number of instructions
 	static int issue_buffer_size;
 
