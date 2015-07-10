@@ -35,14 +35,14 @@ Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
 		WorkGroup *work_group,
 		int wavefront_pool_id) :
 		wavefront(wavefront),
-		wavefront_pool_entry(wavefront_pool_entry)
+		wavefront_pool_entry(wavefront_pool_entry),
+		wavefront_pool_id(wavefront_pool_id)
 {
 	// Assign unique identifier
 	id = ++id_counter;
 	id_in_wavefront = wavefront->getUopId();
 	compute_unit = wavefront_pool_entry->getWavefrontPool()->getComputeUnit();
 	id_in_compute_unit = compute_unit->getUopId();
-	this->wavefront_pool_id = wavefront_pool_id;
 }
 
 }

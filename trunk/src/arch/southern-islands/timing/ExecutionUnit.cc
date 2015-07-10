@@ -30,7 +30,7 @@ void ExecutionUnit::Issue(std::shared_ptr<Uop> uop)
 	assert(canIssue());
 	issue_buffer.push_back(uop);
 
-	// Spend issue lantecy
+	// Spend issue latency
 	Timing *timing = Timing::getInstance();
 	assert(uop->issue_ready == 0);
 	uop->issue_ready = timing->getCycle() + ComputeUnit::issue_latency;

@@ -43,7 +43,7 @@ public:
 
 	/// Constructor
 	WavefrontPoolEntry(WavefrontPool *wavefront_pool) :
-			wavefront_pool(wavefront_pool)
+		wavefront_pool(wavefront_pool)
 	{
 	}
 
@@ -88,7 +88,11 @@ class WavefrontPool
 public:
 
 	/// Constructor
-	WavefrontPool(ComputeUnit *compute_unit, int id);
+	WavefrontPool(int id, ComputeUnit *compute_unit) :
+		id(id),
+		compute_unit(compute_unit)
+	{
+	}
 
 	/// Return the identifier for this wavefront pool
 	int getId() const { return id; }
