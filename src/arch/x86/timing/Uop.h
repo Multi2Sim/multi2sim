@@ -20,10 +20,11 @@
 #ifndef ARCH_X86_TIMING_UOP_H
 #define ARCH_X86_TIMING_UOP_H
 
-#include <lib/cpp/Misc.h>
+#include <deque>
 
 #include <arch/x86/emulator/Uinst.h>
 #include <arch/x86/emulator/Context.h>
+#include <lib/cpp/Misc.h>
 
 #include "BranchPredictor.h"
 
@@ -251,9 +252,14 @@ public:
 	/// True if the instruction is currently in the fetch queue
 	bool in_fetch_queue = false;
 
-	/// Position of the uop in the core's fetch queue, or past-the-end
-	/// iterator if not present.
-	std::list<std::shared_ptr<Uop>>::iterator fetch_queue_iterator;
+	/// Position of the uop in the thread's fetch queue
+	std::deque<std::shared_ptr<Uop>>::iterator fetch_queue_iterator;
+
+	/// True if the instruction is currently in the uop queue
+	bool in_uop_queue = false;
+
+	/// Position of the uop in the thread's uop queue
+	std::deque<std::shared_ptr<Uop>>::iterator uop_queue_iterator;
 
 	/// True if the instruction is currently in the core's event queue
 	bool in_event_queue = false;
@@ -301,10 +307,13 @@ public:
 	bool from_trace_cache = false;
 	
 	/// Physical address that this uop was fetched from
-	unsigned int fetch_address = 0;
+	unsigned fetch_address = 0;
 
 	// Physical address for memory uops
-	unsigned int physical_address = 0;
+	unsigned physical_address = 0;
+
+	/// Access identifier for instruction fetch
+	long long fetch_access = 0;
 
 
 
