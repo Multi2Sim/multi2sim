@@ -48,7 +48,12 @@ class FetchBuffer
 public:
 	
 	/// Constructor
-	FetchBuffer(ComputeUnit *compute_unit, int id);
+	FetchBuffer(int id, ComputeUnit *compute_unit) :
+			id(id),
+			compute_unit(compute_unit)
+
+	{
+	}
 
 	/// Return the number of uops in the fetch buffer
 	int getSize() { return buffer.size(); }

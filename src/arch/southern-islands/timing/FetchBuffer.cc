@@ -25,12 +25,6 @@
 namespace SI
 {
 
-FetchBuffer::FetchBuffer(ComputeUnit *compute_unit, int id) : compute_unit(compute_unit)
-{
-	this->id = id;
-}
-
-
 std::shared_ptr<Uop> FetchBuffer::Remove(std::list<std::shared_ptr<Uop>>::iterator it)
 {
 	assert(it != buffer.end());

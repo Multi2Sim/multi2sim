@@ -23,12 +23,5 @@
 
 namespace SI
 {
-
-WavefrontPool::WavefrontPool(ComputeUnit *compute_unit, int id) :
-	compute_unit(compute_unit)
-{
-	this->id = id;
-}
-
 }
 
