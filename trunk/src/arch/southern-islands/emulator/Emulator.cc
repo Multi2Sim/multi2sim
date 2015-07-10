@@ -110,21 +110,26 @@ bool Emulator::Run()
 			// Get current work group
 			WorkGroup *work_group = (*wg_i).get();
 
-			// Execute an instruction for each wavefront
-			for (auto wf_i = work_group->getWavefrontsBegin(), 
-					wf_e = work_group->getWavefrontsEnd();
-					wf_i != wf_e;
-					++wf_i)
+			while (!(work_group->getFinishedEmu()))
 			{
-				// Get current wavefront
-				Wavefront *wavefront = (*wf_i).get();
+			
+				// Execute an instruction for each wavefront
+				for (auto wf_i = work_group->getWavefrontsBegin(), 
+						wf_e = work_group->getWavefrontsEnd();
+						wf_i != wf_e;
+						++wf_i)
+				{
+					// Get current wavefront
+					Wavefront *wavefront = (*wf_i).get();
 
-				// Check if the wavefront is finished or not
-				if (wavefront->getFinished())
-					continue;
-				
-				// Execute the wavefront
-				wavefront->Execute();
+					// Check if the wavefront is finished or not
+					if (wavefront->getFinished())
+						continue;
+					
+					// Execute the wavefront
+					wavefront->Execute();
+				}
+			
 			}
 
 			// Check if the work group has finished
