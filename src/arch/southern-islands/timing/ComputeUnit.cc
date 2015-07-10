@@ -50,8 +50,8 @@ ComputeUnit::ComputeUnit(int index) :
 	simd_units.reserve(num_wavefront_pools);
 	for (int i = 0; i < num_wavefront_pools; i++)
 	{
-		wavefront_pools[i] = misc::new_unique<WavefrontPool>(this);
-		fetch_buffers[i] = misc::new_unique<FetchBuffer>(this);
+		wavefront_pools[i] = misc::new_unique<WavefrontPool>(this, i);
+		fetch_buffers[i] = misc::new_unique<FetchBuffer>(this, i);
 		simd_units[i] = misc::new_unique<SimdUnit>(this);
 	}
 }
@@ -168,6 +168,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 	// Checks
 	assert(fetch_buffer);
 	assert(wavefront_pool);
+	assert(fetch_buffer->getId() == wavefront_pool->getId());
 
 	// Set up variables
 	int instructions_processed = 0;
@@ -250,41 +251,48 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		// Create uop
 		auto uop = misc::new_shared<Uop>(
 				wavefront,
-				wavefront_pool_entry);
-		uop->setWavefront(wavefront);
-		uop->setWorkGroup(wavefront->getWorkGroup());
-		uop->setComputeUnit(this);
-		uop->setIdInComputeUnit(this->uop_id_counter++);
-		uop->setIdInWavefront(wavefront->uop_id_counter++);
-		uop->setVectorMemRead(wavefront->isVectorMemRead());
-		uop->setVectorMemWrite(wavefront->isVectorMemWrite());
-		uop->setVectorMemAtomic(wavefront->isVectorMemAtomic());
-		uop->setScalarMemRead(wavefront->isScalarMemRead());
-		uop->setLdsRead(wavefront->isLdsRead());
-		uop->setLdsWrite(wavefront->isLdsWrite());
-		uop->setWavefrontPoolEntry(wavefront->getWavefrontPoolEntry());
-		uop->setWavefrontLastInstruction(wavefront->getFinished());
-		uop->setMemWait(wavefront->isMemWait());
-		uop->setAtBarrier(wavefront->isBarrierInst());
+				wavefront_pool_entry,
+				timing->getCycle(),
+				wavefront->getWorkGroup(),
+				fetch_buffer->getId());
+		uop->vector_mem_read = wavefront->vector_mem_read;
+		uop->vector_mem_write = wavefront->vector_mem_write;
+		uop->vector_mem_atomic = wavefront->vector_mem_atomic;
+		uop->scalar_mem_read = wavefront->scalar_mem_read;
+		uop->lds_read = wavefront->lds_read;
+		uop->lds_write = wavefront->lds_write;
+		uop->wavefront_last_instruction = wavefront->finished;
+		uop->mem_wait = wavefront->mem_wait;
+		uop->at_barrier = wavefront->at_barrier;
 		uop->setInstruction(wavefront->getInst());
-		uop->setCycleCreated(timing->getCycle());
-		uop->setVectorMemGlobalCoherency(
-				wavefront->isVectorMemGlobalCoherency());
+		uop->vector_mem_global_coherency =
+				wavefront->vector_mem_global_coherency;
 
 		// Checks
 		assert(wavefront->getWorkGroup() && uop->getWorkGroup());
+
+		// Convert instruction name to string
+		const char* inst_name = wavefront->getInst()->getName();
+		std::stringstream ss;
+		ss << inst_name;
+		std::string inst_str = ss.str();
+		misc::StringSingleSpaces(inst_str);
 
 		// Trace
 		Timing::trace << misc::fmt("si.new_instruction "
 				"id=%lld "
 				"cu=%d "
+				"ib=%d"
 				"wf=%d "
 				"uop_id=%lld "
-				"stg=\"i\"\n",
+				"stg=\"i\"\n"
+				"asm=\"%s\"\n",
 				uop->getIdInComputeUnit(),
 				index,
+				uop->getWavefrontPoolId(),
 				uop->getWavefront()->getId(),
-				uop->getIdInWavefront());
+				uop->getIdInWavefront(),
+				inst_str.c_str());
 
 
 		// Update last memory accesses
@@ -294,29 +302,31 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 				++it)
 		{
 			// Get work item
-			/*
-			FIXME
 			WorkItem *work_item = it->get();
 
+			// Get uop work item info
+			Uop::work_item_info_t *work_item_info;
+			work_item_info =
+				&uop->work_item_info_list[work_item->getIdInWavefront()];
+
 			// Global memory
-			work_item_uop->global_mem_access_addr =
+			work_item_info->global_mem_access_addr =
 				work_item->global_mem_access_addr;
-			work_item_uop->global_mem_access_size =
+			work_item_info->global_mem_access_size =
 				work_item->global_mem_access_size;
 
 			// LDS
-			work_item_uop->lds_access_count =
+			work_item_info->lds_access_count =
 				work_item->lds_access_count;
-			for (j = 0; j < work_item->lds_access_count; j++)
+			for (int j = 0; j < work_item->lds_access_count; j++)
 			{
-				work_item_uop->lds_access_kind[j] =
-					work_item->lds_access_type[j];
-				work_item_uop->lds_access_addr[j] =
-					work_item->lds_access_addr[j];
-				work_item_uop->lds_access_size[j] =
-					work_item->lds_access_size[j];
+				work_item_info->lds_access[j].type =
+					work_item->lds_access[j].type;
+				work_item_info->lds_access[j].addr =
+					work_item->lds_access[j].addr;
+				work_item_info->lds_access[j].size =
+					work_item->lds_access[j].size;
 			}
-			*/
 		}
 
 		// Access instruction cache. Record the time when the

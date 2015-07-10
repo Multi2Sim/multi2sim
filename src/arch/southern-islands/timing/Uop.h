@@ -21,6 +21,7 @@
 #define ARCH_SOUTHERN_ISLANDS_TIMING_UOP_H
 
 #include <arch/southern-islands/disassembler/Instruction.h>
+#include<arch/southern-islands/emulator/WorkItem.h>
 
 
 namespace SI
@@ -58,9 +59,12 @@ class Uop
 	// belongs to. This field is initialized in the constructor.
 	long long id_in_wavefront;
 
-	// Unitque identifier of the instruction in the compute unit that it
+	// Unique identifier of the instruction in the compute unit that it
 	// belongs to. This field is initialized in the constructor.
 	long long id_in_compute_unit;
+
+	// Unique identifier of the associated wavefront pool
+	int wavefront_pool_id;
 
 	// Associated instruction
 	Instruction instruction;
@@ -80,6 +84,14 @@ class Uop
 	// Cycle Uop was created
 	long long cycle_created;
 
+public:
+
+	/// Constructor
+	Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
+			long long cycle_created,
+			WorkGroup *work_group,
+			int wavefront_pool_id);
+
 	// Flags updated during instruction execution
 	bool vector_mem_read;
 	bool vector_mem_write;
@@ -93,10 +105,26 @@ class Uop
 	bool vector_mem_global_coherency;
 	bool wavefront_last_instruction;
 
-public:
+	/// Part of a GPU instruction specific for each work-item within wavefront
+	struct work_item_info_t
+	{
+		// For global memory accesses
+		unsigned int global_mem_access_addr;
+		unsigned int global_mem_access_size;
 
-	/// Constructor
-	Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry);
+		// Flags
+		// Active after instruction emulation
+		bool active = true;
+
+		// LDS accesses
+		int lds_access_count;
+		WorkItem::MemoryAccess lds_access[WorkItem::MaxLDSAccessesPerInst];
+	};
+
+	/// Vector containing work item specific information.  Indices of this
+	/// vector must be the same as the corresponding work item's id
+	/// in wavefront.
+	std::vector<work_item_info_t> work_item_info_list;
 
 	/// Return the unique identifier assigned in sequential order to the
 	/// uop when it was created.
@@ -110,6 +138,9 @@ public:
 	/// unit that it belongs to.
 	long long getIdInComputeUnit() const { return id_in_compute_unit; }
 
+	/// Return the unique identifier to the associated wavefront pool
+	int getWavefrontPoolId() const { return wavefront_pool_id; }
+
 	/// Return the instruction associated with the uop
 	Instruction *getInstruction() { return &instruction; }
 
@@ -118,6 +149,9 @@ public:
 
 	/// Return the associated work group
 	WorkGroup *getWorkGroup() const { return work_group; }
+
+	/// Return the cycle the uop was created
+	long long getCycleCreated() const { return cycle_created; }
 
 	/// Return the associated compute unit
 	ComputeUnit *getComputeUnit() const { return compute_unit; }
@@ -128,120 +162,10 @@ public:
 		return wavefront_pool_entry;
 	}
 
-	/// Set wavefront
-	void setWavefront(Wavefront *wavefront)
-	{
-		this->wavefront = wavefront;
-	}
-
-	/// Set work group
-	void setWorkGroup(WorkGroup *work_group)
-	{
-		this->work_group = work_group;
-	}
-
-	/// Set compute unit
-	void setComputeUnit(ComputeUnit *compute_unit)
-	{
-		this->compute_unit = compute_unit;
-	}
-
-	/// Set the associated wavefront pool entry
-	void setWavefrontPoolEntry(WavefrontPoolEntry *wavefront_pool_entry)
-	{
-		this->wavefront_pool_entry = wavefront_pool_entry;
-	}
-
-	/// Set id in compute unit
-	void setIdInComputeUnit(long long id_in_compute_unit)
-	{
-		this->id_in_compute_unit = id_in_compute_unit;
-	}
-
-	/// Set cycle created
-	void setCycleCreated(long long cycle_created)
-	{
-		this->cycle_created = cycle_created;
-	}
-
-	/// Set the id in associated wavefront
-	void setIdInWavefront(long long id_in_wavefront)
-	{
-		this->id_in_wavefront = id_in_wavefront;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a vector mem read operation.
-	void setVectorMemRead(bool vector_mem_read)
-	{
-		this->vector_mem_read = vector_mem_read;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a vector mem write operation.
-	void setVectorMemWrite(bool vector_mem_write)
-	{
-		this->vector_mem_write = vector_mem_write;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a atomic vector memory operation.
-	void setVectorMemAtomic(bool vector_mem_atomic)
-	{
-		this->vector_mem_atomic = vector_mem_atomic;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a Scalar mem read operation.
-	void setScalarMemRead(bool scalar_mem_read)
-	{
-		this->scalar_mem_read = scalar_mem_read;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a LDS read operation.
-	void setLdsRead(bool lds_read)
-	{
-		this->lds_read = lds_read;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a memory wait operation.
-	void setLdsWrite(bool lds_write)
-	{
-		this->lds_write = lds_write;
-	}
-
-	/// Flag set during instruction emulation
-	void setWavefrontLastInstruction(bool wavefront_last_instruction)
-	{
-		this->wavefront_last_instruction = wavefront_last_instruction;
-	}
-
-	/// Flag set during instruction emulation to indicate that the
-	/// instruction performed a memory wait operation.
-	void setMemWait(bool mem_wait)
-	{
-		this->mem_wait = mem_wait;
-	}
-
-	/// Flag set during execution indicating that uop is at a barrier
-	void setAtBarrier(bool at_barrier)
-	{
-		this->at_barrier = at_barrier;
-	}
-
 	/// Set the instruction
 	void setInstruction(Instruction *instruction)
 	{
 		this->instruction = *instruction;
-	}
-
-	/// Flag set during instruction emulation
-	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency)
-	{
-		this->vector_mem_global_coherency =
-				vector_mem_global_coherency;
 	}
 
 	/// Cycle in which the uop is first ready after fetch

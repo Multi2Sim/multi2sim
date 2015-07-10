@@ -30,7 +30,10 @@ namespace SI
 long long Uop::id_counter = 0;
 
 
-Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry) :
+Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
+		long long cycle_created,
+		WorkGroup *work_group,
+		int wavefront_pool_id) :
 		wavefront(wavefront),
 		wavefront_pool_entry(wavefront_pool_entry)
 {
@@ -39,6 +42,7 @@ Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry) :
 	id_in_wavefront = wavefront->getUopId();
 	compute_unit = wavefront_pool_entry->getWavefrontPool()->getComputeUnit();
 	id_in_compute_unit = compute_unit->getUopId();
+	this->wavefront_pool_id = wavefront_pool_id;
 }
 
 }
