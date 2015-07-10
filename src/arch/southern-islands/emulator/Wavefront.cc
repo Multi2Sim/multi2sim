@@ -314,7 +314,6 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 				work_item->Execute(opcode, &inst);
 		}
 
@@ -349,7 +348,6 @@ void Wavefront::Execute()
 				{
 					work_item = (*it).get();
 					if (isWorkItemActive(work_item->getIdInWavefront()))
-					if (isWorkItemActive(work_item->getIdInWavefront()))
 					{
 						work_item->Execute(opcode, &inst);
 					}
@@ -363,7 +361,6 @@ void Wavefront::Execute()
 				it != e; ++it)
 			{
 				work_item = (*it).get();
-				if (isWorkItemActive(work_item->getIdInWavefront()))
 				if (isWorkItemActive(work_item->getIdInWavefront()))
 				{
 					work_item->Execute(opcode, &inst);
@@ -388,7 +385,6 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
 			}
@@ -410,7 +406,6 @@ void Wavefront::Execute()
 				it != e; ++it)
 		{
 			work_item = (*it).get();
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
@@ -434,7 +429,6 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
 			}
@@ -456,7 +450,6 @@ void Wavefront::Execute()
 				it != e; ++it)
 		{
 			work_item = (*it).get();
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
@@ -498,7 +491,6 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
 			}
@@ -535,7 +527,6 @@ void Wavefront::Execute()
 				it != e; ++it)
 		{
 			work_item = (*it).get();
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
@@ -580,7 +571,6 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);
 			}
@@ -605,7 +595,6 @@ void Wavefront::Execute()
 				it != e; ++it)
 		{
 			work_item = (*it).get();
-			if (isWorkItemActive(work_item->getIdInWavefront()))
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
 				work_item->Execute(opcode, &inst);

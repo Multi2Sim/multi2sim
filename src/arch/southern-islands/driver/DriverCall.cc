@@ -125,15 +125,6 @@ int Driver::CallMemRead(comm::Context *context,
 	// Read memory from host to device
 	auto buffer = misc::new_unique_array<char>(size);
 	video_memory->Read(device_ptr, size, buffer.get());
-
-	std::cout<<"\n\n";
-
-	for (unsigned i = 0; i < size; i++)
-		printf("%02x ", buffer.get()[i]);
-
-	std::cout<<"\n\n";
-
-
 	memory->Write(host_ptr, size, buffer.get());
 	
 	// Return                                                         
@@ -432,9 +423,6 @@ int Driver::CallKernelSetArgValue(comm::Context *context,
 	
 	auto value = misc::new_unique_array<char>(size);
 	memory->Read(host_ptr, size, value.get());
-	
-	//auto value = misc::new_unique<char>(size);
-	//memory->Read(host_ptr, size, value.get());
 
 	// Save value and size
 	arg->setValue(std::move(value));
