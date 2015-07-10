@@ -27,7 +27,6 @@
 #include <arch/hsa/emulator/Component.h>
 #include <arch/hsa/emulator/WorkItem.h>
 #include <arch/hsa/emulator/StackFrame.h>
-#include <arch/hsa/emulator/ProgramLoader.h>
 
 #include "HsaProgram.h"
 #include "HsaExecutable.h"
@@ -69,7 +68,6 @@ int Driver::CallSystemGetInfo(comm::Context *context,
 	// hsa_status_t		| 0		| 4
 	// attribute		| 4		| 4
 	// data			| 8		| 12
-
 	unsigned int attribute = getArgumentValue<unsigned int>(4, memory,
 			args_ptr);
 	unsigned int data_ptr = getArgumentValue<unsigned int>(8, memory,
@@ -142,66 +140,6 @@ int Driver::CallSystemGetInfo(comm::Context *context,
 	return 0;
 }
 
-/*
-int Driver::IterateAgentNext(DriverCallbackInfo *args)
-{
-	// Convert the info object to be this function specific
-	AgentIterateNextInfo *info = (AgentIterateNextInfo *)args;
-	mem::Memory *memory = info->getMemory();
-	WorkItem *work_item = info->getWorkItem();
-	unsigned args_ptr = info->getArgsPtr();
-	unsigned long long last_handler =
-			info->getLastComponentHandler();
-
-	// All information retrieved, then we can pop the stack
-	work_item->PopStack();
-
-
-	debug << misc::fmt("In function %s ", __FUNCTION__);
-	debug << misc::fmt("last_handler: %lld, ", last_handler);
-	debug << "ret: "<<
-		getArgumentValue<unsigned int>(0, memory, args_ptr);
-	debug << ", callback: " <<
-		getArgumentValue<unsigned int>(4, memory, args_ptr);
-	debug << ", data: " <<
-		getArgumentValue<unsigned long long>(12, memory, args_ptr);
-	debug << ", host_lang: " <<
-		getArgumentValue<unsigned int>(20, memory, args_ptr);
-	debug << ", workitem_ptr: " <<
-		getArgumentValue<unsigned long long>(24, memory, args_ptr)
-		<< "\n";
-
-	// Get virtual machine setup
-	Driver *driver = Driver::getInstance();
-	Emu *emu = Emu::getInstance();
-	Component *component = emu->getNextComponent(last_handler);
-
-	// No component to iterate anymore
-	if (!component){
-		// Set return argument to HSA_STATUS_SUCCESS
-		driver->setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
-
-		// Exit intercepted environment
-		StackFrame *stack_top = work_item->getStackTop();
-		driver->ExitInterceptedEnvironment(args_ptr, stack_top);
-
-		// Return 0 to tell the function finished its execution
-		return 0;
-	}
-
-	// Construct a stack frame and implant it the the caller stack
-	unsigned callback_address = driver->getArgumentValue<unsigned long long>
-			(4, memory,args_ptr);
-	unsigned long long data_address = driver->getArgumentValue
-			<unsigned long long>(12, memory, args_ptr);
-	driver->StartAgentIterateCallback(work_item, callback_address,
-			component->getHandler(), data_address, args_ptr);
-
-	return 1;
-}
-*/
-
 
 int Driver::CallIterateAgents(comm::Context *context,
 		mem::Memory *memory,
@@ -234,81 +172,9 @@ int Driver::CallIterateAgents(comm::Context *context,
 		// Return 0 to tell the function finished its execution
 		return 0;
 	}
-/*
-	// Construct a stack frame and implant it the the caller stack
-	WorkItem *workitem = (WorkItem *)getArgumentValue<unsigned long long>(
-			24, memory, args_ptr);
-	unsigned callback_address = getArgumentValue<unsigned long long>(
-			4, memory, args_ptr);
-	unsigned long long data_address = getArgumentValue<unsigned long long>
-		(12, memory, args_ptr);	
-	StartAgentIterateCallback(workitem, callback_address, 
-			component->getHandler(), data_address,
-			args_ptr);
-			*/
 
 	return 1;
 }
-
-/*
-void Driver::StartAgentIterateCallback(WorkItem *work_item,
-		unsigned callback_address, 
-		unsigned long long componentHandler, 
-		unsigned long long data_address,
-		unsigned args_ptr)
-{
-	// Get call back function name
-	BrigFile *binary = ProgramLoader::getInstance()->getBinary();
-	auto function_dir = binary->getCodeEntryByOffset(callback_address);
-	std::string callback_name = function_dir->getName();
-
-	// Create new stack frame
-	Function *callback = ProgramLoader::getInstance()->getFunction(
-			callback_name);
-	auto stack_frame = misc::new_unique<StackFrame>(callback, work_item);
-
-	// Pass argument into stack frame
-	VariableScope *function_args = stack_frame->getFunctionArguments();
-
-	// Declare return argument
-	auto out_arg_directory = function_dir->Next();
-	std::string arg_name = out_arg_directory->getName();
-	SegmentManager *func_arg_seg = stack_frame->getFuncArgSegment();
-	function_args->DeclearVariable(arg_name, out_arg_directory->getType(),
-			out_arg_directory->getDim(), func_arg_seg);
-
-	// Pass argument 1 (Address handler) to the callback
-	auto arg1 = function_dir->getFirstInArg();
-	std::string arg1_name = arg1->getName();
-	function_args->DeclearVariable(arg1_name, BRIG_TYPE_U64,
-			arg1->getDim(), func_arg_seg);
-	unsigned long long *callee_buffer = 
-			(unsigned long long *)function_args->
-			getBuffer(arg1_name);
-	*callee_buffer = componentHandler;
-
-	// Pass argument 2 (Address to the data field) to the callback
-	auto arg2 = arg1->Next();
-	std::string arg2_name = arg2->getName();
-	function_args->DeclearVariable(arg2_name, BRIG_TYPE_U64,
-			arg2->getDim(), func_arg_seg);
-	callee_buffer = (unsigned long long *)
-			function_args->getBuffer(arg2_name);
-	*callee_buffer = data_address;
-
-	// Setup info for return callback function
-	mem::Memory *memory = Emu::getInstance()->getMemory();
-	auto callback_info = misc::new_unique<AgentIterateNextInfo>(
-			work_item, memory, args_ptr, componentHandler);
-
-	// Set the stack frame to be an agent_iterate_callback
-	stack_frame->setReturnCallback(&Driver::IterateAgentNext,
-			std::move(callback_info));
-
-	// Add stack frame to the work item;
-	work_item->PushStackFrame(std::move(stack_frame));
-}
-*/
 
 
 int Driver::CallAgentGetInfo(comm::Context *context,
