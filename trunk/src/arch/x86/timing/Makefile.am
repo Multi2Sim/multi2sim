@@ -19,6 +19,8 @@ libtiming_a_SOURCES = \
 	\
 	Thread.h \
 	Thread.cc \
+	ThreadFetch.cc \
+	ThreadDecode.cc \
 	\
 	Core.h \
 	Core.cc \

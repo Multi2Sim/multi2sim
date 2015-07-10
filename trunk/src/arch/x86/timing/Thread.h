@@ -90,8 +90,20 @@ private:
 	// Queues
 	//
 
+	// Insert a uop into the tail of the fetch queue
+	void InsertInFetchQueue(std::shared_ptr<Uop> uop);
+
+	// Extract a uop from the head of the fetch queue
+	std::shared_ptr<Uop> ExtractFromFetchQueue();
+
 	// Fetch queue
 	std::deque<std::shared_ptr<Uop>> fetch_queue;
+
+	// Insert a uop into the tail of the uop queue
+	void InsertInUopQueue(std::shared_ptr<Uop> uop);
+
+	// Extract a uop from the head of the uop queue
+	std::shared_ptr<Uop> ExtractFromUopQueue();
 
 	// Uop queue
 	std::deque<std::shared_ptr<Uop>> uop_queue;
@@ -153,8 +165,8 @@ private:
 	// Physical address of last instruction fetch
 	unsigned int fetch_address = 0;
 
-	// Module access ID of last instruction fetch
-	long long fetch_access_id = 0;
+	// Access identifier for of last instruction fetch
+	long long fetch_access = 0;
 
 	// Cycle until which fetching is stalled (inclusive)
 	long long fetch_stall_until = 0;
@@ -366,7 +378,7 @@ public:
 
 
 	//
-	// Fetch stages
+	// Fetch stage
 	//
 
 	/// Check whether or not the fecth is allowed
@@ -394,6 +406,17 @@ public:
 
 	/// Fetch stage function
 	void Fetch();
+
+
+
+
+	//
+	// Decode stage
+	//
+
+	/// Run the decode stage for the thread
+	void Decode();
+
 
 
 

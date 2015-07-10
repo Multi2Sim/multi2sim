@@ -349,6 +349,14 @@ Frame *Module::getInFlightWrite(Frame *older_than_frame)
 }
 
 
+bool Module::isInFlightAccess(unsigned address)
+{
+	unsigned block_address = address >> log_block_size;
+	auto it = access_map.find(block_address);
+	return it != access_map.end();
+}
+
+
 Frame *Module::canCoalesce(AccessType access_type,
 		unsigned address,
 		Frame *older_than_frame)

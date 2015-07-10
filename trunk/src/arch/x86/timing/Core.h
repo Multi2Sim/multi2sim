@@ -292,6 +292,9 @@ public:
 
 	/// Fetch stage
 	void Fetch();
+
+	/// Decode stage
+	void Decode();
 };
 
 }

@@ -132,8 +132,17 @@ void Core::Fetch()
 }
 
 
+void Core::Decode()
+{
+	// Run decode stage for all threads
+	for (auto &thread : threads)
+		thread->Decode();
+}
+
+
 void Core::Run()
 {
+	Decode();
 	Fetch();
 }
 
