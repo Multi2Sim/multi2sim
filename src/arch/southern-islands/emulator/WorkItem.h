@@ -164,8 +164,6 @@ public:
 
 private:
 
-	static const int MaxLDSAccessesPerInst = 2;
-	
 	//global ID
 	int id = 0;
 
@@ -197,18 +195,6 @@ private:
 
 	// Vector registers
 	Instruction::Register vreg[256];
-
-	// Last global memory address
-	unsigned global_mem_access_addr;
-	
-	// Last global memory access size
-	unsigned global_mem_access_size;
-
-	// Last LDS accesses by last instruction
-	int lds_access_count;  // Number of LDS access by last instruction
-	MemoryAccess lds_access[MaxLDSAccessesPerInst];
-
-	//TODO fix this naming implementation
 
 	// Emulation of ISA. This code expands to one function per ISA
 	// instruction. For example: ISA_s_mov_b32_Impl(Instruction *inst)
@@ -247,6 +233,18 @@ public:
 	///	Global 1D identifier of the work-item
 	///
 	WorkItem(Wavefront *wavefront, int id);
+
+	static const int MaxLDSAccessesPerInst = 2;
+
+	// Last global memory address
+	unsigned global_mem_access_addr;
+
+	// Last global memory access size
+	unsigned global_mem_access_size;
+
+	// Last LDS accesses by last instruction
+	int lds_access_count;  // Number of LDS access by last instruction
+	MemoryAccess lds_access[MaxLDSAccessesPerInst];
 
 
 

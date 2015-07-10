@@ -36,6 +36,9 @@ class ComputeUnit;
 /// Class representing a fetch buffer in the compute unit front-end
 class FetchBuffer
 {
+	// Global fetch buffer identifier, assigned in constructor
+	int id;
+
 	// Compute unit that it belongs to, assigned in constructor
 	ComputeUnit *compute_unit;
 
@@ -45,12 +48,13 @@ class FetchBuffer
 public:
 	
 	/// Constructor
-	FetchBuffer(ComputeUnit *compute_unit) : compute_unit(compute_unit)
-	{
-	}
+	FetchBuffer(ComputeUnit *compute_unit, int id);
 
 	/// Return the number of uops in the fetch buffer
 	int getSize() { return buffer.size(); }
+
+	/// Return the identifier for this fetch buffer
+	int getId() { return id; }
 
 	/// Add instruction to the end of the buffer
 	void addUop(std::shared_ptr<SI::Uop> uop)
