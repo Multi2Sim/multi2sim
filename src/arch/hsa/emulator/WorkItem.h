@@ -231,7 +231,6 @@ private:
  		auto operand = inst->getOperand(index);
 
  		// Do corresponding action according to the type of operand
- 		// I do not think there should be other type except reg
  		switch (operand->getKind())
  		{
  		case BRIG_KIND_OPERAND_REGISTER:
