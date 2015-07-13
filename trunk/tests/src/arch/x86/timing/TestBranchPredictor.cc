@@ -216,20 +216,19 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	}
 }
 
-/*
 
 TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 {
 	// Local variable declaration
 	const int num_branch_uop = 3;
 	const int N = 3;
-	Uop *uop;
 	BranchPredictor::Prediction pred;
 	int bht_status;
 	char pht_status;
 	unsigned int branch_addr;
 	unsigned int branch_inst_size = 4;
 	unsigned int branch_target_distance = 8;
+	ObjectPool object_pool;
 
 	// Setup configuration file for branch preditor
 	std::string config =
@@ -253,40 +252,44 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> uops;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	Uinst uinst(Uinst::OpcodeBranch);
+	auto uinst = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
+	Uop *uop;
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)
 	{
 		// First micro-operation (Taken)
 		branch_addr = 0;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_target_distance);
-		uop->setMopSize(branch_inst_size);
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_target_distance;
+		uop->mop_size = branch_inst_size;
 
 		// Second micro-operation (Not Taken)
 		branch_addr = 16;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_inst_size);
-		uop->setMopSize(branch_inst_size);
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_inst_size;
+		uop->mop_size = branch_inst_size;
 
 		// Third micro-operation (Not Taken)
 		branch_addr = 32;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_inst_size);
-		uop->setMopSize(branch_inst_size);
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_inst_size;
+		uop->mop_size = branch_inst_size;
 	}
 
 
@@ -369,19 +372,19 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	{
 		// Look up predictor and verify prediction
 		branch_predictor.Lookup(uops[i].get());
-		pred = uops[i]->getPrediction();
+		pred = uops[i]->prediction;
 		EXPECT_EQ(pred_result[i], pred);
 
 		// Verify the BHT index and PHT row colomn
-		EXPECT_EQ(bht_index, uops[i]->getTwolevelBHTIndex());
-		EXPECT_EQ(pht_row[i], uops[i]->getTwolevelPHTRow());
-		EXPECT_EQ(pht_col[i], uops[i]->getTwolevelPHTCol());
+		EXPECT_EQ(bht_index, uops[i]->twolevel_bht_index);
+		EXPECT_EQ(pht_row[i], uops[i]->twolevel_pht_row);
+		EXPECT_EQ(pht_col[i], uops[i]->twolevel_pht_col);
 
 		// Update predictor and verify the two-level branch predictor status
 		branch_predictor.Update(uops[i].get());
-		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->getTwolevelBHTIndex());
-		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->getTwolevelPHTRow(),
-				uops[i]->getTwolevelPHTCol());
+		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->twolevel_bht_index);
+		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->twolevel_pht_row,
+				uops[i]->twolevel_pht_col);
 		EXPECT_EQ(bht_status_trace[i], bht_status);
 		EXPECT_EQ(pht_status_trace[i], (int)pht_status);
 	}
@@ -393,7 +396,6 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	// Local variable declaration
 	const int num_branch_uop = 3;
 	const int N = 3;
-	Uop *uop;
 	BranchPredictor::Prediction bimodal_pred;
 	BranchPredictor::Prediction twolevel_pred;
 	BranchPredictor::Prediction pred;
@@ -404,6 +406,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	unsigned int branch_addr;
 	unsigned int branch_inst_size = 4;
 	unsigned int branch_target_distance = 8;
+	ObjectPool object_pool;
 
 	// Setup configuration file for branch preditor
 	std::string config =
@@ -429,40 +432,48 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	std::vector<std::unique_ptr<Uop>> uops;
 
 	//Shared by different Uop, but this is incorrect in real scenario
-	Uinst uinst(Uinst::OpcodeBranch);
+	auto uinst = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
+	Uop *uop;
 
 	// Create N pattern
 	for (int i = 0; i < N; i++)
 	{
 		// First micro-operation (Taken)
 		branch_addr = 0;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_target_distance);
-		uop->setMopSize(branch_inst_size);
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_target_distance;
+		uop->mop_size = branch_inst_size;
 
 		// Second micro-operation (Not Taken)
 		branch_addr = 16;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_inst_size);
-		uop->setMopSize(branch_inst_size);
+
+
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_inst_size;
+		uop->mop_size = branch_inst_size;
 
 		// Third micro-operation (Not Taken)
 		branch_addr = 32;
-		uops.emplace_back(misc::new_unique<Uop>());
+		uops.emplace_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst));
 		uop = uops.back().get();
-		uop->setUInst(&uinst);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(branch_addr);
-		uop->setNeip(branch_addr + branch_inst_size);
-		uop->setMopSize(branch_inst_size);
+
+
+		uop->eip = branch_addr;
+		uop->neip = branch_addr + branch_inst_size;
+		uop->mop_size = branch_inst_size;
 	}
 
 
@@ -600,20 +611,20 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	{
 		// Look up predictor and verify prediction
 		branch_predictor.Lookup(uops[i].get());
-		twolevel_pred = uops[i]->getTwolevelPrediction();
-		bimodal_pred = uops[i]->getBimodPrediction();
-		pred = uops[i]->getPrediction();
+		twolevel_pred = uops[i]->twolevel_prediction;
+		bimodal_pred = uops[i]->bimod_prediction;
+		pred = uops[i]->prediction;
 		EXPECT_EQ(twolevel_pred_result[i], twolevel_pred);
 		EXPECT_EQ(bimodal_pred_result[i], bimodal_pred);
 		EXPECT_EQ(choice_pred_result[i], pred);
 
 		// Update predictor and verify the two-level branch predictor status
 		branch_predictor.Update(uops[i].get());
-		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->getTwolevelBHTIndex());
-		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->getTwolevelPHTRow(),
-				uops[i]->getTwolevelPHTCol());
-		bimodal_status = branch_predictor.getBimodStatus(uops[i]->getBimodIndex());
-		choice_status = branch_predictor.getChoiceStatus(uops[i]->getChoiceIndex());
+		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->twolevel_bht_index);
+		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->twolevel_pht_row,
+				uops[i]->twolevel_pht_col);
+		bimodal_status = branch_predictor.getBimodStatus(uops[i]->bimod_index);
+		choice_status = branch_predictor.getChoiceStatus(uops[i]->choice_index);
 		EXPECT_EQ(bht_status_trace[i], bht_status);
 		EXPECT_EQ(pht_status_trace[i], (int)pht_status);
 		EXPECT_EQ(bimodal_status_trace[i], bimodal_status);
@@ -621,7 +632,6 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	}
 }
 
-*/
 
 }
 

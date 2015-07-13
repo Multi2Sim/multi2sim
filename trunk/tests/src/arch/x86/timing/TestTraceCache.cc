@@ -22,12 +22,20 @@
 #include <string>
 
 #include <lib/cpp/IniFile.h>
+#include <arch/x86/emulator/Emulator.h>
+#include <arch/x86/emulator/Uinst.h>
 #include <arch/x86/timing/TraceCache.h>
+#include <arch/x86/timing/Core.h>
+#include <arch/x86/timing/Cpu.h>
+#include <arch/x86/timing/Thread.h>
+#include <arch/x86/timing/Timing.h>
+#include <arch/x86/timing/Uop.h>
+
 
 namespace x86
 {
 
-/*
+
 enum UopInstanceType
 {
 	UopInstanceTypeBranch = 0,
@@ -35,44 +43,91 @@ enum UopInstanceType
 };
 
 // Set up a static branch instruction
-static Uinst uinst_branch(Uinst::OpcodeBranch);
+static auto uinst_branch = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
 
 // Set up a static move instruction
-static Uinst uinst_move(Uinst::OpcodeMove);
+static auto uinst_move = misc::new_shared<Uinst>(Uinst::OpcodeMove);
 
 static std::vector<std::unique_ptr<Uop>> uop_list;
+
+class ObjectPool
+{
+	// A CPU
+	std::unique_ptr<Cpu> cpu;
+
+	// A core
+	std::unique_ptr<Core> core;
+
+	// A thread
+	std::unique_ptr<Thread> thread;
+
+	// A context
+	Context *context;
+
+public:
+
+	/// Contructor
+	ObjectPool()
+{
+		// Destroy previous singletons
+		Timing::Destroy();
+		Emulator::Destroy();
+
+		// Timing simulator
+		cpu = misc::new_unique<Cpu>();
+		core = misc::new_unique<Core>(cpu.get(), 0);
+		thread = misc::new_unique<Thread>(core.get(), 0);
+
+		// Create a context
+		Emulator *emulator = Emulator::getInstance();
+		context = emulator->newContext();
+}
+
+	/// Return the core
+	Core *getCore() const { return core.get(); }
+
+	/// Return the thread
+	Thread *getThread() const { return thread.get(); }
+
+	/// Return the context
+	Context *getContext() const { return context; }
+};
+
 
 void ParseUopInstance(UopInstanceType instance_type, int address,
 		int instruction_size, int target_distance, bool taken)
 {
 	// Local variable
 	Uop *uop;
+	ObjectPool object_pool;
 
 	// Generate uop and insert it into Uop list
 	switch (instance_type)
 	{
 	case UopInstanceTypeBranch:
 
-		uop_list.push_back(misc::new_unique<Uop>());
+		uop_list.push_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst_branch));
 		uop = uop_list.back().get();
-		uop->setUInst(&uinst_branch);
-		uop->setFlags(Uinst::FlagCtrl | Uinst::FlagCond);
-		uop->setEip(address);
+		uop->eip = address;
 		if (taken)
-			uop->setNeip(address + target_distance);
+			uop->neip = address + target_distance;
 		else
-			uop->setNeip(address + instruction_size);
-		uop->setMopSize(instruction_size);
+			uop->neip = address + instruction_size;
+		uop->mop_size = instruction_size;
 		break;
 
 	case UopInstanceTypeOther:
 
-		uop_list.push_back(misc::new_unique<Uop>());
+		uop_list.push_back(misc::new_unique<Uop>(
+				object_pool.getThread(),
+				object_pool.getContext(),
+				uinst_move));
 		uop = uop_list.back().get();
-		uop->setUInst(&uinst_move);
-		uop->setFlags(Uinst::FlagInt);
-		uop->setEip(address);
-		uop->setMopSize(instruction_size);
+		uop->eip = address;
+		uop->mop_size = instruction_size;
 		break;
 
 	default:
@@ -106,7 +161,7 @@ TEST(TestTraceCache, read_ini_configuration_file)
 	EXPECT_EQ(128, TraceCache::getNumSets());
 	EXPECT_EQ(8, TraceCache::getNumWays());
 	EXPECT_EQ(32, TraceCache::getTraceSize());
-	EXPECT_EQ(5, TraceCache::getMaxNumBranch());
+	EXPECT_EQ(5, TraceCache::getMaxBranches());
 	EXPECT_EQ(64, TraceCache::getQueueSize());
 }
 
@@ -115,6 +170,5 @@ TEST(TestTraceCache, test_multiple_branch_predictor)
 
 }
 
-*/
 
 }
