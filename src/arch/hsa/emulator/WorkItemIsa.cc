@@ -19,6 +19,7 @@
 
 #include <cstring>
 
+#include <lib/cpp/Misc.h>
 #include <arch/hsa/disassembler/AsmService.h>
 #include <arch/hsa/driver/HsaExecutable.h>
 
@@ -2025,13 +2026,21 @@ void WorkItem::Inst_LD_Aux()
 		address = getFlatAddress(inst->getSegment(), 
 				address);
 
+		Emulator::isa_debug << misc::fmt("Loading from address 0x%x\n", address);
+
 		// Get buffer in host
-		T value;
-		Emulator::getInstance()->getMemory()->Read(address, sizeof(T), 
-				(char *)&value);
+		unsigned vector_modifier = inst->getVectorModifier();
+		if (vector_modifier == 0) vector_modifier = 1;
+		auto value = misc::new_unique_array<T>(
+				vector_modifier);
+		Emulator::getInstance()->getMemory()->Read(address, 
+				sizeof(T) * vector_modifier, 
+				(char *)value.get());
+		Emulator::isa_debug << misc::fmt("Vector_modifier: %d\n", vector_modifier);
+		Emulator::isa_debug << *value.get() << "\n";
 
 		// Move value from register or immediate into memory
-		storeOperandValue<T>(0, &value);
+		storeOperandValue<T>(0, value.get());
 	}
 }
 
@@ -2042,7 +2051,6 @@ void WorkItem::ExecuteInst_LD()
 	StackFrame *stack_top = stack.back().get();
 	BrigCodeEntry *inst = stack_top->getPc();
 
-	//
 	switch (inst->getType())
 	{
 	case BRIG_TYPE_U32:
