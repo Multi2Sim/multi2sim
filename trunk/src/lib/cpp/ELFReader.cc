@@ -182,9 +182,9 @@ void Symbol::getStream(std::istringstream &stream, unsigned int offset,
 				name.c_str()));
 
 	// Check valid offset/size
-	if (offset + size > info->st_size)
+	if (size > info->st_size)
 		throw Error(file->getPath(),
-				misc::fmt("symbol '%s': invalid offset and/or size",
+				misc::fmt("symbol '%s': invalid size",
 				name.c_str()));
 
 	// Set substream

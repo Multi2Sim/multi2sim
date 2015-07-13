@@ -90,7 +90,9 @@ void Kernel::LoadMetaDataV3()
 {
 	// Load metadata content
 	std::istringstream metadata_stream;
-	metadata_symbol->getStream(metadata_stream);
+	metadata_symbol->getStream(metadata_stream,
+			(unsigned)metadata_symbol->getValue(), 
+			(unsigned)metadata_symbol->getSize());
 
  	bool err;
 	std::string line;
@@ -577,13 +579,16 @@ void Kernel::LoadMetaData()
 {
 	// Load metadata content
 	std::istringstream metadata_stream;
-	metadata_symbol->getStream(metadata_stream);
+	metadata_symbol->getStream(metadata_stream,
+			(unsigned)metadata_symbol->getValue(), 
+			(unsigned)metadata_symbol->getSize());
 
 	// First line example:
 	// ;ARGSTART:__OpenCL_opencl_mmul_kernel
 	std::string line;
 	std::vector<std::string> token_list;
 	std::getline(metadata_stream, line);
+
 	misc::StringTokenize(line, token_list, ";:");
 	Expect(token_list, "ARGSTART");
 	ExpectCount(token_list, 2);
@@ -801,6 +806,10 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 		program(program)
 {
 	metadata_symbol = program->getSymbol("__OpenCL_" + name + "_metadata");
+
+	std::cout<<"\n\nmetadata_symbol_name: "<<metadata_symbol->getName()<<"\n\n";
+
+
 	header_symbol = program->getSymbol("__OpenCL_" + name + "_header");
 	kernel_symbol = program->getSymbol("__OpenCL_" + name + "_kernel");
 	if (!metadata_symbol || !header_symbol || !kernel_symbol)
@@ -1093,7 +1102,238 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 
 void Kernel::DebugNDRangeState(NDRange *ndrange)
 {
-	throw misc::Panic("Not implemented");
+
+	// TODO - Need to fix line length to adhere to 80 char limit
+
+	// Get emulator instance and video memory
+	SI::Emulator *emulator = SI::Emulator::getInstance();
+	mem::Memory *video_memory = emulator->getVideoMemory();
+	
+	// Create a buffer descriptor
+	WorkItem::BufferDescriptor buffer_desc;
+
+	// Start writing NDRange debug output
+	Emulator::isa_debug << misc::fmt("\n");
+        Emulator::isa_debug << misc::fmt("================ Initialization Summary ================\n");
+        Emulator::isa_debug << misc::fmt("\n");
+
+        // Table locations
+        Emulator::isa_debug << misc::fmt("NDRange table locations:\n");
+        Emulator::isa_debug << misc::fmt("\t------------------------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\t|    Name            |    Address Range        |\n");
+        Emulator::isa_debug << misc::fmt("\t------------------------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\t| Const Buffer table | [%10u:%10u] |\n",
+                ndrange->getConstBufferTableAddr(),
+                ndrange->getConstBufferTableAddr() +
+                NDRange::ConstBufTableSize - 1);
+        Emulator::isa_debug << misc::fmt("\t| Resource table     | [%10u:%10u] |\n",
+                ndrange->getResourceTableAddr(),
+                ndrange->getResourceTableAddr() +
+                NDRange::ResourceTableSize - 1);
+        Emulator::isa_debug << misc::fmt("\t| UAV table          | [%10u:%10u] |\n",
+                ndrange->getUAVTableAddr(),
+                ndrange->getUAVTableAddr() + NDRange::UAVTableSize - 1);
+        Emulator::isa_debug << misc::fmt("\t------------------------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\n");
+
+        // SREG initialization
+        unsigned user_element_count = 
+			binary_file.get()->GetSIDictEntry()->num_user_elements;
+	BinaryUserElement *user_elements =
+			binary_file.get()->GetSIDictEntry()->user_elements;
+	Emulator::isa_debug << misc::fmt("Scalar register initialization prior to execution:\n");
+        Emulator::isa_debug << misc::fmt("\t-------------------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\t|  Registers  |   Initialization Value    |\n");
+        Emulator::isa_debug << misc::fmt("\t-------------------------------------------\n");
+        for (unsigned i = 0; i < user_element_count; i++)
+        {
+                if (user_elements[i].dataClass == BinaryUserDataConstBuffer)
+                {
+                        // Constant buffer descriptor
+                        if (user_elements[i].userRegCount > 1)
+                        {
+                                Emulator::isa_debug << misc::fmt("\t| SREG[%2d:%2d] |  CB%1d "
+                                        "Descriptor           |\n",
+                                        user_elements[i].startUserReg,
+                                        user_elements[i].startUserReg +
+                                        user_elements[i].userRegCount - 1,
+                                        user_elements[i].apiSlot);
+                        }
+                        else
+                        {
+                                Emulator::isa_debug << misc::fmt("\t| SREG[%2d]    |  CB%1d "
+                                        "Descriptor         |\n",
+                                        user_elements[i].startUserReg,
+                                        user_elements[i].apiSlot);
+                        }
+                }
+
+                else if (user_elements[i].dataClass == BinaryUserDataUAV)
+                {
+                        // UAV buffer descriptor
+                        Emulator::isa_debug << misc::fmt("\t| SREG[%2d:%2d] |  UAV%-2d "
+                                "Descriptor         |\n",
+                                user_elements[i].startUserReg,
+                                user_elements[i].startUserReg +
+                                user_elements[i].userRegCount - 1,
+                                user_elements[i].apiSlot);
+                }
+                else if (user_elements[i].dataClass ==  
+			BinaryUserDataConstBufferTable)
+                {
+                        Emulator::isa_debug << misc::fmt("\t| SREG[%2d:%2d] |  Constant Buffer "
+                                "Table    |\n",
+                                user_elements[i].startUserReg,
+                                user_elements[i].startUserReg +
+                                user_elements[i].userRegCount - 1);
+                }
+                else if (user_elements[i].dataClass == BinaryUserDataUAVTable)
+                {
+                        Emulator::isa_debug << misc::fmt("\t| SREG[%2d:%2d] |  UAV "
+                                "Table                |\n",
+                                user_elements[i].startUserReg,
+                                user_elements[i].startUserReg +
+                                user_elements[i].userRegCount - 1);
+                }
+                else
+                {
+                        assert(0);
+                }
+        }
+        Emulator::isa_debug << misc::fmt("\t-------------------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\n");
+
+	// CB1 mapping (was commented out in old C files)
+
+#if 0
+        /* Dump constant buffer 1 (argument mapping) */
+        si_isa_debug("Constant buffer 1 initialization (kernel arguments):\n");
+        si_isa_debug("\t-------------------------------------------\n");
+        si_isa_debug("\t| CB1 Idx | Arg # |   Size   |    Name    |\n");
+        si_isa_debug("\t-------------------------------------------\n");
+        for (i = 0; i < list_count(kernel->arg_list); i++)
+        {
+                arg = list_get(kernel->arg_list, i);
+                assert(arg);
+
+                /* Check that argument was set */
+                if (!arg->set)
+                {
+                        fatal("kernel '%s': argument '%s' has not been "
+                                "assigned with 'clKernelSetArg'.",
+                                kernel->name, arg->name);
+                }
+
+                /* Process argument depending on its type */
+                switch (arg->kind)
+                {
+
+                case SI_OPENCL_KERNEL_ARG_KIND_VALUE:
+                {
+                        /* Value copied directly into device constant 
+                         * memory */
+                        assert(arg->size);
+                        si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s |\n",
+                                arg->pointer.constant_offset/4, i, arg->size,
+                                arg->name);
+
+                        break;
+                }
+
+                case SI_OPENCL_KERNEL_ARG_KIND_POINTER:
+                {
+                        if (arg->pointer.mem_type !=
+                                SI_OPENCL_KERNEL_ARG_MEM_TYPE_HW_LOCAL)
+                        {
+                                si_isa_debug("\t| CB1[%2d] | %5d | %8d | %-10s"
+                                        " |\n", arg->pointer.constant_offset/4,
+                                        i, arg->size,
+                                        arg->name);
+                        }
+                        else
+                        {
+                                assert(0);
+                        }
+                        break;
+                }
+
+                case SI_OPENCL_KERNEL_ARG_KIND_IMAGE:
+                {
+                        assert(0);
+                        break;
+                }
+
+                case SI_OPENCL_KERNEL_ARG_KIND_SAMPLER:
+                {
+                        assert(0);
+                        break;
+                }
+
+                default:
+                {
+                        fatal("%s: argument type not reconized",
+                                __FUNCTION__);
+                }
+
+                }
+        }
+        si_isa_debug("\t-------------------------------------------\n");
+        si_isa_debug("\n");
+#endif
+        // Initialized constant buffers
+	Emulator::isa_debug << misc::fmt("Initialized constant buffers:\n");
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+	Emulator::isa_debug << misc::fmt("\t|  CB   |      Address Range      |\n");
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+        for (int i = 0; i < NDRange::MaxNumConstBufs; i++)
+	{
+		if (!ndrange->getConstBuffer(i)->valid)
+		{
+                	continue;
+		}
+
+		video_memory->Read(
+			ndrange->getConstBufferTableAddr() + 
+			i * NDRange::ConstBufTableEntrySize, 
+			sizeof(buffer_desc), (char *) &buffer_desc);
+
+        	Emulator::isa_debug << misc::fmt("\t| CB%-2d  | [%10llu:%10llu] |\n",
+			i, (long long unsigned int)buffer_desc.base_addr,
+			(long long unsigned int)buffer_desc.base_addr + 
+			(long long unsigned int)buffer_desc.num_records - 1);
+	}
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\n");
+
+        // Initialized UAVs
+	Emulator::isa_debug << misc::fmt("Initialized UAVs:\n");
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+	Emulator::isa_debug << misc::fmt("\t|  UAV  |      Address Range      |\n");
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+        for (int i = 0; i < NDRange::MaxNumUAVs; i++)
+	{
+		if (!ndrange->getUAV(i)->valid)
+		{
+                	continue;
+		}
+
+		video_memory->Read(
+			ndrange->getUAVTableAddr() + 
+			i * NDRange::UAVTableEntrySize, sizeof(buffer_desc), 
+			(char *) &buffer_desc);
+
+        	Emulator::isa_debug << misc::fmt("\t| UAV%-2d | [%10u:%10u] |\n",
+			i, (unsigned int)buffer_desc.base_addr,
+			(unsigned int)buffer_desc.base_addr + 
+			(unsigned int)buffer_desc.num_records - 1);
+	}
+	Emulator::isa_debug << misc::fmt("\t-----------------------------------\n");
+        Emulator::isa_debug << misc::fmt("\n");
+        Emulator::isa_debug << misc::fmt("========================================================"
+                "\n");
+
+
+	//throw misc::Panic("Not implemented");
 }
 
 

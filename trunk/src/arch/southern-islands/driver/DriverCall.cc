@@ -793,9 +793,9 @@ int Driver::CallNDRangePassMemObjs(comm::Context *context,
 	// Setup constant buffers and arguments
 	kernel->SetupNDRangeConstantBuffers(ndrange);
 	kernel->SetupNDRangeArgs(ndrange);
+	kernel->DebugNDRangeState(ndrange);
 	
-	// TODO SetupNDRangeState
-
+	// Return
 	return 0;
 }
 
