@@ -397,9 +397,6 @@ void Emulator::RemoveNDRange(NDRange *ndrange)
 
 NDRange *Emulator::getNDRangeById(unsigned id)
 {
-	// Check that id is in range
-	assert(id >= 0 && id < (unsigned) getNumNDRanges());
-
 	// Iterate through NDRange list
 	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it != e; ++it)
 	{
