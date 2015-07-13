@@ -576,12 +576,17 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		if (getAbsoluteFlattenedId() == 0) 
+		if (getAbsoluteFlattenedId() == 1) 
 		{
 			Emulator::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
 			Emulator::isa_debug << "Executing: ";
 			Emulator::isa_debug << *inst;
+
+			Emulator::isa_debug << "Before: ";
+			if (Emulator::isa_debug)
+				stack_top->Dump(Emulator::isa_debug);
+			Emulator::isa_debug << "\n";
 		}
 
 		// Get the function according to the opcode and perform the inst
@@ -602,7 +607,7 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (getAbsoluteFlattenedId() == 0) 
+		if (getAbsoluteFlattenedId() == 1) 
 		{
 			if (Emulator::isa_debug)
 				stack_top->Dump(Emulator::isa_debug);
