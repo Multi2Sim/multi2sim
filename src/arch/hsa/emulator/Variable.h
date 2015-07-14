@@ -22,7 +22,6 @@
 
 #include <arch/hsa/disassembler/Brig.h>
 
-
 namespace HSA
 {
 
@@ -37,6 +36,9 @@ class Variable
 	// Type of the variable
 	BrigType type;
 
+	// The segment that this variable is declared in
+	BrigSegment segment;
+
 	// Size of the variable
 	unsigned size;
 
@@ -49,10 +51,6 @@ class Variable
 	// Is input
 	bool is_input = false;
 
-	// The segment where the variable is declared. If segment is nullptr,
-	// the variable is defined directly into memory
-	SegmentManager *segment;
-
 	// Index of the argument in the argument
 	unsigned int index = 0;
 
@@ -64,27 +62,8 @@ public:
 	/// Constructor
 	Variable(const std::string& name, BrigType type,
 			unsigned long long dim, unsigned address,
-			SegmentManager *segment,
+			BrigSegment segment,
 			bool isFormal);
-
-	/// Destructor
-	~Variable();
-
-	/// Dump variable information
-	void Dump(std::ostream &os = std::cout, unsigned int indent = 0,
-			bool is_simple_format = false) const;
-
-	// Output variable value
-	template<typename T>
-	void DumpValue(std::ostream &os = std::cout) const;
-
-	/// Operator \c << invoking the function Dump) on an output stream
-	friend std::ostream &operator<<(std::ostream &os,
-			const Variable &variable)
-	{
-		variable.Dump(os);
-		return os;
-	}
 
 	/// Get variable address
 	unsigned getAddress() const { return address; }
@@ -128,11 +107,8 @@ public:
 	/// Set the dim
 	void setDim(unsigned long long dim) { this->dim = dim; };
 
-	/// Returns the flat address of a variable
-	unsigned getFlatAddress() const;
-
-	/// Return the buffer to the variable
-	char *getBuffer() const;
+	/// Get the segment
+	BrigSegment getSegment() const { return segment; }
 
 };
 

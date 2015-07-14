@@ -93,20 +93,10 @@ private:
 			std::unique_ptr<BrigCodeEntry> entry,
 			bool isInput, Function* function);
 
-
-	/// Return the Brig binary
-	///BrigFile *getBinary() const { return binary.get(); }
-
-
 public:
 
 	/// Constructor
 	HsaExecutable();
-
-	/// Destructor
-	~HsaExecutable()
-	{
-	};
 
 	/// Load code object
 	void LoadCodeObject(HsaCodeObject *code_object);
@@ -119,7 +109,6 @@ public:
 
 	/// Return the pointer to the function by the name
 	Function *getFunction(const std::string &name) const;
-
 };
 
 }  // namespace HSA

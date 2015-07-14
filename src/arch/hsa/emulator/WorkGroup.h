@@ -32,7 +32,6 @@ namespace HSA
 
 class Wavefront;
 class Grid;
-class WorkItem;
 class SegmentManager;
 
 /// Work group of an HSA component

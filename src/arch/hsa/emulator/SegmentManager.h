@@ -45,7 +45,7 @@ public:
 	virtual ~SegmentManager();
 
 	/// Allocate memory from the segment, returns the in-segment address
-	unsigned Allocate(unsigned size, unsigned alignment);
+	unsigned Allocate(unsigned size, unsigned alignment = 1);
 
 	/// Free memory from the segment
 	void Free(unsigned address);

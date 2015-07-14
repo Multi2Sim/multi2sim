@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/hsa/disassembler/Brig.h>
 #include <arch/hsa/disassembler/AsmService.h>
 
 #include "WorkItem.h"
@@ -46,7 +47,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->abs_id_z = abs_id_z;
 
 	// Set the first stack frame
-	StackFrame *frame = new StackFrame(root_function, this);
+	StackFrame *frame = new StackFrame(root_function, this, nullptr);
 	stack.push_back(std::unique_ptr<StackFrame>(frame));
 
 	// Set the status of the work item to be active
@@ -111,7 +112,8 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 
 		// Dump arguments and their value
 		os << "(";
-		frame->getFunctionArguments()->DumpInLine(os);
+		os << "To be supported";
+		//frame->getFunctionArguments()->DumpInLine(os);
 		os << ")";
 		os << "\n";
 	}
@@ -133,15 +135,6 @@ bool WorkItem::ReturnFunction()
 		}
 	}
 
-	// Check if this frame have a call back function when it return
-	if (callee_frame->getReturnCallback())
-	{
-		StackFrame::CallbackFn callback = 
-			callee_frame->getReturnCallback();
-		callback(callee_frame->getReturnCallbackInfo());
-		return true;
-	}
-
 	// Retrieve second last element
 	if (stack.size() > 1)
 	{
@@ -152,7 +145,9 @@ bool WorkItem::ReturnFunction()
 		// Process value return
 		Function *function = callee_frame->getFunction();
 		BrigCodeEntry *inst = caller_frame->getPc();
-		function->PassBackByValue(caller_frame, callee_frame, inst);
+		// function->PassBackByValue(caller_frame, callee_frame, inst);
+
+		// Dump information
 		if (getAbsoluteFlattenedId() == 0) 
 		{
 			if (Emulator::isa_debug)
@@ -263,7 +258,7 @@ void WorkItem::ExecuteDirective()
 
 	case BRIG_KIND_DIRECTIVE_VARIABLE:
 
-		DeclearVariable();
+		DeclareVariable();
 		break;
 
 	default:
@@ -339,108 +334,101 @@ unsigned WorkItem::getFlatAddress(BrigSegment segment, unsigned address)
 }
 
 
-char *WorkItem::getVariableBuffer(BrigSegment segment,
-		const std::string &name)
+void WorkItem::DeclareVariableGlobal(const std::string &name, BrigType type,
+		unsigned long long dim)
 {
-	// Get stack top frame
-	StackFrame *stack_top = stack.back().get();
+	// If not an array, set dim to 1
+	if (dim == 0) dim = 1;
+	
+	// Get the global memory manager
+	mem::Manager *manager = Emulator::getInstance()->getMemoryManager();
+	unsigned size = AsmService::TypeToSize(type);
+	unsigned address = manager->Allocate(size * dim);
 
-	// Perform different action according to different section
-	switch (segment)
-	{
-	case BRIG_SEGMENT_NONE:
+	// Create the variable 
+	auto variable = misc::new_unique<Variable>(name, type, dim, 
+			address, BRIG_SEGMENT_GLOBAL, false);
 
-		throw misc::Panic("Unsupported segment NONE.");
-		break;
-
-	case BRIG_SEGMENT_FLAT:
-
-		throw misc::Panic("Unsupported segment FLAT.");
-		break;
-
-	case BRIG_SEGMENT_GLOBAL:
-	case BRIG_SEGMENT_GROUP:
-	case BRIG_SEGMENT_PRIVATE:
-
-	{
-		VariableScope *variable_scope = stack_top->getVariableScope();
-		return variable_scope->getBuffer(name);
-		break;
-	}
-
-	case BRIG_SEGMENT_KERNARG:
-
-	{
-		VariableScope *kernel_arguments = work_group->
-				getGrid()->getKernelArguments();
-		char *buffer;
-		if (kernel_arguments)
-		{
-			buffer = kernel_arguments->getBuffer(name);
-		}
-
-		return buffer;
-		break;
-	}
-	break;
-
-	case BRIG_SEGMENT_READONLY:
-
-	{
-		throw misc::Panic("Unsupported segment READONLY.");
-		break;
-	}
-
-	case BRIG_SEGMENT_SPILL:
-
-	{
-		throw misc::Panic("Unsupported segment SPILL.");
-		break;
-	}
-
-	case BRIG_SEGMENT_ARG:
-
-	{
-		// Get argument scope if in curve bracket, otherwise, get
-		// function arguments
-		VariableScope *argument_scope = stack_top->getArgumentScope();
-		char *buffer;
-		if (argument_scope)
-		{
-			buffer = argument_scope->getBuffer(name);
-			if (buffer)
-				return buffer;
-		}
-
-		// If variable is not declared in argument scope,
-		// try function arguments.
-		argument_scope = stack_top->getFunctionArguments();
-		buffer = argument_scope->getBuffer(name);
-		if(!buffer)
-		{
-			throw misc::Panic("Argument not found\n");
-		}
-
-		return buffer;
-		break;
-	}
-
-	default:
-
-		throw misc::Panic("Unsupported segment.");
-		break;
-	}
-
-	return nullptr;
+	// Add the variable to stack top
+	StackFrame *stack_top = getStackTop();
+	stack_top->addVariable(std::move(variable));
 }
 
 
-void WorkItem::DeclearVariable()
+void WorkItem::DeclareVariableGroup(const std::string &name, BrigType type,
+			unsigned long long dim)
 {
-	StackFrame *stack_top = stack.back().get();
+	// If not an array, set dim to 1
+	if (dim == 0) dim = 1;
+	
+	// Get the global memory manager
+	SegmentManager *manager = work_group->getGroupSegment();
+	unsigned size = AsmService::TypeToSize(type);
+	unsigned address = manager->Allocate(size * dim);
+
+	// Create the variable 
+	auto variable = misc::new_unique<Variable>(name, type, dim, 
+			address, BRIG_SEGMENT_GROUP, false);
+
+	// Add the variable to stack top
+	StackFrame *stack_top = getStackTop();
+	stack_top->addVariable(std::move(variable));
+}
+
+
+void WorkItem::DeclareVariablePrivate(const std::string &name, BrigType type,
+			unsigned long long dim)
+{
+	// If not an array, set dim to 1
+	if (dim == 0) dim = 1;
+	
+	// Get the global memory manager
+	SegmentManager *manager = private_segment.get();
+	unsigned size = AsmService::TypeToSize(type);
+	unsigned address = manager->Allocate(size * dim);
+
+	// Create the variable 
+	auto variable = misc::new_unique<Variable>(name, type, dim, 
+			address, BRIG_SEGMENT_PRIVATE, false);
+
+	// Add the variable to stack top
+	StackFrame *stack_top = getStackTop();
+	stack_top->addVariable(std::move(variable));
+}
+
+
+void WorkItem::DeclareVariableArgument(const std::string &name, BrigType type,
+			unsigned long long dim)
+{
+	// If not an array, set dim to 1
+	if (dim == 0) dim = 1;
+	
+	// Get the argument section memory manager
+	StackFrame *stack_top = getStackTop();
+	SegmentManager *manager = stack_top->getArgumentSegment();
+	if (!manager) 
+		throw misc::Panic("Argument scope not started.");
+
+	// Allocate memory
+	unsigned size = AsmService::TypeToSize(type);
+	unsigned address = manager->Allocate(size * dim);
+
+	// Create the variable 
+	auto variable = misc::new_unique<Variable>(name, type, dim, 
+			address, BRIG_SEGMENT_ARG, false);
+
+	// Add the variable to stack top
+	stack_top->addVariable(std::move(variable));
+}
+
+
+void WorkItem::DeclareVariable()
+{
+	StackFrame *stack_top = getStackTop();
 	BrigCodeEntry *dir = stack_top->getPc();
-	unsigned int size = AsmService::TypeToSize(dir->getType());
 	std::string name = dir->getName();
+	BrigType type = dir->getType();
+	unsigned long long dim = dir->getDim();
 
 	// Allocate memory in different segment
 	switch (dir->getSegment())
@@ -457,49 +445,18 @@ void WorkItem::DeclearVariable()
 
 	case BRIG_SEGMENT_GLOBAL:
 
-	{
-		VariableScope *variable_scope = stack_top->getVariableScope();
-		unsigned long long dim = dir->getDim();
-		variable_scope->DeclearVariable(name, dir->getType(),
-				dim, nullptr);
-		if (getAbsoluteFlattenedId() == 0) {
-			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
-					"size %d[%lld]\n", name.c_str(), size, dim);
-		}
+		DeclareVariableGlobal(name, type, dim);
 		break;
-	}
 
 	case BRIG_SEGMENT_GROUP:
 
-	{
-		VariableScope *variable_scope = stack_top->getVariableScope();
-		SegmentManager *segment = work_group->getGroupSegment();
-		unsigned long long dim = dir->getDim();
-		variable_scope->DeclearVariable(name, dir->getType(),
-				dim, segment);
-		if (getAbsoluteFlattenedId() == 0) {
-			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
-						"size %d[%lld]\n", name.c_str(),
-						size, dim);
-		}
+		DeclareVariableGroup(name, type, dim);
 		break;
-	}
 
 	case BRIG_SEGMENT_PRIVATE:
 
-	{
-		VariableScope *variable_scope = stack_top->getVariableScope();
-		SegmentManager *segment = private_segment.get();
-		unsigned long long dim = dir->getDim();
-		variable_scope->DeclearVariable(name, dir->getType(),
-				dim, segment);
-		if (getAbsoluteFlattenedId() == 0) 
-		{
-			Emulator::isa_debug << misc::fmt("Declaring variable %s with "
-					"size %d[%lld]\n", name.c_str(), size, dim);
-		}
+		DeclareVariablePrivate(name, type, dim);
 		break;
-	}
 
 	case BRIG_SEGMENT_KERNARG:
 
@@ -517,44 +474,19 @@ void WorkItem::DeclearVariable()
 		break;
 
 	case BRIG_SEGMENT_ARG:
-
-	{
-		// Get the variable scope
-		VariableScope *variable_scope;
-		if (stack_top->getArgumentScope())
-			variable_scope = stack_top->getArgumentScope();
-		else
-			throw misc::Panic("Error creating argument, not in a "
-					"argument scope");
-
-		// Get the arg segment manager
-		SegmentManager *arg_segment = stack_top->getArgSegment();
-
-		// Check if the argument scope started
-		if (!arg_segment || !variable_scope)
-			throw misc::Panic("Argument segment not started\n");
-
-		variable_scope->DeclearVariable(name, dir->getType(),
-				dir->getDim(), arg_segment);
-		if (getAbsoluteFlattenedId() == 0) 
-		{
-			Emulator::isa_debug << misc::fmt("Declaring variable %s width"
-					" size %d\n", name.c_str(), size);
-		}
+		
+		DeclareVariableArgument(name, type, dim);
 		break;
-	}
-
+	
 	default:
 
 		throw misc::Panic("Unsupported segment.");
 		break;
+
 	}
-	if (getAbsoluteFlattenedId() == 0) 
-	{
-		Emulator::isa_debug << misc::fmt("Create variable: %s %s(%d)\n",
-				AsmService::TypeToString(dir->getType()).c_str(),
-				name.c_str(), size);
-	}
+	Emulator::isa_debug << misc::fmt("Create variable: %s %s(%d)[%lld]\n",
+			AsmService::TypeToString(type).c_str(),
+			name.c_str(), AsmService::TypeToSize(type), dim);
 }
 
 
@@ -636,6 +568,11 @@ bool WorkItem::Execute()
 	return true;
 }
 
+
+Grid *WorkItem::getGrid() const 
+{
+	return work_group->getGrid();
+}
 
 }  // namespace HSA
 

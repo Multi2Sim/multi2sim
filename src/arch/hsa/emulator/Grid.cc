@@ -60,31 +60,48 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 			getFunction(function_name);
 	kernel_args = packet->getKernargAddress();
 
-	// Create kernel argument
+	// Create and copy kernel argument
 	mem::Memory *memory = Emulator::getInstance()->getMemory();
-	kernarg_segment.reset(new SegmentManager(memory,
-			root_function->getArgumentSize()));
-	kernel_arguments.reset(new VariableScope());
+	kernarg_segment = misc::new_unique<SegmentManager>(memory, 
+			root_function->getArgumentSize());
+	kernel_arguments.clear();
 	BrigCodeEntry *function_directive =
 			root_function->getFunctionDirective();
-	auto arg_entry = function_directive->Next();
+	auto argument_entry = function_directive->Next();
+	unsigned input_argument_offset = 0;
 	for (int i = 0; i < function_directive->getInArgCount(); i++)
 	{
-		std::string name = arg_entry->getName();
-		unsigned inseg_address = kernel_arguments->DeclearVariable(name,
-				arg_entry->getType(), arg_entry->getDim(),
-				kernarg_segment.get());
-		unsigned size = AsmService::TypeToSize(arg_entry->getType());
+		// Allocate the memory in the kernarg segment
+		std::string name = argument_entry->getName();
+		unsigned argument_size = AsmService::TypeToSize(
+				argument_entry->getType());
+		unsigned dim = argument_entry->getDim();
+		if (dim == 0) dim = 1;
+		unsigned address = kernarg_segment->Allocate(
+				argument_size * dim);
 
-		// Get the buffer from both host and guest
-		char *buffer = kernel_arguments->getBuffer(name);
-		char *host_buffer = memory->getBuffer(
-				kernel_args + inseg_address - 4,
-				size, mem::Memory::AccessRead);
-		memcpy(buffer, host_buffer, size);
+		// Add the argument information to the kernel arguments list
+		auto argument = misc::new_unique<Variable>(name, 
+				argument_entry->getType(), dim, 
+				address, BRIG_SEGMENT_KERNARG,false);
+		kernel_arguments.emplace(name, std::move(argument));
+
+		// Copy argument
+		auto host_buffer = misc::new_unique_array<char>(
+						argument_size * dim);
+		memory->Read(kernel_args + input_argument_offset, 
+				argument_size * dim, 
+				host_buffer.get());
+		unsigned flat_address = kernarg_segment->getFlatAddress(
+				address);
+		memory->Write(flat_address, argument_size * dim, 
+				host_buffer.get());
 
 		// Move arg_entry forward
-		arg_entry = arg_entry->Next();
+		argument_entry = argument_entry->Next();
+
+		// Set the input argument offset forward
+		input_argument_offset += argument_size * dim;
 	}
 
 
@@ -148,7 +165,7 @@ void Grid::Dump(std::ostream &os = std::cout) const
 
 	// Dump kernel arguments
 	os << misc::fmt("\n\t***** Arguments *****\n\n");
-	kernel_arguments->Dump(os, 2);
+	// kernel_arguments->Dump(os, 2);
 	os << misc::fmt("\n\t***** ********* *****\n\n");
 
 	// Dump work items

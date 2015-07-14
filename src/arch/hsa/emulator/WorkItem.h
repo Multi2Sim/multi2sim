@@ -32,12 +32,10 @@
 #include "StackFrame.h"
 #include "WorkGroup.h"
 
-
 namespace HSA
 {
 
 class Emulator;
-class WorkGroup;
 class ProgramLoader;
 class HsaExecutable;
 
@@ -92,6 +90,7 @@ private:
  	//
  	// Functions related with the insts of HSA assembly, implemented in
  	// WorkItemIsa.cc
+	//
 
  	// Stack of current work item.
  	std::vector<std::unique_ptr<StackFrame>> stack;
@@ -149,7 +148,7 @@ private:
  	void getOperandValue(unsigned int index, Type *buffer)
  	{
  		// Get the operand entry
- 		StackFrame *stack_top = stack.back().get();
+ 		StackFrame *stack_top = getStackTop();
  		BrigCodeEntry *inst = stack_top->getPc();
  		auto operand = inst->getOperand(index);
 
@@ -157,6 +156,7 @@ private:
  		switch (operand->getKind())
  		{
  		case BRIG_KIND_OPERAND_CONSTANT_BYTES:
+
  		{
  			BrigImmed immed(operand->getBytes(),
  					inst->getOperandType(index));
@@ -178,6 +178,50 @@ private:
 					register_name);
 			return;
  		}
+
+		case BRIG_KIND_OPERAND_ADDRESS:
+
+		{
+			unsigned address;
+			unsigned long long offset = operand->getOffset();
+			if (operand->getSymbol().get())
+			{
+				auto symbol = operand->getSymbol();
+				std::string name = symbol->getName();
+
+				// Get the variable
+				Variable *variable = 
+					stack_top->getSymbol(name);
+				
+				// If the variable is not found in stack frame
+				// try kernel argument
+				if (!variable)
+					variable = getGrid()->
+							getKernelArgument(
+									name);
+
+				// If the variable is still not found
+				if (!variable)
+					throw misc::Error(misc::fmt(
+							"Symbol %s is not"
+							" defined", 
+							name.c_str()));
+
+				// Variable not in stack frame, try kernel 
+				// argument
+				address = variable->getAddress();
+			}
+			else
+			{
+				std::string register_name = operand->getReg()
+							->getRegisterName();
+				address = stack_top->getRegisterValue<unsigned>(
+						register_name);
+			}
+			address += offset;
+			*buffer = address;
+			return;
+		}
 
 		case BRIG_KIND_OPERAND_OPERAND_LIST:
 
@@ -223,7 +267,7 @@ private:
  	// Store the value into registers marked by the operand, from the 
 	// value pointer
  	template <typename Type>
- 	void storeOperandValue(unsigned int index, Type *value)
+ 	void setOperandValue(unsigned int index, Type *value)
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
@@ -297,14 +341,26 @@ private:
 	// Translate inner address to flat address
 	unsigned getFlatAddress(BrigSegment segment, unsigned address);
 
- 	// Return buffer in host memory
- 	char *getVariableBuffer(BrigSegment segment,
- 			const std::string &name);
+	// Declare variable in global segment
+	void DeclareVariableGlobal(const std::string &name, BrigType type, 
+			unsigned long long dim);
+
+	// Declare variable in group segment
+	void DeclareVariableGroup(const std::string &name, BrigType type,
+			unsigned long long dim);
+
+	// Declare variable in private segment
+	void DeclareVariablePrivate(const std::string &name, BrigType type,
+			unsigned long long dim);
+
+	// Declare variable in argument segment
+	void DeclareVariableArgument(const std::string &name, BrigType type,
+			unsigned long long dim);
 
  	// Allocate memory for variable
- 	void DeclearVariable();
+ 	void DeclareVariable();
 
- public:
+public:
 
  	/// Create a work item. HSA should let grid object to create work item
  	WorkItem(WorkGroup *work_group,
@@ -388,6 +444,9 @@ private:
 	{
 		return work_group;
 	}
+
+	/// Return the grid that this work item belongs to
+	Grid *getGrid() const;
 
 };
 

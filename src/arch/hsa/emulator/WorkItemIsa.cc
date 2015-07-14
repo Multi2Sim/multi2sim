@@ -52,7 +52,7 @@ void WorkItem::Inst_ABS_Aux()
 	T src0;
 	getOperandValue<T>(1, &src0);
 	T des = abs(src0);
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -105,7 +105,7 @@ void WorkItem::Inst_ADD_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 + src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -189,7 +189,7 @@ void WorkItem::Inst_BORROW_Aux()
 		des = 1;
 
 	// Store result
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -252,7 +252,7 @@ void WorkItem::Inst_CARRY_Aux()
 		des = 1;
 
 	// Store result
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -320,7 +320,7 @@ void WorkItem::Inst_DIV_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 / src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -418,7 +418,7 @@ void WorkItem::Inst_MAD_Aux()
 	getOperandValue<T>(2, &src1);
 	getOperandValue<T>(3, &src2);
 	T des = (src0 * src1) + src2;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -470,7 +470,7 @@ void WorkItem::Inst_MAX_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = (src0 > src1) ? src0 : src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -533,7 +533,7 @@ void WorkItem::Inst_MIN_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = (src0 < src1) ? src0 : src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -594,7 +594,7 @@ template<typename T> void WorkItem::Inst_MUL_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 * src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -687,7 +687,7 @@ void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 	// Detemine if part2 + part3 contribute to part 4
 	if (part2 != (part2 + part3) - part3)
 		des += 1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -747,7 +747,7 @@ template<typename T> void WorkItem::Inst_NEG_Aux()
 	T src0;
 	getOperandValue<T>(1, &src0);
 	T des = -src0;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -814,7 +814,7 @@ void WorkItem::Inst_REM_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 % src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -888,7 +888,7 @@ template<typename T> void WorkItem::Inst_SUB_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 - src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -995,7 +995,7 @@ void WorkItem::Inst_SHL_Aux()
 	unsigned int src1;
 	getOperandValue<unsigned int>(2, &src1);
 	T des = src0 << src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1047,7 +1047,7 @@ void WorkItem::Inst_SHR_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<unsigned int>(2, &src1);
 	T des = src0 >> src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1098,7 +1098,7 @@ void WorkItem::Inst_AND_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 & src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1142,7 +1142,7 @@ void WorkItem::Inst_NOT_Aux()
 	T src0;
 	getOperandValue<T>(1, &src0);
 	T des = ~src0;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1188,7 +1188,7 @@ void WorkItem::Inst_OR_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 | src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1239,7 +1239,7 @@ void WorkItem::Inst_POPCOUNT_Aux()
 		if (src0 & 1) des++;
 		src0 >>= 1;
 	}
-	storeOperandValue<unsigned int>(0, &des);
+	setOperandValue<unsigned int>(0, &des);
 }
 
 
@@ -1280,7 +1280,7 @@ void WorkItem::Inst_XOR_Aux()
 	getOperandValue<T>(1, &src0);
 	getOperandValue<T>(2, &src1);
 	T des = src0 ^ src1;
-	storeOperandValue<T>(0, &des);
+	setOperandValue<T>(0, &des);
 }
 
 
@@ -1338,7 +1338,7 @@ void WorkItem::Inst_BITEXTRACT_Aux()
 		dest = (src0 << (length - width - offset)) >> (length - width);
 		// signed or unsigned >>, depending on operation.type
 	}
-	storeOperandValue<T>(0, &dest);
+	setOperandValue<T>(0, &dest);
 }
 
 
@@ -1443,60 +1443,23 @@ void WorkItem::Inst_LDA_Aux()
 	// Get offset
 	unsigned long long offset = address_operand->getOffset();
 
-	// Declare address
+	// Declare addres
 	unsigned address;
 
-	// FIXME remove duplicated code
+	// Get the symbol from stack top
+	Variable *variable = stack_top->getSymbol(name);
+	if (!variable)
+		throw misc::Error(misc::fmt("Variable %s not defined.\n", 
+					name.c_str()));
+		
+	// Add offset
+	address += offset;
 
-	// First, try argument scope first
-	VariableScope *variable_scope = stack_top->getArgumentScope();
+	// Save result
+	setOperandValue<T>(0, (T*)&address);
 
-	// Argument scope exist
-	if (variable_scope)
-	{
-		address = variable_scope->getAddress(name);
-		address = address + offset;
-
-		// If address found
-		if (address)
-		{
-			storeOperandValue<T>(0, (T*)&address);
-			return;
-		}
-	}
-
-	// Second, try variable scope
-	variable_scope = stack_top->getVariableScope();
-	if (variable_scope)
-	{
-		address = variable_scope->getAddress(name);
-		address += offset;
-
-		// If address found
-		if (address)
-		{
-			storeOperandValue<T>(0, (T*)&address);
-			return;
-		}
-	}
-
-	// Third, try function arguments
-	variable_scope = stack_top->getFunctionArguments();
-	if (variable_scope)
-	{
-		address = variable_scope->getAddress(name);
-		address += offset;
-
-		// If address found
-		if (address)
-		{
-			storeOperandValue<T>(0, (T*)&address);
-			return;
-		}
-	}
-
-	// Finally no variable is found
-	throw misc::Panic(misc::fmt("Variable %s not found!\n", name.c_str()));
+	// Return
+	return;
 }
 
 
@@ -1534,7 +1497,7 @@ void WorkItem::Inst_MOV_Aux()
 
 	// Move to dst value
 	T dst = src0;
-	storeOperandValue<T>(0, &dst);
+	setOperandValue<T>(0, &dst);
 }
 
 
@@ -1836,7 +1799,7 @@ void WorkItem::Inst_CMP_Aux()
 	}
 
 	// Store result value
-	storeOperandValue<DstType>(0, &dst);
+	setOperandValue<DstType>(0, &dst);
 
 	// Move PC forward
 	MovePcForwardByOne();
@@ -1901,7 +1864,7 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_chop_Aux()
 
 	// Use memcpy to chop
 	memcpy(&dst, &src, sizeof(DstType));
-	storeOperandValue<DstType>(0, &dst);
+	setOperandValue<DstType>(0, &dst);
 }
 
 
@@ -1912,7 +1875,7 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_zext_Aux()
 	
 	// Force cast
 	DstType dst = (DstType)src;
-	storeOperandValue<DstType>(0, &dst);
+	setOperandValue<DstType>(0, &dst);
 }
 
 
@@ -1923,7 +1886,7 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_sext_Aux()
 
 	// Force cast
 	DstType dst = (DstType)src;
-	storeOperandValue<DstType>(0, &dst);
+	setOperandValue<DstType>(0, &dst);
 }
 
 
@@ -1934,7 +1897,7 @@ template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_u2f_Aux()
 
 	// Force cast
 	DstType dst = (DstType)src;
-	storeOperandValue<DstType>(0, &dst);
+	setOperandValue<DstType>(0, &dst);
 }
 
 
@@ -1995,53 +1958,26 @@ void WorkItem::Inst_LD_Aux()
 	StackFrame *stack_top = stack.back().get();
 	BrigCodeEntry *inst = stack_top->getPc();
 
-	// Get variable name
-	auto address_operand = inst->getOperand(1);
-	if (address_operand->getSymbol().get())
-	{
-		auto symbol = address_operand->getSymbol();
-		std::string name = symbol->getName();
+	// Get address according the type of the operand
+	unsigned address;
+	getOperandValue(1, &address);
+	
+	// Translate address to flat address
+	address = getFlatAddress(inst->getSegment(), 
+			address);
 
-		// Get offset
-		unsigned long long offset = address_operand->getOffset();
+	// Read data
+	unsigned vector_modifier = inst->getVectorModifier();
+	if (vector_modifier == 0) vector_modifier = 1;
+	auto value = misc::new_unique_array<T>(
+			vector_modifier);
+	Emulator::getInstance()->getMemory()->Read(address, 
+			sizeof(T) * vector_modifier, 
+			(char *)value.get());
 
-		// Get buffer in host
-		char *host_buffer = getVariableBuffer(inst->getSegment(), name);
-		host_buffer += offset;
+	// Move value from register or immediate into memory
+	setOperandValue<T>(0, value.get());
 
-		// Move value from register or immediate into memory
-		storeOperandValue<T>(0, ((T *)host_buffer));
-	}
-	// If the address is stored in a register
-	else
-	{
-		std::string register_name = address_operand->getReg()
-					->getRegisterName();
-		unsigned address = stack_top->getRegisterValue<unsigned>(
-				register_name);
-		unsigned long long offset = address_operand->getOffset();
-		address += offset;
-
-		// Translate address to flat address
-		address = getFlatAddress(inst->getSegment(), 
-				address);
-
-		Emulator::isa_debug << misc::fmt("Loading from address 0x%x\n", address);
-
-		// Get buffer in host
-		unsigned vector_modifier = inst->getVectorModifier();
-		if (vector_modifier == 0) vector_modifier = 1;
-		auto value = misc::new_unique_array<T>(
-				vector_modifier);
-		Emulator::getInstance()->getMemory()->Read(address, 
-				sizeof(T) * vector_modifier, 
-				(char *)value.get());
-		Emulator::isa_debug << misc::fmt("Vector_modifier: %d\n", vector_modifier);
-		Emulator::isa_debug << *value.get() << "\n";
-
-		// Move value from register or immediate into memory
-		storeOperandValue<T>(0, value.get());
-	}
 }
 
 
@@ -2101,44 +2037,18 @@ void WorkItem::Inst_ST_Aux()
 	StackFrame *stack_top = stack.back().get();
 	BrigCodeEntry *inst = stack_top->getPc();
 
-	// Retrieve variable name
-	auto address_operand = inst->getOperand(1);
-	if (address_operand->getSymbol().get())
-	{
-		auto symbol = address_operand->getSymbol();
-		std::string name = symbol->getName();
-		// Get offset
-		unsigned long long offset = address_operand->getOffset();\
+	// Get address to store
+	unsigned address;
+	getOperandValue(1, &address);
+	
+	// Translate address to flat address
+	address = getFlatAddress(inst->getSegment(), address);
 
-		// Retrieve memory accessing in the host space
-		char *host_buffer = this->getVariableBuffer(inst->getSegment(),
-				name);
-		host_buffer += offset;
-
-		// Move value from register or immediate into memory
-		T src0;
-		getOperandValue<T>(0, &src0);
-		memcpy((void *)host_buffer, (void *)&src0, sizeof(T));
-	}
-	else
-	{
-		std::string register_name = address_operand->getReg()
-				->getRegisterName();
-		unsigned address = stack_top->getRegisterValue<unsigned>(
-				register_name);
-		unsigned long long offset = address_operand->getOffset();
-		address += offset;
-
-		// Translate address to flat address
-		address = getFlatAddress(inst->getSegment(), address);
-
-		// Move value from register or immediate into memory
-		T src0;
-		getOperandValue<T>(0, &src0);
-		Emulator::getInstance()->getMemory()->Write(
-				address, sizeof(T), (char *)&src0);
-	}
-
+	// Move value from register or immediate into memory
+	T src0;
+	getOperandValue<T>(0, &src0);
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
+	memory->Write(address, sizeof(T), (char *)&src0);
 }
 
 
@@ -2419,16 +2329,11 @@ void WorkItem::ExecuteInst_CALL()
 	Function *function = executable->getFunction(function_name);
 
 	// Prepare stack frame and pass the argument by value
-	auto new_frame = misc::new_unique<StackFrame>(function, this);
-	function->PassByValue(stack_top, new_frame.get(), inst);
+	// auto new_frame = misc::new_unique<StackFrame>(function, this);
+	// function->PassByValue(stack_top, new_frame.get(), inst);
 
 	// Push frame in stack
-	stack.push_back(std::move(new_frame));
-
-	// Dump backtrace information for debugging purpose
-	// if (Emulator::isa_debug)
-	//	Backtrace(Emulator::isa_debug);
-
+	// stack.push_back(std::move(new_frame));
 }
 
 
@@ -2454,7 +2359,7 @@ template<typename T> void WorkItem::Inst_LDI_Aux()
 	auto operand1 = inst->getOperand(1);
 
 	// Store the offset of the function
-	storeOperandValue<T>(0, operand1->getRef()->getOffset());
+	setOperandValue<T>(0, operand1->getRef()->getOffset());
 
 	// Move PC forward
 	MovePcForwardByOne();
@@ -2483,7 +2388,7 @@ void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
 	unsigned int dim;
 	getOperandValue<unsigned int>(1, &dim);
 	unsigned int size = getWorkGroup()->getCurrentWorkGroupSize(dim);
-	storeOperandValue<unsigned int>(0, &size);
+	setOperandValue<unsigned int>(0, &size);
 	MovePcForwardByOne();
 }
 
@@ -2534,7 +2439,7 @@ void WorkItem::ExecuteInst_GRIDSIZE()
 		throw Error(misc::fmt("Invaid dim_number %d.\n", dim_number));
 	}
 
-	storeOperandValue<unsigned int>(0, &size);
+	setOperandValue<unsigned int>(0, &size);
 	MovePcForwardByOne();
 }
 
@@ -2561,7 +2466,7 @@ void WorkItem::ExecuteInst_WORKGROUPID()
 
 	{
 		unsigned int idx = work_group->getGroupIdX();
-		storeOperandValue<unsigned int>(0, &idx);
+		setOperandValue<unsigned int>(0, &idx);
 		break;
 	}
 	
@@ -2569,7 +2474,7 @@ void WorkItem::ExecuteInst_WORKGROUPID()
 
 	{
 		unsigned int idy = work_group->getGroupIdY();
-		storeOperandValue<unsigned int>(0, &idy);
+		setOperandValue<unsigned int>(0, &idy);
 		break;
 	}
 
@@ -2577,7 +2482,7 @@ void WorkItem::ExecuteInst_WORKGROUPID()
 
 	{
 		unsigned int idz = work_group->getGroupIdZ();
-		storeOperandValue<unsigned int>(0, &idz);
+		setOperandValue<unsigned int>(0, &idz);
 		break;
 	}
 
@@ -2607,17 +2512,17 @@ void WorkItem::ExecuteInst_WORKITEMABSID()
 	{
 	case 0:
 
-		storeOperandValue<unsigned int>(0, &abs_id_x);
+		setOperandValue<unsigned int>(0, &abs_id_x);
 		break;
 
 	case 1:
 
-		storeOperandValue<unsigned int>(0, &abs_id_y);
+		setOperandValue<unsigned int>(0, &abs_id_y);
 		break;
 
 	case 2:
 
-		storeOperandValue<unsigned int>(0, &abs_id_z);
+		setOperandValue<unsigned int>(0, &abs_id_z);
 		break;
 
 	default:
@@ -2653,7 +2558,7 @@ void WorkItem::ExecuteInst_WORKITEMID()
 
 	{
 		unsigned int idx = getLocalIdX();
-		storeOperandValue<unsigned int>(0, &idx);
+		setOperandValue<unsigned int>(0, &idx);
 		break;
 	}
 	
@@ -2661,7 +2566,7 @@ void WorkItem::ExecuteInst_WORKITEMID()
 
 	{
 		unsigned int idy = getLocalIdY();
-		storeOperandValue<unsigned int>(0, &idy);
+		setOperandValue<unsigned int>(0, &idy);
 		break;
 	}
 
@@ -2669,7 +2574,7 @@ void WorkItem::ExecuteInst_WORKITEMID()
 
 	{
 		unsigned int idz = getLocalIdZ();
-		storeOperandValue<unsigned int>(0, &idz);
+		setOperandValue<unsigned int>(0, &idz);
 		break;
 	}
 

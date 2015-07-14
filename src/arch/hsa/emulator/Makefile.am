@@ -31,9 +31,6 @@ libemulator_a_SOURCES = \
 		Variable.h \
 		Variable.cc \
 		\
-		VariableScope.h \
-		VariableScope.cc \
-		\
 		Wavefront.h \
 		Wavefront.cc \
 		\

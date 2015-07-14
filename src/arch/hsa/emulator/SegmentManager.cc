@@ -31,7 +31,8 @@ SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
 
 	if (this->size > 0)
 	{
-		// Request the memory of certain size from the main memory manager
+		// Request the memory of certain size from the main memory 
+		// manager
 		mem::Manager *main_manager = 
 				Emulator::getInstance()->getMemoryManager();
 		base_address = main_manager->Allocate(this->size);
@@ -76,7 +77,8 @@ SegmentManager::~SegmentManager()
 		return;
 
 	// Clear the memory occupied by the segment
-	mem::Manager *main_manager = Emulator::getInstance()->getMemoryManager();
+	mem::Manager *main_manager = Emulator::getInstance()
+			->getMemoryManager();
 	main_manager->Free(base_address);
 }
 
