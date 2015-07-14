@@ -106,7 +106,7 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 	int frame_count = 1;
 	for (auto it = stack.rbegin(); it != stack.rend(); it++)
 	{
-		StackFrame *frame = (*it).get();
+		// StackFrame *frame = (*it).get();
 		os << misc::fmt("#%d ", frame_count++);
 		os << misc::fmt("%s ", (*it)->getFunction()->getName().c_str());
 
@@ -143,8 +143,8 @@ bool WorkItem::ReturnFunction()
 		StackFrame *caller_frame = (*it).get();
 
 		// Process value return
-		Function *function = callee_frame->getFunction();
-		BrigCodeEntry *inst = caller_frame->getPc();
+		// Function *function = callee_frame->getFunction();
+		// BrigCodeEntry *inst = caller_frame->getPc();
 		// function->PassBackByValue(caller_frame, callee_frame, inst);
 
 		// Dump information
