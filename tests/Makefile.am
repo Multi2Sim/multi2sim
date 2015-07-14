@@ -113,5 +113,6 @@ src_memory_test_LDADD = \
 
 src_memory_test_SOURCES = \
 	src/memory/TestSystemConfig.cc \
-	src/memory/TestSystemEvents.cc
+	src/memory/TestSystemEvents.cc \
+	src/memory/TestModule.cc
 
