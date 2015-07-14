@@ -806,10 +806,6 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 		program(program)
 {
 	metadata_symbol = program->getSymbol("__OpenCL_" + name + "_metadata");
-
-	std::cout<<"\n\nmetadata_symbol_name: "<<metadata_symbol->getName()<<"\n\n";
-
-
 	header_symbol = program->getSymbol("__OpenCL_" + name + "_header");
 	kernel_symbol = program->getSymbol("__OpenCL_" + name + "_kernel");
 	if (!metadata_symbol || !header_symbol || !kernel_symbol)
@@ -1077,25 +1073,27 @@ void Kernel::SetupNDRangeArgs(NDRange *ndrange /* MMU *gpu_mmu */)
 		// Retrieve constant buffer
 		ConstantBuffer *constant_buffer = 
 				program->getConstantBufferByIndex(i);
-
+		
+		// Check if cosntant buffer exists
 		if (!constant_buffer)
 			break;
 
-		throw misc::Panic("ConstantBuffer size unknown");
-		// CreateBufferDesc(
-		// 	ndrange->cb_start + SI_EMU_CONST_BUF_SIZE*i,
-		// 	constant_buffer->getSize(),
-		// 	4,
-		// 	ArgFloat,
-		// 	&buffer_descriptor);
+		// Create a buffer descriptor for the constant buffer
+		WorkItem::BufferDescriptor buffer_descriptor;
+		CreateBufferDescriptor(
+		 	constant_buffer->getDevicePtr(),
+		 	constant_buffer->getSize(),
+		 	4,
+		 	Argument::DataTypeFloat,
+		 	&buffer_descriptor);
 
-		// Data stored in hw constant memory
-		// uses a 16-byte stride
-		// buffer_descriptor.stride = 16; // XXX Use or don't use?
+		// Data stored in hw constant memory uses a 16-byte stride
+		// XXX Use or don't use?
+		buffer_descriptor.stride = 16; 
 
 		// Add to Constant Buffer table
 		ndrange->InsertBufferIntoConstantBufferTable(
-			&buffer_descriptor, index);
+			&buffer_descriptor, i);
 	}
 }
 
@@ -1332,8 +1330,6 @@ void Kernel::DebugNDRangeState(NDRange *ndrange)
         Emulator::isa_debug << misc::fmt("========================================================"
                 "\n");
 
-
-	//throw misc::Panic("Not implemented");
 }
 
 
