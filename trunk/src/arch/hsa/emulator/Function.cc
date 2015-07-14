@@ -60,50 +60,49 @@ std::unique_ptr<BrigCodeEntry> Function::getLastEntry() const
 }
 
 
-void Function::addArgument(Variable *argument)
+void Function::addArgument(std::unique_ptr<Variable> argument)
 {
 
 	// Check if argument is defined
 	std::map<std::string, std::unique_ptr<Variable>>::iterator it
-			= arg_info.find(argument->getName());
-	if (it != arg_info.end())
+			= arguments.find(argument->getName());
+	if (it != arguments.end())
 	{
 		throw Error(misc::fmt("Function argument %s redefined",
 				name.c_str()));
 	}
 
-	// Insert argument into table
-	arg_info.insert(std::make_pair(argument->getName(),
-			std::unique_ptr<Variable>(argument)));
-
 	// Increase arg_size
-	arg_size += argument->getSize();
+	argument_size += argument->getSize();
+
+	// Insert argument into table
+	arguments.emplace(argument->getName(), std::move(argument));
 }
 
 
-void Function::AddRegister(BrigRegisterKind kind, unsigned short number)
+void Function::addRegister(BrigRegisterKind kind, unsigned short number)
 {
 	// Get register's string representation
 	std::string register_name = AsmService::RegisterToString(kind, number);
 
 	// Check if the register has been added
-	if (reg_info.find(register_name) != reg_info.end())
+	if (register_info.find(register_name) != register_info.end())
 		throw misc::Panic("Duplicate register name");
 
 	// Allocate size for the register
-	reg_info.insert(std::make_pair(register_name, reg_size));
+	register_info.insert(std::make_pair(register_name, register_size));
 	switch(kind)
 	{
 	case BRIG_REGISTER_KIND_CONTROL:
 		break;
 	case BRIG_REGISTER_KIND_SINGLE:
-		reg_size += 4;
+		register_size += 4;
 		break;
 	case BRIG_REGISTER_KIND_DOUBLE:
-		reg_size += 8;
+		register_size += 8;
 		break;
 	case BRIG_REGISTER_KIND_QUAD:
-		reg_size += 16;
+		register_size += 16;
 		break;
 	}
 
@@ -112,8 +111,8 @@ void Function::AddRegister(BrigRegisterKind kind, unsigned short number)
 
 unsigned int Function::getRegisterOffset(const std::string &name) const
 {
-	auto it = reg_info.find(name);
-	if (it == reg_info.end())
+	auto it = register_info.find(name);
+	if (it == register_info.end())
 		throw misc::Panic(misc::fmt("Register %s not found",
 				name.c_str()));
 
@@ -121,18 +120,18 @@ unsigned int Function::getRegisterOffset(const std::string &name) const
 }
 
 
-void Function::AllocateRegister(unsigned int *max_reg)
+void Function::AllocateRegister(unsigned int *max_register)
 {
 	for (unsigned int i = 0; i < 4; i++)
 	{
-		for(unsigned int j = 0; j < max_reg[i]; j++)
+		for(unsigned int j = 0; j < max_register[i]; j++)
 		{
-			AddRegister((BrigRegisterKind)i, j);
+			addRegister((BrigRegisterKind)i, j);
 		}
 	}
 }
 
-
+/*
 void Function::PassByValue(StackFrame *caller_frame,
 		StackFrame *callee_frame, BrigCodeEntry *call_inst)
 {
@@ -146,7 +145,7 @@ void Function::PassByValue(StackFrame *caller_frame,
 	VariableScope *callee_scope = callee_frame->getFunctionArguments();
 	VariableScope *caller_scope = caller_frame->getArgumentScope();
 
-
+	// Copy argument into callee's scope
 	for (auto it = arg_info.begin(); it != arg_info.end(); it++)
 	{
 		// Get argument information from the function
@@ -227,6 +226,7 @@ void Function::PassBackByValue(StackFrame *caller_frame,
 	}
 
 }
+*/
 
 
 
@@ -272,17 +272,20 @@ void Function::DumpArgumentInfo(std::ostream &os = std::cout) const
 	// Dump the argument information
 	os << misc::fmt("\n\t***** Arguments *****\n");
 	std::map<std::string, std::unique_ptr<Variable>>::const_iterator it;
-	for (it = arg_info.begin(); it != arg_info.end(); it++)
+	for (it = arguments.begin(); it != arguments.end(); it++)
 	{
 		os << "\t";
 		if (it->second->isInput())
 			os << "Input ";
 		else
 			os << "Output ";
-		it->second->Dump(os);
+		os << misc::fmt("%s %s", 
+				AsmService::TypeToString(
+					it->second->getType()).c_str(), 
+				it->second->getName().c_str());
 		os << "\n";
 	}
-	os << misc::fmt("\tArgument size allocated %d bytes\n", arg_size);
+	os << misc::fmt("\tArgument size allocated %d bytes\n", argument_size);
 	os << misc::fmt("\t*********************\n\n");
 
 }
@@ -292,13 +295,13 @@ void Function::DumpRegisterInfo(std::ostream &os = std::cout) const
 {
 	// Dump the argument information
 	os << misc::fmt("\n\t***** Registers *****\n");
-	for (auto it = reg_info.begin(); it != reg_info.end(); it++)
+	for (auto it = register_info.begin(); it != register_info.end(); it++)
 	{
 		os << misc::fmt("\tregister %s, offset %d\n",
 				it->first.c_str(),
 				getRegisterOffset(it->first));
 	}
-	os << misc::fmt("\tRegister size allocated %d bytes\n", reg_size);
+	os << misc::fmt("\tRegister size allocated %d bytes\n", register_size);
 	os << misc::fmt("\t*********************\n\n");
 }
 

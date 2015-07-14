@@ -156,17 +156,16 @@ std::unique_ptr<BrigCodeEntry> HsaExecutable::loadArguments(
 		// 		(struct BrigDirectiveSymbol *)next_dir;
 
 		// Get argument information
-		std::string arg_name = entry->getName();
+		std::string name = entry->getName();
 		BrigType type = entry->getType();
 		unsigned long long dim = entry->getDim();
 
 		// Add this argument to the argument table
-		Variable *argument = new Variable(arg_name, type,
-				dim, 0, nullptr,
-				true);
+		auto argument = misc::new_unique<Variable>(name, type, 
+				dim, 0, BRIG_SEGMENT_NONE, true);
 		argument->setIndex(i);
 		argument->setInput(isInput);
-		function->addArgument(argument);
+		function->addArgument(std::move(argument));
 
 		// Move pointer forward
 		entry = entry->Next();
