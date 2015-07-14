@@ -26,7 +26,6 @@
 
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
 
-#include "VariableScope.h"
 #include "Variable.h"
 
 
@@ -71,12 +70,12 @@ class Function
 	// Fields related with arguments
 	//
 
-	// Argument size. When stack frame initialize, allocate the size of
-	// memory
-	unsigned int arg_size = 0;
+	// Argument size. 
+	// When stack frame initialize, allocate the size of memory
+	unsigned int argument_size = 0;
 
 	// Map the name with the information of the argument
-	std::map<std::string, std::unique_ptr<Variable>> arg_info;
+	std::map<std::string, std::unique_ptr<Variable>> arguments;
 
 
 
@@ -86,13 +85,13 @@ class Function
 	//
 
 	// Allocated register size
-	unsigned int reg_size = 0;
+	unsigned int register_size = 0;
 
 	// Maps register
-	std::map<std::string, unsigned int> reg_info;
+	std::map<std::string, unsigned int> register_info;
 
 	// Add register information into table
-	void AddRegister(BrigRegisterKind kind, unsigned short number);
+	void addRegister(BrigRegisterKind kind, unsigned short number);
 
 public:
 
@@ -139,13 +138,13 @@ public:
 	}
 
 	/// Add an argument information in argument table
-	void addArgument(Variable *argument);
+	void addArgument(std::unique_ptr<Variable> argument);
 
 	/// Return the memory size required to hold the arguments
-	unsigned getArgumentSize() const { return arg_size; }
+	unsigned getArgumentSize() const { return argument_size; }
 
 	/// Return the number of arguments
-	unsigned getArgumentCount() const { return arg_info.size(); }
+	unsigned getArgumentCount() const { return arguments.size(); }
 
 	/// Allocate register
 	void AllocateRegister(unsigned int *max_reg);
@@ -154,15 +153,22 @@ public:
 	/// return -1.
 	unsigned int getRegisterOffset(const std::string &name) const;
 
-	/// Return a the register offset table
-	const std::map<std::string, unsigned int> getRegisterInformation() const
+	/// Return the size of register required
+	unsigned int getRegisterSize() const { return register_size; }
+
+	/// Return the begin iterator of the register
+	std::map<std::string, unsigned>::iterator getRegisterBegin() 
 	{
-		return reg_info;
+		return register_info.begin();
 	}
 
-	/// Return the size of register required
-	unsigned int getRegisterSize() const { return reg_size; }
+	// Return the end iterator of the register
+	std::map<std::string, unsigned>:: iterator getRegisterEnd()
+	{
+		return register_info.end();
+	}
 
+	/*
 	/// Copy variable information and value from caller's argument scope
 	/// to callee's argument scope
 	void PassByValue(StackFrame *caller_frame,
@@ -171,6 +177,7 @@ public:
 	/// Copy return value from the calle to caller
 	void PassBackByValue(StackFrame *caller_frame,
 			StackFrame *callee_frame, BrigCodeEntry *call_inst);
+	*/
 
 	/// Dump function information for debug propose
 	void Dump(std::ostream &os) const;
@@ -195,13 +202,13 @@ public:
 		return executable;;
 	}
 
-	/// Set executable
+	/// Set module
 	void setModule(BrigFile *binary)
 	{
 		this->binary = binary;
 	}
 
-	/// Get executable
+	/// Get module
 	BrigFile *getModule()
 	{
 		return binary;

@@ -24,7 +24,6 @@
 #include <arch/hsa/driver/DriverCallbackInfo.h>
 
 #include "Function.h"
-#include "VariableScope.h"
 
 namespace HSA
 {
@@ -43,45 +42,48 @@ class StackFrame
 	std::unique_ptr<BrigCodeEntry> pc;
 
 	// Function input and output arguments
-	std::unique_ptr<VariableScope> function_arguments;
+	std::map<std::string, std::unique_ptr<Variable>> function_arguments;
 
-	// The function arg segment memory manager
-	 std::unique_ptr<SegmentManager> func_arg_segment;
+	// The function arg segment memory manager. The owner ship is kept
+	// by the caller frame
+	SegmentManager *function_argument_segment;
 
 	// Arguments scope, surrounded by {} in current function. Since
 	// argument scope cannot be nested, when we start a new one, the old
 	// one must have already been released.
-	std::unique_ptr<VariableScope> argument_scope;
+	std::map<std::string, std::unique_ptr<Variable>> argument_scope;
+
+	// The arg segment memory manager
+ 	std::unique_ptr<SegmentManager> argument_segment;
 
 	// All variables declared in private, group and global segment
-	std::unique_ptr<VariableScope> variable_scope;
+	std::map<std::string, std::unique_ptr<Variable>> variables;
 
- 	// The arg segment memory manager
- 	std::unique_ptr<SegmentManager> arg_segment;
-
-	// Register storage
-	std::unique_ptr<char> register_storage;
+ 	// Register storage
+	std::unique_ptr<char[]> register_storage;
 
 	// C registers, use a 8 bit char for each 1 bit boolean value
 	unsigned char c_registers[8];
 
 public:
 
-	/// Prototype for return callback functions
-	typedef int (*CallbackFn)(DriverCallbackInfo *info);
-
-private:
-	// If driver_function is set, when the stack frame return, call this
-	// function
-	CallbackFn return_callback = nullptr;
-
-	// The information provided for the return callback function
-	std::unique_ptr<DriverCallbackInfo> callback_info;
-
-public:
-
 	/// Constructor
-	StackFrame(Function *function, WorkItem *work_item);
+	///
+	/// \param function 
+	/// 	The function for this stack frame
+	///
+	/// \param work_item
+	/// 	The work item that own this stack frame
+	///
+	/// \param function_argument_section
+	/// 	The new HSA spec requires that the callee frame uses the 
+	/// 	same arguments with the caller's argument frame. It is no 
+	///	longer passed by value. Therefore, the function argument 
+	/// 	segment is set by the caller. The caller with also set the 
+	///	layout of this segment for the callee, by adding variables 
+	/// 	in member variable \a function_arguments.
+	StackFrame(Function *function, WorkItem *work_item, 
+			SegmentManager *function_argument_segment);
 
 	/// Destructor
 	~StackFrame();
@@ -94,14 +96,6 @@ public:
 
 	/// Set the program counter
 	void setPc(std::unique_ptr<BrigCodeEntry> pc);
-
-	/// Set return callback function
-	void setReturnCallback(CallbackFn callback,
-			std::unique_ptr<DriverCallbackInfo> info)
-	{
-		this->return_callback = callback;
-		this->callback_info = std::move(info);
-	}
 
 	/// Dump stack frame information
 	void Dump(std::ostream &os) const;
@@ -165,50 +159,86 @@ public:
 	void StartArgumentScope(unsigned size);
 
 	/// Release an argument scope, when we find a '}'
-	void  CloseArgumentScope();
-
-	/// Create an argument in the argument scope
-//	void CreateArgument(const std::string &name, BrigType type)
-//	{
-//		if (argument_scope.get())
-//		{
-//			argument_scope->DeclearVariable(name, type,
-//					arg_segment.get());
-//		}
-//	};
+	void CloseArgumentScope();
 
 	/// Return current work item
 	WorkItem *getWorkItem() const { return work_item; }
 
-	/// Return argument scope
-	VariableScope *getArgumentScope() const { return argument_scope.get(); }
-
-	/// Return function argument scope
-	VariableScope *getFunctionArguments() const
-	{
-		return function_arguments.get();
-	}
-
 	/// Return the argument segment memory manager
-	SegmentManager *getArgSegment() const { return arg_segment.get(); }
+	SegmentManager *getArgumentSegment() const 
+	{ 
+		return argument_segment.get(); 
+	}
 
 	/// Return the function argument segment memory manager
-	SegmentManager *getFuncArgSegment() const { return func_arg_segment.get(); }
-
-	/// Return variable scope
-	VariableScope *getVariableScope() const { return variable_scope.get(); }
-
-	/// Get the return callback function
-	CallbackFn getReturnCallback() const 
-	{
-		return return_callback;
+	SegmentManager *getFunctionArgumentSegment() const 
+	{ 
+		return function_argument_segment; 
 	}
 
-	/// Return the pointers to the callback arguments
-	DriverCallbackInfo* getReturnCallbackInfo() const
+	/// Adding an argument in the function argument list. This API is 
+	/// opened for the caller to set the memory layout for the function
+	/// argument segment. In the caller function, it will use bracket to 
+	/// create an argument segment and define a few variables there. 
+	/// Those variables is going to be the input and output argument 
+	/// for the callee function. Because the formal name and the actuall
+	/// name can be different and the sequence of declaring those 
+	/// variables are different, when the function is involked, the 
+	/// simulator should know the connection between the formal and 
+	/// the actual argument. The value of the actual argument is stored
+	/// in the memory that is managed by the argument segment manager. 
+	/// Passing the arguments is just passing a referece of the segment 
+	/// manager, since the callee will be able to access that part of 
+	/// memory. However, the simulator would have to modify the memory
+	/// layout, so that the callee knows the right offset.
+	void addFunctionArguments(std::unique_ptr<Variable> argument)
 	{
-		return callback_info.get();
+		function_arguments.emplace(argument->getName(), 
+				std::move(argument));
 	}
+
+	/// Add an variable to the the variable list
+	void addVariable(std::unique_ptr<Variable> variable)
+	{
+		variables.emplace(variable->getName(), 
+				std::move(variable));
+	}
+
+	/// Return an variable by the name of the variable. If the name is 
+	/// not found, return nullptr
+	Variable *getVariable(const std::string &name) 
+	{
+		auto it = variables.find(name);
+		if (it == variables.end()) 
+			return nullptr;
+		return it->second.get();
+	}
+
+	/// Return an argument in the argument scope. If the name is not found
+	/// return nullptr
+	Variable *getArgument(const std::string &name)
+	{
+		auto it = argument_scope.find(name);
+		if (it == argument_scope.end())
+			return nullptr;
+		return it->second.get();
+	}
+
+	/// Return an argument in the function arguments. If the name is not 
+	/// found, return nullptr
+	Variable *getFunctionArgument(const std::string &name) 
+	{
+		auto it = function_arguments.find(name);
+		if(it == function_arguments.end())
+			return nullptr;
+		return it->second.get();
+	}
+
+	/// This function trys to get a symbol in the stack frame. It would 
+	/// first try to search in the argument scope, and variables and 
+	/// finally function arguments. If the name is net defined in 
+	//. this stack frame, nullptr will be returned.
+	Variable *getSymbol(const std::string &name);
 
 };
 

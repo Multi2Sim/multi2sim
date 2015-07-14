@@ -20,6 +20,8 @@
 #ifndef ARCH_HSA_EMU_HSAPROGRAM_H
 #define ARCH_HSA_EMU_HSAPROGRAM_H
 
+#include <vector>
+
 namespace HSA
 {
 

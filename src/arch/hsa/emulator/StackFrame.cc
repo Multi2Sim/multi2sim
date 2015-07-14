@@ -26,7 +26,8 @@
 namespace HSA
 {
 
-StackFrame::StackFrame(Function *function, WorkItem *work_item)
+StackFrame::StackFrame(Function *function, WorkItem *work_item,
+		SegmentManager *function_argument_segment)
 {
 	// Set function that this frame is working on
 	this->function = function;
@@ -39,30 +40,33 @@ StackFrame::StackFrame(Function *function, WorkItem *work_item)
 	pc = function->getFirstEntry();
 
 	// Allocate register space
-	this->register_storage.reset(new char[function->getRegisterSize()]);
+	register_storage = misc::new_unique_array<char>(
+			function->getRegisterSize());
 
-	// Initialize argument scopes
-	function_arguments.reset(new VariableScope());
-	variable_scope.reset(new VariableScope());
-
-	// Initialize function argument segment
-	mem::Memory *memory = Emulator::getInstance()->getMemory();
-	func_arg_segment.reset(new SegmentManager(memory,
-			function->getArgumentSize()));
+	// Set the function argument segment
+	this->function_argument_segment = function_argument_segment;
 }
 
 
 StackFrame::~StackFrame()
 {
-	// Remove scopes
-	argument_scope.release();
-	variable_scope.release();
-	function_arguments.release();
-
-	func_arg_segment.release();
-	if (arg_segment.get())
+	// Traverse all variable, and release those variables that is 
+	// declared in the global segment
+	for (auto it = variables.begin(); it != variables.end(); it++)
 	{
-		arg_segment.release();
+		BrigSegment segment = it->second->getSegment();
+		
+		// Only free memory allocated in global segment. 
+		// Since other segment managers allocate memory 
+		// from the global memory space, when their scope ends, freeing 
+		// the segment manager would free their memory.
+		if (segment == BRIG_SEGMENT_GLOBAL) 
+		{
+			unsigned address = it->second->getAddress();
+			mem::Manager *manager = Emulator::getInstance()
+					->getMemoryManager();
+			manager->Free(address);
+		}
 	}
 }
 
@@ -75,16 +79,21 @@ void StackFrame::setPc(std::unique_ptr<BrigCodeEntry> pc)
 
 void StackFrame::StartArgumentScope(unsigned size)
 {
-	argument_scope.reset(new VariableScope());
+	// Check if the previous argument scope has not been closed
+	if (!argument_scope.empty())
+		throw misc::Error("Cannot nest argument scopes.");
+
+	// Creates a new argument segment from memory
 	mem::Memory *memory = Emulator::getInstance()->getMemory();
-	arg_segment.reset(new SegmentManager(memory, size));
+	argument_segment = misc::new_unique<SegmentManager>(
+			memory, size);
 };
 
 
 void  StackFrame::CloseArgumentScope()
 {
-	argument_scope.reset(nullptr);
-	arg_segment.reset(nullptr);
+	argument_scope.clear();
+	argument_segment.reset(nullptr);
 };
 
 
@@ -103,9 +112,8 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump Register status
 	os << "  ***** Registers *****\n";
-	std::map<std::string, unsigned int> reg_info =
-			function->getRegisterInformation();
-	for (auto it = reg_info.begin(); it != reg_info.end(); it++)
+	for (auto it = function->getRegisterBegin(); 
+			it != function->getRegisterEnd(); it++)
 	{
 		os << "    ";
 		DumpRegister(it->first, os);
@@ -114,30 +122,28 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump function arguments
 	os << "  ***** Function arguments *****\n";
-	function_arguments->Dump(os, 4);
+	os << "To be suppoted";
 	os << "  ***** ******** ********* *****\n\n";
 
 	// If in argument scope, dump argument scope
 	os << "  ***** Argument scope *****\n";
-	if (argument_scope.get())
-		argument_scope->Dump(os, 4);
+	os << "To be supported";
 	os << "  ***** ******** ***** *****\n\n";
 
 	// Kernal argument
 	os << "  ***** Kernel Argument *****\n";
-	work_item->getWorkGroup()->getGrid()->getKernelArguments()
-			->Dump(os, 4);
+	os << "To be supported";
 	os << "  ***** ****** ******** ****\n\n";
 
 	// Variable scope, 4
 	os << "  ***** Variables *****\n";
-	variable_scope->Dump(os, 4);
+	os << "To be supported";
 	os << "  ***** ********* *****\n\n";
 
 	// Dump back trace information
 	work_item->Backtrace(os);
 
-
+	// Close
 	os << "***** ***** ***** *****\n";
 }
 
@@ -201,6 +207,31 @@ void StackFrame::DumpRegister(const std::string &name,
 		break;
 	}
 	os << "\n";
+}
+
+
+Variable *StackFrame::getSymbol(const std::string &name)
+{
+	// Declare the symbol
+	Variable *symbol = nullptr;
+
+	// Try argument scope
+	symbol = getArgument(name);
+	if (symbol) 
+		return symbol;
+
+	// Try variables
+	symbol = getVariable(name);
+	if (symbol)
+		return symbol;
+
+	// Try function arguments
+	symbol = getFunctionArgument(name);
+	if (symbol)
+		return symbol;
+
+	// If nothing is found, return nullptr
+	return nullptr;
 }
 
 }  // namespace HSA

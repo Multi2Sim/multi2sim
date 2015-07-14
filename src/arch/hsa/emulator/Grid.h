@@ -34,7 +34,7 @@ class WorkGroup;
 class Component;
 class Function;
 class SegmentManager;
-class VariableScope;
+class Variable;
 
 // A grid is an instance of a kernel execution, equivalent to NDRange in OpenCL
 class Grid
@@ -74,7 +74,7 @@ class Grid
 	std::unique_ptr<SegmentManager> kernarg_segment;
 
 	// Kernal arguments
-	std::unique_ptr<VariableScope> kernel_arguments;
+	std::map<std::string, std::unique_ptr<Variable>> kernel_arguments;
 
 	// List of work groups, maps work group flattened absolute id
 	std::map<unsigned int, std::unique_ptr<WorkGroup>> workgroups;
@@ -143,12 +143,21 @@ public:
 	/// Return the pointer to the component
 	Component *getComponent() const { return component; }
 
-	/// Return the kernel arguments
-	VariableScope *getKernelArguments() const { return kernel_arguments.get(); }
-
 	/// Return the kernel segment manager
-	SegmentManager *getKernargSegment() const { return kernarg_segment.get(); }
+	SegmentManager *getKernargSegment() const 
+	{ 
+		return kernarg_segment.get(); 
+	}
 
+	/// Return the kernel argument variable by the name. If the name is
+	/// not found, return nullptr;
+	Variable *getKernelArgument(const std::string &name)
+	{
+		auto it = kernel_arguments.find(name);
+		if (it == kernel_arguments.end())
+			return nullptr;
+		return it->second.get();
+	}
 };
 
 }  // namespace HSA
