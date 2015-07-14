@@ -792,7 +792,10 @@ void Kernel::CreateBufferDescriptor(unsigned base_addr,
 	buffer_descriptor->data_format = data_format;
 	assert(!(size % elem_size));
 	buffer_descriptor->elem_size = elem_size;
-	buffer_descriptor->num_records = size/elem_size;
+	
+	//XXX - C++ version had this as size/elem_size but C version had it as
+	// just size.
+	buffer_descriptor->num_records = size;
 
 	return;
 
