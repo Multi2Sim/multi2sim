@@ -197,6 +197,10 @@ void Wavefront::Execute()
 	Instruction::Bytes *bytes = inst.getBytes();
 	int op = inst.getOp();
 
+	// Create stringstream for debugging
+	std::stringstream ss;
+	ss.str("");
+
 	// Dump instruction string when debugging
 	switch (format)
 	{
@@ -204,6 +208,11 @@ void Wavefront::Execute()
 	// Scalar ALU Instructions
 	case Instruction::FormatSOP1:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
@@ -212,13 +221,18 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatSOP2:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
@@ -227,13 +241,18 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 		
 		break;
 	}
 
 	case Instruction::FormatSOPP:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		if (bytes->sopp.op > 1 &&
 			bytes->sopp.op < 10)
@@ -250,13 +269,18 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatSOPC:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
@@ -265,13 +289,18 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatSOPK:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_inst_count++;
@@ -280,7 +309,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
@@ -288,6 +317,11 @@ void Wavefront::Execute()
 	// Scalar Memory Instructions
 	case Instruction::FormatSMRD:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incScalarMemInstCount();
 		scalar_mem_inst_count++;
@@ -296,7 +330,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
@@ -304,6 +338,11 @@ void Wavefront::Execute()
 	// Vector ALU Instructions
 	case Instruction::FormatVOP2:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -317,13 +356,18 @@ void Wavefront::Execute()
 				work_item->Execute(opcode, &inst);
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatVOP1:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -368,13 +412,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatVOPC:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -390,13 +439,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 	
 	case Instruction::FormatVOP3a:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -412,13 +466,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatVOP3b:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -434,13 +493,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatVINTRP:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_inst_count++;
@@ -456,13 +520,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
  	
 		break;
 	}
 
 	case Instruction::FormatDS:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incLdsInstCount();
 		lds_inst_count++;
@@ -496,7 +565,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
@@ -504,6 +573,11 @@ void Wavefront::Execute()
 	// Vector Memory Instructions
 	case Instruction::FormatMTBUF:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorMemInstCount();
 		vector_mem_inst_count++;
@@ -533,13 +607,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatMUBUF:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incVectorMemInstCount();
 		vector_mem_inst_count++;
@@ -576,13 +655,18 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 	}
 
 	case Instruction::FormatEXP:
 	{
+		// Dump instruction string when debugging
+		inst.Dump(ss);
+		inst.AddrDump(ss);
+		Emulator::isa_debug << ss.str();
+		
 		// Stats
 		emulator->incExportInstCount();
 		export_inst_count++;
@@ -601,7 +685,7 @@ void Wavefront::Execute()
 			}
 		}
 
-		Emulator::isa_debug << "\n";
+		Emulator::isa_debug << "\n\n";
 
 		break;
 

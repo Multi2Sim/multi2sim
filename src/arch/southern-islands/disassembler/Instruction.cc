@@ -1019,6 +1019,20 @@ void Instruction::Dump(std::ostream &os) const
 }
 
 
+void Instruction::AddrDump(std::ostream &os) const
+{
+	// Spaces
+	if (os.tellp() < 59)
+		os << std::string(59 - os.tellp(), ' ');
+
+	// Hex dump
+	os << misc::fmt("// %08X: %08X", address, bytes.word[0]);
+	if (size == 8)
+		os << misc::fmt(" %08X", bytes.word[1]);
+	os << '\n';
+}
+
+
 void Instruction::Clear()
 {
 	info = NULL;

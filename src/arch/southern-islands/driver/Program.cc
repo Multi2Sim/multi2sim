@@ -90,18 +90,26 @@ void Program::InitializeConstantBuffers()
 		ConstantBuffer *constant_buffer = AddConstantBuffer(i, 
 				(unsigned) symbol->getSize());
 		
+		// Set device pointer
+		constant_buffer->setDevicePtr(emulator->getVideoMemoryTop());
+		
 		// Copy the symbol data into the constant buffer object
 		symbol_stream.read(constant_buffer->getData(), 
 				(unsigned) symbol->getSize());
 
+		// Map new pages                                                         
+		video_memory->Map(emulator->getVideoMemoryTop(), 
+				(unsigned) symbol->getSize(),    
+				mem::Memory::AccessRead | 
+				mem::Memory::AccessWrite);     
+		
 		// Copy constant buffer into device memory
 		video_memory->Write(emulator->getVideoMemoryTop(), 
 				(unsigned) symbol->getSize(), 
 				constant_buffer->getData());                           
 
-		// Increment video memory and set current pointer for CB
+		// Increment video memory
 		emulator->incVideoMemoryTop((unsigned) symbol->getSize());
-		constant_buffer->setDevicePtr(emulator->getVideoMemoryTop());
 	}      
 
 
