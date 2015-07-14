@@ -2326,7 +2326,7 @@ void WorkItem::ExecuteInst_CALL()
 	std::string function_name = function_operand->getRef()->getName();
 
 	// Retrieve the function
-	Function *function = executable->getFunction(function_name);
+	// Function *function = executable->getFunction(function_name);
 
 	// Prepare stack frame and pass the argument by value
 	// auto new_frame = misc::new_unique<StackFrame>(function, this);
