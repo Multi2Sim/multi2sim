@@ -33,10 +33,10 @@ Variable::Variable(const std::string& name, BrigType type,
 		bool isFormal = false) :
 		name(name),
 		type(type),
+		segment(segment),
 		size(AsmService::TypeToSize(type)),
 		dim(dim),
 		address(address),
-		segment(segment),
 		isFormal(isFormal)
 {
 }
