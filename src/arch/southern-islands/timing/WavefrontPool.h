@@ -68,6 +68,7 @@ public:
 	bool wavefront_completed = false;
 	bool wait_for_barrier = false;
 	bool wavefront_finished = false;
+	bool mem_wait = false;
 };
 
 

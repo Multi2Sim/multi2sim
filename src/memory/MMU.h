@@ -241,6 +241,16 @@ public:
 	/// Return `true` if the provided physical address is currently mapped
 	/// to a valid virtual address.
 	bool isValidPhysicalAddress(unsigned physical_address);
+
+	/// Record access to page and update statistics
+	///
+	/// \param physical_address
+	///	Physical memory address
+	///
+	/// \param access_type
+	///	Access type to record
+	///
+	void AccessPage(unsigned physical_address, AccessType access_type);
 };
 
 

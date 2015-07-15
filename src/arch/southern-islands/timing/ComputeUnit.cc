@@ -148,7 +148,7 @@ void ComputeUnit::Issue(FetchBuffer *fetch_buffer)
 			continue;
 
 		// Trace
-		Timing::trace << misc::fmt("si.instruction "
+		Timing::trace << misc::fmt("si.inst "
 				"id=%lld "
 				"cu=%d "
 				"wf=%d "
