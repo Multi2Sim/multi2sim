@@ -86,9 +86,6 @@ int Cpu::issue_width;
 Cpu::IssueKind Cpu::issue_kind;
 int Cpu::commit_width;
 Cpu::CommitKind Cpu::commit_kind;
-bool Cpu::process_prefetch_hints;
-bool Cpu::use_nc_store;
-int Cpu::prefetch_history_size;
 bool Cpu::occupancy_stats;
 int Cpu::reorder_buffer_size;
 Cpu::ReorderBufferKind Cpu::reorder_buffer_kind;
@@ -128,13 +125,6 @@ void Cpu::ParseConfiguration(misc::IniFile *ini_file)
 	recover_kind = (RecoverKind)ini_file->ReadEnum(section, "RecoverKind",
 			recover_kind_map, RecoverKindWriteback);
 	recover_penalty = ini_file->ReadInt(section, "RecoverPenalty", 0);
-	process_prefetch_hints = ini_file->ReadBool(section, "ProcessPrefetchHints", true);
-	use_nc_store = ini_file->ReadBool(section,"UseNCStore", false);
-	if (use_nc_store && (num_cores * num_threads > 1))
-	{
-		throw Error("When UseNCStore = True, Cores and Threads must be 1.");
-	}
-	prefetch_history_size = ini_file->ReadInt(section, "PrefetchHistorySize", 10);
 
 	// Section '[ Pipeline ]'
 	section = "Pipeline";

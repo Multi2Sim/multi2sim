@@ -270,22 +270,6 @@ private:
 	// Commit kind
 	static CommitKind commit_kind;
 
-
-
-
-	//
-	// Other Cpu parameters
-	//
-
-	// Flag that indicates Cpu ignore any prefetch hints/instructions
-	static bool process_prefetch_hints;
-
-	// Flag that indicates Cpu to reduce protocol overhead
-	static bool use_nc_store;
-
-	// Prefetch history size
-	static int prefetch_history_size;
-
 	// Flag that indicates Cpu to calculate structures occupancy statistics
 	static bool occupancy_stats;
 
@@ -370,6 +354,9 @@ public:
 
 	/// Return the decode width, as configured by the user
 	static int getDecodeWidth() { return decode_width; }
+
+	/// Return the type of instruction dispatch, as configured by the user
+	static DispatchKind getDispatchKind() { return dispatch_kind; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);

@@ -84,15 +84,6 @@ private:
 	// Counter used to assign per-core identifiers to uops
 	long long uop_id_counter = 0;
 
-	// Counter for uop ID assignment
-	long long dispatch_seq = 0;
-
-	// Uop count in instruction queue
-	int instruction_queue_count = 0;
-
-	// Uop count in load/store queue
-	int load_store_queue_count = 0;
-
 	// Number of occupied integer registers
 	int num_integer_registers_occupied = 0;
 
@@ -102,12 +93,22 @@ private:
 	// Number of XMM registers
 	int num_xmm_registers_occupied = 0;
 
+	// Total number of instructions in all threads' ROBs
+	int reorder_buffer_occupancy = 0;
+
+	// Total number of instructions in all threads' IQs
+	int instruction_queue_occupancy = 0;
+
+	// Total number of instructions in all threads' LSQs
+	int load_store_queue_occupancy = 0;
+
+
 
 
 
 
 	//
-	// Stages
+	// Fetch stage
 	//
 
 	// Currently fetching thread
@@ -205,8 +206,9 @@ public:
 	/// Return a new unique identifier for a uop in this core
 	long long getUopId() { return ++uop_id_counter; }
 
-	/// Get event queue
-	std::list<std::shared_ptr<Uop>> &getEventQueue() { return event_queue; }
+
+
+	/// Register file
 
 	/// Get the number of occupied physical integer registers
 	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
@@ -217,19 +219,6 @@ public:
 	/// Get the number of occupied physical xmm registers
 	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
 
-	/// Get the Uop count in instruction queue
-	int getInstructionQueueCount() { return instruction_queue_count; }
-
-	/// Get the Uop count in load/store queue
-	int getLoadStoreQueueCount() { return load_store_queue_count; }
-
-
-
-
-	//
-	// Increment counters
-	//
-
 	/// Increment the number of occupied physical integer registers
 	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
 
@@ -239,39 +228,33 @@ public:
 	/// Increment the number of occupied physical xmm registers
 	void incNumXmmRegistersOccupied() { num_xmm_registers_occupied++; }
 
-	/// Increment the Uop count in instruction queue
-	void incInstructionQueueCount() { instruction_queue_count++; }
-
-	/// Increment the Uop count in load/store queue
-	void incLoadStoreQueueCount() { load_store_queue_count++; }
-
-
-
-
-	//
-	// Decrement counters
-	//
-
 	/// Decrement the number of occupied physical integer registers
-	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
+	void decNumIntegerRegistersOccupied()
+	{
+		assert(num_integer_registers_occupied > 0);
+		num_integer_registers_occupied--;
+	}
 
 	/// Decrement the number of occupied physical float point registers
-	void decNumFloatPointRegistersOccupied() { num_float_point_registers_occupied--; }
+	void decNumFloatPointRegistersOccupied()
+	{
+		assert(num_float_point_registers_occupied > 0);
+		num_float_point_registers_occupied--;
+	}
 
 	/// Decrement the number of occupied physical xmm registers
-	void decNumXmmRegistersOccupied() { num_xmm_registers_occupied--; }
+	void decNumXmmRegistersOccupied()
+	{
+		assert(num_xmm_registers_occupied > 0);
+		num_xmm_registers_occupied--;
+	}
 
-	/// Decrement the Uop count in instruction queue
-	void decInstructionQueueCount() { instruction_queue_count--; }
-
-	/// Decrement the Uop count in load/store queue
-	void decLoadStoreQueueCount() { load_store_queue_count--; }
 
 
 
 
 	//
-	// Event queue functions
+	// Event queue
 	//
 
 	/// Insert uop into event queue
@@ -279,6 +262,72 @@ public:
 
 	/// Extract uop from event queue
 	std::shared_ptr<Uop> ExtractFromEventQueue();
+
+
+
+
+	//
+	// Reorder buffer
+	//
+
+	/// Increment the total number of instructions in all threads' ROBs
+	void incReorderBufferOccupancy() { reorder_buffer_occupancy++; }
+
+	/// Decrement the total number of instructions in all threads' ROBs
+	void decReorderBufferOccupancy()
+	{
+		assert(reorder_buffer_occupancy > 0);
+		reorder_buffer_occupancy--;
+	}
+
+	/// Return the total number of instructions in all threads' ROBs
+	int getReorderBufferOccupancy() const { return reorder_buffer_occupancy; }
+
+
+
+
+	//
+	// Instruction queue
+	//
+	
+	/// Increment the total number of instructions in all threads' IQs
+	void incInstructionQueueOccupancy() { instruction_queue_occupancy++; }
+
+	/// Decrement the total number of instructions in all threads' IQs
+	void decInstructionQueueOccupancy()
+	{
+		assert(instruction_queue_occupancy > 0);
+		instruction_queue_occupancy--;
+	}
+
+	/// Return the total number of instructions in all threads' IQs
+	int getInstructionQueueOccupancy() const
+	{
+		return instruction_queue_occupancy;
+	}
+
+
+
+
+	//
+	// Load-Store queue
+	//
+	
+	/// Increment the total number of instructions in all threads' LSQs
+	void incLoadStoreQueueOccupancy() { load_store_queue_occupancy++; }
+
+	/// Decrement the total number of instructions in all threads' LSQs
+	void decLoadStoreQueueOccupancy()
+	{
+		assert(load_store_queue_occupancy > 0);
+		load_store_queue_occupancy--;
+	}
+
+	/// Return the total number of instructions in all threads' LSQs
+	int getLoadStoreQueueOccupancy() const
+	{
+		return load_store_queue_occupancy;
+	}
 
 
 
@@ -295,6 +344,9 @@ public:
 
 	/// Decode stage
 	void Decode();
+
+	/// Dispatch stage
+	void Dispatch();
 };
 
 }

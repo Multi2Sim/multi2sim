@@ -268,6 +268,14 @@ public:
 	/// iterator to this queue if not present.
 	std::list<std::shared_ptr<Uop>>::iterator event_queue_iterator;
 
+	/// True if the instruction is currently present in the thread's
+	/// reorder buffer
+	bool in_reorder_buffer = false;
+
+	/// True if the instruction is currently present in the thread's
+	/// instruction queue
+	bool in_instruction_queue = false;
+
 
 
 	
