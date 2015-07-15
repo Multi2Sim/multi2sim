@@ -195,6 +195,9 @@ public:
 
 	/// Last scalar memory access size
 	unsigned int global_mem_access_size;
+
+	/// Lds access witness
+	int lds_witness;
 };
 
 }
