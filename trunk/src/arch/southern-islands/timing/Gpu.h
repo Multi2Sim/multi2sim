@@ -23,12 +23,15 @@
 #include <vector>
 
 #include <lib/cpp/Misc.h>
+#include <memory/MMU.h>
 
 #include "ComputeUnit.h"
 
 
 namespace SI
 {
+
+// Forward declarations
 
 
 /// Class representing a Southern Islands GPU device.
@@ -40,6 +43,9 @@ class Gpu
 
 	// Number of compute units
 	static int num_compute_units;
+
+	// MMU used by this GPU
+	mem::MMU *mmu;
 
 
 
@@ -67,6 +73,9 @@ public:
 	// Class members
 	//
 
+	/// Last complete cycle
+	long long last_complete_cycle;
+
 	/// Constructor
 	Gpu();
 
@@ -76,6 +85,9 @@ public:
 		assert(misc::inRange(index, 0, compute_units.size() - 1));
 		return compute_units[index].get();
 	}
+
+	/// Return the associated MMU
+	mem::MMU *getMmu() const { return mmu; }
 
 	/// Return an iterator to the first compute unit
 	std::vector<std::unique_ptr<ComputeUnit>>::iterator getComputeUnitsBegin()

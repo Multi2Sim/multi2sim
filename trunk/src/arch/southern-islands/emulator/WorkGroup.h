@@ -187,6 +187,9 @@ public:
 	/// Get finished_emu flag
 	bool getFinishedEmu() { return finished_emu; }
 
+	/// Get finished_timing flag
+	bool getFinishedTiming() { return finished_timing; }
+
 	/// Get a pointer to the local memory of the work group
 	mem::Memory *getLocalMemory() { return &local_memory; }
 
@@ -202,6 +205,9 @@ public:
 
 	/// Increase wavefronts_completed_emu counter
 	void incWavefrontsCompletedEmu() { wavefronts_completed_emu++; }
+
+	/// Increase wavefronts_completed_emu counter
+	void incWavefrontsCompletedTiming() { wavefronts_completed_timing++; }
 
 	/// Increase scalar register read counter
 	void incSregReadCount() { sreg_read_count++; }
@@ -230,6 +236,9 @@ public:
 
 	/// Set finished_emu flag
 	void setFinishedEmu(bool flag) { finished_emu = flag; }
+
+	/// Set finished_timing flag
+	void setFinishedTiming(bool flag) { finished_timing = flag; }
 
 	/// Return an iterator to the first work-item in the work-group. The
 	/// following code can then be used to iterate over all work-items (and

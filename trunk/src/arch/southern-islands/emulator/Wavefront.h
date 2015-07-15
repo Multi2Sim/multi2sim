@@ -24,6 +24,7 @@
 #include <vector>
 
 #include <arch/southern-islands/disassembler/Instruction.h>
+#include <arch/southern-islands/emulator/WorkItem.h>
 
 namespace SI
 {
@@ -166,6 +167,12 @@ public:
 
 	/// Return pointer to the workgroup this wavefront belongs to
 	WorkGroup *getWorkGroup() const { return work_group; }
+
+	/// Return pointer to the scalar work item
+	WorkItem *getScalarWorkItem() const
+	{
+		return scalar_work_item.get();
+	}
 
 	/// Get work_item_count
 	unsigned getWorkItemCount() const { return work_item_count; }

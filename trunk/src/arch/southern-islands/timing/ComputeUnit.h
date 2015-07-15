@@ -39,6 +39,7 @@ namespace SI
 // Forward declarations
 class Timing;
 class WorkGroup;
+class Gpu;
 
 
 
@@ -59,6 +60,9 @@ class ComputeUnit
 
 	// Associated timing simulator, saved for performance
 	Timing *timing = nullptr;
+
+	// Associated GPU
+	Gpu *gpu;
 
 	// Index of the compute unit in the GPU device, initialized in the
 	// constructor.
@@ -137,6 +141,12 @@ public:
 	/// Return a new unique sequential identifier for the next uop in the
 	/// compute unit.
 	long long getUopId() { return ++uop_id_counter; }
+
+	/// Return a pointer to the associated GPU
+	Gpu *getGpu() { return gpu; }
+
+	/// Return the associated timing simulator
+	Timing *getTiming() { return timing; }
 
 	/// Cache used for vector data
 	mem::Module *vector_cache = nullptr;
