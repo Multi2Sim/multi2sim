@@ -136,7 +136,7 @@ public:
 	bool lds_read;
 	bool lds_write;
 	bool mem_wait;
-	bool at_barrier;
+	bool at_barrier = false;
 	bool finished = false;
 	bool vector_mem_global_coherency;
 

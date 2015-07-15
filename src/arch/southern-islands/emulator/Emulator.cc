@@ -123,7 +123,7 @@ bool Emulator::Run()
 					Wavefront *wavefront = (*wf_i).get();
 
 					// Check if the wavefront is finished or not
-					if (wavefront->getFinished())
+					if (wavefront->getFinished() || wavefront->at_barrier)
 						continue;
 					
 					// Execute the wavefront
