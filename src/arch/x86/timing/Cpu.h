@@ -170,9 +170,6 @@ private:
 	// MMU used by this CPU
 	std::shared_ptr<mem::MMU> mmu;
 
-	// Number of Uop
-	long long num_uop = 0;
-
 	// Name of currently simulated stage 
 	std::string stage;
 
@@ -197,13 +194,13 @@ private:
 	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_dispatched_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_issued_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_committed_uinsts[Uinst::OpcodeCount] = { };
 
 	// Committed micro-instructions
 	long long num_committed_uinst = 0;
@@ -388,15 +385,6 @@ public:
 	/// Get the MMU
 	mem::MMU *getMMU() { return mmu.get(); }
 
-	/// Get number of Uop
-	int getNumUop() { return num_uop; }
-
-	/// Increment the number of Uop
-	void incNumUop() { num_uop++; }
-
-	/// Increment the number of fetched micro-instructions
-	void incNumFetchedUinsts() { num_fetched_uinsts++; }
-
 	/// Dump functions
 	void Dump();
 	void DumpSummary();
@@ -413,6 +401,24 @@ public:
 
 	/// Update Occupancy statistic
 	void UpdateOccupancyStats();
+
+
+
+
+	//
+	// Stats
+	//
+
+	/// Increment the number of fetched micro-instructions
+	void incNumFetchedUinsts() { num_fetched_uinsts++; }
+
+	/// Increment the number of dispatched micro-instructions of a given
+	/// kind.
+	void incNumDispatchedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_dispatched_uinsts[opcode]++;
+	}
 };
 
 }
