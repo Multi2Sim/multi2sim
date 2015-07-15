@@ -40,23 +40,6 @@ class Cpu;
 // Class Core
 class Core
 {
-public:
-
-	/// Dispatch stall reasons
-	enum DispatchStallReason
-	{
-		DispatchStallReasonInvalid = 0,
-		DispatchStallReasonUsed,  // Dispatch slot was used with a finally committed inst. 
-		DispatchStallReasonSpec,  // Used with a speculative inst. 
-		DispatchStallReasonUopQueue,  // No instruction in the uop queue 
-		DispatchStallReasonRob,  // No space in the rob 
-		DispatchStallReasonIq,  // No space in the iq 
-		DispatchStallReasonLsq,  // No space in the lsq 
-		DispatchStallReasonRename,  // No free physical register 
-		DispatchStallReasonCtx,  // No running ctx 
-		DispatchStallReasonMax
-	};
-
 private:
 
 	// name of this Core
@@ -124,16 +107,16 @@ private:
 	//
 
 	// Number of stalled micro-instruction when dispatch divded by reason
-	long long num_dispatch_stall[DispatchStallReasonMax] = { };
+	long long dispatch_stall[Thread::DispatchStallMax] = {};
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_dispatched_uinsts[Uinst::OpcodeCount] = {};
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_issued_uinsts[Uinst::OpcodeCount] = {};
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_committed_uinsts[Uinst::OpcodeCount] = {};
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
@@ -150,22 +133,15 @@ private:
 	//
 	// Statistics for shared structures 
 	//
-	long long rob_occupancy = 0;
-	long long rob_full = 0;
-	long long rob_reads = 0;
-	long long rob_writes = 0;
 
-	long long iq_occupancy = 0;
-	long long iq_full = 0;
-	long long iq_reads = 0;
-	long long iq_writes = 0;
-	long long iq_wakeup_accesses = 0;
+	long long reorder_buffer_reads = 0;
+	long long reorder_buffer_writes = 0;
 
-	long long lsq_occupancy = 0;
-	long long lsq_full = 0;
-	long long lsq_reads = 0;
-	long long lsq_writes = 0;
-	long long lsq_wakeup_accesses = 0;
+	long long instruction_queue_reads = 0;
+	long long instruction_queue_writes = 0;
+
+	long long load_store_queue_reads = 0;
+	long long load_store_queue_writes = 0;
 
 	long long reg_file_int_occupancy = 0;
 	long long reg_file_int_full = 0;
@@ -208,7 +184,9 @@ public:
 
 
 
-	/// Register file
+	//
+	// Register file
+	//
 
 	/// Get the number of occupied physical integer registers
 	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
@@ -347,6 +325,47 @@ public:
 
 	/// Dispatch stage
 	void Dispatch();
+
+
+
+	//
+	// Statistics
+	//
+
+	/// Increment the counter for reasons of dispatch stalls by the given
+	/// quantum.
+	void incDispatchStall(Thread::DispatchStall stall, int quantum)
+	{
+		assert(stall > Thread::DispatchStallInvalid &&
+				stall < Thread::DispatchStallMax);
+		dispatch_stall[stall] += quantum;
+	}
+
+	/// Increment the number of reads to a thread's reorder buffer
+	void incReorderBufferReads() { reorder_buffer_reads++; }
+
+	/// Increment the number of writes to a thread's reorder buffer
+	void incReorderBufferWrites() { reorder_buffer_writes++; }
+
+	/// Increment the number of reads to a thread's instruction queue
+	void incInstructionQueueReads() { instruction_queue_reads++; }
+
+	/// Increment the number of writes to a thread's instruction queue
+	void incInstructionQueueWrites() { instruction_queue_writes++; }
+
+	/// Increment the number of reads from the load-store queue
+	void incLoadStoreQueueReads() { load_store_queue_reads++; }
+
+	/// Increment the number of writes to a thread's load-store queue
+	void incLoadStoreQueueWrites() { load_store_queue_writes++; }
+	
+	/// Increment the number of dispatched micro-instructions of a given
+	/// kind.
+	void incNumDispatchedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_dispatched_uinsts[opcode]++;
+	}
 };
 
 }

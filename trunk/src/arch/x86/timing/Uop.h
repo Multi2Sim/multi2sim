@@ -276,6 +276,14 @@ public:
 	/// instruction queue
 	bool in_instruction_queue = false;
 
+	/// True if the instruction is currently present in the thread's
+	/// load queue
+	bool in_load_queue = false;
+
+	/// True if the instruction is currently present in the thread's
+	/// store queue
+	bool in_store_queue = false;
+
 
 
 	

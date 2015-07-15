@@ -202,5 +202,35 @@ bool Thread::canInsertInLoadStoreQueue()
 	}
 }
 
+
+void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> uop)
+{
+	// Sanity
+	assert(!uop->in_load_queue);
+	assert(!uop->in_store_queue);
+
+	// Insert into load or store queue depending on instruction type
+	switch (uop->getUinst()->getOpcode())
+	{
+
+	case Uinst::OpcodeLoad:
+
+		load_queue.push_back(uop);
+		break;
+
+	case Uinst::OpcodeStore:
+
+		store_queue.push_back(uop);
+		break;
+	
+	default:
+
+		throw misc::Panic("Invalid micro-instruction opcode");
+	}
+
+	// Increase per-core counter
+	core->incLoadStoreQueueOccupancy();
+}
+
 }
 
