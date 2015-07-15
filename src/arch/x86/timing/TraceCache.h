@@ -146,13 +146,18 @@ private:
 	// Number of fetched micro-instructions
 	long long num_fetched_uinsts = 0;
 
-	long long num_dispatched_uinst = 0;
+	// Number of dispatched micro-instructions coming from the trace cache
+	long long num_dispatched_uinsts = 0;
 
-	long long num_issued_uinst = 0;
+	// Number of issued micro-instructions coming from the trace cache
+	long long num_issued_uinsts = 0;
 
-	long long num_committed_uinst = 0;
+	// Number of committed micro-instructions coming from the trace cache
+	long long num_committed_uinsts = 0;
 
-	long long num_squashed_uinst = 0;
+	// Num of squashed speculative micro-instructions coming from the trace
+	// cache
+	long long num_squashed_uinsts = 0;
 
 	long long trace_length_acc = 0;
 
@@ -264,8 +269,12 @@ public:
 	// Statistics
 	//
 
-	/// Increment number of fetched Uinst in trace cache
+	/// Increment number of fetched micro-instructions in trace cache
 	void incNumFetchedUinsts() { num_fetched_uinsts++; }
+
+	/// Increment number of dispatched micro-instructions coming from the
+	/// trace cache
+	void incNumDispatchedUinsts() { num_dispatched_uinsts++; }
 };
 
 }

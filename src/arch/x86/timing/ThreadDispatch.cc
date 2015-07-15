@@ -17,7 +17,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "Core.h"
+#include "Cpu.h"
 #include "Thread.h"
+#include "Timing.h"
 
 
 namespace x86
@@ -55,67 +58,74 @@ Thread::DispatchStall Thread::canDispatch()
 
 int Thread::Dispatch(int quantum)
 {
-#if 0
 	// Repeat while there is quantum left
 	while (quantum)
 	{
-		/* Check if we can decode */
-		stall = X86ThreadCanDispatch(self);
-		if (stall != x86_dispatch_stall_used)
+		// Check if we can dispatch
+		DispatchStall stall = canDispatch();
+		if (stall != DispatchStallUsed)
 		{
-			core->dispatch_stall[stall] += quantum;
+			core->incDispatchStall(stall, quantum);
 			break;
 		}
 	
-		/* Get entry from uop queue */
-		uop = list_remove_at(self->uop_queue, 0);
-		assert(x86_uop_exists(uop));
-		uop->in_uop_queue = 0;
+		// Extract uop from uop queue
+		std::shared_ptr<Uop> uop = ExtractFromUopQueue();
 		
-		/* Rename */
-		X86ThreadRenameUop(self, uop);
+		// Register renaming
+		register_file->Rename(uop.get());
 		
-		/* Insert in ROB */
-		X86CoreEnqueueInROB(core, uop);
-		core->rob_writes++;
-		self->rob_writes++;
+		// Insert in reorder buffer
+		InsertInReorderBuffer(uop);
+		core->incReorderBufferWrites();
+		reorder_buffer_writes++;
 		
-		/* Non memory instruction into IQ */
-		if (!(uop->flags & X86_UINST_MEM))
+		// Insert non-memory instruction into instruction queue
+		if (!(uop->getFlags() & Uinst::FlagMem))
 		{
-			X86ThreadInsertInIQ(self, uop);
-			core->iq_writes++;
-			self->iq_writes++;
+			InsertInInstructionQueue(uop);
+			core->incInstructionQueueWrites();
+			instruction_queue_writes++;
 		}
 		
-		/* Memory instructions into the LSQ */
-		if (uop->flags & X86_UINST_MEM)
+		// Memory instructions into the load-store queue
+		if ((uop->getFlags() & Uinst::FlagMem))
 		{
-			X86ThreadInsertInLSQ(self, uop);
-			core->lsq_writes++;
-			self->lsq_writes++;
+			InsertInLoadStoreQueue(uop);
+			core->incLoadStoreQueueWrites();
+			load_store_queue_writes++;
 		}
+
+		// Increment dispatch slot
+		core->incDispatchStall(uop->speculative_mode ?
+				DispatchStallSpeculative :
+				DispatchStallUsed, 1);
+
+		// Increment number of dispatched micro-instructions of each
+		// kind
+		incNumDispatchedUinsts(uop->getUinst()->getOpcode());
+		core->incNumDispatchedUinsts(uop->getUinst()->getOpcode());
+		cpu->incNumDispatchedUinsts(uop->getUinst()->getOpcode());
 		
-		/* Statistics */
-		core->dispatch_stall[uop->specmode ? x86_dispatch_stall_spec : x86_dispatch_stall_used]++;
-		self->num_dispatched_uinst_array[uop->uinst->opcode]++;
-		core->num_dispatched_uinst_array[uop->uinst->opcode]++;
-		cpu->num_dispatched_uinst_array[uop->uinst->opcode]++;
-		if (uop->trace_cache)
-			self->trace_cache->num_dispatched_uinst++;
+		// Increment number of dispatched micro-instructions coming from
+		// the trace cache
+		if (uop->from_trace_cache)
+			trace_cache->incNumDispatchedUinsts();
 		
-		/* Another instruction dispatched, update quantum. */
+		// Another instruction dispatched, update quantum
 		quantum--;
 
-		/* Trace */
-		x86_trace("x86.inst id=%lld core=%d stg=\"di\"\n",
-			uop->id_in_core, core->id);
-
+		// Trace
+		Timing::trace << misc::fmt("x86.inst "
+				"id=%lld "
+				"core=%d "
+				"stg=\"di\"\n",
+				uop->getIdInCore(),
+				core->getId());
 	}
 
+	// Return remaining unused quantum
 	return quantum;
-#endif
-	return 0;
 }
 
 }

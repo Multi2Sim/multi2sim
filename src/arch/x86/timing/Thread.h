@@ -169,6 +169,11 @@ private:
 	// private per thread, or shared among threads.
 	bool canInsertInLoadStoreQueue();
 
+	// Insert a uop into the tail of the load-store queue (it is in fact
+	// inserted either at the tail of the load queue or the store queue,
+	// depending on the uop kind).
+	void InsertInLoadStoreQueue(std::shared_ptr<Uop> uop);
+
 
 
 
@@ -237,13 +242,13 @@ private:
 	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_dispatched_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_issued_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
+	long long num_committed_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinst = 0;
@@ -261,22 +266,14 @@ private:
 	// Statistics for structures
 	//
 
-	long long rob_occupancy = 0;
-	long long rob_full = 0;
-	long long rob_reads = 0;
-	long long rob_writes = 0;
+	long long reorder_buffer_reads = 0;
+	long long reorder_buffer_writes = 0;
 
-	long long iq_occupancy = 0;
-	long long iq_full = 0;
-	long long iq_reads = 0;
-	long long iq_writes = 0;
-	long long iq_wakeup_accesses = 0;
+	long long instruction_queue_reads = 0;
+	long long instruction_queue_writes = 0;
 
-	long long lsq_occupancy = 0;
-	long long lsq_full = 0;
-	long long lsq_reads = 0;
-	long long lsq_writes = 0;
-	long long lsq_wakeup_accesses = 0;
+	long long load_store_queue_reads = 0;
+	long long load_store_queue_writes = 0;
 
 	long long reg_file_int_occupancy = 0;
 	long long reg_file_int_full = 0;
@@ -321,7 +318,7 @@ public:
 
 
 	//
-	// Increment counters
+	// Register file
 	//
 
 	/// Increment the number of occupied physical integer registers
@@ -351,14 +348,6 @@ public:
 	/// Increment the write count of Register Aliasing Table for XMM registers
 	void incRatXmmWrites() { rat_xmm_writes++; }
 
-
-
-
-
-	//
-	// Decrement counters
-	//
-
 	/// Decrement the number of occupied physical integer registers
 	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
 
@@ -385,13 +374,6 @@ public:
 
 	/// Increment the write count of Register Aliasing Table for INT registers
 	void decRatXmmWrites() { rat_xmm_writes--; }
-
-
-
-
-	//
-	// Getters
-	//
 
 	/// Get the number of occupied physical integer registers
 	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
@@ -485,7 +467,8 @@ public:
 		DispatchStallInstructionQueue,	// Stall due to no space in the instruction queue
 		DispatchStallLoadStoreQueue,	// Stall due to no space in the load-store queue
 		DispatchStallRename,		// Stall due to no free physical register
-		DispatchStallContext		// Stall due to no running context
+		DispatchStallContext,		// Stall due to no running context
+		DispatchStallMax
 	};
 
 	/// Determine if it is possible to dispatch an instruction for the
@@ -498,6 +481,21 @@ public:
 	/// Dispatch \a quantum instructions for the thread. The function
 	/// returns the remaining dispatch quantum.
 	int Dispatch(int quantum);
+
+
+
+
+	//
+	// Statistics
+	//
+
+	/// Increment the number of dispatched micro-instructions of a given
+	/// kind.
+	void incNumDispatchedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_dispatched_uinsts[opcode]++;
+	}
 
 
 
