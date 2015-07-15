@@ -122,6 +122,26 @@ DEFINST(ISETP_B,
 		0x01,
 		0x02)
 
+DEFINST(LOP_A,
+		"LOP_A",
+		0x01,
+		0x03,
+		0x00,
+		0x08)
+		
+DEFINST(LOP_B,
+		"LOP_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x08)
+				
+DEFINST(LOP32I,
+		"LOP32I",
+		0x00,
+		0x01)
+		
+		
 /* Control catogory instructions:
  * EXIT, BRA
  */
@@ -537,11 +557,6 @@ DEFINST(IDE,
 		0x00,
 		0x00,
 		0x39)
-
-DEFINST(LOP32I,
-		"LOP32I",
-		0x00,
-		0x01)
 
 DEFINST(FADD32I,
 		"FADD32I",
