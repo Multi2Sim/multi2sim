@@ -340,8 +340,21 @@ void Disassembler::DisassembleBinary(const std::string &path)
 			std::cout << "**\n** Disassembly for '__kernel " <<
 					kernel_name << "'\n**\n\n";
 
+			// Get the area of the text section pointed to
+			// by the symbol
+			std::istringstream symbol_stream;
+			symbol->getStream(symbol_stream,
+					(unsigned) symbol->getValue(), 
+					(unsigned) symbol->getSize());
+
+			// Copy the symbol data into a buffer
+			auto buffer = misc::new_unique_array<char>(
+					symbol->getSize());
+			symbol_stream.read(buffer.get(), 
+					(unsigned) symbol->getSize());
+			
 			// Create internal ELF
-			Binary binary(symbol->getBuffer(), symbol->getSize(), kernel_name);
+			Binary binary(buffer.get(), symbol->getSize(), kernel_name);
 
 			// Get section with Southern Islands ISA
 			BinaryDictEntry *si_dict_entry = binary.GetSIDictEntry();
