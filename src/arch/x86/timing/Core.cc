@@ -140,8 +140,33 @@ void Core::Decode()
 }
 
 
+void Core::Dispatch()
+{
+	// Invoke stage according to kind
+	switch (Cpu::getDispatchKind())
+	{
+
+	case Cpu::DispatchKindShared:
+	{
+		break;
+	}
+
+	case Cpu::DispatchKindTimeslice:
+	{
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Invalid dispatch kind");
+	}
+}
+
+
 void Core::Run()
 {
+	// Run stages in reverse order
+	Dispatch();
 	Decode();
 	Fetch();
 }
