@@ -47,8 +47,7 @@ Thread::Thread(Core *core,
 				".TraceCache");
 
 	// Initialize register file
-	reg_file = misc::new_unique<RegisterFile>(core, this);
-	reg_file->InitRegisterFile();
+	register_file = misc::new_unique<RegisterFile>(this);
 }
 
 
@@ -89,6 +88,118 @@ std::shared_ptr<Uop> Thread::ExtractFromUopQueue()
 	uop->in_uop_queue = false;
 	uop->uop_queue_iterator = uop_queue.end();
 	return uop;
+}
+
+
+void Thread::InsertInReorderBuffer(std::shared_ptr<Uop> uop)
+{
+	// Sanity
+	assert(!uop->in_reorder_buffer);
+
+	// Insert into reorder buffer
+	uop->in_reorder_buffer = true;
+	reorder_buffer.push_back(uop);
+
+	// Increase per-core counter
+	core->incReorderBufferOccupancy();
+}
+
+
+bool Thread::canInsertInReorderBuffer()
+{
+	switch (Cpu::getReorderBufferKind())
+	{
+
+	case Cpu::ReorderBufferKindPrivate:
+
+		// Return whether the number of instructions in this thread's
+		// ROB is smaller than the ROB size configured by the user,
+		// which is specified as a per-thread ROB size.
+		return (int) reorder_buffer.size() <
+				Cpu::getReorderBufferSize();
+
+	case Cpu::ReorderBufferKindShared:
+
+		// Return whether the number of instructions in all threads'
+		// ROBs is smaller than the ROB size selected by the user,
+		// which is specified as the total ROB size.
+		return core->getReorderBufferOccupancy() <
+				Cpu::getReorderBufferSize();
+
+	default:
+
+		throw misc::Panic("Invalid reorder buffer kind");
+	}
+}
+
+
+void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> uop)
+{
+	// Sanity
+	assert(!uop->in_instruction_queue);
+
+	// Insert into instruction queue
+	uop->in_instruction_queue = true;
+	instruction_queue.push_back(uop);
+
+	// Increase per-core counter
+	core->incInstructionQueueOccupancy();
+}
+
+
+bool Thread::canInsertInInstructionQueue()
+{
+	switch (Cpu::getInstructionQueueKind())
+	{
+
+	case Cpu::InstructionQueueKindPrivate:
+
+		// Return whether the number of instructions in this thread's IQ
+		// is smaller than the IQ size configured by the user, which is
+		// specified as a per-thread IQ size.
+		return (int) instruction_queue.size() <
+				Cpu::getInstructionQueueSize();
+
+	case Cpu::InstructionQueueKindShared:
+
+		// Return whether the number of instructions in all threads'
+		// IQs is smaller than the IQ size selected by the user,
+		// which is specified as the total IQ size.
+		return core->getInstructionQueueOccupancy() <
+				Cpu::getInstructionQueueSize();
+	
+	default:
+
+		throw misc::Panic("Invalid instruction queue kind");
+	}
+}
+
+
+bool Thread::canInsertInLoadStoreQueue()
+{
+	switch (Cpu::getLoadStoreQueueKind())
+	{
+
+	case Cpu::LoadStoreQueueKindPrivate:
+
+		// Return whether the number of instructions in this thread's
+		// LSQ is smaller than the IQ size configured by the user, which
+		// is specified as a per-thread LSQ size
+		return (int) (load_queue.size() + store_queue.size()) <
+				Cpu::getLoadStoreQueueSize();
+
+	case Cpu::LoadStoreQueueKindShared:
+
+		// Return whether the number of instructions in all threads'
+		// LSQs is smaller than the LSQ size selected by the user,
+		// which is specified as the total LSQ size.
+		return core->getLoadStoreQueueOccupancy() <
+				Cpu::getLoadStoreQueueSize();
+	
+	default:
+
+		throw misc::Panic("Invalid load-store queue kind");
+	}
 }
 
 }

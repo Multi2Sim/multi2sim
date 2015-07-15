@@ -54,8 +54,10 @@ public:
 
 private:
 
-	// Core and thread it belongs to
+	// Core that the register file belongs to, initialized in constructor
 	Core *core;
+
+	// Thread that the register file belongs to, initialized in constructor
 	Thread *thread;
 
 	// Structure of physical register
@@ -98,6 +100,10 @@ private:
 
 public:
 
+	//
+	// Class Error
+	//
+
 	/// Exception for X86 register file
 	class Error : public misc::Error
 	{
@@ -109,14 +115,24 @@ public:
 		}
 	};
 
-	/// Constructor
-	RegisterFile(Core *core, Thread *thread);
+
+
+	//
+	// Static members
+	//
 
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
-	/// Initialize the register file
-	void InitRegisterFile();
+
+
+
+	//
+	// Class members
+	//
+
+	/// Constructor
+	RegisterFile(Thread *thread);
 
 	/// Dump register file
 	void DumpRegisterFile();
@@ -126,19 +142,30 @@ public:
 	int RequestFPRegister();
 	int RequestXMMRegister();
 
-	/// Rename functions
-	bool CanRename(Uop &uop);
-	void Rename(Uop &uop);
+	/// Return true if there are enough available physical registers to
+	/// rename the given uop.
+	bool canRename(Uop *uop);
+
+	/// Perform register renaming on the given uop. This operation renames
+	/// source and destination registers, requesting as many physical
+	/// registers as needed for the uop.
+	void Rename(Uop *uop);
 
 	/// Check if input dependencies are resolved
-	bool IsUopReady(Uop &uop);
+	bool isUopReady(Uop *uop);
 
-	/// Operation on Uop
-	void WriteUop(Uop &uop);
-	void UndoUop(Uop &uop);
-	void CommitUop(Uop &uop);
+	/// Update the state of the register file when an uop completes, that
+	/// is, when its results are written back.
+	void WriteUop(Uop *uop);
 
-	/// Check register file
+	/// Update the state of the register file when an uop is recovered from
+	/// speculative execution
+	void UndoUop(Uop *uop);
+
+	/// Update the state of the register file when an uop commits
+	void CommitUop(Uop *uop);
+
+	/// Check integrity of register file
 	void CheckRegisterFile();
 };
 

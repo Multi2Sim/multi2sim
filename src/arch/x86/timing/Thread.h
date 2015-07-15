@@ -87,8 +87,11 @@ private:
 
 
 	//
-	// Queues
+	// Fetch queue
 	//
+
+	// Fetch queue
+	std::deque<std::shared_ptr<Uop>> fetch_queue;
 
 	// Insert a uop into the tail of the fetch queue
 	void InsertInFetchQueue(std::shared_ptr<Uop> uop);
@@ -96,8 +99,15 @@ private:
 	// Extract a uop from the head of the fetch queue
 	std::shared_ptr<Uop> ExtractFromFetchQueue();
 
-	// Fetch queue
-	std::deque<std::shared_ptr<Uop>> fetch_queue;
+
+
+
+	//
+	// Uop queue
+	//
+
+	// Uop queue
+	std::deque<std::shared_ptr<Uop>> uop_queue;
 
 	// Insert a uop into the tail of the uop queue
 	void InsertInUopQueue(std::shared_ptr<Uop> uop);
@@ -105,17 +115,59 @@ private:
 	// Extract a uop from the head of the uop queue
 	std::shared_ptr<Uop> ExtractFromUopQueue();
 
-	// Uop queue
-	std::deque<std::shared_ptr<Uop>> uop_queue;
+
+
+
+	//
+	// Reorder buffer
+	//
+
+	// Reorder buffer
+	std::deque<std::shared_ptr<Uop>> reorder_buffer;
+
+	// Insert a uop into the tail of the reorder buffer
+	void InsertInReorderBuffer(std::shared_ptr<Uop> uop);
+
+	// Determine whether a new uop can be inserted into this thread's
+	// reorder buffer, based on whether it is private or shared among
+	// threads.
+	bool canInsertInReorderBuffer();
+
+
+
+
+	//
+	// Instruction Queue
+	//
 
 	// Instruction queue
 	std::list<std::shared_ptr<Uop>> instruction_queue;
 
+	// Insert a uop into the tail of the instruction queue
+	void InsertInInstructionQueue(std::shared_ptr<Uop> uop);
+
+	// Determine whether a new uop can be inserted into this thread's
+	// instruction queue, based on whether the queue was configured as
+	// private per thread, or shared among threads.
+	bool canInsertInInstructionQueue();
+
+
+
+
+	//
+	// Load-store queue
+	//
+	
 	// Load queue
 	std::list<std::shared_ptr<Uop>> load_queue;
 
 	// Store queue
 	std::list<std::shared_ptr<Uop>> store_queue;
+
+	// Determine whether a new uop can be inserted into this thread's
+	// load-store queue, based on whether the queue was configured as
+	// private per thread, or shared among threads.
+	bool canInsertInLoadStoreQueue();
 
 
 
@@ -131,7 +183,7 @@ private:
 	std::unique_ptr<TraceCache> trace_cache;
 
 	// Physical register file
-	std::unique_ptr<RegisterFile> reg_file;
+	std::unique_ptr<RegisterFile> register_file;
 
 
 
@@ -371,14 +423,12 @@ public:
 	/// Get cycle until which fetch is stalled
 	long long getFetchStallUntil() { return fetch_stall_until; }
 
-	/// Check whether the pipeline is empty
-	bool IsPipelineEmpty();
 
 
 
 
 	//
-	// Fetch stage
+	// Fetch stage (ThreadFetch.cc)
 	//
 
 	/// Check whether or not the fecth is allowed
@@ -411,11 +461,43 @@ public:
 
 
 	//
-	// Decode stage
+	// Decode stage (ThreadDecode.cc)
 	//
 
-	/// Run the decode stage for the thread
+	/// Run decode stage
 	void Decode();
+
+
+
+
+	//
+	// Dispatch stage (ThreadDispatch.cc)
+	//
+
+	/// Possible reasons for a dispatch stall
+	enum DispatchStall
+	{
+		DispatchStallInvalid = 0,
+		DispatchStallUsed,		// Used with a committed instruction
+		DispatchStallSpeculative,	// Used with a speculative instruction
+		DispatchStallUopQueue,		// Stall due to no instruction in the uop queue
+		DispatchStallReorderBuffer,	// Stall due to no space in the reorder buffer
+		DispatchStallInstructionQueue,	// Stall due to no space in the instruction queue
+		DispatchStallLoadStoreQueue,	// Stall due to no space in the load-store queue
+		DispatchStallRename,		// Stall due to no free physical register
+		DispatchStallContext		// Stall due to no running context
+	};
+
+	/// Determine if it is possible to dispatch an instruction for the
+	/// thread. If so, the function returns `DispatchStallUsed`. If not
+	/// possible, the function returns the reason why it was not possible
+	/// to dispatch an instruction. The instruction considered as a
+	/// candidate for dispatch is the one at the head of the uop queue.
+	DispatchStall canDispatch();
+
+	/// Dispatch \a quantum instructions for the thread. The function
+	/// returns the remaining dispatch quantum.
+	int Dispatch(int quantum);
 
 
 
