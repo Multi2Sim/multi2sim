@@ -186,8 +186,8 @@ void NDRange::ConstantBufferWrite(int const_buffer_num,
 	assert(const_buffer_num < 2);
 	
 	// Check constant buffer sizes
-	assert(const_buffer_num != 0 || offset + size < NDRange::ConstBuf1Size);
-	assert(const_buffer_num != 1 || offset + size < NDRange::ConstBuf0Size);
+	assert(const_buffer_num != 1 || offset + size < NDRange::ConstBuf1Size);
+	assert(const_buffer_num != 0 || offset + size < NDRange::ConstBuf0Size);
 
 	// Calculate address
 	unsigned addr = this->const_buf_table +
