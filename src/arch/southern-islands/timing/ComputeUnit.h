@@ -92,6 +92,9 @@ class ComputeUnit
 	// One instance of the vector memory unit
 	VectorMemoryUnit vector_memory_unit;
 
+	// Associated LDS Module
+	mem::Module *lds_module;
+
 	// Counter of identifiers assigned to uops in this compute unit
 	long long uop_id_counter = 0;
 
@@ -147,6 +150,8 @@ public:
 
 	/// Return the associated timing simulator
 	Timing *getTiming() { return timing; }
+
+	mem::Module *getLdsModule() const { return lds_module; }
 
 	/// Cache used for vector data
 	mem::Module *vector_cache = nullptr;

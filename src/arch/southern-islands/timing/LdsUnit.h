@@ -32,10 +32,28 @@ class ComputeUnit;
 /// Class representing the Local Data Share (LDS) unit of a compute unit
 class LdsUnit : public ExecutionUnit
 {
+	// Variable number of issued Uops
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
+
+	// Variable number of decoded Uops
+	std::deque<std::unique_ptr<Uop>> decode_buffer;
+
+	// Variable number of register read instructions
+	std::deque<std::unique_ptr<Uop>> read_buffer;
+
+	// Variable number of submitted memory accesses
+	std::deque<std::unique_ptr<Uop>> mem_buffer;
+
+	// Variable number of register instructions
+	std::deque<std::unique_ptr<Uop>> write_buffer;
+
 public:
 	//
 	// Static fields
 	//
+
+	/// Maximum number of instructions processed per cycle
+	static int width;
 
 	/// Size of the issue buffer in number of instructions
 	static int issue_buffer_size;
@@ -57,6 +75,9 @@ public:
 
 	/// Size of the write buffer in number of cycles
 	static int write_buffer_size;
+
+	/// Maximum number of in flight memory accesses
+	static int max_in_flight_mem_accesses;
 
 
 
@@ -86,6 +107,19 @@ public:
 
 	/// Issue the given instruction into the LDS unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
+
+	void Complete();
+
+	void Write();
+
+	void Mem();
+
+	void Read();
+
+	void Decode();
+
+	/// Statistics
+	long long inst_count;
 };
 
 }
