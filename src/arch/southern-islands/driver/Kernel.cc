@@ -830,9 +830,21 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 	// The internal ELF is contained in the buffer pointer to by
 	// the 'kernel' symbol.
 	std::string symbol_name = "kernel<" + name + ">.InternalELF";
-	const char *kernel_buf = kernel_symbol->getBuffer();
-	unsigned kernel_buf_size = (unsigned)kernel_symbol->getSize();
-	binary_file.reset(new Binary(kernel_buf, kernel_buf_size, symbol_name));
+	unsigned kernel_buf_size = (unsigned) kernel_symbol->getSize();
+	
+	// Get the area of the text section pointed to by the symbol
+	std::istringstream kernel_symbol_stream;
+	kernel_symbol->getStream(kernel_symbol_stream,
+			(unsigned) kernel_symbol->getValue(), 
+			(unsigned) kernel_symbol->getSize());
+
+	// Copy the symbol data into a buffer
+	auto kernel_buffer = misc::new_unique_array<char>(kernel_buf_size);
+	kernel_symbol_stream.read(kernel_buffer.get(), kernel_buf_size);
+
+	// Create a new ELF based on the kernel buffer
+	binary_file.reset(new Binary(kernel_buffer.get(), kernel_buf_size, 
+			symbol_name));
 
 	// Load metadata
 	LoadMetaData();
