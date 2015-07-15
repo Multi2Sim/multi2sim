@@ -20,6 +20,8 @@
 #ifndef ARCH_KEPLER_EMU_REGISTER_H
 #define ARCH_KEPLER_EMU_REGISTER_H
 
+#include<cstring>
+
 
 namespace Kepler
 {
@@ -125,6 +127,18 @@ public:
 
 	/// Write value of Condition register
 	void WriteCC_OF(unsigned value) { cc.of = value; };
+
+	/// Read value of register
+	void Read_register(unsigned *dst, int gpr_id)
+	{
+		memcpy(dst, &gpr[gpr_id], 4);
+	}
+
+	/// Write to register
+	void Write_register(unsigned *src, int gpr_id)
+	{
+		memcpy(&gpr[gpr_id], src, 4);
+	}
 };
 
 }        // namespace

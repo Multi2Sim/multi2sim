@@ -135,8 +135,8 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 
     // Operands
 	unsigned dst_id, src1_id, src2_id;
-	unsigned long long temp;
-	unsigned src1, src2, dst;
+	unsigned long long temp, src1, src2;
+	unsigned dst;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -224,8 +224,8 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 
     // Operands
 	unsigned src1_id, src2_id, dst_id;
-	unsigned long long temp;
-	unsigned src1, src2, dst;
+	unsigned long long temp, src1, src2;
+	unsigned dst;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -1558,6 +1558,173 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 
 }
 
+void Thread::ExecuteInst_LOP_A(Inst *inst)
+{
+	// Get Warp
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesLOP format = inst_bytes.lop;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
+		// Read Src2
+		if (format.op0 == 1) // src2 is IMM20
+			src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
+
+		// Execute
+		if (format.src1_negate == 1)
+			src1 = ~src1;
+		if (format.src2_negate == 1)
+			src2 = ~src2;
+		if (format.lop == 0)
+			dst = src1 & src2;
+		else if (format.lop == 1)
+			dst = src1 | src2;
+		else if (format.lop == 2)
+			dst = src1 ^ src2;
+		else if (format.lop == 3)
+			dst = src2;
+
+		// Write Result
+		dst_id = format.dst;
+		this->WriteFloatGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+}
+
+void Thread::ExecuteInst_LOP_B(Inst *inst)
+{
+	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesLOP format = inst_bytes.lop;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
+		// Read Src2
+		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
+		{
+			// src2 ID
+			unsigned src2_id;
+
+			// Read src2 value
+			src2_id = format.src2;
+			src2 = this->ReadGPR(src2_id);
+		}
+
+		// Execute
+		if (format.src1_negate == 1)
+			src1 = ~src1;
+		if (format.src2_negate == 1)
+			src2 = ~src2;
+
+		if (format.lop == 0)
+			dst = src1 & src2;
+		else if (format.lop == 1)
+			dst = src1 | src2;
+		else if (format.lop == 2)
+			dst = src1 ^ src2;
+		else if (format.lop == 3)
+			dst = src2;
+
+		// Write Result
+		dst_id = format.dst;
+		this->WriteFloatGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+}
+
 void Thread::ExecuteInst_EXIT(Inst *inst)
 {
 	// Inst bytes format
@@ -1814,7 +1981,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 
     // Operands
 	unsigned dst_id, src_id;
-	int dst, src;
+	unsigned dst, src;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -1846,16 +2013,16 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 			emulator->ReadConstMem(src_id << 2, 4, (char*)&src);
 		}
 		else if (format.srcB_mod == 1)
-			src = this->ReadGPR(src_id);
-
-
+			//src = this->ReadGPR(src_id);
+			this->Read_register(&src, src_id);
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		//this->WriteGPR(dst_id, dst);
+		this->Write_register(&dst, dst_id);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1943,12 +2110,156 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 
 void Thread::ExecuteInst_SEL_A(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Get Warp
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesSEL format = inst_bytes.sel;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id, pred_src_id;
+
+	// Operand
+	unsigned src1, src2, dst, pred_src;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
+		// Read Src2
+		if (format.op0 == 1) // src2 is IMM20
+			src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
+
+		// Read Predicate Src
+		pred_src_id = format.pred_src;
+		if (pred_src_id <= 7)
+			pred_src = this->ReadPred(pred_src_id);
+		else
+			pred_src = ! this->ReadPred(pred_src_id - 8);
+
+		// Execute
+		dst_id = format.dst;
+		dst = pred_src ? src1 : src2;
+		this->Write_register(&dst, dst_id);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_SEL_B(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
+	Warp *warp = this->getWarp();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	InstBytes inst_bytes = inst->getInstBytes();
+	InstBytesSEL format = inst_bytes.sel;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = this->ReadPred(pred_id);
+	else
+		pred = ! this->ReadPred(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id, pred_src_id;
+
+	// Operand
+	unsigned src1, src2, dst, pred_src;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = this->ReadGPR(src1_id);
+
+		// Read Src2
+		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
+		{
+			// src2 ID
+			unsigned src2_id;
+
+			// Read src2 value
+			src2_id = format.src2;
+			src2 = this->ReadGPR(src2_id);
+		}
+
+		// Read Predicate Src
+		pred_src_id = format.pred_src;
+		if (pred_src_id <= 7)
+			pred_src = this->ReadPred(pred_src_id);
+		else
+			pred_src = ! this->ReadPred(pred_src_id - 8);
+
+		// Execute
+		dst_id = format.dst;
+		dst = pred_src ? src1 : src2;
+		this->Write_register(&dst, dst_id);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetpc(warp->getPC() + warp->getInstSize());
 }
 
 void Thread::ExecuteInst_I2F_A(Inst *inst)
@@ -2001,7 +2312,6 @@ void Thread::ExecuteInst_I2F_A(Inst *inst)
 	{
 
 		if (format.op0 == 1) // src2 is IMM20
-			src = format.src;
 			src = format.src >> 18 ? format.src | 0xfff80000 : format.src;
 
 		// Negate
@@ -2160,7 +2470,6 @@ void Thread::ExecuteInst_I2I_A(Inst *inst)
 	{
 
 		if (format.op0 == 1) // src2 is IMM20
-			src = format.src;
 			src = format.src >> 18 ? format.src | 0xfff80000 : format.src;
 
 		// Negate
@@ -2262,7 +2571,7 @@ void Thread::ExecuteInst_I2I_B(Inst *inst)
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		this->WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)

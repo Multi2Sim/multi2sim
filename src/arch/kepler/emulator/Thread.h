@@ -212,8 +212,20 @@ public :
 	/// Execute an instruction
 	void Execute(InstOpcode opcode, Inst *inst);
 
-	// Execute special instruction
+	/// Execute special instruction
 	void ExecuteSpecial();
+
+	/// Read Register
+	void Read_register(unsigned *dst, int gpr_id)
+	{
+		registers.Read_register(dst, gpr_id);
+	}
+
+	/// Write Register
+	void Write_register(unsigned *src, int gpr_id)
+	{
+		registers.Write_register(src, gpr_id);
+	}
 };
 
 } //namespace
