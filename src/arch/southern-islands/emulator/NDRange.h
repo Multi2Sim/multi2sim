@@ -25,6 +25,7 @@
 
 #include <arch/southern-islands/disassembler/Binary.h>
 #include <memory/Memory.h>
+#include <memory/MMU.h>
 
 #include "WorkGroup.h"
 #include "WorkItem.h"
@@ -163,6 +164,9 @@ private:
 	// kernel function.
 	int local_mem_top = 0;
 
+	// Associated memory address space
+	mem::MMU::Space *address_space;
+
 	// If true, it indicates that a flush of the caches is being performed,
 	// evicting data modified by this kernel
 	bool flushing = false;
@@ -242,6 +246,9 @@ public:
 	
 	/// Get local memory top address
 	unsigned getLocalMemTop() const { return local_mem_top; }
+
+	/// Get associated address space
+	mem::MMU::Space *getAddressSpace() const { return address_space; }
 
 	/// Get pointer to local_mem_top
 	int *getLocalMemTopPtr() { return &local_mem_top; }

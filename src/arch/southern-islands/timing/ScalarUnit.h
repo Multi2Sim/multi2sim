@@ -33,6 +33,24 @@ class ComputeUnit;
 /// Class representing the scalar unit of a compute unit
 class ScalarUnit : public ExecutionUnit
 {
+	// Variable number of issued Uops
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
+
+	// Variable number of decoded Uops
+	std::deque<std::unique_ptr<Uop>> decode_buffer;
+
+	// Variable number of register read instructions
+	std::deque<std::unique_ptr<Uop>> read_buffer;
+
+	// Variable number of execution instructions
+	std::deque<std::unique_ptr<Uop>> exec_buffer;
+
+	// Variable number of register instructions
+	std::deque<std::unique_ptr<Uop>> write_buffer;
+
+	// Variable number of pending memory accesses
+	std::deque<std::unique_ptr<Uop>> inflight_buffer;
+
 public:
 	//
 	// Static fields
@@ -96,6 +114,40 @@ public:
 	
 	/// Issue the given instruction into the scalar unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
+
+	/// Complete the instruction
+	void Complete();
+
+	/// Write stage of the execution pipeline.
+	void Write();
+
+	/// Execute stage of the execution pipeline.
+	void Execute();
+
+	/// Read stage of the execution pipeline.
+	void Read();
+
+	/// Decode stage of the execution pipeline.
+	void Decode();
+
+	// Statistics
+	long long inst_count;
+
+	/// Return an iterator to the first uop in the fetch buffer
+	std::deque<std::unique_ptr<Uop>>::iterator begin()
+	{
+		return write_buffer.begin();
+	}
+
+	/// Return a past-the-end iterator to the fetch buffer
+	std::deque<std::unique_ptr<Uop>>::iterator end()
+	{
+		return write_buffer.end();
+	}
+
+	/// Remove the uop pointed to by the given iterator, and return a
+	/// shared pointer reference to the removed entry.
+	std::shared_ptr<Uop> Remove(std::deque<std::shared_ptr<Uop>>::iterator it);
 };
 
 }

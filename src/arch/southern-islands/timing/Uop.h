@@ -174,6 +174,27 @@ public:
 	/// Cycle in which the uop is first ready after being issued to its
 	/// corresponding execution unit
 	long long issue_ready = 0;
+
+	/// Cycle when the uop is first ready after writeback
+	long long write_ready = 0;
+
+	/// Cycle when uop is first ready after decode completes
+	long long decode_ready = 0;
+
+	/// Cycle when uop is first ready after register access completes
+	long long read_ready = 0;
+
+	/// Cycle when uop is first ready after execution completes
+	long long execute_ready;
+
+	/// Witness memory access
+	int global_mem_witness;
+
+	/// Last scalar memory access address
+	unsigned int global_mem_access_addr;
+
+	/// Last scalar memory access size
+	unsigned int global_mem_access_size;
 };
 
 }
