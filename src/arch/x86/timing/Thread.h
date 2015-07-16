@@ -486,6 +486,21 @@ public:
 
 
 	//
+	// Issue stage
+	//
+
+	/// Issue \a quantum instructions for the thread's load-store queue.
+	/// The function returns the remaining quantum.
+	int IssueLoadStoreQueue(int quantum);
+
+	/// Issue \a quantum instructions for the thread's instruction queue.
+	/// The function returns the remaining quantum.
+	int IssueInstructionQueue(int quantum);
+
+
+
+
+	//
 	// Statistics
 	//
 
