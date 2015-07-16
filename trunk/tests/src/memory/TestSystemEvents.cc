@@ -500,7 +500,8 @@ static void Cleanup()
 	comm::ArchPool::Destroy();
 }
 
-
+// l1_0 has address 0 in M
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_0)
 {
 	try
@@ -655,10 +656,11 @@ TEST(TestSystemEvents, config_0_evict_0)
 		e.Dump();
 		FAIL();
 	}
-
-
 }
 
+
+// l1_0 has address 0 in S
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_1)
 {
 	try
@@ -815,10 +817,11 @@ TEST(TestSystemEvents, config_0_evict_1)
 		e.Dump();
 		FAIL();
 	}
-
-
 }
 
+
+// l1_0 has address 0 in O
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_2)
 {
 	try
@@ -976,6 +979,9 @@ TEST(TestSystemEvents, config_0_evict_2)
 	}
 }
 
+
+// l1_0 has address 0 in N
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_3)
 {
 	try
@@ -1133,6 +1139,9 @@ TEST(TestSystemEvents, config_0_evict_3)
 	}
 }
 
+
+// l1_0 and l1_1 have address 0 in S
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_4)
 {
 	try
@@ -1284,6 +1293,9 @@ TEST(TestSystemEvents, config_0_evict_4)
 	}
 }
 
+
+// l1_0 and l1_1 have address 0 in S
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_5)
 {
 	try
@@ -1435,6 +1447,9 @@ TEST(TestSystemEvents, config_0_evict_5)
 	}
 }
 
+
+// l1_0 and l1_1 have address 0 in S
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_6)
 {
 	try
@@ -1585,6 +1600,9 @@ TEST(TestSystemEvents, config_0_evict_6)
 	}
 }
 
+
+// l1_0 and l1_1 have address 0 in S
+// l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_7)
 {
 	try
@@ -1732,6 +1750,11 @@ TEST(TestSystemEvents, config_0_evict_7)
 	}
 }
 
+
+// l1_0 has address 0, subblock 0 in M
+// l1_1 has address 0, subblock 1 in E
+// l2_0 has address 0 in E
+// l1_2 tries to read address 0
 TEST(TestSystemEvents, config_0_load_0)
 {
 	try
@@ -1929,6 +1952,8 @@ TEST(TestSystemEvents, config_0_load_0)
 	}
 }
 
+
+// l1_1 performs a load on a value that is exclusive in l1_0
 TEST(TestSystemEvents, config_0_load_1)
 {
 	try
@@ -2067,6 +2092,8 @@ TEST(TestSystemEvents, config_0_load_1)
 	}
 }
 
+
+// l1_1 performs a load on a value that is modified in l1_0
 TEST(TestSystemEvents, config_0_load_2)
 {
 	try
@@ -2205,6 +2232,8 @@ TEST(TestSystemEvents, config_0_load_2)
 	}
 }
 
+
+// l1_0 loads a value from empty hierarchy
 TEST(TestSystemEvents, config_0_load_3)
 {
 	try
@@ -2328,6 +2357,8 @@ TEST(TestSystemEvents, config_0_load_3)
 	}
 }
 
+
+// l1_1 performs a load on a value that is modified in MM
 TEST(TestSystemEvents, config_0_load_4)
 {
 	try
@@ -2455,6 +2486,9 @@ TEST(TestSystemEvents, config_0_load_4)
 	}
 }
 
+
+// l1_1 has address 0x0, 0x40 in M
+// l1_0 reads address 0
 TEST(TestSystemEvents, config_0_load_5)
 {
 	try
@@ -2611,6 +2645,8 @@ TEST(TestSystemEvents, config_0_load_5)
 	}
 }
 
+
+// Perform a load on a value that is invalid in l1_0, exclusive in l2_0
 TEST(TestSystemEvents, config_0_load_6)
 {
 	try
@@ -2733,6 +2769,8 @@ TEST(TestSystemEvents, config_0_load_6)
 	}
 }
 
+
+// l1_2 performs a load on a value that is exclusive in l1_0
 TEST(TestSystemEvents, config_0_load_7)
 {
 	try
@@ -2848,6 +2886,8 @@ TEST(TestSystemEvents, config_0_load_7)
 	}
 }
 
+
+// l1_0 performs a load on a value that is owned in l2_0
 TEST(TestSystemEvents, config_0_load_8)
 {
 	try
@@ -2938,6 +2978,8 @@ TEST(TestSystemEvents, config_0_load_8)
 	}
 }
 
+
+// l1_0 performs a load on a value that is shared in l2_0
 TEST(TestSystemEvents, config_0_load_9)
 {
 	try
@@ -3027,6 +3069,8 @@ TEST(TestSystemEvents, config_0_load_9)
 	}
 }
 
+
+// l1_0 nc stores in address 0x0
 TEST(TestSystemEvents, config_0_ncstore_0)
 {
 	try
@@ -3143,6 +3187,9 @@ TEST(TestSystemEvents, config_0_ncstore_0)
 	}
 }
 
+
+// l1_0 and l1_1 have address 0x0 in S
+// l1_0 attempts NC Store
 TEST(TestSystemEvents, config_0_ncstore_1)
 {
 	try
@@ -3276,6 +3323,9 @@ TEST(TestSystemEvents, config_0_ncstore_1)
 	}
 }
 
+
+// l1_0 has address 0x0 in E
+// l1_0 attempts NC Store
 //TEST(TestSystemEvents, config_0_ncstore_2)
 //{
 //	try
@@ -3401,6 +3451,9 @@ TEST(TestSystemEvents, config_0_ncstore_1)
 //	}
 //}
 
+
+// L1-3 has addressess 0x0 in E
+// l1_0 attempts NC Store
 TEST(TestSystemEvents, config_0_ncstore_3)
 {
 	try
@@ -3572,6 +3625,8 @@ TEST(TestSystemEvents, config_0_ncstore_3)
 	}
 }
 
+// l1_0 has address 0x0 in O
+// l1_0 attempts NC Store
 TEST(TestSystemEvents, config_0_ncstore_4)
 {
 	try
@@ -3697,6 +3752,9 @@ TEST(TestSystemEvents, config_0_ncstore_4)
 	}
 }
 
+
+// l1_0 has address 0x0 in M
+// l1_0 attempts NC Store
 TEST(TestSystemEvents, config_0_ncstore_5)
 {
 	try
@@ -3822,6 +3880,8 @@ TEST(TestSystemEvents, config_0_ncstore_5)
 	}
 }
 
+
+// l1_0 stores in address 0x0
 TEST(TestSystemEvents, config_0_store_0)
 {
 	try
@@ -3938,6 +3998,8 @@ TEST(TestSystemEvents, config_0_store_0)
 	}
 }
 
+
+// l2_0 has 0x0 in owned; l1_0 stores in address 0x0
 TEST(TestSystemEvents, config_0_store_1)
 {
 	try
@@ -4028,6 +4090,10 @@ TEST(TestSystemEvents, config_0_store_1)
 	}
 }
 
+
+// l1_0, l2_0, l3_0, and mm have address 0 in E
+// Cycle 1 - l1_0 writes address 0 (block in l1_0 turns M)
+// Cycle 2 - l1_1 reads address 0x200 (conflict in l1_0 and l2_0, but not in l3)
 TEST(TestSystemEvents, config_1_evict_0)
 {
 	try
