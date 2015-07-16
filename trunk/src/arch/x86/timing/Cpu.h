@@ -354,6 +354,15 @@ public:
 
 	/// Return the type of instruction dispatch, as configured by the user
 	static DispatchKind getDispatchKind() { return dispatch_kind; }
+
+	/// Return the dispatch width, as configured by the user
+	static int getDispatchWidth() { return dispatch_width; }
+
+	/// Return the type of instruction issue, as configured by the user
+	static IssueKind getIssueKind() { return issue_kind; }
+
+	/// Return the issue width, as configured by the user
+	static int getIssueWidth() { return issue_width; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);

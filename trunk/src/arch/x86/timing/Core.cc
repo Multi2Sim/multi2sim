@@ -142,17 +142,59 @@ void Core::Decode()
 
 void Core::Dispatch()
 {
+	// Maximum number of threads to skip
+	int skip = Cpu::getNumThreads();
+
+	// Initially full quantum
+	int quantum = Cpu::getDispatchWidth();
+
 	// Invoke stage according to kind
 	switch (Cpu::getDispatchKind())
 	{
 
 	case Cpu::DispatchKindShared:
 	{
+		do
+		{
+			// Next thread
+			current_dispatch_thread = (current_dispatch_thread + 1)
+					% Cpu::getNumThreads();
+			Thread *thread = getThread(current_dispatch_thread);
+
+			// Dispatch thread
+			int remaining = thread->Dispatch(1);
+
+			// Update remaining quantum and skipped threads
+			if (remaining)
+			{
+				skip--;
+			}
+			else
+			{
+				skip = Cpu::getNumThreads();
+				quantum--;
+			}
+		} while (quantum && skip);
 		break;
 	}
 
 	case Cpu::DispatchKindTimeslice:
 	{
+		// Find a thread
+		Thread *thread;
+		do
+		{
+			// Next thread
+			current_dispatch_thread = (current_dispatch_thread + 1)
+					% Cpu::getNumThreads();
+			thread = getThread(current_dispatch_thread);
+
+			// Update skipped threads
+			skip--;
+		} while (skip && thread->canDispatch() != Thread::DispatchStallUsed);
+
+		// Dispatch
+		thread->Dispatch(quantum);
 		break;
 	}
 
@@ -163,9 +205,102 @@ void Core::Dispatch()
 }
 
 
+void Core::Issue()
+{
+	switch (Cpu::getIssueKind())
+	{
+	
+	case Cpu::IssueKindShared:
+	{
+		// Issue load-store queue
+		int quantum = Cpu::getIssueWidth();
+		int skip = Cpu::getNumThreads();
+		do
+		{
+			// Next thread
+			current_issue_thread = (current_issue_thread + 1)
+					% Cpu::getNumThreads();
+
+			// Issue instruction
+			Thread *thread = getThread(current_issue_thread);
+			quantum = thread->IssueLoadStoreQueue(quantum);
+
+			// Update skipped threads
+			skip--;
+		} while (skip && quantum);
+
+		// Issue IQs
+		quantum = Cpu::getIssueWidth();
+		skip = Cpu::getNumThreads();
+		do
+		{
+			// Next thread
+			current_issue_thread = (current_issue_thread + 1)
+					% Cpu::getNumThreads();
+
+			// Issue instruction
+			Thread *thread = getThread(current_issue_thread);
+			quantum = thread->IssueInstructionQueue(quantum);
+
+			// Update skipped threads
+			skip--;
+		} while (skip && quantum);
+	
+		// Done
+		break;
+	}
+	
+	case Cpu::IssueKindTimeslice:
+	{
+		// Issue load-store queue
+		int quantum = Cpu::getIssueWidth();
+		int skip = Cpu::getNumThreads();
+		do
+		{
+			// Next thread
+			current_issue_thread = (current_issue_thread + 1)
+					% Cpu::getNumThreads();
+
+			// Issue instruction
+			Thread *thread = getThread(current_issue_thread);
+			quantum = thread->IssueLoadStoreQueue(quantum);
+
+			// Update skipped threads
+			skip--;
+		} while (skip && quantum == Cpu::getIssueWidth());
+
+		// Issue IQs
+		quantum = Cpu::getIssueWidth();
+		skip = Cpu::getNumThreads();
+		do
+		{
+			// Next thread
+			current_issue_thread = (current_issue_thread + 1)
+					% Cpu::getNumThreads();
+
+			// Issue instruction
+			Thread *thread = getThread(current_issue_thread);
+			quantum = thread->IssueInstructionQueue(quantum);
+
+			// Update skipped threads
+			skip--;
+		} while (skip && quantum == Cpu::getIssueWidth());
+	
+		// Done
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Invalid issue kind");
+	}
+}
+
+
 void Core::Run()
 {
 	// Run stages in reverse order
+	Issue();
 	Dispatch();
 	Decode();
 	Fetch();

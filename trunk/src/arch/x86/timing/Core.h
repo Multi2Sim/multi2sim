@@ -88,8 +88,6 @@ private:
 
 
 
-
-
 	//
 	// Fetch stage
 	//
@@ -98,6 +96,24 @@ private:
 	int current_fetch_thread = 0;
 
 
+
+
+	//
+	// Dispatch stage
+	//
+
+	// Currently dispatching thread
+	int current_dispatch_thread = 0;
+
+
+
+
+	//
+	// Issue stage
+	//
+
+	// Currently issued thread
+	int current_issue_thread = 0;
 
 
 
@@ -325,6 +341,9 @@ public:
 
 	/// Dispatch stage
 	void Dispatch();
+
+	/// Issue stage
+	void Issue();
 
 
 
