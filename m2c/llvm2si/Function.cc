@@ -367,6 +367,11 @@ void Function::DumpData(std::ostream &os)
 	os << '\n';
 
 	// Floating-point mode
+	os << "\t// NumVgprs = \n" << num_vregs << "\n";
+	os << "\t// NumSgprs = \n" << num_sregs << "\n";
+	os << '\n';	
+
+	// Floating-point mode
 	os << "\tFloatMode = 192\n";
 	os << "\tIeeeMode = 0\n";
 	os << '\n';
