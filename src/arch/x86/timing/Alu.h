@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2012  Rafael Ubal (ubal@ece.neu.edu)
+ *  Copyright (C) 2015  Rafael Ubal (ubal@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,20 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_X86_TIMING_FUNCTIONAL_UNIT_H
-#define ARCH_X86_TIMING_FUNCTIONAL_UNIT_H
+#ifndef ARCH_X86_TIMING_ALU_H
+#define ARCH_X86_TIMING_ALU_H
 
+#include <arch/x86/emulator/Uinst.h>
 #include <lib/cpp/IniFile.h>
 
-#include "Uop.h"
 
 namespace x86
 {
 
 // Forward declaration
 class Timing;
+class Uop;
 
-class FunctionalUnit
+
+/// Class representing the arithmetic-logic unit
+class Alu
 {
 public:
 
@@ -80,22 +83,22 @@ private:
 	//
 
 	// Cycle count when functional unit is free
-	long long cycle_when_free[TypeCount][MaxFunctionalUnitReservation] = { };
+	long long cycle_when_free[TypeCount][MaxFunctionalUnitReservation] = {};
 
 	// Access count of functional unit
-	long long accesses[TypeCount] = { };
+	long long accesses[TypeCount] = {};
 
 	// Denied count of functional unit
-	long long denied[TypeCount] = { };
+	long long denied[TypeCount] = {};
 
 	// Waiting time of functional unit
-	long long waiting_time[TypeCount] = { };
+	long long waiting_time[TypeCount] = {};
 
 
 
 
 	//
-	// static members
+	// Static members
 	//
 
 	// The name of the functional unit

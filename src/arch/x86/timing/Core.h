@@ -27,7 +27,6 @@
 #include <arch/x86/emulator/Uinst.h>
 
 #include "Thread.h"
-#include "FunctionalUnit.h"
 
 
 namespace x86
