@@ -20,6 +20,7 @@
 #include <arch/common/Arch.h>
 #include <memory/System.h>
 
+#include "Alu.h"
 #include "Timing.h"
 
 
@@ -579,20 +580,20 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 				"must be between 1MHz and 1000GHz.\n",
 				ini_file->getPath().c_str()));
 
-	// Parse Cpu configuration by their sections
+	// Parse CPU configuration by their sections
 	Cpu::ParseConfiguration(ini_file);
 
-	// Parse Register File configuration by their sections
+	// Parse register file configuration by their sections
 	RegisterFile::ParseConfiguration(ini_file);
 
-	// Parse Branch Predictor configuration by their sections
+	// Parse branch predictor configuration by their sections
 	BranchPredictor::ParseConfiguration(ini_file);
 
-	// Parse Trace Cacher configuration by their sections
+	// Parse trace cache configuration by their sections
 	TraceCache::ParseConfiguration(ini_file);
 
-	// Parse Functional Unit configuration by their sections
-	FunctionalUnit::ParseConfiguration(ini_file);
+	// Parse ALU configuration by their sections
+	Alu::ParseConfiguration(ini_file);
 }
 
 } // namespace x86
