@@ -36,11 +36,32 @@ class ComputeUnit;
 /// Class representing the branch unit of a compute unit
 class BranchUnit : public ExecutionUnit
 {
+	// Variable number of issued Uops
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
+
+	// Variable number of decoded Uops
+	std::deque<std::unique_ptr<Uop>> decode_buffer;
+
+	// Variable number of register read instructions
+	std::deque<std::unique_ptr<Uop>> read_buffer;
+
+	// Variable number of execution instructions
+	std::deque<std::unique_ptr<Uop>> exec_buffer;
+
+	// Variable number of register instructions
+	std::deque<std::unique_ptr<Uop>> write_buffer;
+
 public:
 
 	//
 	// Static fields
 	//
+
+
+
+
+	/// Maximum number of instructions processed per cycle
+	static int width;
 
 	/// Size of the issue buffer in number of instructions
 	static int issue_buffer_size;
@@ -82,9 +103,27 @@ public:
 	{
 	}
 
+	/// Complete the instruction
+	void Complete();
+
+	/// Write stage of the execution pipeline.
+	void Write();
+
+	/// Execute stage of the execution pipeline.
+	void Execute();
+
+	/// Read stage of the execution pipeline.
+	void Read();
+
+	/// Decode stage of the execution pipeline.
+	void Decode();
+	
 	/// Run the actions occurring in one cycle
 	void Run();
-
+			
+	// Statistics
+	long long inst_count;
+	
 	/// Return whether there is room in the issue buffer of the branch
 	/// unit to absorb a new instruction.
 	bool canIssue() const override
