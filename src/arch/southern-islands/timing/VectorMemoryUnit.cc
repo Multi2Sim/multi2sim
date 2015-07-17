@@ -23,6 +23,7 @@
 #include <memory/Module.h>
 #include <memory/MMU.h>
 
+#include "CycleIntervalReport.h"
 #include "VectorMemoryUnit.h"
 #include "ComputeUnit.h"
 #include "Timing.h"
@@ -189,24 +190,25 @@ void VectorMemoryUnit::Write()
 		// In the above context, access means any of the                 
 		// mod_access calls in si_vector_mem_mem. Means all              
 		// inflight accesses for uop are done
-		/*if (si_spatial_report_active)                                    
+		if (CycleIntervalReport::spatial_report_active)
 		{                                                                
 			if (uop->vector_mem_write)                               
-			{                                                        
-				SIComputeUnitReportGlobalMemFinish(uop-           >compute_unit,
-						uop->num_global_mem_write);      
+			{        
+				inflight_mem_accesses -= 
+						uop->num_global_mem_write;
 			}                                                        
 			else if (uop->vector_mem_read)                           
 			{                                                        
-				SIComputeUnitReportGlobalMemFinish(uop-           >compute_unit,
-						uop->num_global_mem_read);       
+				inflight_mem_accesses -= 
+						uop->num_global_mem_read;
 			}                                                        
 			else                                                     
 			{
-				throw Error(misc::fmt("%s: invalid access kind",
+				throw Timing::Error(misc::fmt(
+						"%s: invalid access kind",
 						__FUNCTION__));  
 			}                                                        
-		}*/            
+		}
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
@@ -235,7 +237,7 @@ void VectorMemoryUnit::Memory()
 
 	// Module access type enum
 	mem::Module::AccessType module_access_type;
-	//mem::MMU::AccessType mmu_access_type;
+	mem::MMU::AccessType mmu_access_type;
 
 	
 	// Sanity check read buffer
@@ -298,23 +300,23 @@ void VectorMemoryUnit::Memory()
 		if (uop->vector_mem_write && !uop->vector_mem_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessNCStore;
-			//mmu_access_type = mem::MMU::AccessType::AccessWrite;
+			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else if (uop->vector_mem_write && 
 				uop->vector_mem_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
-			//mmu_access_type = mem::MMU::AccessType::AccessWrite;
+			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else if (uop->vector_mem_read)
 		{
 			module_access_type = mem::Module::AccessType::AccessLoad;
-			//mmu_access_type = mem::MMU::AccessType::AccessRead;
+			mmu_access_type = mem::MMU::AccessType::AccessRead;
 		}
 		else if (uop->vector_mem_atomic)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
-			//mmu_access_type = mem::MMU::AccessType::AccessWrite;
+			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else
 		{
@@ -359,9 +361,9 @@ void VectorMemoryUnit::Memory()
 						&uop->global_mem_witness);
 
 				// MMU statistics
-				/*compute_unit->getGpu()->getMmu()->AccessPage(
+				compute_unit->getGpu()->getMmu()->AccessPage(
 						phys_addr,
-						mmu_access_type);*/
+						mmu_access_type);
 
 				// Decrement global_mem_witness
 				uop->global_mem_witness--;
@@ -369,28 +371,29 @@ void VectorMemoryUnit::Memory()
 		}
 
 		// Spatial Report
-		/*if(si_spatial_report_active)                                     
+		if (CycleIntervalReport::spatial_report_active)
 		{                                                                
 			if (uop->vector_mem_write)                               
 			{                                                        
 				uop->num_global_mem_write +=                     
 					uop->global_mem_witness;                 
-				SIComputeUnitReportGlobalMemInFlight(uop-        >compute_unit,
-						uop->num_global_mem_write);      
+				inflight_mem_accesses += 
+						uop->num_global_mem_write;
 			}                                                        
 			else if (uop->vector_mem_read)                           
 			{                                                        
 				uop->num_global_mem_read +=                      
 					uop->global_mem_witness;                 
-				SIComputeUnitReportGlobalMemInFlight(uop-        >compute_unit,
-						uop->num_global_mem_read);       
+				inflight_mem_accesses += 
+						uop->num_global_mem_read;
 			}                                                        
 			else
 			{
-				throw Error(misc::fmt("%s: invalid access kind",
-						__FUNCTION__);  
+				throw Timing::Error(misc::fmt(
+						"%s: invalid access kind",
+						__FUNCTION__));  
 			}
-		}*/
+		}
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
