@@ -18,7 +18,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <string.h>
+#include <string>
+
 #include <arch/southern-islands/emulator/Emulator.h>
 #include <lib/cpp/String.h>
 
@@ -38,12 +39,14 @@ ConstantBuffer::ConstantBuffer(int id, unsigned size)
 	this->data = misc::new_unique_array<char>(size);
 }
 
+
 Program::Program(int id)
 {
 	this->id = id;
 }
 
-ConstantBuffer *Program::AddConstantBuffer(int id, unsigned size)
+
+ConstantBuffer *Program::addConstantBuffer(int id, unsigned size)
 {
 	// Create new constant buffer and insert it to program list
 	constant_buffers.emplace_back(misc::new_unique<ConstantBuffer>(id, 
@@ -52,6 +55,7 @@ ConstantBuffer *Program::AddConstantBuffer(int id, unsigned size)
 	// Return
 	return constant_buffers.back().get();
 }
+
 
 void Program::InitializeConstantBuffers()
 {
@@ -78,7 +82,6 @@ void Program::InitializeConstantBuffers()
 			break;                                                   
 
 		// Read the elf symbol into a buffer
-		//elf_symbol_read_content(elf_file, symbol, &elf_buffer);
 		std::istringstream symbol_stream;
 		symbol->getStream(symbol_stream,
 				(unsigned)symbol->getValue(), 
@@ -89,39 +92,56 @@ void Program::InitializeConstantBuffers()
 				(unsigned) symbol->getValue());
 
 		// Create the constant buffer object and add it to the vector
-		ConstantBuffer *constant_buffer = AddConstantBuffer(i, 
-				(unsigned) symbol->getSize());
+		ConstantBuffer *constant_buffer = addConstantBuffer(i, 
+				symbol->getSize());
 		
 		// Set device pointer
-		constant_buffer->setDevicePtr(emulator->getVideoMemoryTop());
+		constant_buffer->device_address = emulator->getVideoMemoryTop();
 		
 		// Copy the symbol data into the constant buffer object
 		symbol_stream.read(constant_buffer->getData(), 
-				(unsigned) symbol->getSize());
+				symbol->getSize());
 
 		// Map new pages                                                         
 		video_memory->Map(emulator->getVideoMemoryTop(), 
-				(unsigned) symbol->getSize(),    
+				symbol->getSize(),    
 				mem::Memory::AccessRead | 
 				mem::Memory::AccessWrite);     
 		
 		// Copy constant buffer into device memory
 		video_memory->Write(emulator->getVideoMemoryTop(), 
-				(unsigned) symbol->getSize(), 
+				symbol->getSize(), 
 				constant_buffer->getData());                           
 
 		// Increment video memory
-		emulator->incVideoMemoryTop((unsigned) symbol->getSize());
+		emulator->incVideoMemoryTop(symbol->getSize());
 	}      
 
 
 }
 
+
 void Program::setBinary(const char *buf, unsigned int size)
 {
-	this->elf_file = std::unique_ptr<ELFReader::File>(new ELFReader::File(buf, size));
+	// Create a new ELF file based on the passed buffer
+	elf_file = misc::new_unique<ELFReader::File>(buf, size);
 
+	// Initialize constant buffers based on global symbols
 	InitializeConstantBuffers();
 }
+
+
+ConstantBuffer *Program::getConstantBufferByIndex(int index) const 
+{
+	// Retrieve CB by index. Program does not hold CB0 or CB1
+	if (index >= 0 && index < 2)
+		throw misc::Error(misc::fmt("Progam object does not hold"
+				"constant buffers lower than 2"));
+	else if (index >= 2 && index < (int) constant_buffers.size() + 2)
+		return constant_buffers[index - 2].get();
+	else
+		return nullptr;
+}
+
 
 }  // namespace SI
