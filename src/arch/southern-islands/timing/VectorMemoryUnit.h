@@ -32,11 +32,29 @@ class ComputeUnit;
 /// Class representing the vector memory unit of a compute unit
 class VectorMemoryUnit : public ExecutionUnit
 {
+	// Variable number of issued Uops
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
+
+	// Variable number of decoded Uops
+	std::deque<std::unique_ptr<Uop>> decode_buffer;
+
+	// Variable number of register read instructions
+	std::deque<std::unique_ptr<Uop>> read_buffer;
+
+	// Variable number of execution instructions
+	std::deque<std::unique_ptr<Uop>> mem_buffer;
+
+	// Variable number of register instructions
+	std::deque<std::unique_ptr<Uop>> write_buffer;
+
 public:
 	//
 	// Static fields
 	//
 
+	/// Maximum number of instructions processed per cycle
+	static int width;
+	
 	/// Size of the issue buffer in number of instructions
 	static int issue_buffer_size;
 
@@ -51,6 +69,18 @@ public:
 
 	/// Size of the read buffer in number of instructions
 	static int read_buffer_size;
+
+	/// Maximum number of inflight memory accesses
+	static int max_inflight_mem_accesses;
+
+	/// Number of inflight memory accesses
+	long long inflight_mem_accesses;
+
+	/// Number of inflight memory reads
+	long long inflight_mem_read;
+
+	/// Number of inflight memory writes
+	long long inflight_mem_write;
 
 	/// Latency of the write stage in number of cycles
 	static int write_latency;
@@ -71,9 +101,27 @@ public:
 	{
 	}
 
+	/// Complete the instruction
+	void Complete();
+
+	/// Write stage of the execution pipeline.
+	void Write();
+
+	/// Memory stage of the execution pipeline.
+	void Memory();
+
+	/// Read stage of the execution pipeline.
+	void Read();
+
+	/// Decode stage of the execution pipeline.
+	void Decode();
+	
 	/// Run the actions occurring in one cycle
 	void Run();
 
+	// Statistics
+	long long inst_count;
+	
 	/// Return whether there is room in the issue buffer of the
 	/// vector memory unit to absorb a new instruction.
 	bool canIssue() const override
