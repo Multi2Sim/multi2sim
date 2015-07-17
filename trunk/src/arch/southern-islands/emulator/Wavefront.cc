@@ -199,7 +199,6 @@ void Wavefront::Execute()
 
 	// Create stringstream for debugging
 	std::stringstream ss;
-	ss.str("");
 
 	// Dump instruction string when debugging
 	switch (format)
@@ -210,7 +209,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 
 		// Stats
@@ -221,6 +220,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -230,7 +230,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -241,6 +241,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 		
 		break;
@@ -250,7 +251,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -269,6 +270,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -278,7 +280,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -289,6 +291,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -298,7 +301,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -309,6 +312,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -319,7 +323,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -330,6 +334,7 @@ void Wavefront::Execute()
 		work_item = scalar_work_item.get();
 		work_item->Execute(opcode, &inst);
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -340,7 +345,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -356,6 +361,7 @@ void Wavefront::Execute()
 				work_item->Execute(opcode, &inst);
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -365,7 +371,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -412,6 +418,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -421,7 +428,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -439,6 +446,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -448,7 +456,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -466,6 +474,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -475,7 +484,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -493,6 +502,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -502,7 +512,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -520,6 +530,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
  	
 		break;
@@ -529,7 +540,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -565,6 +576,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -575,7 +587,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -607,6 +619,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -616,7 +629,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -655,6 +668,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;
@@ -664,7 +678,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.AddrDump(ss);
+		inst.DumpAddr(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -685,6 +699,7 @@ void Wavefront::Execute()
 			}
 		}
 
+		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
 
 		break;

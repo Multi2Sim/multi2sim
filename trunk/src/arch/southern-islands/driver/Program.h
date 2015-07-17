@@ -34,13 +34,10 @@ class ConstantBuffer
 	// Constant buffer ID (2-24)
 	int id = 0;
 
-	// Pointer in memory to constant buffer
-	unsigned device_ptr = 0;
-
 	// Size of buffer
 	unsigned size = 0;
 
-	// buffer data
+	// Buffer data
 	std::unique_ptr<char[]> data;
 
 public:
@@ -49,29 +46,24 @@ public:
 	ConstantBuffer(int id, unsigned size);
 
 	//
-	// Getters
+	// Class Members
 	//
 
+	// Pointer in memory to constant buffer
+	unsigned device_address = 0;
+
+
+
+
+	//
+	// Getters
+	//
 
 	/// Returns the size of the constant buffer
 	unsigned getSize() const { return size; }
 	
-	/// Returns the device pointer of the constant buffer
-	unsigned getDevicePtr() const { return device_ptr; }
-
 	/// Returns a pointer to the constant buffer data
 	char *getData() const { return data.get(); }
-
-
-	//
-	// Setters
-	//
-
-
-
-
-	/// Set the address in memory that points to the constant buffer
-	void setDevicePtr(unsigned addr) { device_ptr = addr; }	
 };
 
 /// Program Class
@@ -115,24 +107,14 @@ public:
 	int getId() const { return id; }
 
 	/// Add a constant buffer object to the program
-	ConstantBuffer *AddConstantBuffer(int id, unsigned size);
+	ConstantBuffer *addConstantBuffer(int id, unsigned size);
 	
 	/// Get pointer to constant buffer by index. If index is out of bounds,
 	/// the function will return a nullptr. This allows the user to keep 
 	/// retrieving successive constant buffers. They will receive the
 	/// nullptr when they have reached the end of the implemented constant
 	/// buffers.
-	ConstantBuffer *getConstantBufferByIndex(int index) const 
-	{
-		// Retrieve CB by index. Program does not hold CB0 or CB1
-		if (index >= 0 && index < 2)
-			throw misc::Error(misc::fmt("Progam object does not hold"
-			"constant buffers lower than 2"));
-		else if (index >= 2 && index < (int) constant_buffers.size() + 2)
-			return constant_buffers[index - 2].get();
-		else
-			return nullptr;
-	}
+	ConstantBuffer *getConstantBufferByIndex(int index) const;
 };
 
 

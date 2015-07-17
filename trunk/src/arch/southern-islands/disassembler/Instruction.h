@@ -564,7 +564,7 @@ public:
 	void Dump(std::ostream &os) const;
 
 	/// Print relative address
-	void AddrDump(std::ostream &os) const;
+	void DumpAddr(std::ostream &os) const;
 
 	/// Print instruction (equivalent to Dump())
 	friend std::ostream &operator<<(std::ostream &os, const Instruction &inst)

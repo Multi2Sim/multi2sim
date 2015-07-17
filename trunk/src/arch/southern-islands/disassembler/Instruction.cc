@@ -1019,7 +1019,7 @@ void Instruction::Dump(std::ostream &os) const
 }
 
 
-void Instruction::AddrDump(std::ostream &os) const
+void Instruction::DumpAddr(std::ostream &os) const
 {
 	// Spaces
 	if (os.tellp() < 59)
