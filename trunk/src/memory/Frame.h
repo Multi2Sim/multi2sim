@@ -138,7 +138,7 @@ public:
 	bool blocking = false;
 
 	/// Flag indicating whether this access is a read.
-	bool read = true;
+	bool read = false;
 
 	/// Flag indicating whether this access is a write.
 	bool write = false;
