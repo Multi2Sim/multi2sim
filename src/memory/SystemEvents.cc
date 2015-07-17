@@ -3407,15 +3407,14 @@ void System::EventMessageHandler(esim::Event *event,
 					frame->getId(),
 					target_module,
 					frame->getAddress());
-		new_frame->blocking = false;
-		new_frame->read = false;
+		new_frame->message_type = frame->message_type;
+                new_frame->blocking = false;
 		new_frame->retry = false;
 
 		// Schedule event
 		esim_engine->Call(event_find_and_lock,
 				new_frame,
-				nullptr,
-				0);
+				event_message_action);
 
 		return;
 	}
@@ -3450,14 +3449,11 @@ void System::EventMessageHandler(esim::Event *event,
 			for (int z = 0; z < target_module->getDirectorySize(); z++)
 			{
 				// Skip other subblocks
-				if (frame->getId() == frame->tag + z * target_module->getSubBlockSize())
+				if (int(frame->getAddress()) == frame->tag + z * target_module->getSubBlockSize())
 				{
-					// Clear the owner
-					target_directory->setOwner(
-							frame->set,
-							frame->way,
-							z,
-							0);
+				    // Clear the owner
+                                    Directory::Entry *dir_entry = target_directory->getEntry(frame->set, frame->way, z);
+                                    dir_entry->setOwner(-1);
 				}
 
 			}
@@ -3529,6 +3525,9 @@ void System::EventMessageHandler(esim::Event *event,
 		net::Network *network = module->getLowNetwork();
 		net::EndNode *node = module->getLowNetworkNode();
 		network->Receive(node, frame->message);
+
+                // Return
+                esim_engine->Return();
 		return;
 	}
 
@@ -3595,9 +3594,9 @@ void System::EventFlushHandler(esim::Event *event,
 		// Increment the witness pointer if one was provided
 		if (frame->witness)
 			(*frame->witness)++;
-
+                
+                // Return
 		esim_engine->Return();
-
 		return;
 	}
 	// Invalid event
