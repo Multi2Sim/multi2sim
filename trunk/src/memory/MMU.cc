@@ -22,6 +22,7 @@
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/String.h>
 
+#include "Memory.h"
 #include "MMU.h"
 
 
@@ -213,6 +214,51 @@ bool MMU::isValidPhysicalAddress(unsigned physical_address)
 	unsigned physical_tag = physical_address & PageMask;
 	auto it = physical_pages.find(physical_tag);
 	return it != physical_pages.end();
+}
+
+void MMU::AccessPage(unsigned phy_addr, AccessType access)
+{
+	Page *page;
+	unsigned index;
+
+	// Check for the report file
+	if (!report_file)
+		return;
+
+	// Get page
+	index = phy_addr >> LogPageSize;
+	if (index >= 0 && index < pages.size())
+	{
+		page = pages[index].get();
+	}
+	else
+	{
+		if (report_file)
+			// MMUDumpReport(self);
+
+		throw Memory::Error(misc::fmt("%s: accessing non-allocated page "
+				"(addr 0x%x)", __FUNCTION__, phy_addr));
+	}
+
+	// Record access
+	switch (access)
+	{
+	case AccessRead:
+		page->incNumReadAccesses();
+		break;
+
+	case AccessWrite:
+		page->incNumWriteAccesses();
+		break;
+
+	case AccessExecute:
+		page->incNumExecuteAccesses();
+		break;
+
+	default:
+		throw misc::Panic(misc::fmt("%s: invalid access", 
+				__FUNCTION__));
+	}
 }
 
 
