@@ -333,7 +333,7 @@ void Disassembler::DisassembleBinary(const std::string &path)
 				throw Error(misc::fmt(
 					"%s: symbol '%s' without content",
 					path.c_str(), symbol_name.c_str()));
-
+			
 			// Get kernel name
 			std::string kernel_name = symbol_name.substr(9,
 					symbol_name.length() - 16);
@@ -343,9 +343,7 @@ void Disassembler::DisassembleBinary(const std::string &path)
 			// Get the area of the text section pointed to
 			// by the symbol
 			std::istringstream symbol_stream;
-			symbol->getStream(symbol_stream,
-					(unsigned) symbol->getValue(), 
-					(unsigned) symbol->getSize());
+			symbol->getStream(symbol_stream);
 
 			// Copy the symbol data into a buffer
 			auto buffer = misc::new_unique_array<char>(

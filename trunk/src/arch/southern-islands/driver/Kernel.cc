@@ -90,9 +90,7 @@ void Kernel::LoadMetaDataV3()
 {
 	// Load metadata content
 	std::istringstream metadata_stream;
-	metadata_symbol->getStream(metadata_stream,
-			metadata_symbol->getValue(), 
-			metadata_symbol->getSize());
+	metadata_symbol->getStream(metadata_stream);
 
  	bool err;
 	std::string line;
@@ -579,9 +577,7 @@ void Kernel::LoadMetaData()
 {
 	// Load metadata content
 	std::istringstream metadata_stream;
-	metadata_symbol->getStream(metadata_stream,
-			metadata_symbol->getValue(), 
-			metadata_symbol->getSize());
+	metadata_symbol->getStream(metadata_stream);
 
 	// First line example:
 	// ;ARGSTART:__OpenCL_opencl_mmul_kernel
@@ -831,9 +827,7 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 	
 	// Get the area of the text section pointed to by the symbol
 	std::istringstream kernel_symbol_stream;
-	kernel_symbol->getStream(kernel_symbol_stream,
-			kernel_symbol->getValue(), 
-			kernel_symbol->getSize());
+	kernel_symbol->getStream(kernel_symbol_stream);
 
 	// Copy the symbol data into a buffer
 	auto kernel_buffer = misc::new_unique_array<char>(kernel_buf_size);
