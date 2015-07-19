@@ -84,8 +84,8 @@ void Program::InitializeConstantBuffers()
 		// Read the elf symbol into a buffer
 		std::istringstream symbol_stream;
 		symbol->getStream(symbol_stream,
-				(unsigned)symbol->getValue(), 
-				(unsigned)symbol->getSize());
+				(unsigned) symbol->getValue(), 
+				(unsigned) symbol->getSize());
 		Driver::debug << misc::fmt("\tconstant buffer '%s' found with size %d and offset 0x%x\n",                              
 				symbol->getName().c_str(), 
 				(unsigned) symbol->getSize(),

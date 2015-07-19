@@ -23,7 +23,6 @@
 #include <memory/Module.h>
 #include <memory/MMU.h>
 
-#include "CycleIntervalReport.h"
 #include "VectorMemoryUnit.h"
 #include "ComputeUnit.h"
 #include "Timing.h"
@@ -45,11 +44,11 @@ int VectorMemoryUnit::write_buffer_size = 1;
 
 void VectorMemoryUnit::Run()
 {
-	VectorMemoryUnit::Complete();
-	VectorMemoryUnit::Write();
-	VectorMemoryUnit::Memory();
-	VectorMemoryUnit::Read();
-	VectorMemoryUnit::Decode();
+	Complete();
+	Write();
+	Memory();
+	Read();
+	Decode();
 }
 
 bool VectorMemoryUnit::isValidUop(Uop *uop) const
@@ -80,24 +79,23 @@ void VectorMemoryUnit::Issue(std::shared_ptr<Uop> uop)
 
 void VectorMemoryUnit::Complete()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit and GPU objects
+	ComputeUnit *compute_unit = getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
 	// Sanity check the write buffer
 	assert((int) write_buffer.size() <= width);
 
 	// Process completed instructions
-	for (auto it = write_buffer.begin(),
-			e = write_buffer.end();
-			it != e;
-			++it)
+	auto it = write_buffer.begin();
+	while (it != write_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->write_ready)
-			continue;
+			break;
 	
 		// Access complete, remove the uop from the queue
 		assert(uop->getWavefrontPoolEntry()->lgkm_cnt > 0);
@@ -110,18 +108,20 @@ void VectorMemoryUnit::Complete()
 				uop->getIdInComputeUnit(),
 				compute_unit->getIndex());
 
-		// Access complete, remove the uop from the queue
-		write_buffer.erase(it);
+		// Access complete, remove the uop from the queue and get the 
+		// iterator for the next element
+		it = write_buffer.erase(it);
 
 		// Statistics
-		this->inst_count++;
+		num_instructions++;
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
 
 void VectorMemoryUnit::Write()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -130,10 +130,8 @@ void VectorMemoryUnit::Write()
 	assert((int) mem_buffer.size() <= max_inflight_mem_accesses);
 	
 	// Process completed instructions
-	for (auto it = mem_buffer.begin(),
-			e = mem_buffer.end();
-			it != e;
-			++it)
+	auto it = mem_buffer.begin();
+	while (it != mem_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -143,7 +141,7 @@ void VectorMemoryUnit::Write()
 
 		// Uop is not ready yet
 		if (uop->global_mem_witness)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -159,7 +157,7 @@ void VectorMemoryUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check write buffer
@@ -179,36 +177,13 @@ void VectorMemoryUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
 		// Update Uop write ready cycle
 		uop->write_ready = compute_unit->getTiming()->
 			getCycle() + write_latency;
-
-		// In the above context, access means any of the                 
-		// mod_access calls in si_vector_mem_mem. Means all              
-		// inflight accesses for uop are done
-		if (CycleIntervalReport::spatial_report_active)
-		{                                                                
-			if (uop->vector_mem_write)                               
-			{        
-				inflight_mem_accesses -= 
-						uop->num_global_mem_write;
-			}                                                        
-			else if (uop->vector_mem_read)                           
-			{                                                        
-				inflight_mem_accesses -= 
-						uop->num_global_mem_read;
-			}                                                        
-			else                                                     
-			{
-				throw Timing::Error(misc::fmt(
-						"%s: invalid access kind",
-						__FUNCTION__));  
-			}                                                        
-		}
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
@@ -222,32 +197,30 @@ void VectorMemoryUnit::Write()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to write buffer
+		// Move uop to write buffer and get the iterator for the next 
+		// element
 		write_buffer.push_back(std::move(*it));
-		mem_buffer.erase(it);
+		it = mem_buffer.erase(it);
 	}
 }
 
 void VectorMemoryUnit::Memory()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
 
 	// Module access type enum
 	mem::Module::AccessType module_access_type;
-	mem::MMU::AccessType mmu_access_type;
-
 	
 	// Sanity check read buffer
 	assert((int) read_buffer.size() <= read_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = read_buffer.begin(),
-			e = read_buffer.end();
-			it != e;
-			++it)
+	auto it = read_buffer.begin();
+	while (it != read_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -255,9 +228,9 @@ void VectorMemoryUnit::Memory()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->read_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -273,7 +246,7 @@ void VectorMemoryUnit::Memory()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check mem buffer
@@ -293,30 +266,26 @@ void VectorMemoryUnit::Memory()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}
 
 		// Set the access type
 		if (uop->vector_mem_write && !uop->vector_mem_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessNCStore;
-			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else if (uop->vector_mem_write && 
 				uop->vector_mem_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
-			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else if (uop->vector_mem_read)
 		{
 			module_access_type = mem::Module::AccessType::AccessLoad;
-			mmu_access_type = mem::MMU::AccessType::AccessRead;
 		}
 		else if (uop->vector_mem_atomic)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
-			mmu_access_type = mem::MMU::AccessType::AccessWrite;
 		}
 		else
 		{
@@ -345,7 +314,8 @@ void VectorMemoryUnit::Memory()
 
 				// Translate virtual address to a physical 
 				// address
-				unsigned phys_addr = compute_unit->getGpu()->
+				unsigned physical_address = compute_unit->
+						getGpu()->
 						getMmu()->
 						TranslateVirtualAddress(
 						uop->getWorkGroup()->
@@ -357,41 +327,11 @@ void VectorMemoryUnit::Memory()
 				// Submit the access
 				compute_unit->scalar_cache->Access(
 						module_access_type,
-						phys_addr, 
+						physical_address, 
 						&uop->global_mem_witness);
 
-				// MMU statistics
-				compute_unit->getGpu()->getMmu()->AccessPage(
-						phys_addr,
-						mmu_access_type);
-
-				// Decrement global_mem_witness
+				// Access global memory
 				uop->global_mem_witness--;
-			}
-		}
-
-		// Spatial Report
-		if (CycleIntervalReport::spatial_report_active)
-		{                                                                
-			if (uop->vector_mem_write)                               
-			{                                                        
-				uop->num_global_mem_write +=                     
-					uop->global_mem_witness;                 
-				inflight_mem_accesses += 
-						uop->num_global_mem_write;
-			}                                                        
-			else if (uop->vector_mem_read)                           
-			{                                                        
-				uop->num_global_mem_read +=                      
-					uop->global_mem_witness;                 
-				inflight_mem_accesses += 
-						uop->num_global_mem_read;
-			}                                                        
-			else
-			{
-				throw Timing::Error(misc::fmt(
-						"%s: invalid access kind",
-						__FUNCTION__));  
 			}
 		}
 
@@ -407,15 +347,17 @@ void VectorMemoryUnit::Memory()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to exec buffer
+		// Move uop to exec buffer and get the iterator for the next
+		// element
 		write_buffer.push_back(std::move(*it));
-		mem_buffer.erase(it);
+		it = mem_buffer.erase(it);
 	}
 }
 
 void VectorMemoryUnit::Read()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -424,10 +366,8 @@ void VectorMemoryUnit::Read()
 	assert((int) decode_buffer.size() <= decode_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = decode_buffer.begin(),
-			e = decode_buffer.end();
-			it != e;
-			++it)
+	auto it = decode_buffer.begin();
+	while (it != decode_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -435,9 +375,9 @@ void VectorMemoryUnit::Read()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->decode_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -453,7 +393,7 @@ void VectorMemoryUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the read buffer
@@ -473,7 +413,7 @@ void VectorMemoryUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -493,15 +433,17 @@ void VectorMemoryUnit::Read()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to read buffer
+		// Move uop to read buffer and get the iterator for the next
+		// element
 		read_buffer.push_back(std::move(*it));
-		decode_buffer.erase(it);
+		it = decode_buffer.erase(it);
 	}
 }
 
 void VectorMemoryUnit::Decode()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -510,10 +452,8 @@ void VectorMemoryUnit::Decode()
 	assert((int) issue_buffer.size() <= issue_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = issue_buffer.begin(),
-			e = issue_buffer.end();
-			it != e;
-			++it)
+	auto it = issue_buffer.begin();
+	while (it != issue_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -521,9 +461,9 @@ void VectorMemoryUnit::Decode()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->issue_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -539,7 +479,7 @@ void VectorMemoryUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the decode buffer
@@ -559,7 +499,7 @@ void VectorMemoryUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -579,9 +519,10 @@ void VectorMemoryUnit::Decode()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to write buffer
+		// Move uop to write buffer and get the iterator for the next 
+		// element
 		decode_buffer.push_back(std::move(*it));
-		issue_buffer.erase(it);
+		it = issue_buffer.erase(it);
 	}
 }
 

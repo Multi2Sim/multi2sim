@@ -50,9 +50,6 @@ public:
 	/// Mask to apply on a byte address to discard the page offset
 	static const unsigned PageMask = ~(PageSize - 1);
 
-	// Report file
-	FILE *report_file;
-	
 	/// Access types to memory pages
 	enum AccessType
 	{
@@ -101,15 +98,6 @@ public:
 
 		/// Return the page's physical address
 		unsigned getPhysicalAddress() const { return physical_address; }
-		
-		/// Increment the number of read accesses to the page
-		void incNumReadAccesses() { num_read_accesses++; }
-		
-		/// Increment the number of write accesses to the page
-		void incNumWriteAccesses() { num_write_accesses++; }
-		
-		/// Increment the number of execute accesses to the page
-		void incNumExecuteAccesses() { num_execute_accesses++; }
 	};
 
 	/// Virtual memory space in the MMU

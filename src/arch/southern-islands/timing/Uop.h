@@ -190,12 +190,6 @@ public:
 	/// Witness memory access
 	int global_mem_witness;
 	
-	/// Number of global memory writes
-	int num_global_mem_write;
-	
-	/// Number of global memory reads
-	int num_global_mem_read;
-
 	/// Last scalar memory access address
 	unsigned int global_mem_access_addr;
 

@@ -93,25 +93,58 @@ class Wavefront
 	WavefrontPoolEntry *wavefront_pool_entry;
 
 	// Fields introduced for timing simulation
-	// Fields introduced for timing simulation
-	int id_in_compute_unit;
-	bool barrier_inst;
+	int id_in_compute_unit = 0;
+	bool barrier_inst = false;
 
+
+
+
+	//
 	// Statistics
-	long long inst_count;
-	long long scalar_mem_inst_count;
-	long long scalar_alu_inst_count;
-	long long branch_inst_count;
-	long long vector_mem_inst_count;
-	long long vector_alu_inst_count;
-	long long global_mem_inst_count;
-	long long lds_inst_count;
-	long long export_inst_count;
+	//
 
+	// Number of instructions executed
+	long long inst_count = 0;
+
+	// Number of scalar memory instructions executed
+	long long scalar_mem_inst_count = 0;
+	
+	// Number of scalar ALU instructions executed
+	long long scalar_alu_inst_count = 0;
+	
+	// Number of branch instructions executed
+	long long branch_inst_count = 0;
+	
+	// Number of vector memory instructions executed
+	long long vector_mem_inst_count = 0;
+	
+	// Number of vector ALU instructions executed
+	long long vector_alu_inst_count = 0;
+	
+	// Number of global memory instructions executed
+	long long global_mem_inst_count = 0;
+	
+	// Number of lds instructions executed
+	long long lds_inst_count = 0;
+	
+	// Number of export instructions executed
+	long long export_inst_count = 0;
+
+
+
+
+	//
 	// Statistics to measure simulation performance
-	long long emu_inst_count;
-	long long emu_time_start;
-	long long emu_time_end;
+	//
+	
+	// Number of emulated instructions
+	long long emu_inst_count = 0;
+	
+	// Start time of emulation
+	long long emu_time_start = 0;
+
+	// End time of emulation
+	long long emu_time_end = 0;
 
 public:
 
@@ -129,20 +162,56 @@ public:
 	// simulator.
 	long long uop_id_counter = 0;
 
-	// Flags updated during instruction execution
-	bool vector_mem_read;
-	bool vector_mem_write;
-	bool vector_mem_atomic;
-	bool scalar_mem_read;
-	bool lds_read;
-	bool lds_write;
-	bool mem_wait;
-	bool at_barrier = false;
-	bool finished = false;
-	bool vector_mem_global_coherency;
 
-	/// Getters
-	///
+
+
+	//
+	// Flags updated during instruction execution
+	//
+
+	// Indicates if the instruction being performed is a vector memory read
+	// instruction
+	bool vector_mem_read = false;
+	
+	// Indicates if the instruction being performed is a vector memory write
+	// instruction
+	bool vector_mem_write = false;
+	
+	// Indicates if the instruction being performed is an atomic vector 
+	// memory instruction
+	bool vector_mem_atomic = false;
+	
+	// Indicates if the instruction being performed is a scalar memory read
+	// instruction
+	bool scalar_mem_read = false;
+	
+	// Indicates if the instruction being performed is an lds  read
+	// instruction
+	bool lds_read = false;
+	
+	// Indicates if the instruction being performed is an lds write
+	// instruction
+	bool lds_write = false;
+	
+	// Indicates if the instruction being performed is a waitcnt instruction
+	bool mem_wait = false;
+	
+	// Indicates if the instruction being performed is a barrier instruction
+	bool at_barrier = false;
+	
+	// Indicates if the wavefront execution is done
+	bool finished = false;
+	
+	// Indicates if the instruction being performed is using the GLC bit
+	bool vector_mem_global_coherency = false;
+
+
+
+
+	//
+	// Getters
+	//
+
 	/// Return the global wavefront 1D identifier
 	int getId() const { return id; }
 

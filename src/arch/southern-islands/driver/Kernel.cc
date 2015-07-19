@@ -840,8 +840,8 @@ Kernel::Kernel(int id, const std::string &name, Program *program) :
 	kernel_symbol_stream.read(kernel_buffer.get(), kernel_buf_size);
 
 	// Create a new ELF based on the kernel buffer
-	binary_file.reset(new Binary(kernel_buffer.get(), kernel_buf_size, 
-			symbol_name));
+	binary_file = misc::new_unique<Binary>(kernel_buffer.get(), 
+			kernel_buf_size, symbol_name);
 
 	// Load metadata
 	LoadMetaData();
