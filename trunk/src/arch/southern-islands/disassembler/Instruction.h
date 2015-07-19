@@ -561,10 +561,10 @@ public:
 	void Decode(const char *buffer, unsigned int offset);
 
 	/// Print instruction
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Print relative address
-	void DumpAddr(std::ostream &os) const;
+	void DumpAddress(std::ostream &os = std::cout) const;
 
 	/// Print instruction (equivalent to Dump())
 	friend std::ostream &operator<<(std::ostream &os, const Instruction &inst)

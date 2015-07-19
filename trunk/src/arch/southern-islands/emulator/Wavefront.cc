@@ -209,7 +209,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 
 		// Stats
@@ -230,7 +230,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -251,7 +251,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -280,7 +280,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -301,7 +301,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -323,7 +323,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -345,7 +345,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -371,7 +371,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -428,7 +428,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -456,7 +456,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -484,7 +484,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -512,7 +512,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -540,7 +540,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -587,7 +587,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -629,7 +629,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -678,7 +678,7 @@ void Wavefront::Execute()
 	{
 		// Dump instruction string when debugging
 		inst.Dump(ss);
-		inst.DumpAddr(ss);
+		inst.DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats

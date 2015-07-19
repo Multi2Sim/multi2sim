@@ -48,6 +48,7 @@ class VectorMemoryUnit : public ExecutionUnit
 	std::deque<std::unique_ptr<Uop>> write_buffer;
 
 public:
+
 	//
 	// Static fields
 	//
@@ -73,19 +74,10 @@ public:
 	/// Maximum number of inflight memory accesses
 	static int max_inflight_mem_accesses;
 
-	/// Number of inflight memory accesses
-	long long inflight_mem_accesses;
-
-	/// Number of inflight memory reads
-	long long inflight_mem_read;
-
-	/// Number of inflight memory writes
-	long long inflight_mem_write;
-
 	/// Latency of the write stage in number of cycles
 	static int write_latency;
 
-	/// Size of the write buffer in number of cycles
+	/// Size of the write buffer in number of entries
 	static int write_buffer_size;
 
 
@@ -119,8 +111,15 @@ public:
 	/// Run the actions occurring in one cycle
 	void Run();
 
+
+
+
+	// 
 	// Statistics
-	long long inst_count;
+	//
+
+	// Number of vector memory instructions
+	long long num_instructions;
 	
 	/// Return whether there is room in the issue buffer of the
 	/// vector memory unit to absorb a new instruction.
