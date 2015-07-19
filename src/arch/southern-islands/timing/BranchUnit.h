@@ -120,9 +120,16 @@ public:
 	
 	/// Run the actions occurring in one cycle
 	void Run();
-			
+	
+
+
+
+	//
 	// Statistics
-	long long inst_count;
+	//
+
+	// Number of branch instructions
+	long long num_instructions;
 	
 	/// Return whether there is room in the issue buffer of the branch
 	/// unit to absorb a new instruction.

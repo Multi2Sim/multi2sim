@@ -40,17 +40,20 @@ int BranchUnit::write_buffer_size = 1;
 
 void BranchUnit::Run()
 {
-	BranchUnit::Complete();
-	BranchUnit::Write();
-	BranchUnit::Execute();
-	BranchUnit::Read();
-	BranchUnit::Decode();
+	Complete();
+	Write();
+	Execute();
+	Read();
+	Decode();
 }
 
 
 bool BranchUnit::isValidUop(Uop *uop) const
 {
+	// Get instruction
 	Instruction *instruction = uop->getInstruction();
+	
+	// Check if the instruction is a branch instruction
 	return instruction->getFormat() == Instruction::FormatSOPP &&
 			instruction->getBytes()->sopp.op > 1 &&
 			instruction->getBytes()->sopp.op < 10;
@@ -69,24 +72,23 @@ void BranchUnit::Issue(std::shared_ptr<Uop> uop)
 
 void BranchUnit::Complete()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit and GPU objects
+	ComputeUnit *compute_unit = getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
 	// Sanity check the write buffer
 	assert((int) write_buffer.size() <= write_latency * width);
 
 	// Process completed instructions
-	for (auto it = write_buffer.begin(),
-			e = write_buffer.end();
-			it != e;
-			++it)
+	auto it = write_buffer.begin();
+	while (it != write_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->write_ready)
-			continue;
+			break;
 	
 		// Record trace
 		Timing::trace << misc::fmt("si.end_inst "
@@ -98,18 +100,20 @@ void BranchUnit::Complete()
 		// Allow next instruction to be fetched
 		uop->getWavefrontPoolEntry()->ready = true;
 
-		// Access complete, remove the uop from the queue
-		write_buffer.erase(it);
+		// Access complete, remove the uop from the queue, and get the
+		// iterator for the next element
+		it = write_buffer.erase(it);
 
 		// Statistics
-		this->inst_count++;
+		num_instructions++;
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
 
 void BranchUnit::Write()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -118,10 +122,8 @@ void BranchUnit::Write()
 	assert((int) exec_buffer.size() <= exec_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = exec_buffer.begin(),
-			e = exec_buffer.end();
-			it != e;
-			++it)
+	auto it = exec_buffer.begin();
+	while (it != exec_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -129,9 +131,9 @@ void BranchUnit::Write()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->execute_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -147,7 +149,7 @@ void BranchUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check write buffer
@@ -167,7 +169,7 @@ void BranchUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -187,15 +189,17 @@ void BranchUnit::Write()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to write buffer
+		// Move uop to write buffer and get the iterator for the
+		// next element
 		write_buffer.push_back(std::move(*it));
-		exec_buffer.erase(it);
+		it = exec_buffer.erase(it);
 	}
 }
 
 void BranchUnit::Execute()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -204,10 +208,8 @@ void BranchUnit::Execute()
 	assert((int) read_buffer.size() <= read_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = read_buffer.begin(),
-			e = read_buffer.end();
-			it != e;
-			++it)
+	auto it = read_buffer.begin();
+	while (it != read_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -215,9 +217,9 @@ void BranchUnit::Execute()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->read_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -233,7 +235,7 @@ void BranchUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check exec buffer
@@ -253,7 +255,7 @@ void BranchUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -273,15 +275,17 @@ void BranchUnit::Execute()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to exec buffer
+		// Move uop to exec buffer and get the iterator for the 
+		// next element
 		exec_buffer.push_back(std::move(*it));
-		read_buffer.erase(it);
+		it = read_buffer.erase(it);
 	}
 }
 
 void BranchUnit::Read()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -290,10 +294,8 @@ void BranchUnit::Read()
 	assert((int) decode_buffer.size() <= decode_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = decode_buffer.begin(),
-			e = decode_buffer.end();
-			it != e;
-			++it)
+	auto it = decode_buffer.begin();
+	while (it != decode_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -301,9 +303,9 @@ void BranchUnit::Read()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->decode_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -319,7 +321,7 @@ void BranchUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the read buffer
@@ -339,7 +341,7 @@ void BranchUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -359,15 +361,17 @@ void BranchUnit::Read()
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
 
-		// Move uop to read buffer
+		// Move uop to read buffer and get the iterator for the next
+		// element
 		read_buffer.push_back(std::move(*it));
-		decode_buffer.erase(it);
+		it = decode_buffer.erase(it);
 	}
 }
 
 void BranchUnit::Decode()
 {
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	// Get compute unit object
+	ComputeUnit *compute_unit = getComputeUnit();
 	
 	// Internal counter
 	int instructions_processed = 0;
@@ -376,10 +380,8 @@ void BranchUnit::Decode()
 	assert((int) issue_buffer.size() <= issue_buffer_size);
 	
 	// Process completed instructions
-	for (auto it = issue_buffer.begin(),
-			e = issue_buffer.end();
-			it != e;
-			++it)
+	auto it = issue_buffer.begin();
+	while (it != issue_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -387,9 +389,9 @@ void BranchUnit::Decode()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->issue_ready)
-			continue;
+			break;
 	
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -405,7 +407,7 @@ void BranchUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the decode buffer
@@ -425,7 +427,7 @@ void BranchUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;                                 
+			break;                                 
 		}      
 
 
@@ -447,7 +449,7 @@ void BranchUnit::Decode()
 
 		// Move uop to write buffer
 		decode_buffer.push_back(std::move(*it));
-		issue_buffer.erase(it);
+		it = issue_buffer.erase(it);
 	}
 }
 
