@@ -142,7 +142,7 @@ Symbol::Symbol(File *file, Section *section, unsigned int pos)
 	buffer = nullptr;
 	if (this->section && info->st_value + info->st_size <=
 			this->section->getSize())
-		buffer = this->section->getBuffer();
+		buffer = this->section->getBuffer() + info->st_value;
 }
 
 
