@@ -134,13 +134,13 @@ public:
 	long long inst_count;
 
 	/// Return an iterator to the first uop in the fetch buffer
-	std::deque<std::unique_ptr<Uop>>::iterator begin()
+	std::deque<std::unique_ptr<Uop>>::iterator getWriteBufferBegin()
 	{
 		return write_buffer.begin();
 	}
 
 	/// Return a past-the-end iterator to the fetch buffer
-	std::deque<std::unique_ptr<Uop>>::iterator end()
+	std::deque<std::unique_ptr<Uop>>::iterator getWriteBufferEnd()
 	{
 		return write_buffer.end();
 	}

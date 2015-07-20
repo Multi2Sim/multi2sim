@@ -140,7 +140,7 @@ void VectorMemoryUnit::Write()
 		instructions_processed++;
 
 		// Uop is not ready yet
-		if (uop->global_mem_witness)
+		if (uop->global_memory_witness)
 			break;
 	
 		// Stall if width has been reached
@@ -270,20 +270,20 @@ void VectorMemoryUnit::Memory()
 		}
 
 		// Set the access type
-		if (uop->vector_mem_write && !uop->vector_mem_global_coherency)
+		if (uop->vector_memory_write && !uop->vector_memory_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessNCStore;
 		}
-		else if (uop->vector_mem_write && 
-				uop->vector_mem_global_coherency)
+		else if (uop->vector_memory_write &&
+				uop->vector_memory_global_coherency)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
 		}
-		else if (uop->vector_mem_read)
+		else if (uop->vector_memory_read)
 		{
 			module_access_type = mem::Module::AccessType::AccessLoad;
 		}
-		else if (uop->vector_mem_atomic)
+		else if (uop->vector_memory_atomic)
 		{
 			module_access_type = mem::Module::AccessType::AccessStore;
 		}
@@ -294,7 +294,7 @@ void VectorMemoryUnit::Memory()
 		}
 
 		// Access global memory
-		assert(!uop->global_mem_witness);
+		assert(!uop->global_memory_witness);
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;
@@ -322,16 +322,16 @@ void VectorMemoryUnit::Memory()
 						getNDRange()->
 						getAddressSpace(),
 						work_item_info->
-						global_mem_access_addr);
+						global_memory_access_address);
 
 				// Submit the access
 				compute_unit->scalar_cache->Access(
 						module_access_type,
 						physical_address, 
-						&uop->global_mem_witness);
+						&uop->global_memory_witness);
 
 				// Access global memory
-				uop->global_mem_witness--;
+				uop->global_memory_witness--;
 			}
 		}
 

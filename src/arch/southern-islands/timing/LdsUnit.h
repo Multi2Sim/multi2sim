@@ -108,18 +108,23 @@ public:
 	/// Issue the given instruction into the LDS unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
 
+	/// Complete the instruction execution
 	void Complete();
 
+	/// Write stage of the execution pipeline
 	void Write();
 
+	/// Mem stage of the execution pipeline
 	void Mem();
 
+	/// Read stage of the execution pipeline
 	void Read();
 
+	/// Decode stage of the execution pipeline
 	void Decode();
 
 	/// Statistics
-	long long inst_count;
+	long long num_instructions;
 };
 
 }

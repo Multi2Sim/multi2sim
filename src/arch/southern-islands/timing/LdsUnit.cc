@@ -40,6 +40,7 @@ int LdsUnit::max_in_flight_mem_accesses = 32;
 
 void LdsUnit::Run()
 {
+	// Run pipeline stages in reverse order
 	LdsUnit::Complete();
 	LdsUnit::Write();
 	LdsUnit::Mem();
@@ -116,7 +117,7 @@ void LdsUnit::Complete()
 		// SI_uop_free(uop)
 
 		// Statistics
-		inst_count++;
+		num_instructions++;
 		compute_unit->getGpu()->last_complete_cycle = compute_unit->
 				getTiming()->getCycle();
 	}
@@ -301,20 +302,23 @@ void LdsUnit::Mem()
 
 			for (int i = 0; i < work_item_info->lds_access_count; i++)
 			{
-				if (work_item->lds_access[i].type ==
-						WorkItem::MemoryAccessType::MemoryAccessRead)
+				switch (work_item->lds_access[i].type)
+				{
+
+				case WorkItem::MemoryAccessType::MemoryAccessRead:
 				{
 					access_type = mem::Module::AccessType::AccessLoad;
+					break;
 				}
 
-				if (work_item->lds_access[i].type ==
-						WorkItem::MemoryAccessType::MemoryAccessWrite)
+				case WorkItem::MemoryAccessType::MemoryAccessWrite:
 				{
 					access_type = mem::Module::AccessType::AccessStore;
+					break;
 				}
 
-				else
-				{
+				default:
+
 					throw misc::Panic("Invalid lds access");
 				}
 
@@ -386,7 +390,7 @@ void LdsUnit::Read()
 		}
 
 		// Stop if the read buffer is full
-		if (int(read_buffer.size()) == read_buffer_size)
+		if ((int) read_buffer.size() == read_buffer_size)
 		{
 			// Trace
 			Timing::trace << misc::fmt("si.inst "

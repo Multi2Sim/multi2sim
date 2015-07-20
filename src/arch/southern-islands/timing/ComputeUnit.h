@@ -149,8 +149,9 @@ public:
 	Gpu *getGpu() { return gpu; }
 
 	/// Return the associated timing simulator
-	Timing *getTiming() { return timing; }
+	Timing *getTiming() const { return timing; }
 
+	/// Return the associated LDS module
 	mem::Module *getLdsModule() const { return lds_module; }
 
 	/// Cache used for vector data

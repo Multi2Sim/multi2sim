@@ -3449,11 +3449,11 @@ void System::EventMessageHandler(esim::Event *event,
 			for (int z = 0; z < target_module->getDirectorySize(); z++)
 			{
 				// Skip other subblocks
-				if (int(frame->getAddress()) == frame->tag + z * target_module->getSubBlockSize())
+				if (int(frame->getAddress()) == frame->tag + z * target_module->getNumSubBlocks())
 				{
-				    // Clear the owner
-                                    Directory::Entry *dir_entry = target_directory->getEntry(frame->set, frame->way, z);
-                                    dir_entry->setOwner(-1);
+					// Clear the owner
+					Directory::Entry *dir_entry = target_directory->getEntry(frame->set, frame->way, z);
+					dir_entry->setOwner(-1);
 				}
 
 			}

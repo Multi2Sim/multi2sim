@@ -59,7 +59,7 @@ public:
 	int getSize() { return buffer.size(); }
 
 	/// Return the identifier for this fetch buffer
-	int getId() { return id; }
+	int getId() const { return id; }
 
 	/// Add instruction to the end of the buffer
 	void addUop(std::shared_ptr<SI::Uop> uop)
