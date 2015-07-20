@@ -23,109 +23,74 @@
 namespace x86
 {
 
-std::string Alu::name[TypeCount] =
+int Alu::configuration[FunctionalUnit::TypeCount][3] =
 {
-		// Invalid
-		"<invalid>",
+	{ 0, 0, 0 },  // Unused
 
-		// Integer register operation
-		"IntAdd",
-		"IntMult",
-		"IntDiv",
+	{ 3, 1, 1 },  // IntAdd
+	{ 1, 3, 1 },  // IntMult
+	{ 1, 14, 11 },  // IntDiv
 
-		// Logic operation
-		"EffAddr",
-		"Logic",
+	{ 3, 2, 2 },  // Effaddr
+	{ 3, 1, 1 },  // Logic
 
-		// Floating point register operation
-		"FloatSimple",
-		"FloatAdd",
-		"FloatComp",
-		"FloatMult",
-		"FloatDiv",
-		"FloatComplex",
+	{ 1, 2, 1 },  // FloatSimple
+	{ 1, 3, 1 },  // FloatAdd
+	{ 1, 3, 1 },  // FloatComp
+	{ 1, 5, 1 },  // FloatMult
+	{ 1, 12, 5 },  // FloatDiv
+	{ 1, 22, 14 },  // FloatComplex
 
-		// XMM register operation
-		"XMMIntAdd",
-		"XMMIntMult",
-		"XMMIntDiv",
-		"XMMLogic",
-		"XMMFloatAdd",
-		"XMMFloatComp",
-		"XMMFloatMult",
-		"XMMFloatDiv",
-		"XMMFloatConv",
-		"XMMFloatComplex"
+	{ 1, 1, 1 },  // XmmIntAdd
+	{ 1, 3, 1 },  // XmmIntMult
+	{ 1, 14, 11 },  // XmmIntDiv
+
+	{ 1, 1, 1 },  // XmmLogic
+
+	{ 1, 3, 1 },  // XmmFloatAdd
+	{ 1, 3, 1 },  // XmmFloatComp
+	{ 1, 5, 1 },  // XmmFloatMult
+	{ 1, 12, 6 },  // XmmFloatDiv
+	{ 1, 3, 1 },  // XmmFloatConv
+	{ 1, 22, 14 }  // XmmFloatComplex
 };
 
-Alu::ReservationPool Alu::reservation_pool[TypeCount] =
+const FunctionalUnit::Type Alu::type_table[Uinst::OpcodeCount] =
 {
-		{ 0, 0, 0 },  // Unused
+	FunctionalUnit::TypeNone,  // UInstNop
 
-		{ 3, 1, 1 },  // IntAdd
-		{ 1, 3, 1 },  // IntMult
-		{ 1, 14, 11 },  // IntDiv
+	FunctionalUnit::TypeNone,  // UInstMove
+	FunctionalUnit::TypeIntAdd,  // UInstAdd
+	FunctionalUnit::TypeIntAdd,  // UInstSub
+	FunctionalUnit::TypeIntMult,  // UInstMult
+	FunctionalUnit::TypeIntDiv,  // UInstDiv
+	FunctionalUnit::TypeEffaddr,  // UInstEffaddr
 
-		{ 3, 2, 2 },  // Effaddr
-		{ 3, 1, 1 },  // Logic
+	FunctionalUnit::TypeLogic,  // UInstAnd
+	FunctionalUnit::TypeLogic,  // UInstOr
+	FunctionalUnit::TypeLogic,  // UInstXor
+	FunctionalUnit::TypeLogic,  // UInstNot
+	FunctionalUnit::TypeLogic,  // UInstShift
+	FunctionalUnit::TypeLogic,  // UInstSign
 
-		{ 1, 2, 1 },  // FloatSimple
-		{ 1, 3, 1 },  // FloatAdd
-		{ 1, 3, 1 },  // FloatComp
-		{ 1, 5, 1 },  // FloatMult
-		{ 1, 12, 5 },  // FloatDiv
-		{ 1, 22, 14 },  // FloatComplex
+	FunctionalUnit::TypeNone,  // UInstFpMove
+	FunctionalUnit::TypeFloatSimple,  // UInstFpSign
+	FunctionalUnit::TypeFloatSimple,  // UInstFpRound
 
-		{ 1, 1, 1 },  // XmmIntAdd
-		{ 1, 3, 1 },  // XmmIntMult
-		{ 1, 14, 11 },  // XmmIntDiv
+	FunctionalUnit::TypeFloatAdd,  // UInstFpAdd
+	FunctionalUnit::TypeFloatAdd,  // UInstFpSub
+	FunctionalUnit::TypeFloatComp,  // UInstFpComp
+	FunctionalUnit::TypeFloatMult,  // UInstFpMult
+	FunctionalUnit::TypeFloatDiv,  // UInstFpDiv
 
-		{ 1, 1, 1 },  // XmmLogic
-
-		{ 1, 3, 1 },  // XmmFloatAdd
-		{ 1, 3, 1 },  // XmmFloatComp
-		{ 1, 5, 1 },  // XmmFloatMult
-		{ 1, 12, 6 },  // XmmFloatDiv
-		{ 1, 3, 1 },  // XmmFloatConv
-		{ 1, 22, 14 }  // XmmFloatComplex
-};
-
-Alu::Type Alu::type_table[Uinst::OpcodeCount] =
-{
-	TypeNone,  // UInstNop
-
-	TypeNone,  // UInstMove
-	TypeIntAdd,  // UInstAdd
-	TypeIntAdd,  // UInstSub
-	TypeIntMult,  // UInstMult
-	TypeIntDiv,  // UInstDiv
-	TypeEffaddr,  // UInstEffaddr
-
-	TypeLogic,  // UInstAnd
-	TypeLogic,  // UInstOr
-	TypeLogic,  // UInstXor
-	TypeLogic,  // UInstNot
-	TypeLogic,  // UInstShift
-	TypeLogic,  // UInstSign
-
-	TypeNone,  // UInstFpMove
-	TypeFloatSimple,  // UInstFpSign
-	TypeFloatSimple,  // UInstFpRound
-
-	TypeFloatAdd,  // UInstFpAdd
-	TypeFloatAdd,  // UInstFpSub
-	TypeFloatComp,  // UInstFpComp
-	TypeFloatMult,  // UInstFpMult
-	TypeFloatDiv,  // UInstFpDiv
-
-	TypeFloatComplex,  // UInstFpExp
-	TypeFloatComplex,  // UInstFpLog
-	TypeFloatComplex,  // UInstFpSin
-	TypeFloatComplex,  // UInstFpCos
-	TypeFloatComplex,  // UInstFpSincos
-	TypeFloatComplex,  // UInstFpTan
-	TypeFloatComplex,  // UInstFpAtan
-	TypeFloatComplex,  // UInstFpSqrt
+	FunctionalUnit::TypeFloatComplex,  // UInstFpExp
+	FunctionalUnit::TypeFloatComplex,  // UInstFpLog
+	FunctionalUnit::TypeFloatComplex,  // UInstFpSin
+	FunctionalUnit::TypeFloatComplex,  // UInstFpCos
+	FunctionalUnit::TypeFloatComplex,  // UInstFpSincos
+	FunctionalUnit::TypeFloatComplex,  // UInstFpTan
+	FunctionalUnit::TypeFloatComplex,  // UInstFpAtan
+	FunctionalUnit::TypeFloatComplex,  // UInstFpSqrt
 };
 
 
@@ -135,26 +100,43 @@ void Alu::ParseConfiguration(misc::IniFile *ini_file)
 	std::string section = "FunctionalUnits";
 
 	// Get configuration parameter
-	for (int i = 1; i < TypeCount; i++)
+	for (int i = 1; i < FunctionalUnit::TypeCount; i++)
 	{
-		// Get corresponding pool entry
-		ReservationPool *pool_ptr = &reservation_pool[i];
-		std::string value = "";
+		// Functional unit name
+		std::string name = FunctionalUnit::type_map[i];
+		assert(!name.empty());
 
-		// Get functional units count
-		value = name[i] + ".Count";
-		pool_ptr->count = ini_file->ReadInt(section, value, pool_ptr->count);
+		// Number of instances
+		configuration[i][0] = ini_file->ReadInt(section,
+				name + ".Count",
+				configuration[i][0]);
 
-		// Get operation latency
-		value = name[i] + ".OpLat";
-		pool_ptr->operation_latency = ini_file->ReadInt(section, value,
-				pool_ptr->operation_latency);
+		// Get total operation latency
+		configuration[i][1] = ini_file->ReadInt(section,
+				name + ".OpLat",
+				configuration[i][1]);
 
 		// Get issue latency
-		value = name[i] + ".IssueLat";
-		pool_ptr->issue_latency = ini_file->ReadInt(section, value,
-				pool_ptr->issue_latency);
+		configuration[i][2] = ini_file->ReadInt(section,
+				name + ".IssueLat",
+				configuration[i][2]);
 	}
+}
+
+
+Alu::Alu()
+{
+	// Reserve functional unit vector entries
+	functional_units.reserve(FunctionalUnit::TypeCount);
+
+	// Create functional units
+	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
+		functional_units[type] = misc::new_unique<FunctionalUnit>(
+				(FunctionalUnit::Type) type,
+				FunctionalUnit::type_map[type],
+				configuration[type][0],
+				configuration[type][1],
+				configuration[type][2]);
 }
 
 
@@ -164,55 +146,32 @@ int Alu::Reserve(Uop *uop)
 	Timing *timing = Timing::getInstance();
 	long long cycle = timing->getCycle();
 
-	// Get the functional unit type required by the uop.
-	// If the uop does not require a functional unit, return
-	// 1 cycle latency.
-	Type type = type_table[uop->getUinst()->getOpcode()];
-	if (type == TypeNone)
+	// Record the first attempt of the uop to reserve a functional unit
+	if (!uop->first_alu_cycle)
+		uop->first_alu_cycle = cycle;
+
+	// Get the functional unit type required by the uop. If the uop does not
+	// require a functional unit, return 1 cycle latency.
+	FunctionalUnit::Type type = type_table[uop->getUinst()->getOpcode()];
+	if (type == FunctionalUnit::TypeNone)
 		return 1;
 
-	// First time uop tries to reserve functional unit
-	if (!uop->first_cycle_try_reserve)
-		uop->first_cycle_try_reserve = cycle;
+	// Obtain functional unit of the required kind
+	assert(type > FunctionalUnit::TypeNone &&
+			type < FunctionalUnit::TypeCount);
+	FunctionalUnit *functional_unit = functional_units[type].get();
+	assert(functional_unit);
 
-	// Find a free functional unit
-	assert(type > TypeNone && type < TypeCount);
-	assert(reservation_pool[type].count <= MaxFunctionalUnitReservation);
-	for (int i = 0; i < reservation_pool[type].count; i++)
-	{
-		if (cycle_when_free[type][i] <= cycle)
-		{
-			// Make sure the latency exist
-			assert(reservation_pool[type].issue_latency > 0);
-			assert(reservation_pool[type].operation_latency > 0);
-
-			// Calculate the cycle count when functional unit is free
-			cycle_when_free[type][i] = cycle + reservation_pool[type].issue_latency;
-
-			// Increment the access count
-			accesses[type]++;
-
-			// Calculate the wait time in cycle
-			waiting_time[type] += cycle - uop->first_cycle_try_reserve;
-
-			// Return the operation latency and indication
-			// functional unit is reserved
-			return reservation_pool[type].operation_latency;
-		}
-	}
-
-	// No free functional unit was found
-	denied[type]++;
-	return 0;
+	// Reserve functional unit
+	return functional_unit->Reserve(uop);
 }
 
 
 void Alu::ReleaseAll()
 {
-	// Clear the free cycle count for each functional unit
-	for (int i = 0; i < TypeCount; i++)
-		for (int j = 0; j < reservation_pool[i].count; j++)
-			cycle_when_free[i][j] = 0;
+	// Release all functional units
+	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
+		functional_units[type]->Release();
 }
 
 }
