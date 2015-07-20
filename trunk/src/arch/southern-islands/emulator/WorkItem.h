@@ -234,17 +234,31 @@ public:
 	///
 	WorkItem(Wavefront *wavefront, int id);
 
-	static const int MaxLDSAccessesPerInst = 2;
 
-	// Last global memory address
-	unsigned global_mem_access_addr;
 
-	// Last global memory access size
-	unsigned global_mem_access_size;
 
-	// Last LDS accesses by last instruction
-	int lds_access_count;  // Number of LDS access by last instruction
-	MemoryAccess lds_access[MaxLDSAccessesPerInst];
+	//
+	// Static fields
+	//
+
+	/// Maximum number of LDS accesses per instruction
+	static const int MaxLdsAccessesPerInst = 2;
+
+
+
+
+
+	/// Last global memory address
+	unsigned global_memory_access_address;
+
+	/// Last global memory access size
+	unsigned global_memory_access_size;
+
+	/// Last LDS accesses by last instruction
+	int lds_access_count;
+
+	/// Information for each lds access
+	MemoryAccess lds_access[MaxLdsAccessesPerInst];
 
 
 

@@ -32,10 +32,22 @@ class ComputeUnit;
 /// Class representing the SIMD unit of a compute unit
 class SimdUnit : public ExecutionUnit
 {
+	// Variable number of issued Uops
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
+
+	// Variable number of decoded Uops
+	std::deque<std::unique_ptr<Uop>> decode_buffer;
+
+	// Variable number of execution instructions
+	std::deque<std::unique_ptr<Uop>> exec_buffer;
+
 public:
 	//
 	// Static fields
 	//
+
+	/// Maximum number of instructions processed per cycle
+	static int width;
 
 	/// Number of lanes per SIMD.  This must divide the wavefront size
 	/// (64) evenly.
@@ -58,9 +70,18 @@ public:
 	/// at the same time
 	static int read_exec_write_latency;
 
+	/// Size of the execution buffer in number of instructions
+	static int exec_buffer_size;
+
+	/// Latency of the execution stage in number of cycles
+	static int exec_latency;
+
 	/// Size of the buffer holding instructions that have began the
 	/// read-exec-write stages.
 	static int read_exec_write_buffer_size;
+
+	// Statistics
+	long long inst_count;
 
 
 
@@ -90,6 +111,16 @@ public:
 
 	/// Issue the given instruction into the SIMD unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
+
+	/// Complete the instruction
+	void Complete();
+
+	/// Execute stage of the execution pipeline
+	void Execute();
+
+	/// Decode stage of the execution pipeline
+	void Decode();
+
 };
 
 }

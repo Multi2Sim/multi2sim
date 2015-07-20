@@ -224,13 +224,13 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 
 		// Wavefront is ready but waiting on outstanding
 		// memory instructions
-		if (wavefront->isMemWait())
+		if (wavefront->isMemoryWait())
 		{
 			// No outstanding accesses
 			if (!wavefront_pool_entry->lgkm_cnt &&
 				!wavefront_pool_entry->exp_cnt &&
 				!wavefront_pool_entry->vm_cnt)
-					wavefront->setMemWait(false);
+					wavefront->setMemoryWait(false);
 			else
 				continue;
 		}
@@ -255,28 +255,25 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 				timing->getCycle(),
 				wavefront->getWorkGroup(),
 				fetch_buffer->getId());
-		uop->vector_mem_read = wavefront->vector_mem_read;
-		uop->vector_mem_write = wavefront->vector_mem_write;
-		uop->vector_mem_atomic = wavefront->vector_mem_atomic;
-		uop->scalar_mem_read = wavefront->scalar_mem_read;
+		uop->vector_memory_read = wavefront->vector_memory_read;
+		uop->vector_memory_write = wavefront->vector_memory_write;
+		uop->vector_memory_atomic = wavefront->vector_memory_atomic;
+		uop->scalar_memory_read = wavefront->scalar_memory_read;
 		uop->lds_read = wavefront->lds_read;
 		uop->lds_write = wavefront->lds_write;
 		uop->wavefront_last_instruction = wavefront->finished;
-		uop->mem_wait = wavefront->mem_wait;
+		uop->memory_wait = wavefront->memory_wait;
 		uop->at_barrier = wavefront->at_barrier;
-		uop->setInstruction(wavefront->getInst());
-		uop->vector_mem_global_coherency =
-				wavefront->vector_mem_global_coherency;
+		uop->setInstruction(wavefront->getInstruction());
+		uop->vector_memory_global_coherency =
+				wavefront->vector_memory_global_coherency;
 
 		// Checks
 		assert(wavefront->getWorkGroup() && uop->getWorkGroup());
 
 		// Convert instruction name to string
-		const char* inst_name = wavefront->getInst()->getName();
-		std::stringstream ss;
-		ss << inst_name;
-		std::string inst_str = ss.str();
-		misc::StringSingleSpaces(inst_str);
+		std::string instruction_name = wavefront->getInstruction()->getName();
+		misc::StringSingleSpaces(instruction_name);
 
 		// Trace
 		Timing::trace << misc::fmt("si.new_inst "
@@ -292,7 +289,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 				uop->getWavefrontPoolId(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront(),
-				inst_str.c_str());
+				instruction_name.c_str());
 
 
 		// Update last memory accesses
@@ -310,10 +307,10 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 				&uop->work_item_info_list[work_item->getIdInWavefront()];
 
 			// Global memory
-			work_item_info->global_mem_access_addr =
-					work_item->global_mem_access_addr;
-			work_item_info->global_mem_access_size =
-					work_item->global_mem_access_size;
+			work_item_info->global_memory_access_address =
+					work_item->global_memory_access_address;
+			work_item_info->global_memory_access_size =
+					work_item->global_memory_access_size;
 
 			// LDS
 			work_item_info->lds_access_count =

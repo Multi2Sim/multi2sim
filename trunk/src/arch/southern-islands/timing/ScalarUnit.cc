@@ -46,6 +46,7 @@ int ScalarUnit::write_buffer_size = 1;
 
 void ScalarUnit::Run()
 {
+	// Run pipeline stages in reverse order
 	ScalarUnit::Complete();
 	ScalarUnit::Write();
 	ScalarUnit::Execute();
@@ -96,6 +97,7 @@ void ScalarUnit::Issue(std::shared_ptr<Uop> uop)
 
 void ScalarUnit::Complete()
 {
+	// Get useful objects
 	ComputeUnit *compute_unit = this->getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
@@ -138,7 +140,7 @@ void ScalarUnit::Complete()
 		}
 
 		// Decrement the outstanding memory access count
-		if (uop->scalar_mem_read)
+		if (uop->scalar_memory_read)
 		{
 			assert(uop->getWavefrontPoolEntry()->lgkm_cnt > 0);
 			uop->getWavefrontPoolEntry()->lgkm_cnt--;
@@ -148,7 +150,7 @@ void ScalarUnit::Complete()
 		// Check for "wait" instruction
 		// If a wait instruction was executed and there are outstanding
 		// memory accesses, set the wavefront to waiting
-		if (uop->mem_wait)
+		if (uop->memory_wait)
 		{
 			uop->getWavefrontPoolEntry()->mem_wait = true;
 			uop->getWavefrontPoolEntry()->ready = true;
@@ -268,10 +270,10 @@ void ScalarUnit::Write()
 		// One more instruction processed
 		instructions_processed++;
 
-		if (uop->scalar_mem_read)
+		if (uop->scalar_memory_read)
 		{
 			// Check if access is complete
-			if (uop->global_mem_witness)
+			if (uop->global_memory_witness)
 			{
 				break;
 			}
@@ -400,10 +402,6 @@ void ScalarUnit::Write()
 			uop->write_ready = compute_unit->getTiming()->
 					getCycle() + write_latency;
 
-			// Move uop to write buffer
-			exec_buffer.erase(it);
-			write_buffer.push_back(std::move(*it));
-
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
 					"id=%lld "
@@ -489,14 +487,14 @@ void ScalarUnit::Execute()
 		}
 
 		// Scalar mem read
-		if (uop->scalar_mem_read)
+		if (uop->scalar_memory_read)
 		{
 			// Access global memory
-			uop->global_mem_witness--;
+			uop->global_memory_witness--;
 
 			// FIXME Get rid of dependence on wavefront here
-			uop->global_mem_access_addr = uop->getWavefront()->
-					getScalarWorkItem()->global_mem_access_addr;
+			uop->global_memory_access_address = uop->getWavefront()->
+					getScalarWorkItem()->global_memory_access_address;
 
 			// Translate virtual address to physical address
 			unsigned phys_addr = compute_unit->getGpu()->
@@ -504,12 +502,12 @@ void ScalarUnit::Execute()
 							uop->getWorkGroup()->
 							getNDRange()->
 							getAddressSpace(),
-						uop->global_mem_access_addr);
+						uop->global_memory_access_address);
 
 			// Submit the access
 			compute_unit->scalar_cache->Access(
 					mem::Module::AccessType::AccessLoad,
-					phys_addr, &uop->global_mem_witness);
+					phys_addr, &uop->global_memory_witness);
 
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
@@ -620,7 +618,7 @@ void ScalarUnit::Read()
 		uop->read_ready = compute_unit->getTiming()->getCycle() +
 				read_latency;
 
-		if (!uop->at_barrier && !uop->mem_wait &&
+		if (!uop->at_barrier && !uop->memory_wait &&
 				!uop->wavefront_last_instruction)
 		{
 			uop->getWavefrontPoolEntry()->ready_next_cycle = true;

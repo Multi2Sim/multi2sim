@@ -59,7 +59,7 @@ namespace SI
 void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 	int sbase = INST.sbase << 1;
 
 	// sbase holds the first of 4 registers containing the buffer
@@ -86,8 +86,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 				value.as_uint, value.as_float);
 
 	// Record last memory access for timing simulation purposes
-	global_mem_access_addr = addr;
-	global_mem_access_size = 4;
+	global_memory_access_address = addr;
+	global_memory_access_size = 4;
 }
 #undef INST
 
@@ -95,7 +95,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 	int sbase = INST.sbase << 1;
 
 	MemoryPointer memory_pointer;
@@ -128,8 +128,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = 4 * 2;
+	global_memory_access_address = addr;
+	global_memory_access_size = 4 * 2;
 }
 #undef INST
 
@@ -138,7 +138,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX2_Impl(Instruction *instruction)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 	int sbase = INST.sbase << 1;
 
 	MemoryPointer memory_pointer;
@@ -171,8 +171,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = 4 * 4;
+	global_memory_access_address = addr;
+	global_memory_access_size = 4 * 4;
 }
 #undef INST
 
@@ -180,7 +180,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX4_Impl(Instruction *instruction)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 	int sbase = INST.sbase << 1;
 
 	MemoryPointer memory_pointer;
@@ -213,8 +213,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = 4 * 8;
+	global_memory_access_address = addr;
+	global_memory_access_size = 4 * 8;
 }
 #undef INST
 
@@ -222,7 +222,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX8_Impl(Instruction *instruction)
 void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 	int sbase = INST.sbase << 1;
 
 	MemoryPointer memory_pointer;
@@ -255,8 +255,8 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = 4 * 16;
+	global_memory_access_address = addr;
+	global_memory_access_size = 4 * 16;
 }
 #undef INST
 
@@ -264,7 +264,7 @@ void WorkItem::ISA_S_BUFFER_LOAD_DWORDX16_Impl(Instruction *instruction)
 void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 
 	assert(INST.imm);
 
@@ -302,15 +302,15 @@ void WorkItem::ISA_S_LOAD_DWORDX2_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = m_addr;
-	global_mem_access_size = 4 * 2;
+	global_memory_access_address = m_addr;
+	global_memory_access_size = 4 * 2;
 }
 
 #define INST INST_SMRD
 void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 
 	assert(INST.imm);
 
@@ -348,8 +348,8 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = m_addr;
-	global_mem_access_size = 4 * 4;
+	global_memory_access_address = m_addr;
+	global_memory_access_size = 4 * 4;
 }
 #undef INST
 
@@ -357,7 +357,7 @@ void WorkItem::ISA_S_LOAD_DWORDX4_Impl(Instruction *instruction)
 void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 
 	assert(INST.imm);
 
@@ -395,8 +395,8 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = m_addr;
-	global_mem_access_size = 4 * 8;
+	global_memory_access_address = m_addr;
+	global_memory_access_size = 4 * 8;
 }
 #undef INST
 
@@ -404,7 +404,7 @@ void WorkItem::ISA_S_LOAD_DWORDX8_Impl(Instruction *instruction)
 void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Instruction *instruction)
 {
 	// Record access
-	wavefront->setScalarMemRead(true);
+	wavefront->setScalarMemoryRead(true);
 
 	assert(INST.imm);
 
@@ -442,8 +442,8 @@ void WorkItem::ISA_S_LOAD_DWORDX16_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = m_addr;
-	global_mem_access_size = 4 * 16;
+	global_memory_access_address = m_addr;
+	global_memory_access_size = 4 * 16;
 }
 #undef INST
 
@@ -2072,7 +2072,7 @@ void WorkItem::ISA_S_CBRANCH_EXECNZ_Impl(Instruction *instruction)
 void WorkItem::ISA_S_BARRIER_Impl(Instruction *instruction)
 {
 	// Suspend current wavefront at the barrier
-	wavefront->setBarrierInst(true);
+	wavefront->setBarrierInstruction(true);
 	wavefront->setAtBarrier(true);
 	work_group->incWavefrontsAtBarrier();
 
@@ -2102,7 +2102,7 @@ void WorkItem::ISA_S_BARRIER_Impl(Instruction *instruction)
 void WorkItem::ISA_S_WAITCNT_Impl(Instruction *instruction)
 {
 	// Nothing to do in emulation
-	wavefront->setMemWait(true);
+	wavefront->setMemoryWait(true);
 }
 
 void WorkItem::ISA_PHI_Impl(Instruction *instruction)
@@ -7010,8 +7010,8 @@ void WorkItem::ISA_BUFFER_LOAD_SBYTE_Impl(Instruction *instruction)
 	WriteVReg(INST.vdata, value.as_uint);
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_read;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_read;
 
 	if (Emulator::isa_debug)
 	{
@@ -7080,8 +7080,8 @@ void WorkItem::ISA_BUFFER_LOAD_DWORD_Impl(Instruction *instruction)
 	WriteVReg(INST.vdata, value.as_uint);
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_read;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_read;
 
 	if (Emulator::isa_debug)
 	{
@@ -7110,7 +7110,7 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Instruction *instruction)
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency(true); // FIXME redundant
+		wavefront->setVectorMemoryGlobalCoherency(true); // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
@@ -7155,8 +7155,8 @@ void WorkItem::ISA_BUFFER_STORE_BYTE_Impl(Instruction *instruction)
 	WriteVReg(INST.vdata, value.as_uint);
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 
 	if (Emulator::isa_debug)
 	{
@@ -7185,7 +7185,7 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Instruction *instruction)
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency(true); // FIXME redundant
+		wavefront->setVectorMemoryGlobalCoherency(true); // FIXME redundant
 	}
 
 	// srsrc is in units of 4 registers
@@ -7225,8 +7225,8 @@ void WorkItem::ISA_BUFFER_STORE_DWORD_Impl(Instruction *instruction)
 	global_mem->Write(addr, bytes_to_write, (char *)&value);
 	
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 
 	if (Emulator::isa_debug)
 	{
@@ -7257,14 +7257,14 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Instruction *instruction)
 
 	if (INST.glc)
 	{
-		wavefront->setVectorMemGlobalCoherency(true);
+		wavefront->setVectorMemoryGlobalCoherency(true);
 	}
 	else
 	{
 		/* NOTE Regardless of whether the glc bit is set by the AMD 
 		 * compiler, for the NMOESI protocol correctness , the glc bit
 		 * must be set. */
-		wavefront->setVectorMemGlobalCoherency(true);
+		wavefront->setVectorMemoryGlobalCoherency(true);
 	}
 
 	// srsrc is in units of 4 registers
@@ -7317,8 +7317,8 @@ void WorkItem::ISA_BUFFER_ATOMIC_ADD_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 
 	if (Emulator::isa_debug)
 	{
@@ -7396,8 +7396,8 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_X_Impl(Instruction *instruction)
 	WriteVReg(INST.vdata, value.as_uint);
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_read;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_read;
 
 	// TODO Print value based on type
 	if (Emulator::isa_debug)
@@ -7487,8 +7487,8 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XY_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_read;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_read;
 }
 #undef INST
 
@@ -7575,8 +7575,8 @@ void WorkItem::ISA_TBUFFER_LOAD_FORMAT_XYZW_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_read;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_read;
 }
 #undef INST
 
@@ -7636,8 +7636,8 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_X_Impl(Instruction *instruction)
 	global_mem->Write(addr, bytes_to_write, (char *)&value);
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 
 	// TODO Print value based on type
 	if (Emulator::isa_debug)
@@ -7717,8 +7717,8 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XY_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 }
 #undef INST
 
@@ -7791,8 +7791,8 @@ void WorkItem::ISA_TBUFFER_STORE_FORMAT_XYZW_Impl(Instruction *instruction)
 	}
 
 	// Record last memory access for the detailed simulator.
-	global_mem_access_addr = addr;
-	global_mem_access_size = bytes_to_write;
+	global_memory_access_address = addr;
+	global_memory_access_size = bytes_to_write;
 }
 #undef INST
 

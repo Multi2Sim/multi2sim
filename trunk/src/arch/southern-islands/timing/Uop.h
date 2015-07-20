@@ -93,32 +93,34 @@ public:
 			int wavefront_pool_id);
 
 	/// Flags updated during instruction execution
-	bool vector_mem_read;
-	bool vector_mem_write;
-	bool vector_mem_atomic;
-	bool scalar_mem_read;
+	bool vector_memory_read;
+	bool vector_memory_write;
+	bool vector_memory_atomic;
+	bool scalar_memory_read;
 	bool lds_read;
 	bool lds_write;
-	bool mem_wait;
+	bool memory_wait;
 	bool at_barrier;
 	bool finished;
-	bool vector_mem_global_coherency;
+	bool vector_memory_global_coherency;
 	bool wavefront_last_instruction;
 
 	/// Part of a GPU instruction specific for each work-item within wavefront
 	struct WorkItemInfo
 	{
 		// For global memory accesses
-		unsigned int global_mem_access_addr;
-		unsigned int global_mem_access_size;
+		unsigned int global_memory_access_address;
+		unsigned int global_memory_access_size;
 
 		// Flags
 		// Active after instruction emulation
 		bool active = true;
 
-		// LDS accesses
+		// Number of lds_accesses
 		int lds_access_count;
-		WorkItem::MemoryAccess lds_access[WorkItem::MaxLDSAccessesPerInst];
+
+		// Information for each lds_access
+		WorkItem::MemoryAccess lds_access[WorkItem::MaxLdsAccessesPerInst];
 	};
 
 	/// Vector containing work item specific information.  Indices of this
@@ -185,19 +187,19 @@ public:
 	long long read_ready = 0;
 
 	/// Cycle when uop is first ready after execution completes
-	long long execute_ready;
+	long long execute_ready = 0;
 
 	/// Witness memory access
-	int global_mem_witness;
+	int global_memory_witness = 0;
 	
 	/// Last scalar memory access address
-	unsigned int global_mem_access_addr;
+	unsigned int global_memory_access_address = 0;
 
 	/// Last scalar memory access size
-	unsigned int global_mem_access_size;
+	unsigned int global_memory_access_size = 0;
 
 	/// Lds access witness
-	int lds_witness;
+	int lds_witness = 0;
 };
 
 }

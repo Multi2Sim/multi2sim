@@ -94,7 +94,7 @@ class Wavefront
 
 	// Fields introduced for timing simulation
 	int id_in_compute_unit = 0;
-	bool barrier_inst = false;
+	bool barrier_instruction = false;
 
 
 
@@ -107,28 +107,28 @@ class Wavefront
 	long long inst_count = 0;
 
 	// Number of scalar memory instructions executed
-	long long scalar_mem_inst_count = 0;
+	long long scalar_memory_instruction_count = 0;
 	
 	// Number of scalar ALU instructions executed
-	long long scalar_alu_inst_count = 0;
+	long long scalar_alu_instruction_count = 0;
 	
 	// Number of branch instructions executed
-	long long branch_inst_count = 0;
+	long long branch_instruction_count = 0;
 	
 	// Number of vector memory instructions executed
-	long long vector_mem_inst_count = 0;
+	long long vector_memory_instruction_count = 0;
 	
 	// Number of vector ALU instructions executed
-	long long vector_alu_inst_count = 0;
+	long long vector_alu_instruction_count = 0;
 	
 	// Number of global memory instructions executed
-	long long global_mem_inst_count = 0;
+	long long global_mem_instruction_count = 0;
 	
 	// Number of lds instructions executed
-	long long lds_inst_count = 0;
+	long long lds_instruction_count = 0;
 	
 	// Number of export instructions executed
-	long long export_inst_count = 0;
+	long long export_instruction_count = 0;
 
 
 
@@ -138,7 +138,7 @@ class Wavefront
 	//
 	
 	// Number of emulated instructions
-	long long emu_inst_count = 0;
+	long long emu_instruction_count = 0;
 	
 	// Start time of emulation
 	long long emu_time_start = 0;
@@ -171,19 +171,19 @@ public:
 
 	// Indicates if the instruction being performed is a vector memory read
 	// instruction
-	bool vector_mem_read = false;
+	bool vector_memory_read = false;
 	
 	// Indicates if the instruction being performed is a vector memory write
 	// instruction
-	bool vector_mem_write = false;
+	bool vector_memory_write = false;
 	
 	// Indicates if the instruction being performed is an atomic vector 
 	// memory instruction
-	bool vector_mem_atomic = false;
+	bool vector_memory_atomic = false;
 	
 	// Indicates if the instruction being performed is a scalar memory read
 	// instruction
-	bool scalar_mem_read = false;
+	bool scalar_memory_read = false;
 	
 	// Indicates if the instruction being performed is an lds  read
 	// instruction
@@ -194,7 +194,7 @@ public:
 	bool lds_write = false;
 	
 	// Indicates if the instruction being performed is a waitcnt instruction
-	bool mem_wait = false;
+	bool memory_wait = false;
 	
 	// Indicates if the instruction being performed is a barrier instruction
 	bool at_barrier = false;
@@ -203,7 +203,7 @@ public:
 	bool finished = false;
 	
 	// Indicates if the instruction being performed is using the GLC bit
-	bool vector_mem_global_coherency = false;
+	bool vector_memory_global_coherency = false;
 
 
 
@@ -247,7 +247,7 @@ public:
 	unsigned getWorkItemCount() const { return work_item_count; }
 
 	/// Get the associated instruction
-	Instruction *getInst() const { return inst; }
+	Instruction *getInstruction() const { return inst; }
 
 	/// Return true if work-item is active. The work-item identifier is
 	/// given relative to the first work-item in the wavefront
@@ -258,13 +258,13 @@ public:
 
 	/// Return true if the instruction performed a memory
 	/// wait operation
-	bool isMemWait() const { return mem_wait; }
+	bool isMemoryWait() const { return memory_wait; }
 
-	bool isBarrierInst() const { return barrier_inst; }
+	bool isBarrierInstruction() const { return barrier_instruction; }
 
-	bool isVectorMemGlobalCoherency() const
+	bool isVectorMemoryGlobalCoherency() const
 	{
-		return vector_mem_global_coherency;
+		return vector_memory_global_coherency;
 	}
 
 
@@ -291,18 +291,18 @@ public:
 
 	/// Flag set during instruction emulation indicating that there was a
 	/// barrier instruction
-	void setBarrierInst(bool barrier_inst) { this->barrier_inst = barrier_inst; }
+	void setBarrierInstruction(bool barrier_instruction) { this->barrier_instruction = barrier_instruction; }
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a scalar memory read operation.
-	void setScalarMemRead(bool scalar_mem_read)
+	void setScalarMemoryRead(bool scalar_memory_read)
 	{
-		this->scalar_mem_read = scalar_mem_read;
+		this->scalar_memory_read = scalar_memory_read;
 	}
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a memory wait operation.
-	void setMemWait(bool mem_wait) { this->mem_wait = mem_wait; }
+	void setMemoryWait(bool mem_wait) { this->memory_wait = memory_wait; }
 
 	/// Flag set during instruction emulation to indicate that the wavefront
 	/// got stalled at a barrier.
@@ -313,9 +313,9 @@ public:
 	void setFinished(bool finished) { this->finished = finished; }
 
 	/// Flag set during instruction emulation.
-	void setVectorMemGlobalCoherency(bool vector_mem_global_coherency) 
+	void setVectorMemoryGlobalCoherency(bool vector_mem_global_coherency)
 	{
-		this->vector_mem_global_coherency = vector_mem_global_coherency;
+		this->vector_memory_global_coherency = vector_memory_global_coherency;
 	}
 
 	/// Set scalar register as an unsigned int

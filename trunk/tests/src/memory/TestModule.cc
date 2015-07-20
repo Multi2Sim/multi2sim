@@ -144,8 +144,10 @@ TEST(TestModule, is_in_flight_access)
 		// Simulation loop for 200 cycles
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		for (int i = 0; i < 201; i++)
+		{
 			esim_engine->ProcessEvents();
 			EXPECT_TRUE(module_mm->isInFlightAccess(0x400));
+		}
 
 		// Check that the access finishes after 1 more cycle
 		esim_engine->ProcessEvents();
