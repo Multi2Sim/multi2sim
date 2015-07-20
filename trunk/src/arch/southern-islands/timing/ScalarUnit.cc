@@ -99,11 +99,11 @@ void ScalarUnit::Complete()
 	ComputeUnit *compute_unit = this->getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
-	// Process completed instructions
-	for (auto it = write_buffer.begin(),
-			e = write_buffer.end();
-			it != e;
-			++it)
+	// Initialize iterator
+	auto it = write_buffer.begin();
+
+	// Process completed instructionss
+	while (it != write_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -111,9 +111,9 @@ void ScalarUnit::Complete()
 		// Get work group
 		WorkGroup *work_group = uop->getWorkGroup();
 
-		// Continue if uop is not ready
+		// Break if uop is not ready
 		if (compute_unit->getTiming()->getCycle() < uop->write_ready)
-			continue;
+			break;
 
 		// If this is the last instruction and there are outstanding
 		// memory operations, wait for them to complete
@@ -134,7 +134,7 @@ void ScalarUnit::Complete()
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
 
-					continue;
+					break;
 		}
 
 		// Decrement the outstanding memory access count
@@ -144,8 +144,6 @@ void ScalarUnit::Complete()
 			uop->getWavefrontPoolEntry()->lgkm_cnt--;
 		}
 
-		// Access complete, remove the uop from the queue
-		write_buffer.erase(it);
 
 		// Check for "wait" instruction
 		// If a wait instruction was executed and there are outstanding
@@ -234,6 +232,9 @@ void ScalarUnit::Complete()
 					    uop->getIdInComputeUnit(),
 			                    compute_unit->getIndex());
 
+		// Access complete, remove the uop from the queue
+		it = write_buffer.erase(it);
+
 		// Free uop
 		//si_uop_free(uop);
 
@@ -242,6 +243,7 @@ void ScalarUnit::Complete()
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
+
 
 void ScalarUnit::Write()
 {
@@ -254,11 +256,11 @@ void ScalarUnit::Write()
 	// Sanity check exec buffer
 	assert(int(exec_buffer.size()) <= exec_buffer_size);
 
+	// Initialize iterator
+	auto it = exec_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = exec_buffer.begin(),
-			e = exec_buffer.end();
-			it != e;
-			++it)
+	while (it != exec_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -271,7 +273,7 @@ void ScalarUnit::Write()
 			// Check if access is complete
 			if (uop->global_mem_witness)
 			{
-				continue;
+				break;
 			}
 
 			// Stall if width has been reached
@@ -288,7 +290,7 @@ void ScalarUnit::Write()
 						compute_unit->getIndex(),
 						uop->getWavefront()->getId(),
 						uop->getIdInWavefront());
-				continue;
+				break;
 			}
 
 			// Sanity check write buffer
@@ -308,16 +310,12 @@ void ScalarUnit::Write()
 						compute_unit->getIndex(),
 						uop->getWavefront()->getId(),
 						uop->getIdInWavefront());
-				continue;
+				break;
 			}
 
 			// Update Uop write ready cycle
 			uop->write_ready = compute_unit->getTiming()->
 					getCycle() + write_latency;
-
-			// Move uop to write buffer
-			exec_buffer.erase(it);
-			write_buffer.push_back(std::move(*it));
 
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
@@ -338,7 +336,7 @@ void ScalarUnit::Write()
 			// Uop is not ready yet
 			if (compute_unit->getTiming()->getCycle() < uop->
 					execute_ready)
-						continue;
+						break;
 
 			// Stall if the width has been reached
 			if (instructions_processed > width)
@@ -354,7 +352,7 @@ void ScalarUnit::Write()
 						compute_unit->getIndex(),
 						uop->getWavefront()->getId(),
 						uop->getIdInWavefront());
-				continue;
+				break;
 			}
 
 			// Sanity check write buffer
@@ -375,7 +373,7 @@ void ScalarUnit::Write()
 						uop->getWavefront()->getId(),
 						uop->getIdInWavefront());
 
-				continue;
+				break;
 			}
 
 			// Sanity check write buffer
@@ -395,7 +393,7 @@ void ScalarUnit::Write()
 						compute_unit->getIndex(),
 						uop->getWavefront()->getId(),
 						uop->getIdInWavefront());
-				continue;
+				break;
 			}
 
 			// Update uop write ready
@@ -417,6 +415,11 @@ void ScalarUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
+
+			// Move uop to write buffer and get the iterator for
+			// the next element
+			write_buffer.push_back(std::move(*it));
+			it = exec_buffer.erase(it);
 		}
 	}
 }
@@ -432,11 +435,11 @@ void ScalarUnit::Execute()
 	// Sanity check read buffer
 	assert(int(read_buffer.size()) <= read_buffer_size);
 
+	// Initialize iterator
+	auto it = read_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = read_buffer.begin(),
-			e = read_buffer.end();
-			it != e;
-			++it)
+	while (it != read_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -446,7 +449,7 @@ void ScalarUnit::Execute()
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->read_ready)
-			continue;
+			break;
 
 		// Stall if width has been reached
 		if (instructions_processed > width)
@@ -462,7 +465,7 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check exec buffer
@@ -482,7 +485,7 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Scalar mem read
@@ -508,17 +511,6 @@ void ScalarUnit::Execute()
 					mem::Module::AccessType::AccessLoad,
 					phys_addr, &uop->global_mem_witness);
 
-			// MMU statistics
-			/*
-			compute_unit->getGpu()->getMmu()->AccessPage(
-					phys_addr,
-					mem::MMU::AccessType::AccessRead);
-			*/
-
-			// Move the uop to the execution buffer
-			read_buffer.erase(it);
-			exec_buffer.push_back(std::move(*it));
-
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
 					"id=%lld "
@@ -530,7 +522,7 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// ALU instruction
@@ -538,10 +530,6 @@ void ScalarUnit::Execute()
 		{
 			uop->execute_ready = compute_unit->getTiming()->
 					getCycle() + exec_latency;
-
-			// Move uop to the execution buffer
-			read_buffer.erase(it);
-			exec_buffer.push_back(std::move(*it));
 
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
@@ -554,7 +542,12 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
+
+			// Move uop to the execution buffer and get the
+			// iterator for the next element
+			exec_buffer.push_back(std::move(*it));
+			it = read_buffer.erase(it);
 		}
 	}
 }
@@ -570,11 +563,11 @@ void ScalarUnit::Read()
 	// Sanity check decode buffer
 	assert(int(decode_buffer.size()) <= decode_buffer_size);
 
+	// Initialize iterator
+	auto it = decode_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = decode_buffer.begin(),
-			e = decode_buffer.end();
-			it != e;
-			++it)
+	while (it != decode_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -584,7 +577,7 @@ void ScalarUnit::Read()
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->decode_ready)
-			continue;
+			break;
 
 		// Stall if the decode width has been reached
 		if (instructions_processed > width)
@@ -600,7 +593,7 @@ void ScalarUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check
@@ -620,16 +613,12 @@ void ScalarUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Update uop read ready
 		uop->read_ready = compute_unit->getTiming()->getCycle() +
 				read_latency;
-
-		// Move uop to the read buffer
-		decode_buffer.erase(it);
-		read_buffer.push_back(std::move(*it));
 
 		if (!uop->at_barrier && !uop->mem_wait &&
 				!uop->wavefront_last_instruction)
@@ -648,6 +637,11 @@ void ScalarUnit::Read()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Move uop to the read buffer and get the iterator to the
+		// next element
+		read_buffer.push_back(std::move(*it));
+		it = decode_buffer.erase(it);
 	}
 }
 
@@ -662,11 +656,11 @@ void ScalarUnit::Decode()
 	// Sanity check decode buffer
 	assert(int(issue_buffer.size()) <= issue_buffer_size);
 
+	// Initialize iterator
+	auto it = issue_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = issue_buffer.begin(),
-			e = issue_buffer.end();
-			it != e;
-			++it)
+	while (it != issue_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -676,7 +670,7 @@ void ScalarUnit::Decode()
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->issue_ready)
-			continue;
+			break;
 
 		// Stall if the issue width has been reached
 		if (instructions_processed > width)
@@ -692,7 +686,7 @@ void ScalarUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check
@@ -712,16 +706,12 @@ void ScalarUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Update uop decode ready
 		uop->decode_ready = compute_unit->getTiming()->getCycle() +
 				decode_latency;
-
-		// Move uop to the decode buffer
-		issue_buffer.erase(it);
-		decode_buffer.push_back(std::move(*it));
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
@@ -734,9 +724,14 @@ void ScalarUnit::Decode()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Move uop to the decode buffer and get the iterator
+		// to the next element
+		decode_buffer.push_back(std::move(*it));
+		it = issue_buffer.erase(it);
 	}
 }
 
 
-}
+} // namespace SI
 

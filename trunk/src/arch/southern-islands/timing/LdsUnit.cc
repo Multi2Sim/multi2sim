@@ -82,40 +82,43 @@ void LdsUnit::Complete()
 	// Sanity check write buffer
 	assert(int(write_buffer.size()) <= write_buffer_size);
 
-	// Process completed instructions
-	for (auto it = write_buffer.begin(),
-			e = write_buffer.end();
-			it != e;
-			++it)
+	// Initialize iterator
+	auto it = write_buffer.begin();
+
+	// Iterate through uops in the write buffer
+	while (it != write_buffer.end())
 	{
+		// Initialize iterator for this loop
+		it = write_buffer.begin();
+
 		// Get Uop
 		Uop *uop = it->get();
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->write_ready)
-			continue;
+			break;
 
-	// Access complete, remove the uop from the queue
-	write_buffer.erase(it);
+		// Access complete, remove the uop from the queue
+		write_buffer.erase(it);
 
-	// Statistics
-	assert(uop->getWavefrontPoolEntry()->lgkm_cnt > 0);
-	uop->getWavefrontPoolEntry()->lgkm_cnt--;
+		// Statistics
+		assert(uop->getWavefrontPoolEntry()->lgkm_cnt > 0);
+		uop->getWavefrontPoolEntry()->lgkm_cnt--;
 
-	// Trace
-	Timing::trace << misc::fmt("si.end_inst "
-			           "id=%lld "
-			           "cu=%d\n",
-				    uop->getIdInComputeUnit(),
-		                    compute_unit->getIndex());
+		// Trace
+		Timing::trace << misc::fmt("si.end_inst "
+			           	   "id=%lld "
+			           	   "cu=%d\n",
+					   uop->getIdInComputeUnit(),
+					   compute_unit->getIndex());
 
-	// Free uop
-	// SI_uop_free(uop)
+		// Free uop
+		// SI_uop_free(uop)
 
-	// Statistics
-	inst_count++;
-	compute_unit->getGpu()->last_complete_cycle = compute_unit->
-			getTiming()->getCycle();
+		// Statistics
+		inst_count++;
+		compute_unit->getGpu()->last_complete_cycle = compute_unit->
+				getTiming()->getCycle();
 	}
 }
 
@@ -130,11 +133,11 @@ void LdsUnit::Write()
 	// Sanity check write buffer
 	assert(int(mem_buffer.size()) <= max_in_flight_mem_accesses);
 
+	// Initialize iterator
+	auto it = mem_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = mem_buffer.begin(),
-			e = mem_buffer.end();
-			it != e;
-			++it)
+	while (it != mem_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -142,9 +145,9 @@ void LdsUnit::Write()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Uop is not ready yet
+		// Break if Uop is not ready yet
 		if (uop->lds_witness)
-			continue;
+			break;
 
 		// Stall if the width has been reached
 		if (instructions_processed > width)
@@ -160,7 +163,7 @@ void LdsUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the write buffer
@@ -186,10 +189,6 @@ void LdsUnit::Write()
 		uop->write_ready = compute_unit->getTiming()->getCycle() +
 				write_latency;
 
-		// Remove the uop from the queue
-		mem_buffer.erase(it);
-		write_buffer.push_back(std::move(*it));
-
 		// Update wavefront pool entry
 		uop->getWavefrontPoolEntry()->ready_next_cycle = true;
 
@@ -207,8 +206,14 @@ void LdsUnit::Write()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Move uop to write buffer and get the iterator for the next
+		// element
+		write_buffer.push_back(std::move(*it));
+		it = mem_buffer.erase(it);
 	}
 }
+
 
 void LdsUnit::Mem()
 {
@@ -221,11 +226,11 @@ void LdsUnit::Mem()
 	// Sanity check write buffer
 	assert(int(read_buffer.size()) <= read_buffer_size);
 
+	// Initialize iterator
+	auto it = read_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = read_buffer.begin(),
-			e = read_buffer.end();
-			it != e;
-			++it)
+	while (it != read_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -233,9 +238,9 @@ void LdsUnit::Mem()
 		// One more instruction processed
 		instructions_processed++;
 
-		// Uop is not ready yet
+		// Break if Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->read_ready)
-			continue;
+			break;
 
 		// Stall if the width has been reached
 		if (instructions_processed > width)
@@ -251,7 +256,7 @@ void LdsUnit::Mem()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check uop
@@ -274,7 +279,7 @@ void LdsUnit::Mem()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Access local memory
@@ -321,10 +326,6 @@ void LdsUnit::Mem()
 			}
 		}
 
-		// Move uop to the mem buffer
-		read_buffer.erase(it);
-		mem_buffer.push_back(std::move(*it));
-
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
 				"id=%lld "
@@ -336,6 +337,11 @@ void LdsUnit::Mem()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Move uop to the mem buffer and get the iterator for the
+		// next element
+		mem_buffer.push_back(std::move(*it));
+		it = read_buffer.erase(it);
 	}
 }
 
@@ -350,11 +356,11 @@ void LdsUnit::Read()
 	// Sanity check write buffer
 	assert(int(decode_buffer.size()) <= decode_buffer_size);
 
+	// Initialize iterator
+	auto it = decode_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = decode_buffer.begin(),
-			e = decode_buffer.end();
-			it != e;
-			++it)
+	while (it != decode_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -376,7 +382,7 @@ void LdsUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Stop if the read buffer is full
@@ -393,20 +399,16 @@ void LdsUnit::Read()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->decode_ready)
-			continue;
+			break;
 
 		// Update uop
 		uop->read_ready = compute_unit->getTiming()->getCycle() +
 				read_latency;
-
-		// Move uop to read buffer
-		decode_buffer.erase(it);
-		read_buffer.push_back(std::move(*it));
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
@@ -419,6 +421,11 @@ void LdsUnit::Read()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Move uop to read buffer and get the iterator for the
+		// next element
+		read_buffer.push_back(std::move(*it));
+		it = decode_buffer.erase(it);
 	}
 }
 
@@ -433,11 +440,11 @@ void LdsUnit::Decode()
 	// Sanity check write buffer
 	assert(int(issue_buffer.size()) <= issue_buffer_size);
 
+	// Initialize iterator
+	auto it = issue_buffer.begin();
+
 	// Process completed instructions
-	for (auto it = issue_buffer.begin(),
-			e = issue_buffer.end();
-			it != e;
-			++it)
+	while (it != issue_buffer.end())
 	{
 		// Get Uop
 		Uop *uop = it->get();
@@ -447,7 +454,7 @@ void LdsUnit::Decode()
 
 		// Uop is not ready yet
 		if (compute_unit->getTiming()->getCycle() < uop->issue_ready)
-			continue;
+			break;
 
 		// Stall if the width has been reached
 		if (instructions_processed > width)
@@ -463,7 +470,7 @@ void LdsUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Sanity check the decode buffer
@@ -483,16 +490,12 @@ void LdsUnit::Decode()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			continue;
+			break;
 		}
 
 		// Update uop
 		uop->decode_ready = compute_unit->getTiming()->getCycle() +
 				decode_latency;
-
-		// Mode uop to decode buffer
-		issue_buffer.erase(it);
-		decode_buffer.push_back(std::move(*it));
 
 		// if (si_spatial_report_active)
 		//	SIComputeUnitReportNewLDSInst(lds->compute_unit);
@@ -508,6 +511,11 @@ void LdsUnit::Decode()
 				compute_unit->getIndex(),
 				uop->getWavefront()->getId(),
 				uop->getIdInWavefront());
+
+		// Mode uop to decode buffer and get the iterator for the
+		// next element
+		decode_buffer.push_back(std::move(*it));
+		it = issue_buffer.erase(it);
 	}
 }
 
