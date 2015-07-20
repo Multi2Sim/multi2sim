@@ -68,6 +68,8 @@ src_arch_x86_timing_test_LDADD = \
 	-lz
 
 src_arch_x86_timing_test_SOURCES = \
+	src/arch/x86/timing/ObjectPool.h \
+	src/arch/x86/timing/ObjectPool.cc \
 	src/arch/x86/timing/TestBranchPredictor.cc \
 	src/arch/x86/timing/TestTraceCache.cc
 	

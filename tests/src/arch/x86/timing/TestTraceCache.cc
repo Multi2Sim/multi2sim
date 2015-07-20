@@ -31,6 +31,8 @@
 #include <arch/x86/timing/Timing.h>
 #include <arch/x86/timing/Uop.h>
 
+#include "ObjectPool.h"
+
 
 namespace x86
 {
@@ -50,56 +52,12 @@ static auto uinst_move = misc::new_shared<Uinst>(Uinst::OpcodeMove);
 
 static std::vector<std::unique_ptr<Uop>> uop_list;
 
-class ObjectPool
-{
-	// A CPU
-	std::unique_ptr<Cpu> cpu;
-
-	// A core
-	std::unique_ptr<Core> core;
-
-	// A thread
-	std::unique_ptr<Thread> thread;
-
-	// A context
-	Context *context;
-
-public:
-
-	/// Contructor
-	ObjectPool()
-{
-		// Destroy previous singletons
-		Timing::Destroy();
-		Emulator::Destroy();
-
-		// Timing simulator
-		cpu = misc::new_unique<Cpu>();
-		core = misc::new_unique<Core>(cpu.get(), 0);
-		thread = misc::new_unique<Thread>(core.get(), 0);
-
-		// Create a context
-		Emulator *emulator = Emulator::getInstance();
-		context = emulator->newContext();
-}
-
-	/// Return the core
-	Core *getCore() const { return core.get(); }
-
-	/// Return the thread
-	Thread *getThread() const { return thread.get(); }
-
-	/// Return the context
-	Context *getContext() const { return context; }
-};
-
-
 void ParseUopInstance(UopInstanceType instance_type, int address,
 		int instruction_size, int target_distance, bool taken)
 {
 	// Local variable
 	Uop *uop;
-	ObjectPool object_pool;
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
 	// Generate uop and insert it into Uop list
 	switch (instance_type)
@@ -107,8 +65,8 @@ void ParseUopInstance(UopInstanceType instance_type, int address,
 	case UopInstanceTypeBranch:
 
 		uop_list.push_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst_branch));
 		uop = uop_list.back().get();
 		uop->eip = address;
@@ -122,8 +80,8 @@ void ParseUopInstance(UopInstanceType instance_type, int address,
 	case UopInstanceTypeOther:
 
 		uop_list.push_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst_move));
 		uop = uop_list.back().get();
 		uop->eip = address;
