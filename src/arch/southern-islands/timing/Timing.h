@@ -126,6 +126,9 @@ public:
 	/// Return unique instance of the X86 timing simulator singleton.
 	static Timing *getInstance();
 
+	/// Destroy the singleton if allocated.
+	static void Destroy() { instance = nullptr; }
+
 	/// Run one iteration of the Southern Islands timing simulator. See
 	/// comm::Timing::Run() for details.
 	bool Run() override;
