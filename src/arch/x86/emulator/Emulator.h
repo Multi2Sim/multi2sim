@@ -129,7 +129,7 @@ public:
 	//
 	// Class members
 	//
-	
+
 	/// Constructor
 	Emulator() : comm::Emulator("x86") { }
 
