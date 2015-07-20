@@ -134,7 +134,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	unsigned active;
 
     // Operands
-	unsigned dst_id, src1_id, src2_id;
+	unsigned dst_id, src1_id;
 	unsigned long long temp, src1, src2;
 	unsigned dst;
 
@@ -164,14 +164,8 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 		// Read
 		src1_id = format.src1;
 		src1 = ReadGPR(src1_id);
-		src2_id = format.src2;
 
-		if ((format.op0 == 2) && (format.op2 == 1))
-		{
-			// Register Mode
-			src2 = ReadGPR(src2_id);
-		}
-		else if ((format.op0 == 1) && (format.op2 == 1))
+		if ((format.op0 == 1) && (format.op2 == 1))
 		{
 			//Immediate Mode
 			src2 = format.src2;
@@ -257,19 +251,9 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 
 		// Check it
 		if ((format.op0 == 2) && (format.op2 == 1))
-		{
-			// Register Mode
-			src2 = ReadGPR(src2_id);
-		}
-		else if ((format.op0 == 1) && (format.op2 == 1))
-		{
-			//Immediate Mode
-			src2 = format.src2;
-		}
+			src2 = ReadGPR(src2_id);	// Register Mode
 		else if (format.op2 == 0)
-		{
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
-		}
+			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2); // const
 		//else
 		//	src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 
@@ -921,19 +905,9 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 		src1_id = format.src1;
 		src1 = this->ReadGPR(src1_id);
 
-		if((format.op0 == 2) && (format.op2 == 1)) // src2 is register mode
-		{
-			// src2 ID
-			unsigned src2_id;
-
-			// Read src2 value
-			src2_id = format.src2;
-			src2 = this->ReadGPR(src2_id);
-		}
-		else if ((format.op0 == 1) && (format.op2 == 1)) // src2 is IMM20
-		{
+		// Read src2 value
+		if ((format.op0 == 1) && (format.op2 == 1)) // src2 is IMM20
 			src2 = format.src2;
-		}
 
 		// Determine least significant bit value for the add
 		unsigned lsb = 0;
@@ -1071,11 +1045,18 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 		src1_id = format.src1;
 		src1 = this->ReadGPR(src1_id);
 
-		// Read src2 value Check it
-		if (format.op2 == 0) // constant mode
+		// Read src2 value
+		if((format.op0 == 2) && (format.op2 == 1)) // src2 is register mode
+		{
+			// src2 ID
+			unsigned src2_id;
+
+			// Read src2 value
+			src2_id = format.src2;
+			src2 = this->ReadGPR(src2_id);
+		}
+		else if (format.op2 == 0) // constant mode
 			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
-		else if ((format.op0 == 1) && (format.op2 == 1)) // IMM20
-			src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 
 		// Determine least significant bit value for the add
 		unsigned lsb = 0;
