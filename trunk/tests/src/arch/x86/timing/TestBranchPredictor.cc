@@ -31,6 +31,7 @@
 #include <arch/x86/timing/Timing.h>
 #include <arch/x86/timing/Uop.h>
 
+#include "ObjectPool.h"
 
 namespace x86
 {
@@ -70,50 +71,6 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 }
 
 
-class ObjectPool
-{
-	// A CPU
-	std::unique_ptr<Cpu> cpu;
-
-	// A core
-	std::unique_ptr<Core> core;
-
-	// A thread
-	std::unique_ptr<Thread> thread;
-
-	// A context
-	Context *context;
-
-public:
-
-	/// Contructor
-	ObjectPool()
-	{
-		// Destroy previous singletons
-		Timing::Destroy();
-		Emulator::Destroy();
-
-		// Timing simulator
-		cpu = misc::new_unique<Cpu>();
-		core = misc::new_unique<Core>(cpu.get(), 0);
-		thread = misc::new_unique<Thread>(core.get(), 0);
-
-		// Create a context
-		Emulator *emulator = Emulator::getInstance();
-		context = emulator->newContext();
-	}
-
-	/// Return the core
-	Core *getCore() const { return core.get(); }
-
-	/// Return the thread
-	Thread *getThread() const { return thread.get(); }
-
-	/// Return the context
-	Context *getContext() const { return context; }
-};
-
-
 TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 {
 	// Local variable declaration
@@ -123,8 +80,8 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	unsigned int branch_addr = 0;
 	unsigned int branch_inst_size = 4;
 	unsigned int branch_target_distance = 8;
-	ObjectPool object_pool;
-	
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
 	// Setup configuration file for branch predictor
 	std::string config =
 			"[ BranchPredictor ]\n"
@@ -141,8 +98,8 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// First micro-operation (Taken)
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
 	uops.emplace_back(misc::new_unique<Uop>(
-			object_pool.getThread(),
-			object_pool.getContext(),
+			object_pool->getThread(),
+			object_pool->getContext(),
 			uinst_1));
 	Uop *uop = uops.back().get();
 	uop->eip = branch_addr;
@@ -152,8 +109,8 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Second micro-operation (Not Taken)
 	auto uinst_2 = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
 	uops.emplace_back(misc::new_unique<Uop>(
-			object_pool.getThread(),
-			object_pool.getContext(),
+			object_pool->getThread(),
+			object_pool->getContext(),
 			uinst_2));
 	uop = uops.back().get();
 	uop->eip = branch_addr;
@@ -163,8 +120,8 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Third micro-operation (Not Taken)
 	auto uinst_3 = misc::new_shared<Uinst>(Uinst::OpcodeBranch);
 	uops.emplace_back(misc::new_unique<Uop>(
-			object_pool.getThread(),
-			object_pool.getContext(),
+			object_pool->getThread(),
+			object_pool->getContext(),
 			uinst_2));
 	uop = uops.back().get();
 	uop->eip = branch_addr;
@@ -228,7 +185,7 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 	unsigned int branch_addr;
 	unsigned int branch_inst_size = 4;
 	unsigned int branch_target_distance = 8;
-	ObjectPool object_pool;
+	ObjectPool *object_pool = ObjectPool::getInstance();;
 
 	// Setup configuration file for branch preditor
 	std::string config =
@@ -261,8 +218,8 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		// First micro-operation (Taken)
 		branch_addr = 0;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 		uop->eip = branch_addr;
@@ -272,8 +229,8 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		// Second micro-operation (Not Taken)
 		branch_addr = 16;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 		uop->eip = branch_addr;
@@ -283,8 +240,8 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		// Third micro-operation (Not Taken)
 		branch_addr = 32;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 		uop->eip = branch_addr;
@@ -406,7 +363,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	unsigned int branch_addr;
 	unsigned int branch_inst_size = 4;
 	unsigned int branch_target_distance = 8;
-	ObjectPool object_pool;
+	ObjectPool *object_pool = ObjectPool::getInstance();;
 
 	// Setup configuration file for branch preditor
 	std::string config =
@@ -441,8 +398,8 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		// First micro-operation (Taken)
 		branch_addr = 0;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 		uop->eip = branch_addr;
@@ -452,8 +409,8 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		// Second micro-operation (Not Taken)
 		branch_addr = 16;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 
@@ -465,8 +422,8 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 		// Third micro-operation (Not Taken)
 		branch_addr = 32;
 		uops.emplace_back(misc::new_unique<Uop>(
-				object_pool.getThread(),
-				object_pool.getContext(),
+				object_pool->getThread(),
+				object_pool->getContext(),
 				uinst));
 		uop = uops.back().get();
 
