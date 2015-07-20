@@ -192,7 +192,7 @@ public:
 	unsigned getFinishedThreadCount() const;
 
 	/// Get inst_size
-	int getInstSize() const {return inst_size;}
+	int getInstructionSize() const {return inst_size;}
 
 	//////////////////////////////////////////////////////////////
 
@@ -229,7 +229,7 @@ public:
 
 	void setFinishedEmu (bool value) { finished_emu = value;}
 
-	void setTargetpc ( int target)  {target_pc = target; }
+	void setTargetPC ( int target)  {target_pc = target; }
 
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;
