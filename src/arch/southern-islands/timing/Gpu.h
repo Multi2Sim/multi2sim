@@ -31,9 +31,6 @@
 namespace SI
 {
 
-// Forward declarations
-
-
 /// Class representing a Southern Islands GPU device.
 class Gpu
 {
@@ -73,7 +70,7 @@ public:
 	// Class members
 	//
 
-	/// Last complete cycle
+	/// Last cycle when uop completed execution
 	long long last_complete_cycle;
 
 	/// Constructor

@@ -156,16 +156,16 @@ void Wavefront::Execute()
 	Instruction inst;
 
 	// Reset instruction flags
-	vector_mem_write = 0;
-	vector_mem_read = 0;
-	vector_mem_atomic = 0;
-	scalar_mem_read = 0;
+	vector_memory_write = 0;
+	vector_memory_read = 0;
+	vector_memory_atomic = 0;
+	scalar_memory_read = 0;
 	lds_write = false;
 	lds_read = false;
-	mem_wait = false;
+	memory_wait = false;
 	at_barrier = false;
-	barrier_inst = false;
-	vector_mem_global_coherency = false;
+	barrier_instruction = false;
+	vector_memory_global_coherency = false;
 
 	// Make sure the program has not finished yet
 	assert(!finished);
@@ -214,7 +214,7 @@ void Wavefront::Execute()
 
 		// Stats
 		emulator->incScalarAluInstCount();
-		scalar_alu_inst_count++;
+		scalar_alu_instruction_count++;
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
@@ -235,7 +235,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incScalarAluInstCount();
-		scalar_alu_inst_count++;
+		scalar_alu_instruction_count++;
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
@@ -259,11 +259,11 @@ void Wavefront::Execute()
 			bytes->sopp.op < 10)
 		{
 			emulator->incBranchInstCount();
-			branch_inst_count++;
+			branch_instruction_count++;
 		} else
 		{
 			emulator->incScalarAluInstCount();
-			scalar_alu_inst_count++;
+			scalar_alu_instruction_count++;
 		}
 
 		// Only one work item executes the instruction
@@ -285,7 +285,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incScalarAluInstCount();
-		scalar_alu_inst_count++;
+		scalar_alu_instruction_count++;
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
@@ -306,7 +306,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incScalarAluInstCount();
-		scalar_alu_inst_count++;
+		scalar_alu_instruction_count++;
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
@@ -328,7 +328,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incScalarMemInstCount();
-		scalar_mem_inst_count++;
+		scalar_memory_instruction_count++;
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
@@ -350,7 +350,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 	
 		// Execute the instruction
 		for (auto it = work_items_begin, e = work_items_end;
@@ -376,7 +376,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 
 		// Special case: V_READFIRSTLANE_B32
 		if (bytes->vop1.op == 2)
@@ -433,7 +433,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 	
 		// Execute the instruction
 		for (auto it = work_items_begin, e = work_items_end; 
@@ -461,7 +461,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 	
 		// Execute the instruction
 		for (auto it = work_items_begin, e = work_items_end; 
@@ -489,7 +489,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 	
 		// Execute the instruction
 		for (auto it = work_items_begin, e = work_items_end; 
@@ -517,7 +517,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorAluInstCount();
-		vector_alu_inst_count++;
+		vector_alu_instruction_count++;
 
 		// Execute the instruction
 		for (auto it = work_items_begin, e = work_items_end; 
@@ -545,7 +545,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incLdsInstCount();
-		lds_inst_count++;
+		lds_instruction_count++;
 
 		// Record access type
 		if ((op >= 13 && op < 16) ||
@@ -592,16 +592,16 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorMemInstCount();
-		vector_mem_inst_count++;
+		vector_memory_instruction_count++;
 
 		// Record access type
 		if (op >= 0 && op < 4)
 		{
-			vector_mem_read = true;
+			vector_memory_read = true;
 		}
 		else if (op >= 4 && op < 8)
 		{
-			vector_mem_write = true;
+			vector_memory_write = true;
 		}
 		else
 		{
@@ -634,22 +634,22 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incVectorMemInstCount();
-		vector_mem_inst_count++;
+		vector_memory_instruction_count++;
 
 		// Record access type
 		if ((op >= 0 && op < 4) ||
 			(op >= 8 && op < 15))
 		{
-			vector_mem_read = true;
+			vector_memory_read = true;
 		}
 		else if ((op >= 4 && op < 8) ||
 			(op >= 24 && op < 30))
 		{
-			vector_mem_write = true;
+			vector_memory_write = true;
 		}
 		else if (op == 50)
 		{
-			vector_mem_atomic = true;
+			vector_memory_atomic = true;
 		}
 		else 
 		{
@@ -683,7 +683,7 @@ void Wavefront::Execute()
 		
 		// Stats
 		emulator->incExportInstCount();
-		export_inst_count++;
+		export_instruction_count++;
 
 		// Record access type
 		// FIXME
