@@ -103,7 +103,6 @@ void Thread::ExecuteInst_Special()
 {
 
 	SyncStack* stack = warp->getSyncStack()->get();
-
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
@@ -115,7 +114,7 @@ void Thread::ExecuteInst_Special()
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 
@@ -126,7 +125,6 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	InstBytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
-	Warp* warp = getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -185,11 +183,11 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 		{
 			unsigned zf, sf;
 			zf = (dst == 0) ? 1 : 0;
-			this->WriteCC_ZF(zf);
-			sf = (dst >> 31) & 0x00000001;
-			this->WriteCC_SF(sf);
-			this->WriteCC_CF(0);
-			this->WriteCC_OF(0);
+			WriteCC_ZF(zf);
+			sf = (dst >> 31) & 0x1;
+			WriteCC_SF(sf);
+			WriteCC_CF(0);
+			WriteCC_OF(0);
 		}
 
 		// Write
@@ -198,7 +196,7 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_IMUL_B(Inst *inst)
@@ -209,7 +207,6 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 
 	// Predicates and active masks
 	Emulator *emulator = Emulator::getInstance();
-	Warp *warp = getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -272,11 +269,11 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 		{
 			unsigned zf, sf;
 			zf = (dst == 0) ? 1 : 0;
-			this->WriteCC_ZF(zf);
-			sf = (dst >> 31) & 0x00000001;
-			this->WriteCC_SF(sf);
-			this->WriteCC_CF(0);
-			this->WriteCC_OF(0);
+			WriteCC_ZF(zf);
+			sf = (dst >> 31) & 0x1;
+			WriteCC_SF(sf);
+			WriteCC_CF(0);
+			WriteCC_OF(0);
 		}
 
 		// Write result
@@ -285,7 +282,7 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_ISCADD_A(Inst *inst)
@@ -295,7 +292,6 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	InstBytesISCADD format = inst_bytes.iscadd;
 
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -322,9 +318,9 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -340,7 +336,7 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 
 		// Read src1 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 		src1 = (src1 << shamt) & 0xffffffff;
 
 		// Read src2 value IMM20 mode
@@ -373,36 +369,36 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 
 		// Update zero flag
 		zf = (dst == 0)? 1 : 0;
-		this->WriteCC_ZF(zf);
+		WriteCC_ZF(zf);
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update overflow flag (for signed arithmetic)
 		long long of_tmp, src1_tmp, src2_tmp;
 		src1_tmp = (int) src1;
 		src2_tmp = (int) src2;
 		of_tmp = src1_tmp + src2_tmp + lsb;
-		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
-		this->WriteCC_OF(of);
+		of = ((of_tmp >> 32) & 0x1) ^ ((dst >> 31) & 0x1);
+		WriteCC_OF(of);
 
 		// Update carry flag (for unsigned arithmetic)
 		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
 		src1_tmp1 = src1;
 		src2_tmp1 = src2;
 		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 
@@ -414,7 +410,6 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 
 	// Get Warp
 	Emulator* emu = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -441,9 +436,9 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -459,7 +454,7 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 
 		// Read src1 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 		src1 = (src1 << shamt) & 0xffffffff;
 
 		// Read src2 value Check it
@@ -469,7 +464,7 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 		{
 			unsigned src2_id;
 			src2_id = format.src2;
-			src2 = this->ReadGPR(src2_id);
+			src2 = ReadGPR(src2_id);
 		}
 
 		// Determine least significant bit value for the add
@@ -499,42 +494,41 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
 
 		// Update zero flag
 		zf = (dst == 0)? 1 : 0;
-		this->WriteCC_ZF(zf);
+		WriteCC_ZF(zf);
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update overflow flag (for signed arithmetic)
 		long long of_tmp, src1_tmp, src2_tmp;
 		src1_tmp = (int) src1;
 		src2_tmp = (int) src2;
 		of_tmp = src1_tmp + src2_tmp + lsb;
-		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
-		this->WriteCC_OF(of);
+		of = ((of_tmp >> 32) & 0x1) ^ ((dst >> 31) & 0x1);
+		WriteCC_OF(of);
 
 		// Update carry flag (for unsigned arithmetic)
 		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
 		src1_tmp1 = src1;
 		src2_tmp1 = src2;
 		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_ISAD_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -565,9 +559,9 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -583,11 +577,11 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 	{
 		// Read src1 src2 src3 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 		src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 		unsigned src3_id;
 		src3_id = format.src3;
-		src3 = this->ReadGPR(src3_id);
+		src3 = ReadGPR(src3_id);
 
 		// signed mode
 		if (format.u_s == 1) // sign mode
@@ -612,34 +606,33 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 
 		// Update zero flag
 		zf = (dst == 0) ? 1 : 0;
-		this->WriteCC_ZF(zf);
+		WriteCC_ZF(zf);
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update carry flag (for unsigned arithmetic)
 		src2_tmp1 = src3;
 		cf_tmp = src1_tmp1 + src2_tmp1;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// no Update for overflow flag (for signed arithmetic)
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_ISAD_B(Inst *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -670,9 +663,9 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -688,7 +681,7 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 	{
 		// Read src1 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read src2 value and src3 value
 		if (format.op2 == 1) // src2 is const src3 is register
@@ -696,13 +689,13 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 			unsigned src3_id;
 			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
 			src3_id = format.src3;
-			src3 = this->ReadGPR(src3_id);
+			src3 = ReadGPR(src3_id);
 		}
 		else if ((format.op2 == 2)) // src2 is register src3 is const
 		{
 			unsigned src2_id;
 			src2_id = format.src3;
-			src2 = this->ReadGPR(src2_id);
+			src2 = ReadGPR(src2_id);
 			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src3);
 		}
 		else if (format.op2 == 3) // both src2 src3 register
@@ -710,8 +703,8 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 			unsigned src2_id, src3_id;
 			src2_id = format.src2;
 			src3_id = format.src3;
-			src2 = this->ReadGPR(src2_id);
-			src3 = this->ReadGPR(src3_id);
+			src2 = ReadGPR(src2_id);
+			src3 = ReadGPR(src3_id);
 		}
 
 		// signed mode
@@ -737,27 +730,27 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 
 		// Update zero flag
 		zf = (dst == 0) ? 1 : 0;
-		this->WriteCC_ZF(zf);
+		WriteCC_ZF(zf);
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update carry flag (for unsigned arithmetic)
 		src2_tmp1 = src3;
 		cf_tmp = src1_tmp1 + src2_tmp1;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// no Update for overflow flag (for signed arithmetic)
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_IMAD(Inst *inst)
@@ -768,7 +761,6 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -796,17 +788,17 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
-	if( active == 1 && pred == 1)
+	if ( active == 1 && pred == 1)
 	{
 		// Read
 		src_id = format.mod0;
-		srcA = this->ReadGPR(src_id);
+		srcA = ReadGPR(src_id);
 		src_id = format.mod1 & 0xff;
-		src3 = this->ReadGPR(src_id);
+		src3 = ReadGPR(src_id);
 		if (format.srcB_mod == 0)
 		{
 			src_id = format.srcB;
@@ -815,7 +807,7 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 		else if (format.srcB_mod == 1)
 		{
 			src_id = format.srcB & 0x1ff;
-			srcB = this->ReadGPR(src_id);
+			srcB = ReadGPR(src_id);
 		}
 		else	//check it
 			srcB = src_id >> 18 ? src_id | 0xfff80000 : src_id;
@@ -826,17 +818,17 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 
 		// Write
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-        		<<this->getWarpId() <<" IMAD op0 "<<format.op0;
+        		<<getWarpId() <<" IMAD op0 "<<format.op0;
         std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 
         		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
@@ -857,10 +849,7 @@ void Thread::ExecuteInst_IMADSP_B(Inst *inst)
 void Thread::ExecuteInst_IADD_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
-
-	unsigned active;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -873,7 +862,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	}
 
 	// Active
-	active = 1u & (stack->getActiveMask() >> id_in_warp);
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -888,9 +877,9 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -903,7 +892,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	{
 		// Read src1 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read src2 value
 		if ((format.op0 == 1) && (format.op2 == 1)) // src2 is IMM20
@@ -929,7 +918,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 
 		// Extended precision addition read carry bit
 		if (format.x == 1)
-			lsb = this->ReadCC_CF(); // Illegal to combine .PO and .X
+			lsb = ReadCC_CF(); // Illegal to combine .PO and .X
 
 		// Execute .PO and .X flag
 		dst = src1 + src2 + lsb;
@@ -942,48 +931,48 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 			// Update zero flag
 			if (format.x == 1)
 			{
-				zf = ((dst == 0) && this->ReadCC_ZF()) ? 1 : 0;
-				this->WriteCC_ZF(zf);
+				zf = ((dst == 0) && ReadCC_ZF()) ? 1 : 0;
+				WriteCC_ZF(zf);
 			}
 			else
 			{
 				zf = (dst == 0)? 1 : 0;
-				this->WriteCC_ZF(zf);
+				WriteCC_ZF(zf);
 			}
 
 			// Update sign flag
-			sf = (dst >> 31) & 0x00000001;
-			this->WriteCC_SF(sf);
+			sf = (dst >> 31) & 0x1;
+			WriteCC_SF(sf);
 
 			// Update overflow flag (for signed arithmetic)
 			long long of_tmp, src1_tmp, src2_tmp;
 			src1_tmp = (int) src1;
 			src2_tmp = (int) src2;
 			of_tmp = src1_tmp + src2_tmp + lsb;
-			of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
-			this->WriteCC_OF(of);
+			of = ((of_tmp >> 32) & 0x1) ^ ((dst >> 31) & 0x1);
+			WriteCC_OF(of);
 
 			// Update carry flag (for unsigned arithmetic)
 			unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
 			src1_tmp1 = src1;
 			src2_tmp1 = src2;
 			cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
-			cf = (cf_tmp >> 32) & 0x00000001;
-			this->WriteCC_CF(cf);
+			cf = (cf_tmp >> 32) & 0x1;
+			WriteCC_CF(cf);
 		}
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
-					"= %u\n",inst->getName(),this->id_in_warp);
+					"= %u\n",inst->getName(),id_in_warp);
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
 					,inst->getName(),src1);
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
@@ -997,10 +986,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
-
-	unsigned active;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -1013,7 +999,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	}
 
 	// Active
-	active = 1u & (stack->getActiveMask() >> id_in_warp);
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
@@ -1028,9 +1014,9 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -1043,17 +1029,17 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	{
 		// Read src1 value
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read src2 value
-		if((format.op0 == 2) && (format.op2 == 1)) // src2 is register mode
+		if ((format.op0 == 2) && (format.op2 == 1)) // src2 is register mode
 		{
 			// src2 ID
 			unsigned src2_id;
 
 			// Read src2 value
 			src2_id = format.src2;
-			src2 = this->ReadGPR(src2_id);
+			src2 = ReadGPR(src2_id);
 		}
 		else if (format.op2 == 0) // constant mode
 			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
@@ -1079,7 +1065,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 
 		// Extended precision addition read carry bit
 		if (format.x == 1)
-			lsb = this->ReadCC_CF(); // Illegal to combine .PO and .X
+			lsb = ReadCC_CF(); // Illegal to combine .PO and .X
 
 		// Execute .PO and .X flag
 		dst = src1 + src2 + lsb;
@@ -1090,51 +1076,51 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 		// Update zero flag
 		if (format.x == 1)
 		{
-			zf = ((dst == 0) && this->ReadCC_ZF()) ? 1 : 0;
-			this->WriteCC_ZF(zf);
+			zf = ((dst == 0) && ReadCC_ZF()) ? 1 : 0;
+			WriteCC_ZF(zf);
 		}
 		else
 		{
 			zf = (dst == 0)? 1 : 0;
-			this->WriteCC_ZF(zf);
+			WriteCC_ZF(zf);
 		}
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update overflow flag (for signed arithmetic)
 		long long of_tmp, src1_tmp, src2_tmp;
 		src1_tmp = (int) src1;
 		src2_tmp = (int) src2;
 		of_tmp = src1_tmp + src2_tmp + lsb;
-		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
-		this->WriteCC_OF(of);
+		of = ((of_tmp >> 32) & 0x1) ^ ((dst >> 31) & 0x1);
+		WriteCC_OF(of);
 
 		// Update carry flag (for unsigned arithmetic)
 		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
 		src1_tmp1 = src1;
 		src2_tmp1 = src2;
 		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe current PC is "
 					"= %x\n",inst->getName(),warp->getPC());
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tthe thread ID is "
-					"= %u\n",inst->getName(),this->id_in_warp);
+					"= %u\n",inst->getName(),id_in_warp);
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src1 is = %d\n"
 					,inst->getName(),src1);
 	Emulator::isa_debug << misc::fmt("At instruction %s:\tinput: the src2 is = %d\n"
@@ -1147,10 +1133,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 void Thread::ExecuteInst_IADD32I(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
-
-	unsigned active;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -1163,24 +1146,25 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
 	}
 
 	// Active
-	active = 1u & (stack->getActiveMask() >> id_in_warp);
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesIADD32I format = inst_bytes.iadd32i;
-
-	// Predicate register
-	unsigned pred;
 
 	// Predicate register ID
 	unsigned pred_id;
 
 	// get predicate register value
 	pred_id = format.pred;
+
+	// Predicate register
+	unsigned pred;
+
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -1193,7 +1177,7 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
 	{
 		// Read src1 value
 		src_id = format.src;
-		src = this->ReadGPR(src_id);
+		src = ReadGPR(src_id);
 
 		// Read src2 value Check it
 		imm32 = format.imm32;
@@ -1219,7 +1203,7 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
 
 		// Extended precision addition read carry bit
 		if (format.x == 1)
-			lsb = this->ReadCC_CF(); // Illegal to combine .PO and .X
+			lsb = ReadCC_CF(); // Illegal to combine .PO and .X
 
 		// Execute .PO and .X flag
 		dst = src + imm32 + lsb;
@@ -1230,42 +1214,42 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
 		// Update zero flag
 		if (format.x == 1)
 		{
-			zf = ((dst == 0) && this->ReadCC_ZF()) ? 1 : 0;
-			this->WriteCC_ZF(zf);
+			zf = ((dst == 0) && ReadCC_ZF()) ? 1 : 0;
+			WriteCC_ZF(zf);
 		}
 		else
 		{
 			zf = (dst == 0)? 1 : 0;
-			this->WriteCC_ZF(zf);
+			WriteCC_ZF(zf);
 		}
 
 		// Update sign flag
-		sf = (dst >> 31) & 0x00000001;
-		this->WriteCC_SF(sf);
+		sf = (dst >> 31) & 0x1;
+		WriteCC_SF(sf);
 
 		// Update overflow flag (for signed arithmetic)
 		long long of_tmp, src1_tmp, src2_tmp;
 		src1_tmp = (int) src;
 		src2_tmp = (int) imm32;
 		of_tmp = src1_tmp + src2_tmp + lsb;
-		of = ((of_tmp >> 32) & 0x00000001) ^ ((dst >> 31) & 0x00000001);
-		this->WriteCC_OF(of);
+		of = ((of_tmp >> 32) & 0x1) ^ ((dst >> 31) & 0x1);
+		WriteCC_OF(of);
 
 		// Update carry flag (for unsigned arithmetic)
 		unsigned long long cf_tmp, src1_tmp1, src2_tmp1;
 		src1_tmp1 = src;
 		src2_tmp1 = imm32;
 		cf_tmp = src1_tmp1 + src2_tmp1 + lsb;
-		cf = (cf_tmp >> 32) & 0x00000001;
-		this->WriteCC_CF(cf);
+		cf = (cf_tmp >> 32) & 0x1;
+		WriteCC_CF(cf);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_ISETP_A(Inst *inst)
@@ -1276,7 +1260,6 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -1309,9 +1292,9 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -1321,14 +1304,14 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		x = (format.mod1 >> 4) & 0x1;
 
 		srcA_id = format.mod0;
-		srcA = this->ReadGPR(srcA_id) - (x ? ReadCC_CF() : 0);
+		srcA = ReadGPR(srcA_id) - (x ? ReadCC_CF() : 0);
 		srcB_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
 			emulator->ReadConstMem(srcB_id << 2, 4, (char*)&srcB);
 		}
 		else if (format.srcB_mod == 1)
-			srcB = this->ReadGPR(srcB_id);
+			srcB = ReadGPR(srcB_id);
 
 		// Predicates
 		pred_id_1 = (format.dst >> 3) & 0x7;
@@ -1336,7 +1319,7 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		pred_id_3 = format.mod1 & 0x7;
 
 
-		pred_3 = this->ReadPred(pred_id_3);
+		pred_3 = ReadPred(pred_id_3);
 		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
 
@@ -1382,18 +1365,18 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 		pred_id_1 = (format.dst >> 3) & 0x7;
 		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
-			this->WritePred(pred_id_1, pred_1);
+			WritePred(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
-			this->WritePred(pred_id_2, pred_2);
+			WritePred(pred_id_2, pred_2);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISETP op0 "<<format.op0;
+				<<getWarpId() <<" ISETP op0 "<<format.op0;
 		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<" cmp "<< cmp_op << " bool " << bool_op
@@ -1408,8 +1391,6 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	//emulator* emulator = emulator::getInstance();
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -1441,9 +1422,9 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -1451,7 +1432,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 	{
 		// Sources
 		srcA_id = format.mod0;
-		srcA = this->ReadGPR(srcA_id);
+		srcA = ReadGPR(srcA_id);
 
 		if (format.srcB_mod == 1)
 		{
@@ -1472,7 +1453,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 		pred_id_2 = format.dst & 0x7;
 		pred_id_3 = format.mod1 & 0x7;
 
-		pred_3 = this->ReadPred(pred_id_3);
+		pred_3 = ReadPred(pred_id_3);
 
 		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
@@ -1519,18 +1500,18 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 		pred_id_1 = (format.dst >> 3) & 0x7;
 		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
-			this->WritePred(pred_id_1, pred_1);
+			WritePred(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
-			this->WritePred(pred_id_2, pred_2);
+			WritePred(pred_id_2, pred_2);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" ISETP op0 "<<format.op0;
+				<<getWarpId() <<" ISETP op0 "<<format.op0;
 		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<" cmp "<< cmp_op << " bool " << bool_op
@@ -1542,7 +1523,6 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 void Thread::ExecuteInst_LOP_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -1573,9 +1553,9 @@ void Thread::ExecuteInst_LOP_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1588,7 +1568,7 @@ void Thread::ExecuteInst_LOP_A(Inst *inst)
 	{
 		// Read Src1
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read Src2
 		if (format.op0 == 1) // src2 is IMM20
@@ -1610,18 +1590,17 @@ void Thread::ExecuteInst_LOP_A(Inst *inst)
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_LOP_B(Inst *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -1652,9 +1631,9 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1667,7 +1646,7 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
 	{
 		// Read Src1
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read Src2
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
@@ -1679,7 +1658,7 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
 
 			// Read src2 value
 			src2_id = format.src2;
-			src2 = this->ReadGPR(src2_id);
+			src2 = ReadGPR(src2_id);
 		}
 
 		// Execute
@@ -1699,11 +1678,11 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_EXIT(Inst *inst)
@@ -1713,7 +1692,6 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	//emulator* emulator = emulator::getInstance();
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Predicates and active masks
@@ -1736,9 +1714,9 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	if (id_in_warp == 0)
 		stack->resetTempMask();
@@ -1762,16 +1740,13 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
             if (warp->getFinishedThreadCount() > warp->getThreadCount() )
             	throw misc::Panic("More threads finished than warp thread count.\n");
 
-        warp->setTargetpc(warp->getPC() + warp->getInstSize());
+        warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 	}
 
 }
 
 void Thread::ExecuteInst_BRA(Inst *inst)
 {
-	// Get warp
-	Warp *warp = this->getWarp();
-
 	// Get SyncStack
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -1790,7 +1765,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	unsigned target_pc = pc;
 
 	// Get Instruction size
-	unsigned inst_size = warp->getInstSize();
+	unsigned inst_size = warp->getInstructionSize();
 
 	// Get instruction offset
 	int offset = format.offset >> 23 ?
@@ -1824,10 +1799,10 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id-8);
+		pred = !ReadPred(pred_id-8);
 
 	// Clear temp_entry and taken_thread before BRA execute
 	if (id_in_warp == 0)
@@ -1838,7 +1813,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	// The threads taking the BRA will set temp_entry's mask to 1
 	// This mask will be pushed into stack then.
 	// taken_thread adds 1
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		stack->setTempMaskBit(id_in_warp);
 	}
@@ -1862,7 +1837,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         //  no thread in the active mask taken branch
         if (!taken_thread)
         {
-        	warp->setTargetpc(pc + inst_size);
+        	warp->setTargetPC(pc + inst_size);
         }
 
         // If all threads in warp take the BRA
@@ -1872,7 +1847,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         	target_pc = pc + inst_size + offset;
 
         	// Update pc
-        	warp->setTargetpc(target_pc);
+        	warp->setTargetPC(target_pc);
 
         	// Pop all entries in syncstack between current pc and target pc
         	stack->popTillTarget(target_pc, warp->getPC());
@@ -1883,7 +1858,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         {
         	assert(branch_direction == 1 || branch_direction == 0);
 
-        	if(branch_direction == 0)
+        	if (branch_direction == 0)
         	{
         		// push reconvergence pc and the active mask at that pc into stack
         		// Clear all current active mask bits taking the BRA.
@@ -1900,7 +1875,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         		assert(active_thread ==
         				stack->getActiveMaskBitCount() + taken_thread);
 
-        		warp->setTargetpc(pc + inst_size);
+        		warp->setTargetPC(pc + inst_size);
 
         	}
 
@@ -1912,12 +1887,12 @@ void Thread::ExecuteInst_BRA(Inst *inst)
        			// no thread takes the BRA
        			if (!taken_thread)
        			{
-       				warp->setTargetpc(pc + inst_size);
+       				warp->setTargetPC(pc + inst_size);
        			}
        			// all active threads take the BRA
        			else if (taken_thread == active_thread)
       			{
-       				warp->setTargetpc(pc + inst_size + offset);
+       				warp->setTargetPC(pc + inst_size + offset);
        			}
        			else
         		// predicated backward BRA, appearing in do while loop.
@@ -1925,10 +1900,10 @@ void Thread::ExecuteInst_BRA(Inst *inst)
         		{
         			target_pc = pc + inst_size + offset;
         			stack->setActiveMask(stack->getTempMask());
-        			warp->setTargetpc(target_pc);
+        			warp->setTargetPC(target_pc);
 
         			// There is supposed to be no entries between the pcs.
-        			if(stack->popTillTarget(target_pc, pc))
+        			if (stack->popTillTarget(target_pc, pc))
         				throw misc::Panic("Stack entries found between pc to"
         						" target pc when backward BRA\n");
         		}
@@ -1941,8 +1916,8 @@ void Thread::ExecuteInst_MOV_A(Inst *inst)
 {
 	std::cerr << "MOV_A" << std::endl;
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
-	this->ISAUnsupportedFeature(inst);
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
+	ISAUnsupportedFeature(inst);
 }
 
 void Thread::ExecuteInst_MOV_B(Inst *inst)
@@ -1953,7 +1928,6 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -1980,9 +1954,9 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -1994,25 +1968,25 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 			emulator->ReadConstMem(src_id << 2, 4, (char*)&src);
 		}
 		else if (format.srcB_mod == 1)
-			//src = this->ReadGPR(src_id);
-			this->Read_register(&src, src_id);
+			//src = ReadGPR(src_id);
+			Read_register(&src, src_id);
 
 		/* Execute */
 		dst = src;
 
 		/* Write */
 		dst_id = format.dst;
-		//this->WriteGPR(dst_id, dst);
-		this->Write_register(&dst, dst_id);
+		//WriteGPR(dst_id, dst);
+		Write_register(&dst, dst_id);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-        		<<this->getWarpId() <<" MOV_B op0 "<<format.op0;
+        		<<getWarpId() <<" MOV_B op0 "<<format.op0;
         std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
         		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
         		<<std::endl;
@@ -2023,7 +1997,6 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 void Thread::ExecuteInst_MOV32I(Inst *inst)
 {
 	// Get warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2053,10 +2026,10 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 	// Operands ID
 	unsigned dst_id;
@@ -2065,9 +2038,9 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 	RegValue src;
 
 	// Execute
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
-		if(format.s == 0)
+		if (format.s == 0)
 			{
 				// Read source immediate
 				src.u32 = format.imm32;
@@ -2076,7 +2049,7 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 				dst_id = format.dst;
 
 				// Write the src value to destination register
-				this->WriteGPR(dst_id, src.u32);
+				WriteGPR(dst_id, src.u32);
 
 			}
 		else
@@ -2086,13 +2059,12 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_SEL_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2123,9 +2095,9 @@ void Thread::ExecuteInst_SEL_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2138,7 +2110,7 @@ void Thread::ExecuteInst_SEL_A(Inst *inst)
 	{
 		// Read Src1
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read Src2
 		if (format.op0 == 1) // src2 is IMM20
@@ -2147,25 +2119,24 @@ void Thread::ExecuteInst_SEL_A(Inst *inst)
 		// Read Predicate Src
 		pred_src_id = format.pred_src;
 		if (pred_src_id <= 7)
-			pred_src = this->ReadPred(pred_src_id);
+			pred_src = ReadPred(pred_src_id);
 		else
-			pred_src = ! this->ReadPred(pred_src_id - 8);
+			pred_src = ! ReadPred(pred_src_id - 8);
 
 		// Execute
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
-		this->Write_register(&dst, dst_id);
+		Write_register(&dst, dst_id);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_SEL_B(Inst *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2196,9 +2167,9 @@ void Thread::ExecuteInst_SEL_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2211,7 +2182,7 @@ void Thread::ExecuteInst_SEL_B(Inst *inst)
 	{
 		// Read Src1
 		src1_id = format.src1;
-		src1 = this->ReadGPR(src1_id);
+		src1 = ReadGPR(src1_id);
 
 		// Read Src2
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
@@ -2223,30 +2194,29 @@ void Thread::ExecuteInst_SEL_B(Inst *inst)
 
 			// Read src2 value
 			src2_id = format.src2;
-			src2 = this->ReadGPR(src2_id);
+			src2 = ReadGPR(src2_id);
 		}
 
 		// Read Predicate Src
 		pred_src_id = format.pred_src;
 		if (pred_src_id <= 7)
-			pred_src = this->ReadPred(pred_src_id);
+			pred_src = ReadPred(pred_src_id);
 		else
-			pred_src = ! this->ReadPred(pred_src_id - 8);
+			pred_src = ! ReadPred(pred_src_id - 8);
 
 		// Execute
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
-		this->Write_register(&dst, dst_id);
+		Write_register(&dst, dst_id);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_I2F_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2277,9 +2247,9 @@ void Thread::ExecuteInst_I2F_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2296,33 +2266,32 @@ void Thread::ExecuteInst_I2F_A(Inst *inst)
 			src = format.src >> 18 ? format.src | 0xfff80000 : format.src;
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 
 		// Absolute Value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = abs(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 			dst = src;
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_I2F_B(Inst *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2353,9 +2322,9 @@ void Thread::ExecuteInst_I2F_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2377,35 +2346,34 @@ void Thread::ExecuteInst_I2F_B(Inst *inst)
 
 			// Read src2 value
 			src_id = format.src;
-			src = this->ReadGPR(src_id);
+			src = ReadGPR(src_id);
 		}
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 		// Absolute value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = abs(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 			dst = src;
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_I2I_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2436,9 +2404,9 @@ void Thread::ExecuteInst_I2I_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2454,33 +2422,32 @@ void Thread::ExecuteInst_I2I_A(Inst *inst)
 			src = format.src >> 18 ? format.src | 0xfff80000 : format.src;
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 
 		// Absolute Value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = abs(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 			dst = src;
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_I2I_B(Inst *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2511,9 +2478,9 @@ void Thread::ExecuteInst_I2I_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2534,35 +2501,34 @@ void Thread::ExecuteInst_I2I_B(Inst *inst)
 
 			// Read src2 value
 			src_id = format.src;
-			src = this->ReadGPR(src_id);
+			src = ReadGPR(src_id);
 		}
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 		// Absolute value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = abs(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 			dst = src;
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_F2I_A(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2593,9 +2559,9 @@ void Thread::ExecuteInst_F2I_A(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2611,22 +2577,22 @@ void Thread::ExecuteInst_F2I_A(Inst *inst)
 		if (format.op0 == 1) // src2 is IMM20
 		{
 			src = format.src;
-			if(format.s_fmt == 2) // FP32
+			if (format.s_fmt == 2) // FP32
 				src = format.src << 12;
 			else
-				this->ISAUnsupportedFeature(inst); // FP16 or FP64 not supported yet
+				ISAUnsupportedFeature(inst); // FP16 or FP64 not supported yet
 		}
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 
 		// Absolute Value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = fabsf(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 		{
 			if (format.round == 0)
 				dst = roundf(src);
@@ -2638,22 +2604,21 @@ void Thread::ExecuteInst_F2I_A(Inst *inst)
 				dst = truncf(src);
 		}
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_F2I_B(Inst *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2684,9 +2649,9 @@ void Thread::ExecuteInst_F2I_B(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2709,19 +2674,19 @@ void Thread::ExecuteInst_F2I_B(Inst *inst)
 
 			// Read src value
 			src_id = format.src;
-			src = this->ReadFloatGPR(src_id);
+			src = ReadFloatGPR(src_id);
 		}
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
 
 		// Absolute Value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = fabsf(src);
 
 		// Execute
-		if(format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
 		{
 			if (format.round == 0)
 				dst = roundf(src);
@@ -2733,25 +2698,25 @@ void Thread::ExecuteInst_F2I_B(Inst *inst)
 				dst = truncf(src);
 		}
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_F2F_A(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_F2F_B(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_LD(Inst *inst)
@@ -2762,7 +2727,7 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
+
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -2791,18 +2756,18 @@ void Thread::ExecuteInst_LD(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		if(format.op1 & 0x1) 	//offset direction
-			addr = this->ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
+		if (format.op1 & 0x1) 	//offset direction
+			addr = ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
 		else
-			addr = this->ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
+			addr = ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
 
 		data_type = (format.op1 >> 2) & 0x7;
 
@@ -2815,25 +2780,25 @@ void Thread::ExecuteInst_LD(Inst *inst)
 
 		/* Write */
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst[0]);
+		WriteGPR(dst_id, dst[0]);
 
 
 		if (data_type > 4)
-			this->WriteGPR(dst_id + 1, dst[1]);
+			WriteGPR(dst_id + 1, dst[1]);
 		if (data_type > 5)
 		{
-			this->WriteGPR(dst_id + 2, dst[2]);
-			this->WriteGPR(dst_id + 3, dst[3]);
+			WriteGPR(dst_id + 2, dst[2]);
+			WriteGPR(dst_id + 3, dst[3]);
 		}
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" LD op0 "<<format.op0;
+				<<getWarpId() <<" LD op0 "<<format.op0;
 		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
@@ -2844,14 +2809,12 @@ void Thread::ExecuteInst_LD(Inst *inst)
 void Thread::ExecuteInst_LDS(Inst *inst)
 {
 	// Inst bytes format
-
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
+
 	SyncStack* stack = warp->getSyncStack()->get();
-	ThreadBlock* thread_block = this->thread_block;
 
 	unsigned pred;
 	unsigned pred_id;
@@ -2879,9 +2842,9 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2940,7 +2903,7 @@ void Thread::ExecuteInst_LDS(Inst *inst)
 
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_LDC(Inst *inst)
@@ -2960,7 +2923,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 	// Predicates and active masks
 	Emulator *emulator = Emulator::getInstance();
-	Warp* warp = this->getWarp();
+
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -2982,15 +2945,15 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 	// Predicate
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id -8);
+		pred = !ReadPred(pred_id -8);
 
 	// Execute
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
-	    if(format.u_or_s == 4) // default case, unsigned 32
+	    if (format.u_or_s == 4) // default case, unsigned 32
 		{
 			// Read
 			// read GPR
@@ -3001,7 +2964,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 			srcB_id2 = format.src2_2;   // FIXME
 
 			// read register value
-			srcA.s32 = this->ReadGPR(srcA_id);
+			srcA.s32 = ReadGPR(srcA_id);
 
 			// Caculate mem_addr and read const mem
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
@@ -3012,9 +2975,9 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 			// Write
 			dst_id = format.dst;
-			this->WriteGPR(dst_id, dst.u32);
+			WriteGPR(dst_id, dst.u32);
 		}
-	    else if(format.u_or_s == 5)
+	    else if (format.u_or_s == 5)
 	    {
 			// Read
 			// read GPR
@@ -3025,7 +2988,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 			srcB_id2 = format.src2_2;   // FIXME
 
 			// read register value
-			srcA.s32 = this->ReadGPR(srcA_id);
+			srcA.s32 = ReadGPR(srcA_id);
 
 			// Caculate mem_addr and read const mem
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
@@ -3038,7 +3001,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 			// Write
 			dst_id = format.dst;
-			this->WriteGPR(dst_id, dst.u32);
+			WriteGPR(dst_id, dst.u32);
 
 			// Read the upper 32 bits
 			emulator->ReadConstMem(mem_addr + 4, 4, (char*)&srcB.u32);
@@ -3047,7 +3010,7 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 			dst.u32 = srcB.u32;
 
 			// Write the upper 32 bits
-			this->WriteGPR(dst_id + 1, dst.u32);
+			WriteGPR(dst_id + 1, dst.u32);
 	    }
 		else
 		{
@@ -3058,12 +3021,12 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-                 <<this->getWarpId() <<" LDC op0 "<<format.op0;
+                 <<getWarpId() <<" LDC op0 "<<format.op0;
         std::cerr<<" dst " <<format.dst <<" src1 " <<format.src1 << " pred " <<format.pred << " S " <<format.s
                  <<" src2_2 " <<format.src2_2 << " src2_1 "<< format.src2_1 <<" IS " <<format.is <<" u_or_s"
 				 <<format.u_or_s << "op1" << format.op1 <<std::endl;
@@ -3074,13 +3037,11 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 void Thread::ExecuteInst_ST(Inst *inst)
 {
 	// Inst bytes format
-
 	InstBytes inst_bytes = inst->getInstBytes();
 	InstBytesGeneral0 format = inst_bytes.general0;
 	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -3109,27 +3070,27 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
 	{
 		// Read
-		if(format.op1 & 0x1) 	//offset direction
-			addr = this->ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
+		if (format.op1 & 0x1) 	//offset direction
+			addr = ReadGPR(format.mod0) - (format.mod1 << 19) - format.srcB;
 		else
-			addr = this->ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
+			addr = ReadGPR(format.mod0) + (format.mod1 << 19) + format.srcB;
 		data_type = (format.op1 >> 2) & 0x7;
 		src_id = format.dst;
-		src[0] = this->ReadGPR(src_id);
+		src[0] = ReadGPR(src_id);
 		if (data_type > 4)
-			src[1] = this->ReadGPR(src_id + 1);
+			src[1] = ReadGPR(src_id + 1);
 		if (data_type > 5)										//Really? FIXME
 		{
-			src[2] = this->ReadGPR(src_id + 2);
-			src[3] = this->ReadGPR(src_id + 3);
+			src[2] = ReadGPR(src_id + 2);
+			src[3] = ReadGPR(src_id + 3);
 		}
 
 		// Execute
@@ -3142,12 +3103,12 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
         std::cerr<< "Warp id "<< std::hex
-                 <<this->getWarpId() <<" ST op0 "<<format.op0;
+                 <<getWarpId() <<" ST op0 "<<format.op0;
         std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
                  <<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
                  <<std::endl;
@@ -3161,9 +3122,7 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
-	ThreadBlock* thread_block = this->thread_block;
 
 	unsigned pred;
 	unsigned pred_id;
@@ -3191,9 +3150,9 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -3251,18 +3210,18 @@ void Thread::ExecuteInst_STS(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
 }
 
 void Thread::ExecuteInst_DADD(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_FFMA(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 
@@ -3272,7 +3231,6 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	Emulator* emulator = Emulator::getInstance();
 
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 
@@ -3304,9 +3262,9 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3359,7 +3317,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 
@@ -3369,7 +3327,6 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	Emulator* emulator = Emulator::getInstance();
 
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 
@@ -3401,9 +3358,9 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3456,13 +3413,12 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_MUFU(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -3493,9 +3449,9 @@ void Thread::ExecuteInst_MUFU(Inst *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned src_id, dst_id;
@@ -3508,34 +3464,34 @@ void Thread::ExecuteInst_MUFU(Inst *inst)
 	{
 		// Read src2 value
 		src_id = format.src;
-		src = this->ReadFloatGPR(src_id);
+		src = ReadFloatGPR(src_id);
 
 		// Negate
-		if(format.src_negate == 1)
+		if (format.src_negate == 1)
 			src = -src;
+
 		// Absolute value
-		if(format.src_abs == 1)
+		if (format.src_abs == 1)
 			src = abs(src);
 
 		// Execute
-		if(format.mufu_op == 4) // RCP mode
-			dst = 1.0f/src;
+		if (format.mufu_op == 4) // RCP mode
+			dst = 1.0f / src;
 		else
-			this->ISAUnsupportedFeature(inst);
+			ISAUnsupportedFeature(inst);
 
 		// Write Result
 		dst_id = format.dst;
-		this->WriteFloatGPR(dst_id, dst);
+		WriteFloatGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_NOP(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -3565,7 +3521,7 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_S2R(Inst *inst)
@@ -3575,7 +3531,6 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -3602,9 +3557,9 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3612,27 +3567,27 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 		/* Read */
 		src_id = format.srcB & 0xff;
 		if (src_id == SR_CLOCKLO)	//No cycle count for now
-			;//src = this->grid->emulator->inst_count & 0xffffffff;
+			;//src = grid->emulator->inst_count & 0xffffffff;
 		else if (src_id == SR_CLOCKHI)
-			;//src = (this->grid->emulator->inst_count >> 32) & 0xffffffff;
+			;//src = (grid->emulator->inst_count >> 32) & 0xffffffff;
 		else if (format.srcB_mod == 1)
-			src = this->ReadSR(src_id);
+			src = ReadSR(src_id);
 
 		// Execute
 		dst = src;
 
 		// Write
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" S2R op0 "<<format.op0;
+				<<getWarpId() <<" S2R op0 "<<format.op0;
 		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
@@ -3643,7 +3598,6 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 void Thread::ExecuteInst_PSETP(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -3673,10 +3627,10 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id, srcB_id, srcC_id;
@@ -3688,34 +3642,34 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 	unsigned bool_op0, bool_op1;
 
 	// Execute
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		// Read SrcA id
 		srcA_id = format.pred2;
 
 		// Get SrcA value
-		if(srcA_id <= 7)
-			srcA = this->ReadPred(srcA_id);
+		if (srcA_id <= 7)
+			srcA = ReadPred(srcA_id);
 		else
-			srcA = !this->ReadPred(srcA_id - 8);
+			srcA = !ReadPred(srcA_id - 8);
 
 		// Read SrcB id
 		srcB_id = format.pred3;
 
 		// Get SrcB value
-		if(srcB_id <= 7)
-			srcB = this->ReadPred(srcB_id);
+		if (srcB_id <= 7)
+			srcB = ReadPred(srcB_id);
 		else
-			srcB = !this->ReadPred(srcB_id - 8);
+			srcB = !ReadPred(srcB_id - 8);
 
 		// Read SrcC id
 		srcC_id = format.pred4;
 
 		// Get SrcC value
-		if(srcC_id <= 7)
-			srcC = this->ReadPred(srcC_id);
+		if (srcC_id <= 7)
+			srcC = ReadPred(srcC_id);
 		else
-			srcC = !this->ReadPred(srcC_id - 8);
+			srcC = !ReadPred(srcC_id - 8);
 
 		// Get Opcode
 		bool_op0 = format.bool_op0;
@@ -3742,17 +3696,17 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 
 		// Write Result
 		dst_id = format.pred0;
-		this->WritePred(dst_id, dst);
+		WritePred(dst_id, dst);
 
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_SHF(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_BAR(Inst *inst)
@@ -3763,7 +3717,6 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	InstBytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -3787,9 +3740,9 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3818,12 +3771,12 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" S2R op0 "<<format.op0;
+				<<getWarpId() <<" S2R op0 "<<format.op0;
 		std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " <<format.srcB
 				<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
 				<<std::endl;
@@ -3832,27 +3785,27 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 
 void Thread::ExecuteInst_BPT(Inst *inst)
 {
-	//this->ISAUnimplemented(inst);
+	//ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_JMX(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_JMP(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_JCAL(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_BRX(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_CAL(Inst *inst)
@@ -3862,7 +3815,6 @@ void Thread::ExecuteInst_CAL(Inst *inst)
 	InstBytesCAL format = inst_bytes.cal;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Get instruction offset
@@ -3891,9 +3843,9 @@ void Thread::ExecuteInst_CAL(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3917,18 +3869,18 @@ void Thread::ExecuteInst_CAL(Inst *inst)
 			warp->getReturnAddressStack()->get()->push(warp->getPC() + 8,
 					stack->getActiveMask(), sync_stack);
 
-			warp->setTargetpc(warp->getPC() + offset + warp->getInstSize());
+			warp->setTargetPC(warp->getPC() + offset + warp->getInstructionSize());
 		}
 		else
 		{
-			warp->setTargetpc(warp->getPC() + warp->getInstSize());
+			warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 		}
 	}
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr<< "Warp id "<< std::hex
-				<<this->getWarpId() <<" CAL op0 "<<format.op0 << " offset "
+				<<getWarpId() <<" CAL op0 "<<format.op0 << " offset "
 				<<format.offset << " op1 "<< format.op1 <<std::endl;
 	}
 }
@@ -3936,21 +3888,18 @@ void Thread::ExecuteInst_CAL(Inst *inst)
 
 void Thread::ExecuteInst_PRET(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_PLONGJMP(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_SSY(Inst *inst)
 {
 	// Get emulator
     Emulator *emulator = Emulator::getInstance();
-
-	// Get warp
-	Warp *warp = this->getWarp();
 
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3982,14 +3931,14 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	offset = format.offset;
 
 	// Execute at the last thread in warp
-	if(id_in_warp == warp->getThreadCount() - 1)
+	if (id_in_warp == warp->getThreadCount() - 1)
 	{
 		if (isconstmem == 0)
 		{
 			// Push SSY instruction into stack and set the reconvergence address
 			pc = warp->getPC();
 
-			address = offset + pc + warp->getInstSize();
+			address = offset + pc + warp->getInstructionSize();
 		}
 		else
         {
@@ -4004,14 +3953,11 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_PBK(Inst *inst)
 {
-	// Get warp
-	Warp* warp = this->getWarp();
-
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -4046,7 +3992,7 @@ void Thread::ExecuteInst_PBK(Inst *inst)
         {
         // Get operand value
                 if (format.offset >> 23 == 0)
-                    address = format.offset + warp->getPC() + warp->getInstSize();
+                    address = format.offset + warp->getPC() + warp->getInstructionSize();
                 else
                         //means offset is negative value
                         throw misc::Panic("Negative PKB address offset."
@@ -4060,15 +4006,12 @@ void Thread::ExecuteInst_PBK(Inst *inst)
     }
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 
 void Thread::ExecuteInst_PCNT(Inst *inst)
 {
-	// Get warp
-	Warp* warp = this->getWarp();
-
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -4104,7 +4047,7 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
         {
         // Get operand value
                 if (format.offset >> 23 == 0)
-                    address = format.offset + warp->getPC() + warp->getInstSize();
+                    address = format.offset + warp->getPC() + warp->getInstructionSize();
                 else
                         //means offset is negative value
                         throw misc::Panic("Negative PCNT address offset."
@@ -4118,7 +4061,7 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
     }
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 
@@ -4130,7 +4073,7 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
-	Warp* warp = this->getWarp();
+
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -4159,16 +4102,16 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
 	{
 		/* Read */
 		src_id = format.mod0;
-		srcA = this->ReadGPR(src_id);
+		srcA = ReadGPR(src_id);
 		src_id = format.srcB;
 
 		// FIXME == 0 has not been observed.
@@ -4189,47 +4132,47 @@ void Thread::ExecuteInst_BFE(Inst *inst)
 
 		/* Write */
 		dst_id = format.dst;
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
     std::cerr<< "Warp id "<< std::hex
-      		<<this->getWarpId() <<" BFE op0 "<<format.op0;
+      		<<getWarpId() <<" BFE op0 "<<format.op0;
     std::cerr<<" dst " <<format.dst <<" mod0 " <<format.mod0 << " s " <<format.s << " srcB " << srcB
        		<<" mod1 " <<format.mod1 << " op1 "<< format.op1 <<" srcB_mod " <<format.srcB_mod
        		<<std::endl;
 	}
-	//this->ISAUnimplemented(inst);
+	//ISAUnimplemented(inst);
 }
 
 
 void Thread::ExecuteInst_GETCRSPTR(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_GETLMEMBASE(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_SETCRSPTR(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_SETLMEMBASE(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_LONGJMP(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_RET(Inst *inst)
@@ -4240,7 +4183,6 @@ void Thread::ExecuteInst_RET(Inst *inst)
 	InstBytesGeneral2 format = inst_bytes.general2;
 
 	// Predicates and active masks
-	Warp* warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 	ReturnAddressStack* ret_stack = warp->getReturnAddressStack()->get();
 
@@ -4268,9 +4210,9 @@ void Thread::ExecuteInst_RET(Inst *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+		pred = ReadPred(pred_id);
 	else
-		pred = ! this->ReadPred(pred_id - 8);
+		pred = ! ReadPred(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4298,32 +4240,29 @@ void Thread::ExecuteInst_RET(Inst *inst)
         		<< "	A.M.	" << stack->getActiveMask()<< std::endl;
         stack->Dump(std::cout);
         */
-        warp->setTargetpc(return_addr);
+        warp->setTargetPC(return_addr);
 	}
 
-	if(getenv("M2S_KPL_ISA_DEBUG"))
+	if (getenv("M2S_KPL_ISA_DEBUG"))
 	{
 		std::cerr << "RET Warp id "<< std::hex
-				<<this->getWarpId() <<" op0 "<<format.op0
+				<<getWarpId() <<" op0 "<<format.op0
 				<< " offset " <<format.mod << " mod "<< format.op1 << std::endl;
 		std::cerr << "From " << std::hex << warp->getPC() << " to "
 				<< return_addr << std::endl;
 	}
 
-	//this->ISAUnimplemented(inst);
+	//ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_KIL(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 
 void Thread::ExecuteInst_BRK(Inst *inst)
 {
-	// Get warp
-	Warp *warp = this->getWarp();
-
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -4356,10 +4295,10 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 
 	// Execute
@@ -4384,14 +4323,14 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 		if (stack->checkBRK(PBK_addr) && stack->getActiveMask() == 0)
 		{
 			// update pc
-			warp->setTargetpc(PBK_addr);
+			warp->setTargetPC(PBK_addr);
 
 			// Pop all entries in stack until the first PBK
 			stack->popTillTarget(PBK_addr, warp->getPC());
 		}
 		else
 		{
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 		}
 	}
 }
@@ -4399,9 +4338,6 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 
 void Thread::ExecuteInst_CONT(Inst *inst)
 {
-	// Get warp
-	Warp *warp = this->getWarp();
-
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
 
@@ -4421,7 +4357,7 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 	//unsigned target_pc;
 
 	// Get Instruction size
-	unsigned inst_size = warp->getInstSize();
+	unsigned inst_size = warp->getInstructionSize();
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -4438,14 +4374,14 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id-8);
+		pred = !ReadPred(pred_id-8);
 
 	// Set the latest PCNT active thread mask
 	// Clear active mask bit of specific all entries before the PCNT
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		stack->mask(id_in_warp, SyncStackMaskCONT);
 
@@ -4462,63 +4398,62 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 		// and then pop all entries before the target pc.
 		if (stack->checkCONT(target_pc))
 		{
-			warp->setTargetpc(target_pc);
+			warp->setTargetPC(target_pc);
 			stack->popTillTarget(target_pc, pc);
 		}
 		else
-			warp->setTargetpc(pc + inst_size);
+			warp->setTargetPC(pc + inst_size);
 	}
 }
 
 void Thread::ExecuteInst_RTT(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_SAM(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_RAM(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_IDE(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_LOP32I(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_FADD32I(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_FFMA32I(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_IMAD32I(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_ISCADD32I(Inst *inst)
 {
-	this->ISAUnimplemented(inst);
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_SHL(Inst *inst)
 {
 	// Get Warp
-	Warp *warp = this->getWarp();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -4548,10 +4483,10 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 
 	// Get predicate register value
 	pred_id = format.pred;
-	if(pred_id <= 7)
-		pred = this->ReadPred(pred_id);
+	if (pred_id <= 7)
+		pred = ReadPred(pred_id);
 	else
-		pred = !this->ReadPred(pred_id - 8);
+		pred = !ReadPred(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id; //srcB_id to be added for register
@@ -4560,13 +4495,13 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 	unsigned srcA, srcB, dst;
 
 	// Execute
-	if(active == 1 && pred == 1)
+	if (active == 1 && pred == 1)
 	{
 		// Read SrcA id
 		srcA_id = format.src1;
 
 		// Get SrcA value
-		srcA = this->ReadGPR(srcA_id);
+		srcA = ReadGPR(srcA_id);
 
 		// Read SrcB
 		if ((format.op2 == 1) && (format.op0 == 1)) // src2 is immediate value
@@ -4585,11 +4520,11 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 		dst = srcA << srcB;
 
 		// Write the value to destination register
-		this->WriteGPR(dst_id, dst);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
-            warp->setTargetpc(warp->getPC() + warp->getInstSize());
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 
 }
 
