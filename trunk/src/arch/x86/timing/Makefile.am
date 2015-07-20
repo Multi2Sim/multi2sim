@@ -5,17 +5,20 @@ libtiming_a_SOURCES = \
 	Alu.h \
 	Alu.cc \
 	\
-	Uop.h \
-	Uop.cc \
+	BranchPredictor.h \
+	BranchPredictor.cc \
+	\
+	Core.h \
+	Core.cc \
+	\
+	Cpu.h \
+	Cpu.cc \
+	\
+	FunctionalUnit.h \
+	FunctionalUnit.cc \
 	\
 	RegisterFile.h \
 	RegisterFile.cc \
-	\
-	TraceCache.h \
-	TraceCache.cc \
-	\
-	BranchPredictor.h \
-	BranchPredictor.cc \
 	\
 	Thread.h \
 	Thread.cc \
@@ -24,14 +27,14 @@ libtiming_a_SOURCES = \
 	ThreadDispatch.cc \
 	ThreadIssue.cc \
 	\
-	Core.h \
-	Core.cc \
-	\
-	Cpu.h \
-	Cpu.cc \
-	\
 	Timing.h \
-	Timing.cc
+	Timing.cc \
+	\
+	TraceCache.h \
+	TraceCache.cc \
+	\
+	Uop.h \
+	Uop.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

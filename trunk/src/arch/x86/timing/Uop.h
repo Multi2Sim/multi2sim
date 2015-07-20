@@ -394,8 +394,8 @@ public:
 	// True if uop finished execution
 	bool completed = false;
 
-	// First cycle when functional unit is tried to be reserved
-	long long first_cycle_try_reserve = 0;
+	// First cycle when functional unit is tried to be reserved for this uop
+	long long first_alu_cycle = 0;
 };
 
 }

@@ -23,11 +23,13 @@
 #include <arch/x86/emulator/Uinst.h>
 #include <lib/cpp/IniFile.h>
 
+#include "FunctionalUnit.h"
+
 
 namespace x86
 {
 
-// Forward declaration
+// Forward declarations
 class Timing;
 class Uop;
 
@@ -35,98 +37,61 @@ class Uop;
 /// Class representing the arithmetic-logic unit
 class Alu
 {
+	//
+	// Static fields
+	//
+
+	// Table indexed by a micro-instruction opcode returning the type
+	// of functional unit required by that micro-instruction.
+	static const FunctionalUnit::Type type_table[Uinst::OpcodeCount];
+
+	// Configuration of each functional unit, given as three integers:
+	//	0 -> Number of instances
+	//	1 -> Total operation latency
+	//	2 -> Issue latency
+	static int configuration[FunctionalUnit::TypeCount][3];
+
+
+
+
+	//
+	// Class members
+	//
+
+	// Vector of functional units, indexed by a functional unit type
+	std::vector<std::unique_ptr<FunctionalUnit>> functional_units;
+
 public:
 
-	/// Maximum number of reserved functional unit
-	static const int MaxFunctionalUnitReservation = 10;
-
-	/// Functional unit type
-	enum Type
-	{
-		TypeNone = 0,
-		TypeIntAdd,
-		TypeIntMult,
-		TypeIntDiv,
-		TypeEffaddr,
-		TypeLogic,
-		TypeFloatSimple,
-		TypeFloatAdd,
-		TypeFloatComp,
-		TypeFloatMult,
-		TypeFloatDiv,
-		TypeFloatComplex,
-		TypeXmmIntAdd,
-		TypeXmmIntMult,
-		TypeXmmIntDiv,
-		TypeXmmLogic,
-		TypeXmmFloatAdd,
-		TypeXmmFloatCompare,
-		TypeXmmFloatMult,
-		TypeXmmFloatDiv,
-		TypeXmmFloatConv,
-		TypeXmmFloatComplex,
-		TypeCount
-	};
-
-	/// Structure of functional unit reservation pool
-	struct ReservationPool
-	{
-		int count;
-		int operation_latency;
-		int issue_latency;
-	};
-
-private:
-
 	//
-	// Functional unit parameters
+	// Static functions
 	//
-
-	// Cycle count when functional unit is free
-	long long cycle_when_free[TypeCount][MaxFunctionalUnitReservation] = {};
-
-	// Access count of functional unit
-	long long accesses[TypeCount] = {};
-
-	// Denied count of functional unit
-	long long denied[TypeCount] = {};
-
-	// Waiting time of functional unit
-	long long waiting_time[TypeCount] = {};
-
-
-
-
-	//
-	// Static members
-	//
-
-	// The name of the functional unit
-	static std::string name[TypeCount];
-
-	// Reservation pool
-	static ReservationPool reservation_pool[TypeCount];
-
-	// Functional Unit type table
-	static Type type_table[Uinst::OpcodeCount];
-
-public:
 
 	/// Read functional unit configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
-	/// Dump configuration
-	void DumpConfiguration(std::ostream &os = std::cout);
 
-	/// Reserve the functional unit required by the uop.
-	/// The return value is the functional unit latency, or 0 if it could not
-	/// be reserved.
+
+	
+	//
+	// Class members
+	//
+
+	/// Constructor
+	Alu();
+
+	/// Reserve the functional unit required by the uop. The return value is
+	/// the functional unit latency, or 0 if it could not be reserved.
 	int Reserve(Uop *uop);
 
 	/// Release all functional units
 	void ReleaseAll();
+	
+	/// Dump configuration
+	void DumpConfiguration(std::ostream &os = std::cout);
 };
 
 }
 
-#endif // ARCH_X86_TIMING_FUNCTIONAL_UNIT_H
+#endif
+
