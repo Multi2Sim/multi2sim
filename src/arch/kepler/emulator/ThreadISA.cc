@@ -3219,12 +3219,6 @@ void Thread::ExecuteInst_DADD(Inst *inst)
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_FFMA(Inst *inst)
-{
-	ISAUnimplemented(inst);
-}
-
-
 void Thread::ExecuteInst_FMUL(Inst *inst)
 {
 	// Get emulator
@@ -3487,6 +3481,16 @@ void Thread::ExecuteInst_MUFU(Inst *inst)
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
+}
+
+void Thread::ExecuteInst_FFMA_A(Inst *inst)
+{
+	ISAUnimplemented(inst);
+}
+
+void Thread::ExecuteInst_FFMA_B(Inst *inst)
+{
+	ISAUnimplemented(inst);
 }
 
 void Thread::ExecuteInst_NOP(Inst *inst)
