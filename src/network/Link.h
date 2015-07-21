@@ -103,14 +103,11 @@ public:
 	/// Get source node
 	Node *getSourceNode() const { return source_node; }
 
-	/// Set destination node
-	void setDestinationNode(Node* node) { this->destination_node = node; }
-
 	/// Get the number of busy cycles
-	long long getBusyCycle() { return busy_cycles; }
+	long long getBusyCycle() const { return busy_cycles; }
 
 	/// Get th amount of transfered bytes
-	long long getTransferredBytes() { return transferred_bytes; }
+	long long getTransferredBytes() const { return transferred_bytes; }
 
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }

@@ -87,7 +87,7 @@ void System::EventTypeSendHandler(esim::Event *type,
 	System *system = getInstance();
 	long long cycle = system->getCycle();
 	output_buffer->InsertPacket(packet);
-	output_buffer->setWriteBusy(cycle);
+	output_buffer->write_busy = cycle;
 	packet->setNode(source_node);
 	packet->setBuffer(output_buffer);
 	packet->setBusy(cycle);

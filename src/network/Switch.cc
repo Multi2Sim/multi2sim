@@ -77,7 +77,7 @@ void Switch::Forward(Packet *packet)
 	long long cycle = System::getInstance()->getCycle();
 	Message *message = packet->getMessage();
 	Network *network = message->getNetwork();
-	if (input_buffer->getReadBusy() >= cycle) 
+	if (input_buffer->read_busy >= cycle)
 	{
 		System::debug << misc::fmt("pkt a=\"stall\" "
 				"net=\"%s\" msg-->pkt=%lld:%d "
@@ -86,7 +86,7 @@ void Switch::Forward(Packet *packet)
 				message->getId(),
 				packet->getSessionId());
 		esim_engine->Next(current_event, 
-				input_buffer->getReadBusy() - cycle + 1);
+				input_buffer->read_busy - cycle + 1);
 		return;
 	}
 
@@ -103,7 +103,7 @@ void Switch::Forward(Packet *packet)
 	Buffer *output_buffer = entry->getBuffer();
 
 	// Check if the output buffer is busy
-	if (output_buffer->getWriteBusy() >= cycle)
+	if (output_buffer->write_busy >= cycle)
 	{
 		System::debug << misc::fmt("pkt "
 					"a=\"stall\" "
@@ -114,7 +114,7 @@ void Switch::Forward(Packet *packet)
 					message->getId(),
 					packet->getSessionId());
 		esim_engine->Next(current_event, 
-				output_buffer->getWriteBusy() - cycle + 1);
+				output_buffer->write_busy - cycle + 1);
 		return;
 	}
 
@@ -158,8 +158,8 @@ void Switch::Forward(Packet *packet)
 
 	// Calculate latency and occupy resources
 	int latency = (packet->getSize() - 1) / bandwidth + 1;
-	input_buffer->setReadBusy(cycle + latency - 1);
-	output_buffer->setWriteBusy(cycle + latency - 1);
+	input_buffer->read_busy = cycle + latency - 1;
+	output_buffer->write_busy = cycle + latency - 1;
 
 	// Transfer message to next output buffer
 	input_buffer->ExtractPacket();
@@ -204,7 +204,7 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 		output_buffer->getScheduledBuffer()->getIndex() : 0;
 	
 	// Checks if the output buffer is in write cycle
-	if (output_buffer->getWriteBusy() >= cycle)
+	if (output_buffer->write_busy >= cycle)
 		throw misc::Panic(misc::fmt("Cannot schedule a busy output "
 					"buffer %s", 
 					output_buffer->getName().c_str()));
@@ -227,7 +227,7 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 			continue;
 
 		// Skip the buffer in read busy
-		if (input_buffer->getReadBusy() >= cycle)
+		if (input_buffer->read_busy >= cycle)
 			continue;
 
 		// Skip the buffer whose first packet is not to be forwarded
