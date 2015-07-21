@@ -17,14 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Network.h"
 #include "Bus.h"
+#include "Network.h"
 
 namespace net
 {
 
 
-Bus::Bus(const std::string &name, Network *network, int bandwidth, int lanes) :
+Bus::Bus(Network *network, const std::string &name, int bandwidth, int lanes) :
 		Connection(name, network, bandwidth)
 {
 	for (int i = 0; i < lanes; i++)
@@ -40,4 +40,8 @@ void Bus::Dump(std::ostream &os = std::cout) const
 	os << misc::fmt("\n***** Bus %s *****\n", name.c_str());
 }
 
+void Bus::TransferPacket(Packet *packet)
+{
+
+}
 }

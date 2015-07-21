@@ -146,7 +146,7 @@ void Link::TransferPacket(Packet *packet)
 
 	// Check if the destination buffer is busy
 	Buffer *destination_buffer = destination_buffers[0];
-	long long write_busy = destination_buffer->getWriteBusy();
+	long long write_busy = destination_buffer->write_busy;
 	if (write_busy >= cycle)
 	{
 		System::debug <<misc::fmt("[Network] [stall - buffer write busy] "
@@ -165,7 +165,7 @@ void Link::TransferPacket(Packet *packet)
 
 	// Check if the destination buffer is full
 	int packet_size = packet->getSize();
-	if ((destination_buffer->getCount() + packet_size) >
+	if (destination_buffer->getCount() + packet_size >
 			destination_buffer->getSize())
 	{
 		System::debug <<misc::fmt("[Network] [stall - dst buffer full] "
@@ -184,9 +184,9 @@ void Link::TransferPacket(Packet *packet)
 
 	// Calculate latency and occupied resources
 	int latency = (packet->getSize() - 1) / bandwidth + 1;
-	source_buffer->setReadBusy(cycle + latency - 1);
+	source_buffer->read_busy = cycle + latency - 1;
 	busy = cycle + latency - 1;
-	destination_buffer->setWriteBusy(cycle + latency - 1);
+	destination_buffer->write_busy = cycle + latency - 1;
 
 	// Transfer message to next input buffer
 	source_buffer->ExtractPacket();
@@ -199,10 +199,10 @@ void Link::TransferPacket(Packet *packet)
 	busy_cycles += latency;
 	transferred_bytes += packet_size;
 	transferred_packets ++;
-	source_node->IncreaseSentBytes(packet_size);
-	source_node->IncreaseSentPackets();
-	destination_node->IncreaseReceivedBytes(packet_size);
-	destination_node->IncreaseReceivedPackets();
+	source_node->incSentBytes(packet_size);
+	source_node->incSentPackets();
+	destination_node->incReceivedBytes(packet_size);
+	destination_node->incReceivedPackets();
 
 	// Schedule input buffer event	
 	esim_engine->Next(System::event_input_buffer, latency);

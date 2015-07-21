@@ -58,7 +58,7 @@ public:
 
 public:
 	// Constructor
-	Bus(const std::string &name, Network *network,
+	Bus(Network *network, const std::string &name,
 			int bandwidth, int num_lanes);
 
 	// Get the number of lanes
@@ -70,6 +70,8 @@ public:
 	// Dump information about Bus
 	void Dump(std::ostream &os) const;
 
+	/// Transfer the packet from an output buffer
+	void TransferPacket(Packet *packet);
 };
 
 }  // namespace net
