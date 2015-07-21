@@ -54,12 +54,6 @@ protected:
 	// Output buffer size
 	int output_buffer_size;
 
-	// Statistics
-	long long received_bytes = 0;
-	long long received_packets = 0;
-	long long sent_bytes = 0;
-	long long sent_packets = 0;
-
 	// User data, used by the memory system to attach information about
 	// which module is associated with this network node.
 	void *user_data = nullptr;
@@ -69,6 +63,24 @@ protected:
 
 	// Output buffer list
 	std::vector<std::unique_ptr<Buffer>> output_buffers;
+
+
+
+	//
+	// Statistics
+	//
+
+	// Amount of received data in bytes
+	long long received_bytes = 0;
+
+	// Number of received packets
+	long long received_packets = 0;
+
+	// Amount of sent data in bytes
+	long long sent_bytes = 0;
+
+	// Number of sent packets
+	long long sent_packets = 0;
 
 public:
 
@@ -133,23 +145,23 @@ public:
 	long long getSentBytes() const { return sent_bytes; }
 
 	/// Increase the number of bytes sent
-	void IncreaseSentBytes(long long bytes) { sent_bytes += bytes; }
+	void incSentBytes(long long bytes) { sent_bytes += bytes; }
 
 	/// Increase the number of packets sent
-	void IncreaseSentPackets() { sent_packets++; }
+	void incSentPackets() { sent_packets++; }
 
 	/// Return the incoming traffic into this node in number of bytes, as
 	/// the sum of the bytes received through all its input links.
 	long long getReceivedBytes() const { return received_bytes; }
 
 	/// Increase the number of bytes received
-	void IncreaseReceivedBytes(long long bytes) 
+	void incReceivedBytes(long long bytes)
 	{ 
 		received_bytes += bytes; 
 	}
 
 	/// Increase the number of packets received
-	void IncreaseReceivedPackets() { received_packets++; }
+	void incReceivedPackets() { received_packets++; }
 };
 
 

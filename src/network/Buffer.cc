@@ -72,10 +72,12 @@ void Buffer::RemovePacket(Packet *packet)
 		event_queue.WakeupAll();
 }
 
+
 void Buffer::UpdateOccupancyInformation()
 {
 	// Getting the current cycle
-	long long cycle = System::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 
 	// Accumulate previous values
 	long long cycles = cycle - occupancy_measured_cycles;
@@ -87,6 +89,7 @@ void Buffer::UpdateOccupancyInformation()
 	occupancy_packet_value = packets.size();
 	occupancy_measured_cycles = cycle;
 }
+
 
 void Buffer::ExtractPacket()
 {
@@ -111,6 +114,7 @@ void Buffer::ExtractPacket()
 		event_queue.WakeupOne();
 }
 
+
 void Buffer::Dump(std::ostream &os)
 {
 	// Update the occupancy information before the report
@@ -120,7 +124,8 @@ void Buffer::Dump(std::ostream &os)
 	os << misc::fmt("%s.size = %d\n", name.c_str(), size);
 
 	// Dump information related to cycle
-	long long cycle = System::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 	os << misc::fmt("%s.PacketOccupancy = %.2f\n", name.c_str(), cycle ?
 			(double) occupancy_accumulated_packets / cycle : 0.0);
 	os << misc::fmt("%s.ByteOccupancy = %.2f\n", name.c_str(), cycle ?

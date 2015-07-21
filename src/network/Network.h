@@ -357,7 +357,9 @@ public:
 	//
 
 	/// Add the Bus to the Connection List of the Network.
-	void addBus(std::unique_ptr<Bus> bus);
+	Bus *addBus(const std::string name,
+			int bandwith,
+			int lanes);
 
 	/// Find and returns connection in the network using connection name.
 	///

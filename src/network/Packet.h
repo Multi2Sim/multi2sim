@@ -80,7 +80,7 @@ public:
 	void setBusy(long long busy) { this->busy = busy; }
 
 	/// Get the cycle which the packet is busy
-	long long getBusy() { return busy; }
+	long long getBusy() const { return busy; }
 
 };
 

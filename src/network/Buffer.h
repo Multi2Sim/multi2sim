@@ -56,12 +56,6 @@ class Buffer
 	// Connection that the buffer is connected to
 	Connection *connection;
 
-	// Cycle until a read operation on buffer lasts
-	long long read_busy = -1;
-
-	// Cycle until a write operation on buffer lasts
-	long long write_busy = -1;
-
 	// The scheduled cycle is for an arbiter to keep track of when 
 	// a decision is made on this buffer. An init value of -1 means
 	// no previous decision has been made.
@@ -119,24 +113,6 @@ public:
 
 	/// Get buffer's connection.
 	Connection *getConnection() const { return this->connection; }
-
-	/// Get the cycle when write operation will finish
-	long long getWriteBusy() const { return write_busy; }
-
-	/// Set the cycle when write operation will finish
-	void setWriteBusy(long long write_busy) 
-	{ 
-		this->write_busy = write_busy;
-	}
-
-	/// Get the cycle when read operation will finish
-	long long getReadBusy() const { return read_busy; }
-
-	/// Set the cycle when read operation will finish
-	void setReadBusy(long long read_busy)
-	{
-		this->read_busy = read_busy;
-	}
 
 	/// Get the scheduled cycle
 	long long getScheduledCycle() const { return scheduled_cycle; }
@@ -197,8 +173,21 @@ public:
 
 	/// Updating the buffer statistics
 	void UpdateOccupancyInformation();
+
 	/// Dump the buffer information
 	void Dump(std::ostream &os = std::cout);
+
+
+
+	//
+	// Public fields
+	//
+
+	// Cycle until a read operation on buffer lasts
+	long long read_busy = -1;
+
+	// Cycle until a write operation on buffer lasts
+	long long write_busy = -1;
 
 };
 
