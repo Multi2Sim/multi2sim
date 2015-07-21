@@ -323,13 +323,6 @@ DEFINST(FMUL,
 		0x0c,
 		0x0d)
 
-DEFINST(FFMA,
-		"%pred0 FFMA %dst, %srcA, %srcB, %srcC;",
-		0x02,
-		0x03,
-		0x09,
-		0x01)
-
 DEFINST(FADD,
 		"%pred0 FADD %dst, %srcA, %srcB;",
 		0x02,
@@ -347,6 +340,20 @@ DEFINST(MUFU,
 		0x01,
 		0x00)
 		
+DEFINST(FFMA_A,
+		"%pred0 FFMA_A %dst, %srcA, %srcB, %srcC;",
+		0x01,
+		0x02,
+		0x01,
+		0x01)
+		
+DEFINST(FFMA_B,
+		"%pred0 FFMA_B %dst, %srcA, %srcB, %srcC;",
+		0x02,
+		0x01,
+		0x01,
+		0x01)
+				
 /* Misc catogory instructions:
  * S2R, NOP
  */
