@@ -94,68 +94,57 @@ bool Emulator::Run()
 	{
 		// Get NDRange
 		NDRange *ndrange = it->get();
+
+		// Setup WorkGroup pointer
+		WorkGroup *work_group = nullptr;
 		
-		// Move waiting work groups to running work groups 
-		ndrange->WaitingToRunning();
-
-		// If there's no work groups to run, go to next nd-range 
-		if (ndrange->isWorkGroupsEmpty())
-			continue;
-
-		// Iterate over running work groups
-		for (auto wg_i = ndrange->WorkGroupBegin(), 
-			wg_e = ndrange->WorkGroupEnd(); 
-			wg_i != wg_e;)
+		// Move a single waiting work group to the running work groups 
+		// list
+		if (!ndrange->isWaitingWorkGroupsEmpty())
 		{
-			// Get current work group
-			WorkGroup *work_group = (*wg_i).get();
-
-			while (!(work_group->getFinishedEmu()))
-			{
-			
-				// Execute an instruction for each wavefront
-				for (auto wf_i = work_group->getWavefrontsBegin(), 
-						wf_e = work_group->getWavefrontsEnd();
-						wf_i != wf_e;
-						++wf_i)
-				{
-					// Get current wavefront
-					Wavefront *wavefront = (*wf_i).get();
-
-					// Check if the wavefront is finished or not
-					if (wavefront->getFinished() || wavefront->at_barrier)
-						continue;
-					
-					// Execute the wavefront
-					wavefront->Execute();
-				}
-			
-			}
-
-			// Check if the work group has finished
-			if (work_group->getFinishedEmu())
-			{
-				// Move work group to the completed list
-				wg_i = ndrange->RemoveWorkGroup(work_group);
-
-				// Re-evaluate end iterator
-				wg_e = ndrange->WorkGroupEnd();
-			}
-			else
-			{
-				// If the work group hasn't finished, increment
-				// the iterator
-				++wg_i;
-			}
+			long work_group_id = ndrange->GetWaitingWorkGroup();
+			work_group = ndrange->ScheduleWorkGroup(
+					work_group_id);
 		}
 
+		// If there's no work groups to run, go to next nd-range 
+		if (ndrange->isRunningWorkGroupsEmpty())
+			continue;
+	
+		// Normally, we would iterate over the running work group list
+		// but in this case there is only a single work group being
+		// executed at a time so no loop is needed
+		while (!work_group->getFinished())
+		{
+			// Execute an instruction for each wavefront
+			for (auto wf_i = work_group->getWavefrontsBegin(), 
+					wf_e = work_group->getWavefrontsEnd();
+					wf_i != wf_e;
+					++wf_i)
+			{
+				// Get current wavefront
+				Wavefront *wavefront = (*wf_i).get();
+
+				// Check if the wavefront is finished or not
+				if (wavefront->getFinished() || wavefront->at_barrier)
+					continue;
+				
+				// Execute the wavefront
+				wavefront->Execute();
+			}
+		}
+	
+		// Now that the work group is finished, remove it from the
+		// running work group list
+		ndrange->RemoveWorkGroup(work_group);
+		
 		// Let OpenCL driver know that all work-groups from this nd-range
 		// have been run
 		// opencl_driver->RequestWork((*ndr_i).get());
 	}
 
 	// Done with all the work
-	return false;
+	return true;
 }
 
 
