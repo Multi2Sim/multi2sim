@@ -100,7 +100,11 @@ src_arch_southern_islands_timing_test_LDADD = \
 	-lz
 	
 src_arch_southern_islands_timing_test_SOURCES = \
-	src/arch/southern-islands/timing/TestTiming.cc
+	src/arch/southern-islands/timing/ObjectPool.cc \
+	src/arch/southern-islands/timing/ObjectPool.h \
+	src/arch/southern-islands/timing/TestTiming.cc \
+	src/arch/southern-islands/timing/TestBranchUnit.cc
+	
 
 src_memory_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
