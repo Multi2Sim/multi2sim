@@ -20,6 +20,7 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 #define ARCH_SOUTHERN_ISLANDS_EMU_NDRANGE_H
 
+#include <deque>
 #include <list>
 #include <memory>
 
@@ -130,7 +131,7 @@ private:
 	std::list<std::unique_ptr<WorkGroup>> work_groups;
 
 	// Work-group list of pending work groups, IDs only
-	std::vector<long> waiting_work_groups;
+	std::deque<long> waiting_work_groups;
 
 	// Used by the driver
 	bool last_work_group_sent = false;
@@ -304,12 +305,7 @@ public:
 
 	/// Remove a work-group from the list of work-groups and free it. All
 	/// references to this work-group will be invalidates after this call.
-	///
-	/// \return Returns an iterator to the nex element in the list. If there
-	/// are no more elements, a past-the-end iterator is returned.
-	///
-	std::list<std::unique_ptr<WorkGroup>>::iterator 
-			RemoveWorkGroup(WorkGroup *work_group);
+	void RemoveWorkGroup(WorkGroup *work_group);
 
 	/// Get stage of NDRange
 	Stage getStage() const { return stage; }
@@ -376,20 +372,38 @@ public:
 		return &uav_table_entries[idx];
 	}
 
-	// Get constant buffer table address in global memory
+	/// Get constant buffer table address in global memory
 	unsigned getConstBufferTableAddr() const { return const_buf_table; }
 
-	// Get reource table address in global memory
+	/// Get reource table address in global memory
 	unsigned getResourceTableAddr() const { return resource_table; }
 
-	// Get UAV table address in global memory
+	/// Get UAV table address in global memory
 	unsigned getUAVTableAddr() const { return uav_table; }
 
-	// Get Vertex buffer table address in global memory
+	/// Get Vertex buffer table address in global memory
 	unsigned getVertexBufferTableAddr() const { return vertex_buffer_table; }
+	
+	/// Remove and return a work group id from the waiting list 
+	long GetWaitingWorkGroup() 
+	{ 
+		// Get the work_group id at the front of the deque and
+		// remove it from the deque
+		long work_group_id = waiting_work_groups.front();
+		waiting_work_groups.pop_front(); 
+		
+		// Return
+		return work_group_id;
+	} 
 
-	/// Get count of running_work_groups
-	bool isWorkGroupsEmpty() const { return work_groups.empty(); }
+	/// Get empty status of running_work_groups
+	bool isWaitingWorkGroupsEmpty() const 
+	{ 
+		return waiting_work_groups.empty(); 
+	}
+	
+	/// Get empty status of running_work_groups
+	bool isRunningWorkGroupsEmpty() const { return work_groups.empty(); }
 
 	// Return an iterator to the first workgroup in the running_work_group list.
 	std::list<std::unique_ptr<WorkGroup>>::iterator WorkGroupBegin()
@@ -522,10 +536,10 @@ public:
 			WorkItem::ImageDescriptor *image_descriptor,
 			unsigned uav);
 
-	/// Move workgroups in waiting list to running list. This function
-	/// will move all the work groups in the waiting list to the running
-	/// list
-	void WaitingToRunning();	
+	/// Move a workgroup the in waiting list to the running list. This 
+	/// function will move all the work groups in the waiting list to the 
+	/// running list
+	WorkGroup *ScheduleWorkGroup(long id);
 	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);

@@ -319,21 +319,6 @@ void NDRange::ImageIntoUAVTable(
 }
 
 
-void NDRange::WaitingToRunning()
-{
-	// Add waiting work-groups to the list of running work-groups
-	for (auto it = waiting_work_groups.begin(), 
-			e = waiting_work_groups.end(); 
-			it != e; ++it)
-		addWorkGroup(*it);
-
-	// Erase elements in waiting_work_groups, they are now in 
-	// running_work_groups
-	waiting_work_groups.erase(waiting_work_groups.begin(), 
-			waiting_work_groups.end());
-}
-
-
 void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 {
 	// Add work-group to waiting list
@@ -341,7 +326,7 @@ void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 }
 			
 
-WorkGroup *NDRange::addWorkGroup(int id)
+WorkGroup *NDRange::ScheduleWorkGroup(long id)
 {
 	// Create work-group
 	auto it = work_groups.emplace(work_groups.end(),
@@ -356,15 +341,11 @@ WorkGroup *NDRange::addWorkGroup(int id)
 }
 
 
-std::list<std::unique_ptr<WorkGroup>>::iterator 
-		NDRange::RemoveWorkGroup(WorkGroup *work_group)
+void NDRange::RemoveWorkGroup(WorkGroup *work_group)
 {
 	// Erase work group
 	assert(work_group->work_groups_iterator != work_groups.end());
-	auto next_it = work_groups.erase(work_group->work_groups_iterator);
-
-	// Return next iterator
-	return next_it;
+	work_groups.erase(work_group->work_groups_iterator);
 }
 
 

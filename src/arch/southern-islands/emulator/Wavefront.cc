@@ -726,7 +726,7 @@ void Wavefront::Execute()
 			work_group->getWavefrontsInWorkgroup())
 		{
 			// Mark work group as finished
-			work_group->setFinishedEmu(true);	
+			work_group->setFinished(true);	
 		}
 	}
 }

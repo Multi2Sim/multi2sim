@@ -69,11 +69,8 @@ class WorkGroup
 	// Number of wavefronts that have completed timing simulation
 	unsigned wavefronts_completed_timing = 0;
 
-	// Flag indicating whether the work-group has finished emulation
-	bool finished_emu = false;
-
-	// Flag indicating whether the work-group has finished timing simulation
-	bool finished_timing;
+	// Flag indicating whether the work-group has finished
+	bool finished = false;
 
 	// ND-Range that the work-group belongs to
 	NDRange *ndrange = nullptr;
@@ -184,11 +181,8 @@ public:
 		return work_items[id_in_work_group].get();
 	}
 
-	/// Get finished_emu flag
-	bool getFinishedEmu() { return finished_emu; }
-
-	/// Get finished_timing flag
-	bool getFinishedTiming() { return finished_timing; }
+	/// Get finished flag
+	bool getFinished() { return finished; }
 
 	/// Get a pointer to the local memory of the work group
 	mem::Memory *getLocalMemory() { return &local_memory; }
@@ -234,11 +228,8 @@ public:
 	/// work-group is destructed.
 	void setData(WorkGroupData *data);
 
-	/// Set finished_emu flag
-	void setFinishedEmu(bool flag) { finished_emu = flag; }
-
-	/// Set finished_timing flag
-	void setFinishedTiming(bool flag) { finished_timing = flag; }
+	/// Set finished flag
+	void setFinished(bool flag) { finished = flag; }
 
 	/// Return an iterator to the first work-item in the work-group. The
 	/// following code can then be used to iterate over all work-items (and

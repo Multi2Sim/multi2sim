@@ -143,6 +143,21 @@ public:
 
 	/// Issue the given instruction into the branch unit.
 	void Issue(std::shared_ptr<Uop> uop) override;
+
+	/// Return the current size of the issue buffer
+	unsigned getIssueBufferSize() { return issue_buffer.size(); };
+	
+	/// Return the current size of the decode buffer
+	unsigned getDecodeBufferSize() { return decode_buffer.size(); };
+	
+	/// Return the current size of the read buffer
+	unsigned getReadBufferSize() { return read_buffer.size(); };
+	
+	/// Return the current size of the exec buffer
+	unsigned getExecBufferSize() { return exec_buffer.size(); };
+	
+	/// Return the current size of the write buffer
+	unsigned getWriteBufferSize() { return write_buffer.size(); };
 };
 
 }
