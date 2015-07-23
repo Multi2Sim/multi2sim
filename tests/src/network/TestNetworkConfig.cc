@@ -457,6 +457,7 @@ TEST(TestSystemConfiguration, section_node_switch_bandwidth)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_FALSE(network->getNodeByName("S1") != nullptr);
@@ -504,6 +505,7 @@ TEST(TestSystemConfiguration, section_link_type)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -556,6 +558,7 @@ TEST(TestSystemConfiguration, section_link_wrong_variable)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -608,6 +611,7 @@ TEST(TestSystemConfiguration, section_link_wrong_source)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -659,6 +663,7 @@ TEST(TestSystemConfiguration, section_link_no_source)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -711,6 +716,7 @@ TEST(TestSystemConfiguration, section_link_wrong_destination)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -762,6 +768,7 @@ TEST(TestSystemConfiguration, section_link_no_destination)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -814,6 +821,7 @@ TEST(TestSystemConfiguration, section_link_same_src_dst)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -867,6 +875,7 @@ TEST(TestSystemConfiguration, section_link_bandwidth)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -919,6 +928,7 @@ TEST(TestSystemConfiguration, section_link_between_end_nodes)
 		message = error.getMessage();
 	}
 
+	// Sanity checks
 	Network *network = system->getNetworkByName("test");
 	EXPECT_TRUE(network != nullptr);
 	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
@@ -1013,6 +1023,534 @@ TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
 	EXPECT_TRUE(net0->getConnectionByName("link_n3_s0") != nullptr);
 	EXPECT_TRUE(net0->getConnectionByName("link_s0_n3") != nullptr);
 	EXPECT_TRUE(net0->getNumberConnections() == 8);
+}
+
+TEST(TestSystemConfiguration, section_bus_unknown_varialbe)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"anything = S1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Bus\\.B0.), "
+					"invalid variable 'anything'",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_bus_negative_bandwdith)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"Bandwidth = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: Bus 'B0', bandwidth cannot be "
+					"zero/negative.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_bus_negative_lanes)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.S1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"Bandwidth = 2\n"
+			"Lanes = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: Bus 'B0', number of lanes cannot be "
+					"zero/negative.\n",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_no_bus)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Busport.port0]";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: Bus name should be included for "
+					"the port.",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_wrong_bus)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Busport.port0]\n"
+			"Bus = B0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: Bus 'B0' does not exist in "
+					"the network.",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_no_node)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"[Network.test.Busport.port0]\n"
+			"Bus = B0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+					"Node is not set for the busport.",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_wrong_node)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"[Network.test.Busport.port0]\n"
+			"Bus = B0\n"
+			"Node = anything";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+					"Node 'anything' does not exist in the network.",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_wrong_size)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"[Network.test.Busport.port0]\n"
+			"Bus = B0\n"
+			"Node = N1\n"
+			"BufferSize = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+	EXPECT_TRUE(network->getConnectionByName("B0") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+					"Buffer size cannot be less than 1.",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_busport_wrong_type)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"[Network.test.Busport.port0]\n"
+			"Type = anything\n"
+			"Bus = B0\n"
+			"Node = N1\n"
+			"BufferSize = 2";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N1") != nullptr);
+	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
+	EXPECT_TRUE(network->getConnectionByName("B0") != nullptr);
+
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+					"Type 'anything' is not recognized",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_bus_config)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N2]\n"
+			"Type = Switch\n"
+			"[Network.test.Bus.B0]\n"
+			"[Network.test.Busport.port0]\n"
+			"Bus = B0\n"
+			"Node = N1\n"
+			"BufferSize = 2";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	// Sanity checks
+	Network *network = system->getNetworkByName("test");
+	Node *N1 = network->getNodeByName("N1");
+	Node *N2 = network->getNodeByName("N2");
+	Bus *B0 = dynamic_cast<Bus *>(network->getConnectionByName("B0"));
+	EXPECT_TRUE(network != nullptr);
+	EXPECT_TRUE(N1 != nullptr);
+	EXPECT_TRUE(N2 != nullptr);
+	EXPECT_TRUE(B0 != nullptr);
+	EXPECT_EQ(N1->getNumOutputBuffer(), 1);
+	EXPECT_EQ(N1->getNumInputBuffer(), 1);
+	EXPECT_EQ(B0->getNumSourceBuffers(), 1);
+	EXPECT_EQ(B0->getNumDestinationBuffers(), 1);
+
 }
 
 }

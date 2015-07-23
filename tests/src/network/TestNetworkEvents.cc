@@ -41,7 +41,7 @@ static void Cleanup()
 	System::Destroy();
 }
 
-TEST(TestSystemConfiguration, event_0_same_src_dest_not_allowed)
+TEST(TestSystemConfiguration, event_config_0_same_src_dest_not_allowed)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -86,7 +86,7 @@ TEST(TestSystemConfiguration, event_0_same_src_dest_not_allowed)
 			"be the same\\.").c_str(), message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_no_route)
+TEST(TestSystemConfiguration, event_config_1_no_route)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -137,7 +137,7 @@ TEST(TestSystemConfiguration, event_0_no_route)
 			message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_message_too_big)
+TEST(TestSystemConfiguration, event_config_2_message_too_big)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -201,7 +201,7 @@ TEST(TestSystemConfiguration, event_0_message_too_big)
 			"message size\\.").c_str(), message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_packetized_message_too_big)
+TEST(TestSystemConfiguration, event_config_3_packetized_message_too_big)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -266,7 +266,7 @@ TEST(TestSystemConfiguration, event_0_packetized_message_too_big)
 			"message size\\.").c_str(), message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_message_sent_cycle_1)
+TEST(TestSystemConfiguration, event_config_4_message_sent_cycle_1)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -324,7 +324,7 @@ TEST(TestSystemConfiguration, event_0_message_sent_cycle_1)
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		esim_engine->ProcessEvents();
 
-		// Checking the location of the packet
+		// Checking the location of the packets
 		Packet *packet = msg->getPacket(0);
 		EXPECT_EQ(packet->getNode(), src);
 		EXPECT_EQ(packet->getBuffer(), src->getOutputBuffer(0));
@@ -342,7 +342,7 @@ TEST(TestSystemConfiguration, event_0_message_sent_cycle_1)
 					"not arrived.").c_str(), message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_message_sent_cycle_2)
+TEST(TestSystemConfiguration, event_config_4_message_sent_cycle_2)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -430,7 +430,7 @@ TEST(TestSystemConfiguration, event_0_message_sent_cycle_2)
 					"not arrived.").c_str(), message.c_str());
 }
 
-TEST(TestSystemConfiguration, event_0_message_sent_cycle_3)
+TEST(TestSystemConfiguration, event_config_4_message_sent_cycle_3)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -512,6 +512,185 @@ TEST(TestSystemConfiguration, event_0_message_sent_cycle_3)
 	}
 	EXPECT_REGEX_MATCH(misc::fmt("Packet 0 of the message 0 has "
 					"not arrived.").c_str(), message.c_str());
+}
+
+TEST(TestSystemConfiguration, event_config_5_same_src_does_not_allowed)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"[Network.net0.Node.n0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Bus.b0]\n"
+			"[Network.net0.Busport.port0]\n"
+			"Bus = b0\n"
+			"Node = n1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+
+		// Creating the message
+		network->TrySend(src, src, 1);
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("Source and destination cannot "
+			"be the same\\.").c_str(), message.c_str());
+}
+
+TEST(TestSystemConfiguration, event_config_6_no_route)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"[Network.net0.Node.n0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Bus.b0]\n"
+			"[Network.net0.Busport.port0]\n"
+			"Bus = b0\n"
+			"Node = n1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
+
+		// Creating the message
+		network->TrySend(src, dst, 1);
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("No route from 'n0' to 'n1'").c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, event_config_7_message_sent_cycle_0)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 8\n"
+			"DefaultOutputBufferSize = 8\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 2\n"
+			"[Network.net0.Node.n0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Bus.b0]\n"
+			"[Network.net0.Busport.port0]\n"
+			"Bus = b0\n"
+			"Node = n0\n"
+			"[Network.net0.Busport.port1]\n"
+			"Bus = b0\n"
+			"Node = n1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
+
+		// Creating the message
+		Message *msg = network->TrySend(src, dst, 4);
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+
+		// Checking the location of the packets
+		Packet *packet_1 = msg->getPacket(0);
+		Packet *packet_2 = msg->getPacket(1);
+		EXPECT_EQ(packet_1->getNode(), src);
+		EXPECT_EQ(packet_1->getBuffer(), src->getOutputBuffer(0));
+		EXPECT_EQ(packet_1->getBuffer()->getBufferHead(), packet_1);
+		EXPECT_EQ(packet_2->getNode(), src);
+		EXPECT_EQ(packet_2->getBuffer(), src->getOutputBuffer(0));
+		EXPECT_NE(packet_2->getBuffer()->getBufferHead(), packet_2);
+
+		// Receive event
+		network->Receive(dst, msg);
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("Packet 0 of the message 0 has "
+			"not arrived.").c_str(), message.c_str());
 }
 
 }
