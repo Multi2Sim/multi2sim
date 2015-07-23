@@ -276,13 +276,25 @@ public:
 	/// instruction queue
 	bool in_instruction_queue = false;
 
+	/// Position of the uop in the thread's instruction queue, or past-the-
+	/// end iterator to this queue if not present.
+	std::list<std::shared_ptr<Uop>>::iterator instruction_queue_iterator;
+
 	/// True if the instruction is currently present in the thread's
 	/// load queue
 	bool in_load_queue = false;
 
+	/// Position of the uop in the thread's load queue, or past-the-end
+	/// iterator to this queue if not present.
+	std::list<std::shared_ptr<Uop>>::iterator load_queue_iterator;
+
 	/// True if the instruction is currently present in the thread's
 	/// store queue
 	bool in_store_queue = false;
+
+	/// Position of the uop in the thread's store queue, or past-the-end
+	/// iterator to this queue if not present.
+	std::list<std::shared_ptr<Uop>>::iterator store_queue_iterator;
 
 
 

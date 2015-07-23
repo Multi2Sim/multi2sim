@@ -232,5 +232,25 @@ void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> uop)
 	core->incLoadStoreQueueOccupancy();
 }
 
+
+void Thread::ExtractFromLoadQueue(Uop *uop)
+{
+	assert(uop->in_load_queue);
+	assert(!uop->in_store_queue);
+	load_queue.erase(uop->load_queue_iterator);
+	uop->in_load_queue = false;
+	uop->load_queue_iterator = load_queue.end();
+}
+
+
+void Thread::ExtractFromStoreQueue(Uop *uop)
+{
+	assert(!uop->in_load_queue);
+	assert(uop->in_store_queue);
+	store_queue.erase(uop->store_queue_iterator);
+	uop->in_store_queue = false;
+	uop->store_queue_iterator = store_queue.end();
+}
+
 }
 

@@ -18,6 +18,7 @@
  */
 
 #include "Cpu.h"
+#include "Timing.h"
 
 
 namespace x86
@@ -96,12 +97,26 @@ Cpu::LoadStoreQueueKind Cpu::load_store_queue_kind;
 int Cpu::load_store_queue_size;
 int Cpu::uop_queue_size;
 
+esim::Event *Cpu::event_memory_access_start;
+esim::Event *Cpu::event_memory_access_end;
 
-Cpu::Cpu()
+
+Cpu::Cpu(Timing *timing) : timing(timing)
 {
 	// Initialize
 	emulator = Emulator::getInstance();
 	mmu = misc::new_unique<mem::MMU>("x86");
+
+	// Memory access events
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	event_memory_access_start = esim_engine->RegisterEvent(
+			"memory_access_start",
+			MemoryAccessHandler,
+			timing->getFrequencyDomain());
+	event_memory_access_end = esim_engine->RegisterEvent(
+			"memory_access_end",
+			MemoryAccessHandler,
+			timing->getFrequencyDomain());
 
 	// Create cores
 	cores.reserve(num_cores);
@@ -165,6 +180,54 @@ void Cpu::Run()
 	// Run all cores
 	for (auto &core : cores)
 		core->Run();
+}
+
+
+void Cpu::MemoryAccess(mem::Module *module,
+			mem::Module::AccessType access_type,
+			unsigned address,
+			std::shared_ptr<Uop> uop,
+			std::list<std::shared_ptr<Uop>> *event_queue)
+{
+	// New frame
+	auto frame = misc::new_shared<MemoryAccessFrame>();
+	frame->module = module;
+	frame->access_type = access_type;
+	frame->address = address;
+	frame->uop = uop;
+	frame->event_queue = event_queue;
+
+	// Schedule event
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	esim_engine->Call(event_memory_access_start, frame);
+}
+
+
+void Cpu::MemoryAccessHandler(esim::Event *event, esim::Frame *esim_frame)
+{
+	// Get actual frame
+	MemoryAccessFrame *frame = misc::cast<MemoryAccessFrame *>(esim_frame);
+
+	// Check event
+	if (event == event_memory_access_start)
+	{
+		// Start access
+		mem::Module *module = frame->module;
+		module->Access(frame->access_type,
+				frame->address,
+				nullptr,
+				event_memory_access_end);
+	}
+	else if (event == event_memory_access_end)
+	{
+		// Insert uop into head of event queue
+		frame->event_queue->push_front(frame->uop);
+	}
+	else
+	{
+		// Invalid event
+		throw misc::Panic("Invalid event");
+	}
 }
 
 }

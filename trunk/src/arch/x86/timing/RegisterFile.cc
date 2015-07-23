@@ -395,20 +395,42 @@ void RegisterFile::Rename(Uop *uop)
 
 bool RegisterFile::isUopReady(Uop *uop)
 {
+	// If uop is marked as ready, it means that we verified that it is
+	// ready before. The uop ready state can never change from true to
+	// false.
+	if (uop->ready)
+		return true;
+	
+	// Traverse dependencies
 	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
+		// Get dependencies
 		int logical_register = uop->getUinst()->getIDep(dep);
 		int physical_register = uop->getPhyRegIdep(dep);
-		if (logical_register >= Uinst::DepIntFirst && logical_register <= Uinst::DepIntLast
+
+		// Integer dependency
+		if (logical_register >= Uinst::DepIntFirst
+				&& logical_register <= Uinst::DepIntLast
 				&& int_phy_reg[physical_register].pending)
 			return false;
-		if (logical_register >= Uinst::DepFpFirst && logical_register <= Uinst::DepFpLast
+
+		// Floating-point dependency
+		if (logical_register >= Uinst::DepFpFirst
+				&& logical_register <= Uinst::DepFpLast
 				&& fp_phy_reg[physical_register].pending)
 			return false;
-		if (logical_register >= Uinst::DepXmmFirst && logical_register <= Uinst::DepXmmLast
+
+		// XMM dependency
+		if (logical_register >= Uinst::DepXmmFirst
+				&& logical_register <= Uinst::DepXmmLast
 				&& xmm_phy_reg[physical_register].pending)
 			return false;
 	}
+
+	// At this point, we found that the uop is ready. Save this information
+	// in the 'ready' field of the uop to avoid having to check in the
+	// future.
+	uop->ready = true;
 	return true;
 }
 
