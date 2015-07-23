@@ -458,8 +458,8 @@ struct InstBytesIADD
 	unsigned long long int cc: 			  1; // 50
 	unsigned long long int po: 			  2; // 52:51
 	unsigned long long int sat:			  1; // 53
-	unsigned long long int op1: 		  9; // 62:54
-	unsigned long long int op2:			  1; // 63
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
 };
 
 
@@ -701,6 +701,86 @@ struct InstBytesLOP
 };
 
 
+// FFMA
+struct InstBytesFFMA
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2:         19; // 41:23
+	unsigned long long int src3:		  8; // 49:42
+	unsigned long long int cc:			  1; // 50
+	unsigned long long int negate_ab:     1; // 51
+	unsigned long long int negate_c:      1; // 52
+	unsigned long long int sat:           1; // 53
+	unsigned long long int round:		  2; // 55:54
+	unsigned long long int fmz:           2; // 57:56
+	unsigned long long int op1: 		  4; // 61:58
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// SHR
+struct InstBytesSHR
+{
+	unsigned long long int op0:			  2; // 1:0
+	unsigned long long int dst:			  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred:		  4; // 21:18
+	unsigned long long int s:             1; // 22
+	unsigned long long int src2:	  	 19; // 41:23
+	unsigned long long int shift_mode:	  1; // 42
+	unsigned long long int bit_reverse:   1; // 43
+	unsigned long long int unused1:       2; // 45:44
+	unsigned long long int x_precision:   2; // 47:46
+	unsigned long long int unused2:	      2; // 49:48
+	unsigned long long int cc:    		  1; // 50
+	unsigned long long int u_s:           1; // 51
+	unsigned long long int unused3:	  	  2; // 53:52
+	unsigned long long int op1:	 	      8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// BFI
+struct InstBytesBFI
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2:         19; // 41:23
+	unsigned long long int src3:		  8; // 49:42
+	unsigned long long int cc:			  1; // 50
+	unsigned long long int unused:     	  3; // 53:51
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
+// BFE
+struct InstBytesBFE
+{
+	unsigned long long int op0: 		  2; // 1:0
+	unsigned long long int dst: 		  8; // 9:2
+	unsigned long long int src1:		  8; // 17:10
+	unsigned long long int pred: 		  4; // 21:18
+	unsigned long long int s: 			  1; // 22
+	unsigned long long int src2:         19; // 41:23
+	unsigned long long int unused1:       1; // 42
+	unsigned long long int bit_reverse:   1; // 43
+	unsigned long long int unused2:       6; // 49:44
+	unsigned long long int cc:			  1; // 50
+	unsigned long long int u_s:           1; // 51
+	unsigned long long int unused3:       2; // 53:52
+	unsigned long long int op1: 		  8; // 61:54
+	unsigned long long int op2:			  2; // 63:62
+};
+
+
 union InstBytes
 {
 	unsigned char as_uchar[8];
@@ -734,6 +814,10 @@ union InstBytes
 	InstBytesMUFU     mufu;
 	InstBytesSEL      sel;
 	InstBytesLOP      lop;
+	InstBytesFFMA     ffma;
+	InstBytesSHR      shr;
+	InstBytesBFI      bfi;
+	InstBytesBFE      bfe;
 };
 
 
