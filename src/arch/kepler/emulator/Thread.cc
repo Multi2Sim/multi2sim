@@ -30,12 +30,25 @@ namespace Kepler
 Thread::Thread(Warp *warp, int id)
 {
 	// Initialization
+	this->emulator = emulator->getInstance();
 	this->warp = warp;
 	thread_block = warp->getThreadBlock();
 	grid = thread_block->getGrid();
 	this->id = id + thread_block->getId() * grid->getThreadBlockSize();
 	id_in_warp = id % warp_size;
 	id_in_thread_block = id;
+
+	// Local Memory Initialization
+	local_mem = misc::new_unique<mem::Memory>();
+	local_mem->setSafe(false);
+	local_mem_size = 1 << 20; // current 1MB for local memory
+	local_mem_top_addr = 0;
+	local_mem_top_generic_addr = local_mem_top_addr + id * local_mem_size +
+					emulator->getGlobalMemTotalSize();
+
+	// local mem top generic address record in const mem c[0x0][0x24]
+	emulator->WriteConstMem(0x24, sizeof(unsigned),
+			(const char*)&local_mem_top_generic_addr);
 
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \
@@ -86,6 +99,8 @@ Thread::Thread(Warp *warp, int id)
 	WriteSR(39, thread_block->getId() /
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1)));
+
+	WriteSR(55, 0); // Currently Set LMEMHIOFF to 0
 
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
