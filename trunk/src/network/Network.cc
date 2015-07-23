@@ -193,6 +193,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 	}
 }
 
+
 void Network::ParseConfigurationForBuses(misc::IniFile *ini_file)
 {
 	for (int i = 0; i < ini_file->getNumSections(); i++)
@@ -210,7 +211,7 @@ void Network::ParseConfigurationForBuses(misc::IniFile *ini_file)
 			continue;
 		if (strcasecmp(tokens[1].c_str(), name.c_str()))
 			continue;
-		if (strcasecmp(tokens[2].c_str(), "BusPort"))
+		if (strcasecmp(tokens[2].c_str(), "Bus"))
 			continue;
 
 		// Get the bus name
@@ -220,7 +221,7 @@ void Network::ParseConfigurationForBuses(misc::IniFile *ini_file)
 		int bandwidth = ini_file->ReadInt(section, "Bandwidth",
 				default_bandwidth);
 		if (bandwidth < 1)
-			throw Error(misc::fmt("%s: Bus '%s', bandwidth cannot be"
+			throw Error(misc::fmt("%s: Bus '%s', bandwidth cannot be "
 					"zero/negative.\n", ini_file->getPath().c_str(),
 					name.c_str()));
 
@@ -237,6 +238,7 @@ void Network::ParseConfigurationForBuses(misc::IniFile *ini_file)
 	}
 }
 
+
 Bus *Network::addBus(const std::string name, int bandwidth, int lanes)
 {
 	// Create bus
@@ -249,6 +251,8 @@ Bus *Network::addBus(const std::string name, int bandwidth, int lanes)
 	// Return
 	return bus;
 }
+
+
 void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 {
 	for (int i = 0; i < ini_file->getNumSections(); i++)
@@ -273,26 +277,27 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		std::string bus_name = ini_file->ReadString(section, "Bus");
 		if (bus_name == "")
 			throw Error(misc::fmt("%s: Bus name should be "
-					"included for the port",
+					"included for the port.",
 					ini_file->getPath().c_str()));
 
 		// Find the bus
 		Bus *bus = dynamic_cast<Bus *> (getConnectionByName(bus_name));
 		if (!bus)
 			throw Error(misc::fmt("%s: Bus '%s' does not exist in the "
-					"network", ini_file->getPath().c_str(),
+					"network.", ini_file->getPath().c_str(),
 					bus_name.c_str()));
 
 		// Get the node
 		std::string node_name = ini_file->ReadString(section, "Node");
 		if (node_name == "")
-			throw Error(misc::fmt("%s: section '%s': Source node is "
-					"not set for busport", ini_file->getPath().c_str(),
+			throw Error(misc::fmt("%s: section [%s]: Node is "
+					"not set for the busport.", ini_file->getPath().c_str(),
 					section.c_str()));
 		Node *node = getNodeByName(node_name);
 		if (!node)
-			throw Error(misc::fmt("%s: section '%s': Node '%s' is not in "
-					"the network", ini_file->getPath().c_str(),
+			throw Error(misc::fmt("%s: section [%s]: Node '%s' does not "
+					"exist in the network.",
+					ini_file->getPath().c_str(),
 					section.c_str(), node_name.c_str()));
 
 		// Get port type and adding the buffer(s)
@@ -303,24 +308,24 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		Connection *connection = misc::cast<Connection *>(bus);
 
 		// Setting up the buffer
-		if (!strcasecmp(type.c_str(), "Send"))
+		if (!strcasecmp(type.c_str(), "Sender"))
 		{
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_output_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: Section '%s': Buffer size "
+				throw Error(misc::fmt("%s: section [%s]: Buffer size "
 						"cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
 			buffer = node->addOutputBuffer(buffer_size, connection);
 			bus->addSourceBuffer(buffer);
 		}
-		else if (!strcasecmp(type.c_str(), "Receive"))
+		else if (!strcasecmp(type.c_str(), "Receiver"))
 		{
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_input_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: Section '%s': Buffer size "
+				throw Error(misc::fmt("%s: section [%s]: Buffer size "
 						"cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
@@ -350,16 +355,17 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 			}
 			else if (buffer_size < 0)
 			{
-				throw Error(misc::fmt("%s: Section '%s': Buffer size "
-						"cannot be negative", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: section [%s]: Buffer size "
+						"cannot be less than 1.", ini_file->getPath().c_str(),
 						section.c_str()));
 			}
 		}
 		else
 		{
-			throw misc::Error(misc::fmt("%s: Type '%s' is not recognized"
-					"for Bus '%s' ",ini_file->getPath().c_str(),
-					type.c_str(), bus_name.c_str()));
+			throw misc::Error(misc::fmt("%s: section [%s]: Type '%s' "
+					"is not recognized",
+					ini_file->getPath().c_str(), section.c_str(),
+					type.c_str()));
 		}
 	}
 }
