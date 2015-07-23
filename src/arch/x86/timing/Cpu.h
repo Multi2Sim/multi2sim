@@ -24,6 +24,7 @@
 #include <list>
 
 #include <memory/MMU.h>
+#include <memory/Module.h>
 #include <arch/x86/emulator/Emulator.h>
 #include <arch/x86/emulator/Uinst.h>
 
@@ -164,6 +165,9 @@ private:
 	// Associated emulator 
 	Emulator *emulator;
 
+	// Associated timing simulator, initialized in constructor
+	Timing *timing;
+
 	// Array of cores 
 	std::vector<std::unique_ptr<Core>> cores;
 
@@ -229,6 +233,41 @@ private:
 
 	// IPC since last dump
 	long long last_dump = 0;
+
+
+
+
+	//
+	// Memory accesses
+	//
+
+	// Frame for memory access events
+	struct MemoryAccessFrame : public esim::Frame
+	{
+		// Module to access
+		mem::Module *module = nullptr;
+
+		// Access type
+		mem::Module::AccessType access_type = mem::Module::AccessInvalid;
+
+		// Physical address to access
+		unsigned address = -1;
+
+		// Uop associated with the memory access
+		std::shared_ptr<Uop> uop;
+
+		// Event queue to insert the uop to when memory access finishes
+		std::list<std::shared_ptr<Uop>> *event_queue = nullptr;
+	};
+
+	// Event scheduled to start a memory access
+	static esim::Event *event_memory_access_start;
+
+	// Event scheduled when a memory access finishes
+	static esim::Event *event_memory_access_end;
+
+	// Event handler for memory accesses
+	static void MemoryAccessHandler(esim::Event *event, esim::Frame *frame);
 
 
 
@@ -375,7 +414,7 @@ public:
 	//
 
 	/// Constructor
-	Cpu();
+	Cpu(Timing *timing);
 
 	/// Return the core with the given index
 	Core *getCore(int index) const
@@ -408,8 +447,17 @@ public:
 	void AddToTraceList(Uop &uop);
 	void EmptyTraceList();
 
-	/// Update Occupancy statistic
+	/// Update structure occupancy statistics
 	void UpdateOccupancyStats();
+
+	/// Perform a memory access on the given module for the given address.
+	/// When the access completes, insert \a uop at the head of the given
+	/// event queue.
+	void MemoryAccess(mem::Module *module,
+			mem::Module::AccessType access_type,
+			unsigned address,
+			std::shared_ptr<Uop> uop,
+			std::list<std::shared_ptr<Uop>> *event_queue);
 
 
 

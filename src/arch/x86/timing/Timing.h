@@ -77,8 +77,8 @@ class Timing : public comm::Timing
 	// Member fields
 	//
 
-	// Cpu instance of this timing simulator
-	Cpu cpu;
+	// CPU object
+	std::unique_ptr<Cpu> cpu;
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
@@ -126,8 +126,12 @@ public:
 	/// Constructor
 	Timing();
 
-	/// Get CPU instance pointer
-	Cpu *getCpu() { return &cpu; }
+	/// Get pointer to the CPU object of this timing simulator
+	Cpu *getCpu() const
+	{
+		assert(cpu.get());
+		return cpu.get();
+	}
 
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful

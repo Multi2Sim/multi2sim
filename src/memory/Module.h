@@ -623,9 +623,16 @@ public:
 	///	the access has completed. This argument is optional, and can
 	///	be set to \c nullptr.
 	///
+	/// \param return_event
+	///	Event to be scheduled when the access completes. If the
+	///	Access() function is invoked within an event handler, the
+	///	current frame will be available within the event handler of
+	///	\a return_event. Use \c nullptr (default) for no return event.
+	///
 	long long Access(AccessType access_type,
 			unsigned address,
-			int *witness = nullptr);
+			int *witness = nullptr,
+			esim::Event *return_event = nullptr);
 	
 	/// Add the given frame to the list of in-flight accesses, and record
 	/// its access type. This function is invoked internally by the event

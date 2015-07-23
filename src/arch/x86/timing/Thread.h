@@ -174,6 +174,14 @@ private:
 	// depending on the uop kind).
 	void InsertInLoadStoreQueue(std::shared_ptr<Uop> uop);
 
+	// Remove a uop from the load queue. The uop must be currently present
+	// in said queue.
+	void ExtractFromLoadQueue(Uop *uop);
+
+	// Remove a uop from the store queue. The uop must be currently present
+	// in said queue.
+	void ExtractFromStoreQueue(Uop *uop);
+
 
 
 
@@ -489,8 +497,17 @@ public:
 	// Issue stage
 	//
 
-	/// Issue \a quantum instructions for the thread's load-store queue.
-	/// The function returns the remaining quantum.
+	/// Issue \a quantum instructions for the thread's load queue, returning
+	/// the remaining qunatum.
+	int IssueLoadQueue(int quantum);
+
+	/// Issue \a quantum instructions for the thread's store queue,
+	/// returning the remaining quantum.
+	int IssueStoreQueue(int quantum);
+
+	/// Issue \a quantum instructions for the thread's load-store queue,
+	/// giving priority to the load instructions. The function returns the
+	/// remaining quantum.
 	int IssueLoadStoreQueue(int quantum);
 
 	/// Issue \a quantum instructions for the thread's instruction queue.

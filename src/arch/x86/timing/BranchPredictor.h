@@ -215,7 +215,8 @@ public:
 	/// Return prediction for an address (0=not taken, 1=taken)
 	///
 	/// \param uop
-	/// 	Micro-opertion including all the information regarding a micro instruction
+	/// 	Micro-instruction with information used to read the branch
+	///	predictor.
 	///
 	/// \return
 	/// 	Global prediction result
@@ -242,10 +243,7 @@ public:
 	/// Update the parameter inside branch predictor
 	///
 	/// \param uop
-	/// 	Micro-opertion including all the information regarding a micro instruction
-	///
-	/// \return
-	/// 	No value is returned
+	/// 	Micro-instruction with branch prediction information.
 	///
 	void Update(Uop *uop);
 
@@ -255,7 +253,8 @@ public:
 	/// instead of BTB.
 	///
 	/// \param uop
-	/// 	Micro-opertion including all the information regarding a micro instruction
+	/// 	Micro-instruction capturing all the information related with the
+	///	branch prediction.
 	///
 	/// \return
 	/// 	Target address
@@ -265,10 +264,9 @@ public:
 	/// Update the BTB
 	///
 	/// \param uop
-	/// 	Micro-opertion including all the information regarding a micro instruction
+	/// 	Micro-instruction including all the information related with
+	///	its branch prediction.
 	///
-	/// \return
-	/// 	No value is returned
 	void UpdateBTB(Uop *uop);
 
 	/// Find address of next branch after eip within current block.
