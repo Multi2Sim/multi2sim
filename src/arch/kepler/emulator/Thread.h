@@ -23,6 +23,7 @@
 #include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/disassembler/Inst.h>
 
+#include "Emulator.h"
 #include "Grid.h"
 #include "Register.h"
 #include "ThreadBlock.h"
@@ -31,6 +32,7 @@
 namespace Kepler
 {
 
+class Emulator;
 class Warp;
 class ThreadBlock;
 class Grid;
@@ -68,6 +70,9 @@ class Thread
 
 private:
 
+	// Emulator
+	Emulator *emulator;
+
 	// IDs
 	int id;
 	int id_in_thread_block;
@@ -88,6 +93,18 @@ private:
 	// Last global memory access
 	unsigned global_mem_access_addr;
 	unsigned global_mem_access_size;
+
+	// Local Memory
+	std::unique_ptr<mem::Memory> local_mem;
+
+	// Local memory size
+	unsigned local_mem_size; // currently set as 1MB
+
+	// Local memory top local address
+	unsigned local_mem_top_addr;
+
+	// Local memory top generic address
+	unsigned local_mem_top_generic_addr;
 
 	// Emulation of ISA. This code expands to one function per ISA
 	// instruction. For example:
@@ -225,6 +242,18 @@ public :
 	void Write_register(unsigned *src, int gpr_id)
 	{
 		registers.Write_register(src, gpr_id);
+	}
+
+	/// Write Local Memory
+	void WriteLocalMem(unsigned addr, unsigned size, const char *buf)
+	{
+		local_mem->Write(addr, size, buf);
+	}
+
+	/// Read Local Memory
+	void ReadLocalMem(unsigned addr, unsigned size, char *buf)
+	{
+		local_mem->Read(addr, size, buf);
 	}
 };
 

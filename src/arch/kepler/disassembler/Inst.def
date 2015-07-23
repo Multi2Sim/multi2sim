@@ -64,7 +64,39 @@ DEFINST(ISAD_B,
 		0x03,
 		0x02,
 		0x01)
+
+DEFINST(BFI_A,
+		"BFI_A",
+		0x01,
+		0x02,
+		0x03,
+		0x03,
+		0x03,
+		0x00)
 		
+DEFINST(BFI_B,
+		"BFI_B",
+		0x02,
+		0x01,
+		0x03,
+		0x03,
+		0x03,
+		0x00)
+
+DEFINST(BFE_A,
+		"%pred0 BFE_A %dst, %srcA, %imm32;",
+		0x01,
+		0x03,
+		0x00,
+		0x00)
+		
+DEFINST(BFE_B,
+		"BFE_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x00)
+								
 DEFINST(IMAD,
 		"%pred IMAD%us%hi%po%sat%x%s %dst %cc_dst, %srcA, %srcB, %srcC;",
 		0x02,
@@ -408,13 +440,6 @@ DEFINST(BAR,
                 0x01,
 		0x05)
 
-DEFINST(BFE,
-				"%pred0 BFE %dst, %srcA, %imm32;",
-				0x01,
-				0x03,
-				0x00,
-				0x00)
-
 /* Other (place later) instructions:
  * 
  */
@@ -591,3 +616,17 @@ DEFINST(SHL,
 		0x03,
 		0x00,
 		0x09)
+		
+DEFINST(SHR_A,
+		"SHR_A",
+		0x01,
+		0x03,
+		0x00,
+		0x05)
+		
+DEFINST(SHR_B,
+		"SHR_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x05)
