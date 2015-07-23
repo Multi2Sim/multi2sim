@@ -244,6 +244,9 @@ Timing::Timing() : comm::Timing("x86")
 {
 	// Configure frequency domain with the frequency given by the user
 	ConfigureFrequencyDomain(frequency);
+
+	// Create CPU
+	cpu = misc::new_unique<Cpu>(this);
 }
 
 
@@ -262,7 +265,7 @@ Timing *Timing::getInstance()
 bool Timing::Run()
 {
 	// Run stages
-	cpu.Run();
+	cpu->Run();
 
 	// Still simulating
 	return true;
@@ -395,7 +398,7 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 	}
 
 	// Check that entry has not been assigned before
-	Thread *thread = cpu.getThread(core_index, thread_index);
+	Thread *thread = cpu->getThread(core_index, thread_index);
 	if (thread->data_module || thread->instruction_module)
 	{
 		assert(thread->data_module && thread->instruction_module);
@@ -476,9 +479,9 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
 	// Check that all cores/threads have an entry to the memory hierarchy.
-	for (int i = 0; i < cpu.getNumCores(); i++)
+	for (int i = 0; i < cpu->getNumCores(); i++)
 	{
-		Core *core = cpu.getCore(i);
+		Core *core = cpu->getCore(i);
 		for (int j = 0; j < core->getNumThreads(); j++)
 		{
 			Thread *thread = core->getThread(j);

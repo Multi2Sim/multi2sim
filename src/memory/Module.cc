@@ -156,7 +156,8 @@ bool Module::canAccess(int address) const
 
 long long Module::Access(AccessType access_type,
 		unsigned address,
-		int *witness)
+		int *witness,
+		esim::Event *return_event)
 {
 	// Create a new event frame
 	auto frame = misc::new_shared<Frame>(
@@ -225,7 +226,7 @@ long long Module::Access(AccessType access_type,
 
 	// Schedule event
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	esim_engine->Call(event, frame);
+	esim_engine->Call(event, frame, return_event);
 
 	// Return frame ID
 	return frame->getId();
