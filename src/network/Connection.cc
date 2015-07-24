@@ -24,10 +24,9 @@
 namespace net
 {
 
-Connection::Connection(const std::string &name, Network *network, int bandwidth) :
+Connection::Connection(const std::string &name, Network *network) :
 		network(network),
-		name(name),
-		bandwidth(bandwidth)
+		name(name)
 {
 }
 

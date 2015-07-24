@@ -27,55 +27,77 @@ namespace net
 {
 class Buffer;
 
-class Bus : public Connection
+class Lane
 {
+
+	// Lane bandwidth
+	int bandwidth;
+	//
+	// Statistics
+	//
+
+	// Number of bytes that was transfered through the lane
+	long long transferred_bytes = 0;
+
+	// Number of cycles that the lane was busy
+	long long busy_cycles = 0;
+
+	// Number of packets that traversed the lane
+	long long transferred_packets = 0;
+
+
 
 public:
 
-	class Lane
-	{
+	// Constructor
+	Lane(int bandwidth) : bandwidth(bandwidth) {}
 
-	public:
+	// Dumping lane statistics
+	void Dump(std::ostream &os) const;
 
-		// Constructor
-		Lane() {}
+	// Getter for bandwidth
+	int getBandwidth() const { return bandwidth; }
 
+	// Increase the amount of transfered bytes
+	void incTransferredBytes(int bytes) { transferred_bytes += bytes; }
 
+	// Increase the number of transfered packets
+	void incTransferredPackets() { transferred_packets++; }
 
-		//
-		// Statistics
-		//
+	// Increase the number of cycles that the lane was busy
+	void incBusyCycles(long long cycles) { busy_cycles += cycles;}
 
-		// Number of bytes that was transfered through the lane
-		long long transferred_bytes = 0;
+	//
+	// Public fields
+	//
 
-		// Number of cycles that the lane was busy
-		long long busy_cycles = 0;
+	// Last cycle lane was scheduled
+	long long sched_when;
 
-		// Number of packets that traversed the lane
-		long long transferred_packets = 0;
+	// The last buffer that was scheduled
+	Buffer *sched_buffer;
 
+	// lane is busy until this cycle
+	long long busy = -1;
 
+};
 
-		//
-		// Public fields
-		//
-
-		// Last cycle lane was scheduled
-		long long sched_when;
-
-		// The last buffer that was scheduled
-		Buffer *sched_buffer;
-
-		// lane is busy until this cycle
-		long long busy = -1;
-
-	};
+class Bus : public Connection
+{
 
 private:
 
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
+
+
+
+	//
+	// Arbitration and scheduling
+	//
+
+	// Arbitration for each lane
+	Buffer *LaneArbitration(Lane *lane);
 
 	// Arbitration between available lanes
 	Lane *Arbitration(Buffer *current_buffer);

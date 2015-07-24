@@ -36,11 +36,12 @@ Link::Link(Network *network,
 		int source_buffer_size,
 		int destination_buffer_size,
 		int num_virtual_channels) :
-						Connection(descriptive_name, network, bandwidth),
+						Connection(descriptive_name, network),
 						source_node(src_node),
 						destination_node(dst_node),
 						num_virtual_channels(num_virtual_channels),
-						name(name)
+						name(name),
+						bandwidth(bandwidth)
 {
 	for (int i = 0; i < num_virtual_channels ; i++)
 	{

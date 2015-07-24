@@ -281,7 +281,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 					ini_file->getPath().c_str()));
 
 		// Find the bus
-		Bus *bus = dynamic_cast<Bus *> (getConnectionByName(bus_name));
+		Bus *bus = dynamic_cast<Bus *>(getConnectionByName(bus_name));
 		if (!bus)
 			throw Error(misc::fmt("%s: Bus '%s' does not exist in the "
 					"network.", ini_file->getPath().c_str(),
@@ -746,7 +746,6 @@ void Network::Receive(EndNode *node, Message *message)
 	transfers++;
 	accumulated_bytes += message->getSize();
 	accumulated_latency += cycle - message->getSendCycle();
-
 
 	// Remove packets from their buffer
 	for (int i = 0; i < message->getNumPackets(); i++)

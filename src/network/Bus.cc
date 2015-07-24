@@ -27,20 +27,64 @@ namespace net
 
 
 Bus::Bus(Network *network, const std::string &name, int bandwidth, int lanes) :
-		Connection(name, network, bandwidth)
+		Connection(name, network)
 {
 	for (int i = 0; i < lanes; i++)
-	{
-		auto lane = misc::new_unique<Lane>();
-		this->lanes.emplace_back(std::move(lane));
-	}
+		this->lanes.emplace_back(misc::new_unique<Lane>(bandwidth));
+}
+
+
+void Lane::Dump(std::ostream &os = std::cout) const
+{
+	//Dumping lane statistic informations
+	os << misc::fmt("Bandwidth = %d\n", bandwidth);
+	os << misc::fmt("TransferredPackets = %lld\n", transferred_packets);
+	os << misc::fmt("TransferredBytes = %lld\n", transferred_bytes);
+	os << misc::fmt("BusyCycles = %lld\n", busy_cycles);
+
+	// Statistics that depends on the cycle
+	long long cycle = System::getInstance()->getCycle();
+	os << misc::fmt("BytesPerCycle = %0.4f\n", cycle ?
+			(double) transferred_bytes / cycle : 0.0);
+	os << misc::fmt("Utilization = %0.4f\n", cycle ?
+			(double) transferred_bytes / (cycle * bandwidth) : 0.0);
 }
 
 
 void Bus::Dump(std::ostream &os = std::cout) const
 {
-	os << misc::fmt("\n***** Bus %s *****\n", name.c_str());
+	// Dumping user assigned name
+	os << misc::fmt("[ Network.%s.Bus.%s ]\n", network->getName().c_str(),
+			name.c_str());
+
+	// Dump source buffers
+	os << misc::fmt("Source buffers = ");
+	for (auto buffer : source_buffers)
+		os << misc::fmt("%s:%s \t",
+				buffer->getNode()->getName().c_str(),
+				buffer->getName().c_str());
+	os << "\n" ;
+
+	// Dump destination buffers
+	os << misc::fmt("Destination buffers = ");
+	for (auto buffer : destination_buffers)
+		os << misc::fmt("%s:%s \t",
+				buffer->getNode()->getName().c_str(),
+				buffer->getName().c_str());
+	os << "\n" ;
+
+	// Dump statistics
+	for (unsigned i = 0 ; i < lanes.size() ; i++)
+	{
+		Lane *lane = lanes[i].get();
+		os << misc::fmt("Bus lane = %d\n", i);
+		lane->Dump(os);
+	}
+
+	// Creating and empty line in dump
+	os << "\n";
 }
+
 
 void Bus::TransferPacket(Packet *packet)
 {
@@ -88,18 +132,16 @@ void Bus::TransferPacket(Packet *packet)
 				destination_node->getName().c_str()));
 
 	// Get the next buffer to transmit to, through bus
-	int destination_buffer_found;
-	Buffer *destination_buffer;
-	for (auto &iterator_buffer: destination_buffers)
+	Buffer *destination_buffer = nullptr;
+	for (Buffer *buffer : destination_buffers)
 	{
-		if (entry->getNextNode() == iterator_buffer->getNode())
+		if (entry->getNextNode() == buffer->getNode())
 		{
-			destination_buffer_found = 1;
-			destination_buffer = iterator_buffer;
+			destination_buffer = buffer;
 			break;
 		}
 	}
-	if (destination_buffer_found == 0)
+	if (destination_buffer == nullptr)
 		throw misc::Panic(misc::fmt("%s: Next node is not connected "
 				"to the bus '%s'.", network->getName().c_str(),
 				name.c_str()));
@@ -157,7 +199,7 @@ void Bus::TransferPacket(Packet *packet)
 	}
 
 	// Calculate latency and occupied resources
-	int latency = ((packet_size - 1) / bandwidth + 1);
+	int latency = ((packet_size - 1) / lane->getBandwidth() + 1);
 	source_buffer->read_busy = cycle + latency - 1;
 	lane->busy = cycle + latency - 1;
 	destination_buffer->write_busy = cycle + latency - 1;
@@ -170,9 +212,9 @@ void Bus::TransferPacket(Packet *packet)
 	packet->setBusy(cycle + latency - 1);
 
 	// Update the statistics
-	lane->busy_cycles += latency;
-	lane->transferred_bytes += packet_size;
-	lane->transferred_packets ++;
+	lane->incBusyCycles(latency);
+	lane->incTransferredBytes(packet_size);
+	lane->incTransferredPackets();
 	Node *source_node = source_buffer->getNode();
 	destination_node = destination_buffer->getNode();
 	source_node->incSentBytes(packet_size);
@@ -184,7 +226,8 @@ void Bus::TransferPacket(Packet *packet)
 	esim_engine->Next(System::event_input_buffer, latency);
 }
 
-static Buffer *laneArbitration(Bus *bus, Bus::Lane *lane)
+
+Buffer *Bus::LaneArbitration(Lane *lane)
 {
 	// Get the current cycle
 	System *system = System::getInstance();
@@ -204,18 +247,20 @@ static Buffer *laneArbitration(Bus *bus, Bus::Lane *lane)
 	}
 
 	// Get the last node that had the permission to transmit on the whole bus
-	int input_buffer_count = bus->getNumSourceBuffers();
-	int last_input_node_index = bus->last_node_index;
+	int input_buffer_count = getNumSourceBuffers();
+	int last_input_node_index = last_node_index;
 
 	// Find an input buffer to fetch from for this lane
-	Buffer *buffer;
-	int input_buffer_index;
-	for (int i = 0; i < bus->getNumSourceBuffers(); i++)
+	for (int i = 0; i < getNumSourceBuffers(); i++)
 	{
+		// variable declaration
+		Buffer *buffer;
+		int input_buffer_index;
+
 		// Applying round-robin to inputs, starting from last scheduled node
 		input_buffer_index = (last_input_node_index + i + 1)
 				% input_buffer_count;
-		buffer = bus->getSourceBuffer(input_buffer_index);
+		buffer = source_buffers[input_buffer_index];
 
 		// There must be a packet at the head of buffer
 		Packet *packet = buffer->getBufferHead();
@@ -231,7 +276,7 @@ static Buffer *laneArbitration(Bus *bus, Bus::Lane *lane)
 			continue;
 
 		// Return the scheduled buffer if all conditions where satisfied
-		bus->last_node_index = input_buffer_index;
+		last_node_index = input_buffer_index;
 		lane->sched_buffer = buffer;
 		return buffer;
 	}
@@ -242,16 +287,20 @@ static Buffer *laneArbitration(Bus *bus, Bus::Lane *lane)
 
 }
 
-Bus::Lane *Bus::Arbitration(Buffer *current_buffer)
+
+Lane *Bus::Arbitration(Buffer *current_buffer)
 {
 	// The arbitration returns first available lane of the bus
 	for (auto &lane : lanes)
 	{
 		// Arbitrate between existing lanes and sources, and return a lane
 		// that is available for the requesting buffer
-		if (laneArbitration(this, lane.get()) == current_buffer)
+		if (LaneArbitration(lane.get()) == current_buffer)
 			return lane.get();
 	}
+
+	// Return null if there are no available lanes for the packet
 	return nullptr;
 }
+
 }
