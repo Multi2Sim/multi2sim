@@ -27,12 +27,14 @@
 #include <memory>
 #include <vector>
 
+#include "Emulator.h"
 #include <memory/Memory.h>
 
 
 namespace Kepler
 {
 
+class Emulator;
 class Warp;
 class Thread;
 class Grid;
@@ -51,6 +53,9 @@ public:
 
 class ThreadBlock
 {
+	// Emulator
+	Emulator *emulator;
+
 	// ID
 	int id;
 	int id_3d[3];
@@ -83,8 +88,17 @@ class ThreadBlock
 	bool finished_emu;
 	bool finished_timing;
 
-	// Shared memory
-	mem::Memory shared_mem;
+	// Shared Memory
+	std::unique_ptr<mem::Memory> shared_memory;
+
+	// Shared memory size
+	unsigned shared_memory_size; // currently set as 16MB
+
+	// Shared memory top local address
+	unsigned shared_memory_top_addr;
+
+	// Shared memory top generic address
+	unsigned shared_memory_top_generic_addr;
 
 public:
 
@@ -114,6 +128,9 @@ public:
 
 	/// Get counter of warps at barrier
 	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
+
+	/// Get shared memory size
+	unsigned getSharedMemorySize() const { return shared_memory_size; }
 
 	/// Get counter of completed warps
 	unsigned getWarpsCompletedEmuCount() const

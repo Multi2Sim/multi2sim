@@ -77,6 +77,9 @@ Emulator::Emulator() : comm::Emulator("kpl")
 	global_mem_total_size = 1 << 30; /* 2GB */
 	global_mem_free_size = this->global_mem_total_size;
 
+	// Shared memory initialization
+	shared_memory_total_size = 16 * (1 << 20) * 20; // 20 blocks. 16MB each
+
 	// Constant memory initialization
 	const_mem = misc::new_unique<mem::Memory>();
 	const_mem->setSafe(false);
