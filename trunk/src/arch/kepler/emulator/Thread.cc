@@ -39,16 +39,17 @@ Thread::Thread(Warp *warp, int id)
 	id_in_thread_block = id;
 
 	// Local Memory Initialization
-	local_mem = misc::new_unique<mem::Memory>();
-	local_mem->setSafe(false);
-	local_mem_size = 1 << 20; // current 1MB for local memory
-	local_mem_top_addr = 0;
-	local_mem_top_generic_addr = local_mem_top_addr + id * local_mem_size +
-					emulator->getGlobalMemTotalSize();
+	local_memory = misc::new_unique<mem::Memory>();
+	local_memory->setSafe(false);
+	local_memory_size = 1 << 20; // current 1MB for local memory
+	local_memory_top_addr = 0;
+	local_memory_top_generic_addr = local_memory_top_addr + id *
+			local_memory_size +	emulator->getGlobalMemTotalSize() +
+			emulator->getSharedMemoryTotalSize();
 
 	// local mem top generic address record in const mem c[0x0][0x24]
 	emulator->WriteConstMem(0x24, sizeof(unsigned),
-			(const char*)&local_mem_top_generic_addr);
+			(const char*)&local_memory_top_generic_addr);
 
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \
@@ -100,7 +101,8 @@ Thread::Thread(Warp *warp, int id)
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1)));
 
-	WriteSR(55, 0); // Currently Set LMEMHIOFF to 0
+	// Currently Set LMEMHIOFF to 0
+	WriteSR(55, 0);
 
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
