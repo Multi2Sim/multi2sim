@@ -246,7 +246,7 @@ void Uinst::Dump(std::ostream &os) const
 		if (!dep)
 			continue;
 		dep_count++;
-		os << comma << getDepName(dep);
+		os << comma << getDependencyName(dep);
 		comma = ",";
 	}
 	if (!dep_count)
@@ -264,7 +264,7 @@ void Uinst::Dump(std::ostream &os) const
 		if (!dep)
 			continue;
 		dep_count++;
-		os << comma << getDepName(dep);
+		os << comma << getDependencyName(dep);
 		comma = ",";
 	}
 	if (!dep_count)

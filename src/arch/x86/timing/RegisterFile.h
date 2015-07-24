@@ -38,18 +38,24 @@ class RegisterFile
 {
 public:
 
-	/// Minimum size of INT FP and XMM register
-	static const int MinINTSize;
-	static const int MinFPSize;
-	static const int MinXMMSize;
+	/// Minimum size of integer register file
+	static const int MinIntegerSize;
 
-	/// enumeration of register file kind
+	/// Minimum size of floating-point register file
+	static const int MinFloatingPointSize;
+
+	/// Minimum size of XMM register file
+	static const int MinXmmSize;
+
+	/// Privacy kinds for register file
 	enum Kind
 	{
 		KindInvalid = 0,
 		KindShared,
 		KindPrivate
 	};
+
+	/// String map for values of type Kind
 	static misc::StringMap KindMap;
 
 private:
@@ -67,35 +73,103 @@ private:
 		int busy;  // number of mapped logical registers 
 	};
 
-	// Integer registers 
-	int int_rat[Uinst::DepIntCount]; // Int register aliasing table
-	std::unique_ptr<PhysicalRegister[]> int_phy_reg;
-	int int_phy_reg_count = 0;
-	std::unique_ptr<int[]> int_free_phy_reg;
-	int int_free_phy_reg_count = 0;
 
-	// FP registers 
-	int fp_top_of_stack = 0;  // Value between 0 and 7
-	int fp_rat[Uinst::DepFpCount]; // Fp register aliasing table
-	std::unique_ptr<PhysicalRegister[]> fp_phy_reg;
-	int fp_phy_reg_count = 0;
-	std::unique_ptr<int[]> fp_free_phy_reg;
-	int fp_free_phy_reg_count = 0;
 
-	// XMM registers 
-	int xmm_rat[Uinst::DepXmmCount]; // Xmm register aliasing table
-	std::unique_ptr<PhysicalRegister[]> xmm_phy_reg;
-	int xmm_phy_reg_count = 0;
-	std::unique_ptr<int[]> xmm_free_phy_reg;
-	int xmm_free_phy_reg_count = 0;
 
-	// Register file parameters
+	//
+	// Integer registers
+	//
+
+	// Integer register aliasing table
+	int integer_rat[Uinst::DepIntCount];
+
+	// Integer physical registers
+	std::unique_ptr<PhysicalRegister[]> integer_registers;
+
+	// List of free integer physical registers
+	std::unique_ptr<int[]> free_integer_registers;
+
+	// Number of free integer physical registers
+	int num_free_integer_registers = 0;
+
+	// Request an integer physical register, and return its identifier
+	int RequestIntegerRegister();
+
+
+
+
+	//
+	// Floating-point registers
+	//
+
+	// Floating-point register aliasing table
+	int floating_point_rat[Uinst::DepFpCount];
+
+	// Floating-point physical registers
+	std::unique_ptr<PhysicalRegister[]> floating_point_registers;
+
+	// List of free floating-point physical registers
+	std::unique_ptr<int[]> free_floating_point_registers;
+
+	// Number of free floating-point physical registers
+	int num_free_floating_point_registers = 0;
+
+	// Value between 0 and 7 indicating the top of the stack in the
+	// floating-point register stack
+	int floating_point_top = 0;
+
+	// Request a floating-point physical register, and return its
+	// identifier
+	int RequestFloatingPointRegister();
+
+
+
+
+	//
+	// XMM registers
+	//
+	
+	// XMM register aliasing table
+	int xmm_rat[Uinst::DepXmmCount];
+
+	// XMM physical registers
+	std::unique_ptr<PhysicalRegister[]> xmm_registers;
+
+	// List of free XMM physical registers
+	std::unique_ptr<int[]> free_xmm_registers;
+
+	// Number of free XMM physical registers
+	int num_free_xmm_registers = 0;
+
+	// Request an XMM physical register and return its identifier
+	int RequestXmmRegister();
+
+
+
+
+	//
+	// Configuration
+	//
+
+	// Private/shared register file
 	static Kind kind;
-	static int int_size;
-	static int fp_size;
+
+	// Total size of integer register file
+	static int integer_size;
+
+	// Total size of floating-point register file
+	static int floating_point_size;
+
+	// Total size of XMM register file
 	static int xmm_size;
-	static int int_local_size;
-	static int fp_local_size;
+
+	// Per-thread size of integer register file
+	static int integer_local_size;
+
+	// Per-thread size of floating-point register file
+	static int floating_point_local_size;
+
+	// Per-thread size of XMM register file
 	static int xmm_local_size;
 
 public:
@@ -136,11 +210,6 @@ public:
 
 	/// Dump register file
 	void DumpRegisterFile();
-
-	/// Request an integer/FP/XMM physical register, and return its identifier.
-	int RequestIntRegister();
-	int RequestFPRegister();
-	int RequestXMMRegister();
 
 	/// Return true if there are enough available physical registers to
 	/// rename the given uop.
