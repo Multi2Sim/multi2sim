@@ -186,8 +186,7 @@ void Cpu::Run()
 void Cpu::MemoryAccess(mem::Module *module,
 			mem::Module::AccessType access_type,
 			unsigned address,
-			std::shared_ptr<Uop> uop,
-			std::list<std::shared_ptr<Uop>> *event_queue)
+			std::shared_ptr<Uop> uop)
 {
 	// New frame
 	auto frame = misc::new_shared<MemoryAccessFrame>();
@@ -195,7 +194,6 @@ void Cpu::MemoryAccess(mem::Module *module,
 	frame->access_type = access_type;
 	frame->address = address;
 	frame->uop = uop;
-	frame->event_queue = event_queue;
 
 	// Schedule event
 	esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -220,14 +218,21 @@ void Cpu::MemoryAccessHandler(esim::Event *event, esim::Frame *esim_frame)
 	}
 	else if (event == event_memory_access_end)
 	{
-		// Insert uop into head of event queue
-		frame->event_queue->push_front(frame->uop);
+		// Insert uop into the core's event queue
+		Core *core = frame->uop->getCore();
+		core->InsertInEventQueue(frame->uop);
 	}
 	else
 	{
 		// Invalid event
 		throw misc::Panic("Invalid event");
 	}
+}
+
+
+long long Cpu::getCycle() const
+{
+	return timing->getCycle();
 }
 
 }

@@ -233,9 +233,6 @@ private:
 	// Access identifier for of last instruction fetch
 	long long fetch_access = 0;
 
-	// Cycle until which fetching is stalled (inclusive)
-	long long fetch_stall_until = 0;
-
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
 
@@ -283,20 +280,14 @@ private:
 	long long load_store_queue_reads = 0;
 	long long load_store_queue_writes = 0;
 
-	long long reg_file_int_occupancy = 0;
-	long long reg_file_int_full = 0;
-	long long reg_file_int_reads = 0;
-	long long reg_file_int_writes = 0;
+	long long integer_register_reads = 0;
+	long long integer_register_writes = 0;
 
-	long long reg_file_fp_occupancy = 0;
-	long long reg_file_fp_full = 0;
-	long long reg_file_fp_reads = 0;
-	long long reg_file_fp_writes = 0;
-
-	long long reg_file_xmm_occupancy = 0;
-	long long reg_file_xmm_full = 0;
-	long long reg_file_xmm_reads = 0;
-	long long reg_file_xmm_writes = 0;
+	long long floating_point_register_reads = 0;
+	long long floating_point_register_writes = 0;
+	
+	long long xmm_register_reads = 0;
+	long long xmm_register_writes = 0;
 
 	long long rat_int_reads = 0;
 	long long rat_int_writes = 0;
@@ -410,9 +401,6 @@ public:
 	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatXmmWrites() { return rat_xmm_writes; }
 
-	/// Get cycle until which fetch is stalled
-	long long getFetchStallUntil() { return fetch_stall_until; }
-
 
 
 
@@ -521,12 +509,18 @@ public:
 	// Statistics
 	//
 
-	/// Increment the number of dispatched micro-instructions of a given
-	/// kind.
+	/// Increment the number of dispatched micro-instructions of a kind
 	void incNumDispatchedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
 		num_dispatched_uinsts[opcode]++;
+	}
+
+	/// Increment the number of issued micro-instructions of a kind
+	void incNumIssuedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_issued_uinsts[opcode]++;
 	}
 
 

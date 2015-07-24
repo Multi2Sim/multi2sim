@@ -255,9 +255,6 @@ private:
 
 		// Uop associated with the memory access
 		std::shared_ptr<Uop> uop;
-
-		// Event queue to insert the uop to when memory access finishes
-		std::list<std::shared_ptr<Uop>> *event_queue = nullptr;
 	};
 
 	// Event scheduled to start a memory access
@@ -433,6 +430,11 @@ public:
 	/// Get the MMU
 	mem::MMU *getMMU() { return mmu.get(); }
 
+	/// Return the current cycle in the CPU's frequency domain. We cannot
+	/// make this function inline to avoid the cross-dependency between
+	/// classes Cpu and Timing.
+	long long getCycle() const;
+
 	/// Dump functions
 	void Dump();
 	void DumpSummary();
@@ -451,13 +453,12 @@ public:
 	void UpdateOccupancyStats();
 
 	/// Perform a memory access on the given module for the given address.
-	/// When the access completes, insert \a uop at the head of the given
-	/// event queue.
+	/// When the access completes, the \a uop is inserted in the event
+	/// queue of the corresponding core.
 	void MemoryAccess(mem::Module *module,
 			mem::Module::AccessType access_type,
 			unsigned address,
-			std::shared_ptr<Uop> uop,
-			std::list<std::shared_ptr<Uop>> *event_queue);
+			std::shared_ptr<Uop> uop);
 
 
 
@@ -469,12 +470,18 @@ public:
 	/// Increment the number of fetched micro-instructions
 	void incNumFetchedUinsts() { num_fetched_uinsts++; }
 
-	/// Increment the number of dispatched micro-instructions of a given
-	/// kind.
+	/// Increment the number of dispatched micro-instructions of a kind
 	void incNumDispatchedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
 		num_dispatched_uinsts[opcode]++;
+	}
+
+	/// Increment the number of issued micro-instructions of a kind
+	void incNumIssuedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_issued_uinsts[opcode]++;
 	}
 };
 
