@@ -30,6 +30,8 @@ namespace SI
 {
 
 int ComputeUnit::num_wavefront_pools = 4;
+int ComputeUnit::max_work_groups_per_wavefront_pool = 10;
+int ComputeUnit::max_wavefronts_per_wavefront_pool = 10; 
 int ComputeUnit::fetch_latency = 1;
 int ComputeUnit::fetch_width = 1;
 int ComputeUnit::fetch_buffer_size = 10;
@@ -410,10 +412,30 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	//	SIComputeUnitReportMapWorkGroup(self);
 }
 
+void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
+{
+	// Add work-group                                                     
+	work_groups.push_back(work_group);                  
+
+	// Save iterator 
+	auto it = work_groups.begin();
+	std::advance(it, work_group->getIdInComputeUnit());                                   
+	work_group->compute_unit_work_groups_iterator = it;
+}
+
+
+void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
+{
+	// Erase work group                                                      
+	assert(work_group->compute_unit_work_groups_iterator != 
+			work_groups.end());           
+	work_groups.erase(work_group->compute_unit_work_groups_iterator);  
+}
+
 
 void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 {
-	// Get the associated GPU object
+	// Get Gpu object
 	Gpu *gpu = getGpu();
 
 	// Add work group register access statistics to compute unit
@@ -422,13 +444,20 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	num_vreg_reads += work_group->getVregReadCount();
 	num_vreg_writes += work_group->getVregWriteCount();
 
+	// Remove the work group from the list
+	assert(work_groups.size() > 0);
+	RemoveWorkGroup(work_group);
+
+	// Unmap wavefronts from instruction buffer
+	work_group->getWavefrontPool()->UnmapWavefronts(work_group);
+	
 	// If compute unit is not already in the available list, place
 	//  it there
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
 
 	// Trace
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
-		work_group->getId());
+			work_group->getId());
 }
 
 

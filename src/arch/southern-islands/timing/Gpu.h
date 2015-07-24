@@ -34,13 +34,41 @@ namespace SI
 /// Class representing a Southern Islands GPU device.
 class Gpu
 {
+
+public:
+
+	/// Enumeration depciting the various allocation granularities
+	enum RegisterAllocationGranularity
+	{
+		RegisterAllocationInvalid = 0,  /* For invalid user input */
+		RegisterAllocationWavefront,
+		RegisterAllocationWorkGroup
+	};
+
+	/// String map depciting the various allocation granularities
+	static const misc::StringMap register_allocation_granularity_map;
+
+private:
+
 	//
 	// Configuration
 	//
 
 	// Number of compute units
 	static int num_compute_units;
+	
+	// Register allocation size
+	static unsigned register_allocation_size;
 
+	// Number of vector registers per compute unit
+	static int num_vector_registers;
+	
+	// Allocation size of lds memory 
+	static int lds_allocation_size; 
+
+	// Size of lds memory
+	static int lds_size;
+	
 	// MMU used by this GPU
 	mem::MMU *mmu;
 
@@ -54,12 +82,16 @@ class Gpu
 	// Vector of compute units
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
 
-	// Number of work groups allowed in a wavefront pool
-	int work_groups_per_wavefront_pool;
+	// Granularity of the register allocation
+	RegisterAllocationGranularity register_allocation_granularity = 
+			RegisterAllocationInvalid;
 
-	// Number of work_groups allowed in a compute unit
-	int work_groups_per_compute_unit;
+	/// Number of work groups allowed in a wavefront pool
+	int work_groups_per_wavefront_pool = 0;
 
+	/// Number of work_groups allowed in a compute unit
+	int work_groups_per_compute_unit = 0;
+	
 public:
 
 	//
@@ -89,8 +121,23 @@ public:
 		return compute_units[index].get();
 	}
 
+	/// return the number of work groups per compute unit
+	int getWorkGroupsPerComputeUnit() const 
+	{
+		return work_groups_per_compute_unit; 
+	}
+
 	/// Return the associated MMU
 	mem::MMU *getMmu() const { return mmu; }
+
+	/// Map an NDRange to the GPP object
+	void MapNDRange(NDRange *ndrange);
+	
+	// Calculate the number of allowed work groups per wavefront pool
+	void CalcGetWorkGroupsPerWavefrontPool(
+			int work_items_per_work_group, 
+			int registers_per_work_item, 
+			int local_memory_per_work_group);
 
 	/// Return an iterator to the first compute unit
 	std::vector<std::unique_ptr<ComputeUnit>>::iterator getComputeUnitsBegin()
@@ -109,18 +156,6 @@ public:
 	
 	/// Add a compute unit to the list of available compute units
 	ComputeUnit *AddComputeUnit(ComputeUnit *compute_unit);
-
-
-
-	//
-	// Getters
-	//
-
-	/// Return the number of work groups per compute unit
-	int getWorkGroupsPerComputeUnit() 
-	{ 
-		return work_groups_per_compute_unit; 
-	}
 };
 
 }
