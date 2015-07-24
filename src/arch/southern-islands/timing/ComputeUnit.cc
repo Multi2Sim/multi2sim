@@ -19,6 +19,7 @@
 
 #include <arch/southern-islands/disassembler/Instruction.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
+#include <arch/southern-islands/emulator/WorkGroup.h>
 
 #include "ComputeUnit.h"
 #include "Timing.h"
@@ -339,6 +340,25 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 	}
 }
 
+void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
+{
+	// Get the associated GPU object
+	Gpu *gpu = getGpu();
+
+	// Add work group register access statistics to compute unit
+	num_sreg_reads += work_group->getSregReadCount();
+	num_sreg_writes += work_group->getSregWriteCount();
+	num_vreg_reads += work_group->getVregReadCount();
+	num_vreg_writes += work_group->getVregWriteCount();
+
+	// If compute unit is not already in the available list, place
+	//  it there
+	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+
+	// Trace
+	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
+		work_group->getId());
+}
 
 void ComputeUnit::Run()
 {
