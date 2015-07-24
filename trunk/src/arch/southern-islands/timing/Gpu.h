@@ -54,6 +54,12 @@ class Gpu
 	// Vector of compute units
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
 
+	// Number of work groups allowed in a wavefront pool
+	int work_groups_per_wavefront_pool;
+
+	// Number of work_groups allowed in a compute unit
+	int work_groups_per_compute_unit;
+
 public:
 
 	//
@@ -100,6 +106,21 @@ public:
 
 	/// Advance one cycle in the GPU state
 	void Run();
+	
+	/// Add a compute unit to the list of available compute units
+	ComputeUnit *AddComputeUnit(ComputeUnit *compute_unit);
+
+
+
+	//
+	// Getters
+	//
+
+	/// Return the number of work groups per compute unit
+	int getWorkGroupsPerComputeUnit() 
+	{ 
+		return work_groups_per_compute_unit; 
+	}
 };
 
 }
