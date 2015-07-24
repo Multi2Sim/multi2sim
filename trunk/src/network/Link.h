@@ -44,6 +44,9 @@ class Link : public Connection
 	// user assigned name
 	std::string name;
 
+	// Bandwidth
+	int bandwidth;
+
 
 
 

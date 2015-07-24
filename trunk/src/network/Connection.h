@@ -38,9 +38,6 @@ protected:
 	// Connection Name
 	std::string name;
 
-	// Connection bandwidth
-	int bandwidth;
-
 	// Connection Latency
 	int latency = 0;
 
@@ -53,7 +50,7 @@ protected:
 public:
 
 	/// Constructor
-	Connection(const std::string &name, Network *network, int bandwidth);
+	Connection(const std::string &name, Network *network);
 
 	/// Get the name of the connection
 	std::string getName() const { return name; }
