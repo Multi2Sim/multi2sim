@@ -67,10 +67,10 @@ void Uop::CountDependencies()
 		else if (Uinst::isXmmDependency(loreg))
 			xmm_count++;
 	}
-	odep_count = flag_count + int_count + fp_count + xmm_count;
-	phy_int_odep_count = flag_count && !int_count ? 1 : int_count;
-	phy_fp_odep_count = fp_count;
-	phy_xmm_odep_count = xmm_count;
+	num_outputs = flag_count + int_count + fp_count + xmm_count;
+	num_integer_outputs = flag_count && !int_count ? 1 : int_count;
+	num_floating_point_outputs = fp_count;
+	num_xmm_outputs = xmm_count;
 
 	// Input dependences
 	int_count = 0;
@@ -89,10 +89,10 @@ void Uop::CountDependencies()
 		else if (Uinst::isXmmDependency(loreg))
 			xmm_count++;
 	}
-	idep_count = flag_count + int_count + fp_count + xmm_count;
-	phy_int_idep_count = flag_count + int_count;
-	phy_fp_idep_count = fp_count;
-	phy_xmm_idep_count = xmm_count;
+	num_inputs = flag_count + int_count + fp_count + xmm_count;
+	num_integer_inputs = flag_count + int_count;
+	num_floating_point_inputs = fp_count;
+	num_xmm_inputs = xmm_count;
 }
 
 

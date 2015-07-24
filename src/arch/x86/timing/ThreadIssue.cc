@@ -76,14 +76,14 @@ int Thread::IssueLoadQueue(int quantum)
 		core->incLoadStoreQueueReads();
 
 		// Increment per-thread number of reads from registers
-		integer_register_reads += uop->getPhyIntIdepCount();
-		floating_point_register_reads += uop->getPhyFpIdepCount();
-		xmm_register_reads += uop->getPhyXmmIdepCount();
+		integer_register_reads += uop->getNumIntegerInputs();
+		floating_point_register_reads += uop->getNumFloatingPointInputs();
+		xmm_register_reads += uop->getNumXmmInputs();
 
 		// Increment per-core number of reads from registers
-		core->incIntegerRegisterReads(uop->getPhyIntIdepCount());
-		core->incFloatingPointRegisterReads(uop->getPhyFpIdepCount());
-		core->incXmmRegisterReads(uop->getPhyXmmIdepCount());
+		core->incIntegerRegisterReads(uop->getNumIntegerInputs());
+		core->incFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
+		core->incXmmRegisterReads(uop->getNumXmmInputs());
 
 		// Increment number of issued micro-instructions coming from
 		// the trace cache

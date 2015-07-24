@@ -88,42 +88,42 @@ class Uop
 	// Dependencies
 	//
 
-	// Input dependency count
-	int idep_count = 0;
+	// Input physical registers
+	int inputs[Uinst::MaxIDeps] = {};
 
-	// Output dependency count
-	int odep_count = 0;
+	// Output physical registers
+	int outputs[Uinst::MaxODeps] = {};
 
-	// Number of output dependencies on physical integer registers
-	int phy_int_odep_count = 0;
+	// Old output physical registers
+	int old_outputs[Uinst::MaxODeps] = {};
 
-	// Number of output dependencies on physical floating-point registers
-	int phy_fp_odep_count = 0;
+	// Total number of input dependencies
+	int num_inputs = 0;
 
-	// Number of output dependencies on physical XMM registers
-	int phy_xmm_odep_count = 0;
+	// Total number of output dependencies
+	int num_outputs = 0;
 
-	// Number of input dependencies on physical integer registers
-	int phy_int_idep_count = 0;
+	// Number of integer input dependencies
+	int num_integer_inputs = 0;
 
-	// Number of input dependencies on physical floating-point registers
-	int phy_fp_idep_count = 0;
+	// Number of integer output dependencies
+	int num_integer_outputs = 0;
 
-	// Number of input dependences on physical XMM registers
-	int phy_xmm_idep_count = 0;
+	// Number of floating-point input dependencies
+	int num_floating_point_inputs = 0;
 
-	// Input dependency physical register table
-	int phy_idep[Uinst::MaxIDeps] = {};
+	// Number of floating-point output dependencies
+	int num_floating_point_outputs = 0;
 
-	// Output dependency physical register table
-	int phy_odep[Uinst::MaxODeps] = {};
+	// Number of XMM input dependencies
+	int num_xmm_inputs = 0;
 
-	// Old output dependency physical register table
-	int phy_oodep[Uinst::MaxODeps] = {};
+	// Number of XMM output dependencies
+	int num_xmm_outputs = 0;
 
 public:
 
-	/// Constructor.
+	/// Constructor
 	///
 	/// \param thread
 	///	Hardware thread that this uop belongs to.
@@ -162,46 +162,46 @@ public:
 	/// Get flags
 	int getFlags() const { return flags; }
 
-	/// Set physical register in the input dependency table
-	void setPhyRegIdep(int index, int reg_no)
+	/// Set input physical register dependency
+	void setInput(int index, int physical_register)
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxIDeps - 1));
-		phy_idep[index] = reg_no;
+		inputs[index] = physical_register;
 	}
 
-	/// Set physical register in the output dependency table
-	void setPhyRegOdep(int index, int reg_no)
+	/// Set output physical register dependency
+	void setOutput(int index, int physical_register)
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
-		phy_odep[index] = reg_no;
+		outputs[index] = physical_register;
 	}
 
-	/// Set physical register in the old output dependency table
-	void setPhyRegOOdep(int index, int reg_no)
+	/// Set old output physical register dependency
+	void setOldOutput(int index, int physical_register)
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
-		phy_oodep[index] = reg_no;
+		old_outputs[index] = physical_register;
 	}
 
-	/// Get physical register in the input dependency table
-	int getPhyRegIdep(int index) const
+	/// Get input physical register dependency
+	int getInput(int index) const
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxIDeps - 1));
-		return phy_idep[index];
+		return inputs[index];
 	}
 
-	/// Get physical register in the output dependency table
-	int getPhyRegOdep(int index) const
+	/// Get output physical register dependency
+	int getOutput(int index) const
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
-		return phy_odep[index];
+		return outputs[index];
 	}
 
-	/// Get physical register in the old output dependency table
-	int getPhyRegOOdep(int index) const
+	/// Get old output physical register dependency
+	int getOldOutput(int index) const
 	{
 		assert(misc::inRange(index, 0, Uinst::MaxODeps - 1));
-		return phy_oodep[index];
+		return old_outputs[index];
 	}
 
 	/// Uop comparison based on ready time or unique ID
@@ -222,27 +222,23 @@ public:
 	// Dependencies
 	//
 
-	/// Return the number of output dependencies on physical integer
-	/// registers.
-	int getPhyIntOdepCount() const { return phy_int_odep_count; }
+	/// Return the number of integer input dependencies
+	int getNumIntegerInputs() const { return num_integer_inputs; }
 
-	/// Return the number of output dependencies on physical floating-point
-	/// registers.
-	int getPhyFpOdepCount() const { return phy_fp_odep_count; }
+	/// Return the number of integer output dependencies
+	int getNumIntegerOutputs() const { return num_integer_outputs; }
 
-	/// Return the number of output dependencies on physical XMM registers.
-	int getPhyXmmOdepCount() const { return phy_xmm_odep_count; }
+	/// Return the number of floating-point input dependencies
+	int getNumFloatingPointInputs() const { return num_floating_point_inputs; }
 
-	/// Return the number of input dependencies on physical integer
-	/// registers.
-	int getPhyIntIdepCount() const { return phy_int_idep_count; }
+	/// Return the number of floating-point output dependencies
+	int getNumFloatingPointOutputs() const { return num_floating_point_outputs; }
 
-	/// Return the number of input dependencies on physical floating-point
-	/// registers.
-	int getPhyFpIdepCount() const { return phy_fp_idep_count; }
+	/// Return the number of XMM input dependencies
+	int getNumXmmInputs() const { return num_xmm_inputs; }
 
-	/// Return the number of input dependences on physical XMM registers.
-	int getPhyXmmIdepCount() const { return phy_xmm_idep_count; }
+	/// Return the number of XMM output dependencies
+	int getNumXmmOutputs() const { return num_xmm_outputs; }
 
 
 
