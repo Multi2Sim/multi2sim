@@ -29,34 +29,59 @@ class Buffer;
 
 class Bus : public Connection
 {
+
 public:
 
 	class Lane
 	{
 
-		// lane owner
-		Buffer* owner = nullptr;
-
-		// lane is busy until this cycle
-		long long busy_cycle = -1;
-
-		// Lane index
-		int index;
-
 	public:
 
 		// Constructor
-		Lane(int index) : index(index) {}
+		Lane() {}
 
-		// Get the Lane index
-		int getLaneIndex() const { return this->index; }
+
+
+		//
+		// Statistics
+		//
+
+		// Number of bytes that was transfered through the lane
+		long long transferred_bytes = 0;
+
+		// Number of cycles that the lane was busy
+		long long busy_cycles = 0;
+
+		// Number of packets that traversed the lane
+		long long transferred_packets = 0;
+
+
+
+		//
+		// Public fields
+		//
+
+		// Last cycle lane was scheduled
+		long long sched_when;
+
+		// The last buffer that was scheduled
+		Buffer *sched_buffer;
+
+		// lane is busy until this cycle
+		long long busy = -1;
 
 	};
+
+private:
 
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
 
+	// Arbitration between available lanes
+	Lane *Arbitration(Buffer *current_buffer);
+
 public:
+
 	// Constructor
 	Bus(Network *network, const std::string &name,
 			int bandwidth, int num_lanes);
@@ -72,6 +97,14 @@ public:
 
 	/// Transfer the packet from an output buffer
 	void TransferPacket(Packet *packet);
+
+	//
+	// Public fields
+	//
+
+	// The index of last node scheduled on the bus
+	int last_node_index;
+
 };
 
 }  // namespace net

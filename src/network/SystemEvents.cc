@@ -61,9 +61,9 @@ void System::EventTypeSendHandler(esim::Event *type,
 				destination_node->getName().c_str()));
 
 	// Dump debug information
-	debug << misc::fmt("[Network] Send Handler net=\"%s\", "
-			"msg-->pkt=%lld-->%d, "
-			"source_node=\"%s\", destination_node=\"%s\", "
+	debug << misc::fmt("[Network %s] [Send Handler]"
+			"message-->packet: %lld-->%d, "
+			"[Source node %s] to [Destination node=\"%s\", "
 			"output_buffer=\"%s\"\n",
 			network->getName().c_str(), 
 			message->getId(), 
@@ -111,8 +111,9 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 	Network *network = message->getNetwork();
 
 	// Dump debug information
-	debug << misc::fmt("[Network] Output Buffer Event Handler, net=\"%s\", "
-			"msg-->pkt=%lld-->%d, node=\"%s\", buf=\"%s\"\n",
+	debug << misc::fmt("[Network %s] [Output Buffer Event Handler], "
+			"message-->packet: %lld-->%d, "
+			"[Node %s] [Buffer %s]\n",
 			network->getName().c_str(), message->getId(), 
 			packet->getSessionId(), node->getName().c_str(), 
 			buffer->getName().c_str());
@@ -140,8 +141,9 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 	Network *network = message->getNetwork();
 
 	// Dump debug information
-	debug << misc::fmt("[Network] Input Buffer Event Handler, net=\"%s\", "
-			"msg-->pkt=%lld-->%d, node=\"%s\", buf=\"%s\"\n",
+	debug << misc::fmt("[Network %s] [Input Buffer Event Handler], "
+			"message-->packet: %lld-->%d, at "
+			"[Node %s] [Buffer %s]\n",
 			network->getName().c_str(), message->getId(),
 			packet->getSessionId(), node->getName().c_str(),
 			buffer->getName().c_str());
@@ -186,8 +188,8 @@ void System::EventTypeReceiveHandler(esim::Event *type,
 	Network *network = message->getNetwork();
 
 	// Dump debug information
-	debug << misc::fmt("[Network] Receive Event Handler, net=\"%s\", "
-			"msg-->pkt=%lld-->%d, node=\"%s\"\n",
+	debug << misc::fmt("[Network %s] [Receive Event Handler], "
+			"message-->packet: %lld-->%d, [node %s]\n",
 			network->getName().c_str(), message->getId(),
 			packet->getSessionId(), node->getName().c_str());
 

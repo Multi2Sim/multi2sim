@@ -79,12 +79,14 @@ void Switch::Forward(Packet *packet)
 	Network *network = message->getNetwork();
 	if (input_buffer->read_busy >= cycle)
 	{
-		System::debug << misc::fmt("pkt a=\"stall\" "
-				"net=\"%s\" msg-->pkt=%lld:%d "
-				"why=\"src-busy\"",
+		System::debug << misc::fmt("[Network %s] [stall - busy source] "
+				"message-->packet: %lld:%d, at "
+				"[Node %s] [Buffer %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId());
+				packet->getSessionId(),
+				node->getName().c_str(),
+				input_buffer->getName().c_str());
 		esim_engine->Next(current_event, 
 				input_buffer->read_busy - cycle + 1);
 		return;
@@ -105,20 +107,20 @@ void Switch::Forward(Packet *packet)
 	// Check if the output buffer is busy
 	if (output_buffer->write_busy >= cycle)
 	{
-		System::debug << misc::fmt("pkt "
-					"a=\"stall\" "
-					"net=\"%s\" "
-					"msg-->pkt=%lld:%d "
-					"why=\"dst-busy\"\n",
-					network->getName().c_str(),
-					message->getId(),
-					packet->getSessionId());
+		System::debug << misc::fmt("[Network %s] [stall - busy destination] "
+				"message-->packet: %lld:%d, at "
+				"[Node %s] [Buffer %s]",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getSessionId(),
+				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getName().c_str());
 		esim_engine->Next(current_event, 
 				output_buffer->write_busy - cycle + 1);
 		return;
 	}
 
-	// Check if the destination buffer larget enough to fit the packet
+	// Check if the destination buffer target enough to fit the packet
 	if (packet->getSize() > output_buffer->getSize())
 		throw misc::Panic(misc::fmt("%s: packet does not fit in "
 				"buffer.\n", 
@@ -128,14 +130,14 @@ void Switch::Forward(Packet *packet)
 	if (output_buffer->getCount() + packet->getSize() > 
 			output_buffer->getSize())
 	{
-		System::debug << misc::fmt("pkt "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg-->pkt=%lld:%d "
-				"why=\"dst-full\"\n",
+		System::debug << misc::fmt("[Network %s] [stall - full destination] "
+				"message-->packet: %lld:%d, at "
+				"[Node %s] [Buffer %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId());
+				packet->getSessionId(),
+				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getName().c_str());
 		output_buffer->Wait(current_event);
 		return;
 	}
@@ -143,14 +145,13 @@ void Switch::Forward(Packet *packet)
 	// If scheduler says that it is not our turn, try later
 	if (Schedule(output_buffer) != input_buffer)
 	{
-		System::debug << misc::fmt("pkt "
-				"a=\"stall\" "
-				"net=\"%s\" "
-				"msg-->pkt=%lld:%d "
-				"why=\"sched\"\n",
+		System::debug << misc::fmt("[Network %s] [stall - switch scheduling] "
+				"message-->packet: %lld:%d, at "
+				"[Node %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId());
+				packet->getSessionId(),
+				name.c_str());
 
 		esim_engine->Next(current_event, 1);
 		return;
