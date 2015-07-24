@@ -17,14 +17,28 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emulator/NDRange.h>
+
 #include "Gpu.h"
+#include "Timing.h"
 
 
 namespace SI
 {
 
+// Static variables
 int Gpu::num_compute_units = 32;
+unsigned Gpu::register_allocation_size = 32;
+int Gpu::num_vector_registers = 65536;
+int Gpu::lds_allocation_size = 64; 
+int Gpu::lds_size = 65536;
 
+// String map of the argument's access type                                      
+const misc::StringMap Gpu::register_allocation_granularity_map =                                
+{                                                                                
+	{ "Wavefront", RegisterAllocationWavefront },
+	{ "WorkGroup", RegisterAllocationWorkGroup }
+}; 
 
 Gpu::Gpu()
 {
@@ -32,6 +46,96 @@ Gpu::Gpu()
 	compute_units.reserve(num_compute_units);
 	for (int i = 0; i < num_compute_units; i++)
 		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i));
+}
+
+
+void Gpu::MapNDRange(NDRange *ndrange)
+{
+	// Check that at least one work-group can be allocated per 
+	// wavefront pool
+	Gpu::CalcGetWorkGroupsPerWavefrontPool(ndrange->getLocalSize1D(),
+			ndrange->getNumVgprUsed(),
+			ndrange->getLocalMemTop());
+
+	// Make sure the number of work groups per wavefront pool is non-zero
+	if (!work_groups_per_wavefront_pool)
+	{
+		throw Timing::Error(misc::fmt("work-group resources cannot be allocated to a compute "
+			"unit.\n\tA compute unit in the GPU has a limit in "
+			"number of wavefronts, number\n\tof registers, and "
+			"amount of local memory. If the work-group size\n"
+			"\texceeds any of these limits, the ND-Range cannot "
+			"be executed.\n"));
+	}
+
+	// Calculate limit of work groups per compute unit
+	work_groups_per_compute_unit = work_groups_per_wavefront_pool *
+			ComputeUnit::num_wavefront_pools;
+	assert(work_groups_per_wavefront_pool <=
+			ComputeUnit::max_work_groups_per_wavefront_pool);
+}
+
+
+void Gpu::CalcGetWorkGroupsPerWavefrontPool(int work_items_per_work_group, 
+		int registers_per_work_item, int local_memory_per_work_group)
+{
+	// Get maximum number of work-groups per SIMD as limited by the 
+	// maximum number of wavefronts, given the number of wavefronts per 
+	// work-group in the NDRange
+	assert(WorkGroup::WavefrontSize > 0);
+	int wavefronts_per_work_group = (work_items_per_work_group + 
+			WorkGroup::WavefrontSize - 1) / 
+			WorkGroup::WavefrontSize;
+	int max_work_groups_limited_by_max_wavefronts = 
+			ComputeUnit::max_wavefronts_per_wavefront_pool /
+			wavefronts_per_work_group;
+
+	// Get maximum number of work-groups per SIMD as limited by the number 
+	// of available registers, given the number of registers used per 
+	// work-item.
+	int registers_per_work_group;
+	if (register_allocation_granularity == RegisterAllocationWavefront)
+	{
+		registers_per_work_group = misc::RoundUp(
+				registers_per_work_item *
+				WorkGroup::WavefrontSize, 
+				register_allocation_size) * 
+				wavefronts_per_work_group;
+	}
+	else
+	{
+		registers_per_work_group = misc::RoundUp(
+				registers_per_work_item *
+				work_items_per_work_group, 
+				register_allocation_size);
+	}
+	
+	// FIXME need to account for scalar registers
+	int max_work_groups_limited_by_num_registers = 
+			registers_per_work_group ?
+			num_vector_registers / registers_per_work_group :
+			ComputeUnit::max_work_groups_per_wavefront_pool;
+
+	// Get maximum number of work-groups per SIMD as limited by the 
+	// amount of available local memory, given the local memory used 
+	// by each work-group in the NDRange
+	local_memory_per_work_group = misc::RoundUp(local_memory_per_work_group, 
+			lds_allocation_size);
+	int max_work_groups_limited_by_local_memory = 
+			local_memory_per_work_group ?
+			lds_size / local_memory_per_work_group :
+			ComputeUnit::max_work_groups_per_wavefront_pool;
+
+	// Based on the limits above, calculate the actual limit of work-groups 
+	// per SIMD.
+	work_groups_per_wavefront_pool = 
+			ComputeUnit::max_work_groups_per_wavefront_pool;
+	work_groups_per_wavefront_pool = std::min(work_groups_per_wavefront_pool,
+			max_work_groups_limited_by_max_wavefronts);
+	work_groups_per_wavefront_pool= std::min(work_groups_per_wavefront_pool, 
+			max_work_groups_limited_by_num_registers);
+	work_groups_per_wavefront_pool = std::min(work_groups_per_wavefront_pool, 
+			max_work_groups_limited_by_local_memory);
 }
 
 

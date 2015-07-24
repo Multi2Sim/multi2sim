@@ -28,7 +28,7 @@ namespace SI
 {
 
 // Private constant declaring wavefront size
-const unsigned WorkGroup::WavefrontSize;
+const unsigned WorkGroup::WavefrontSize = 64;
 
 
 WorkGroup::WorkGroup(NDRange *ndrange, unsigned id)

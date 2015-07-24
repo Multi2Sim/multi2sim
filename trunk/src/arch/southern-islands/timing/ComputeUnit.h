@@ -101,6 +101,9 @@ class ComputeUnit
 	// Counter of identifiers assigned to uops in this compute unit
 	long long uop_id_counter = 0;
 
+	// Flag to indicate if the compute unit is currently available or not
+	bool available = true;
+
 public:
 
 	//
@@ -128,6 +131,12 @@ public:
 	/// Maximum number of instructions issued in each cycle of each type
 	/// (vector, scalar, branch, ...)
 	static int max_instructions_issued_per_type;
+
+	/// The maximum number of work_groups in a wavefront pool
+	static int max_work_groups_per_wavefront_pool;
+
+	/// The maximum number of wavefronts in a wavefront pool
+	static int max_wavefronts_per_wavefront_pool; 
 
 
 
@@ -159,6 +168,12 @@ public:
 
 	/// Unmap a work group from the compute unit
 	void UnmapWorkGroup(WorkGroup *work_group);
+
+	/// Add a work group pointer to the work_groups list
+	void AddWorkGroup(WorkGroup *work_group);
+
+	/// Remove a work group pointer from the work_groups list
+	void RemoveWorkGroup(WorkGroup *work_group);
 
 	/// Return the associated LDS module
 	mem::Module *getLdsModule() const { return lds_module; }

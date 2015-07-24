@@ -28,30 +28,67 @@ namespace SI
 class ComputeUnit;
 class WavefrontPool;
 class Wavefront;
+class WorkGroup;
+class Uop;
 
 
 /// Wavefront pool entry
 class WavefrontPoolEntry
 {
+	// ID of entry in the wavefront pool
+	int id_in_wavefront_pool;
+
 	// Wavefront pool that it belongs to
 	WavefrontPool *wavefront_pool;
 
 	// Wavefront that belongs to this entry
-	Wavefront *wavefront;
-
+	Wavefront *wavefront = nullptr;
+	
+	// Uop currently associated with the entry
+	Uop *uop = nullptr;
+	
 public:
 
 	/// Constructor
-	WavefrontPoolEntry(WavefrontPool *wavefront_pool) :
+	WavefrontPoolEntry(int id, WavefrontPool *wavefront_pool) :
+		id_in_wavefront_pool(id), 
 		wavefront_pool(wavefront_pool)
 	{
 	}
+	
+	/// Clear the internal counters of the wavefront pool entry
+	void Clear();
+
+
+	//
+	// Getters
+	//
+
+	/// Get the ID of the entry in the wavefront pool
+	int getIdInWavefrontPool() { return id_in_wavefront_pool; }
 
 	/// Return the wavefront pool that it belongs to
 	WavefrontPool *getWavefrontPool() const { return wavefront_pool; }
 
 	/// Return the associated wavefront
 	Wavefront *getWavefront() const { return wavefront; }
+
+	
+
+
+	//
+	// Setters
+	//
+
+	/// Set the associated wavefront
+	void setWavefront(Wavefront *wavefront) { this->wavefront = wavefront; }
+
+	
+
+
+	//
+	// Counters
+	// 
 
 	/// Number of outstanding vector memory accesses
 	int vm_cnt = 0;
@@ -62,12 +99,29 @@ public:
 	/// Number of outstanding LDS, GLDS, or constant memory accesses
 	int lgkm_cnt = 0;
 
+
+
+	
+	// 
 	// Flags updated during wavefront execution
+	//
+
+	/// Valid if wavefront assigned to entry
+	bool valid = false; 
+	
+	/// Indicates whether the wavefront is ready now
 	bool ready = false;
+	
+	/// Indicates whether the wavefront will be ready in the next cycle
 	bool ready_next_cycle = false;
-	bool wavefront_completed = false;
+	
+	/// Indicates whether the wavefront is waiting at a barrier
 	bool wait_for_barrier = false;
+	
+	/// Indicates whether the wavefront has finished yet
 	bool wavefront_finished = false;
+
+	/// Indicates whether the wavefront needs to wait for a memory access
 	bool mem_wait = false;
 };
 
@@ -84,19 +138,25 @@ class WavefrontPool
 	// Number of instructions
 	long long num_instructions = 0;
 
+	// Number of wavefronts associated with the wavefront pool
+	int num_wavefronts = 0;
+
 	// Wavefront pool entries that belong to this pool
 	std::vector<std::unique_ptr<WavefrontPoolEntry>> wavefront_pool_entries;
+
 public:
 
 	/// Constructor
-	WavefrontPool(int id, ComputeUnit *compute_unit) :
-		id(id),
-		compute_unit(compute_unit)
-	{
-	}
+	WavefrontPool(int id, ComputeUnit *compute_unit);
 
 	/// Return the identifier for this wavefront pool
 	int getId() const { return id; }
+
+	/// Map wavefronts to the wavefront pool
+	void MapWavefronts(WorkGroup *work_group);
+	
+	/// Unmap wavefronts from the wavefront pool
+	void UnmapWavefronts(WorkGroup *work_group);
 
 	/// Return an iterator to the first wavefront pool entry
 	/// in wavefront_pool_entries
