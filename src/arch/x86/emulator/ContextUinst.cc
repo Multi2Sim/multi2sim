@@ -111,10 +111,10 @@ void Context::EmitUinstEffectiveAddress(Uinst *uinst, int index)
 
 void Context::ParseUinstDep(Uinst *uinst, int index)
 {
-	// Regular dependence */
+	// Regular dependence
 	assert(misc::inRange(index, 0, Uinst::MaxDeps - 1));
 	Uinst::Dep dep = uinst->getDep(index);
-	if (Uinst::isValidDep(dep))
+	if (Uinst::isValidDependency(dep))
 		return;
 
 	// Instruction dependent

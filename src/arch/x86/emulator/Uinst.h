@@ -313,45 +313,42 @@ public:
 
 	/// Return \c true if a micro-instruction dependency is an integer
 	/// register
-	static bool isDepIntReg(Dep dep)
+	static bool isIntegerDependency(int dep)
 	{
-		return dep >= DepIntFirst
-				&& dep <= DepIntLast;
+		return dep >= DepIntFirst && dep <= DepIntLast;
 	}
 
 	/// Return \c true if a micro-instruction dependency is a floating-point
 	/// register.
-	static bool isDepFpReg(Dep dep)
+	static bool isFloatingPointDependency(int dep)
 	{
-		return dep >= DepFpFirst
-				&& dep <= DepFpLast;
+		return dep >= DepFpFirst && dep <= DepFpLast;
 	}
 
 	/// Return \c true if a micro-instruction dependency is an XMM register
-	static bool isDepXmmReg(Dep dep)
+	static bool isXmmDependency(int dep)
 	{
 		return dep >= DepXmmFirst
 				&& dep <= DepXmmLast;
 	}
 	
 	/// Return \c true if a micro-instruction dependency is a flag
-	static bool isDepFlag(Dep dep)
+	static bool isFlagDependency(int dep)
 	{
-		return dep >= DepFlagFirst
-				&& dep <= DepFlagLast;
+		return dep >= DepFlagFirst && dep <= DepFlagLast;
 	}
 	
 	/// Return \c true if a micro-instruction dependency is valid
-	static bool isValidDep(Dep dep)
+	static bool isValidDependency(int dep)
 	{
-		return isDepIntReg(dep) &&
-				isDepFpReg(dep) &&
-				isDepXmmReg(dep);
+		return isIntegerDependency(dep) ||
+				isFloatingPointDependency(dep) ||
+				isXmmDependency(dep);
 	}
 
 	/// Return the name of a dependence. This is equivalent to querying
 	/// string map \c uinst_dep_map.
-	static const char *getDepName(Dep dep)
+	static const char *getDependencyName(Dep dep)
 	{
 		return dep_map.MapValue(dep);
 	}
