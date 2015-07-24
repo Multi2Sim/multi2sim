@@ -213,35 +213,41 @@ bool RegisterFile::canRename(Uop *uop)
 	if (kind == KindPrivate)
 	{
 		// Not enough integer registers
-		if (thread->getNumIntegerRegistersOccupied() +
-				uop->getPhyIntOdepCount() > integer_local_size)
+		if (thread->getNumIntegerRegistersOccupied()
+				+ uop->getNumIntegerOutputs()
+				> integer_local_size)
 			return false;
 
 		// Not enough floating-point registers
-		if (thread->getNumFloatPointRegistersOccupied() +
-				uop->getPhyFpOdepCount() > floating_point_local_size)
+		if (thread->getNumFloatPointRegistersOccupied()
+				+ uop->getNumFloatingPointOutputs()
+				> floating_point_local_size)
 			return false;
 
 		// Not enough XMM registers
-		if (thread->getNumXmmRegistersOccupied() +
-				uop->getPhyXmmOdepCount() > xmm_local_size)
+		if (thread->getNumXmmRegistersOccupied()
+				+ uop->getNumXmmOutputs()
+				> xmm_local_size)
 			return false;
 	}
 	else
 	{
 		// Not enough integer registers
-		if (core->getNumIntegerRegistersOccupied() +
-				uop->getPhyIntOdepCount() > integer_local_size)
+		if (core->getNumIntegerRegistersOccupied()
+				+ uop->getNumIntegerOutputs()
+				> integer_local_size)
 			return false;
 
 		// Not enough floating-point registers
-		if (core->getNumFloatPointRegistersOccupied() +
-				uop->getPhyFpOdepCount() > floating_point_local_size)
+		if (core->getNumFloatPointRegistersOccupied()
+				+ uop->getNumFloatingPointOutputs()
+				> floating_point_local_size)
 			return false;
 
 		// Not enough XMM registers
-		if (core->getNumXmmRegistersOccupied() +
-				uop->getPhyXmmOdepCount() > xmm_local_size)
+		if (core->getNumXmmRegistersOccupied()
+				+ uop->getNumXmmOutputs()
+				> xmm_local_size)
 			return false;
 	}
 
@@ -271,7 +277,7 @@ void RegisterFile::Rename(Uop *uop)
 		if (Uinst::isIntegerDependency(logical_register))
 		{
 			int physical_register = integer_rat[logical_register - Uinst::DepIntFirst];
-			uop->setPhyRegIdep(dep, physical_register);
+			uop->setInput(dep, physical_register);
 			thread->incRatIntReads();
 		}
 		else if (Uinst::isFloatingPointDependency(logical_register))
@@ -285,18 +291,18 @@ void RegisterFile::Rename(Uop *uop)
 
 			// Rename it.
 			int physical_register = floating_point_rat[stack_register - Uinst::DepFpFirst];
-			uop->setPhyRegIdep(dep, physical_register);
+			uop->setInput(dep, physical_register);
 			thread->incRatFpReads();
 		}
 		else if (Uinst::isXmmDependency(logical_register))
 		{
 			int physical_register = xmm_rat[logical_register - Uinst::DepXmmFirst];
-			uop->setPhyRegIdep(dep, physical_register);
+			uop->setInput(dep, physical_register);
 			thread->incRatXmmReads();
 		}
 		else
 		{
-			uop->setPhyRegIdep(dep, -1);
+			uop->setInput(dep, -1);
 		}
 	}
 
@@ -322,8 +328,8 @@ void RegisterFile::Rename(Uop *uop)
 				flag_physical_register = physical_register;
 
 			// Allocate it
-			uop->setPhyRegOdep(dep, physical_register);
-			uop->setPhyRegOOdep(dep, old_physical_register);
+			uop->setOutput(dep, physical_register);
+			uop->setOldOutput(dep, old_physical_register);
 			integer_rat[logical_register - Uinst::DepIntFirst] = physical_register;
 			thread->incRatIntWrites();
 		}
@@ -343,8 +349,8 @@ void RegisterFile::Rename(Uop *uop)
 			int old_physical_register = floating_point_rat[stack_register - Uinst::DepFpFirst];
 
 			// Allocate it
-			uop->setPhyRegOdep(dep, physical_register);
-			uop->setPhyRegOOdep(dep, old_physical_register);
+			uop->setOutput(dep, physical_register);
+			uop->setOldOutput(dep, old_physical_register);
 			floating_point_rat[stack_register - Uinst::DepFpFirst] = physical_register;
 			thread->incRatFpWrites();
 		}
@@ -357,16 +363,16 @@ void RegisterFile::Rename(Uop *uop)
 			int old_physical_register = xmm_rat[logical_register - Uinst::DepXmmFirst];
 
 			// Allocate it
-			uop->setPhyRegOdep(dep, physical_register);
-			uop->setPhyRegOOdep(dep, old_physical_register);
+			uop->setOutput(dep, physical_register);
+			uop->setOldOutput(dep, old_physical_register);
 			xmm_rat[logical_register - Uinst::DepXmmFirst] = physical_register;
 			thread->incRatXmmWrites();
 		}
 		else
 		{
 			// Not a valid output dependence
-			uop->setPhyRegOdep(dep, -1);
-			uop->setPhyRegOOdep(dep, -1);
+			uop->setOutput(dep, -1);
+			uop->setOldOutput(dep, -1);
 		}
 	}
 
@@ -387,8 +393,8 @@ void RegisterFile::Rename(Uop *uop)
 			integer_registers[flag_physical_register].busy++;
 			integer_registers[flag_physical_register].pending = 1;
 			int old_physical_register = integer_rat[logical_register - Uinst::DepIntFirst];
-			uop->setPhyRegOdep(dep, flag_physical_register);
-			uop->setPhyRegOOdep(dep, old_physical_register);
+			uop->setOutput(dep, flag_physical_register);
+			uop->setOldOutput(dep, old_physical_register);
 			integer_rat[logical_register - Uinst::DepFlagFirst] = flag_physical_register;
 		}
 	}
@@ -408,7 +414,7 @@ bool RegisterFile::isUopReady(Uop *uop)
 	{
 		// Get dependencies
 		int logical_register = uop->getUinst()->getIDep(dep);
-		int physical_register = uop->getPhyRegIdep(dep);
+		int physical_register = uop->getInput(dep);
 
 		// Integer dependency
 		if (Uinst::isIntegerDependency(logical_register)
@@ -439,7 +445,7 @@ void RegisterFile::WriteUop(Uop *uop)
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		int logical_register = uop->getUinst()->getODep(dep);
-		int physical_register = uop->getPhyRegOdep(dep);
+		int physical_register = uop->getOutput(dep);
 		if (Uinst::isIntegerDependency(logical_register))
 			integer_registers[physical_register].pending = 0;
 		else if (Uinst::isFloatingPointDependency(logical_register))
@@ -458,8 +464,8 @@ void RegisterFile::UndoUop(Uop *uop)
 	for (int dep = Uinst::MaxODeps - 1; dep >= 0; dep--)
 	{
 		int logical_register = uop->getUinst()->getODep(dep);
-		int physical_register = uop->getPhyRegOdep(dep);
-		int old_physical_register = uop->getPhyRegOOdep(dep);
+		int physical_register = uop->getOutput(dep);
+		int old_physical_register = uop->getOldOutput(dep);
 		if (Uinst::isIntegerDependency(logical_register))
 		{
 			// Decrease busy counter and free if 0.
@@ -558,8 +564,8 @@ void RegisterFile::CommitUop(Uop *uop)
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		int logical_register = (int)uop->getUinst()->getODep(dep);
-		int physical_register = uop->getPhyRegOdep(dep);
-		int old_physical_register = uop->getPhyRegOOdep(dep);
+		int physical_register = uop->getOutput(dep);
+		int old_physical_register = uop->getOldOutput(dep);
 
 		if (Uinst::isIntegerDependency(logical_register))
 		{
