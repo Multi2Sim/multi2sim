@@ -58,6 +58,9 @@ class ComputeUnit
 	void IssueToExecutionUnit(FetchBuffer *fetch_buffer,
 			ExecutionUnit *execution_unit);
 
+	// Update the visualization states for non-issued instructions
+	void UpdateFetchVisualization(FetchBuffer *fetch_buffer);
+
 	// Associated timing simulator, saved for performance
 	Timing *timing = nullptr;
 
@@ -150,6 +153,9 @@ public:
 
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
+
+	/// Map a work group to the compute unit
+	void MapWorkGroup(WorkGroup *work_group);
 
 	/// Unmap a work group from the compute unit
 	void UnmapWorkGroup(WorkGroup *work_group);

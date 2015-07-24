@@ -340,6 +340,77 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 	}
 }
 
+
+void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
+{
+//	// Checks
+//	assert(work_group);
+//	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+//
+//	// Find an available slot
+//	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()
+//			&& work_groups[work_group->id_in_compute_unit])
+//	{
+//		work_group->id_in_compute_unit++;
+//	}
+//
+//	// Checks
+//	assert(work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit());
+//
+//	// Insert work group into the list
+//	work_groups[work_group->id_in_compute_unit] = work_group;
+//
+//	// If compute unit is not full, add it back to the available list
+//	assert((int) work_groups.size() <= gpu->getWorkGroupsPerComputeUnit());
+//	//if ((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit())
+//	//	list_enqueue(gpu->available_compute_units,self);
+//
+//	// Assign wavefront identifiers in compute unit
+//	int wavefront_id = 0;
+//	for (auto it = work_group->getWavefrontsBegin();
+//			it != work_group->getWavefrontsEnd();
+//			++it)
+//	{
+//		// Get wavefront pointer
+//		Wavefront *wavefront = it->get();
+//
+//		// Set wavefront Id
+//		wavefront->setIdInComputeUnit(work_group->id_in_compute_unit *
+//				work_group->getWavefrontsSize() + wavefront_id;
+//
+//		// Update internal counter
+//		wavefront_id++;
+//	}
+//
+//	// Set wavefront pool for work group
+//	int wavefront_pool_id = work_group->id_in_compute_unit %
+//			num_wavefront_pools;
+	//work_group->wavefront_pool = wavefront_pools[wavefront_pool_id];
+
+	// Insert wavefronts into an instruction buffer
+	//	si_wavefront_pool_map_wavefronts(work_group->wavefront_pool,
+	//work_group);
+
+//	Timing::trace << misc::fmt("si.map_wg "
+//				   "cu=%d "
+//				   "wg=%d "
+//				   "wi_first=%d "
+//				   "wi_count=%d "
+//				   "wf_first=%d "
+//				   "wf_count=%d\n",
+//				   self->id, work_group->id,
+//				   work_group->work_items[0]->getId().
+//				   work_group->getWorkItemsCount(),
+//				   work_group->wavefronts[0]->getId(),
+//				   work_group->getWavefrontsCount());
+
+	/* Stats */
+	//self->mapped_work_groups++;
+	//if (si_spatial_report_active)
+	//	SIComputeUnitReportMapWorkGroup(self);
+}
+
+
 void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 {
 	// Get the associated GPU object
@@ -359,6 +430,37 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
 		work_group->getId());
 }
+
+
+void ComputeUnit::UpdateFetchVisualization(FetchBuffer *fetch_buffer)
+{
+	for (auto it = fetch_buffer->begin(),
+			e = fetch_buffer->end();
+			it != e;
+			++it)
+	{
+		// Get uop
+		Uop *uop = it->get();
+		assert(uop);
+
+		// Skip all uops that have not yet completed the fetch
+		if (timing->getCycle() < uop->fetch_ready)
+			break;
+
+		// Trace
+		Timing::trace << misc::fmt("si.inst "
+				"id=%lld "
+				"cu=%d "
+				"wf=%d "
+				"uop_id=%lld "
+				"stg=\"s\"\n",
+				uop->getIdInComputeUnit(),
+				index,
+				uop->getWavefront()->getId(),
+				uop->getIdInWavefront());
+	}
+}
+
 
 void ComputeUnit::Run()
 {
@@ -393,21 +495,19 @@ void ComputeUnit::Run()
 	Issue(fetch_buffers[active_issue_buffer].get());
 
 	// Update visualization in non-active issue buffers
-	/*
-	FIXME
-	for (i = 0; i < num_simd_units; i++)
+	for (int i = 0; i < (int) simd_units.size(); i++)
 	{
 		if (i != active_issue_buffer)
 		{
-			SIComputeUnitUpdateFetchVisualization(self, i);
+			UpdateFetchVisualization(fetch_buffers[i].get());
 		}
 	}
-	*/
 
 	// Fetch
-	//for (int i = 0; i < num_wavefront_pools; i++)
-	//	Fetch(i);
+	for (int i = 0; i < num_wavefront_pools; i++)
+		Fetch(fetch_buffers[i].get(), wavefront_pools[i].get());
 }
 
-}
+
+} // Namespace SI
 

@@ -237,11 +237,8 @@ void ScalarUnit::Complete()
 		// Access complete, remove the uop from the queue
 		it = write_buffer.erase(it);
 
-		// Free uop
-		//si_uop_free(uop);
-
 		// Statistics
-		this->inst_count++;
+		this->num_instructions++;
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
@@ -256,7 +253,7 @@ void ScalarUnit::Write()
 	int instructions_processed = 0;
 
 	// Sanity check exec buffer
-	assert(int(exec_buffer.size()) <= exec_buffer_size);
+	assert((int) exec_buffer.size() <= exec_buffer_size);
 
 	// Initialize iterator
 	auto it = exec_buffer.begin();
@@ -296,10 +293,10 @@ void ScalarUnit::Write()
 			}
 
 			// Sanity check write buffer
-			assert(int(write_buffer.size()) <= write_buffer_size);
+			assert((int) write_buffer.size() <= write_buffer_size);
 
 			// Stall if there is not room in the exec buffer
-			if (int(write_buffer.size()) == write_buffer_size)
+			if ((int) write_buffer.size() == write_buffer_size)
 			{
 				// Trace
 				Timing::trace << misc::fmt("si.inst "
@@ -358,10 +355,10 @@ void ScalarUnit::Write()
 			}
 
 			// Sanity check write buffer
-			assert(int(write_buffer.size()) <= write_buffer_size);
+			assert((int) write_buffer.size() <= write_buffer_size);
 
 			// Stall if the write buffer is full
-			if (int(write_buffer.size()) == write_buffer_size)
+			if ((int) write_buffer.size() == write_buffer_size)
 			{
 				// Trace
 				Timing::trace << misc::fmt("si.inst "
@@ -379,10 +376,10 @@ void ScalarUnit::Write()
 			}
 
 			// Sanity check write buffer
-			assert(int(write_buffer.size()) <= write_buffer_size);
+			assert((int) write_buffer.size() <= write_buffer_size);
 
 			// Stall if the write buffer is full
-			if (int(write_buffer.size()) == write_buffer_size)
+			if ((int) write_buffer.size() == write_buffer_size)
 			{
 				// Trace
 				Timing::trace << misc::fmt("si.inst "
@@ -431,7 +428,7 @@ void ScalarUnit::Execute()
 	int instructions_processed = 0;
 
 	// Sanity check read buffer
-	assert(int(read_buffer.size()) <= read_buffer_size);
+	assert((int) read_buffer.size() <= read_buffer_size);
 
 	// Initialize iterator
 	auto it = read_buffer.begin();
@@ -470,7 +467,7 @@ void ScalarUnit::Execute()
 		assert(int(exec_buffer.size()) <= exec_buffer_size);
 
 		// Stall if there is no room in the exec buffer
-		if (int(exec_buffer.size()) == exec_buffer_size)
+		if ((int) exec_buffer.size() == exec_buffer_size)
 		{
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
@@ -559,7 +556,7 @@ void ScalarUnit::Read()
 	int instructions_processed = 0;
 
 	// Sanity check decode buffer
-	assert(int(decode_buffer.size()) <= decode_buffer_size);
+	assert((int) decode_buffer.size() <= decode_buffer_size);
 
 	// Initialize iterator
 	auto it = decode_buffer.begin();
@@ -595,10 +592,10 @@ void ScalarUnit::Read()
 		}
 
 		// Sanity check
-		assert(int(read_buffer.size()) <= read_buffer_size);
+		assert((int) read_buffer.size() <= read_buffer_size);
 
 		// Stall if read buffer is full
-		if (int(read_buffer.size()) == read_buffer_size)
+		if ((int) read_buffer.size() == read_buffer_size)
 		{
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
@@ -652,7 +649,7 @@ void ScalarUnit::Decode()
 	int instructions_processed = 0;
 
 	// Sanity check decode buffer
-	assert(int(issue_buffer.size()) <= issue_buffer_size);
+	assert((int) issue_buffer.size() <= issue_buffer_size);
 
 	// Initialize iterator
 	auto it = issue_buffer.begin();
@@ -688,10 +685,10 @@ void ScalarUnit::Decode()
 		}
 
 		// Sanity check
-		assert(int(decode_buffer.size()) <= decode_buffer_size);
+		assert((int) decode_buffer.size() <= decode_buffer_size);
 
 		// Stall if decode buffer is full
-		if (int(read_buffer.size()) == read_buffer_size)
+		if ((int) read_buffer.size() == read_buffer_size)
 		{
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
