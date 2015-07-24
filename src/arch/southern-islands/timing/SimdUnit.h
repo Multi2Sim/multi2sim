@@ -70,11 +70,8 @@ public:
 	/// at the same time
 	static int read_exec_write_latency;
 
-	/// Size of the execution buffer in number of instructions
+	/// Size of the execution buffer in instructions
 	static int exec_buffer_size;
-
-	/// Latency of the execution stage in number of cycles
-	static int exec_latency;
 
 	/// Size of the buffer holding instructions that have began the
 	/// read-exec-write stages.

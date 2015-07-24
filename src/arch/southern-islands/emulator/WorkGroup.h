@@ -127,6 +127,9 @@ public:
 		return os;
 	}
 
+	/// Identifier in compute unit
+	int id_in_compute_unit;
+
 	/// Position of this work-group in the ND-Range's list of work-groups.
 	/// This field is managed internally by the ND-Range.
 	std::list<std::unique_ptr<WorkGroup>>::iterator work_groups_iterator;
