@@ -251,8 +251,14 @@ public:
 	/// Get associated address space
 	mem::MMU::Space *getAddressSpace() const { return address_space; }
 
+	/// Get num_vgpr_used
+	unsigned getNumVgprUsed() const { return num_vgpr_used; }
+	
 	/// Get pointer to local_mem_top
 	int *getLocalMemTopPtr() { return &local_mem_top; }
+
+	/// Get the 1D local size 
+	unsigned getLocalSize1D() const { return local_size; }
 
 	/// Get size of local size
 	unsigned getLocalSize(unsigned dim) const

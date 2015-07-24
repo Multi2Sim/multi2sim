@@ -90,7 +90,7 @@ class Wavefront
 	Instruction::Register sreg[256];
 
 	// Associated wavefront pool entry
-	WavefrontPoolEntry *wavefront_pool_entry;
+	WavefrontPoolEntry *wavefront_pool_entry = nullptr;
 
 	// Fields introduced for timing simulation
 	int id_in_compute_unit = 0;

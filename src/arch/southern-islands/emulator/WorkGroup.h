@@ -25,6 +25,7 @@
 #include <memory>
 #include <vector>
 
+#include <arch/southern-islands/timing/WavefrontPool.h>
 #include <memory/Memory.h>
 
 #include "Wavefront.h"
@@ -69,6 +70,9 @@ class WorkGroup
 	// Number of wavefronts that have completed timing simulation
 	unsigned wavefronts_completed_timing = 0;
 
+	// Wavefront pool that the work group is associated with
+	WavefrontPool *wavefront_pool = nullptr;
+
 	// Flag indicating whether the work-group has finished
 	bool finished = false;
 
@@ -102,9 +106,6 @@ class WorkGroup
 	// Number of vectorr registers being written to
 	long long vreg_write_count = 0;
 
-	// Size of wavefront
-	static const unsigned WavefrontSize = 64;
-
 public:
 
 	/// Constructor
@@ -134,6 +135,14 @@ public:
 	/// This field is managed internally by the ND-Range.
 	std::list<std::unique_ptr<WorkGroup>>::iterator work_groups_iterator;
 
+	/// Position of this work-group in the ComputeUnit's list of 
+	/// work-groups. This field is managed internally by the ComputeUnit.
+	std::list<WorkGroup*>::iterator compute_unit_work_groups_iterator;
+
+	/// Size of wavefront
+	static const unsigned WavefrontSize;
+
+
 
 
 	//
@@ -150,6 +159,9 @@ public:
 		return id_3d[dim];		
 	}
 
+	/// Get the ID of the workgroup in its compute unit
+	int getIdInComputeUnit() { return id_in_compute_unit; }
+
 	/// Get counter of wavefronts in workgroup
 	unsigned getWavefrontsInWorkgroup() const { return wavefronts.size(); }
 
@@ -162,6 +174,9 @@ public:
 	/// Get counter of finished wavefront, timing mode
 	unsigned getWavefrontsCompletedTiming() const { return wavefronts_completed_timing; }	
 
+	// Wavefront pool that the work group is associated with
+	WavefrontPool *getWavefrontPool() const { return wavefront_pool; }
+	
 	/// Return value of sreg_read_count
 	long long getSregReadCount() const{ return sreg_read_count; }
 
