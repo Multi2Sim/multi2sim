@@ -58,13 +58,13 @@ void Uop::CountDependencies()
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		Uinst::Dep loreg = uinst->getODep(dep);
-		if (Uinst::isDepFlag(loreg))
+		if (Uinst::isFlagDependency(loreg))
 			flag_count++;
-		else if (Uinst::isDepIntReg(loreg))
+		else if (Uinst::isIntegerDependency(loreg))
 			int_count++;
-		else if (Uinst::isDepFpReg(loreg))
+		else if (Uinst::isFloatingPointDependency(loreg))
 			fp_count++;
-		else if (Uinst::isDepXmmReg(loreg))
+		else if (Uinst::isXmmDependency(loreg))
 			xmm_count++;
 	}
 	odep_count = flag_count + int_count + fp_count + xmm_count;
@@ -80,13 +80,13 @@ void Uop::CountDependencies()
 	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
 		Uinst::Dep loreg = uinst->getIDep(dep);
-		if (Uinst::isDepFlag(loreg))
+		if (Uinst::isFlagDependency(loreg))
 			flag_count++;
-		else if (Uinst::isDepIntReg(loreg))
+		else if (Uinst::isIntegerDependency(loreg))
 			int_count++;
-		else if (Uinst::isDepFpReg(loreg))
+		else if (Uinst::isFloatingPointDependency(loreg))
 			fp_count++;
-		else if (Uinst::isDepXmmReg(loreg))
+		else if (Uinst::isXmmDependency(loreg))
 			xmm_count++;
 	}
 	idep_count = flag_count + int_count + fp_count + xmm_count;
