@@ -151,6 +151,9 @@ public:
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
 
+	/// Unmap a work group from the compute unit
+	void UnmapWorkGroup(WorkGroup *work_group);
+
 	/// Return the associated LDS module
 	mem::Module *getLdsModule() const { return lds_module; }
 
@@ -159,6 +162,7 @@ public:
 
 	/// Cache used for scalar data
 	mem::Module *scalar_cache = nullptr;
+
 
 
 
@@ -186,6 +190,18 @@ public:
 
 	// Number of issued LDS instructions
 	long long num_lds_instructions = 0;
+
+	// Number of scalar registers being read from
+	long long num_sreg_reads = 0;
+	
+	// Number of scalar registers being written to
+	long long num_sreg_writes = 0;
+	
+	// Number of vector registers being read from
+	long long num_vreg_reads = 0;
+	
+	// Number of vectorr registers being written to
+	long long num_vreg_writes = 0;
 };
 
 }
