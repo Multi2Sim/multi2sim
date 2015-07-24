@@ -139,8 +139,10 @@ private:
 	// Statistics 
 	//
 
+	// Total number of accesses to the trace cache
 	long long accesses = 0;
 
+	// Total number of hits
 	long long hits = 0;
 
 	// Number of fetched micro-instructions
@@ -275,8 +277,13 @@ public:
 	/// Increment number of dispatched micro-instructions coming from the
 	/// trace cache
 	void incNumDispatchedUinsts() { num_dispatched_uinsts++; }
+
+	/// Increment the number of issued micor-instructions coming from the
+	/// trace cache
+	void incNumIssuedUinsts() { num_issued_uinsts++; }
 };
 
 }
 
-#endif // ARCH_X86_TIMING_TRACE_CACHE_H
+#endif
+

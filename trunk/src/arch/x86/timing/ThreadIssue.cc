@@ -17,7 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <memory/Module.h>
+
+#include "Core.h"
 #include "Thread.h"
+#include "Timing.h"
 
 
 namespace x86
@@ -48,55 +52,55 @@ int Thread::IssueLoadQueue(int quantum)
 			++it;
 			continue;
 		}
-	}
-#if 0
-	/* Process lq */
-	linked_list_head(lq);
-	while (!linked_list_is_end(lq) && quant)
-	{
-		/* Remove from load queue */
-		assert(load->uinst->opcode == x86_uinst_load);
-		X86ThreadRemoveFromLQ(self);
 
-		/* create and fill the mod_client_info_t object */
-		client_info = mod_client_info_create(self->data_mod);
-		client_info->prefetcher_eip = load->eip;
+		// Remove uop from load queue
+		ExtractFromLoadQueue(uop.get());
 
-		/* Access memory system */
-		mod_access(self->data_mod, mod_access_load,
-			load->phy_addr, NULL, core->event_queue, load, client_info);
+		// Access memory system
+		cpu->MemoryAccess(data_module,
+				mem::Module::AccessLoad,
+				uop->physical_address,
+				uop);
 
-		/* The cache system will place the load at the head of the
-		 * event queue when it is ready. For now, mark "in_event_queue" to
-		 * prevent the uop from being freed. */
-		load->in_event_queue = 1;
-		load->issued = 1;
-		load->issue_when = asTiming(cpu)->cycle;
+		// Mark uop as issued
+		uop->issued = true;
+		uop->issue_when = cpu->getCycle();
 		
-		/* Statistics */
-		core->num_issued_uinst_array[load->uinst->opcode]++;
-		core->lsq_reads++;
-		core->reg_file_int_reads += load->ph_int_idep_count;
-		core->reg_file_fp_reads += load->ph_fp_idep_count;
-		self->num_issued_uinst_array[load->uinst->opcode]++;
-		self->lsq_reads++;
-		self->reg_file_int_reads += load->ph_int_idep_count;
-		self->reg_file_fp_reads += load->ph_fp_idep_count;
-		cpu->num_issued_uinst_array[load->uinst->opcode]++;
-		if (load->trace_cache)
-			self->trace_cache->num_issued_uinst++;
+		// Increment the number of issued instructions of this kind
+		incNumIssuedUinsts(uop->getOpcode());
+		core->incNumIssuedUinsts(uop->getOpcode());
+		cpu->incNumIssuedUinsts(uop->getOpcode());
 
-		/* One more instruction issued, update quantum. */
-		quant--;
-		
-		/* MMU statistics */
-		MMUAccessPage(cpu->mmu, load->phy_addr, mmu_access_read);
+		// Increment number of reads from load-store-queue
+		load_store_queue_reads++;
+		core->incLoadStoreQueueReads();
 
-		/* Trace */
-		x86_trace("x86.inst id=%lld core=%d stg=\"i\"\n",
-			load->id_in_core, core->id);
+		// Increment per-thread number of reads from registers
+		integer_register_reads += uop->getPhyIntIdepCount();
+		floating_point_register_reads += uop->getPhyFpIdepCount();
+		xmm_register_reads += uop->getPhyXmmIdepCount();
+
+		// Increment per-core number of reads from registers
+		core->incIntegerRegisterReads(uop->getPhyIntIdepCount());
+		core->incFloatingPointRegisterReads(uop->getPhyFpIdepCount());
+		core->incXmmRegisterReads(uop->getPhyXmmIdepCount());
+
+		// Increment number of issued micro-instructions coming from
+		// the trace cache
+		if (uop->from_trace_cache)
+			trace_cache->incNumIssuedUinsts();
+	
+		// One more instruction issued, update quantum
+		quantum--;
+
+		// Trace
+		Timing::trace << misc::fmt("x86.inst "
+				"id=%lld "
+				"core=%d "
+				"stg=\"i\"\n",
+				uop->getIdInCore(),
+				core->getId());
 	}
-#endif
 
 	// Return remaining quantum
 	return quantum;

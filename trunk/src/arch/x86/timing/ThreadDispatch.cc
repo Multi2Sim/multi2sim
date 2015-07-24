@@ -103,9 +103,9 @@ int Thread::Dispatch(int quantum)
 
 		// Increment number of dispatched micro-instructions of each
 		// kind
-		incNumDispatchedUinsts(uop->getUinst()->getOpcode());
-		core->incNumDispatchedUinsts(uop->getUinst()->getOpcode());
-		cpu->incNumDispatchedUinsts(uop->getUinst()->getOpcode());
+		incNumDispatchedUinsts(uop->getOpcode());
+		core->incNumDispatchedUinsts(uop->getOpcode());
+		cpu->incNumDispatchedUinsts(uop->getOpcode());
 		
 		// Increment number of dispatched micro-instructions coming from
 		// the trace cache

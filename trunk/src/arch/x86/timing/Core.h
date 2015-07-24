@@ -158,20 +158,14 @@ private:
 	long long load_store_queue_reads = 0;
 	long long load_store_queue_writes = 0;
 
-	long long reg_file_int_occupancy = 0;
-	long long reg_file_int_full = 0;
-	long long reg_file_int_reads = 0;
-	long long reg_file_int_writes = 0;
+	long long integer_register_reads = 0;
+	long long integer_register_writes = 0;
 
-	long long reg_file_fp_occupancy = 0;
-	long long reg_file_fp_full = 0;
-	long long reg_file_fp_reads = 0;
-	long long reg_file_fp_writes = 0;
-
-	long long reg_file_xmm_occupancy = 0;
-	long long reg_file_xmm_full = 0;
-	long long reg_file_xmm_reads = 0;
-	long long reg_file_xmm_writes = 0;
+	long long floating_point_register_reads = 0;
+	long long floating_point_register_writes = 0;
+	
+	long long xmm_register_reads = 0;
+	long long xmm_register_writes = 0;
 
 public:
 
@@ -383,6 +377,49 @@ public:
 	{
 		assert(opcode < Uinst::OpcodeCount);
 		num_dispatched_uinsts[opcode]++;
+	}
+	
+	/// Increment the number of issued micro-instructions of a type
+	void incNumIssuedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_issued_uinsts[opcode]++;
+	}
+
+	/// Increment the number of reads to integer registers
+	void incIntegerRegisterReads(int count = 1)
+	{
+		integer_register_reads += count;
+	}
+
+	/// Increment the number of writes to integer registers
+	void incIntegerRegisterWrites(int count = 1)
+	{
+		integer_register_writes += count;
+	}
+
+	/// Increment the number of reads to floating-point registers
+	void incFloatingPointRegisterReads(int count = 1)
+	{
+		floating_point_register_reads += count;
+	}
+
+	/// Increment the number of writes to floating-point registers
+	void incFloatingPointRegisterWrites(int count = 1)
+	{
+		floating_point_register_writes += count;
+	}
+
+	/// Increment the number of reads to XMM registers
+	void incXmmRegisterReads(int count = 1)
+	{
+		xmm_register_reads += count;
+	}
+
+	/// Increment the number of writes to XMM registers
+	void incXmmRegisterWrites(int count = 1)
+	{
+		xmm_register_writes += count;
 	}
 };
 

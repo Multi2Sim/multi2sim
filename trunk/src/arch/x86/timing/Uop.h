@@ -148,7 +148,10 @@ public:
 	Core *getCore() const { return core; }
 
 	/// Return the micro-instruction associated with this uop.
-	Uinst *getUinst() { return uinst.get(); }
+	Uinst *getUinst() const { return uinst.get(); }
+
+	/// Return the opcode of the associated micro-instruction
+	Uinst::Opcode getOpcode() const { return uinst->getOpcode(); }
 
 	/// Return a globally unique identifier for the uop
 	long long getId() const { return id; }
