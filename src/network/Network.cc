@@ -669,8 +669,9 @@ Message *Network::Send(EndNode *source_node,
 		esim::Event *receive_event)
 {
 	// Debug information
-	System::debug << misc::fmt("[Network] Send %d bytes from "
+	System::debug << misc::fmt("[Network %s] Send %d bytes from "
 			"'%s' to '%s'\n",
+			name.c_str(),
 			size,
 			source_node->getName().c_str(),
 			destination_node->getName().c_str());
@@ -756,8 +757,8 @@ void Network::Receive(EndNode *node, Message *message)
 	}
 
 	// Dump debug information
-	System::debug << misc::fmt("[Network] message %lld received at [node %s]"
-			"\n", message->getId(), node->getName().c_str());
+	System::debug << misc::fmt("[Network %s] message %lld received at [node %s]"
+			"\n", name.c_str(), message->getId(), node->getName().c_str());
 
 	// Destroy the message
 	message_table.erase(message->getId());

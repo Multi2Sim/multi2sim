@@ -37,7 +37,8 @@ ObjectPool::ObjectPool()
 	Timing::ParseConfiguration(&ini_file);
 
 	// Timing simulator
-	cpu = misc::new_unique<Cpu>();
+	Timing *timing = Timing::getInstance();
+	cpu = misc::new_unique<Cpu>(timing);
 	core = misc::new_unique<Core>(cpu.get(), 0);
 	thread = misc::new_unique<Thread>(core.get(), 0);
 

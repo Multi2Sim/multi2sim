@@ -164,7 +164,6 @@ public:
 
 
 
-
 	//
 	// Class members
 	//
@@ -179,12 +178,6 @@ public:
 		auto it = network_map.find(name);
 		return it == network_map.end() ? nullptr : it->second;
 	}
-
-	/// Create a new network.
-	///
-	/// \param name
-	///	Name of the new network.
-	Network *newNetwork(const std::string &name);
 
 	/// Return the current cycle in the network frequency domain.
 	long long getCycle() const

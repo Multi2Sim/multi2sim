@@ -120,9 +120,10 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the packet is at the head of the buffer
 	if (source_buffer->getBufferHead() != packet)
 	{
-		System::debug <<misc::fmt("[Network] [stall - queue] "
+		System::debug <<misc::fmt("[Network %s] [stall - queue] "
 				"message-->packet: %lld-->%d, at "
 				"[node %s], [buffer %s]\n",
+				network->getName().c_str(),
 				message->getId(), packet->getSessionId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str());
@@ -133,9 +134,10 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
-		System::debug <<misc::fmt("[Network] [stall - link busy] "
+		System::debug <<misc::fmt("[Network %s] [stall - link busy] "
 				"message-->packet: %lld-->%d, at "
 				"[node %s], [buffer %s], [link %s]\n",
+				network->getName().c_str(),
 				message->getId(), packet->getSessionId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
@@ -149,10 +151,11 @@ void Link::TransferPacket(Packet *packet)
 	long long write_busy = destination_buffer->write_busy;
 	if (write_busy >= cycle)
 	{
-		System::debug <<misc::fmt("[Network] [stall - buffer write busy] "
+		System::debug <<misc::fmt("[Network %s] [stall - buffer write busy] "
 				"message-->packet: %lld-->%d, at "
 				"[node %s], [buffer %s], [link %s],"
 				"destination: [node %s], [buffer %s]\n",
+				network->getName().c_str(),
 				message->getId(), packet->getSessionId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
@@ -168,14 +171,12 @@ void Link::TransferPacket(Packet *packet)
 	if (destination_buffer->getCount() + packet_size >
 			destination_buffer->getSize())
 	{
-		System::debug <<misc::fmt("[Network] [stall - dst buffer full] "
+		System::debug <<misc::fmt("[Network %s] [stall - link dst buffer full] "
 				"message-->packet: %lld-->%d, at "
-				"[node %s], [buffer %s], [link %s],"
-				"destination: [node %s], [buffer %s]\n",
+				"[link %s], destination: [node %s], [buffer %s]\n",
+				network->getName().c_str(),
 				message->getId(), packet->getSessionId(),
-				node->getName().c_str(),
-				source_buffer->getName().c_str(),
-				getName().c_str(),
+				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
 		destination_buffer->Wait(current_event);
