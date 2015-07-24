@@ -131,19 +131,7 @@ public:
 	void Decode();
 
 	// Statistics
-	long long inst_count;
-
-	/// Return an iterator to the first uop in the fetch buffer
-	std::deque<std::unique_ptr<Uop>>::iterator getWriteBufferBegin()
-	{
-		return write_buffer.begin();
-	}
-
-	/// Return a past-the-end iterator to the fetch buffer
-	std::deque<std::unique_ptr<Uop>>::iterator getWriteBufferEnd()
-	{
-		return write_buffer.end();
-	}
+	long long num_instructions;
 
 	/// Remove the uop pointed to by the given iterator, and return a
 	/// shared pointer reference to the removed entry.

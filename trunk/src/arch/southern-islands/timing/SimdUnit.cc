@@ -35,7 +35,6 @@ int SimdUnit::decode_latency = 1;
 int SimdUnit::decode_buffer_size = 1;
 int SimdUnit::read_exec_write_latency = 8;
 int SimdUnit::exec_buffer_size = 2;
-int SimdUnit::exec_latency = 4;
 int SimdUnit::read_exec_write_buffer_size = 2;
 
 
@@ -186,7 +185,7 @@ void SimdUnit::Execute()
 		// Includes time for pipelined read-exec-write of all
 		// subwavefronts
 		uop->execute_ready = compute_unit->getTiming()->getCycle() +
-				exec_latency;
+				read_exec_write_latency;
 
 		// Update wavefront pool entry
 		uop->getWavefrontPoolEntry()->ready_next_cycle = true;

@@ -113,9 +113,6 @@ void LdsUnit::Complete()
 					   uop->getIdInComputeUnit(),
 					   compute_unit->getIndex());
 
-		// Free uop
-		// SI_uop_free(uop)
-
 		// Statistics
 		num_instructions++;
 		compute_unit->getGpu()->last_complete_cycle = compute_unit->
