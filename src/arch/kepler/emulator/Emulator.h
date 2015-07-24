@@ -77,6 +77,9 @@ class Emulator : public comm::Emulator
 	unsigned global_mem_free_size;
 	unsigned global_mem_total_size;
 
+	// Shared memory parameters
+	unsigned shared_memory_total_size;
+
 	// Flags indicating whether the first 32 bytes of constant memory
 	// are initialized. A warning will be issued by the simulator
 	// if an uninitialized element is used by the kernel.
@@ -152,6 +155,12 @@ public:
 
 	/// Get ALU instruction count
 	unsigned getAluInstCount() const { return alu_inst_count; }
+
+	/// Get Shared memory total size
+	unsigned getSharedMemoryTotalSize() const
+	{
+		return shared_memory_total_size;
+	}
 
 	/// Get global memory
 	mem::Memory* getGlobalMem() const  { return global_mem.get(); }
