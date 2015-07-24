@@ -243,9 +243,10 @@ void System::UniformTrafficSimulation(Network *network)
 			while (inject_time[i] < cycle)
 			{
 				// Dump debug information
-				debug << misc::fmt("[Network] [cycle %lld] "
+				debug << misc::fmt("[Network %s] [cycle %lld] "
 						"Injecting a message from node "
 						"%s to node %s.\n",
+						network->getName().c_str(),
 						cycle,
 						node->getName().c_str(),
 						destination_node->getName().c_str());
@@ -253,9 +254,10 @@ void System::UniformTrafficSimulation(Network *network)
 				// Schedule next injection
 				inject_time[i] += RandomExponential(
 						injection_rate);
-				debug << misc::fmt("[Network] [cycle %lld] "
+				debug << misc::fmt("[Network %s] [cycle %lld] "
 						"[node %s] next injection time "
 						"%f\n",
+						network->getName().c_str(),
 						cycle, node->getName().c_str(),
 						inject_time[i]);
 

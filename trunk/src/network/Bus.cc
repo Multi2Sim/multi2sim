@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <algorithm>
+
 #include "Bus.h"
 #include "Network.h"
 
@@ -29,7 +31,7 @@ Bus::Bus(Network *network, const std::string &name, int bandwidth, int lanes) :
 {
 	for (int i = 0; i < lanes; i++)
 	{
-		auto lane = misc::new_unique<Lane>(getNumberLanes());
+		auto lane = misc::new_unique<Lane>();
 		this->lanes.emplace_back(std::move(lane));
 	}
 }
@@ -42,6 +44,214 @@ void Bus::Dump(std::ostream &os = std::cout) const
 
 void Bus::TransferPacket(Packet *packet)
 {
+	// Get the current event
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	esim::Event *current_event = esim_engine->getCurrentEvent();
 
+	// Retrieve related information
+	Message *message = packet->getMessage();
+	Node *node = packet->getNode();
+	int packet_size = packet->getSize();
+
+	// Check the packet to make sure it is in an output buffer that connects
+	// to this bus
+	Buffer *source_buffer = packet->getBuffer();
+	if (std::find(source_buffers.begin(), source_buffers.end(),
+			source_buffer) == source_buffers.end())
+		throw Error(misc::fmt("Packet %lld:%d is not in a source buffer."
+				"of the bus",message->getId(), packet->getSessionId()));
+
+	// Check if the packet is on the head of its buffer
+	if (source_buffer->getBufferHead() != packet)
+	{
+		// Update debug information
+		System::debug << misc::fmt("[Network %s] [stall - queue] "
+				"message->packet: %lld-->%d, at "
+				"[node %s], [buffer %s]\n", network->getName().c_str(),
+				message->getId(), packet->getSessionId(),
+				node->getName().c_str(), source_buffer->getName().c_str());
+
+		// Schedule the event for next time buffer head has changed
+		source_buffer->Wait(current_event);
+		return;
+	}
+
+	// Get the next entry in the routing table
+	RoutingTable *routing_table = network->getRoutingTable();
+	Node *destination_node = message->getDestinationNode();
+	RoutingTable::Entry *entry =
+			routing_table->Lookup(node, destination_node);
+	if (!entry)
+		throw misc::Panic(misc::fmt("%s: no route from %s to %s.",
+				network->getName().c_str(),
+				node->getName().c_str(),
+				destination_node->getName().c_str()));
+
+	// Get the next buffer to transmit to, through bus
+	int destination_buffer_found;
+	Buffer *destination_buffer;
+	for (auto &iterator_buffer: destination_buffers)
+	{
+		if (entry->getNextNode() == iterator_buffer->getNode())
+		{
+			destination_buffer_found = 1;
+			destination_buffer = iterator_buffer;
+			break;
+		}
+	}
+	if (destination_buffer_found == 0)
+		throw misc::Panic(misc::fmt("%s: Next node is not connected "
+				"to the bus '%s'.", network->getName().c_str(),
+				name.c_str()));
+
+	// Get the current cycle
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
+
+	// Check if the destination buffer is not busy
+	if (destination_buffer->write_busy >= cycle)
+	{
+		System::debug << misc::fmt("[Network %s] [stall - bus dst buffer busy] "
+				"message->packet: %lld-->%d, at "
+				"[node %s] [buffer %s]\n", network->getName().c_str(),
+				message->getId(), packet->getSessionId(),
+				destination_buffer->getNode()->getName().c_str(),
+				destination_buffer->getName().c_str());
+		esim_engine->Next(current_event,
+				destination_buffer->write_busy - cycle + 1);
+		return;
+	}
+
+	// Check if the destination buffer is not full
+	if (packet_size > destination_buffer->getSize())
+		throw misc::Panic(misc::fmt("%s: Packet does not in node %s of "
+				"buffer %s",network->getName().c_str(),
+				destination_buffer->getNode()->getName().c_str(),
+				destination_buffer->getName().c_str()));
+	if (destination_buffer->getCount() + packet_size >
+			destination_buffer->getSize())
+	{
+		System::debug <<misc::fmt("[Network %s] [stall - bus dst buffer full] "
+				"message-->packet: %lld-->%d, at "
+				"[bus %s], destination: [node %s], [buffer %s]\n",
+				network->getName().c_str(),
+				message->getId(), packet->getSessionId(),
+				name.c_str(),
+				destination_buffer->getNode()->getName().c_str(),
+				destination_buffer->getName().c_str());
+		destination_buffer->Wait(current_event);
+		return;
+	}
+
+	// Return the next lane that is not busy for the current buffer
+	Lane *lane = Arbitration(source_buffer);
+	if (!lane)
+	{
+		System::debug << misc::fmt("[Network %s] [stall - bus arbitration] "
+				"message->packet: %lld-->%d, at "
+				"[bus %s]\n", network->getName().c_str(),
+				message->getId(), packet->getSessionId(),
+				this->name.c_str());
+		esim_engine->Next(current_event, 1);
+		return;
+	}
+
+	// Calculate latency and occupied resources
+	int latency = ((packet_size - 1) / bandwidth + 1);
+	source_buffer->read_busy = cycle + latency - 1;
+	lane->busy = cycle + latency - 1;
+	destination_buffer->write_busy = cycle + latency - 1;
+
+	// Transfer packet to the next buffer
+	source_buffer->ExtractPacket();
+	destination_buffer->InsertPacket(packet);
+	packet->setNode(destination_buffer->getNode());
+	packet->setBuffer(destination_buffer);
+	packet->setBusy(cycle + latency - 1);
+
+	// Update the statistics
+	lane->busy_cycles += latency;
+	lane->transferred_bytes += packet_size;
+	lane->transferred_packets ++;
+	Node *source_node = source_buffer->getNode();
+	destination_node = destination_buffer->getNode();
+	source_node->incSentBytes(packet_size);
+	source_node->incSentPackets();
+	destination_node->incReceivedBytes(packet_size);
+	destination_node->incReceivedPackets();
+
+	// Schedule next input buffer event
+	esim_engine->Next(System::event_input_buffer, latency);
+}
+
+static Buffer *laneArbitration(Bus *bus, Bus::Lane *lane)
+{
+	// Get the current cycle
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
+
+	// If a decision was made in the current cycle, return the decided buffer
+	if (lane->sched_when >= cycle)
+		return lane->sched_buffer;
+
+	// Make a new decision for this lane at this cycle even if it is busy
+	// at the moment
+	lane->sched_when = cycle;
+	if (lane->busy >= cycle)
+	{
+		lane->sched_buffer = nullptr;
+		return nullptr;
+	}
+
+	// Get the last node that had the permission to transmit on the whole bus
+	int input_buffer_count = bus->getNumSourceBuffers();
+	int last_input_node_index = bus->last_node_index;
+
+	// Find an input buffer to fetch from for this lane
+	Buffer *buffer;
+	int input_buffer_index;
+	for (int i = 0; i < bus->getNumSourceBuffers(); i++)
+	{
+		// Applying round-robin to inputs, starting from last scheduled node
+		input_buffer_index = (last_input_node_index + i + 1)
+				% input_buffer_count;
+		buffer = bus->getSourceBuffer(input_buffer_index);
+
+		// There must be a packet at the head of buffer
+		Packet *packet = buffer->getBufferHead();
+		if (!packet)
+			continue;
+
+		// The packet must be ready
+		if (packet->getBusy() >= cycle)
+			continue;
+
+		// The buffer must be ready to be read
+		if (buffer->read_busy >= cycle)
+			continue;
+
+		// Return the scheduled buffer if all conditions where satisfied
+		bus->last_node_index = input_buffer_index;
+		lane->sched_buffer = buffer;
+		return buffer;
+	}
+
+	// Return null if non of the input buffers are ready
+	lane->sched_buffer = nullptr;
+	return nullptr;
+
+}
+
+Bus::Lane *Bus::Arbitration(Buffer *current_buffer)
+{
+	// The arbitration returns first available lane of the bus
+	for (auto &lane : lanes)
+	{
+		// Arbitrate between existing lanes and sources, and return a lane
+		// that is available for the requesting buffer
+		if (laneArbitration(this, lane.get()) == current_buffer)
+			return lane.get();
+	}
+	return nullptr;
 }
 }
