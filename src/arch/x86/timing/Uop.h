@@ -204,7 +204,9 @@ public:
 		return old_outputs[index];
 	}
 
-	/// Uop comparison based on ready time or unique ID
+	/// Compare the current uop against another uop based on the completion
+	/// time set in their `complete_when` field. If both uops have the
+	/// same completion time, they are compared based on their identifier.
 	///
 	/// \param uop
 	///	Uop to compare with
@@ -213,7 +215,12 @@ public:
 	///	< 0: Current uop comes first
 	///	> 0: Uop given in the argument comes first
 	///
-	int Compare(Uop *uop);
+	int Compare(Uop *uop)
+	{
+		return complete_when != uop->complete_when ?
+				complete_when - uop->complete_when :
+				id - uop->id;
+	}
 
 
 	
@@ -390,22 +397,25 @@ public:
 	// State
 	//
 
-	// True if uop is ready to be issued
+	/// True if uop is ready to be issued
 	bool ready = false;
 
-	// Cycle when uop was made ready, or 0 if not ready yet
+	/// Cycle when uop was made ready, or 0 if not ready yet
 	long long ready_when = 0;
 
-	// True if uop was already issued
+	/// True if uop was already issued
 	bool issued = false;
 
-	// Cycle when instruction was issued, or 0 if not issued yet
+	/// Cycle when instruction was issued, or 0 if not issued yet
 	long long issue_when = 0;
 
-	// True if uop finished execution
+	/// True if uop finished execution
 	bool completed = false;
 
-	// First cycle when functional unit is tried to be reserved for this uop
+	/// Time when uop is set to finish execution
+	long long complete_when = 0;
+
+	/// First cycle when the uop first tried to reserve a functional unit
 	long long first_alu_cycle = 0;
 };
 

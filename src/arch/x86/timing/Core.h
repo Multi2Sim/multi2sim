@@ -26,6 +26,7 @@
 
 #include <arch/x86/emulator/Uinst.h>
 
+#include "Alu.h"
 #include "Thread.h"
 
 
@@ -41,17 +42,20 @@ class Core
 {
 private:
 
-	// name of this Core
+	// Name of this core
 	std::string name;
 
-	// Cpu that it belongs to 
+	// CPU that it belongs to 
 	Cpu *cpu;
 
 	// Array of threads 
 	std::vector<std::unique_ptr<Thread>> threads;
 
-	// Unique ID in Cpu 
+	// Unique identifier in the CPU
 	int id;
+
+	// Arithmetic-logic unit
+	Alu alu;
 
 	// Event queue
 	std::list<std::shared_ptr<Uop>> event_queue;
@@ -191,6 +195,10 @@ public:
 	/// Return a new unique identifier for a uop in this core
 	long long getUopId() { return ++uop_id_counter; }
 
+	/// Return the core's arithmetic-logic unit
+	Alu *getAlu() { return &alu; }
+
+
 
 
 	//
@@ -244,8 +252,10 @@ public:
 	// Event queue
 	//
 
-	/// Insert uop into event queue
-	void InsertInEventQueue(std::shared_ptr<Uop> uop);
+	/// Insert uop into event queue, making it ready to be extract in
+	/// \a latency cycles from now. The uop's field `complete_when` is
+	/// set to the current cycle plus \a latency in the function.
+	void InsertInEventQueue(std::shared_ptr<Uop> uop, int latency);
 
 	/// Extract uop from event queue
 	std::shared_ptr<Uop> ExtractFromEventQueue();

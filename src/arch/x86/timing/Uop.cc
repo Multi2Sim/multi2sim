@@ -96,6 +96,7 @@ void Uop::CountDependencies()
 }
 
 
+/*
 int Uop::Compare(Uop *uop)
 {
 	// If the time when is ready for these two Uops is different, then return the time difference
@@ -105,5 +106,6 @@ int Uop::Compare(Uop *uop)
 			ready_when - uop->ready_when :
 			id - uop->id;
 }
+*/
 
 }

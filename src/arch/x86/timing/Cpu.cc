@@ -220,7 +220,7 @@ void Cpu::MemoryAccessHandler(esim::Event *event, esim::Frame *esim_frame)
 	{
 		// Insert uop into the core's event queue
 		Core *core = frame->uop->getCore();
-		core->InsertInEventQueue(frame->uop);
+		core->InsertInEventQueue(frame->uop, 0);
 	}
 	else
 	{
