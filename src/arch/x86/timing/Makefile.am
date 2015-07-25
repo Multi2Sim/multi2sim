@@ -27,6 +27,8 @@ libtiming_a_SOURCES = \
 	ThreadDispatch.cc \
 	ThreadIssue.cc \
 	ThreadRecover.cc \
+	ThreadCommit.cc \
+	ThreadScheduler.cc \
 	\
 	Timing.h \
 	Timing.cc \

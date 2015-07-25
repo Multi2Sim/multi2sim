@@ -323,6 +323,14 @@ public:
 	/// Get the thread index within the CPU
 	int getIdInCpu() const { return id_in_cpu; }
 
+	/// Return true if there is no uop in the pipeline for this thread
+	bool isPipelineEmpty() const
+	{
+		return fetch_queue.empty()
+				&& uop_queue.empty()
+				&& reorder_buffer.empty();
+	}
+
 
 
 
@@ -534,6 +542,22 @@ public:
 
 
 
+
+	//
+	// Commit stage (ThreadCommit.cc)
+	//
+
+	/// Error message for stalls
+	static const char *commit_stall_error;
+
+	/// Return true if at least one uop can be committed for the thread
+	bool canCommit();
+
+	/// Commit stage for the thread
+	void Commit(int quantum);
+
+
+
 	
 	//
 	// Recovery from mispeculation (ThreadRecover.cc)
@@ -559,6 +583,17 @@ public:
 
 	/// Recover from mispeculation
 	void Recover();
+
+
+
+
+	//
+	// Scheduler (ThreadScheduler.cc)
+	//
+
+	/// Evict the context currently allocated to the thread. There must
+	/// be such a context currently allocated.
+	void EvictContext();
 
 
 
