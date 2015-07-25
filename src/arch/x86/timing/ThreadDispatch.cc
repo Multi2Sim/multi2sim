@@ -68,9 +68,12 @@ int Thread::Dispatch(int quantum)
 			core->incDispatchStall(stall, quantum);
 			break;
 		}
+
+		// Get uop at the head of the uop queue
+		std::shared_ptr<Uop> uop = uop_queue.front();
 	
 		// Extract uop from uop queue
-		std::shared_ptr<Uop> uop = ExtractFromUopQueue();
+		ExtractFromUopQueue(uop.get());
 		
 		// Register renaming
 		register_file->Rename(uop.get());

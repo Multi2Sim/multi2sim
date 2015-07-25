@@ -138,13 +138,13 @@ private:
 	long long num_committed_uinsts[Uinst::OpcodeCount] = {};
 
 	// Number of squashed micro-instructions
-	long long num_squashed_uinst = 0;
+	long long num_squashed_uinsts = 0;
 
 	// Number of branch micro-instructions
-	long long num_branch_uinst = 0;
+	long long num_branches = 0;
 
 	// Number of mis-predicted branch micro-instructions
-	long long num_mispred_branch_uinst = 0;
+	long long num_mispredicted_branches = 0;
 
 
 
@@ -260,6 +260,18 @@ public:
 	/// Extract uop from event queue. The given uop must be placed at the
 	/// head of the event queue.
 	void ExtractFromEventQueue(Uop *uop);
+
+	/// Return an iterator to the first element of the event queue
+	std::list<std::shared_ptr<Uop>>::iterator getEventQueueBegin()
+	{
+		return event_queue.begin();
+	}
+
+	/// Return a past-the-end iterator to the event queue
+	std::list<std::shared_ptr<Uop>>::iterator getEventQueueEnd()
+	{
+		return event_queue.end();
+	}
 
 
 
@@ -435,6 +447,9 @@ public:
 	{
 		xmm_register_writes += count;
 	}
+
+	/// Increment the number of squashed micro-instructions
+	void incNumSquashedUinsts() { num_squashed_uinsts++; }
 };
 
 }

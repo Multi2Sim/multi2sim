@@ -281,6 +281,9 @@ public:
 	/// Increment the number of issued micor-instructions coming from the
 	/// trace cache
 	void incNumIssuedUinsts() { num_issued_uinsts++; }
+
+	/// Increment the number of squashed micro-instructions
+	void incNumSquashedUinsts() { num_squashed_uinsts++; }
 };
 
 }

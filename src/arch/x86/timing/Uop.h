@@ -278,6 +278,9 @@ public:
 	/// reorder buffer
 	bool in_reorder_buffer = false;
 
+	/// Position of the uop in the reorder buffer, if present
+	std::deque<std::shared_ptr<Uop>>::iterator reorder_buffer_iterator;
+
 	/// True if the instruction is currently present in the thread's
 	/// instruction queue
 	bool in_instruction_queue = false;
@@ -301,6 +304,13 @@ public:
 	/// Position of the uop in the thread's store queue, or past-the-end
 	/// iterator to this queue if not present.
 	std::list<std::shared_ptr<Uop>>::iterator store_queue_iterator;
+
+	/// True if the instruction is currently present in the uop trace list
+	/// of the CPU
+	bool in_trace_list = false;
+
+	/// Position of the uop in the CPU's trace list, if present
+	std::deque<std::shared_ptr<Uop>>::iterator trace_list_iterator;
 
 
 
