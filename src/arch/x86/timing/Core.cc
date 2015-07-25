@@ -364,9 +364,71 @@ void Core::Writeback()
 }
 
 
+void Core::Commit()
+{
+	// Check type of commit
+	switch (Cpu::getCommitKind())
+	{
+
+	case Cpu::CommitKindShared:
+	{
+		int skip = Cpu::getNumThreads();
+		int quantum = Cpu::getCommitWidth();
+		while (quantum && skip)
+		{
+			// Check next thread
+			current_commit_thread = (current_commit_thread + 1)
+					% Cpu::getNumThreads();
+			
+			// Check if we can commit from thread
+			Thread *thread = threads[current_commit_thread].get();
+			if (thread->canCommit())
+			{
+				// Commit one instruction
+				thread->Commit(1);
+				quantum--;
+				skip = Cpu::getNumThreads();
+			}
+			else
+			{
+				// One thread skipped
+				skip--;
+			}
+		}
+
+		// Done
+		break;
+	}
+
+	case Cpu::CommitKindTimeslice:
+	{
+		// Look for a reorder buffer with at least one uop
+		int next_thread = (current_commit_thread + 1)
+				% Cpu::getNumThreads();
+		while (next_thread != current_commit_thread
+				&& !threads[next_thread]->canCommit())
+			next_thread = (next_thread + 1) % Cpu::getNumThreads();
+		
+		// Commit new thread
+		current_commit_thread = next_thread;
+		Thread *thread = threads[current_commit_thread].get();
+		thread->Commit(Cpu::getCommitWidth());
+
+		// Done
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Invalid commit kind");
+	}
+}
+
+
 void Core::Run()
 {
 	// Run stages in reverse order
+	Commit();
 	Writeback();
 	Issue();
 	Dispatch();

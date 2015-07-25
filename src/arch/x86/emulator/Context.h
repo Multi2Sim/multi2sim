@@ -38,15 +38,14 @@
 #include "Uinst.h"
 
 
-extern int x86_cpu_num_threads;
-extern int x86_cpu_num_cores;
-
 namespace x86
 {
 
 // Forward declarations
 class Context;
 class Emulator;
+class Core;
+class Thread;
 
 
 // Assembly code used before and after instruction emulation when the host flags
@@ -183,10 +182,14 @@ private:
 	// Call stack
 	std::unique_ptr<comm::CallStack> call_stack;
 
-	// Instruction pointers
-	unsigned last_eip;  // Address of last emulated instruction
-	unsigned current_eip;  // Address of currently emulated instruction
-	unsigned target_eip;  // Target address for branch, even if not taken
+	// Address of last emulated instruction
+	unsigned last_eip = 0;
+
+	// Address of currently emulated instruction
+	unsigned current_eip = 0;
+
+	// Target address for branch, even if not taken
+	unsigned target_eip = 0;
 
 	// Parent context
 	Context *parent = nullptr;
@@ -209,19 +212,33 @@ private:
 	// Virtual address of the memory access performed by the last emulated
 	// instruction.
 	unsigned last_effective_address;
-	
-	// For emulation of string operations
-	unsigned int str_op_esi = 0;  // Initial value for register 'esi'
-	unsigned int str_op_edi = 0;  // Initial value for register 'edi'
-	int str_op_dir = 0;  // Direction: 1 = forward, -1 = backward
-	int str_op_count = 0;  // Number of iterations in string operation //
+
+	// Initial value for register 'esi' for string instructions
+	unsigned int str_op_esi = 0;
+
+	// Initial value for register 'edi' for string instructions
+	unsigned int str_op_edi = 0;
+
+	// Direction: 1 = forward, -1 = backward, for string instructions
+	int str_op_dir = 0;
+
+	// Number of iterations in string instructions
+	int str_op_count = 0;
 
 	// Last emulated instruction
 	Instruction inst;
 	
-	// For segmented memory access in glibc
+	// Segment base for glibc
 	unsigned glibc_segment_base = 0;
+
+	// Segment size for glibc
 	unsigned glibc_segment_limit = 0;
+
+	// Scheduler policy, for sched_XXX system calls
+	int sched_policy = SCHED_RR;
+
+	// Scheduling priority, for sched_XXX system calls
+	int sched_priority = 0;
 
 	// Host thread that suspends and then schedules call to ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
@@ -236,38 +253,15 @@ private:
 	pthread_t host_thread_timer;
 	int host_thread_timer_active = false;
 	long long host_thread_timer_wakeup;
-	
 
+	// Address of futex where context is suspended
+	unsigned wakeup_futex;
 
+	// Bit mask for selective futex wakeup
+	unsigned wakeup_futex_bitset;
 
-	//
-	// Scheduler
-	//
-
-	// Cycle when the context was allocated to a node (core/thread),
-	long long alloc_cycle;
-
-	// Cycle when the context was evicted to a node (core/thread),
-	long long evict_cycle;
-
-	// The context is mapped and allocated, but its eviction is in progress.
-	// It will be effectively evicted once the last instruction reaches the
-	// commit stage.
-	int evict_signal;
-
-	// If context is in state 'mapped', these two variables represent the
-	// node (core/thread) associated with the context.
-	int core_index;
-	int thread_index;
-
-	int sched_policy = SCHED_RR;
-	int sched_priority = 1;
-
-	// Variables used to wake up suspended contexts.
-	unsigned wakeup_futex;  // Address of futex where context is suspended
-	unsigned wakeup_futex_bitset;  // Bit mask for selective futex wakeup
-	long long wakeup_futex_sleep;  // Assignment from futex_sleep_count
-
+	// Assignment from futex_sleep_count
+	long long wakeup_futex_sleep;
 
 	// Update the context state, updating also the presence on the context
 	// in the various context lists in the emulator.
@@ -955,6 +949,30 @@ public:
 
 	// Address space within the mmu;
 	mem::MMU::Space *mmu_space = nullptr;
+	
+
+
+
+	//
+	// Scheduler fields (for timing simulator)
+	//
+
+	// Cycle when the context was allocated to a hardware thread
+	long long allocate_cycle = 0;
+
+	// Cycle when the context was evicted from a hardware thread
+	long long evict_cycle = 0;
+
+	// The context is mapped and allocated, but its eviction is in progress.
+	// It will be effectively evicted once the last instruction reaches the
+	// commit stage.
+	bool evict_signal = false;
+
+	// Hardware core where context is mapped, or nullptr if unmapped
+	Core *core = nullptr;
+
+	// Hardware thread where context is mapped, or nullptr if unmapped
+	Thread *thread = nullptr;
 };
 
 }  // namespace x86

@@ -122,6 +122,16 @@ private:
 
 
 	//
+	// Commit stage
+	//
+
+	// Currently committed thread
+	int current_commit_thread = 0;
+
+
+
+
+	//
 	// Statistics
 	//
 
@@ -364,6 +374,10 @@ public:
 	/// Writeback stage
 	void Writeback();
 
+	/// Commit stage
+	void Commit();
+
+
 
 
 	//
@@ -412,6 +426,13 @@ public:
 		num_issued_uinsts[opcode]++;
 	}
 
+	/// Increment the number of committed micro-instructions of a type
+	void incNumCommittedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_committed_uinsts[opcode]++;
+	}
+
 	/// Increment the number of reads to integer registers
 	void incIntegerRegisterReads(int count = 1)
 	{
@@ -450,6 +471,12 @@ public:
 
 	/// Increment the number of squashed micro-instructions
 	void incNumSquashedUinsts() { num_squashed_uinsts++; }
+
+	/// Increment the number of branches
+	void incNumBranches() { num_branches++; }
+
+	/// Increment the number of mispredicted branches
+	void incNumMispredictedBranches() { num_mispredicted_branches++; }
 };
 
 }

@@ -211,7 +211,7 @@ private:
 	long long num_committed_uinst = 0;
 
 	// Committed macro-instructions
-	long long num_committed_inst = 0;
+	long long num_committed_instructions = 0;
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinsts = 0;
@@ -220,7 +220,7 @@ private:
 	long long num_branches = 0;
 
 	// Number of mis-predicted branch micro-instructions
-	long long num_mispred_branches = 0;
+	long long num_mispredicted_branches = 0;
 
 
 
@@ -403,6 +403,12 @@ public:
 
 	/// Return the kind of recovery upon mispeculation
 	static RecoverKind getRecoverKind() { return recover_kind; }
+
+	/// Return the type of instruction commit, as configured by the user
+	static CommitKind getCommitKind() { return commit_kind; }
+
+	/// Return the commit width, as configured by the user
+	static int getCommitWidth() { return commit_width; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
@@ -486,8 +492,24 @@ public:
 		num_issued_uinsts[opcode]++;
 	}
 
+	/// Increment the number of committed micro-instructions of a type
+	void incNumCommittedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_committed_uinsts[opcode]++;
+	}
+
 	/// Increment the number of squashed micro-instructions
 	void incNumSquashedUinsts() { num_squashed_uinsts++; }
+
+	/// Increment the number of committed instructions
+	void incNumCommittedInstructions() { num_committed_instructions++; }
+
+	/// Increment the number of branches
+	void incNumBranches() { num_branches++; }
+
+	/// Increment the number of mispredicted branches
+	void incNumMispredictedBranches() { num_mispredicted_branches++; }
 };
 
 }
