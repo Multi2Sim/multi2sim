@@ -48,8 +48,7 @@ void Thread::Decode()
 			do
 			{
 				// Extract from fetch queue
-				std::shared_ptr<Uop> extracted_uop = ExtractFromFetchQueue();
-				assert(extracted_uop == uop);
+				ExtractFromFetchQueue(uop.get());
 
 				// Add to uop queue
 				InsertInUopQueue(uop);
@@ -72,8 +71,7 @@ void Thread::Decode()
 			do
 			{
 				// Extract from fetch queue
-				std::shared_ptr<Uop> extracted_uop = ExtractFromFetchQueue();
-				assert(extracted_uop == uop);
+				ExtractFromFetchQueue(uop.get());
 
 				// Add to uop queue
 				InsertInUopQueue(uop);

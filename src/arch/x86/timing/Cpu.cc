@@ -235,4 +235,38 @@ long long Cpu::getCycle() const
 	return timing->getCycle();
 }
 
+
+void Cpu::InsertInTraceList(std::shared_ptr<Uop> uop)
+{
+	assert(Timing::trace == true);
+	assert(!uop->in_trace_list);
+	uop->in_trace_list = true;
+	uop->trace_list_iterator = trace_list.insert(trace_list.end(), uop);
 }
+
+
+void Cpu::EmptyTraceList()
+{
+	assert(Timing::trace == true);
+	while (trace_list.size())
+	{
+		// Get instruction at the head
+		std::shared_ptr<Uop> uop = trace_list.front();
+		assert(uop->in_trace_list);
+
+		// Remove from trace list
+		trace_list.pop_front();
+		uop->in_trace_list = false;
+		uop->trace_list_iterator = trace_list.end();
+
+		// Trace
+		Timing::trace << misc::fmt("x86.end_inst "
+				"id=%lld "
+				"core=%d\n",
+				uop->getIdInCore(),
+				uop->getCore()->getId());
+	}
+}
+
+}
+

@@ -96,8 +96,9 @@ private:
 	// Insert a uop into the tail of the fetch queue
 	void InsertInFetchQueue(std::shared_ptr<Uop> uop);
 
-	// Extract a uop from the head of the fetch queue
-	std::shared_ptr<Uop> ExtractFromFetchQueue();
+	// Extract a uop from the fetch queue. The uop must be located either
+	// at the head or at the tail of the fetch queue.
+	void ExtractFromFetchQueue(Uop *uop);
 
 
 
@@ -112,8 +113,9 @@ private:
 	// Insert a uop into the tail of the uop queue
 	void InsertInUopQueue(std::shared_ptr<Uop> uop);
 
-	// Extract a uop from the head of the uop queue
-	std::shared_ptr<Uop> ExtractFromUopQueue();
+	// Extract a uop from the uop queue. The uop must be located either at
+	// the head or at the tail of the uop queue.
+	void ExtractFromUopQueue(Uop *uop);
 
 
 
@@ -132,6 +134,10 @@ private:
 	// reorder buffer, based on whether it is private or shared among
 	// threads.
 	bool canInsertInReorderBuffer();
+
+	// Extract a uop from the reorder buffer. The uop must be located either
+	// at the head or at the tail of the reorder buffer.
+	void ExtractFromReorderBuffer(Uop *uop);
 
 
 
@@ -260,13 +266,13 @@ private:
 	long long num_committed_uinsts[Uinst::OpcodeCount] = { };
 
 	// Number of squashed micro-instructions
-	long long num_squashed_uinst = 0;
+	long long num_squashed_uinsts = 0;
 
 	// Number of branch micro-instructions
-	long long num_branch_uinst = 0;
+	long long num_branches = 0;
 
 	// Number of mis-predicted branch micro-instructions
-	long long num_mispred_branch_uinst = 0;
+	long long num_mispredicted_branches = 0;
 
 
 
@@ -532,6 +538,24 @@ public:
 	//
 	// Recovery from mispeculation (ThreadRecover.cc)
 	//
+
+	/// Squash mispredicted instructions in fetch queue
+	void RecoverFetchQueue();
+
+	/// Squash mispredicted instructions in uop queue
+	void RecoverUopQueue();
+
+	/// Squash mispredicted instructions in instruction queue
+	void RecoverInstructionQueue();
+
+	/// Squash mispredicted instructions in load queue
+	void RecoverLoadQueue();
+
+	/// Squash mispredicted instructions in the store queue
+	void RecoverStoreQueue();
+
+	/// Squash mispredicted instructions in event queue
+	void RecoverEventQueue();
 
 	/// Recover from mispeculation
 	void Recover();

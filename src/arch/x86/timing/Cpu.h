@@ -20,8 +20,9 @@
 #ifndef ARCH_X86_TIMING_CPU_H
 #define ARCH_X86_TIMING_CPU_H
 
-#include <vector>
+#include <deque>
 #include <list>
+#include <vector>
 
 #include <memory/MMU.h>
 #include <memory/Module.h>
@@ -185,7 +186,7 @@ private:
 	long long min_alloc_cycle = 0;
 
 	// List containing uops that need to report an 'end_inst' trace event 
-	std::list<std::shared_ptr<Uop>> uop_trace_list;
+	std::deque<std::shared_ptr<Uop>> trace_list;
 
 
 
@@ -213,13 +214,13 @@ private:
 	long long num_committed_inst = 0;
 
 	// Number of squashed micro-instructions
-	long long num_squashed_uinst = 0;
+	long long num_squashed_uinsts = 0;
 
 	// Number of branch micro-instructions
-	long long num_branch_uinst = 0;
+	long long num_branches = 0;
 
 	// Number of mis-predicted branch micro-instructions
-	long long num_mispred_branch_uinst = 0;
+	long long num_mispred_branches = 0;
 
 
 
@@ -438,19 +439,17 @@ public:
 	/// classes Cpu and Timing.
 	long long getCycle() const;
 
-	/// Dump functions
-	void Dump();
-	void DumpSummary();
-	void DumpReport();
-	void DumpUopReport(long long &uop_stats,
-			std::string &prefix, int peak_ipc);
+	/// Insert an uop into a list of uops that still need to dump an
+	/// 'end_inst' trace event. This will happen when the trace list is
+	/// emptied with a call to EmptyUopTraceList().
+	void InsertInTraceList(std::shared_ptr<Uop> uop);
+
+	/// Empty the uop trace list and make every uop contained in it dump
+	/// its last 'end_inst' trace event.
+	void EmptyTraceList();
 
 	/// Simulate one cycle of the CPU for all its cores and threads.
 	void Run();
-
-	/// Trace functions
-	void AddToTraceList(Uop &uop);
-	void EmptyTraceList();
 
 	/// Update structure occupancy statistics
 	void UpdateOccupancyStats();
@@ -486,6 +485,9 @@ public:
 		assert(opcode < Uinst::OpcodeCount);
 		num_issued_uinsts[opcode]++;
 	}
+
+	/// Increment the number of squashed micro-instructions
+	void incNumSquashedUinsts() { num_squashed_uinsts++; }
 };
 
 }
