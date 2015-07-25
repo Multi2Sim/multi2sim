@@ -237,6 +237,7 @@ void Thread::ExtractFromLoadQueue(Uop *uop)
 {
 	assert(uop->in_load_queue);
 	assert(!uop->in_store_queue);
+	assert(!uop->in_instruction_queue);
 	load_queue.erase(uop->load_queue_iterator);
 	uop->in_load_queue = false;
 	uop->load_queue_iterator = load_queue.end();
@@ -245,11 +246,23 @@ void Thread::ExtractFromLoadQueue(Uop *uop)
 
 void Thread::ExtractFromStoreQueue(Uop *uop)
 {
+	assert(!uop->in_instruction_queue);
 	assert(!uop->in_load_queue);
 	assert(uop->in_store_queue);
 	store_queue.erase(uop->store_queue_iterator);
 	uop->in_store_queue = false;
 	uop->store_queue_iterator = store_queue.end();
+}
+
+
+void Thread::ExtractFromInstructionQueue(Uop *uop)
+{
+	assert(!uop->in_load_queue);
+	assert(!uop->in_store_queue);
+	assert(uop->in_instruction_queue);
+	instruction_queue.erase(uop->instruction_queue_iterator);
+	uop->in_instruction_queue = false;
+	uop->instruction_queue_iterator = instruction_queue.end();
 }
 
 }

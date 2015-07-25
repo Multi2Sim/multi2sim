@@ -182,6 +182,10 @@ private:
 	// in said queue.
 	void ExtractFromStoreQueue(Uop *uop);
 
+	// Remove a uop from the instruction queue. The uop must be currently
+	// present in said queue.
+	void ExtractFromInstructionQueue(Uop *uop);
+
 
 
 

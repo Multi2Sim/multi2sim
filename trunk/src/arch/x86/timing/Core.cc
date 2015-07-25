@@ -40,11 +40,15 @@ Core::Core(Cpu *cpu,
 }
 
 
-void Core::InsertInEventQueue(std::shared_ptr<Uop> uop)
+void Core::InsertInEventQueue(std::shared_ptr<Uop> uop, int latency)
 {
 	// Sanity
 	assert(!uop->in_event_queue);
 	assert(uop->event_queue_iterator == event_queue.end());
+
+	// Set completion time for the instruction
+	assert(!uop->completed);
+	uop->complete_when = cpu->getCycle() + latency;
 
 	// Find position in event queue
 	auto it = event_queue.begin();
