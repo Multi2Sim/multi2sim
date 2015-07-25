@@ -247,7 +247,7 @@ private:
 	// Statistics
 	//
 
-	// Number of fectched micro-instructions
+	// Number of fetched micro-instructions
 	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
@@ -323,6 +323,9 @@ public:
 	//
 	// Register file
 	//
+
+	/// Return the thread's register file
+	RegisterFile *getRegisterFile() const { return register_file.get(); }
 
 	/// Increment the number of occupied physical integer registers
 	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
@@ -405,6 +408,23 @@ public:
 	/// Get the write count of Register Aliasing Table for INT registers
 	int getRatXmmWrites() { return rat_xmm_writes; }
 
+	/// Increment the number of writes to integer registers
+	void incIntegerRegisterWrites(int count = 1)
+	{
+		integer_register_writes += count;
+	}
+
+	/// Increment the number of writes to floating-point registers
+	void incFloatingPointRegisterWrites(int count = 1)
+	{
+		floating_point_register_writes += count;
+	}
+
+	/// Increment the number of writes to XMM registers
+	void incXmmRegisterWrites(int count = 1)
+	{
+		xmm_register_writes += count;
+	}
 
 
 
@@ -486,7 +506,7 @@ public:
 
 
 	//
-	// Issue stage
+	// Issue stage (ThreadIssue.cc)
 	//
 
 	/// Issue \a quantum instructions for the thread's load queue, returning
@@ -505,6 +525,16 @@ public:
 	/// Issue \a quantum instructions for the thread's instruction queue.
 	/// The function returns the remaining quantum.
 	int IssueInstructionQueue(int quantum);
+
+
+
+	
+	//
+	// Recovery from mispeculation (ThreadRecover.cc)
+	//
+
+	/// Recover from mispeculation
+	void Recover();
 
 
 
