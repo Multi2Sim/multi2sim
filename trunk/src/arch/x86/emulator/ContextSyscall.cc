@@ -3631,26 +3631,6 @@ int Context::ExecuteSyscall_sched_setparam()
 	// Max and min priority
 	int max_priority = 99;
 	int min_priority = 0;
-	switch (sched_policy)
-	{
-
-	case SCHED_OTHER:
-		max_priority = 0;
-		min_priority = 0;
-
-	case SCHED_FIFO:
-		max_priority = 99;
-		min_priority = 1;
-
-	case SCHED_RR:
-		max_priority = 99;
-		min_priority = 1;
-
-	default:
-		misc::fatal("%s: policy not supported.\n%s",
-				__FUNCTION__, syscall_error_note);
-	}
-
 	if (sched_priority < min_priority || sched_priority > max_priority)
 		misc::fatal("%s: invalid scheduling priority supplied (%d: "
 				"min = %d, max = %d)\n", __FUNCTION__,

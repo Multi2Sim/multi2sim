@@ -282,8 +282,13 @@ public:
 	/// trace cache
 	void incNumIssuedUinsts() { num_issued_uinsts++; }
 
-	/// Increment the number of squashed micro-instructions
+	/// Increment the number of squashed micro-instructions coming from the
+	/// trace cache
 	void incNumSquashedUinsts() { num_squashed_uinsts++; }
+
+	/// Increment the number of committed micro-instructions coming from the
+	/// trace cache
+	void incNumCommittedUinsts() { num_committed_uinsts++; }
 };
 
 }
