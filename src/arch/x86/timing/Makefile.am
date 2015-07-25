@@ -26,6 +26,7 @@ libtiming_a_SOURCES = \
 	ThreadDecode.cc \
 	ThreadDispatch.cc \
 	ThreadIssue.cc \
+	ThreadRecover.cc \
 	\
 	Timing.h \
 	Timing.cc \

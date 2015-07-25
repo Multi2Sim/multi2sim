@@ -257,8 +257,9 @@ public:
 	/// set to the current cycle plus \a latency in the function.
 	void InsertInEventQueue(std::shared_ptr<Uop> uop, int latency);
 
-	/// Extract uop from event queue
-	std::shared_ptr<Uop> ExtractFromEventQueue();
+	/// Extract uop from event queue. The given uop must be placed at the
+	/// head of the event queue.
+	void ExtractFromEventQueue(Uop *uop);
 
 
 
@@ -347,6 +348,9 @@ public:
 
 	/// Issue stage
 	void Issue();
+
+	/// Writeback stage
+	void Writeback();
 
 
 
