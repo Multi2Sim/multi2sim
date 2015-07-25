@@ -71,16 +71,18 @@ void Core::InsertInEventQueue(std::shared_ptr<Uop> uop, int latency)
 
 void Core::ExtractFromEventQueue(Uop *uop)
 {
-	// Get the first element of the queue
+	// Uop must be in the queue
 	assert(uop->in_event_queue);
-	assert(uop->event_queue_iterator == event_queue.begin());
 
-	// Remove the uop
-	event_queue.pop_front();
+	// Save iterator
+	auto it = uop->event_queue_iterator;
 
-	// Set flag to indicate that the uop is not in the queue anymore
+	// Indicate that the uop is not in the queue anymore
 	uop->in_event_queue = false;
 	uop->event_queue_iterator = event_queue.end();
+
+	// Remove it as the last step, as this may free the uop
+	event_queue.erase(it);
 }
 
 

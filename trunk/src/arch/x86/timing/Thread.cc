@@ -55,19 +55,28 @@ void Thread::InsertInFetchQueue(std::shared_ptr<Uop> uop)
 {
 	assert(!uop->in_fetch_queue);
 	uop->in_fetch_queue = true;
-	fetch_queue.push_back(uop);
+	uop->fetch_queue_iterator = fetch_queue.insert(fetch_queue.end(), uop);
 }
 
 
-std::shared_ptr<Uop> Thread::ExtractFromFetchQueue()
+void Thread::ExtractFromFetchQueue(Uop *uop)
 {
-	std::shared_ptr<Uop> uop = fetch_queue.front();
+	// Sanity: uop must be in the fetch queue, and must be either the first
+	// or the last element in it.
 	assert(uop->in_fetch_queue);
-	assert(uop->fetch_queue_iterator == fetch_queue.begin());
-	fetch_queue.pop_front();
+	assert(fetch_queue.size() > 0);
+	assert(uop == fetch_queue.front().get() ||
+			uop == fetch_queue.back().get());
+	
+	// Save iterator
+	auto it = uop->fetch_queue_iterator;
+
+	// Mark uop as extracted
 	uop->in_fetch_queue = false;
 	uop->fetch_queue_iterator = fetch_queue.end();
-	return uop;
+
+	// Extract uop as last step, since uop may be freed here
+	fetch_queue.erase(it);
 }
 
 
@@ -75,33 +84,27 @@ void Thread::InsertInUopQueue(std::shared_ptr<Uop> uop)
 {
 	assert(!uop->in_uop_queue);
 	uop->in_uop_queue = true;
-	uop_queue.push_back(uop);
+	uop->uop_queue_iterator = uop_queue.insert(uop_queue.end(), uop);
 }
 
 
-std::shared_ptr<Uop> Thread::ExtractFromUopQueue()
+void Thread::ExtractFromUopQueue(Uop *uop)
 {
-	std::shared_ptr<Uop> uop = uop_queue.front();
+	// Sanity: uop must be in the uop queue, and must be either the first
+	// or the last element in it.
 	assert(uop->in_uop_queue);
-	assert(uop->uop_queue_iterator == uop_queue.begin());
-	uop_queue.pop_front();
+	assert(uop_queue.size() > 0);
+	assert(uop == uop_queue.front().get() || uop_queue.back().get());
+
+	// Save iterator
+	auto it = uop->uop_queue_iterator;
+
+	// Mark uop as extracted
 	uop->in_uop_queue = false;
 	uop->uop_queue_iterator = uop_queue.end();
-	return uop;
-}
 
-
-void Thread::InsertInReorderBuffer(std::shared_ptr<Uop> uop)
-{
-	// Sanity
-	assert(!uop->in_reorder_buffer);
-
-	// Insert into reorder buffer
-	uop->in_reorder_buffer = true;
-	reorder_buffer.push_back(uop);
-
-	// Increase per-core counter
-	core->incReorderBufferOccupancy();
+	// Extract uop as last step, since this may free it
+	uop_queue.erase(it);
 }
 
 
@@ -133,17 +136,37 @@ bool Thread::canInsertInReorderBuffer()
 }
 
 
-void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> uop)
+void Thread::InsertInReorderBuffer(std::shared_ptr<Uop> uop)
 {
 	// Sanity
-	assert(!uop->in_instruction_queue);
+	assert(!uop->in_reorder_buffer);
 
-	// Insert into instruction queue
-	uop->in_instruction_queue = true;
-	instruction_queue.push_back(uop);
+	// Insert into reorder buffer
+	uop->in_reorder_buffer = true;
+	uop->reorder_buffer_iterator = reorder_buffer.insert(reorder_buffer.end(), uop);
 
 	// Increase per-core counter
-	core->incInstructionQueueOccupancy();
+	core->incReorderBufferOccupancy();
+}
+
+
+void Thread::ExtractFromReorderBuffer(Uop *uop)
+{
+	// Sanity: uop must be in the reorder buffer, and must be either the
+	// first or the last instruction in that queue.
+	assert(uop->in_reorder_buffer);
+	assert(reorder_buffer.size() > 0);
+	assert(uop == reorder_buffer.front().get() || reorder_buffer.back().get());
+
+	// Save iterator
+	auto it = uop->reorder_buffer_iterator;
+
+	// Mark uop as extracted
+	uop->in_reorder_buffer = false;
+	uop->reorder_buffer_iterator = reorder_buffer.end();
+
+	// Extract uop as last step, since this may free it
+	reorder_buffer.erase(it);
 }
 
 
@@ -172,6 +195,40 @@ bool Thread::canInsertInInstructionQueue()
 
 		throw misc::Panic("Invalid instruction queue kind");
 	}
+}
+
+
+void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> uop)
+{
+	// Sanity
+	assert(!uop->in_instruction_queue);
+
+	// Insert into instruction queue
+	uop->in_instruction_queue = true;
+	uop->instruction_queue_iterator = instruction_queue.insert(
+			instruction_queue.end(), uop);
+
+	// Increase per-core counter
+	core->incInstructionQueueOccupancy();
+}
+
+
+void Thread::ExtractFromInstructionQueue(Uop *uop)
+{
+	// Sanity: instruction must be in the queue
+	assert(!uop->in_load_queue);
+	assert(!uop->in_store_queue);
+	assert(uop->in_instruction_queue);
+
+	// Save iterator
+	auto it = uop->instruction_queue_iterator;
+
+	// Mark uop as not present
+	uop->in_instruction_queue = false;
+	uop->instruction_queue_iterator = instruction_queue.end();
+	
+	// Remove from queue as the last step, as this may free the uop
+	instruction_queue.erase(it);
 }
 
 
@@ -215,12 +272,14 @@ void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> uop)
 
 	case Uinst::OpcodeLoad:
 
-		load_queue.push_back(uop);
+		uop->load_queue_iterator = load_queue.insert(load_queue.end(), uop);
+		uop->in_load_queue = true;
 		break;
 
 	case Uinst::OpcodeStore:
 
-		store_queue.push_back(uop);
+		uop->store_queue_iterator = store_queue.insert(store_queue.end(), uop);
+		uop->in_store_queue = true;
 		break;
 	
 	default:
@@ -235,34 +294,39 @@ void Thread::InsertInLoadStoreQueue(std::shared_ptr<Uop> uop)
 
 void Thread::ExtractFromLoadQueue(Uop *uop)
 {
+	// Uop must be in the queue
 	assert(uop->in_load_queue);
 	assert(!uop->in_store_queue);
 	assert(!uop->in_instruction_queue);
-	load_queue.erase(uop->load_queue_iterator);
+
+	// Save iterator
+	auto it = uop->load_queue_iterator;
+
+	// Mark as not present in the queue
 	uop->in_load_queue = false;
 	uop->load_queue_iterator = load_queue.end();
+	
+	// Remove from queue as last step, as this may free uop
+	load_queue.erase(it);
 }
 
 
 void Thread::ExtractFromStoreQueue(Uop *uop)
 {
+	// Uop must be in the queue
 	assert(!uop->in_instruction_queue);
 	assert(!uop->in_load_queue);
 	assert(uop->in_store_queue);
-	store_queue.erase(uop->store_queue_iterator);
+
+	// Save iterator
+	auto it = uop->store_queue_iterator;
+
+	// Mark as not present in the queue
 	uop->in_store_queue = false;
 	uop->store_queue_iterator = store_queue.end();
-}
 
-
-void Thread::ExtractFromInstructionQueue(Uop *uop)
-{
-	assert(!uop->in_load_queue);
-	assert(!uop->in_store_queue);
-	assert(uop->in_instruction_queue);
-	instruction_queue.erase(uop->instruction_queue_iterator);
-	uop->in_instruction_queue = false;
-	uop->instruction_queue_iterator = instruction_queue.end();
+	// Remove from queue as last step, as this may free uop
+	store_queue.erase(it);
 }
 
 }
