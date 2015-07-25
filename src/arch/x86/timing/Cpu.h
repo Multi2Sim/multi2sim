@@ -399,6 +399,9 @@ public:
 
 	/// Return the issue width, as configured by the user
 	static int getIssueWidth() { return issue_width; }
+
+	/// Return the kind of recovery upon mispeculation
+	static RecoverKind getRecoverKind() { return recover_kind; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);

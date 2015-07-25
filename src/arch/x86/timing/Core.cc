@@ -69,16 +69,11 @@ void Core::InsertInEventQueue(std::shared_ptr<Uop> uop, int latency)
 }
 
 
-std::shared_ptr<Uop> Core::ExtractFromEventQueue()
+void Core::ExtractFromEventQueue(Uop *uop)
 {
-	// If the queue is empty, return a null pointer
-	if (event_queue.size() <= 0)
-		return nullptr;
-
 	// Get the first element of the queue
-	std::shared_ptr<Uop> uop = event_queue.front();
 	assert(uop->in_event_queue);
-	assert(uop->event_queue_iterator == event_queue.end());
+	assert(uop->event_queue_iterator == event_queue.begin());
 
 	// Remove the uop
 	event_queue.pop_front();
@@ -86,9 +81,6 @@ std::shared_ptr<Uop> Core::ExtractFromEventQueue()
 	// Set flag to indicate that the uop is not in the queue anymore
 	uop->in_event_queue = false;
 	uop->event_queue_iterator = event_queue.end();
-
-	// Return the uop
-	return uop;
 }
 
 
@@ -301,9 +293,79 @@ void Core::Issue()
 }
 
 
+void Core::Writeback()
+{
+	// Traverse event queue
+	for (;;)
+	{
+		// No more elements in the event queue
+		if (event_queue.empty())
+			break;
+
+		// Pick uop from the head of the event queue
+		std::shared_ptr<Uop> uop = event_queue.front();
+
+		// If the uop is set to complete later than the current cycle,
+		// there is nothing else to extract from the event queue.
+		if (uop->complete_when > cpu->getCycle())
+			break;
+
+		// Sanity
+		assert(uop->ready);
+		assert(!uop->completed);
+
+		// Extract element from event queue
+		ExtractFromEventQueue(uop.get());
+
+		// If a mispredicted branch is resolved and recovery is
+		// configured at the writeback stage, schedule recovery for the
+		// end of this iteration.
+		bool recover = Cpu::getRecoverKind() == Cpu::RecoverKindWriteback
+				&& (uop->getFlags() & Uinst::FlagCtrl)
+				&& !uop->speculative_mode
+				&& uop->neip != uop->predicted_neip;
+
+		// Trace output. Prevent instructions that are not in the
+		// reorder buffer from writing to the trace. These can be either
+		// loads that were squashed, or stores that committed before
+		// being issued.
+		if (uop->in_reorder_buffer)
+			Timing::trace << misc::fmt("x86.inst "
+					"id=%lld "
+					"core=%d "
+					"stg=\"wb\"\n",
+					uop->getIdInCore(),
+					id);
+
+		// Instruction has completed
+		uop->completed = true;
+
+		// Write output registers
+		Thread *thread = uop->getThread();
+		RegisterFile *register_file = thread->getRegisterFile();
+		register_file->WriteUop(uop.get());
+
+		// Increment number of writes to core's register counters
+		integer_register_writes += uop->getNumIntegerOutputs();
+		floating_point_register_writes += uop->getNumFloatingPointOutputs();
+		xmm_register_writes += uop->getNumXmmOutputs();
+
+		// Increment number of writes to thread's register counters
+		thread->incIntegerRegisterWrites(uop->getNumIntegerOutputs());
+		thread->incFloatingPointRegisterWrites(uop->getNumFloatingPointOutputs());
+		thread->incXmmRegisterWrites(uop->getNumXmmOutputs());
+		
+		// Recover from mispeculation
+		if (recover)
+			thread->Recover();
+	}
+}
+
+
 void Core::Run()
 {
 	// Run stages in reverse order
+	Writeback();
 	Issue();
 	Dispatch();
 	Decode();
