@@ -196,7 +196,7 @@ private:
 
 
 	//
-	// Component pointer
+	// Hardware structures
 	//
 
 	// Branch predictor
@@ -245,6 +245,16 @@ private:
 
 	// Cycle in which last micro-instruction committed
 	long long last_commit_cycle = 0;
+
+
+
+
+	//
+	// Scheduler
+	//
+
+	// List of contexts mapped to this hardware thread
+	std::list<Context *> mapped_contexts;
 
 
 
@@ -591,9 +601,24 @@ public:
 	// Scheduler (ThreadScheduler.cc)
 	//
 
+	// Unmap a context from a hardware thread, i.e., remove it from the list
+	// of contexts mapped to the thread. A context is unmapped from a thread
+	// either because it lost affinity with it, or because it finished
+	// execution. A context must have been evicted from the thread before
+	// being unmapped.
+	void UnmapContext(Context *context);
+	
+	// Activate the 'evict_signal' flag of an allocated context and start
+	// flushing the thread's pipeline. Once the last instruction reaches the
+	// commit stage, the context will be effectively evicted.
+	void EvictContextSignal();
+
 	/// Evict the context currently allocated to the thread. There must
 	/// be such a context currently allocated.
 	void EvictContext();
+
+	/// Scheduling actions for all contexts currently mapped to a thread.
+	void Schedule();
 
 
 

@@ -13,6 +13,7 @@ libtiming_a_SOURCES = \
 	\
 	Cpu.h \
 	Cpu.cc \
+	CpuScheduler.cc \
 	\
 	FunctionalUnit.h \
 	FunctionalUnit.cc \
