@@ -171,8 +171,8 @@ void Emulator::AddContextToList(Context::ListType type, Context *context)
 	// Add context
 	context->context_list_present[type] = true;
 	context_list[type].push_back(context);
-	auto iter = context_list[type].end();
-	context->context_list_iter[type] = --iter;
+	auto iterator = context_list[type].end();
+	context->context_list_iterator[type] = --iterator;
 }
 
 	
@@ -184,8 +184,8 @@ void Emulator::RemoveContextFromList(Context::ListType type, Context *context)
 
 	// Remove context
 	context->context_list_present[type] = false;
-	auto iter = context->context_list_iter[type];
-	context_list[type].erase(iter);
+	auto iterator = context->context_list_iterator[type];
+	context_list[type].erase(iterator);
 }
 	
 
@@ -222,8 +222,8 @@ Context *Emulator::newContext()
 	contexts.emplace_back(context);
 
 	// Save position in context list
-	auto iter = contexts.end();
-	context->contexts_iter = --iter;
+	auto iterator = contexts.end();
+	context->contexts_iterator = --iterator;
 
 	// Set the context in running state. This call will add it automatically
 	// to the emulator list of running contexts.
@@ -262,7 +262,7 @@ void Emulator::LoadProgram(const std::vector<std::string> &args,
 }
 
 
-void Emulator::freeContext(Context *context)
+void Emulator::FreeContext(Context *context)
 {
 	// Remove context from all context lists
 	for (int i = 0; i < Context::ListCount; i++)
@@ -270,7 +270,7 @@ void Emulator::freeContext(Context *context)
 	
 	// Remove from main context list. This will invoke the context
 	// destructor and free it.
-	contexts.erase(context->contexts_iter);
+	contexts.erase(context->contexts_iterator);
 }
 
 
@@ -301,18 +301,18 @@ void Emulator::ProcessEvents()
 	// one that needs to be waken up.
 	//
 	auto &suspended_context_list = getContextList(Context::ListSuspended);
-	auto iter_next = suspended_context_list.end();
-	for (auto iter = suspended_context_list.begin();
-			iter != suspended_context_list.end();
-			iter = iter_next)
+	auto iterator_next = suspended_context_list.end();
+	for (auto iterator = suspended_context_list.begin();
+			iterator != suspended_context_list.end();
+			iterator = iterator_next)
 	{
 		// Save iterator to next element here, since the context can be
 		// removed from the suspended list if waken up.
-		iter_next = iter;
-		++iter_next;
-		Context *context = *iter;
+		iterator_next = iterator;
+		++iterator_next;
+		Context *context = *iterator;
 		assert(context->getState(Context::StateSuspended));
-		assert(context->context_list_iter[Context::ListSuspended] == iter);
+		assert(context->context_list_iterator[Context::ListSuspended] == iterator);
 		assert(context->context_list_present[Context::ListSuspended]);
 
 		// Context suspended in a system call using a custom wake up
@@ -431,7 +431,7 @@ bool Emulator::Run()
 
 	// Free finished contexts
 	while (context_list[Context::ListFinished].size())
-		freeContext(context_list[Context::ListFinished].front());
+		FreeContext(context_list[Context::ListFinished].front());
 
 	// Process list of suspended contexts
 	ProcessEvents();

@@ -60,14 +60,34 @@ const misc::StringMap Context::StateMap =
 
 
 long Context::host_flags;
-
 unsigned char Context::host_fpenv[28];
 
 
+Context::Context() :
+		comm::Context(Emulator::getInstance()),
+		emulator(Emulator::getInstance())
+{
+	// Micro-instructions
+	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
 
-//
-// Private functions
-//
+	// Initialize thread affinity bitmap, making the context have affinity
+	// with all harware threads
+	thread_affinity = misc::new_unique<misc::Bitmap>(
+			Cpu::getNumCores() *
+			Cpu::getNumThreads());
+	thread_affinity->Set();
+
+	// Debug
+	Emulator::context_debug << "Context " << getId() << " created\n";
+}
+
+
+Context::~Context()
+{
+	// Debug
+	Emulator::context_debug << "Context " << getId() << " destroyed\n";
+}
+
 
 void Context::UpdateState(unsigned state)
 {
@@ -311,28 +331,6 @@ std::string Context::OpenProcCPUInfo()
 	// Close file 
 	fclose(f);
 	return path;
-}
-
-//
-// Public functions
-//
-
-Context::Context() :
-		comm::Context(Emulator::getInstance()),
-		emulator(Emulator::getInstance())
-{
-	// Micro-instructions
-	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
-
-	// Debug
-	emulator->context_debug << "Context " << getId() << " created\n";
-}
-
-
-Context::~Context()
-{
-	// Debug
-	emulator->context_debug << "Context " << getId() << " destroyed\n";
 }
 
 
