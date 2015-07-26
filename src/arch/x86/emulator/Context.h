@@ -26,6 +26,7 @@
 #include <arch/common/CallStack.h>
 #include <arch/common/Context.h>
 #include <arch/common/FileTable.h>
+#include <lib/cpp/Bitmap.h>
 #include <lib/cpp/Debug.h>
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
@@ -233,12 +234,6 @@ private:
 
 	// Segment size for glibc
 	unsigned glibc_segment_limit = 0;
-
-	// Scheduler policy, for sched_XXX system calls
-	int sched_policy = SCHED_RR;
-
-	// Scheduling priority, for sched_XXX system calls
-	int sched_priority = 0;
 
 	// Host thread that suspends and then schedules call to ProcessEvents()
 	// The 'host_thread_suspend_active' flag is set when a 'host_thread_suspend' thread
@@ -739,16 +734,16 @@ public:
 	/// Position of the context in the main context list. This field is
 	/// managed by the emulator. When a context is removed from the main
 	/// context list, it is automatically freed.
-	std::list<std::unique_ptr<Context>>::iterator contexts_iter;
+	std::list<std::unique_ptr<Context>>::iterator contexts_iterator;
 
 	/// Flag indicating whether this context is present in a certain context
 	/// list of the emulator. This field is exclusively managed by the
 	/// emulator.
-	bool context_list_present[ListCount] = { };
+	bool context_list_present[ListCount] = {};
 
 	/// Position of the context in a certain context list. This field is
 	/// exclusively managed by the emulator.
-	std::list<Context *>::iterator context_list_iter[ListCount];
+	std::list<Context *>::iterator context_list_iterator[ListCount];
 
 	/// Create a context from a command line. To safely create a context,
 	/// function NewContext() should be used instead. After the
@@ -785,6 +780,10 @@ public:
 	/// the zombie contexts list is return. Otherwise, 'pid' is the pid of
 	/// the child process. If no child has finished, return nullptr.
 	Context *getZombie(int pid);
+
+	/// Return a bitmap representing the context state. Enumaration values
+	/// in type State can be used to check individual bits.
+	unsigned getState() const { return state; }
 
 	/// Return \c true if flag \a state is part of the context state
 	bool getState(State state) const { return this->state & state; }
@@ -957,6 +956,12 @@ public:
 	// Scheduler fields (for timing simulator)
 	//
 
+	// Scheduler policy, for sched_XXX system calls
+	int sched_policy = SCHED_RR;
+
+	// Scheduling priority, for sched_XXX system calls
+	int sched_priority = 0;
+
 	// Cycle when the context was allocated to a hardware thread
 	long long allocate_cycle = 0;
 
@@ -973,6 +978,13 @@ public:
 
 	// Hardware thread where context is mapped, or nullptr if unmapped
 	Thread *thread = nullptr;
+
+	// If field 'thread' is other than nullptr, this field represents the
+	// position of the context in the 'mapped_contexts' list of the thread.
+	std::list<Context *>::iterator mapped_contexts_iterator;
+
+	// Bitmap of thread affinity
+	std::unique_ptr<misc::Bitmap> thread_affinity;
 };
 
 }  // namespace x86

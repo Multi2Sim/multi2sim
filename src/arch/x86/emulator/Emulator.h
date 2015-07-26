@@ -144,12 +144,12 @@ public:
 	Context *getContext(int pid);
 
 	/// Remove a context from all context lists and free it
-	void freeContext(Context *context);
+	void FreeContext(Context *context);
 
 	/// Create a context and load a program. See comm::Emu::Load() for
 	/// details on the meaning of each argument.
 	void LoadProgram(const std::vector<std::string> &args,
-			const std::vector<std::string> &env = { },
+			const std::vector<std::string> &env = {},
 			const std::string &cwd = "",
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
@@ -164,7 +164,8 @@ public:
 	/// passed in argument \a present. If \c true, the context will be added
 	/// to the list (if not present already. If \c false, it will be removed
 	/// (if still present).
-	void UpdateContextInList(Context::ListType type, Context *context,
+	void UpdateContextInList(Context::ListType type,
+			Context *context,
 			bool present);
 
 	/// Return a constant reference to a list of contexts
