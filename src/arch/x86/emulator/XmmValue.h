@@ -30,7 +30,7 @@ namespace x86
 {
 
 /// Class representing a 128-bit XMM register value
-class XMMValue
+class XmmValue
 {
 	// Bytes
 	union
@@ -54,7 +54,7 @@ class XMMValue
 public:
 
 	/// Default constructor, initializing XMM value to 0
-	XMMValue() : as_uchar() { }
+	XmmValue() : as_uchar() { }
 
 	/// Get content as a vector of 16 unsigned 8-bit integers
 	unsigned char *getAsUChar() { return as_uchar; }
@@ -227,7 +227,7 @@ public:
 	}
 
 	/// Copy the content of another value
-	void setWithMemcpy(XMMValue* source)
+	void setWithMemcpy(XmmValue *source)
 	{
 		memcpy(this->as_char, source->as_char, 16);
 	}
@@ -265,7 +265,7 @@ public:
 	}
 
 	/// Dump value as sequence of bytes, same as Dump()
-	friend std::ostream &operator<<(std::ostream &os, const XMMValue &xmm)
+	friend std::ostream &operator<<(std::ostream &os, const XmmValue &xmm)
 	{
 		xmm.Dump(os);
 		return os;

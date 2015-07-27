@@ -26,7 +26,7 @@
 #include <lib/cpp/Misc.h>
 
 #include "Extended.h"
-#include "XMMValue.h"
+#include "XmmValue.h"
 
 
 namespace x86
@@ -91,7 +91,7 @@ class Regs
 	unsigned short fpu_ctrl;
 
 	// XMM registers (8 128-bit values)
-	XMMValue xmm[8];
+	XmmValue xmm[8];
 
 	// Register info table, used to efficiently access a register given its
 	// identifier (\c Inst::RegXXX constant).
@@ -153,14 +153,14 @@ public:
 	Extended PopFpu();
 
 	/// Get a reference to XMM register \a index (0 to 7)
-	XMMValue &getXMM(int index)
+	XmmValue &getXMM(int index)
 	{
 		assert(misc::inRange(index, 0, 7));
 		return xmm[index];
 	}
 
 	/// Get a constant reference to XMM register \a index (0 to 7)
-	const XMMValue &getXMM(int index) const
+	const XmmValue &getXMM(int index) const
 	{
 		assert(misc::inRange(index, 0, 7));
 		return xmm[index];

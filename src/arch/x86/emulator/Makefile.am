@@ -8,13 +8,13 @@ libemulator_a_SOURCES = \
 	ContextIsaFp.cc \
 	ContextIsaMisc.cc \
 	ContextIsaRot.cc \
-	ContextIsaSSE2.cc \
-	ContextIsaSSE3.cc \
-	ContextIsaSSE4.cc \
-	ContextIsaSSE.cc \
+	ContextIsaSse.cc \
+	ContextIsaSse2.cc \
+	ContextIsaSse3.cc \
+	ContextIsaSse4.cc \
 	ContextIsaStd.cc \
 	ContextIsaStr.cc \
-	ContextIsaXMM.cc \
+	ContextIsaXmm.cc \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextSyscall.cc \
@@ -36,8 +36,8 @@ libemulator_a_SOURCES = \
 	Uinst.cc \
 	Uinst.h \
 	\
-	XMMValue.cc \
-	XMMValue.h
+	XmmValue.cc \
+	XmmValue.h
 
 
 AM_CPPFLAGS = @M2S_INCLUDES@
