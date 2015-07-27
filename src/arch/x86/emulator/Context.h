@@ -622,26 +622,21 @@ private:
 	// Return a memory address contained in the immediate value
 	unsigned getMoffsAddress();
 
+	// Store the value of an XMM register to memory
+	void StoreXmm(const XmmValue &value);
 
-	// Import the value into XMM register
-	// \param value
-	// 		Reference to the value to be copied
-	void StoreXMM(const XMMValue &value);
-
-	// Export the value in XMM register to memory
-	// \param value
-	// 		Referemce to the XMMValue object to receice the value
-	void LoadXMM(XMMValue &value);
+	// Load the value from memory into an XMM register
+	void LoadXmm(XmmValue &value);
 
 	// Store lower 32/64/128 bits from value into XMM register or memory
-	void StoreXMMM32(const XMMValue &value);
-	void StoreXMMM64(const XMMValue &value);
-	void StoreXMMM128(const XMMValue &value);
+	void StoreXmmM32(const XmmValue &value);
+	void StoreXmmM64(const XmmValue &value);
+	void StoreXmmM128(const XmmValue &value);
 
 	// Load the lower 32/64/128 bits into lower bits of value
-	void LoadXMMM32(XMMValue &value);
-	void LoadXMMM64(XMMValue &value);
-	void LoadXMMM128(XMMValue &value);
+	void LoadXmmM32(XmmValue &value);
+	void LoadXmmM64(XmmValue &value);
+	void LoadXmmM128(XmmValue &value);
 
 
 	

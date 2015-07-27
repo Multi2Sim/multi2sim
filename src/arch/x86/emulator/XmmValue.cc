@@ -19,13 +19,13 @@
 
 #include <lib/cpp/String.h>
 
-#include "XMMValue.h"
+#include "XmmValue.h"
 
 
 namespace x86
 {
 
-void XMMValue::DumpAsChar(std::ostream &os) const
+void XmmValue::DumpAsChar(std::ostream &os) const
 {
 	std::string comma;
 	os << "{ ";
@@ -38,7 +38,7 @@ void XMMValue::DumpAsChar(std::ostream &os) const
 }
 
 
-void XMMValue::DumpAsShort(std::ostream &os) const
+void XmmValue::DumpAsShort(std::ostream &os) const
 {
 	std::string comma;
 	os << "{ ";
@@ -51,28 +51,28 @@ void XMMValue::DumpAsShort(std::ostream &os) const
 }
 
 
-void XMMValue::DumpAsInt(std::ostream &os) const
+void XmmValue::DumpAsInt(std::ostream &os) const
 {
 	os << misc::fmt("{ %08x, %08x, %08x, %08x }",
 			as_uint[0], as_uint[1], as_uint[2], as_uint[3]);
 }
 
 
-void XMMValue::DumpAsInt64(std::ostream &os) const
+void XmmValue::DumpAsInt64(std::ostream &os) const
 {
 	os << misc::fmt("{ %016llx, %016llx }",
 			as_uint64[0], as_uint64[1]);
 }
 
 
-void XMMValue::DumpAsFloat(std::ostream &os) const
+void XmmValue::DumpAsFloat(std::ostream &os) const
 {
 	os << misc::fmt("{ %g, %g, %g, %g }",
 			as_float[0], as_float[1], as_float[2], as_float[3]);
 }
 
 
-void XMMValue::DumpAsDouble(std::ostream &os) const
+void XmmValue::DumpAsDouble(std::ostream &os) const
 {
 	os << misc::fmt("{ %g, %g }",
 			as_double[0], as_double[1]);

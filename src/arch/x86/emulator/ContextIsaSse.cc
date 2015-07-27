@@ -38,11 +38,11 @@ namespace x86
 
 void Context::ExecuteInst_addps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
-	this->LoadXMM(dest);
-	this->LoadXMMM128(src);
+	this->LoadXmm(dest);
+	this->LoadXmmM128(src);
 
 	int spec_mode = this->getState(StateSpecMode);
 	if (!spec_mode)
@@ -60,7 +60,7 @@ void Context::ExecuteInst_addps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	this->StoreXMM(dest);
+	this->StoreXmm(dest);
 
 	this->newUinst(Uinst::OpcodeFpAdd,
 			Uinst::DepXmmm128,
@@ -75,13 +75,13 @@ void Context::ExecuteInst_addps_xmm_xmmm128()
 
 void Context::ExecuteInst_addss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -101,7 +101,7 @@ void Context::ExecuteInst_addss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpAdd,
 			Uinst::DepXmmm32,
@@ -116,11 +116,11 @@ void Context::ExecuteInst_addss_xmm_xmmm32()
 
 void Context::ExecuteInst_andps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -134,7 +134,7 @@ void Context::ExecuteInst_andps_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmAnd,
 			Uinst::DepXmmm128,
@@ -162,14 +162,14 @@ void Context::ExecuteInst_andps_xmm_xmmm128()
 
 void Context::ExecuteInst_cmppd_xmm_xmmm128_imm8()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 	int imm8 = inst.getImmByte();
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -193,7 +193,7 @@ void Context::ExecuteInst_cmppd_xmm_xmmm128_imm8()
 		}
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm128,
 			Uinst::DepXmm,
@@ -207,14 +207,14 @@ void Context::ExecuteInst_cmppd_xmm_xmmm128_imm8()
 
 void Context::ExecuteInst_cmpps_xmm_xmmm128_imm8()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 	int imm8 = inst.getImmByte();
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -238,7 +238,7 @@ void Context::ExecuteInst_cmpps_xmm_xmmm128_imm8()
 		}
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm128,
 			Uinst::DepXmm,
@@ -252,13 +252,13 @@ void Context::ExecuteInst_cmpps_xmm_xmmm128_imm8()
 
 void Context::ExecuteInst_cvtsi2ss_xmm_rm32()
 {
-	XMMValue dest;
+	XmmValue dest;
 	unsigned int src;
 
 	int spec_mode;
 
 	src = LoadRm32();
-	LoadXMM(dest);
+	LoadXmm(dest);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -278,7 +278,7 @@ void Context::ExecuteInst_cvtsi2ss_xmm_rm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmConv,
 			Uinst::DepXmm,
@@ -293,12 +293,12 @@ void Context::ExecuteInst_cvtsi2ss_xmm_rm32()
 
 void Context::ExecuteInst_cvttss2si_r32_xmmm32()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 	unsigned int r32;
 
 	int spec_mode;
 
-	LoadXMMM32(xmm);
+	LoadXmmM32(xmm);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -331,13 +331,13 @@ void Context::ExecuteInst_cvttss2si_r32_xmmm32()
 
 void Context::ExecuteInst_divps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -357,7 +357,7 @@ void Context::ExecuteInst_divps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpDiv,
 			Uinst::DepXmmm128,
@@ -372,13 +372,13 @@ void Context::ExecuteInst_divps_xmm_xmmm128()
 
 void Context::ExecuteInst_divss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -398,7 +398,7 @@ void Context::ExecuteInst_divss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpDiv,
 			Uinst::DepXmmm32,
@@ -419,13 +419,13 @@ void Context::ExecuteInst_ldmxcsr_m32()
 
 void Context::ExecuteInst_maxps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -445,7 +445,7 @@ void Context::ExecuteInst_maxps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm128,
@@ -460,13 +460,13 @@ void Context::ExecuteInst_maxps_xmm_xmmm128()
 
 void Context::ExecuteInst_maxss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -486,7 +486,7 @@ void Context::ExecuteInst_maxss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm32,
@@ -501,13 +501,13 @@ void Context::ExecuteInst_maxss_xmm_xmmm32()
 
 void Context::ExecuteInst_minps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -527,7 +527,7 @@ void Context::ExecuteInst_minps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm128,
@@ -542,13 +542,13 @@ void Context::ExecuteInst_minps_xmm_xmmm128()
 
 void Context::ExecuteInst_minss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -568,7 +568,7 @@ void Context::ExecuteInst_minss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
 			Uinst::DepXmmm32,
@@ -583,10 +583,10 @@ void Context::ExecuteInst_minss_xmm_xmmm32()
 
 void Context::ExecuteInst_movaps_xmm_xmmm128()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 
-	LoadXMMM128(xmm);
-	StoreXMM(xmm);
+	LoadXmmM128(xmm);
+	StoreXmm(xmm);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmmm128,
@@ -601,10 +601,10 @@ void Context::ExecuteInst_movaps_xmm_xmmm128()
 
 void Context::ExecuteInst_movaps_xmmm128_xmm()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 
-	LoadXMM(xmm);
-	StoreXMMM128(xmm);
+	LoadXmm(xmm);
+	StoreXmmM128(xmm);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmm,
@@ -619,13 +619,13 @@ void Context::ExecuteInst_movaps_xmmm128_xmm()
 
 void Context::ExecuteInst_movhlps_xmm_xmmm128()
 {
-	XMMValue xmm1;
-	XMMValue xmm2;
+	XmmValue xmm1;
+	XmmValue xmm2;
 
-	LoadXMM(xmm1);
-	LoadXMMM128(xmm2);
+	LoadXmm(xmm1);
+	LoadXmmM128(xmm2);
 	xmm1.setAsUInt64(0, xmm2.getAsUInt64(1));
-	StoreXMM(xmm1);
+	StoreXmm(xmm1);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmmm128,
@@ -640,13 +640,13 @@ void Context::ExecuteInst_movhlps_xmm_xmmm128()
 
 void Context::ExecuteInst_movlhps_xmm_xmmm128()
 {
-	XMMValue xmm1;
-	XMMValue xmm2;
+	XmmValue xmm1;
+	XmmValue xmm2;
 
-	LoadXMM(xmm1);
-	LoadXMMM128(xmm2);
+	LoadXmm(xmm1);
+	LoadXmmM128(xmm2);
 	xmm1.setAsUInt64(1, xmm2.getAsUInt64(0));
-	StoreXMM(xmm1);
+	StoreXmm(xmm1);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmmm128,
@@ -661,16 +661,16 @@ void Context::ExecuteInst_movlhps_xmm_xmmm128()
 
 void Context::ExecuteInst_movss_xmm_xmmm32()
 {
-	XMMValue value;
+	XmmValue value;
 
 	/* xmm <= m32: bits 127-32 of xmm set to 0.
 	 * xmm <= xmm: bits 127-32 unmodified */
 	if (inst.getModRmMod() == 3)
-		LoadXMM(value);
+		LoadXmm(value);
 	else
 		value.setWithMemset(0, 0, 16);
-	LoadXMMM32(value);
-	StoreXMM(value);
+	LoadXmmM32(value);
+	StoreXmm(value);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmmm32,
@@ -685,12 +685,12 @@ void Context::ExecuteInst_movss_xmm_xmmm32()
 
 void Context::ExecuteInst_movss_xmmm32_xmm()
 {
-	XMMValue value;
+	XmmValue value;
 
 	/* xmm <= xmm: bits 127-32 unmodified.
 	 * m32 <= xmm: copy 32 bits to memory */
-	LoadXMM(value);
-	StoreXMMM32(value);
+	LoadXmm(value);
+	StoreXmmM32(value);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmm,
@@ -705,10 +705,10 @@ void Context::ExecuteInst_movss_xmmm32_xmm()
 
 void Context::ExecuteInst_movups_xmm_xmmm128()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 
-	LoadXMMM128(xmm);
-	StoreXMM(xmm);
+	LoadXmmM128(xmm);
+	StoreXmm(xmm);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmmm128,
@@ -723,10 +723,10 @@ void Context::ExecuteInst_movups_xmm_xmmm128()
 
 void Context::ExecuteInst_movups_xmmm128_xmm()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 
-	LoadXMM(xmm);
-	StoreXMMM128(xmm);
+	LoadXmm(xmm);
+	StoreXmmM128(xmm);
 
 	newUinst(Uinst::OpcodeXmmMove,
 			Uinst::DepXmm,
@@ -741,13 +741,13 @@ void Context::ExecuteInst_movups_xmmm128_xmm()
 
 void Context::ExecuteInst_mulps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -767,7 +767,7 @@ void Context::ExecuteInst_mulps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpMult,
 			Uinst::DepXmmm128,
@@ -782,13 +782,13 @@ void Context::ExecuteInst_mulps_xmm_xmmm128()
 
 void Context::ExecuteInst_mulss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -808,7 +808,7 @@ void Context::ExecuteInst_mulss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpMult,
 			Uinst::DepXmmm32,
@@ -823,11 +823,11 @@ void Context::ExecuteInst_mulss_xmm_xmmm32()
 
 void Context::ExecuteInst_orps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -841,7 +841,7 @@ void Context::ExecuteInst_orps_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmOr,
 			Uinst::DepXmmm128,
@@ -856,12 +856,12 @@ void Context::ExecuteInst_orps_xmm_xmmm128()
 
 void Context::ExecuteInst_pextrw_r32_xmmm128_imm8()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 	unsigned char imm8;
 	unsigned int result;
 
 	/* Get 'xmm' source */
-	LoadXMMM128(xmm);
+	LoadXmmM128(xmm);
 
 	/* Take the 3 LSB of 'imm8' */
 	imm8 = inst.getImmByte() & 0x7;
@@ -884,17 +884,17 @@ void Context::ExecuteInst_pextrw_r32_xmmm128_imm8()
 
 void Context::ExecuteInst_pinsrw_xmm_r32m16_imm8()
 {
-	XMMValue xmm;
+	XmmValue xmm;
 	unsigned short r32m16;
 	unsigned char imm8;
 
-	LoadXMM(xmm);
+	LoadXmm(xmm);
 	r32m16 = LoadR32M16();
 	imm8 = inst.getImmByte() & 0x7;
 
 	/* Update word in 'xmm' */
 	xmm.setAsUShort(imm8, r32m16);
-	StoreXMM(xmm);
+	StoreXmm(xmm);
 
 	newUinst(Uinst::OpcodeXmmShift,
 			Uinst::DepXmm,
@@ -909,10 +909,10 @@ void Context::ExecuteInst_pinsrw_xmm_r32m16_imm8()
 
 void Context::ExecuteInst_pmovmskb_r32_xmmm128()
 {
-	XMMValue src;
+	XmmValue src;
 	unsigned int r32;
 
-	LoadXMMM128(src);
+	LoadXmmM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -940,12 +940,12 @@ void Context::ExecuteInst_pmovmskb_r32_xmmm128()
 
 void Context::ExecuteInst_shufps_xmm_xmmm128_imm8()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 	unsigned char imm;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 	imm = inst.getImmByte();
 
 	dest.setAsInt(0, dest.getAsInt(imm & 3));
@@ -953,7 +953,7 @@ void Context::ExecuteInst_shufps_xmm_xmmm128_imm8()
 	dest.setAsInt(2, src.getAsInt((imm >> 4) & 3));
 	dest.setAsInt(3, src.getAsInt((imm >> 6) & 3));
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmShuf,
 			Uinst::DepXmmm128,
@@ -968,13 +968,13 @@ void Context::ExecuteInst_shufps_xmm_xmmm128_imm8()
 
 void Context::ExecuteInst_sqrtps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -994,7 +994,7 @@ void Context::ExecuteInst_sqrtps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpSqrt,
 			Uinst::DepXmmm128,
@@ -1009,13 +1009,13 @@ void Context::ExecuteInst_sqrtps_xmm_xmmm128()
 
 void Context::ExecuteInst_sqrtss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1035,7 +1035,7 @@ void Context::ExecuteInst_sqrtss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpSqrt,
 			Uinst::DepXmmm32,
@@ -1056,13 +1056,13 @@ void Context::ExecuteInst_stmxcsr_m32()
 
 void Context::ExecuteInst_subps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1082,7 +1082,7 @@ void Context::ExecuteInst_subps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpSub,
 			Uinst::DepXmmm128,
@@ -1097,13 +1097,13 @@ void Context::ExecuteInst_subps_xmm_xmmm128()
 
 void Context::ExecuteInst_subss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1123,7 +1123,7 @@ void Context::ExecuteInst_subss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmFpSub,
 			Uinst::DepXmmm32,
@@ -1138,15 +1138,15 @@ void Context::ExecuteInst_subss_xmm_xmmm32()
 
 void Context::ExecuteInst_ucomisd_xmm_xmmm64()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	unsigned long eflags = regs.getEflags();
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM64(src);
+	LoadXmm(dest);
+	LoadXmmM64(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1170,7 +1170,7 @@ void Context::ExecuteInst_ucomisd_xmm_xmmm64()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 	regs.setEflags(eflags);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
@@ -1186,15 +1186,15 @@ void Context::ExecuteInst_ucomisd_xmm_xmmm64()
 
 void Context::ExecuteInst_ucomiss_xmm_xmmm32()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	unsigned long eflags = regs.getEflags();
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM32(src);
+	LoadXmm(dest);
+	LoadXmmM32(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1218,7 +1218,7 @@ void Context::ExecuteInst_ucomiss_xmm_xmmm32()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 	regs.setEflags(eflags);
 
 	newUinst(Uinst::OpcodeXmmFpComp,
@@ -1234,13 +1234,13 @@ void Context::ExecuteInst_ucomiss_xmm_xmmm32()
 
 void Context::ExecuteInst_unpckhps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1260,7 +1260,7 @@ void Context::ExecuteInst_unpckhps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmShuf,
 			Uinst::DepXmmm128,
@@ -1275,13 +1275,13 @@ void Context::ExecuteInst_unpckhps_xmm_xmmm128()
 
 void Context::ExecuteInst_unpcklps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
 	int spec_mode;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	/* Prevent execution of the floating-point computation in speculative
 	 * mode, since it may cause host exceptions for garbage input operands. */
@@ -1301,7 +1301,7 @@ void Context::ExecuteInst_unpcklps_xmm_xmmm128()
 		__X86_ISA_ASM_END__
 	}
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmShuf,
 			Uinst::DepXmmm128,
@@ -1316,11 +1316,11 @@ void Context::ExecuteInst_unpcklps_xmm_xmmm128()
 
 void Context::ExecuteInst_xorps_xmm_xmmm128()
 {
-	XMMValue dest;
-	XMMValue src;
+	XmmValue dest;
+	XmmValue src;
 
-	LoadXMM(dest);
-	LoadXMMM128(src);
+	LoadXmm(dest);
+	LoadXmmM128(src);
 
 	__X86_ISA_ASM_START__
 	asm volatile (
@@ -1334,7 +1334,7 @@ void Context::ExecuteInst_xorps_xmm_xmmm128()
 	);
 	__X86_ISA_ASM_END__
 
-	StoreXMM(dest);
+	StoreXmm(dest);
 
 	newUinst(Uinst::OpcodeXmmXor,
 			Uinst::DepXmmm128,

@@ -27,17 +27,17 @@
 namespace x86
 {
 
-void Context::StoreXMM(const XMMValue &value)
+void Context::StoreXmm(const XmmValue &value)
 {
 	regs.getXMM(inst.getModRmReg()) = value;
 }
 
-void Context::LoadXMM(XMMValue &value)
+void Context::LoadXmm(XmmValue &value)
 {
 	value = regs.getXMM(inst.getModRmReg());
 }
 
-void Context::StoreXMMM32(const XMMValue &value)
+void Context::StoreXmmM32(const XmmValue &value)
 {
 	unsigned int content = value.getAsUInt(0);
 	if (inst.getModRmMod() == 3)
@@ -49,7 +49,7 @@ void Context::StoreXMMM32(const XMMValue &value)
 	MemoryWrite(getEffectiveAddress(), 4, (char *) &content);
 }
 
-void Context::LoadXMMM32(XMMValue &value)
+void Context::LoadXmmM32(XmmValue &value)
 {
 	unsigned int content;
 	if(inst.getModRmMod() == 3)
@@ -63,7 +63,7 @@ void Context::LoadXMMM32(XMMValue &value)
 	value.setAsUInt(0, content);
 }
 
-void Context::StoreXMMM64(const XMMValue &value)
+void Context::StoreXmmM64(const XmmValue &value)
 {
 	unsigned long long content = value.getAsUInt64(0);
 	if(inst.getModRmMod() == 3)
@@ -75,7 +75,7 @@ void Context::StoreXMMM64(const XMMValue &value)
 	MemoryWrite(getEffectiveAddress(), 8, (char *) &content);
 }
 
-void Context::LoadXMMM64(XMMValue &value)
+void Context::LoadXmmM64(XmmValue &value)
 {
 	unsigned long long content;
 	if(inst.getModRmMod() == 3)
@@ -89,7 +89,7 @@ void Context::LoadXMMM64(XMMValue &value)
 	value.setAsUInt64(0, content);
 }
 
-void Context::StoreXMMM128(const XMMValue &value)
+void Context::StoreXmmM128(const XmmValue &value)
 {
 	unsigned long long contentLo = value.getAsUInt64(0);
 	unsigned long long contentHi = value.getAsUInt64(1);
@@ -107,7 +107,7 @@ void Context::StoreXMMM128(const XMMValue &value)
 			8, (void*) &contentHi);
 }
 
-void Context::LoadXMMM128(XMMValue &value)
+void Context::LoadXmmM128(XmmValue &value)
 {
 	unsigned long long content_lo;
 	unsigned long long content_hi;
