@@ -116,10 +116,10 @@ void Context::UpdateState(unsigned state)
 		this->state &= ~StateRunning;
 	
 	// Update presence of context in emulator lists depending on its state
-	emulator->UpdateContextInList(ListRunning, this, this->state & StateRunning);
-	emulator->UpdateContextInList(ListZombie, this, this->state & StateZombie);
-	emulator->UpdateContextInList(ListFinished, this, this->state & StateFinished);
-	emulator->UpdateContextInList(ListSuspended, this, this->state & StateSuspended);
+	emulator->UpdateRunningContexts(this, this->state & StateRunning);
+	emulator->UpdateZombieContexts(this, this->state & StateZombie);
+	emulator->UpdateFinishedContexts(this, this->state & StateFinished);
+	emulator->UpdateSuspendedContexts(this, this->state & StateSuspended);
 
 	// Dump new state (ignore ContextSpecMode state, it's too frequent)
 	if (Emulator::context_debug && (diff & ~StateSpecMode))
@@ -133,7 +133,7 @@ void Context::UpdateState(unsigned state)
 
 	// Resume or pause timer depending on whether there are any contexts
 	// currently running.
-	if (emulator->getContextList(ListRunning).size())
+	if (emulator->getNumRunningContexts())
 		emulator->StartTimer();
 	else
 		emulator->StopTimer();
@@ -149,8 +149,12 @@ int Context::FutexWake(unsigned futex, unsigned count, unsigned bitset)
 	while (count)
 	{
 		wakeup_context = nullptr;
-		for (Context *context : emulator->getContextList(ListSuspended))
+		for (auto it = emulator->getSuspendedContextsBegin(),
+				e = emulator->getSuspendedContextsEnd();
+				it != e;
+				++it)
 		{
+			Context *context = *it;
 			if (!context->getState(StateFutex) || context->wakeup_futex != futex)
 				continue;
 			if (!(context->wakeup_futex_bitset & bitset))
@@ -827,9 +831,13 @@ void Context::FinishGroup(int exit_code)
 		return;
 
 	// Finish all contexts in the group
-	for (auto &context : emulator->getContexts())
+	for (auto it = emulator->getContextsBegin(),
+			e = emulator->getContextsEnd();
+			it != e;
+			++it)
 	{
-		if (context->group_parent != this && context.get() != this)
+		Context *context = it->get();
+		if (context->group_parent != this && context != this)
 			continue;
 
 		if (context->getState(StateZombie))
@@ -841,7 +849,7 @@ void Context::FinishGroup(int exit_code)
 
 		// Child context of 'context' goes to state 'finished'.
 		// Context 'context' goes to state 'zombie' or 'finished' if it has a parent
-		if (context.get() == this)
+		if (context == this)
 			context->setState(context->parent ? StateZombie : StateFinished);
 		else
 			context->setState(StateFinished);
@@ -866,8 +874,12 @@ void Context::Finish(int exit_code)
 	// From now on, all children have lost their parent. If a child is
 	// already zombie, finish it, since its parent won't be able to waitpid it
 	// anymore.
-	for (auto &context : emulator->getContexts())
+	for (auto it = emulator->getContextsBegin(),
+			e = emulator->getContextsEnd();
+			it != e;
+			++it)
 	{
+		Context *context = it->get();
 		if (context->parent == this)
 		{
 			context->parent = nullptr;
@@ -908,8 +920,12 @@ void Context::Finish(int exit_code)
 
 Context *Context::getZombie(int pid)
 {
-	for (Context *context : emulator->getContextList(ListZombie))
+	for (auto it = emulator->getZombieContextsBegin(),
+			e = emulator->getZombieContextsEnd();
+			it != e;
+			++it)
 	{
+		Context *context = *it;
 		if (context->parent != this)
 			continue;
 		if (context->getId() == pid || pid == -1)

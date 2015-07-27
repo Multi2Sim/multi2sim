@@ -107,19 +107,6 @@ class Context : public comm::Context
 {
 public:
 
-	/// Context list identifiers
-	enum ListType
-	{
-		// No 'Invalid' identifier here
-		ListRunning,
-		ListSuspended,
-		ListZombie,
-		ListFinished,
-
-		// Number of context lists
-		ListCount
-	};
-
 	/// Context states
 	enum State
 	{
@@ -725,20 +712,6 @@ private:
 
 public:
 	
-	/// Position of the context in the main context list. This field is
-	/// managed by the emulator. When a context is removed from the main
-	/// context list, it is automatically freed.
-	std::list<std::unique_ptr<Context>>::iterator contexts_iterator;
-
-	/// Flag indicating whether this context is present in a certain context
-	/// list of the emulator. This field is exclusively managed by the
-	/// emulator.
-	bool context_list_present[ListCount] = {};
-
-	/// Position of the context in a certain context list. This field is
-	/// exclusively managed by the emulator.
-	std::list<Context *>::iterator context_list_iterator[ListCount];
-
 	/// Create a context from a command line. To safely create a context,
 	/// function NewContext() should be used instead. After the
 	/// creation of a context, its basic data structures are initialized
@@ -873,6 +846,49 @@ public:
 
 	/// Get Target EIP
 	int getTargetEip() { return target_eip; }
+
+
+
+
+	//
+	// Context lists
+	//
+
+	/// Position of the context in the emulator's main context list
+	std::list<std::unique_ptr<Context>>::iterator contexts_iterator;
+
+	/// Position of the context in the emulator's list of running contexts,
+	/// or past-the-end iterator if not present.
+	std::list<Context *>::iterator running_contexts_iterator;
+
+	/// Flag indicating whether the context is present in the emulator's
+	/// list of running contexts.
+	bool in_running_contexts = false;
+
+	/// Position of the context in the emulator's list of suspended
+	/// contexts, or past-the-end iterator if not present.
+	std::list<Context *>::iterator suspended_contexts_iterator;
+
+	/// Flag indicating whether the context is present in the emulator's
+	/// list of suspended contexts.
+	bool in_suspended_contexts = false;
+
+	/// Position of the context in the emulator's list of finished contexts,
+	/// or past-the-end iterator if not present.
+	std::list<Context *>::iterator finished_contexts_iterator;
+
+	/// Flag indicating whether the context is present in the emulator's
+	/// list of finished contexts.
+	bool in_finished_contexts = false;
+
+	/// Position of the context in the emulator's list of zombie contexts,
+	/// or past-the-end iterator if not present.
+	std::list<Context *>::iterator zombie_contexts_iterator;
+
+	/// Flag indicating whether the context is present in the emulator's
+	/// list of zombie contexts.
+	bool in_zombie_contexts = false;
+
 
 
 
