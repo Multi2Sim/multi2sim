@@ -10,7 +10,7 @@ libemulator_a_SOURCES = \
 	\
 	Thread.cc \
 	Thread.h \
-	ThreadISA.cc\
+	ThreadIsa.cc\
 	\
 	ThreadBlock.cc \
 	ThreadBlock.h \
