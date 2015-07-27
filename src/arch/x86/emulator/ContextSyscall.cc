@@ -5710,8 +5710,12 @@ int Context::ExecuteSyscall_futex()
 		// The rest of the threads waiting in futex 'addr1' are requeued
 		// into futex 'addr2'
 		int requeued = 0;
-		for (Context *context : emulator->getContextList(ListSuspended))
+		for (auto it = emulator->getSuspendedContextsBegin(),
+				e = emulator->getSuspendedContextsEnd();
+				it != e;
+				++it)
 		{
+			Context *context = *it;
 			if (context->getState(StateFutex)
 					&& context->wakeup_futex == addr1)
 			{

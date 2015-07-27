@@ -85,9 +85,17 @@ class Emulator : public comm::Emulator
 	// Primary list of contexts
 	std::list<std::unique_ptr<Context>> contexts;
 
-	// Secondary lists of contexts. Contexts in different states
-	// are added/removed from this lists as their state gets updated.
-	std::list<Context *> context_list[Context::ListCount];
+	// List of running contexts
+	std::list<Context *> running_contexts;
+
+	// List of suspended contexts
+	std::list<Context *> suspended_contexts;
+
+	// List of finished contexts
+	std::list<Context *> finished_contexts;
+
+	// List of zombie contexts
+	std::list<Context *> zombie_contexts;
 
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
@@ -183,44 +191,9 @@ public:
 			const std::string &stdin_file_name = "",
 			const std::string &stdout_file_name = "");
 
-	/// Add a context to a context list if it is not present already
-	void AddContextToList(Context::ListType type, Context *context);
-
-	/// Remove a context from a context list if present
-	void RemoveContextFromList(Context::ListType type, Context *context);
-
-	/// Update the presence of a context in a list depending on the value
-	/// passed in argument \a present. If \c true, the context will be added
-	/// to the list (if not present already. If \c false, it will be removed
-	/// (if still present).
-	void UpdateContextInList(Context::ListType type,
-			Context *context,
-			bool present);
-
-	/// Return a constant reference to a list of contexts
-	const std::list<Context *> &getContextList(Context::ListType type) const
-	{
-		return context_list[type];
-	}
-
 	/// Return a unique process ID. Contexts can call this function when
 	/// created to obtain their unique identifier.
 	int getPid() { return pid++; }
-
-	/// Get reference to the main context list
-	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }
-
-	/// Return an iterator to the first element of the running context list
-	std::list<Context *>::iterator getRunningContextsBegin()
-	{
-		return context_list[Context::ListRunning].begin();
-	}
-
-	/// Return a past-the-end iterator to the running context list
-	std::list<Context *>::iterator getRunningContextsEnd()
-	{
-		return context_list[Context::ListRunning].end();
-	}
 
 	/// Lock the emulator mutex
 	void LockMutex() { pthread_mutex_lock(&mutex); }
@@ -251,6 +224,178 @@ public:
 	/// \return This function \c true if the iteration had a useful
 	/// emulation, and \c false if all contexts finished execution.
 	bool Run();
+
+
+
+
+	//
+	// List of all contexts
+	//
+
+	/// Return an iterator to the first element of the context list
+	std::list<std::unique_ptr<Context>>::iterator getContextsBegin()
+	{
+		return contexts.begin();
+	}
+
+	/// Return a past-the-end iterator to the context list
+	std::list<std::unique_ptr<Context>>::iterator getContextsEnd()
+	{
+		return contexts.end();
+	}
+
+	/// Return the number of contexts
+	int getNumContexts() const
+	{
+		return contexts.size();
+	}
+
+
+
+	//
+	// List of running contexts
+	//
+
+	/// Add a context to the list of running contexts. The context must
+	/// not be present in said list.
+	void InsertInRunningContexts(Context *context);
+
+	/// Remove a context from the list of running contexts. The context
+	/// must be present in said list.
+	void RemoveFromRunningContexts(Context *context);
+
+	/// Update the presence of a context in the list of running contexts,
+	/// regardless of its previous presence in it.
+	void UpdateRunningContexts(Context *context, bool present);
+
+	/// Return an iterator to the first element of the running context list
+	std::list<Context *>::iterator getRunningContextsBegin()
+	{
+		return running_contexts.begin();
+	}
+
+	/// Return a past-the-end iterator to the running context list
+	std::list<Context *>::iterator getRunningContextsEnd()
+	{
+		return running_contexts.end();
+	}
+
+	/// Return the number of running contexts
+	int getNumRunningContexts() const
+	{
+		return running_contexts.size();
+	}
+
+
+
+
+	//
+	// List of suspended contexts
+	//
+
+	/// Add a context to the list of suspended contexts. The context must
+	/// not be present in said list.
+	void InsertInSuspendedContexts(Context *context);
+
+	/// Remove a context from the list of suspended contexts. The context
+	/// must be present in said list.
+	void RemoveFromSuspendedContexts(Context *context);
+
+	/// Update the presence of a context in the list of suspended contexts,
+	/// regardless of its previous presence in it.
+	void UpdateSuspendedContexts(Context *context, bool present);
+
+	/// Return an iterator to the first element of the suspended context list
+	std::list<Context *>::iterator getSuspendedContextsBegin()
+	{
+		return suspended_contexts.begin();
+	}
+
+	/// Return a past-the-end iterator to the suspended context list
+	std::list<Context *>::iterator getSuspendedContextsEnd()
+	{
+		return suspended_contexts.end();
+	}
+
+	/// Return the number of suspended contexts
+	int getNumSuspendedContexts() const
+	{
+		return suspended_contexts.size();
+	}
+
+
+
+
+	//
+	// List of finished contexts
+	//
+
+	/// Add a context to the list of finished contexts. The context must
+	/// not be present in said list.
+	void InsertInFinishedContexts(Context *context);
+
+	/// Remove a context from the list of finished contexts. The context
+	/// must be present in said list.
+	void RemoveFromFinishedContexts(Context *context);
+
+	/// Update the presence of a context in the list of finished contexts,
+	/// regardless of its previous presence in it.
+	void UpdateFinishedContexts(Context *context, bool present);
+
+	/// Return an iterator to the first element of the finished context list
+	std::list<Context *>::iterator getFinishedContextsBegin()
+	{
+		return finished_contexts.begin();
+	}
+
+	/// Return a past-the-end iterator to the finished context list
+	std::list<Context *>::iterator getFinishedContextsEnd()
+	{
+		return finished_contexts.end();
+	}
+
+	/// Return the number of finished contexts
+	int getNumFinishedContexts() const
+	{
+		return finished_contexts.size();
+	}
+
+
+
+
+	//
+	// List of zombie contexts
+	//
+
+	/// Add a context to the list of zombie contexts. The context must
+	/// not be present in said list.
+	void InsertInZombieContexts(Context *context);
+
+	/// Remove a context from the list of zombie contexts. The context
+	/// must be present in said list.
+	void RemoveFromZombieContexts(Context *context);
+
+	/// Update the presence of a context in the list of zombie contexts,
+	/// regardless of its previous presence in it.
+	void UpdateZombieContexts(Context *context, bool present);
+
+	/// Return an iterator to the first element of the zombie context list
+	std::list<Context *>::iterator getZombieContextsBegin()
+	{
+		return zombie_contexts.begin();
+	}
+
+	/// Return a past-the-end iterator to the zombie context list
+	std::list<Context *>::iterator getZombieContextsEnd()
+	{
+		return zombie_contexts.end();
+	}
+
+	/// Return the number of zombie contexts
+	int getNumZombieContexts() const
+	{
+		return zombie_contexts.size();
+	}
 
 
 
