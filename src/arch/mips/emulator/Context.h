@@ -340,28 +340,29 @@ class Context
 	// Emulate a system call
 	void ExecuteSyscall();
 
-	// Enumeration with all system call codes. Each entry of Syscall.dat
-	// will be expanded into a code. For example, entry
+	// Enumeration with all system call codes. Each entry of
+	// ContextSyscall.def will be expanded into a code. For example, entry
 	//	DEFSYSCALL(exit, 1)
 	// will produce code
 	//	SyscallCode_exit
 	// There is a last element 'SyscallCodeCount' that will be one unit
-	// higher than the highest system call code found in Syscall.dat.
+	// higher than the highest system call code found in
+	// ContextSyscall.def.
 	enum
 	{
 #define DEFSYSCALL(name, code) SyscallCode_##name = code,
-#include "syscall.dat"
+#include "ContextSyscall.def"
 #undef DEFSYSCALL
 		SyscallCodeCount
 	};
 
-	// System call emulation functions. Each entry of syscall.dat will be
-	// expanded into a function prototype. For example, entry
+	// System call emulation functions. Each entry of ContextSyscall.def
+	// will be expanded into a function prototype. For example, entry
 	//	DEFSYSCALL(exit, 1)
 	// is expanded to
 	//	void ExecuteSyscall_exit();
 #define DEFSYSCALL(name, code) int ExecuteSyscall_##name();
-#include "syscall.dat"
+#include "ContextSyscall.def"
 #undef DEFSYSCALL
 
 	// System call names

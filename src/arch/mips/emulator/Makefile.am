@@ -8,6 +8,7 @@ libemulator_a_SOURCES = \
 	ContextLoader.cc \
 	ContextSignal.cc \
 	ContextSyscall.cc \
+	ContextSyscall.def \
 	\
 	Emulator.cc \
 	Emulator.h  \
@@ -16,9 +17,7 @@ libemulator_a_SOURCES = \
 	Regs.h \
 	\
 	Signal.cc \
-	Signal.h \
-	\
-	syscall.dat
+	Signal.h
 
 	
 AM_CPPFLAGS = @M2S_INCLUDES@

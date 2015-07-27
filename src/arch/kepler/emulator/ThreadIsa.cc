@@ -22,9 +22,6 @@
 
 #include <arch/kepler/disassembler/Inst.h>
 #include <lib/cpp/Bitmap.h>
-#include <lib/util/bit-map.h>
-#include <lib/util/debug.h>
-#include <memory/memory.h>
 
 #include "Emulator.h"
 #include "Grid.h"
