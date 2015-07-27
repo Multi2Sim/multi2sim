@@ -134,44 +134,119 @@ void Emulator::ProcessOptions()
 }
 
 
-void Emulator::AddContextToList(Context::ListType type, Context *context)
+void Emulator::InsertInRunningContexts(Context *context)
 {
-	// Nothing if already present
-	if (context->context_list_present[type])
-		return;
-
-	// Add context
-	context->context_list_present[type] = true;
-	context_list[type].push_back(context);
-	auto iterator = context_list[type].end();
-	context->context_list_iterator[type] = --iterator;
+	assert(!context->in_running_contexts);
+	assert(context->running_contexts_iterator == running_contexts.end());
+	context->in_running_contexts = true;
+	context->running_contexts_iterator = running_contexts.insert(
+			running_contexts.end(), context);
 }
 
-	
-void Emulator::RemoveContextFromList(Context::ListType type, Context *context)
-{
-	// Nothing if not present
-	if (!context->context_list_present[type])
-		return;
 
-	// Remove context
-	context->context_list_present[type] = false;
-	auto iterator = context->context_list_iterator[type];
-	context_list[type].erase(iterator);
+void Emulator::RemoveFromRunningContexts(Context *context)
+{
+	assert(context->in_running_contexts);
+	assert(context->running_contexts_iterator != running_contexts.end());
+	running_contexts.erase(context->running_contexts_iterator);
+	context->in_running_contexts = false;
+	context->running_contexts_iterator = running_contexts.end();
 }
-	
 
-void Emulator::UpdateContextInList(Context::ListType type, Context *context,
-			bool present)
+
+void Emulator::UpdateRunningContexts(Context *context, bool present)
 {
-	if (present && !context->context_list_present[type])
-	{
-		AddContextToList(type, context);
-	}
-	else if (!present && context->context_list_present[type])
-	{
-		RemoveContextFromList(type, context);
-	}
+	if (present && !context->in_running_contexts)
+		InsertInRunningContexts(context);
+	else if (!present && context->in_running_contexts)
+		RemoveFromRunningContexts(context);
+}
+
+
+void Emulator::InsertInSuspendedContexts(Context *context)
+{
+	assert(!context->in_suspended_contexts);
+	assert(context->suspended_contexts_iterator == suspended_contexts.end());
+	context->in_suspended_contexts = true;
+	context->suspended_contexts_iterator = suspended_contexts.insert(
+			suspended_contexts.end(), context);
+}
+
+
+void Emulator::RemoveFromSuspendedContexts(Context *context)
+{
+	assert(context->in_suspended_contexts);
+	assert(context->suspended_contexts_iterator != suspended_contexts.end());
+	suspended_contexts.erase(context->suspended_contexts_iterator);
+	context->in_suspended_contexts = false;
+	context->suspended_contexts_iterator = suspended_contexts.end();
+}
+
+
+void Emulator::UpdateSuspendedContexts(Context *context, bool present)
+{
+	if (present && !context->in_suspended_contexts)
+		InsertInSuspendedContexts(context);
+	else if (!present && context->in_suspended_contexts)
+		RemoveFromSuspendedContexts(context);
+}
+
+
+void Emulator::InsertInFinishedContexts(Context *context)
+{
+	assert(!context->in_finished_contexts);
+	assert(context->finished_contexts_iterator == finished_contexts.end());
+	context->in_finished_contexts = true;
+	context->finished_contexts_iterator = finished_contexts.insert(
+			finished_contexts.end(), context);
+}
+
+
+void Emulator::RemoveFromFinishedContexts(Context *context)
+{
+	assert(context->in_finished_contexts);
+	assert(context->finished_contexts_iterator != finished_contexts.end());
+	finished_contexts.erase(context->finished_contexts_iterator);
+	context->in_finished_contexts = false;
+	context->finished_contexts_iterator = finished_contexts.end();
+}
+
+
+void Emulator::UpdateFinishedContexts(Context *context, bool present)
+{
+	if (present && !context->in_finished_contexts)
+		InsertInFinishedContexts(context);
+	else if (!present && context->in_finished_contexts)
+		RemoveFromFinishedContexts(context);
+}
+
+
+void Emulator::InsertInZombieContexts(Context *context)
+{
+	assert(!context->in_zombie_contexts);
+	assert(context->zombie_contexts_iterator == zombie_contexts.end());
+	context->in_zombie_contexts = true;
+	context->zombie_contexts_iterator = zombie_contexts.insert(
+			zombie_contexts.end(), context);
+}
+
+
+void Emulator::RemoveFromZombieContexts(Context *context)
+{
+	assert(context->in_zombie_contexts);
+	assert(context->zombie_contexts_iterator != zombie_contexts.end());
+	zombie_contexts.erase(context->zombie_contexts_iterator);
+	context->in_zombie_contexts = false;
+	context->zombie_contexts_iterator = zombie_contexts.end();
+}
+
+
+void Emulator::UpdateZombieContexts(Context *context, bool present)
+{
+	if (present && !context->in_zombie_contexts)
+		InsertInZombieContexts(context);
+	else if (!present && context->in_zombie_contexts)
+		RemoveFromZombieContexts(context);
 }
 
 
@@ -237,8 +312,10 @@ void Emulator::LoadProgram(const std::vector<std::string> &args,
 void Emulator::FreeContext(Context *context)
 {
 	// Remove context from all context lists
-	for (int i = 0; i < Context::ListCount; i++)
-		RemoveContextFromList((Context::ListType) i, context);
+	UpdateRunningContexts(context, false);
+	UpdateSuspendedContexts(context, false);
+	UpdateFinishedContexts(context, false);
+	UpdateZombieContexts(context, false);
 	
 	// Remove from main context list. This will invoke the context
 	// destructor and free it.
@@ -272,10 +349,9 @@ void Emulator::ProcessEvents()
 	// Look at the list of suspended contexts and try to find
 	// one that needs to be waken up.
 	//
-	auto &suspended_context_list = getContextList(Context::ListSuspended);
-	auto iterator_next = suspended_context_list.end();
-	for (auto iterator = suspended_context_list.begin();
-			iterator != suspended_context_list.end();
+	auto iterator_next = suspended_contexts.end();
+	for (auto iterator = suspended_contexts.begin();
+			iterator != suspended_contexts.end();
 			iterator = iterator_next)
 	{
 		// Save iterator to next element here, since the context can be
@@ -284,8 +360,8 @@ void Emulator::ProcessEvents()
 		++iterator_next;
 		Context *context = *iterator;
 		assert(context->getState(Context::StateSuspended));
-		assert(context->context_list_iterator[Context::ListSuspended] == iterator);
-		assert(context->context_list_present[Context::ListSuspended]);
+		assert(context->suspended_contexts_iterator == iterator);
+		assert(context->in_suspended_contexts);
 
 		// Context suspended in a system call using a custom wake up
 		// check call-back function. NOTE: this is a new mechanism. It'd
@@ -366,7 +442,7 @@ void Emulator::ProcessEvents()
 	// LOOP 3
 	// Process pending signals in running contexts to launch signal handlers
 	//
-	for (Context *context : context_list[Context::ListRunning])
+	for (Context *context : running_contexts)
 		context->CheckSignalHandler();
 	
 	// Unlock
@@ -402,8 +478,8 @@ bool Emulator::Run()
 	}
 
 	// Free finished contexts
-	while (context_list[Context::ListFinished].size())
-		FreeContext(context_list[Context::ListFinished].front());
+	while (finished_contexts.size())
+		FreeContext(finished_contexts.front());
 
 	// Process list of suspended contexts
 	ProcessEvents();
