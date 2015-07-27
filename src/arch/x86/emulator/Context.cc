@@ -70,8 +70,15 @@ Context::Context() :
 	// Micro-instructions
 	uinst_active = Timing::getSimKind() == comm::Arch::SimDetailed;
 
+	// Initialize emulator list iterators
+	contexts_iterator = emulator->getContextsEnd();
+	running_contexts_iterator = emulator->getRunningContextsEnd();
+	suspended_contexts_iterator = emulator->getSuspendedContextsEnd();
+	finished_contexts_iterator = emulator->getFinishedContextsEnd();
+	zombie_contexts_iterator = emulator->getZombieContextsEnd();
+
 	// Initialize thread affinity bitmap, making the context have affinity
-	// with all harware threads
+	// with all hardware threads
 	thread_affinity = misc::new_unique<misc::Bitmap>(
 			Cpu::getNumCores() *
 			Cpu::getNumThreads());
