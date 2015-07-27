@@ -77,6 +77,8 @@ int Cpu::num_threads = 1;
 int Cpu::context_quantum;
 int Cpu::thread_quantum;
 int Cpu::thread_switch_penalty;
+long long Cpu::num_fast_forward_instructions;
+long long Cpu::max_cycles;
 int Cpu::recover_penalty;
 Cpu::RecoverKind Cpu::recover_kind;
 Cpu::FetchKind Cpu::fetch_kind;
@@ -247,7 +249,6 @@ void Cpu::InsertInTraceList(std::shared_ptr<Uop> uop)
 
 void Cpu::EmptyTraceList()
 {
-	assert(Timing::trace == true);
 	while (trace_list.size())
 	{
 		// Get instruction at the head

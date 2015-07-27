@@ -46,6 +46,9 @@ class Timing : public comm::Timing
 	// Static fields
 	//
 
+	// Error message
+	static const char *error_fast_forward;
+
 	// Unique instance of the singleton
 	static std::unique_ptr<Timing> instance;
 
@@ -133,9 +136,13 @@ public:
 		return cpu.get();
 	}
 
+	/// Fast forward instructions set up by the user
+	void FastForward();
+
 	/// Run one iteration of the cpu timing simuation.
 	/// \return This function \c true if the iteration had a useful
-	/// timing simulation, and \c false if all timing simulation finished execution.
+	/// timing simulation, and \c false if all timing simulation finished
+	/// execution.
 	bool Run() override;
 
 	/// Dump a default memory configuration for the architecture. This
