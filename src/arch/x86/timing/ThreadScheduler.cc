@@ -86,6 +86,33 @@
 namespace x86
 {
 
+void Thread::MapContext(Context *context)
+{
+	// Sanity
+	assert(context);
+	assert(!context->core);
+	assert(!context->thread);
+	assert(!context->getState(Context::StateMapped));
+	assert(!context->getState(Context::StateAlloc));
+
+	// Update context state
+	context->core = core;
+	context->thread = this;
+	context->setState(Context::StateMapped);
+
+	// Add context to the node's mapped list
+	context->mapped_contexts_iterator = mapped_contexts.insert(
+			mapped_contexts.end(), context);
+
+	// Debug
+	Emulator::context_debug << misc::fmt("@%lld Context %d mapped "
+			"to thread %s\n",
+			cpu->getCycle(),
+			context->getId(),
+			name.c_str());
+}
+
+
 void Thread::UnmapContext(Context *context)
 {
 	// Sanity

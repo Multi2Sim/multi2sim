@@ -178,13 +178,6 @@ private:
 	// Name of currently simulated stage 
 	std::string stage;
 
-	// From all contexts in the 'alloc' list of 'x86_emu', minimum value
-	// of variable 'ctx->alloc_cycle'. This value is used to decide whether
-	// the scheduler should be called at all to check for any context whose
-	// execution quantum has expired. These variables are updated by calling
-	// 'x86_cpu_update_min_alloc_cycle'
-	long long min_alloc_cycle = 0;
-
 	// List containing uops that need to report an 'end_inst' trace event 
 	std::deque<std::shared_ptr<Uop>> trace_list;
 
@@ -289,7 +282,7 @@ private:
 	// Dispatch width
 	static int dispatch_width;
 
-	// Dispath kind
+	// Dispatch kind
 	static DispatchKind dispatch_kind;
 
 	// Issue width
@@ -337,6 +330,20 @@ private:
 
 	// Uop queue size
 	static int uop_queue_size;
+
+	
+	
+
+	//
+	// Scheduler
+	//
+
+	// From all contexts currently allocated to hardware threads, minimum
+	// value of their field 'allocate_cycle', used to decide whether the
+	// scheduler should be called at all to check for any context whose
+	// execution quantum has expired. This value is updated with a call to
+	// UpdateContextAllocationCycle().
+	long long min_context_allocate_cycle = 0;
 
 public:
 

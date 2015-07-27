@@ -95,7 +95,7 @@ void Context::UpdateState(unsigned state)
 	// states other than 'ContextSpecMode', a reschedule is marked. */
 	unsigned diff = this->state ^ state;
 	if (diff & ~StateSpecMode)
-		emulator->setScheduleSignal();
+		emulator->schedule_signal = true;
 	
 	// Update state
 	this->state = state;
