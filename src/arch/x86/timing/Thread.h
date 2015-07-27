@@ -324,6 +324,9 @@ public:
 	/// Constructor
 	Thread(Core *core, int id_in_core);
 
+	/// Return the thread's name
+	const std::string &getName() const { return name; }
+
 	/// Return the core that this thread belongs to
 	Core *getCore() const { return core; }
 
@@ -456,6 +459,10 @@ public:
 	//
 	// Fetch stage (ThreadFetch.cc)
 	//
+
+	/// Set the address in instruction memory used for the next instruction
+	/// fetch cycle.
+	void setFetchNeip(unsigned fetch_neip) { this->fetch_neip = fetch_neip; }
 
 	/// Check whether or not the fecth is allowed
 	bool canFetch();
@@ -600,6 +607,13 @@ public:
 	//
 	// Scheduler (ThreadScheduler.cc)
 	//
+
+	/// Return the number of contexts currently mapped to the thread.
+	int getNumMappedContexts() const { return mapped_contexts.size(); }
+
+	// Map a context to the hardware thread. This means that it gets
+	// inserted into the list of mapped contexts.
+	void MapContext(Context *context);
 
 	// Unmap a context from a hardware thread, i.e., remove it from the list
 	// of contexts mapped to the thread. A context is unmapped from a thread

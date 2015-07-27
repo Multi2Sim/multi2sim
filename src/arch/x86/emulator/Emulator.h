@@ -55,7 +55,7 @@ public:
 class Emulator : public comm::Emulator
 {
 	//
-	// Configuration options
+	// Static fields
 	//
 
 	// Debugger files
@@ -72,16 +72,15 @@ class Emulator : public comm::Emulator
 	// Maximum number of instructions
 	static long long max_instructions;
 
-	// Process prefetch instructions
-	static bool process_prefetch_hints;
+	// Unique instance of singleton
+	static std::unique_ptr<Emulator> instance;
+
+
 
 
 	//
 	// Class members
 	//
-
-	// Unique instance of singleton
-	static std::unique_ptr<Emulator> instance;
 
 	// Primary list of contexts
 	std::list<std::unique_ptr<Context>> contexts;
@@ -89,9 +88,6 @@ class Emulator : public comm::Emulator
 	// Secondary lists of contexts. Contexts in different states
 	// are added/removed from this lists as their state gets updated.
 	std::list<Context *> context_list[Context::ListCount];
-
-	// See setScheduleSignal()
-	bool schedule_signal = false;
 
 	// Schedule next call to Emu::ProcessEvents(). The call will only be
 	// effective if 'process_events_force' is set. This flag should be
@@ -114,7 +110,7 @@ class Emulator : public comm::Emulator
 public:
 
 	//
-	// Static functions
+	// Static fields
 	//
 
 	/// Get instance of singleton
@@ -122,6 +118,39 @@ public:
 
 	/// Destroy the singleton if it existed
 	static void Destroy() { instance = nullptr; }
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
+	/// Debugger for function calls
+	static misc::Debug call_debug;
+
+	/// Debugger for x86 contexts
+	static misc::Debug context_debug;
+
+	/// Debugger for CUDA driver
+	static misc::Debug cuda_debug;
+
+	/// Debugger for GLUT driver
+	static misc::Debug glut_debug;
+	
+	/// Debugger for x86 ISA emulation
+	static misc::Debug isa_debug;
+
+	/// Debugger for program loader
+	static misc::Debug loader_debug;
+
+	/// Debugger for OpenCL driver
+	static misc::Debug opencl_debug;
+
+	/// Debugger for OpenGL driver
+	static misc::Debug opengl_debug;
+	
+	/// Debugger for system calls
+	static misc::Debug syscall_debug;
 
 
 
@@ -174,19 +203,24 @@ public:
 		return context_list[type];
 	}
 
-	/// Signals a call to the scheduler Timing::Schedule() in the
-	/// beginning of next cycle. This flag is set any time a context changes
-	/// its state in any bit other than ContextSpecMode. It can be set
-	/// anywhere in the code by directly assigning a value to 1. E.g.:
-	/// when a system call is executed to change the context's affinity.
-	void setScheduleSignal() { schedule_signal = true; }
-
 	/// Return a unique process ID. Contexts can call this function when
 	/// created to obtain their unique identifier.
 	int getPid() { return pid++; }
 
 	/// Get reference to the main context list
 	std::list<std::unique_ptr<Context>> &getContexts() { return contexts; }
+
+	/// Return an iterator to the first element of the running context list
+	std::list<Context *>::iterator getRunningContextsBegin()
+	{
+		return context_list[Context::ListRunning].begin();
+	}
+
+	/// Return a past-the-end iterator to the running context list
+	std::list<Context *>::iterator getRunningContextsEnd()
+	{
+		return context_list[Context::ListRunning].end();
+	}
 
 	/// Lock the emulator mutex
 	void LockMutex() { pthread_mutex_lock(&mutex); }
@@ -219,45 +253,19 @@ public:
 	bool Run();
 
 
+
+
 	//
-	// Debuggers and configuration
+	// Public fields
 	//
-
-	/// Register command-line options
-	static void RegisterOptions();
-
-	/// Process command-line options
-	static void ProcessOptions();
-
-	/// Debugger for function calls
-	static misc::Debug call_debug;
-
-	/// Debugger for x86 contexts
-	static misc::Debug context_debug;
-
-	/// Debugger for CUDA driver
-	static misc::Debug cuda_debug;
-
-	/// Debugger for GLUT driver
-	static misc::Debug glut_debug;
 	
-	/// Debugger for x86 ISA emulation
-	static misc::Debug isa_debug;
+	/// Signals a call to the scheduler Timing::Schedule() in the
+	/// beginning of next cycle. This flag is set any time a context changes
+	/// its state in any bit other than StateSpecMode. It can be set
+	/// anywhere in the code by directly assigning a value of true. E.g.:
+	/// when a system call is executed to change the context's affinity.
+	bool schedule_signal = false;
 
-	/// Debugger for program loader
-	static misc::Debug loader_debug;
-
-	/// Debugger for OpenCL driver
-	static misc::Debug opencl_debug;
-
-	/// Debugger for OpenGL driver
-	static misc::Debug opengl_debug;
-	
-	/// Debugger for system calls
-	static misc::Debug syscall_debug;
-
-	/// Return whether prefetch hints should be processed
-	static bool getProcessPrefetchHints() { return process_prefetch_hints; }
 };
 
 
