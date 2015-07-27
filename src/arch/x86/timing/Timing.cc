@@ -234,9 +234,14 @@ const std::string Timing::help_message =
 		"      For the two-level adaptive predictor, level 2 history size.\n"
 		"\n";
 
+const char *Timing::error_fast_forward =
+	"The number of instructions specified in the x86 CPU configuration file "
+	"for fast-forward (functional) execution has caused all contexts to end "
+	"before the timing simulation could start. Please decrease the number "
+	"of fast-forward instructions and retry.\n";
+
 bool Timing::help = false;
 
-// Default frequency
 int Timing::frequency = 1000;
 
 
@@ -264,11 +269,63 @@ Timing *Timing::getInstance()
 
 bool Timing::Run()
 {
-	// Run stages
+	// Stop if no context is running
+	Emulator *emulator = Emulator::getInstance();
+	assert(emulator->getNumFinishedContexts() <= emulator->getNumContexts());
+	if (emulator->getNumFinishedContexts() == emulator->getNumContexts())
+		return false;
+
+	// Fast-forward simulation
+	if (Cpu::getNumFastForwardInstructions()
+			&& emulator->getNumInstructions()
+			< Cpu::getNumFastForwardInstructions())
+		FastForward();
+
+	// Stop if maximum number of CPU instructions exceeded
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	if (Emulator::getMaxInstructions()
+			&& cpu->getNumCommittedInstructions()
+			>= Emulator::getMaxInstructions()
+			- Cpu::getNumFastForwardInstructions())
+		esim_engine->Finish("X86MaxInstructions");
+
+	// Stop if maximum number of cycles exceeded
+	if (Cpu::getMaxCycles() && getCycle() >= Cpu::getMaxCycles())
+		esim_engine->Finish("X86MaxCycles");
+
+	// Stop if any previous reason met
+	if (esim_engine->hasFinished())
+		return true;
+
+	// Empty uop trace list. This dumps the last trace line for instructions
+	// that were freed in the previous simulation cycle.
+	cpu->EmptyTraceList();
+
+	// Run processor stages
 	cpu->Run();
+
+	// Process host threads generating events
+	emulator->ProcessEvents();
 
 	// Still simulating
 	return true;
+}
+
+
+void Timing::FastForward()
+{
+	// Fast-forward simulation
+	Emulator *emulator = Emulator::getInstance();
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	while (emulator->getNumInstructions()
+			< Cpu::getNumFastForwardInstructions()
+			&& !esim_engine->hasFinished())
+		emulator->Run();
+
+	// Output warning if simulation finished during fast-forward execution
+	if (esim_engine->hasFinished())
+		misc::Warning("x86 fast-forwarding finished simulation.\n%s",
+				Timing::error_fast_forward);
 }
 
 

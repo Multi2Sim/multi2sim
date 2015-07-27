@@ -45,7 +45,7 @@ protected:
 	esim::Engine *esim;
 
 	/// Number of emulated instructions
-	long long instructions = 0;
+	long long num_instructions = 0;
 
 public:
 	/// Constructor
@@ -55,10 +55,10 @@ public:
 	const std::string &getName() const { return name; }
 
 	/// Increment the number of emulated instructions
-	void incInstructions() { ++instructions; }
+	void incNumInstructions() { ++num_instructions; }
 
 	/// Return the number of emulated instructions
-	long long getInstructions() { return instructions; }
+	long long getNumInstructions() { return num_instructions; }
 
 	/// Start or resume the emulator timer
 	void StartTimer() { timer.Start(); }

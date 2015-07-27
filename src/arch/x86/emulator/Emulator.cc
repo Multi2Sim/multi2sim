@@ -457,7 +457,7 @@ bool Emulator::Run()
 		return false;
 
 	// Stop if maximum number of CPU instructions exceeded
-	if (max_instructions && instructions >= max_instructions)
+	if (max_instructions && num_instructions >= max_instructions)
 		esim->Finish("x86MaxInst");
 
 	// Stop if any previous reason met

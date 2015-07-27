@@ -141,10 +141,10 @@ private:
 	// Static fields
 	//
 
-	// Number of Cores
+	// Number of cores
 	static int num_cores;
 
-	// Number of Threads
+	// Number of threads
 	static int num_threads;
 
 	// Context quantum
@@ -155,6 +155,12 @@ private:
 
 	// Thread swtich penalty
 	static int thread_switch_penalty;
+
+	// Number of fast forward instructions
+	static long long num_fast_forward_instructions;
+
+	// Maximum number of cycles to simulate
+	static long long max_cycles;
 
 
 
@@ -264,7 +270,7 @@ private:
 
 
 	//
-	// Cpu stage parameters
+	// CPU parameters
 	//
 
 	// Recover penalty
@@ -416,6 +422,17 @@ public:
 
 	/// Return the commit width, as configured by the user
 	static int getCommitWidth() { return commit_width; }
+
+	/// Return the number of fast foward instructions, as configured by
+	/// the user.
+	static long long getNumFastForwardInstructions()
+	{
+		return num_fast_forward_instructions;
+	}
+
+	/// Return the maximum number of cycles to simulate, as configured by
+	/// the user
+	static long long getMaxCycles() { return max_cycles; }
 	
 	/// Read branch predictor configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
@@ -539,6 +556,9 @@ public:
 
 	/// Increment the number of committed instructions
 	void incNumCommittedInstructions() { num_committed_instructions++; }
+	
+	/// Return the number of committed macro-instructions
+	long long getNumCommittedInstructions() { return num_committed_instructions; }
 
 	/// Increment the number of branches
 	void incNumBranches() { num_branches++; }
