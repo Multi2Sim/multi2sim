@@ -507,52 +507,7 @@ void Context::Execute()
 	}
 
 	// Stats
-	emulator->incInstructions();
-
-	if (emulator->getInstructions() % 10 == 0)
-	{
-		emulator->isa_debug << misc::fmt("Register Debug Dump\n");
-		emulator->isa_debug << misc::fmt(
-			"r0 = 0x%x\n"
-			"r1 = 0x%x\n"
-			"r2 = 0x%x\n"
-			"r3 = 0x%x\n"
-			"r4 = 0x%x\n"
-			"r5 = 0x%x\n"
-			"r6 = 0x%x\n"
-			"r7 = 0x%x\n"
-			"r8 = 0x%x\n"
-			"r9 = 0x%x\n"
-			"r10(sl) = 0x%x\n"
-			"r11(fp) = 0x%x\n"
-			"r12(ip) = 0x%x\n"
-			"r13(sp) = 0x%x\n"
-			"r14(lr) = 0x%x\n"
-			"r15(pc) = 0x%x\n"
-			"cpsr.n	= 0x%x\n"
-			"cpsr.v	= 0x%x\n"
-			"cpsr.q	= 0x%x\n"
-			"cpsr.thumb = 0x%x\n"
-			"cpsr.C	= 0x%x\n\n",
-			regs.getRegister(0), regs.getRegister(1), regs.getRegister(2), regs.getRegister(3),
-			regs.getRegister(4), regs.getRegister(5), regs.getRegister(6), regs.getRegister(7),
-			regs.getRegister(8), regs.getRegister(9), regs.getSL(), regs.getFP(),
-			regs.getIP(), regs.getSP(), regs.getLR(), regs.getPC(),
-			regs.getCPSR().n, regs.getCPSR().v, regs.getCPSR().q,
-			regs.getCPSR().thumb, regs.getCPSR().C);
-	}
-
-	// For debug purpose
-	char *stack_value;
-	if (false)
-	{
-		emulator->isa_debug << misc::fmt("Stack Dump\n");
-		for(unsigned int i = 0; i < 64; i = i + 4)
-		{
-			stack_value = memory->getBuffer(regs.getSP() + i, 4, mem::Memory::AccessRead);
-			emulator->isa_debug << misc::fmt("[0x%x]: 0x%x\n", regs.getSP() + i, *((int *)stack_value));
-		}
-	}
+	emulator->incNumInstructions();
 }
 
 
@@ -587,7 +542,7 @@ void Context::ExecuteInst()
 	if (emulator->isa_debug)
 	{
 		emulator->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-				emulator->getInstructions(), current_ip);
+				emulator->getNumInstructions(), current_ip);
 		if (regs.getCPSR().thumb != 0)
 		{
 			if(getInstType() == ContextInstTypeThumb32)

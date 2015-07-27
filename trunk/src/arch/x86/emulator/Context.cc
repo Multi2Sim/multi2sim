@@ -134,7 +134,7 @@ void Context::UpdateState(unsigned state)
 		Emulator::context_debug << misc::fmt(
 				"[%s] Instruction %lld: Changed state to %s\n",
 				getName().c_str(),
-				emulator->getInstructions(),
+				emulator->getNumInstructions(),
 				StateMap.MapFlags(this->state).c_str());
 	}
 
@@ -767,7 +767,7 @@ void Context::Execute()
 	// Debug
 	if (emulator->isa_debug)
 		emulator->isa_debug << misc::fmt("%d %8lld %x: ", getId(),
-				emulator->getInstructions(), current_eip)
+				emulator->getNumInstructions(), current_eip)
 				<< inst
 				<< misc::fmt("  (%d bytes)",
 						inst.getSize());
@@ -819,7 +819,7 @@ void Context::Execute()
 		DebugCallInst();
 
 	// Stats
-	emulator->incInstructions();
+	emulator->incNumInstructions();
 }
 
 

@@ -133,6 +133,9 @@ public:
 	/// Process command-line options
 	static void ProcessOptions();
 
+	/// Return the maximum number of instructions, as set up by the user
+	static long long getMaxInstructions() { return max_instructions; }
+
 	/// Debugger for function calls
 	static misc::Debug call_debug;
 

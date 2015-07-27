@@ -418,7 +418,8 @@ void Context::Execute()
 			emulator->isa_debug << misc::fmt("\nIN %s\n", symbol_string.c_str());
 
 		emulator->isa_debug << misc::fmt("%d %8lld %x: ", pid,
-				emulator->getInstructions(), regs.getPC());
+				emulator->getNumInstructions(),
+				regs.getPC());
 		inst.Dump(emulator->isa_debug.operator std::ostream &());
 		emulator->isa_debug << misc::fmt("\n");
 	}
@@ -439,7 +440,7 @@ void Context::Execute()
 	}
 
 	// Stats
-	emulator->incInstructions();
+	emulator->incNumInstructions();
 }
 
 

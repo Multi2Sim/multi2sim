@@ -34,6 +34,9 @@ Thread::Thread(Core *core,
 	// Assign name
 	name = misc::fmt("Core %d Thread %d", core->getId(), id_in_core);
 
+	// Assign CPU
+	cpu = core->getCpu();
+
 	// Global index in CPU
 	id_in_cpu = core->getId() * Cpu::getNumThreads() + id_in_core;
 

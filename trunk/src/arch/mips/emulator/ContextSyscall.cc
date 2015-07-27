@@ -70,7 +70,7 @@ void Context::ExecuteSyscall()
 	emulator->syscall_debug << misc::fmt("system call '%s' "
 			"(code %d, inst %lld, pid %d)\n",
 			Context::syscall_name[code], code,
-			emulator->getInstructions(), pid);
+			emulator->getNumInstructions(), pid);
 
 	// Perform system call
 	ExecuteSyscallFn fn = execute_syscall_fn[code];

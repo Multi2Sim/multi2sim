@@ -259,13 +259,13 @@ void Context::ExecuteSyscall()
 			getName().c_str(),
 			Context::syscall_name[code],
 			code,
-			emulator->getInstructions());
+			emulator->getNumInstructions());
 	emulator->syscall_debug << misc::fmt("[%s] System call '%s' "
 			"(code %d, inst %lld)\n",
 			getName().c_str(),
 			Context::syscall_name[code],
 			code,
-			emulator->getInstructions());
+			emulator->getNumInstructions());
 
 	// Perform system call
 	ExecuteSyscallFn fn = execute_syscall_fn[code];
