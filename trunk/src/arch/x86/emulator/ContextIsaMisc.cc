@@ -2397,10 +2397,6 @@ void Context::ExecuteInst_popf()
 
 void Context::ExecuteInst_prefetcht0_m8()
 {
-	// Not if prefetch is disabled
-	if (!Emulator::getProcessPrefetchHints())
-		return;
-
 	unsigned eff_addr = getEffectiveAddress();
 	newUinst(Uinst::OpcodeEffaddr,
 			Uinst::DepEaseg,

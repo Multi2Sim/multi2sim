@@ -644,12 +644,11 @@ private:
 	void LoadXMMM128(XMMValue &value);
 
 
-	///////////////////////////////////////////////////////////////////////
+	
+	
 	//
-	// Functions and fields related with the emulation of system calls,
-	// implemented in ContextSyscall.cc.
+	// System calls (ContextSyscall.cc)
 	//
-	///////////////////////////////////////////////////////////////////////
 
 	// Emulate a system call
 	void ExecuteSyscall();
@@ -793,6 +792,10 @@ public:
 
 	/// Clear flag \a state in the context state
 	void clearState(State state) { UpdateState(this->state & ~state); }
+
+	/// If the context has a parent, return the parent's ID. Otherwise,
+	/// return 0.
+	int getParentId() const { return parent ? parent->getId() : 0; }
 
 	// Finish a context. If the context has no parent, its state will be
 	// set to ContextFinished. If it has, its state is set to

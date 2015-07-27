@@ -27,11 +27,6 @@
 namespace x86
 {
 
-//
-// Configuration options
-//
-
-// Debug files
 std::string Emulator::call_debug_file;
 std::string Emulator::context_debug_file;
 std::string Emulator::cuda_debug_file;
@@ -42,21 +37,10 @@ std::string Emulator::opencl_debug_file;
 std::string Emulator::opengl_debug_file;
 std::string Emulator::syscall_debug_file;
 
-// Maximum number of instructions
 long long Emulator::max_instructions;
 
-bool Emulator::process_prefetch_hints = false;
-
-
-
-//
-// Static variables
-//
-
-// Emulator singleton
 std::unique_ptr<Emulator> Emulator::instance;
 
-// Debuggers
 misc::Debug Emulator::call_debug;
 misc::Debug Emulator::context_debug;
 misc::Debug Emulator::cuda_debug;
@@ -67,11 +51,6 @@ misc::Debug Emulator::opencl_debug;
 misc::Debug Emulator::opengl_debug;
 misc::Debug Emulator::syscall_debug;
 
-
-
-//
-// Functions
-//
 
 void Emulator::RegisterOptions()
 {
@@ -137,13 +116,6 @@ void Emulator::RegisterOptions()
 			"instructions. On x86 detailed simulation, it is given as "
 			"the number of committed (non-speculative) instructions. "
 			"A value of 0 means no limit.");
-
-	// Option --x86-prefetch
-	command_line->RegisterBool("--x86-prefetch {True|False} (default = False)",
-			process_prefetch_hints,
-			"This option determines whether or not to process "
-			"prefetch x86 instructions, and trigger prefetching "
-			"requests during a timing simulation.");
 }
 
 
@@ -218,12 +190,12 @@ Emulator *Emulator::getInstance()
 Context *Emulator::newContext()
 {
 	// Create context and add to context list
-	Context *context = new Context();
-	contexts.emplace_back(context);
-
-	// Save position in context list
-	auto iterator = contexts.end();
-	context->contexts_iterator = --iterator;
+	auto it = contexts.insert(contexts.end(),
+			misc::new_unique<Context>());
+	
+	// Get created context, and save position in context list
+	Context *context = it->get();
+	context->contexts_iterator = it;
 
 	// Set the context in running state. This call will add it automatically
 	// to the emulator list of running contexts.
