@@ -104,6 +104,9 @@ Thread::Thread(Warp *warp, int id)
 	// Currently Set LMEMHIOFF to 0
 	WriteSR(55, 0);
 
+	// Virual Thread Lane ID
+	WriteSR(0, id_in_warp);
+
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
 		WritePred(i, 0);
