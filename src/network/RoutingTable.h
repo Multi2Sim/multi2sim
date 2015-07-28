@@ -119,7 +119,25 @@ public:
 	/// Check if the routing table has cycle
 	bool hasCycle() const { return has_cycle; }
 
-	/// Update a route manually
+	/// Update a route manually. This function is used for adding route-steps.
+	/// Route-step is an element in the list of connections that provide the
+	/// path between two nodes in manual routing. Each routes requires the
+	/// source and destination of the route, as well as the next node which
+	/// lies within the path.
+	///
+	/// \param source
+	///			Identifies the source node of the route-step
+	///
+	/// \param destination
+	///			Identifies the destination end-node of the route-step.
+	///
+	/// \param next
+	///			Identifies the next node within the path of the route-step.
+	///
+	/// \param virtual_channel
+	///			Identifies the virtual_channel specific for the route-step,
+	///			if the next connection within the path is a link.
+	///
 	void UpdateRoute(Node *source,
 			Node *destination,
 			Node *next,

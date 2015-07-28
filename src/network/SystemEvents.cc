@@ -37,7 +37,7 @@ esim::Event *System::event_input_buffer;
 esim::Event *System::event_receive;
 
 
-void System::EventTypeSendHandler(esim::Event *type, 
+void System::EventTypeSendHandler(esim::Event *event,
 		esim::Frame *frame)
 {
 	// Useful objects
@@ -67,7 +67,7 @@ void System::EventTypeSendHandler(esim::Event *type,
 			"output_buffer=\"%s\"\n",
 			network->getName().c_str(), 
 			message->getId(), 
-			packet->getSessionId(), 
+			packet->getId(),
 			source_node->getName().c_str(), 
 			destination_node->getName().c_str(), 
 			output_buffer->getName().c_str());
@@ -97,7 +97,7 @@ void System::EventTypeSendHandler(esim::Event *type,
 }
 	
 
-void System::EventTypeOutputBufferHandler(esim::Event *type, 
+void System::EventTypeOutputBufferHandler(esim::Event *event,
 		esim::Frame *frame)
 {
 	// Cast event frame type
@@ -115,7 +115,7 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 			"message-->packet: %lld-->%d, "
 			"[Node %s] [Buffer %s]\n",
 			network->getName().c_str(), message->getId(), 
-			packet->getSessionId(), node->getName().c_str(), 
+			packet->getId(), node->getName().c_str(),
 			buffer->getName().c_str());
 	
 	// Let the connection to pass the packet to input buffer
@@ -124,7 +124,7 @@ void System::EventTypeOutputBufferHandler(esim::Event *type,
 }
 
 
-void System::EventTypeInputBufferHandler(esim::Event *type, 
+void System::EventTypeInputBufferHandler(esim::Event *event,
 		esim::Frame *frame)
 {
 	// Get esim engine
@@ -145,7 +145,7 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 			"message-->packet: %lld-->%d, at "
 			"[Node %s] [Buffer %s]\n",
 			network->getName().c_str(), message->getId(),
-			packet->getSessionId(), node->getName().c_str(),
+			packet->getId(), node->getName().c_str(),
 			buffer->getName().c_str());
 
 	// If this is the destination node, schedule receive event
@@ -158,7 +158,7 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 	// If the message is not at buffer head, process later
 	if (buffer->getBufferHead() != packet)
 	{
-		buffer->Wait(type);
+		buffer->Wait(event);
 		return;
 	}
 
@@ -172,7 +172,7 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 }
 
 
-void System::EventTypeReceiveHandler(esim::Event *type, 
+void System::EventTypeReceiveHandler(esim::Event *event,
 		esim::Frame *frame)
 {
 	// Cast event frame type
@@ -191,7 +191,7 @@ void System::EventTypeReceiveHandler(esim::Event *type,
 	debug << misc::fmt("[Network %s] [Receive Event Handler], "
 			"message-->packet: %lld-->%d, [node %s]\n",
 			network->getName().c_str(), message->getId(),
-			packet->getSessionId(), node->getName().c_str());
+			packet->getId(), node->getName().c_str());
 
 	// Check if the message arrived at an end node
 	if (!node)

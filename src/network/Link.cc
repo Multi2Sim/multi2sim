@@ -39,7 +39,7 @@ Link::Link(Network *network,
 						Connection(descriptive_name, network),
 						source_node(src_node),
 						destination_node(dst_node),
-						virtual_channels(num_virtual_channels),
+						num_virtual_channels(num_virtual_channels),
 						name(name),
 						bandwidth(bandwidth)
 {
@@ -125,7 +125,7 @@ void Link::TransferPacket(Packet *packet)
 				"message-->packet: %lld-->%d, at "
 				"[node %s], [buffer %s]\n",
 				network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str());
 		source_buffer->Wait(current_event);
@@ -139,7 +139,7 @@ void Link::TransferPacket(Packet *packet)
 				"message-->packet: %lld-->%d, at "
 				"[node %s], [buffer %s], [link %s]\n",
 				network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
 				getName().c_str());
@@ -157,7 +157,7 @@ void Link::TransferPacket(Packet *packet)
 				"[node %s], [buffer %s], [link %s],"
 				"destination: [node %s], [buffer %s]\n",
 				network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
 				getName().c_str(),
@@ -176,7 +176,7 @@ void Link::TransferPacket(Packet *packet)
 				"message-->packet: %lld-->%d, at "
 				"[link %s], destination: [node %s], [buffer %s]\n",
 				network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());

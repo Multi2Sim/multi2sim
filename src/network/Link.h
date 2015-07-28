@@ -39,7 +39,7 @@ class Link : public Connection
 	Node *destination_node;
 
 	// Number of virtual channels on link
-	int virtual_channels;
+	int num_virtual_channels;
 
 	// user assigned name
 	std::string name;
@@ -95,7 +95,7 @@ public:
 			int num_virtual_channel);
 
 	/// Get number of virtual channel
-	int numVirtualChannels() const { return virtual_channels; }
+	int getNumVirtualChannels() const { return num_virtual_channels; }
 
 	/// Set source node
 	void setSourceNode(Node* node) { this->source_node = node; }

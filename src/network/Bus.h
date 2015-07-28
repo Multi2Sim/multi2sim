@@ -32,6 +32,10 @@ class Lane
 
 	// Lane bandwidth
 	int bandwidth;
+
+
+
+
 	//
 	// Statistics
 	//
@@ -53,7 +57,7 @@ public:
 	Lane(int bandwidth) : bandwidth(bandwidth) {}
 
 	// Dumping lane statistics
-	void Dump(std::ostream &os) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	// Getter for bandwidth
 	int getBandwidth() const { return bandwidth; }
@@ -67,20 +71,24 @@ public:
 	// Increase the number of cycles that the lane was busy
 	void incBusyCycles(long long cycles) { busy_cycles += cycles;}
 
+
+
+
 	//
 	// Public fields
 	//
 
 	// Last cycle lane was scheduled
-	long long sched_when = 0;
+	long long scheduled_when = 0;
 
 	// The last buffer that was scheduled
-	Buffer *sched_buffer = nullptr;
+	Buffer *scheduled_buffer = nullptr;
 
 	// lane is busy until this cycle
 	long long busy = -1;
 
 };
+
 
 class Bus : public Connection
 {
@@ -89,6 +97,7 @@ private:
 
 	// List of the Lanes in the bus
 	std::vector<std::unique_ptr<Lane>> lanes;
+
 
 
 
@@ -120,12 +129,15 @@ public:
 	/// Transfer the packet from an output buffer
 	void TransferPacket(Packet *packet);
 
+
+
+
 	//
 	// Public fields
 	//
 
 	// The index of last node scheduled on the bus
-	int last_node_index;
+	int last_node_index = -1;
 
 };
 
