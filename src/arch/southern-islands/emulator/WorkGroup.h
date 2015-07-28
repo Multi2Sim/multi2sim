@@ -193,6 +193,13 @@ public:
 	NDRange *getNDRange() const { return ndrange; }
 
 	/// Get pointer of a work-item in this work-group
+	Wavefront *getWavefront(int id)
+	{
+		assert(id >= 0 && id < (int) wavefronts.size());
+		return wavefronts[id].get();
+	}
+
+	/// Get pointer of a work-item in this work-group
 	WorkItem *getWorkItem(int id_in_work_group)
 	{
 		assert(id_in_work_group >= 0 && id_in_work_group < (int) work_items.size());
@@ -239,6 +246,12 @@ public:
 		wavefronts_at_barrier = counter;
 	}
 
+	/// Set the pointer to the associated wavefront pool
+	void setWavefrontPool(WavefrontPool *wavefront_pool)
+	{
+		this->wavefront_pool = wavefront_pool;
+	}
+
 	/// Attach additional data to the work-group, passing an object derived
 	/// from class WorkGroupData. The object passed to it must be
 	/// dynamically allocated with \a new. The WorkGroup object will take
@@ -248,6 +261,12 @@ public:
 
 	/// Set finished flag
 	void setFinished(bool flag) { finished = flag; }
+
+	/// Get the number of wavefronts
+	int getNumWavefronts() const { return wavefronts.size(); }
+
+	/// Get the number of work items
+	int getNumWorkItems() const { return work_items.size(); }
 
 	/// Return an iterator to the first work-item in the work-group. The
 	/// following code can then be used to iterate over all work-items (and

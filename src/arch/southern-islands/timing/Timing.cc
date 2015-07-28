@@ -690,36 +690,40 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 
 bool Timing::Run()
 {
-/*
+	/*
 	// Get SI Driver
-	Driver *driver = Driver::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
-	if (!driver->getNumNDRanges())
+	if (!emulator->getNumNDRanges())
 		return false;
 
+
+
 	// Add any available work groups to the waiting list
-
-	LIST_FOR_EACH(opencl_driver->si_ndrange_list, ndrange_index)
+	for (auto it = emulator->getNdRangesBegin();
+			it != emulator->getNDRangesEnd();
+			++it)
 	{
-		ndrange = list_get(opencl_driver->si_ndrange_list, 
-			ndrange_index);
+		// Get pointer to NDRange
+		NDRange *ndrange = it->get();
 
+		// Break if there are no waiting work groups
 		if (!list_count(ndrange->waiting_work_groups))
-			continue;
+			break;
 
-		LIST_FOR_EACH(ndrange->waiting_work_groups, wg_index)
+		for (int i = 0; i < ndrange->getNumWaitingWorkgroups();
+				i++)
 		{
-			work_group_id = (long) list_dequeue(
-				ndrange->waiting_work_groups);
-			list_enqueue(ndrange->running_work_groups,
-				(void *) work_group_id);
+			// Remove work group from list and get its ID
+			long work_group_id = ndrange->waiting_work_groups.front();
+			ndrange->waiting_work_groups->pop_front();
 
 			// Instantiate the work group
-			work_group = new(SIWorkGroup, work_group_id, ndrange);
+			WorkGroup *work_group = misc::new_unique<WorkGroup>(ndrange, work_group_id);
 
-			list_add(gpu->waiting_work_groups, work_group);
+			gpu->waiting_work_groups.emplace_back(work_group);
 		}
 	}
 
@@ -781,12 +785,14 @@ bool Timing::Run()
 
 	// Still running
 	return TRUE;
-*/
+
 	// Advance one cycle in GPU device
 	gpu.Run();
 
+	*/
 	// Still running
 	return true;
+
 }
 
 }
