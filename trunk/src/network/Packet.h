@@ -35,7 +35,7 @@ class Packet
 	int size;
 
 	// The index of the packet in a message
-	int session_id;
+	int id;
 
 	// In transit until cycle
 	long long busy;
@@ -52,11 +52,8 @@ public:
 	/// Constructor
 	Packet(Message *message, int size);
 
-	/// Set session id
-	void setSessionId(int session_id) { this->session_id = session_id; }
-
 	/// Get session id
-	int getSessionId() const { return session_id; }
+	int getId() const { return id; }
 
 	/// Get message
 	Message *getMessage() const { return message; }

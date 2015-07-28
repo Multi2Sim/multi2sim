@@ -26,24 +26,25 @@ namespace net
 {
 
 
-Bus::Bus(Network *network, const std::string &name, int bandwidth, int lanes) :
+Bus::Bus(Network *network, const std::string &name, int bandwidth, int num_lanes) :
 		Connection(name, network)
 {
-	for (int i = 0; i < lanes; i++)
-		this->lanes.emplace_back(misc::new_unique<Lane>(bandwidth));
+	for (int i = 0; i < num_lanes; i++)
+		lanes.emplace_back(misc::new_unique<Lane>(bandwidth));
 }
 
 
-void Lane::Dump(std::ostream &os = std::cout) const
+void Lane::Dump(std::ostream &os) const
 {
-	//Dumping lane statistic informations
+	// Dumping lane statistic informations
 	os << misc::fmt("Bandwidth = %d\n", bandwidth);
 	os << misc::fmt("TransferredPackets = %lld\n", transferred_packets);
 	os << misc::fmt("TransferredBytes = %lld\n", transferred_bytes);
 	os << misc::fmt("BusyCycles = %lld\n", busy_cycles);
 
 	// Statistics that depends on the cycle
-	long long cycle = System::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 	os << misc::fmt("BytesPerCycle = %0.4f\n", cycle ?
 			(double) transferred_bytes / cycle : 0.0);
 	os << misc::fmt("Utilization = %0.4f\n", cycle ?
@@ -103,7 +104,7 @@ void Bus::TransferPacket(Packet *packet)
 	if (std::find(source_buffers.begin(), source_buffers.end(),
 			source_buffer) == source_buffers.end())
 		throw Error(misc::fmt("Packet %lld:%d is not in a source buffer."
-				"of the bus",message->getId(), packet->getSessionId()));
+				"of the bus",message->getId(), packet->getId()));
 
 	// Check if the packet is on the head of its buffer
 	if (source_buffer->getBufferHead() != packet)
@@ -112,7 +113,7 @@ void Bus::TransferPacket(Packet *packet)
 		System::debug << misc::fmt("[Network %s] [stall - queue] "
 				"message->packet: %lld-->%d, at "
 				"[node %s], [buffer %s]\n", network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				node->getName().c_str(), source_buffer->getName().c_str());
 
 		// Schedule the event for next time buffer head has changed
@@ -156,7 +157,7 @@ void Bus::TransferPacket(Packet *packet)
 		System::debug << misc::fmt("[Network %s] [stall - bus dst buffer busy] "
 				"message->packet: %lld-->%d, at "
 				"[node %s] [buffer %s]\n", network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
 		esim_engine->Next(current_event,
@@ -177,7 +178,7 @@ void Bus::TransferPacket(Packet *packet)
 				"message-->packet: %lld-->%d, at "
 				"[bus %s], destination: [node %s], [buffer %s]\n",
 				network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
@@ -192,7 +193,7 @@ void Bus::TransferPacket(Packet *packet)
 		System::debug << misc::fmt("[Network %s] [stall - bus arbitration] "
 				"message->packet: %lld-->%d, at "
 				"[bus %s]\n", network->getName().c_str(),
-				message->getId(), packet->getSessionId(),
+				message->getId(), packet->getId(),
 				this->name.c_str());
 		esim_engine->Next(current_event, 1);
 		return;
@@ -234,15 +235,15 @@ Buffer *Bus::LaneArbitration(Lane *lane)
 	long long cycle = system->getCycle();
 
 	// If a decision was made in the current cycle, return the decided buffer
-	if (lane->sched_when >= cycle)
-		return lane->sched_buffer;
+	if (lane->scheduled_when >= cycle)
+		return lane->scheduled_buffer;
 
 	// Make a new decision for this lane at this cycle even if it is busy
 	// at the moment
-	lane->sched_when = cycle;
+	lane->scheduled_when = cycle;
 	if (lane->busy >= cycle)
 	{
-		lane->sched_buffer = nullptr;
+		lane->scheduled_buffer = nullptr;
 		return nullptr;
 	}
 
@@ -253,14 +254,10 @@ Buffer *Bus::LaneArbitration(Lane *lane)
 	// Find an input buffer to fetch from for this lane
 	for (int i = 0; i < getNumSourceBuffers(); i++)
 	{
-		// variable declaration
-		Buffer *buffer;
-		int input_buffer_index;
-
 		// Applying round-robin to inputs, starting from last scheduled node
-		input_buffer_index = (last_input_node_index + i + 1)
+		int input_buffer_index = (last_input_node_index + i + 1)
 				% input_buffer_count;
-		buffer = source_buffers[input_buffer_index];
+		Buffer *buffer = source_buffers[input_buffer_index];
 
 		// There must be a packet at the head of buffer
 		Packet *packet = buffer->getBufferHead();
@@ -277,12 +274,12 @@ Buffer *Bus::LaneArbitration(Lane *lane)
 
 		// Return the scheduled buffer if all conditions where satisfied
 		last_node_index = input_buffer_index;
-		lane->sched_buffer = buffer;
+		lane->scheduled_buffer = buffer;
 		return buffer;
 	}
 
 	// Return null if non of the input buffers are ready
-	lane->sched_buffer = nullptr;
+	lane->scheduled_buffer = nullptr;
 	return nullptr;
 
 }

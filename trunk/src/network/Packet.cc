@@ -28,7 +28,7 @@ Packet::Packet(Message *message, int size) :
 		size(size)
 {
 	// Assigning the packet's id
-	session_id = message->getNumPackets();
+	id = message->getNumPackets();
 }
 
 }  // namespace net

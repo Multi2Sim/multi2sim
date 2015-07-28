@@ -84,7 +84,7 @@ void Switch::Forward(Packet *packet)
 				"[Node %s] [Buffer %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId(),
+				packet->getId(),
 				node->getName().c_str(),
 				input_buffer->getName().c_str());
 		esim_engine->Next(current_event, 
@@ -112,7 +112,7 @@ void Switch::Forward(Packet *packet)
 				"[Node %s] [Buffer %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId(),
+				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
 		esim_engine->Next(current_event, 
@@ -135,7 +135,7 @@ void Switch::Forward(Packet *packet)
 				"[Node %s] [Buffer %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId(),
+				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
 		output_buffer->Wait(current_event);
@@ -150,7 +150,7 @@ void Switch::Forward(Packet *packet)
 				"[Node %s]",
 				network->getName().c_str(),
 				message->getId(),
-				packet->getSessionId(),
+				packet->getId(),
 				name.c_str());
 
 		esim_engine->Next(current_event, 1);
