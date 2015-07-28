@@ -18,6 +18,7 @@
  */
 
 #include "Packet.h"
+#include "Message.h"
 
 namespace net
 {
@@ -26,7 +27,8 @@ Packet::Packet(Message *message, int size) :
 		message(message),
 		size(size)
 {
-	session_id = 0;
+	// Assigning the packet's id
+	session_id = message->getNumPackets();
 }
 
 }  // namespace net

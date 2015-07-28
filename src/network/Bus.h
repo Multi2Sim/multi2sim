@@ -72,10 +72,10 @@ public:
 	//
 
 	// Last cycle lane was scheduled
-	long long sched_when;
+	long long sched_when = 0;
 
 	// The last buffer that was scheduled
-	Buffer *sched_buffer;
+	Buffer *sched_buffer = nullptr;
 
 	// lane is busy until this cycle
 	long long busy = -1;

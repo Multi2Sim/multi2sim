@@ -61,9 +61,6 @@ class System
 	// Configuration file
 	static std::string config_file;
 
-	// Trace file
-	static std::string trace_file;
-
 	// Show help for network configuration file
 	static bool help;
 
