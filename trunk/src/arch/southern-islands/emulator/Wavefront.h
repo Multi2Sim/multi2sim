@@ -234,6 +234,9 @@ public:
 		return wavefront_pool_entry;
 	}
 
+	/// Return the ID in the associated compute unit
+	int getIdInComputeUnit() const { return id_in_compute_unit; }
+
 	/// Return pointer to the workgroup this wavefront belongs to
 	WorkGroup *getWorkGroup() const { return work_group; }
 
@@ -288,6 +291,9 @@ public:
 
 	/// Increase PC
 	void incPC(int increment) { pc += increment; }
+
+	/// Set the ID in the associated compute unit
+	void setIdInComputeUnit(int id) { id_in_compute_unit = id; }
 
 	/// Flag set during instruction emulation indicating that there was a
 	/// barrier instruction
