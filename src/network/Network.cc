@@ -26,10 +26,10 @@
 #include "Bus.h"
 #include "Connection.h"
 #include "EndNode.h"
+#include "Frame.h"
 #include "Network.h"
 #include "RoutingTable.h"
 #include "Switch.h"
-#include "Frame.h"
 
 namespace net
 {
@@ -482,7 +482,78 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 
 bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 {
-	return false;
+	bool routing = false;
+	for (int i = 0; i < ini_file->getNumSections(); i++)
+	{
+		// Tokenize section name
+		std::string section = ini_file->getSection(i);
+		std::vector<std::string> tokens;
+		misc::StringTokenize(section, tokens, ".");
+
+		// Check section name
+		if (tokens.size() != 3)
+			continue;
+		if (strcasecmp(tokens[0].c_str(), "Network"))
+			continue;
+		if (strcasecmp(tokens[1].c_str(), name.c_str()))
+			continue;
+		if (strcasecmp(tokens[2].c_str(), "Routes"))
+			continue;
+
+		// Set routing to true
+		routing = true;
+
+		// Find and update routes
+		for (auto &source : nodes)
+			for (auto &destination : nodes)
+			{
+				if ((dynamic_cast<EndNode *>(destination.get())) &&
+						(source != destination))
+				{
+					// Create a string in the format of src.to.dst
+					std::string route = source->getName() + ".to." +
+							destination->getName();
+
+					// Look for the new string as a variable in the section
+					std::string destination_string = ini_file->ReadString(
+							section, route);
+
+					// If the string in the format exists in the section
+					if (destination_string != "")
+					{
+						// Tokenize result to destination:virtual_channel
+						std::vector<std::string> string_tokens;
+						misc::StringTokenize(destination_string,
+								string_tokens, ":");
+
+						// Get destination node
+						Node *next = getNodeByName(string_tokens[0]);
+						if (!next)
+							throw Error(misc::fmt("%s: section [%s]: "
+									"invalid node name '%s'\n",
+									ini_file->getPath().c_str(),
+									section.c_str(),
+									string_tokens[0].c_str()));
+
+						// Get the VC, if any
+						int virtual_channel = 0;
+						if (string_tokens.size() == 2)
+							virtual_channel = atoi(string_tokens[1].c_str());
+						if (virtual_channel < 0)
+							throw Error(misc::fmt("%s: section [%s]: "
+									"virtual channel cannot be negative\n",
+									ini_file->getPath().c_str(),
+									section.c_str()));
+
+						getRoutingTable()->UpdateRoute(source.get(),
+								destination.get(),
+								next, virtual_channel);
+					}
+				}
+			}
+
+	}
+	return routing;
 }
 
 
