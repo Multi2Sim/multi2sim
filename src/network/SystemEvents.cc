@@ -148,17 +148,17 @@ void System::EventTypeInputBufferHandler(esim::Event *type,
 			packet->getSessionId(), node->getName().c_str(),
 			buffer->getName().c_str());
 
-	// If the message is not at buffer head, process later
-	if (buffer->getBufferHead() != packet)
-	{
-		buffer->Wait(type);
-		return;
-	}
-
 	// If this is the destination node, schedule receive event
 	if (node == packet->getMessage()->getDestinationNode())
 	{
 		esim_engine->Next(event_receive);
+		return;
+	}
+
+	// If the message is not at buffer head, process later
+	if (buffer->getBufferHead() != packet)
+	{
+		buffer->Wait(type);
 		return;
 	}
 
