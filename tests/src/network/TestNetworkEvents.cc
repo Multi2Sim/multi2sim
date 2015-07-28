@@ -651,7 +651,6 @@ TEST(TestSystemConfiguration, event_config_7_message_sent_cycle_0)
 	EXPECT_TRUE(system != nullptr);
 
 	// Test body
-	std::string message;
 	try
 	{
 		// Parse the configuration file
@@ -691,7 +690,8 @@ TEST(TestSystemConfiguration, event_config_7_message_sent_cycle_0)
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
 }
 
@@ -955,7 +955,6 @@ TEST(TestSystemConfiguration, event_config_8_two_packets_sent_cycle_5)
 	EXPECT_TRUE(system != nullptr);
 
 	// Test body
-	std::string message;
 	try
 	{
 		// Parse the configuration file
@@ -994,7 +993,8 @@ TEST(TestSystemConfiguration, event_config_8_two_packets_sent_cycle_5)
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
 }
 
@@ -1041,7 +1041,6 @@ TEST(TestSystemConfiguration, event_config_9_message_four_nodes_2_lanes)
 	EXPECT_TRUE(system != nullptr);
 
 	// Test body
-	std::string message;
 	try
 	{
 		// Parse the configuration file
@@ -1094,7 +1093,8 @@ TEST(TestSystemConfiguration, event_config_9_message_four_nodes_2_lanes)
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
 }
 
@@ -1141,7 +1141,6 @@ TEST(TestSystemConfiguration, event_config_10_message_four_nodes_1_lane)
 	EXPECT_TRUE(system != nullptr);
 
 	// Test body
-	std::string message;
 	try
 	{
 		// Parse the configuration file
@@ -1203,7 +1202,8 @@ TEST(TestSystemConfiguration, event_config_10_message_four_nodes_1_lane)
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
 }
 
@@ -1251,7 +1251,6 @@ TEST(TestSystemConfiguration, event_config_11_packet_four_nodes_1_lane)
 	EXPECT_TRUE(system != nullptr);
 
 	// Test body
-	std::string message;
 	try
 	{
 		// Parse the configuration file
@@ -1405,9 +1404,9 @@ TEST(TestSystemConfiguration, event_config_11_packet_four_nodes_1_lane)
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
 }
-
 
 }

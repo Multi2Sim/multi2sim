@@ -53,7 +53,7 @@ public:
 	Connection(const std::string &name, Network *network);
 
 	/// Get the name of the connection
-	std::string getName() const { return name; }
+	const std::string &getName() const { return name; }
 
 	/// Dump connection information
 	virtual void Dump(std::ostream &os) const = 0;

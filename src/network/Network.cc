@@ -88,6 +88,8 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	// Parse the routing elements, for manual routing.
 	if (!ParseConfigurationForRoutes(config))
 		routing_table.FloydWarshall();
+	else
+		routing_table.DetectCycle();
 
 }
 
@@ -545,7 +547,7 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 									ini_file->getPath().c_str(),
 									section.c_str()));
 
-						getRoutingTable()->UpdateRoute(source.get(),
+						routing_table.UpdateRoute(source.get(),
 								destination.get(),
 								next, virtual_channel);
 					}
@@ -808,7 +810,7 @@ void Network::Receive(EndNode *node, Message *message)
 		if (packet_node != node)
 			throw Error(misc::fmt(
 					"Packet %d of the message %lld has "
-					"not arrived.", packet->getSessionId(), 
+					"not arrived.", packet->getId(),
 					message->getId()));
 	}
 

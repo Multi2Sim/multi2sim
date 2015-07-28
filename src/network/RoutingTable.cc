@@ -266,7 +266,7 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 			if (link->getDestinationNode() == next)
 			{
 				// Check the value of the virtual channel
-				if (virtual_channel > link->numVirtualChannels() - 1)
+				if (virtual_channel > link->getNumVirtualChannels() - 1)
 					throw Error(misc::fmt("Network %s: route %s.to.%s:"
 							"wrong virtual channel\n",
 							network->getName().c_str(),
@@ -313,14 +313,13 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 		}
 	}
 
-	if (route_updated == false)
+	// If the route was not found, the route-step is wrongly provided.
+	if (!route_updated)
 		throw Error(misc::fmt("Network %s: route %s.to.%s: "
 				"missing connection\n",
 				network->getName().c_str(),
 				source->getName().c_str(),
 				destination->getName().c_str()));
-
-	DetectCycle();
 }
 
 }
