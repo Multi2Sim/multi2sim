@@ -119,6 +119,12 @@ public:
 	/// Check if the routing table has cycle
 	bool hasCycle() const { return has_cycle; }
 
+	/// Update a route manually
+	void UpdateRoute(Node *source,
+			Node *destination,
+			Node *next,
+			int virtual_channel);
+
 };
 
 }

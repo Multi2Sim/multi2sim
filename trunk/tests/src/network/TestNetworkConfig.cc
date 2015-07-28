@@ -1553,4 +1553,68 @@ TEST(TestSystemConfiguration, section_bus_config)
 
 }
 
+TEST(TestSystemConfiguration, routes)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+}
+
 }

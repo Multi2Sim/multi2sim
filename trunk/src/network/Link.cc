@@ -39,7 +39,7 @@ Link::Link(Network *network,
 						Connection(descriptive_name, network),
 						source_node(src_node),
 						destination_node(dst_node),
-						num_virtual_channels(num_virtual_channels),
+						virtual_channels(num_virtual_channels),
 						name(name),
 						bandwidth(bandwidth)
 {
