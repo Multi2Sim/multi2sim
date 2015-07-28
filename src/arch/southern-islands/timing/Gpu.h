@@ -92,6 +92,9 @@ private:
 	/// Number of work_groups allowed in a compute unit
 	int work_groups_per_compute_unit = 0;
 	
+	// Maximum number of cycles to simulate
+	static long long max_cycles;
+
 public:
 
 	//
@@ -100,6 +103,9 @@ public:
 
 	/// Return the number of compute units, as set up by the user
 	static int getNumComputeUnits() { return num_compute_units; }
+
+	/// Return the maximum number of cycles to simulate
+	static long long getMaxCycles() { return max_cycles; }
 
 
 

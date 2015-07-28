@@ -20,6 +20,7 @@
 #include <arch/common/Arch.h>
 #include <lib/cpp/CommandLine.h>
 #include <memory/System.h>
+#include <arch/southern-islands/emulator/Emulator.h>
 
 #include "ComputeUnit.h"
 #include "Timing.h"
@@ -690,7 +691,7 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 
 bool Timing::Run()
 {
-	/*
+
 	// Get SI Driver
 	Emulator *emulator = Emulator::getInstance();
 
@@ -699,10 +700,9 @@ bool Timing::Run()
 	if (!emulator->getNumNDRanges())
 		return false;
 
-
-
+	/*
 	// Add any available work groups to the waiting list
-	for (auto it = emulator->getNdRangesBegin();
+	for (auto it = emulator->getNDRangesBegin();
 			it != emulator->getNDRangesEnd();
 			++it)
 	{
@@ -710,7 +710,7 @@ bool Timing::Run()
 		NDRange *ndrange = it->get();
 
 		// Break if there are no waiting work groups
-		if (!list_count(ndrange->waiting_work_groups))
+		if (!ndrange->getNumWaitingWorkgroups())
 			break;
 
 		for (int i = 0; i < ndrange->getNumWaitingWorkgroups();
@@ -718,15 +718,16 @@ bool Timing::Run()
 		{
 			// Remove work group from list and get its ID
 			long work_group_id = ndrange->waiting_work_groups.front();
-			ndrange->waiting_work_groups->pop_front();
 
 			// Instantiate the work group
 			WorkGroup *work_group = misc::new_unique<WorkGroup>(ndrange, work_group_id);
-
-			gpu->waiting_work_groups.emplace_back(work_group);
+			ndrange->AddWorkgroupIdToWaitingList(work_group_id);
 		}
 	}
+	*/
 
+
+	/*
 	// Allocate work-groups to compute units
 	while (list_count(gpu->available_compute_units) && 
 		list_count(gpu->waiting_work_groups))
@@ -747,52 +748,41 @@ bool Timing::Run()
 			OpenclDriverRequestWork(opencl_driver, ndrange);
 		}
 	}
+	*/
 
+	/*
 	// One more cycle
 	asTiming(self)->cycle++;
+	*/
 
 	// Stop if maximum number of GPU cycles exceeded
-	if (si_emu_max_cycles && asTiming(self)->cycle >=
-			si_emu_max_cycles)
-		esim_finish = esim_finish_si_max_cycles;
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	if (Gpu::getMaxCycles() && getCycle() >=
+			Gpu::getMaxCycles())
+		esim_engine->Finish("SIMaxCycles");
 
 	// Stop if maximum number of GPU instructions exceeded
-	if (si_emu_max_inst && asEmu(emu)->instructions >=
-			si_emu_max_inst)
-		esim_finish = esim_finish_si_max_inst;
+	if (Emulator::getMaxInstructions() && emulator->getNumInstructions() >=
+			Emulator::getMaxInstructions())
+		esim_engine->Finish("SIMaxInstructions");
 
 	// Stop if there was a simulation stall
-	if (gpu->last_complete_cycle && 
-		(asTiming(self)->cycle-gpu->last_complete_cycle) > 1000000)
+	if (gpu.last_complete_cycle > 1000000)
 	{
-		warning("Southern Islands GPU simulation stalled.\n%s", 
-			si_err_stall);
-		esim_finish = esim_finish_stall;
+		//warning("Southern Islands GPU simulation stalled.\n%s",
+		//	si_err_stall);
+		esim_engine->Finish("SIStall");
 	}
 
 	// Stop if any reason met
-	if (esim_finish)
-		return TRUE;
+	if (esim_engine->hasFinished())
+		return true;
 
 	// Run one loop iteration on each busy compute unit
-	SI_GPU_FOREACH_COMPUTE_UNIT(compute_unit_id)
-	{
-		compute_unit = gpu->compute_units[compute_unit_id];
-
-		// Run one cycle
-		SIComputeUnitRun(compute_unit);
-	}
-
-	// Still running
-	return TRUE;
-
-	// Advance one cycle in GPU device
 	gpu.Run();
 
-	*/
 	// Still running
 	return true;
-
 }
 
 }
