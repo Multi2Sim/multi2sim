@@ -127,7 +127,7 @@ void Alu::ParseConfiguration(misc::IniFile *ini_file)
 Alu::Alu()
 {
 	// Reserve functional unit vector entries
-	functional_units.reserve(FunctionalUnit::TypeCount);
+	functional_units.resize(FunctionalUnit::TypeCount);
 
 	// Create functional units
 	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
