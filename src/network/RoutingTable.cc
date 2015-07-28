@@ -232,4 +232,95 @@ void RoutingTable::Dump(std::ostream &os) const
 	os << "\n";
 }
 
+
+void RoutingTable::UpdateRoute(Node *source, Node *destination,
+		Node *next, int virtual_channel)
+{
+	// Getting the routing table entry
+	Entry *entry = Lookup(source, destination);
+
+	// Setting the next node
+	entry->setNextNode(next);
+
+	// Exit strategy from the nested loop
+	bool route_updated = false;
+
+	// Setting the next buffer
+	Buffer *buffer = nullptr;
+	for (int i = 0; i < source->getNumOutputBuffer(); i++)
+	{
+		// Exit the loop if route has already been updated
+		if (route_updated == true)
+			break;
+
+		// Find a buffer that is connected to next node through a connection
+		buffer = source->getOutputBuffer(i);
+		Connection *connection = buffer->getConnection();
+
+		// If the connection is a link, all its destination
+		// buffers are connected to the same node.
+		if (dynamic_cast<Link *>(connection))
+		{
+			// Compare link's destination to next node of the route
+			Link *link = misc::cast<Link *>(connection);
+			if (link->getDestinationNode() == next)
+			{
+				// Check the value of the virtual channel
+				if (virtual_channel > link->numVirtualChannels() - 1)
+					throw Error(misc::fmt("Network %s: route %s.to.%s:"
+							"wrong virtual channel\n",
+							network->getName().c_str(),
+							source->getName().c_str(),
+							destination->getName().c_str()));
+
+				// The virtual channel acts as an offset in link's source list
+				Buffer *entry_buffer = link->getSourceBuffer(
+						buffer->getIndex() + virtual_channel);
+				assert(entry_buffer->getNode() == source);
+
+				// Update the entry with calculated buffer
+				entry->setBuffer(entry_buffer);
+				route_updated = true;
+				break;
+			}
+		}
+		else
+		{
+			// No other type of connection would have virtual channels
+			if (virtual_channel != 0)
+				throw Error(misc::fmt("Network %s: route %s.to.%s:"
+						"existing connection does not support "
+						"virtual channel",
+						network->getName().c_str(),
+						source->getName().c_str(),
+						destination->getName().c_str()));
+
+			// Find the buffer connected to next node
+			for (int j = 0; j < connection->getNumDestinationBuffers(); j++)
+			{
+				Buffer *destination_buffer = connection->
+						getDestinationBuffer(j);
+				if (destination_buffer->getNode() == next)
+				{
+					// Update the entry
+					entry->setBuffer(destination_buffer);
+
+					// Exit the nested loop
+					route_updated = true;
+					break;
+				}
+			}
+		}
+	}
+
+	if (route_updated == false)
+		throw Error(misc::fmt("Network %s: route %s.to.%s: "
+				"missing connection\n",
+				network->getName().c_str(),
+				source->getName().c_str(),
+				destination->getName().c_str()));
+
+	DetectCycle();
+}
+
 }

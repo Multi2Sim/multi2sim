@@ -680,7 +680,7 @@ TEST(TestSystemConfiguration, event_config_7_message_sent_cycle_0)
 		// Continue simulation loop
 		esim_engine->ProcessEvents();
 
-		// Recheck the packet position again
+		// Recheck the packet position
 		EXPECT_EQ(packet_1->getNode(), dst);
 		EXPECT_NE(packet_1->getBuffer(), src->getOutputBuffer(0));
 		EXPECT_EQ(packet_1->getBuffer(), dst->getInputBuffer(0));
@@ -1206,5 +1206,208 @@ TEST(TestSystemConfiguration, event_config_10_message_four_nodes_1_lane)
 		message = e.getMessage();
 	}
 }
+
+TEST(TestSystemConfiguration, event_config_11_packet_four_nodes_1_lane)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 8\n"
+			"DefaultOutputBufferSize = 8\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 1\n"
+			"[Network.net0.Node.n0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n2]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.n3]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Bus.b0]\n"
+			"Lanes = 1\n"
+			"[Network.net0.Busport.port0]\n"
+			"Bus = b0\n"
+			"Node = n0\n"
+			"[Network.net0.Busport.port1]\n"
+			"Bus = b0\n"
+			"Node = n1\n"
+			"[Network.net0.Busport.port2]\n"
+			"Bus = b0\n"
+			"Node = n2\n"
+			"[Network.net0.Busport.port3]\n"
+			"Bus = b0\n"
+			"Node = n3";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source and destination nodes
+		EndNode *n0 = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		EndNode *n1 = misc::cast<EndNode *>(network->getNodeByName("n1"));
+		EndNode *n2 = misc::cast<EndNode *>(network->getNodeByName("n2"));
+		EndNode *n3 = misc::cast<EndNode *>(network->getNodeByName("n3"));
+		// Creating the message
+		Message *msg_1 = network->TrySend(n0, n1, 2);
+		Message *msg_2 = network->TrySend(n2, n3, 2);
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+
+		// Getting pointers to packets
+		Packet *message_1_packet_1 = msg_1->getPacket(0);
+		Packet *message_1_packet_2 = msg_1->getPacket(1);
+		Packet *message_2_packet_1 = msg_2->getPacket(0);
+		Packet *message_2_packet_2 = msg_2->getPacket(1);
+
+		// Checking the location of first packet of first message
+		EXPECT_EQ(message_1_packet_1->getNode(), n0);
+		EXPECT_EQ(message_1_packet_1->getBuffer(), n0->getOutputBuffer(0));
+		EXPECT_EQ(message_1_packet_1->getBuffer()->getBufferHead(),
+				message_1_packet_1);
+
+		// Checking the location of second packet of first message
+		EXPECT_EQ(message_1_packet_2->getNode(), n0);
+		EXPECT_EQ(message_1_packet_2->getBuffer(), n0->getOutputBuffer(0));
+		EXPECT_NE(message_1_packet_2->getBuffer()->getBufferHead(),
+				message_1_packet_2);
+
+		// Checking the location of first packet of second message
+		EXPECT_EQ(message_2_packet_1->getNode(), n2);
+		EXPECT_EQ(message_2_packet_1->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_EQ(message_2_packet_1->getBuffer()->getBufferHead(),
+						message_2_packet_1);
+
+		// Checking the location of second packet of second message
+		EXPECT_EQ(message_2_packet_2->getNode(), n2);
+		EXPECT_EQ(message_2_packet_2->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_NE(message_2_packet_2->getBuffer()->getBufferHead(),
+						message_2_packet_2);
+
+		// Continue simulation loop to next cycle
+		esim_engine->ProcessEvents();
+
+		// Checking the location of first packet of first message
+		EXPECT_EQ(message_1_packet_1->getNode(), n1);
+		EXPECT_EQ(message_1_packet_1->getBuffer(), n1->getInputBuffer(0));
+		EXPECT_EQ(message_1_packet_1->getBuffer()->getBufferHead(),
+				message_1_packet_1);
+
+		// Checking the location of second packet of first message
+		EXPECT_EQ(message_1_packet_2->getNode(), n0);
+		EXPECT_EQ(message_1_packet_2->getBuffer(), n0->getOutputBuffer(0));
+		EXPECT_EQ(message_1_packet_2->getBuffer()->getBufferHead(),
+				message_1_packet_2);
+
+		// Checking the location of first packet of second message
+		EXPECT_EQ(message_2_packet_1->getNode(), n2);
+		EXPECT_EQ(message_2_packet_1->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_EQ(message_2_packet_1->getBuffer()->getBufferHead(),
+						message_2_packet_1);
+
+		// Checking the location of second packet of second message
+		EXPECT_EQ(message_2_packet_2->getNode(), n2);
+		EXPECT_EQ(message_2_packet_2->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_NE(message_2_packet_2->getBuffer()->getBufferHead(),
+						message_2_packet_2);
+
+		// Continue simulation loop to next cycle
+		esim_engine->ProcessEvents();
+
+		// Checking the location of first packet of first message
+		EXPECT_EQ(message_1_packet_1->getNode(), n1);
+		EXPECT_EQ(message_1_packet_1->getBuffer(), n1->getInputBuffer(0));
+		EXPECT_EQ(message_1_packet_1->getBuffer()->getBufferHead(),
+				message_1_packet_1);
+
+		// Checking the location of second packet of first message
+		EXPECT_EQ(message_1_packet_2->getNode(), n0);
+		EXPECT_EQ(message_1_packet_2->getBuffer(), n0->getOutputBuffer(0));
+		EXPECT_EQ(message_1_packet_2->getBuffer()->getBufferHead(),
+				message_1_packet_2);
+
+		// Checking the location of first packet of second message
+		EXPECT_EQ(message_2_packet_1->getNode(), n3);
+		EXPECT_EQ(message_2_packet_1->getBuffer(), n3->getInputBuffer(0));
+		EXPECT_EQ(message_2_packet_1->getBuffer()->getBufferHead(),
+						message_2_packet_1);
+
+		// Checking the location of second packet of second message
+		EXPECT_EQ(message_2_packet_2->getNode(), n2);
+		EXPECT_EQ(message_2_packet_2->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_EQ(message_2_packet_2->getBuffer()->getBufferHead(),
+						message_2_packet_2);
+
+		// Continue simulation loop to next cycle
+		esim_engine->ProcessEvents();
+
+		// Checking the location of first packet of first message
+		EXPECT_EQ(message_1_packet_1->getNode(), n1);
+		EXPECT_EQ(message_1_packet_1->getBuffer(), n1->getInputBuffer(0));
+		EXPECT_EQ(message_1_packet_1->getBuffer()->getBufferHead(),
+				message_1_packet_1);
+
+		// Checking the location of second packet of first message
+		EXPECT_EQ(message_1_packet_2->getNode(), n1);
+		EXPECT_EQ(message_1_packet_2->getBuffer(), n1->getInputBuffer(0));
+		EXPECT_NE(message_1_packet_2->getBuffer()->getBufferHead(),
+				message_1_packet_2);
+
+		// Checking the location of first packet of second message
+		EXPECT_EQ(message_2_packet_1->getNode(), n3);
+		EXPECT_EQ(message_2_packet_1->getBuffer(), n3->getInputBuffer(0));
+		EXPECT_EQ(message_2_packet_1->getBuffer()->getBufferHead(),
+						message_2_packet_1);
+
+		// Checking the location of second packet of second message
+		EXPECT_EQ(message_2_packet_2->getNode(), n2);
+		EXPECT_EQ(message_2_packet_2->getBuffer(), n2->getOutputBuffer(0));
+		EXPECT_EQ(message_2_packet_2->getBuffer()->getBufferHead(),
+						message_2_packet_2);
+
+		// At this point message_1 is received
+		// Continue simulation loop
+		esim_engine->ProcessEvents();
+
+		// Checking the location of first packet of second message
+		EXPECT_EQ(message_2_packet_1->getNode(), n3);
+		EXPECT_EQ(message_2_packet_1->getBuffer(), n3->getInputBuffer(0));
+		EXPECT_EQ(message_2_packet_1->getBuffer()->getBufferHead(),
+						message_2_packet_1);
+
+		// Checking the location of second packet of second message
+		EXPECT_EQ(message_2_packet_2->getNode(), n3);
+		EXPECT_EQ(message_2_packet_2->getBuffer(), n3->getInputBuffer(0));
+		EXPECT_NE(message_2_packet_2->getBuffer()->getBufferHead(),
+						message_2_packet_2);
+
+		// Receive message
+		network->Receive(n3, msg_2);
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+}
+
 
 }
