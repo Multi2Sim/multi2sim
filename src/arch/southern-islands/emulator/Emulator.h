@@ -95,6 +95,9 @@ private:
 	// Singleton
 	static std::unique_ptr<Emulator> instance;
 
+	// Maximum number of instructions
+	static long long max_instructions;
+
 
 
 
@@ -314,7 +317,10 @@ public:
 
 	/// Increase video memory top
 	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }
-};
+
+	static long long getMaxInstructions () { return max_instructions; }
+
+	};
 
 
 
