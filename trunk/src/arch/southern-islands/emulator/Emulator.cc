@@ -38,6 +38,8 @@ misc::Debug Emulator::isa_debug;
 
 std::string Emulator::isa_debug_file;
 
+long long Emulator::max_instructions;
+
 
 Emulator *Emulator::getInstance()
 {
