@@ -48,9 +48,9 @@ ComputeUnit::ComputeUnit(int index) :
 		vector_memory_unit(this)
 {
 	// Create wavefront pools, and SIMD units
-	wavefront_pools.reserve(num_wavefront_pools);
-	fetch_buffers.reserve(num_wavefront_pools);
-	simd_units.reserve(num_wavefront_pools);
+	wavefront_pools.resize(num_wavefront_pools);
+	fetch_buffers.resize(num_wavefront_pools);
+	simd_units.resize(num_wavefront_pools);
 	for (int i = 0; i < num_wavefront_pools; i++)
 	{
 		wavefront_pools[i] = misc::new_unique<WavefrontPool>(i, this);
