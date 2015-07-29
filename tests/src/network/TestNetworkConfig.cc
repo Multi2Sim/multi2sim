@@ -1553,7 +1553,7 @@ TEST(TestSystemConfiguration, section_bus_config)
 
 }
 
-TEST(TestSystemConfiguration, routes)
+TEST(TestSystemConfiguration, routes_wrong_source_node)
 {
 	// Cleanup singleton instance
 	Cleanup();
@@ -1595,7 +1595,8 @@ TEST(TestSystemConfiguration, routes)
 			"Type = Unidirectional\n"
 			"Source = S2\n"
 			"Dest = N1\n"
-			"[Network.test.Routes]";
+			"[Network.test.Routes]\n"
+			"anything.to.N1 = S1";
 
 	// Set up INI file
 	misc::IniFile ini_file;
@@ -1615,6 +1616,562 @@ TEST(TestSystemConfiguration, routes)
 	{
 		message = error.getMessage();
 	}
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+					"invalid variable 'anything.to.N1'",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_wrong_destination_node)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N1.to.anything = S1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+					"invalid variable 'N1.to.anything'",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_to_switch)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"S1.to.S2 = S2";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+					"invalid variable 'S1.to.S2'",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_same_src_dst)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N0 = S1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route N0.to.N0: "
+					"source and destination cannot be the same\n",
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_no_possible_route)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N1 = N1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route N0.to.N1: "
+					"missing connection\n",
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_wrong_virtual_channel)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N1 = S1:1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route N0.to.N1: "
+					"wrong virtual channel\n",
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_negative_virtual_channel)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N1 = S1:0\n"
+			"S1.to.N1 = S2:-1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route S1.to.N1: "
+					"virtual channel cannot be negative\n",
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_wrong_format_for_next_node)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N1 = S1:0\n"
+			"S1.to.N1 = S2:1:0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route S1.to.N1: "
+					"wrong format for next node\n",
+					message.c_str());
+}
+
+TEST(TestSystemConfiguration, routes_wrong_next_node)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.test.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.test.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.test.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.test.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"[Network.test.Link.N0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S1\n"
+			"[Network.test.Link.S0-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.test.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.test.Routes]\n"
+			"N0.to.N1 = S1:0\n"
+			"S1.to.N1 = S3";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_REGEX_MATCH("Network test: route S1.to.N1: "
+					"invalid node name 'S3'\n",
+					message.c_str());
 }
 
 }
