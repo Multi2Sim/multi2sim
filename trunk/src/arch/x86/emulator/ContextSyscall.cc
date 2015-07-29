@@ -3695,37 +3695,59 @@ int Context::ExecuteSyscall_sched_setscheduler()
 	switch (policy)
 	{
 	case SCHED_OTHER:
+
+		// Check valid priority
 		if (priority != 0)
-			misc::fatal("%s: invalid priority.\n%s",
-					__FUNCTION__, syscall_error_note);
+			throw Error(misc::fmt("%s: Invalid scheduler priority "
+					"(%d)\n%s",
+					__FUNCTION__,
+					priority,
+					syscall_error_note));
 		break;
 
 	case SCHED_FIFO:
+
+		// Not implemented, but ignore
 		misc::Warning("%s: FIFO policy is not implemented to spec\n%s",
 				__FUNCTION__, syscall_error_note);
+
+		// Check priority range
 		if (priority < 1 || priority > 99)
-			misc::fatal("%s: invalid priority.\n%s",
-					__FUNCTION__, syscall_error_note);
+			throw Error(misc::fmt("%s: Invalid FIFO scheduler "
+					"priority (%d)\n%s",
+					__FUNCTION__,
+					priority,
+					syscall_error_note));
 		break;
 
 	case SCHED_RR:
+
+		// Check priority range
 		if (priority < 1 || priority > 99)
-			misc::fatal("%s: invalid priority.\n%s",
-					__FUNCTION__, syscall_error_note);
+			throw Error(misc::fmt("%s: Invalid FIFO scheduler "
+					"priority (%d)\n%s",
+					__FUNCTION__,
+					priority,
+					syscall_error_note));
 		break;
 
 	default:
-		misc::fatal("%s: policy not supported (%d).\n%s",
-				__FUNCTION__, policy, syscall_error_note);
+		
+		throw misc::Panic(misc::fmt("Unsupported scheduling policy\n%s",
+				syscall_error_note));
 	}
 
 	// Find context referred by pid.
 	Context *context = emulator->getContext(pid);
 	if (!context)
-		misc::fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+		throw Error(misc::fmt("%s: invalid pid (%d)",
+				__FUNCTION__, pid));
 
+	// Update scheduler
 	context->sched_policy = policy;
 	context->sched_priority = priority;
+
+	// Done
 	return 0;
 }
 
