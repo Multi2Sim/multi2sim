@@ -67,17 +67,20 @@ class Emulator : public comm::Emulator
 	std::list<Grid *> finished_grids;
 
 	// Memory
-	std::unique_ptr<mem::Memory> global_mem;
-	std::unique_ptr<mem::Memory> const_mem;
-	std::unique_ptr<mem::Memory> shared_mem;
+	std::unique_ptr<mem::Memory> global_memory;
+	std::unique_ptr<mem::Memory> constant_memory;
+	std::unique_ptr<mem::Memory> shared_memory;
 
+	// Field initialized in constructor. Global memory top address
+	unsigned global_memory_top;
 
-	// Global memory parameters
-	unsigned global_mem_top;
-	unsigned global_mem_free_size;
-	unsigned global_mem_total_size;
+	// Field initialized in constructor. Global memory freed size
+	unsigned global_memory_free_size;
 
-	// Shared memory parameters
+	// Field initialized in constructor. Global memory total size
+	unsigned global_memory_total_size;
+
+	// Field initialized in constructor. Shared memory total size
 	unsigned shared_memory_total_size;
 
 	// Flags indicating whether the first 32 bytes of constant memory
@@ -86,16 +89,16 @@ class Emulator : public comm::Emulator
 	bool const_mem_init[32];
 
 	// Number of ALU instructions executed
-	long long alu_inst_count = 0;
+	long long num_alu_instructions = 0;
 
 	// Number of branch instructions executed
-	long long branch_inst_count = 0;
+	long long num_branch_instructions = 0;
 
 	// Number of shared memory instructions executed
-	long long shared_mem_inst_count = 0;
+	long long num_shared_mem_instructions = 0;
 
 	// Number of global memory instructions executed
-	long long global_mem_inst_count = 0;
+	long long num_global_memory_instructions = 0;
 
 	/// Constructor
 	Emulator();
@@ -119,13 +122,13 @@ public:
 	static misc::Debug isa_debug;
 
 	/// Kepler emulator maximum cycles
-	long long emu_max_cycles;
+	long long max_cycles;
 
 	/// Kepler emulator maximum number of instructions
-	long long emu_max_inst;
+	long long max_instructions;
 
 	/// Kepler emulator maximum number of functions
-	int emu_max_functions;
+	int max_functions;
 
 	/// Warp size
 	static const int warp_size = 32;
@@ -142,19 +145,19 @@ public:
 	Disassembler *getAsm() const { return disassembler;}
 
 	/// Get global memory top
-	unsigned getGlobalMemTop() const { return global_mem_top; }
+	unsigned getGlobalMemTop() const { return global_memory_top; }
 
 	/// Get global memory top
-	unsigned* getGlobalMemTopAddress() { return &global_mem_top; }
+	unsigned* getGlobalMemTopAddress() { return &global_memory_top; }
 
 	/// Get global memory free size
-	unsigned getGlobalMemFreeSize() const { return global_mem_free_size; }
+	unsigned getGlobalMemFreeSize() const { return global_memory_free_size; }
 
 	/// Get global memory Total size
-	unsigned getGlobalMemTotalSize() const { return global_mem_total_size; }
+	unsigned getGlobalMemTotalSize() const { return global_memory_total_size; }
 
 	/// Get ALU instruction count
-	unsigned getAluInstCount() const { return alu_inst_count; }
+	unsigned getNumAluInstructions() const { return num_alu_instructions; }
 
 	/// Get Shared memory total size
 	unsigned getSharedMemoryTotalSize() const
@@ -163,10 +166,10 @@ public:
 	}
 
 	/// Get global memory
-	mem::Memory* getGlobalMem() const  { return global_mem.get(); }
+	mem::Memory* getGlobalMem() const  { return global_memory.get(); }
 
 	/// Get constant memory
-	mem::Memory * getConstMem() const { return const_mem.get();}
+	mem::Memory * getConstMem() const { return constant_memory.get();}
 
 	/// Return the number of available grids
 	int getNumGrids() { return grids.size(); }
@@ -181,19 +184,25 @@ public:
 	}
 
 	/// Set global memory top
-	void SetGlobalMemTop(unsigned value) { global_mem_top = value; }
+	void SetGlobalMemTop(unsigned value) { global_memory_top = value; }
 
 	/// Set global memory free size
-	void setGlobalMemFreeSize(unsigned value) { global_mem_free_size = value; }
+	void setGlobalMemFreeSize(unsigned value)
+	{
+		global_memory_free_size = value;
+	}
 
 	/// Set global memory total size
-	void setGlobalMemTotalSize(unsigned value) { global_mem_total_size = value;}
+	void setGlobalMemTotalSize(unsigned value)
+	{
+		global_memory_total_size = value;
+	}
 
 	/// Increment ALU instruction counter
-	void incAluInstCount() { alu_inst_count ++; }
+	void incNumAluInst() { num_alu_instructions ++; }
 
 	/// Increse global memory top
-	void incGloablMemTop(unsigned inc) { global_mem_top += inc; }
+	void incGloablMemTop(unsigned inc) { global_memory_top += inc; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output
 	/// stream (or standard output if argument \a os is omitted.
