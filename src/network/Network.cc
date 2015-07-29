@@ -509,8 +509,7 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 		for (auto &source : nodes)
 			for (auto &destination : nodes)
 			{
-				if ((dynamic_cast<EndNode *>(destination.get())) &&
-						(source != destination))
+				if (dynamic_cast<EndNode *>(destination.get()))
 				{
 					// Create a string in the format of src.to.dst
 					std::string route = source->getName() + ".to." +
@@ -527,14 +526,21 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 						std::vector<std::string> string_tokens;
 						misc::StringTokenize(destination_string,
 								string_tokens, ":");
+						if (string_tokens.size() > 2)
+							throw Error(misc::fmt("Network %s: route "
+									"%s.to.%s: wrong format for next node\n",
+									name.c_str(),
+									source->getName().c_str(),
+									destination->getName().c_str()));
 
 						// Get destination node
 						Node *next = getNodeByName(string_tokens[0]);
 						if (!next)
-							throw Error(misc::fmt("%s: section [%s]: "
+							throw Error(misc::fmt("Network %s: route %s.to.%s: "
 									"invalid node name '%s'\n",
-									ini_file->getPath().c_str(),
-									section.c_str(),
+									name.c_str(),
+									source->getName().c_str(),
+									destination->getName().c_str(),
 									string_tokens[0].c_str()));
 
 						// Get the VC, if any
@@ -542,10 +548,12 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 						if (string_tokens.size() == 2)
 							virtual_channel = atoi(string_tokens[1].c_str());
 						if (virtual_channel < 0)
-							throw Error(misc::fmt("%s: section [%s]: "
-									"virtual channel cannot be negative\n",
-									ini_file->getPath().c_str(),
-									section.c_str()));
+							throw Error(misc::fmt("Network %s: route "
+									"%s.to.%s: virtual channel cannot "
+									"be negative\n",
+									name.c_str(),
+									source->getName().c_str(),
+									destination->getName().c_str()));
 
 						routing_table.UpdateRoute(source.get(),
 								destination.get(),
@@ -553,7 +561,6 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 					}
 				}
 			}
-
 	}
 	return routing;
 }

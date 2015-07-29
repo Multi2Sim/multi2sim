@@ -236,6 +236,14 @@ void RoutingTable::Dump(std::ostream &os) const
 void RoutingTable::UpdateRoute(Node *source, Node *destination,
 		Node *next, int virtual_channel)
 {
+	// Check if source and destination are not the same
+	if (source == destination)
+		throw Error(misc::fmt("Network %s: route %s.to.%s: "
+				"source and destination cannot be the same\n",
+				network->getName().c_str(),
+				source->getName().c_str(),
+				destination->getName().c_str()));
+
 	// Getting the routing table entry
 	Entry *entry = Lookup(source, destination);
 
@@ -267,15 +275,14 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 			{
 				// Check the value of the virtual channel
 				if (virtual_channel > link->getNumVirtualChannels() - 1)
-					throw Error(misc::fmt("Network %s: route %s.to.%s:"
+					throw Error(misc::fmt("Network %s: route %s.to.%s: "
 							"wrong virtual channel\n",
 							network->getName().c_str(),
 							source->getName().c_str(),
 							destination->getName().c_str()));
 
 				// The virtual channel acts as an offset in link's source list
-				Buffer *entry_buffer = link->getSourceBuffer(
-						buffer->getIndex() + virtual_channel);
+				Buffer *entry_buffer = link->getSourceBuffer(virtual_channel);
 				assert(entry_buffer->getNode() == source);
 
 				// Update the entry with calculated buffer
