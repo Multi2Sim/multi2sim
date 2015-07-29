@@ -65,54 +65,48 @@ Emulator *Emulator::getInstance()
 	return instance.get();
 }
 
-Emulator::Emulator() : comm::Emulator("kpl")
+Emulator::Emulator() : comm::Emulator("kepler")
 {
 	// Initialize disassembler
 	disassembler = Disassembler::getInstance();
 
 	// Global memory initialization
-	global_mem = misc::new_unique<mem::Memory>();
-	global_mem->setSafe(false);
-	global_mem_top = 0;
-	global_mem_total_size = 1 << 30; /* 2GB */
-	global_mem_free_size = this->global_mem_total_size;
+	global_memory = misc::new_unique<mem::Memory>();
+	global_memory->setSafe(false);
+	global_memory_top = 0;
+	global_memory_total_size = 1 << 30; /* 2GB */
+	global_memory_free_size = this->global_memory_total_size;
 
 	// Shared memory initialization
 	shared_memory_total_size = 16 * (1 << 20) * 20; // 20 blocks. 16MB each
 
 	// Constant memory initialization
-	const_mem = misc::new_unique<mem::Memory>();
-	const_mem->setSafe(false);
+	constant_memory = misc::new_unique<mem::Memory>();
+	constant_memory->setSafe(false);
 
-	emu_max_inst = 0xffffffff;
-	emu_max_cycles = 0xffffffff;
-	emu_max_functions = 0xffffffff;
+	max_instructions = 0x0;
+	max_cycles = 0x0;
+	max_functions = 0x0;
 }
 
 void Emulator::Dump(std::ostream &os) const
 {
 	std::cout <<"\n[ Kepler ]\nInstructions = "
-			<< alu_inst_count << std::endl;
+			<< num_alu_instructions << std::endl;
 }
 
 
 void Emulator::DumpSummary(std::ostream &os)
 {
-	// Call parent
 	Dump();
 }
 
 
 bool Emulator::Run()
 {
-
-	Grid *grid;
-	std::unique_ptr<ThreadBlock> thread_block;
-	int thread_block_id;
-
 	// Stop emulation if no grids
 	if (!this->grids.size())
-		return FALSE;
+		return false;
 
 	// Stop if no pending grids
 	if (!pending_grids.size())
@@ -120,37 +114,32 @@ bool Emulator::Run()
 
 	// Remove grid and its thread blocks from pending list, and add them to
 	// running list
+	Grid *grid;
+	std::unique_ptr<ThreadBlock> thread_block;
+	int thread_block_id;
 	while (pending_grids.size())
 	{
 		grid = pending_grids.front();
 		pending_grids.pop_front();
 		thread_block_id = 0;
-
 		while (grid->getPendThreadBlocksize())
 		{
 			grid->WaitingToRunning(thread_block_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
-
 			while (thread_block.get()->getWarpsCompletedEmuCount()
 					!= thread_block.get()->getWarpCount())
 			{
-
 				for (auto wp_p = thread_block.get()->WarpsBegin(); wp_p <
 					thread_block.get()->WarpsEnd(); ++wp_p)
 				{
 					if ((*wp_p)->getFinishedEmu() || (*wp_p)->getAtBarrier())
-					{
 						continue;
-					}
 					(*wp_p)->Execute();
 				}
 			}
 			thread_block.get()->setFinishedEmu(true);
 			grid->PopRunningThreadBlock();
-			// Fixme Delete directly?
-			//grid->PushFinishedThreadBlock
-			//(std::move(std::unique_ptr<ThreadBlock>(thread_block.release())));
 			thread_block.reset(); // free the memory of thread block
 		}
 		finished_grids.push_back(grid);
@@ -166,23 +155,23 @@ bool Emulator::Run()
 
 void Emulator::ReadConstMem(unsigned addr, unsigned size, char *buf)
 {
-	const_mem->Read(addr, size, buf);
+	constant_memory->Read(addr, size, buf);
 }
 
 void Emulator::ReadGlobalMem(unsigned addr, unsigned size, char *buf)
 {
-	global_mem->Read(addr, size, buf);
+	global_memory->Read(addr, size, buf);
 }
 
 void Emulator::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
 {
-	global_mem->Write(addr, size, buf);
+	global_memory->Write(addr, size, buf);
 }
 
 
 void Emulator::WriteConstMem(unsigned addr, unsigned size, const char *buf)
 {
-	const_mem->Write(addr, size, buf);
+	constant_memory->Write(addr, size, buf);
 }
 
 
