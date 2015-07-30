@@ -225,7 +225,7 @@ public:
 	/// \param starting address to be written in
 	/// \param size of data
 	/// \param data buffer
-	void WriteConstMem(unsigned addr, unsigned size, const char *buf);
+	void WriteConstantMemory(unsigned addr, unsigned size, const char *buf);
 
 	/// Write Global Memory
 	/// \param starting address to be written in

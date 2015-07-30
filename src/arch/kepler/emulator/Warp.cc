@@ -168,7 +168,7 @@ void Warp::Execute()
 		thread_block->incWarpsCompletedEmu();
 
 		// Check if thread block finished kernel execution
-		if (thread_block->getWarpsCompletedEmuCount() ==
+		if (thread_block->getNumWarpsCompletedEmu() ==
 				thread_block->getWarpCount())
 		{
 			thread_block->setFinishedEmu(true);

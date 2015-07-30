@@ -127,7 +127,7 @@ bool Emulator::Run()
 			grid->WaitingToRunning(thread_block_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
-			while (thread_block.get()->getWarpsCompletedEmuCount()
+			while (thread_block.get()->getNumWarpsCompletedEmu()
 					!= thread_block.get()->getWarpCount())
 			{
 				for (auto wp_p = thread_block.get()->WarpsBegin(); wp_p <
@@ -169,7 +169,7 @@ void Emulator::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
 }
 
 
-void Emulator::WriteConstMem(unsigned addr, unsigned size, const char *buf)
+void Emulator::WriteConstantMemory(unsigned addr, unsigned size, const char *buf)
 {
 	constant_memory->Write(addr, size, buf);
 }
