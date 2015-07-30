@@ -21,8 +21,7 @@
 #define ARCH_KEPLER_EMU_THREAD_H
 
 #include <arch/kepler/disassembler/Disassembler.h>
-#include <arch/kepler/disassembler/Inst.h>
-
+#include "../disassembler/Instruction.h"
 #include "Emulator.h"
 #include "Grid.h"
 #include "Register.h"
@@ -109,8 +108,8 @@ private:
 	// Emulation of ISA. This code expands to one function per ISA
 	// instruction. For example:
 #define DEFINST(_name, _fmt_str, ...) \
-		void	ExecuteInst_##_name(Inst *inst);
-#include <arch/kepler/disassembler/Inst.def>
+		void	ExecuteInst_##_name(Instruction *inst);
+#include "../disassembler/Instruction.def"
 #undef DEFINST
 
 	// The special instruction appearing every 64 instructions
@@ -119,14 +118,14 @@ private:
 	void ExecuteInst_Special();
 
 	// Instruction execution table
-	typedef void (Thread::*InstFunc)(Inst *inst);
-	InstFunc inst_func[InstOpcodeCount];
+	typedef void (Thread::*InstFunc)(Instruction *inst);
+	InstFunc inst_func[Instruction::OpcodeCount];
 
 	// Error massage for unimplemented instructions
-	static void ISAUnimplemented(Inst *inst);
+	static void ISAUnimplemented(Instruction *inst);
 
 	// Error massage of unsupported feature
-	static void ISAUnsupportedFeature(Inst *inst);
+	static void ISAUnsupportedFeature(Instruction *inst);
 
 	// Fields below are used for architectural simulation only.
 public :
@@ -227,7 +226,7 @@ public :
 	void SetActive(unsigned value);
 
 	/// Execute an instruction
-	void Execute(InstOpcode opcode, Inst *inst);
+	void Execute(Instruction::Opcode opcode, Instruction *inst);
 
 	/// Execute special instruction
 	void ExecuteSpecial();
