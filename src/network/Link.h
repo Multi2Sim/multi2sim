@@ -65,6 +65,9 @@ class Link : public Connection
 	// channel arbitration
 	Buffer *scheduled_buffer = nullptr;
 
+	// The index of the last scheduled buffer on the link
+	int last_scheduled_buffer_index = -1;
+
 
 
 
@@ -125,7 +128,31 @@ public:
 
 	/// Transfer the packet from an output buffer 
 	void TransferPacket(Packet *packet);
+
+	/// This function returns the buffer that is scheduled to transmit
+	/// a packet on the link on the current cycle. The arbitration
+	/// is in round-robin fashion.
+	///
+	/// \return
+	///		The buffer that is scheduled to transmit buffer in the current
+	///		cycle.
+	///
+	Buffer *VirtualChannelArbitration();
+
+	/// Virtual channel is a pair of buffers. This function return
+	/// destination buffer that is paired with the source buffer.
+	///
+	/// \param source buffer
+	///		Source buffer in a virtual channel pair.
+	///
+	/// \return
+	///		The destination puffer of the virtual channel pair based on the
+	///		source buffer.
+	///
+	Buffer *getDestinationBufferfromSource(Buffer *buffer);
 };
+
+
 
 
 }  // namespace net
