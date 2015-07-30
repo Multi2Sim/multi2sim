@@ -77,9 +77,10 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	shared_memory_top_generic_addr = shared_memory_top_addr + id *
 				shared_memory_size + emulator->getGlobalMemTotalSize();
 
-	// shared mem top generic address record in const mem c[0x0][0x20]
-	emulator->WriteConstMem(0x20, sizeof(unsigned),
-			(const char*)&shared_memory_top_generic_addr);
+	// Shared memory top generic address is recorded in constant memory
+	// c[0x0][0x20]
+	emulator->WriteConstantMemory(0x20, sizeof(unsigned),
+			(char *) &shared_memory_top_generic_addr);
 
 	/* Flags */
 	finished_emu = false;
@@ -105,13 +106,13 @@ void ThreadBlock::Dump(std::ostream &os) const
 }
 
 
-void ThreadBlock::readSharedMem(unsigned address, unsigned length, char* buffer)
+void ThreadBlock::ReadFromSharedMemory(unsigned address, unsigned length, char* buffer)
 {
 	shared_memory->Read(address, length, buffer);
 }
 
 
-void ThreadBlock::writeSharedMem(unsigned address, unsigned length, char* buffer)
+void ThreadBlock::WriteToSharedMemory(unsigned address, unsigned length, char* buffer)
 {
 	shared_memory->Write(address, length, buffer);
 }

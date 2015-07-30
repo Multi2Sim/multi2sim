@@ -42,14 +42,14 @@ Thread::Thread(Warp *warp, int id)
 	local_memory = misc::new_unique<mem::Memory>();
 	local_memory->setSafe(false);
 	local_memory_size = 1 << 20; // current 1MB for local memory
-	local_memory_top_addr = 0;
-	local_memory_top_generic_addr = local_memory_top_addr + id *
+	local_memory_top_address = 0;
+	local_memory_top_generic_address = local_memory_top_address + id *
 			local_memory_size +	emulator->getGlobalMemTotalSize() +
 			emulator->getSharedMemoryTotalSize();
 
 	// local mem top generic address record in const mem c[0x0][0x24]
-	emulator->WriteConstMem(0x24, sizeof(unsigned),
-			(const char*)&local_memory_top_generic_addr);
+	emulator->WriteConstantMemory(0x24, sizeof(unsigned),
+			(const char *) &local_memory_top_generic_address);
 
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \
@@ -69,7 +69,7 @@ Thread::Thread(Warp *warp, int id)
 
 	// Initialize special registers
 	for (int i = 0; i < 82; ++i)
-		WriteSR(i, 0);
+		WriteSpecialRegister(i, 0);
 
 	/*
 	sr[33].u32 = id % grid->getThreadBlockSize3(0);
@@ -87,30 +87,30 @@ Thread::Thread(Warp *warp, int id)
 					grid->getThreadBlockCount3(1));
 
 	*/
-	WriteSR(33, id % grid->getThreadBlockSize3(0));
-	WriteSR(34, (id / grid->getThreadBlockSize3(0)) %
+	WriteSpecialRegister(33, id % grid->getThreadBlockSize3(0));
+	WriteSpecialRegister(34, (id / grid->getThreadBlockSize3(0)) %
 			grid->getThreadBlockSize3(1));
-	WriteSR(35, id / (grid->getThreadBlockSize3(0) *
+	WriteSpecialRegister(35, id / (grid->getThreadBlockSize3(0) *
 			grid->getThreadBlockSize3(1)));
-	WriteSR(37, thread_block->getId() %
+	WriteSpecialRegister(37, thread_block->getId() %
 			grid->getThreadBlockCount3(0));
-	WriteSR(38, (thread_block->getId() /
+	WriteSpecialRegister(38, (thread_block->getId() /
 			grid->getThreadBlockCount3(0)) %
 			grid->getThreadBlockCount3(1));
-	WriteSR(39, thread_block->getId() /
+	WriteSpecialRegister(39, thread_block->getId() /
 			(grid->getThreadBlockCount3(0) *
 					grid->getThreadBlockCount3(1)));
 
 	// Currently Set LMEMHIOFF to 0
-	WriteSR(55, 0);
+	WriteSpecialRegister(55, 0);
 
 	// Virual Thread Lane ID
-	WriteSR(0, id_in_warp);
+	WriteSpecialRegister(0, id_in_warp);
 
 	// Initialize predicate registers
 	for (int i = 0; i < 7; ++i)
-		WritePred(i, 0);
-	WritePred(7, 1);
+		WritePredicate(i, 0);
+	WritePredicate(7, 1);
 
 	// Add thread to warp
 	//warp->threads[this->id_in_warp] = this;
