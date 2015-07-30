@@ -27,7 +27,6 @@
 #include <memory>
 #include <vector>
 
-#include "Emulator.h"
 #include <memory/Memory.h>
 
 
@@ -91,13 +90,14 @@ class ThreadBlock
 	// Shared Memory
 	std::unique_ptr<mem::Memory> shared_memory;
 
-	// Shared memory size
-	unsigned shared_memory_size; // currently set as 16MB
+	// Shared memory size. Field initialized in constructor. Currently set as
+	// 16MB
+	unsigned shared_memory_size;
 
-	// Shared memory top local address
+	// Shared memory top local address. Field initialized in constructor.
 	unsigned shared_memory_top_addr;
 
-	// Shared memory top generic address
+	// Shared memory top generic address. Field initialized in constructor.
 	unsigned shared_memory_top_generic_addr;
 
 public:
@@ -127,13 +127,13 @@ public:
 	unsigned getWarpCount() const;
 
 	/// Get counter of warps at barrier
-	unsigned getWarpsAtBarrier() const { return num_warps_at_barrier; }
+	unsigned getNumWarpsAtBarrier() const { return num_warps_at_barrier; }
 
 	/// Get shared memory size
 	unsigned getSharedMemorySize() const { return shared_memory_size; }
 
 	/// Get counter of completed warps
-	unsigned getWarpsCompletedEmuCount() const
+	unsigned getNumWarpsCompletedEmu() const
 	{
 		return num_warps_completed_emu;
 	}
@@ -142,19 +142,19 @@ public:
 	Grid *getGrid() const { return grid; }
 
 	/// Get pointer of a thread in this thread-block
-	Thread *getThread(int id_in_thread_block) {
-		assert(id_in_thread_block >= 0 && id_in_thread_block < (int)threads.size());
+	Thread *getThread(int id_in_thread_block)
+	{
+		assert(id_in_thread_block >= 0 && id_in_thread_block <
+						(int)threads.size());
 		return threads[id_in_thread_block].get();
 	}
 
 	/// Get counter of threads in thread-block
 	int getThreadsCount() const { return threads.size(); }
 
-
 	/// Get finished_emu
 	bool getFinishedEmu() const { return finished_emu; }
-	/// Setters
-	///
+
 	/// Increase warps_at_barrier counter
 	void incWarpsAtBarrier() { num_warps_at_barrier++; }
 
@@ -167,17 +167,29 @@ public:
 	/// Set finished_emu
 	void setFinishedEmu(bool value) { finished_emu = value; }
 
-	/// Write shared memory
+	/// Write to shared memory
+	///
 	/// \param addr the address the program will write to
+	///
 	/// \param buffer the variable the program will read from
+	///
 	/// \param length data length
-	void writeSharedMem(unsigned addr, unsigned length, char* buffer);
+	///
+	/// \return
+	/// No value is returned.
+	void WriteToSharedMemory(unsigned addr, unsigned length, char* buffer);
 
 	/// Read shared memory
+	///
 	/// \param addr the address the program will read from
+	///
 	/// \param buffer the variable the program will read to
+	///
 	/// \param length data length
-	void readSharedMem(unsigned addr, unsigned length, char* buffer);
+	///
+	/// \return
+	/// No value is returned
+	void ReadFromSharedMemory(unsigned addr, unsigned length, char* buffer);
 
 	/// Clear barrier flag in all warps of the threadblock
 	/// To continue simulation

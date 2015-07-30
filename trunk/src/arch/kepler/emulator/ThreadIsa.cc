@@ -149,9 +149,9 @@ void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -231,9 +231,9 @@ void Thread::ExecuteInst_IMUL_B(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -315,9 +315,9 @@ void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -433,9 +433,9 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -556,9 +556,9 @@ void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -660,9 +660,9 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -777,9 +777,9 @@ void Thread::ExecuteInst_BFI_A(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	if (active == 1 && pred == 1)
 	{
@@ -870,9 +870,9 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	if (active == 1 && pred == 1)
 	{
@@ -981,9 +981,9 @@ void Thread::ExecuteInst_IMAD(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	if ( active == 1 && pred == 1)
 	{
@@ -1070,9 +1070,9 @@ void Thread::ExecuteInst_IADD_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -1206,9 +1206,9 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -1354,9 +1354,9 @@ void Thread::ExecuteInst_IADD32I(Instruction *inst)
 	unsigned pred;
 
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -1484,9 +1484,9 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -1511,7 +1511,7 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 		pred_id_3 = format.mod1 & 0x7;
 
 
-		pred_3 = ReadPred(pred_id_3);
+		pred_3 = ReadPredicate(pred_id_3);
 		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
 
@@ -1557,9 +1557,9 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 		pred_id_1 = (format.dst >> 3) & 0x7;
 		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
-			WritePred(pred_id_1, pred_1);
+			WritePredicate(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
-			WritePred(pred_id_2, pred_2);
+			WritePredicate(pred_id_2, pred_2);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1614,9 +1614,9 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -1645,7 +1645,7 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 		pred_id_2 = format.dst & 0x7;
 		pred_id_3 = format.mod1 & 0x7;
 
-		pred_3 = ReadPred(pred_id_3);
+		pred_3 = ReadPredicate(pred_id_3);
 
 		if (((format.mod1 >> 3) & 0x1))
 			pred_3 = !pred_3;
@@ -1692,9 +1692,9 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 		pred_id_1 = (format.dst >> 3) & 0x7;
 		pred_id_2 = format.dst & 0x7;
 		if (pred_id_1 != 7)
-			WritePred(pred_id_1, pred_1);
+			WritePredicate(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
-			WritePred(pred_id_2, pred_2);
+			WritePredicate(pred_id_2, pred_2);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1745,9 +1745,9 @@ void Thread::ExecuteInst_LOP_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1823,9 +1823,9 @@ void Thread::ExecuteInst_LOP_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1906,9 +1906,9 @@ void Thread::ExecuteInst_EXIT(Instruction *inst)
 
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	if (id_in_warp == 0)
 		stack->resetTempMask();
@@ -1992,9 +1992,9 @@ void Thread::ExecuteInst_BRA(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id-8);
+		pred = !ReadPredicate(pred_id-8);
 
 	// Clear temp_entry and taken_thread before BRA execute
 	if (id_in_warp == 0)
@@ -2146,9 +2146,9 @@ void Thread::ExecuteInst_MOV_B(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2219,9 +2219,9 @@ void Thread::ExecuteInst_MOV32I(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operands ID
 	unsigned dst_id;
@@ -2287,9 +2287,9 @@ void Thread::ExecuteInst_SEL_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2311,9 +2311,9 @@ void Thread::ExecuteInst_SEL_A(Instruction *inst)
 		// Read Predicate Src
 		pred_src_id = format.pred_src;
 		if (pred_src_id <= 7)
-			pred_src = ReadPred(pred_src_id);
+			pred_src = ReadPredicate(pred_src_id);
 		else
-			pred_src = ! ReadPred(pred_src_id - 8);
+			pred_src = ! ReadPredicate(pred_src_id - 8);
 
 		// Execute
 		dst_id = format.dst;
@@ -2359,9 +2359,9 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2392,9 +2392,9 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 		// Read Predicate Src
 		pred_src_id = format.pred_src;
 		if (pred_src_id <= 7)
-			pred_src = ReadPred(pred_src_id);
+			pred_src = ReadPredicate(pred_src_id);
 		else
-			pred_src = ! ReadPred(pred_src_id - 8);
+			pred_src = ! ReadPredicate(pred_src_id - 8);
 
 		// Execute
 		dst_id = format.dst;
@@ -2439,9 +2439,9 @@ void Thread::ExecuteInst_I2F_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2514,9 +2514,9 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2596,9 +2596,9 @@ void Thread::ExecuteInst_I2I_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2670,9 +2670,9 @@ void Thread::ExecuteInst_I2I_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2751,9 +2751,9 @@ void Thread::ExecuteInst_F2I_A(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2841,9 +2841,9 @@ void Thread::ExecuteInst_F2I_B(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2948,9 +2948,9 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2978,7 +2978,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 						emulator->getGlobalMemTotalSize()
 							- thread_block->getId() *
 								thread_block->getSharedMemorySize();
-			thread_block->readSharedMem(shared_memory_addr, 4, (char*)dst);
+			thread_block->ReadFromSharedMemory(shared_memory_addr, 4, (char*)dst);
 		}
 		else
 			emulator->ReadGlobalMem(addr, 4, (char*)dst); // Global Memory
@@ -3001,7 +3001,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 							emulator->getGlobalMemTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
-				thread_block->readSharedMem(shared_memory_addr, 4,
+				thread_block->ReadFromSharedMemory(shared_memory_addr, 4,
 								(char*)&dst[1]);
 			}
 			else
@@ -3025,7 +3025,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 							emulator->getGlobalMemTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
-				thread_block->readSharedMem(shared_memory_addr, 4,
+				thread_block->ReadFromSharedMemory(shared_memory_addr, 4,
 							(char*)&dst[2]);
 			}
 			else
@@ -3096,9 +3096,9 @@ void Thread::ExecuteInst_LDS(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3120,7 +3120,7 @@ void Thread::ExecuteInst_LDS(Instruction *inst)
                  <<std::endl;
 
 		}
-		thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+		thread_block->ReadFromSharedMemory(src, sizeof(int), (char*)&dst);
 
 		// write back
 		WriteGPR(dst_id, dst);
@@ -3128,7 +3128,7 @@ void Thread::ExecuteInst_LDS(Instruction *inst)
 		if (((format.mod1 >> 9) & 0x7) == 5)
 		{
 			src += sizeof(int);
-			thread_block->readSharedMem(src, sizeof(int), (char*)&dst);
+			thread_block->ReadFromSharedMemory(src, sizeof(int), (char*)&dst);
 			WriteGPR(dst_id + 1, dst);
 		}
 
@@ -3200,9 +3200,9 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id -8);
+		pred = !ReadPredicate(pred_id -8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3324,9 +3324,9 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3363,7 +3363,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 						emulator->getGlobalMemTotalSize()
 							- thread_block->getId() *
 								thread_block->getSharedMemorySize();
-			thread_block->writeSharedMem(shared_memory_addr, 4, (char*)src);
+			thread_block->WriteToSharedMemory(shared_memory_addr, 4, (char*)src);
 		}
 		else
 			emulator->WriteGlobalMem(addr, 4, (char*)src);
@@ -3386,7 +3386,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 							emulator->getGlobalMemTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
-				thread_block->writeSharedMem(shared_memory_addr, 4,
+				thread_block->WriteToSharedMemory(shared_memory_addr, 4,
 								(char*)&src[1]);
 			}
 			else
@@ -3411,7 +3411,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 							emulator->getGlobalMemTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
-				thread_block->writeSharedMem(shared_memory_addr, 4,
+				thread_block->WriteToSharedMemory(shared_memory_addr, 4,
 								(char*)&src[2]);
 			}
 			else
@@ -3467,9 +3467,9 @@ void Thread::ExecuteInst_STS(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -3494,12 +3494,12 @@ void Thread::ExecuteInst_STS(Instruction *inst)
 		// Execute
 		// Write
 
-		thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
+		thread_block->WriteToSharedMemory(dst, sizeof(int), (char*)&src);
 
 		if (((format.mod1 >> 9) & 0x7) == 5)
 		{
 			src = ReadGPR(src_id + 1);
-			thread_block->writeSharedMem(dst + sizeof(int),
+			thread_block->WriteToSharedMemory(dst + sizeof(int),
 					sizeof(int), (char*)&src);
 		}
 
@@ -3573,9 +3573,9 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3669,9 +3669,9 @@ void Thread::ExecuteInst_FADD(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3758,9 +3758,9 @@ void Thread::ExecuteInst_MUFU(Instruction *inst)
 	// get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src_id, dst_id;
@@ -3876,9 +3876,9 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3890,7 +3890,7 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 		else if (src_id == SR_CLOCKHI)
 			;//src = (grid->emulator->inst_count >> 32) & 0xffffffff;
 		else if (format.srcB_mod == 1)
-			src = ReadSR(src_id);
+			src = ReadSpecialRegister(src_id);
 
 		// Execute
 		dst = src;
@@ -3947,9 +3947,9 @@ void Thread::ExecuteInst_PSETP(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id, srcB_id, srcC_id;
@@ -3968,27 +3968,27 @@ void Thread::ExecuteInst_PSETP(Instruction *inst)
 
 		// Get SrcA value
 		if (srcA_id <= 7)
-			srcA = ReadPred(srcA_id);
+			srcA = ReadPredicate(srcA_id);
 		else
-			srcA = !ReadPred(srcA_id - 8);
+			srcA = !ReadPredicate(srcA_id - 8);
 
 		// Read SrcB id
 		srcB_id = format.pred3;
 
 		// Get SrcB value
 		if (srcB_id <= 7)
-			srcB = ReadPred(srcB_id);
+			srcB = ReadPredicate(srcB_id);
 		else
-			srcB = !ReadPred(srcB_id - 8);
+			srcB = !ReadPredicate(srcB_id - 8);
 
 		// Read SrcC id
 		srcC_id = format.pred4;
 
 		// Get SrcC value
 		if (srcC_id <= 7)
-			srcC = ReadPred(srcC_id);
+			srcC = ReadPredicate(srcC_id);
 		else
-			srcC = !ReadPred(srcC_id - 8);
+			srcC = !ReadPredicate(srcC_id - 8);
 
 		// Get Opcode
 		bool_op0 = format.bool_op0;
@@ -4015,7 +4015,7 @@ void Thread::ExecuteInst_PSETP(Instruction *inst)
 
 		// Write Result
 		dst_id = format.pred0;
-		WritePred(dst_id, dst);
+		WritePredicate(dst_id, dst);
 
 	}
 
@@ -4059,9 +4059,9 @@ void Thread::ExecuteInst_BAR(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4079,7 +4079,7 @@ void Thread::ExecuteInst_BAR(Instruction *inst)
 				<< "warp count is " << thread_block->getWarpCount()<< std::endl;
 				*/
 
-		if (thread_block->getWarpsAtBarrier()
+		if (thread_block->getNumWarpsAtBarrier()
 				== thread_block->getWarpCount())
 		{
 			//std::cout << " num at barrier " << thread_block->getWarpsAtBarrier()
@@ -4163,9 +4163,9 @@ void Thread::ExecuteInst_CAL(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4175,12 +4175,6 @@ void Thread::ExecuteInst_CAL(Instruction *inst)
 
 	if (id_in_warp == warp->getThreadCount() - 1)
 	{
-		/*
-        std::cout << "CAL PC " << std::hex << warp->getPC()
-        		<< "	A.M.	" << stack->getActiveMask()<< std::endl;
-        stack->Dump(std::cout);
-		*/
-
 		if (stack->getActiveMask())
 		{
 			std::unique_ptr<SyncStack> sync_stack(
@@ -4445,9 +4439,9 @@ void Thread::ExecuteInst_RET(Instruction *inst)
 	// Predicate
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPred(pred_id - 8);
+		pred = ! ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4531,9 +4525,9 @@ void Thread::ExecuteInst_BRK(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -4610,9 +4604,9 @@ void Thread::ExecuteInst_CONT(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id-8);
+		pred = !ReadPredicate(pred_id-8);
 
 	// Set the latest PCNT active thread mask
 	// Clear active mask bit of specific all entries before the PCNT
@@ -4717,9 +4711,9 @@ void Thread::ExecuteInst_SHL(Instruction *inst)
 	// Get predicate register value
 	pred_id = format.pred;
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, srcA_id; //srcB_id to be added for register
@@ -4793,9 +4787,9 @@ void Thread::ExecuteInst_SHR_A(Instruction *inst)
 	unsigned pred;
 
 	if (pred_id <= 7)
-		pred = ReadPred(pred_id);
+		pred = ReadPredicate(pred_id);
 	else
-		pred = !ReadPred(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id; //srcB_id to be added for register

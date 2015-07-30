@@ -100,10 +100,10 @@ private:
 	unsigned local_memory_size; // currently set as 1MB
 
 	// Local memory top local address
-	unsigned local_memory_top_addr;
+	unsigned local_memory_top_address;
 
 	// Local memory top generic address
-	unsigned local_memory_top_generic_addr;
+	unsigned local_memory_top_generic_address;
 
 	// Emulation of ISA. This code expands to one function per ISA
 	// instruction. For example:
@@ -170,23 +170,23 @@ public :
 
 	/// Get value of a SR
 	/// \param vreg SR identifier
-	unsigned ReadSR(int sr_id) { return registers.ReadSR(sr_id); }
+	unsigned ReadSpecialRegister(int sr_id) { return registers.ReadSR(sr_id); }
 
 	/// Set value of a SR
 	/// \param gpr SR identifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteSR(int sr_id, unsigned value)
+	void WriteSpecialRegister(int sr_id, unsigned value)
 	{
 		registers.WriteSR(sr_id, value);
 	}
 
 	/// Read value of a predicate register
 	/// \param pr Predicate register identifier
-	int ReadPred(int pr_id) { return registers.ReadPred(pr_id); }
+	int ReadPredicate(int pr_id) { return registers.ReadPred(pr_id); }
 
 	/// Write value of a predicate register
 	/// \param pr predicate register identifier
-	void WritePred(int pr_id, unsigned value)
+	void WritePredicate(int pr_id, unsigned value)
 	{
 		registers.WritePred(pr_id, value);
 	}

@@ -101,10 +101,13 @@ void Grid::GridSetupConstantMemory()
 {
 	unsigned v;
 
-	emulator->WriteConstMem(0x28, 3*sizeof(unsigned), (const char*)thread_block_size3);
-	emulator->WriteConstMem(0x34, 3*sizeof(unsigned), (const char*)thread_block_count3);
+	emulator->WriteConstantMemory(0x28, 3*sizeof(unsigned),
+					(const char *) thread_block_size3);
+	emulator->WriteConstantMemory(0x34, 3*sizeof(unsigned),
+					(const char *) thread_block_count3);
 	v = 0x1000000;
-	emulator->WriteConstMem(0x100000, sizeof(unsigned), (const char*)&v);
+	emulator->WriteConstantMemory(0x100000, sizeof(unsigned),
+					(const char *) &v);
 }
 
 void Grid::WaitingToRunning(int thread_block_id)
