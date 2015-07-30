@@ -514,6 +514,76 @@ TEST(TestSystemConfiguration, event_config_4_message_sent_cycle_3)
 					"not arrived.").c_str(), message.c_str());
 }
 
+TEST(TestSystemConfiguration, event_config_4_message_sent_cycle_4)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	std::string net_config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"\n"
+			"[ Network.net0.Node.n0 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.n1 ]\n"
+			"Type = EndNode\n"
+			"\n"
+			"[ Network.net0.Node.s0 ]\n"
+			"Type = Switch\n"
+			"\n"
+			"[ Network.net0.Link.n0-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n0\n"
+			"Dest = s0\n"
+			"\n"
+			"[ Network.net0.Link.n1-s0 ]\n"
+			"Type = Bidirectional\n"
+			"Source = n1\n"
+			"Dest = s0";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(net_config);
+
+	// Set up network instance
+	System *network_system = System::getInstance();
+
+	// Test body
+	try
+	{
+		// Parse the configuration file
+		network_system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = network_system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *src = misc::cast<EndNode *>(network->getNodeByName("n0"));
+		EndNode *dst = misc::cast<EndNode *>(network->getNodeByName("n1"));
+
+		// Creating the message
+		Message *msg = network->TrySend(src, dst, 1);
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+		esim_engine->ProcessEvents();
+		esim_engine->ProcessEvents();
+		esim_engine->ProcessEvents();
+
+		// Receive event
+		network->Receive(dst, msg);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
 TEST(TestSystemConfiguration, event_config_5_same_src_does_not_allowed)
 {
 	// Cleanup singleton instance
@@ -1054,6 +1124,7 @@ TEST(TestSystemConfiguration, event_config_9_message_four_nodes_2_lanes)
 		EndNode *n1 = misc::cast<EndNode *>(network->getNodeByName("n1"));
 		EndNode *n2 = misc::cast<EndNode *>(network->getNodeByName("n2"));
 		EndNode *n3 = misc::cast<EndNode *>(network->getNodeByName("n3"));
+
 		// Creating the message
 		Message *msg_1 = network->TrySend(n0, n1, 1);
 		Message *msg_2 = network->TrySend(n2, n3, 1);
@@ -1154,6 +1225,7 @@ TEST(TestSystemConfiguration, event_config_10_message_four_nodes_1_lane)
 		EndNode *n1 = misc::cast<EndNode *>(network->getNodeByName("n1"));
 		EndNode *n2 = misc::cast<EndNode *>(network->getNodeByName("n2"));
 		EndNode *n3 = misc::cast<EndNode *>(network->getNodeByName("n3"));
+
 		// Creating the message
 		Message *msg_1 = network->TrySend(n0, n1, 1);
 		Message *msg_2 = network->TrySend(n2, n3, 1);
@@ -1264,6 +1336,7 @@ TEST(TestSystemConfiguration, event_config_11_packet_four_nodes_1_lane)
 		EndNode *n1 = misc::cast<EndNode *>(network->getNodeByName("n1"));
 		EndNode *n2 = misc::cast<EndNode *>(network->getNodeByName("n2"));
 		EndNode *n3 = misc::cast<EndNode *>(network->getNodeByName("n3"));
+
 		// Creating the message
 		Message *msg_1 = network->TrySend(n0, n1, 2);
 		Message *msg_2 = network->TrySend(n2, n3, 2);
@@ -1401,6 +1474,245 @@ TEST(TestSystemConfiguration, event_config_11_packet_four_nodes_1_lane)
 
 		// Receive message
 		network->Receive(n3, msg_2);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
+///
+/// Test topology
+///
+///   N0  -->  S0  -->  S1  -->  S2  -->  S3
+///                                  \    |
+///                                   v   v
+///                                    N1
+/// Without route the path will be through S2, but with route
+/// path will be through S3
+TEST(TestSystemConfiguration, event_config_12_manual_vs_fw_routing)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.net0.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S3]\n"
+			"Type = Switch\n"
+			"[Network.net0.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"VC = 2\n"
+			"[Network.net0.Link.S0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S1\n"
+			"[Network.net0.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.net0.Link.S2-S3]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = S3\n"
+			"[Network.net0.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.net0.Link.S3-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S3\n"
+			"Dest = N1\n";
+
+	std::string route = "[Network.net0.Routes]\n"
+			"N0.to.N1 = S0:1\n"
+			"S0.to.N1 = S1\n"
+			"S1.to.N1 = S2\n"
+			"S2.to.N1 = S3\n"
+			"S3.to.N1 = N1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *N0 = dynamic_cast<EndNode *>(network->getNodeByName("N0"));
+		EndNode *N1 = dynamic_cast<EndNode *>(network->getNodeByName("N1"));
+		Node *S0 = network->getNodeByName("S0");
+		Node *S1 = network->getNodeByName("S1");
+		Node *S2 = network->getNodeByName("S2");
+
+		// Create a message
+		Message *message = network->TrySend(N0, N1, 1);
+		Packet *packet = message->getPacket(0);
+
+		// Simulation loop an checking location of packet - cycle 1
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), N0);
+		EXPECT_EQ(packet->getBuffer(), N0->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 2
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S0);
+		EXPECT_EQ(packet->getBuffer(), S0->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 3
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S0);
+		EXPECT_EQ(packet->getBuffer(), S0->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 4
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S1);
+		EXPECT_EQ(packet->getBuffer(), S1->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 5
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S1);
+		EXPECT_EQ(packet->getBuffer(), S1->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 6
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S2);
+		EXPECT_EQ(packet->getBuffer(), S2->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 7
+		// We are not checking the index of buffer since it can change
+		// depending on the order code parse the links
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S2);
+		EXPECT_EQ(packet->getBuffer()->getBufferHead(), packet);
+
+		// Simulation loop an checking location of packet - cycle 8
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), N1);
+		EXPECT_EQ(packet->getBuffer()->getBufferHead(), packet);
+
+		// Receive message
+		network->Receive(N1, message);
+
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+
+	// Cleanup previous instance
+	Cleanup();
+
+	// Load the new INI file
+	misc::IniFile ini_file_2;
+	std::string config_route = config + route;
+	ini_file_2.LoadFromString(config_route);
+
+	// Set up network instance again
+	system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body for route
+	try
+	{
+		// Parse the new configuration file
+		system->ParseConfiguration(&ini_file_2);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *N0 = dynamic_cast<EndNode *>(network->getNodeByName("N0"));
+		EndNode *N1 = dynamic_cast<EndNode *>(network->getNodeByName("N1"));
+		Node *S0 = network->getNodeByName("S0");
+		Node *S1 = network->getNodeByName("S1");
+		Node *S2 = network->getNodeByName("S2");
+		Node *S3 = network->getNodeByName("S3");
+
+		// Create a message
+		Message *message = network->TrySend(N0, N1, 1);
+		Packet *packet = message->getPacket(0);
+
+		// Simulation loop an checking location of packet - cycle 1
+		// Packet should be in second buffer because of the virtual channel
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), N0);
+		EXPECT_EQ(packet->getBuffer(), N0->getOutputBuffer(1));
+
+		// Simulation loop an checking location of packet - cycle 2
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S0);
+		EXPECT_EQ(packet->getBuffer(), S0->getInputBuffer(1));
+
+		// Simulation loop an checking location of packet - cycle 3
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S0);
+		EXPECT_EQ(packet->getBuffer(), S0->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 4
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S1);
+		EXPECT_EQ(packet->getBuffer(), S1->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 5
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S1);
+		EXPECT_EQ(packet->getBuffer(), S1->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 6
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S2);
+		EXPECT_EQ(packet->getBuffer(), S2->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 7
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S2);
+		EXPECT_EQ(packet->getBuffer()->getBufferHead(), packet);
+
+		// Simulation loop an checking location of packet - cycle 8
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S3);
+		EXPECT_EQ(packet->getBuffer(), S3->getInputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 9
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), S3);
+		EXPECT_EQ(packet->getBuffer(), S3->getOutputBuffer(0));
+
+		// Simulation loop an checking location of packet - cycle 10
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet->getNode(), N1);
+		EXPECT_EQ(packet->getBuffer()->getBufferHead(), packet);
 	}
 	catch (misc::Error &e)
 	{

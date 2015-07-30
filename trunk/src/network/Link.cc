@@ -88,7 +88,8 @@ void Link::Dump(std::ostream &os) const
 	os << misc::fmt("BusyCycles = %lld\n", busy_cycles);
 
 	// Statistics that depends on the cycle
-	long long cycle = System::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 	os << misc::fmt("BytesPerCycle = %0.4f\n", cycle ?
 			(double) transferred_bytes / cycle : 0.0);
 	os << misc::fmt("Utilization = %0.4f\n", cycle ?
@@ -104,7 +105,8 @@ void Link::TransferPacket(Packet *packet)
 	// Get current cycle
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	esim::Event *current_event = esim_engine->getCurrentEvent();
-	long long cycle = System::getInstance()->getCycle();
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
 
 	// Retrieve related information
 	Message *message = packet->getMessage();
@@ -147,8 +149,29 @@ void Link::TransferPacket(Packet *packet)
 		return;
 	}
 
+	// If buffer contains a packet but doesn't have the shared link
+	// in control, wait
+	Buffer *next_buffer = VirtualChannelArbitration();
+	if (next_buffer != source_buffer)
+	{
+		System::debug <<misc::fmt("[Network %s] [stall - virtual channel "
+						"arbitration] message-->packet: %lld-->%d, at "
+						"[node %s], [buffer %s], [link %s]\n",
+						network->getName().c_str(),
+						message->getId(), packet->getId(),
+						node->getName().c_str(),
+						source_buffer->getName().c_str(),
+						name.c_str());
+				esim_engine->Next(current_event, 1);
+				return;
+	}
+
+	// getting the destination buffer
+	Buffer *destination_buffer = getDestinationBufferfromSource(source_buffer);
+	if (!destination_buffer)
+		throw misc::Panic(misc::fmt("Unsuccessful Virtual channel pairing"));
+
 	// Check if the destination buffer is busy
-	Buffer *destination_buffer = destination_buffers[0];
 	long long write_busy = destination_buffer->write_busy;
 	if (write_busy >= cycle)
 	{
@@ -160,7 +183,7 @@ void Link::TransferPacket(Packet *packet)
 				message->getId(), packet->getId(),
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
-				getName().c_str(),
+				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
 		esim_engine->Next(current_event, write_busy - cycle + 1);
@@ -210,4 +233,68 @@ void Link::TransferPacket(Packet *packet)
 	esim_engine->Next(System::event_input_buffer, latency);
 }
 
+Buffer *Link::VirtualChannelArbitration()
+{
+	// Get the current cycle and current event
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
+
+	// If last decision was made in the current cycle,
+	// return the scheduled buffer
+	if (scheduled_when == cycle)
+		return scheduled_buffer;
+
+	// Make a new decision
+	scheduled_when = cycle;
+
+	// Find output buffer to fetch from
+	for (unsigned i = 0; i < source_buffers.size(); i++)
+	{
+		// Index of the next buffer we check to see if it has a packet
+		int next_index = (last_scheduled_buffer_index + i + 1) %
+				num_virtual_channels;
+
+		// Next buffer we check
+		Buffer *buffer = source_buffers[next_index];
+
+		// Get the head packet
+		Packet *packet = buffer->getBufferHead();
+
+		// If there is no packet in the buffer, continue
+		if (!packet)
+			continue;
+
+		// If there is a packet, it should be ready
+		if (packet->getBusy() >= cycle)
+			continue;
+
+		// See if the source buffer is ready
+		if (buffer->read_busy >= cycle)
+			continue;
+
+		// All conditioned satisfied
+		scheduled_buffer = buffer;
+		last_scheduled_buffer_index = next_index;
+		return scheduled_buffer;
+	}
+
+	// No buffer is scheduled
+	scheduled_buffer = nullptr;
+	return nullptr;
+}
+
+Buffer *Link::getDestinationBufferfromSource(Buffer *buffer)
+{
+	// Search for the buffer in the link's list of source buffers
+	for (unsigned i = 0; i < source_buffers.size(); i++)
+		if (buffer == source_buffers[i])
+		{
+			// If the buffer is found, return the same buffer index in the
+			// list of Link's destination buffers
+			return destination_buffers[i];
+		}
+
+	// Buffer is not found
+	return nullptr;
+}
 }
