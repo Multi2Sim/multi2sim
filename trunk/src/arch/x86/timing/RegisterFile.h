@@ -92,6 +92,15 @@ private:
 	// Number of free integer physical registers
 	int num_free_integer_registers = 0;
 
+	// Number of reads to the integer RAT
+	long long num_integer_rat_reads = 0;
+
+	// Number of writes to the integer RAT
+	long long num_integer_rat_writes = 0;
+
+	// Number of occupied integer registers
+	int num_occupied_integer_registers = 0;
+
 	// Request an integer physical register, and return its identifier
 	int RequestIntegerRegister();
 
@@ -118,6 +127,15 @@ private:
 	// floating-point register stack
 	int floating_point_top = 0;
 
+	// Number of reads to the floating-point RAT
+	long long num_floating_point_rat_reads = 0;
+
+	// Number of writes to the floating-point RAT
+	long long num_floating_point_rat_writes = 0;
+
+	// Number of occupied float point registers
+	int num_occupied_floating_point_registers= 0;
+
 	// Request a floating-point physical register, and return its
 	// identifier
 	int RequestFloatingPointRegister();
@@ -140,6 +158,15 @@ private:
 
 	// Number of free XMM physical registers
 	int num_free_xmm_registers = 0;
+
+	// Number of reads to the XMM RAT
+	long long num_xmm_rat_reads = 0;
+
+	// Number of writes to the XMM RAT
+	long long num_xmm_rat_writes = 0;
+
+	// Number of occupied XMM registers
+	int num_occupied_xmm_registers= 0;
 
 	// Request an XMM physical register and return its identifier
 	int RequestXmmRegister();
