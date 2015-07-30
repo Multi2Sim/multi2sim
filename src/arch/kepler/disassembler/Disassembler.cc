@@ -28,7 +28,8 @@
 #include <lib/cpp/String.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+
+#include "Instruction.h"
 
 
 namespace Kepler
@@ -155,7 +156,7 @@ void Disassembler::ProcessOptions()
 	}
 }
 
-void Disassembler::InitTableWithArray(InstOpcode opcode, const char *name,
+void Disassembler::InitTableWithArray(Instruction::Opcode opcode, const char *name,
 		const char *fmt_str, int argc, int argv[])
 {
 	// Initialize instruction info table
@@ -164,7 +165,7 @@ void Disassembler::InitTableWithArray(InstOpcode opcode, const char *name,
 	inst_info[opcode].fmt_str = fmt_str;
 
 	// Initialize argument list
-	InstDecodeInfo *table = dec_table;
+	Instruction::DecodeInfo *table = dec_table;
 
 	// Traverse argument list
 	assert(argc > 0);
@@ -461,9 +462,9 @@ Disassembler::Disassembler() : comm::Disassembler("Kepler")
 	dec_table_c_b_e_b_a[AsmOpcode_C_B_E_B_A_A].next_table_high = 57;
 
 #define DEFINST(_name, _fmt_str, ...) \
-	InitTable(INST_##_name, #_name, _fmt_str, __VA_ARGS__);
+	InitTable(Instruction::INST_##_name, #_name, _fmt_str, __VA_ARGS__);
 
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 }
 
@@ -472,7 +473,7 @@ void Disassembler::DisassembleBinary(const std::string &path) const
 {
 	// Initializations
 	ELFReader::File f(path);
-	Inst inst;
+	Instruction inst;
 
 	// Read Sections
 	for (int i = 0; i < f.getNumSections(); i++)

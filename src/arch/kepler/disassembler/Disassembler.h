@@ -26,7 +26,7 @@
 #include <arch/common/Disassembler.h>
 #include <lib/cpp/CommandLine.h>
 
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace Kepler
@@ -35,84 +35,84 @@ namespace Kepler
 class Disassembler : public comm::Disassembler
 {
 	// Instruction information
-	InstInfo inst_info[InstOpcodeCount];
+	Instruction::Info inst_info[Instruction::OpcodeCount];
 
 
 	// Decoding tables
 
-	InstDecodeInfo dec_table[4];
+	Instruction::DecodeInfo dec_table[4];
 
-	InstDecodeInfo dec_table_a[8];
-	InstDecodeInfo dec_table_b[4];
-	InstDecodeInfo dec_table_c[4];
+	Instruction::DecodeInfo dec_table_a[8];
+	Instruction::DecodeInfo dec_table_b[4];
+	Instruction::DecodeInfo dec_table_c[4];
 
-	InstDecodeInfo dec_table_a_a[64];
+	Instruction::DecodeInfo dec_table_a_a[64];
 
-	InstDecodeInfo dec_table_b_a[2];
-	InstDecodeInfo dec_table_b_b[4];
-	InstDecodeInfo dec_table_b_c[4];
-	InstDecodeInfo dec_table_b_d[4];
+	Instruction::DecodeInfo dec_table_b_a[2];
+	Instruction::DecodeInfo dec_table_b_b[4];
+	Instruction::DecodeInfo dec_table_b_c[4];
+	Instruction::DecodeInfo dec_table_b_d[4];
 
-	InstDecodeInfo dec_table_b_c_a[2];
-	InstDecodeInfo dec_table_b_c_b[2];
-	InstDecodeInfo dec_table_b_c_c[2];
-	InstDecodeInfo dec_table_b_c_d[4];
+	Instruction::DecodeInfo dec_table_b_c_a[2];
+	Instruction::DecodeInfo dec_table_b_c_b[2];
+	Instruction::DecodeInfo dec_table_b_c_c[2];
+	Instruction::DecodeInfo dec_table_b_c_d[4];
 
-	InstDecodeInfo dec_table_b_c_d_a[4];
-	InstDecodeInfo dec_table_b_c_d_b[4];
-	InstDecodeInfo dec_table_b_c_d_c[4];
+	Instruction::DecodeInfo dec_table_b_c_d_a[4];
+	Instruction::DecodeInfo dec_table_b_c_d_b[4];
+	Instruction::DecodeInfo dec_table_b_c_d_c[4];
 
-	InstDecodeInfo dec_table_b_c_d_c_a[2];
-	InstDecodeInfo dec_table_b_c_d_c_b[2];
-	InstDecodeInfo dec_table_b_c_d_c_c[2];
+	Instruction::DecodeInfo dec_table_b_c_d_c_a[2];
+	Instruction::DecodeInfo dec_table_b_c_d_c_b[2];
+	Instruction::DecodeInfo dec_table_b_c_d_c_c[2];
 
-	InstDecodeInfo dec_table_b_d_a[32];
+	Instruction::DecodeInfo dec_table_b_d_a[32];
 
-	InstDecodeInfo dec_table_c_a[4];
-	InstDecodeInfo dec_table_c_b[16];
+	Instruction::DecodeInfo dec_table_c_a[4];
+	Instruction::DecodeInfo dec_table_c_b[16];
 
-	InstDecodeInfo dec_table_c_a_a[2];
-	InstDecodeInfo dec_table_c_a_b[2];
+	Instruction::DecodeInfo dec_table_c_a_a[2];
+	Instruction::DecodeInfo dec_table_c_a_b[2];
 
-	InstDecodeInfo dec_table_c_b_a[2];
-	InstDecodeInfo dec_table_c_b_b[2];
-	InstDecodeInfo dec_table_c_b_c[4];
-	InstDecodeInfo dec_table_c_b_d[32];
-	InstDecodeInfo dec_table_c_b_e[4];
+	Instruction::DecodeInfo dec_table_c_b_a[2];
+	Instruction::DecodeInfo dec_table_c_b_b[2];
+	Instruction::DecodeInfo dec_table_c_b_c[4];
+	Instruction::DecodeInfo dec_table_c_b_d[32];
+	Instruction::DecodeInfo dec_table_c_b_e[4];
 
-	InstDecodeInfo dec_table_c_b_c_a[4];
-	InstDecodeInfo dec_table_c_b_c_b[4];
-	InstDecodeInfo dec_table_c_b_c_c[4];
+	Instruction::DecodeInfo dec_table_c_b_c_a[4];
+	Instruction::DecodeInfo dec_table_c_b_c_b[4];
+	Instruction::DecodeInfo dec_table_c_b_c_c[4];
 
-	InstDecodeInfo dec_table_c_b_c_c_a[2];
-	InstDecodeInfo dec_table_c_b_c_c_b[2];
-	InstDecodeInfo dec_table_c_b_c_c_c[2];
+	Instruction::DecodeInfo dec_table_c_b_c_c_a[2];
+	Instruction::DecodeInfo dec_table_c_b_c_c_b[2];
+	Instruction::DecodeInfo dec_table_c_b_c_c_c[2];
 
-	InstDecodeInfo dec_table_c_b_e_a[8];
-	InstDecodeInfo dec_table_c_b_e_b[2];
-	InstDecodeInfo dec_table_c_b_e_c[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a[8];
+	Instruction::DecodeInfo dec_table_c_b_e_b[2];
+	Instruction::DecodeInfo dec_table_c_b_e_c[2];
 
-	InstDecodeInfo dec_table_c_b_e_a_a[8];
-	InstDecodeInfo dec_table_c_b_e_a_b[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a[8];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b[2];
 
-	InstDecodeInfo dec_table_c_b_e_a_a_a[2];
-	InstDecodeInfo dec_table_c_b_e_a_a_b[8];
-	InstDecodeInfo dec_table_c_b_e_a_a_c[2];
-	InstDecodeInfo dec_table_c_b_e_a_a_d[4];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a_a[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a_b[8];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a_c[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a_d[4];
 
-	InstDecodeInfo dec_table_c_b_e_a_a_c_a[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a_a_c_a[2];
 
-	InstDecodeInfo dec_table_c_b_e_a_b_a[4];
-	InstDecodeInfo dec_table_c_b_e_a_b_b[16];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b_a[4];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b_b[16];
 
-	InstDecodeInfo dec_table_c_b_e_a_b_a_a[4];
-	InstDecodeInfo dec_table_c_b_e_a_b_a_b[2];
-	InstDecodeInfo dec_table_c_b_e_a_b_a_c[4];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b_a_a[4];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b_a_b[2];
+	Instruction::DecodeInfo dec_table_c_b_e_a_b_a_c[4];
 
-	InstDecodeInfo dec_table_c_b_e_b_a[2];
-	InstDecodeInfo dec_table_c_b_e_b_b[4];
+	Instruction::DecodeInfo dec_table_c_b_e_b_a[2];
+	Instruction::DecodeInfo dec_table_c_b_e_b_b[4];
 
-	InstDecodeInfo dec_table_c_b_e_b_a_a[16];
+	Instruction::DecodeInfo dec_table_c_b_e_b_a_a[16];
 
 	// Global instance of the Kepler disassembler
 	static std::unique_ptr<Disassembler> instance;
@@ -120,7 +120,7 @@ class Disassembler : public comm::Disassembler
 	// The path of cubin file disassembler gets from command line
 	static std::string path;
 
-	template<typename... Args> void InitTable(InstOpcode opcode,
+	template<typename... Args> void InitTable(Instruction::Opcode opcode,
 			const char *name, const char *fmt_str, Args&&... args)
 	{
 		int argv[sizeof...(args)];
@@ -128,7 +128,7 @@ class Disassembler : public comm::Disassembler
 				argv, args...);
 	}
 
-	template<typename... Args> void InitTableWithArray(InstOpcode opcode,
+	template<typename... Args> void InitTableWithArray(Instruction::Opcode opcode,
 			const char *name, const char *fmt_str, int argc,
 			int argv[], int arg, Args&&... args)
 	{
@@ -136,7 +136,7 @@ class Disassembler : public comm::Disassembler
 		InitTableWithArray(opcode, name, fmt_str, argc + 1, argv, args...);
 	}
 	
-	void InitTableWithArray(InstOpcode opcode, const char *name,
+	void InitTableWithArray(Instruction::Opcode opcode, const char *name,
 			const char *fmt_str, int argc, int argv[]);
 
 	// Private constructor for singleton
@@ -149,7 +149,7 @@ public:
 
 	/// Return a pointer to the decoding table, which will be indexed by
 	/// instruction bits for instruction decoding purposes.
-	const InstDecodeInfo *getDecTable() const { return dec_table; }
+	const Instruction::DecodeInfo *getDecTable() const { return dec_table; }
 
 	/// Disassemble the \c .cubin file in \a path, using the same format as
 	/// NVIDIA's \c cuobjdump tool.

@@ -53,8 +53,8 @@ Thread::Thread(Warp *warp, int id)
 
 	// Initialization instruction table
 #define DEFINST(_name, _fmt_str, ...) \
-		inst_func[INST_##_name] = &Thread::ExecuteInst_##_name;
-#include <arch/kepler/disassembler/Inst.def>
+		inst_func[Instruction::INST_##_name] = &Thread::ExecuteInst_##_name;
+#include "../disassembler/Instruction.def"
 #undef DEFINST
 
 	// Initialize  general purpose registers
@@ -117,7 +117,7 @@ Thread::Thread(Warp *warp, int id)
 }
 
 
-void Thread::Execute(InstOpcode opcode, Inst *inst)
+void Thread::Execute(Instruction::Opcode opcode, Instruction *inst)
 {
 	(this->*(inst_func[opcode]))(inst);
 }
@@ -129,7 +129,7 @@ void Thread::ExecuteSpecial()
 }
 
 
-void Thread::ISAUnimplemented(Inst *inst)
+void Thread::ISAUnimplemented(Instruction *inst)
 {
 	throw misc::Panic(misc::fmt("%s: Unimplemented Kepler "
 			"instruction\n"
@@ -142,7 +142,7 @@ void Thread::ISAUnimplemented(Inst *inst)
 }
 
 
-void Thread::ISAUnsupportedFeature(Inst *inst)
+void Thread::ISAUnsupportedFeature(Instruction *inst)
 {
 	throw misc::Panic(misc::fmt("%s: Unsupported Kepler "
 			"instruction feature\n"

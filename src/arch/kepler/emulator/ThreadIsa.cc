@@ -20,8 +20,8 @@
 #include <cmath>
 #include <iostream>
 
-#include <arch/kepler/disassembler/Inst.h>
 #include <lib/cpp/Bitmap.h>
+#include "../disassembler/Instruction.h"
 
 #include "Emulator.h"
 #include "Grid.h"
@@ -115,11 +115,11 @@ void Thread::ExecuteInst_Special()
 }
 
 
-void Thread::ExecuteInst_IMUL_A(Inst *inst)
+void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesIMUL format = inst_bytes.imul;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -196,11 +196,11 @@ void Thread::ExecuteInst_IMUL_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_IMUL_B(Inst *inst)
+void Thread::ExecuteInst_IMUL_B(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesIMUL format = inst_bytes.imul;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
 	Emulator *emulator = Emulator::getInstance();
@@ -282,11 +282,11 @@ void Thread::ExecuteInst_IMUL_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_ISCADD_A(Inst *inst)
+void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 {
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesISCADD format = inst_bytes.iscadd;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesISCADD format = inst_bytes.iscadd;
 
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -399,11 +399,11 @@ void Thread::ExecuteInst_ISCADD_A(Inst *inst)
 }
 
 
-void Thread::ExecuteInst_ISCADD_B(Inst *inst)
+void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 {
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesISCADD format = inst_bytes.iscadd;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesISCADD format = inst_bytes.iscadd;
 
 	// Get Warp
 	Emulator* emu = Emulator::getInstance();
@@ -523,7 +523,7 @@ void Thread::ExecuteInst_ISCADD_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_ISAD_A(Inst *inst)
+void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -544,8 +544,8 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesISAD format = inst_bytes.isad;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesISAD format = inst_bytes.isad;
 
 	// Predicate register
 	unsigned pred;
@@ -626,7 +626,7 @@ void Thread::ExecuteInst_ISAD_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_ISAD_B(Inst *inst)
+void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
@@ -648,8 +648,8 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesISAD format = inst_bytes.isad;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesISAD format = inst_bytes.isad;
 
 	// Predicate register
 	unsigned pred;
@@ -750,11 +750,11 @@ void Thread::ExecuteInst_ISAD_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_BFI_A(Inst *inst)
+void Thread::ExecuteInst_BFI_A(Instruction *inst)
 {
 	// Inst Bytes Format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesBFI format = inst_bytes.bfi;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesBFI format = inst_bytes.bfi;
 
 	// Predicates and active masks
 	SyncStack *stack = warp->getSyncStack()->get();
@@ -832,21 +832,21 @@ void Thread::ExecuteInst_BFI_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_BFI_B(Inst *inst)
+void Thread::ExecuteInst_BFI_B(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_BFE_A(Inst *inst)
+void Thread::ExecuteInst_BFE_A(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_BFE_B(Inst *inst)
+void Thread::ExecuteInst_BFE_B(Instruction *inst)
 {
 	// Inst Bytes Format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesBFE format = inst_bytes.bfe;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesBFE format = inst_bytes.bfe;
 
 	// Predicates and active masks
 	Emulator *emulator = Emulator::getInstance();
@@ -946,11 +946,11 @@ void Thread::ExecuteInst_BFE_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_IMAD(Inst *inst)
+void Thread::ExecuteInst_IMAD(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
@@ -1029,17 +1029,17 @@ void Thread::ExecuteInst_IMAD(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_IMADSP_A(Inst *inst)
+void Thread::ExecuteInst_IMADSP_A(Instruction *inst)
 {
 	ISAUnsupportedFeature(inst);
 }
 
-void Thread::ExecuteInst_IMADSP_B(Inst *inst)
+void Thread::ExecuteInst_IMADSP_B(Instruction *inst)
 {
 	ISAUnsupportedFeature(inst);
 }
 
-void Thread::ExecuteInst_IADD_A(Inst *inst)
+void Thread::ExecuteInst_IADD_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1058,8 +1058,8 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesIADD format = inst_bytes.iadd;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesIADD format = inst_bytes.iadd;
 
 	// Predicate register
 	unsigned pred;
@@ -1174,7 +1174,7 @@ void Thread::ExecuteInst_IADD_A(Inst *inst)
 	Emulator::isa_debug << misc::fmt("\n");
 }
 
-void Thread::ExecuteInst_IADD_B(Inst *inst)
+void Thread::ExecuteInst_IADD_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
@@ -1194,8 +1194,8 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesIADD format = inst_bytes.iadd;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesIADD format = inst_bytes.iadd;
 
 	// Predicate register
 	unsigned pred;
@@ -1322,7 +1322,7 @@ void Thread::ExecuteInst_IADD_B(Inst *inst)
 	Emulator::isa_debug << misc::fmt("\n");
 }
 
-void Thread::ExecuteInst_IADD32I(Inst *inst)
+void Thread::ExecuteInst_IADD32I(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1341,8 +1341,8 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesIADD32I format = inst_bytes.iadd32i;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesIADD32I format = inst_bytes.iadd32i;
 
 	// Predicate register ID
 	unsigned pred_id;
@@ -1444,11 +1444,11 @@ void Thread::ExecuteInst_IADD32I(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_ISETP_A(Inst *inst)
+void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
@@ -1576,11 +1576,11 @@ void Thread::ExecuteInst_ISETP_A(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_ISETP_B(Inst *inst)
+void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1712,7 +1712,7 @@ void Thread::ExecuteInst_ISETP_B(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_LOP_A(Inst *inst)
+void Thread::ExecuteInst_LOP_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1733,8 +1733,8 @@ void Thread::ExecuteInst_LOP_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesLOP format = inst_bytes.lop;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesLOP format = inst_bytes.lop;
 
 	// Predicate register
 	unsigned pred;
@@ -1789,7 +1789,7 @@ void Thread::ExecuteInst_LOP_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_LOP_B(Inst *inst)
+void Thread::ExecuteInst_LOP_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
@@ -1811,8 +1811,8 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesLOP format = inst_bytes.lop;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesLOP format = inst_bytes.lop;
 
 	// Predicate register
 	unsigned pred;
@@ -1877,11 +1877,11 @@ void Thread::ExecuteInst_LOP_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_EXIT(Inst *inst)
+void Thread::ExecuteInst_EXIT(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	//emulator* emulator = emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1937,7 +1937,7 @@ void Thread::ExecuteInst_EXIT(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_BRA(Inst *inst)
+void Thread::ExecuteInst_BRA(Instruction *inst)
 {
 	// Get SyncStack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -1948,8 +1948,8 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	unsigned active;
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesBRA format = inst_bytes.bra;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesBRA format = inst_bytes.bra;
 
 	// Get current PC
 	unsigned pc = warp->getPC();
@@ -2104,7 +2104,7 @@ void Thread::ExecuteInst_BRA(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_MOV_A(Inst *inst)
+void Thread::ExecuteInst_MOV_A(Instruction *inst)
 {
 	std::cerr << "MOV_A" << std::endl;
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2112,11 +2112,11 @@ void Thread::ExecuteInst_MOV_A(Inst *inst)
 	ISAUnsupportedFeature(inst);
 }
 
-void Thread::ExecuteInst_MOV_B(Inst *inst)
+void Thread::ExecuteInst_MOV_B(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	Emulator* emulator = Emulator::getInstance();
@@ -2186,7 +2186,7 @@ void Thread::ExecuteInst_MOV_B(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_MOV32I(Inst *inst)
+void Thread::ExecuteInst_MOV32I(Instruction *inst)
 {
 	// Get warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -2207,8 +2207,8 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesImm format = inst_bytes.immediate;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesImm format = inst_bytes.immediate;
 
 	// Predicate register
 	unsigned pred;
@@ -2254,7 +2254,7 @@ void Thread::ExecuteInst_MOV32I(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_SEL_A(Inst *inst)
+void Thread::ExecuteInst_SEL_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -2275,8 +2275,8 @@ void Thread::ExecuteInst_SEL_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesSEL format = inst_bytes.sel;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSEL format = inst_bytes.sel;
 
 	// Predicate register
 	unsigned pred;
@@ -2325,7 +2325,7 @@ void Thread::ExecuteInst_SEL_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_SEL_B(Inst *inst)
+void Thread::ExecuteInst_SEL_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator *emulator = Emulator::getInstance();
@@ -2347,8 +2347,8 @@ void Thread::ExecuteInst_SEL_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesSEL format = inst_bytes.sel;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSEL format = inst_bytes.sel;
 
 	// Predicate register
 	unsigned pred;
@@ -2406,7 +2406,7 @@ void Thread::ExecuteInst_SEL_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_I2F_A(Inst *inst)
+void Thread::ExecuteInst_I2F_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -2427,8 +2427,8 @@ void Thread::ExecuteInst_I2F_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesI2F format = inst_bytes.i2f;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesI2F format = inst_bytes.i2f;
 
 	// Predicate register
 	unsigned pred;
@@ -2480,7 +2480,7 @@ void Thread::ExecuteInst_I2F_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_I2F_B(Inst *inst)
+void Thread::ExecuteInst_I2F_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
@@ -2502,8 +2502,8 @@ void Thread::ExecuteInst_I2F_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesI2F format = inst_bytes.i2f;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesI2F format = inst_bytes.i2f;
 
 	// Predicate register
 	unsigned pred;
@@ -2563,7 +2563,7 @@ void Thread::ExecuteInst_I2F_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_I2I_A(Inst *inst)
+void Thread::ExecuteInst_I2I_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -2584,8 +2584,8 @@ void Thread::ExecuteInst_I2I_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesI2I format = inst_bytes.i2i;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesI2I format = inst_bytes.i2i;
 
 	// Predicate register
 	unsigned pred;
@@ -2636,7 +2636,7 @@ void Thread::ExecuteInst_I2I_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_I2I_B(Inst *inst)
+void Thread::ExecuteInst_I2I_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
@@ -2658,8 +2658,8 @@ void Thread::ExecuteInst_I2I_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesI2I format = inst_bytes.i2i;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesI2I format = inst_bytes.i2i;
 
 	// Predicate register
 	unsigned pred;
@@ -2718,7 +2718,7 @@ void Thread::ExecuteInst_I2I_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_F2I_A(Inst *inst)
+void Thread::ExecuteInst_F2I_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -2739,8 +2739,8 @@ void Thread::ExecuteInst_F2I_A(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesF2I format = inst_bytes.f2i;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesF2I format = inst_bytes.f2i;
 
 	// Predicate register
 	unsigned pred;
@@ -2807,7 +2807,7 @@ void Thread::ExecuteInst_F2I_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_F2I_B(Inst *inst)
+void Thread::ExecuteInst_F2I_B(Instruction *inst)
 {
 	// Get Warp
 	Emulator* emulator = Emulator::getInstance();
@@ -2829,8 +2829,8 @@ void Thread::ExecuteInst_F2I_B(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesF2I format = inst_bytes.f2i;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesF2I format = inst_bytes.f2i;
 
 	// Predicate register
 	unsigned pred;
@@ -2901,21 +2901,21 @@ void Thread::ExecuteInst_F2I_B(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_F2F_A(Inst *inst)
+void Thread::ExecuteInst_F2F_A(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_F2F_B(Inst *inst)
+void Thread::ExecuteInst_F2F_B(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_LD(Inst *inst)
+void Thread::ExecuteInst_LD(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
@@ -3060,11 +3060,11 @@ void Thread::ExecuteInst_LD(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_LDS(Inst *inst)
+void Thread::ExecuteInst_LDS(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 
@@ -3160,11 +3160,11 @@ void Thread::ExecuteInst_LDS(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_LDC(Inst *inst)
+void Thread::ExecuteInst_LDC(Instruction *inst)
 {
 	// Inst byte format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesLDC format = inst_bytes.ldc;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesLDC format = inst_bytes.ldc;
 
 	// Operands Type
 	// int u_or_s = format.u_or_s;
@@ -3288,11 +3288,11 @@ void Thread::ExecuteInst_LDC(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_ST(Inst *inst)
+void Thread::ExecuteInst_ST(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 	Emulator* emulator = Emulator::getInstance();
 
 	// Predicates and active masks
@@ -3432,11 +3432,11 @@ void Thread::ExecuteInst_ST(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_STS(Inst *inst)
+void Thread::ExecuteInst_STS(Instruction *inst)
 {
 	// Inst bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3531,12 +3531,12 @@ void Thread::ExecuteInst_STS(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_DADD(Inst *inst)
+void Thread::ExecuteInst_DADD(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_FMUL(Inst *inst)
+void Thread::ExecuteInst_FMUL(Instruction *inst)
 {
 	// Get emulator
 	Emulator* emulator = Emulator::getInstance();
@@ -3561,8 +3561,8 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicate register
 	unsigned pred;
@@ -3632,7 +3632,7 @@ void Thread::ExecuteInst_FMUL(Inst *inst)
 }
 
 
-void Thread::ExecuteInst_FADD(Inst *inst)
+void Thread::ExecuteInst_FADD(Instruction *inst)
 {
 	// Get emulator
 	Emulator* emulator = Emulator::getInstance();
@@ -3657,8 +3657,8 @@ void Thread::ExecuteInst_FADD(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicate register
 	unsigned pred;
@@ -3727,7 +3727,7 @@ void Thread::ExecuteInst_FADD(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_MUFU(Inst *inst)
+void Thread::ExecuteInst_MUFU(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3746,8 +3746,8 @@ void Thread::ExecuteInst_MUFU(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesMUFU format = inst_bytes.mufu;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesMUFU format = inst_bytes.mufu;
 
 	// Predicate register
 	unsigned pred;
@@ -3798,17 +3798,17 @@ void Thread::ExecuteInst_MUFU(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_FFMA_A(Inst *inst)
+void Thread::ExecuteInst_FFMA_A(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_FFMA_B(Inst *inst)
+void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_NOP(Inst *inst)
+void Thread::ExecuteInst_NOP(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3816,8 +3816,8 @@ void Thread::ExecuteInst_NOP(Inst *inst)
 	unsigned active;
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesNOP format = inst_bytes.nop;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesNOP format = inst_bytes.nop;
 
 	// Get Operand
 	unsigned s = format.s;
@@ -3843,11 +3843,11 @@ void Thread::ExecuteInst_NOP(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_S2R(Inst *inst)
+void Thread::ExecuteInst_S2R(Instruction *inst)
 {
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3914,7 +3914,7 @@ void Thread::ExecuteInst_S2R(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_PSETP(Inst *inst)
+void Thread::ExecuteInst_PSETP(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -3935,8 +3935,8 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
 	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesPSETP format = inst_bytes.psetp;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesPSETP format = inst_bytes.psetp;
 
 	// Predicate register
 	unsigned pred;
@@ -4023,17 +4023,17 @@ void Thread::ExecuteInst_PSETP(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_SHF(Inst *inst)
+void Thread::ExecuteInst_SHF(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_BAR(Inst *inst)
+void Thread::ExecuteInst_BAR(Instruction *inst)
 {
 
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral0 format = inst_bytes.general0;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4102,37 +4102,37 @@ void Thread::ExecuteInst_BAR(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_BPT(Inst *inst)
+void Thread::ExecuteInst_BPT(Instruction *inst)
 {
 	if (id_in_warp == warp->getThreadCount() - 1)
 		warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_JMX(Inst *inst)
+void Thread::ExecuteInst_JMX(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_JMP(Inst *inst)
+void Thread::ExecuteInst_JMP(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_JCAL(Inst *inst)
+void Thread::ExecuteInst_JCAL(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_BRX(Inst *inst)
+void Thread::ExecuteInst_BRX(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_CAL(Inst *inst)
+void Thread::ExecuteInst_CAL(Instruction *inst)
 {
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesCAL format = inst_bytes.cal;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesCAL format = inst_bytes.cal;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4207,17 +4207,17 @@ void Thread::ExecuteInst_CAL(Inst *inst)
 }
 
 
-void Thread::ExecuteInst_PRET(Inst *inst)
+void Thread::ExecuteInst_PRET(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_PLONGJMP(Inst *inst)
+void Thread::ExecuteInst_PLONGJMP(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SSY(Inst *inst)
+void Thread::ExecuteInst_SSY(Instruction *inst)
 {
 	// Get emulator
     Emulator *emulator = Emulator::getInstance();
@@ -4239,8 +4239,8 @@ void Thread::ExecuteInst_SSY(Inst *inst)
 	}
 
 	// Instbytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesSSY format = inst_bytes.ssy;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSSY format = inst_bytes.ssy;
 
 	// Operand
 	unsigned offset;
@@ -4277,7 +4277,7 @@ void Thread::ExecuteInst_SSY(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_PBK(Inst *inst)
+void Thread::ExecuteInst_PBK(Instruction *inst)
 {
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4295,8 +4295,8 @@ void Thread::ExecuteInst_PBK(Inst *inst)
 	}
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesPBK format = inst_bytes.pbk;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesPBK format = inst_bytes.pbk;
 
 
 	// Execute
@@ -4331,7 +4331,7 @@ void Thread::ExecuteInst_PBK(Inst *inst)
 }
 
 
-void Thread::ExecuteInst_PCNT(Inst *inst)
+void Thread::ExecuteInst_PCNT(Instruction *inst)
 {
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4349,8 +4349,8 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
 	}
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesPCNT format = inst_bytes.pcnt;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesPCNT format = inst_bytes.pcnt;
 
 
 	// Execute
@@ -4385,37 +4385,37 @@ void Thread::ExecuteInst_PCNT(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_GETCRSPTR(Inst *inst)
+void Thread::ExecuteInst_GETCRSPTR(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_GETLMEMBASE(Inst *inst)
+void Thread::ExecuteInst_GETLMEMBASE(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SETCRSPTR(Inst *inst)
+void Thread::ExecuteInst_SETCRSPTR(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SETLMEMBASE(Inst *inst)
+void Thread::ExecuteInst_SETLMEMBASE(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_LONGJMP(Inst *inst)
+void Thread::ExecuteInst_LONGJMP(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_RET(Inst *inst)
+void Thread::ExecuteInst_RET(Instruction *inst)
 {
 
 	// Inst bytes format	//FIXME S2R description missing in Inst.h
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesGeneral2 format = inst_bytes.general2;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesGeneral2 format = inst_bytes.general2;
 
 	// Predicates and active masks
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4490,13 +4490,13 @@ void Thread::ExecuteInst_RET(Inst *inst)
 	//ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_KIL(Inst *inst)
+void Thread::ExecuteInst_KIL(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
 
-void Thread::ExecuteInst_BRK(Inst *inst)
+void Thread::ExecuteInst_BRK(Instruction *inst)
 {
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4519,8 +4519,8 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 	active = 1u & (active_mask >> id_in_warp);
 
 	// Instruction bytes foramt
-	InstBytes inst_bytes =inst->getInstBytes();
-	InstBytesBRK format = inst_bytes.brk;
+	Instruction::Bytes inst_bytes =inst->getInstBytes();
+	Instruction::BytesBRK format = inst_bytes.brk;
 
 	// Predicate register
 	unsigned pred;
@@ -4571,7 +4571,7 @@ void Thread::ExecuteInst_BRK(Inst *inst)
 }
 
 
-void Thread::ExecuteInst_CONT(Inst *inst)
+void Thread::ExecuteInst_CONT(Instruction *inst)
 {
 	// Get synchronization stack
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4583,8 +4583,8 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 	unsigned pred;
 
 	// Instruction bytes foramt
-	InstBytes inst_bytes =inst->getInstBytes();
-	InstBytesCONT format = inst_bytes.cont;
+	Instruction::Bytes inst_bytes =inst->getInstBytes();
+	Instruction::BytesCONT format = inst_bytes.cont;
 
 	// Get current PC
 	unsigned pc = warp->getPC();
@@ -4641,52 +4641,52 @@ void Thread::ExecuteInst_CONT(Inst *inst)
 	}
 }
 
-void Thread::ExecuteInst_RTT(Inst *inst)
+void Thread::ExecuteInst_RTT(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SAM(Inst *inst)
+void Thread::ExecuteInst_SAM(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_RAM(Inst *inst)
+void Thread::ExecuteInst_RAM(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_IDE(Inst *inst)
+void Thread::ExecuteInst_IDE(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_LOP32I(Inst *inst)
+void Thread::ExecuteInst_LOP32I(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_FADD32I(Inst *inst)
+void Thread::ExecuteInst_FADD32I(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_FFMA32I(Inst *inst)
+void Thread::ExecuteInst_FFMA32I(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_IMAD32I(Inst *inst)
+void Thread::ExecuteInst_IMAD32I(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_ISCADD32I(Inst *inst)
+void Thread::ExecuteInst_ISCADD32I(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SHL(Inst *inst)
+void Thread::ExecuteInst_SHL(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4705,8 +4705,8 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesSHL format = inst_bytes.shl;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSHL format = inst_bytes.shl;
 
 	// Predicate register
 	unsigned pred;
@@ -4761,7 +4761,7 @@ void Thread::ExecuteInst_SHL(Inst *inst)
 
 }
 
-void Thread::ExecuteInst_SHR_A(Inst *inst)
+void Thread::ExecuteInst_SHR_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4780,8 +4780,8 @@ void Thread::ExecuteInst_SHR_A(Inst *inst)
 	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Instruction bytes format
-	InstBytes inst_bytes = inst->getInstBytes();
-	InstBytesSHR format = inst_bytes.shr;
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSHR format = inst_bytes.shr;
 
 	// Predicate register ID
 	unsigned pred_id;
@@ -4844,7 +4844,7 @@ void Thread::ExecuteInst_SHR_A(Inst *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-void Thread::ExecuteInst_SHR_B(Inst *inst)
+void Thread::ExecuteInst_SHR_B(Instruction *inst)
 {
 	ISAUnimplemented(inst);
 }
