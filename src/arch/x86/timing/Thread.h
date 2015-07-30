@@ -74,15 +74,6 @@ private:
 	// Uop count in load/store queue
 	int uop_count_in_load_store_queue = 0;
 
-	// Number of occupied integer registers
-	int num_integer_registers_occupied = 0;
-
-	// Number of occupied float point registers
-	int num_float_point_registers_occupied = 0;
-
-	// Number of XMM registers
-	int num_xmm_registers_occupied = 0;
-
 
 
 
@@ -309,13 +300,6 @@ private:
 	long long xmm_register_reads = 0;
 	long long xmm_register_writes = 0;
 
-	long long rat_int_reads = 0;
-	long long rat_int_writes = 0;
-	long long rat_fp_reads = 0;
-	long long rat_fp_writes = 0;
-	long long rat_xmm_reads = 0;
-	long long rat_xmm_writes = 0;
-
 	long long btb_reads = 0;
 	long long btb_writes = 0;
 
@@ -353,87 +337,6 @@ public:
 
 	/// Return the thread's register file
 	RegisterFile *getRegisterFile() const { return register_file.get(); }
-
-	/// Increment the number of occupied physical integer registers
-	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
-
-	/// Increment the number of occupied physical float point registers
-	void incNumFloatPointRegistersOccupied() { num_float_point_registers_occupied++; }
-
-	/// Increment the number of occupied physical xmm registers
-	void incNumXmmRegistersOccupied() { num_xmm_registers_occupied++; }
-
-	/// Increment the read count of Register Aliasing Table for INT registers
-	void incRatIntReads() { rat_int_reads++; }
-
-	/// Increment the read count of Register Aliasing Table for FP registers
-	void incRatFpReads() { rat_fp_reads++; }
-
-	/// Increment the read count of Register Aliasing Table for XMM registers
-	void incRatXmmReads() { rat_xmm_reads++; }
-
-	/// Increment the write count of Register Aliasing Table for INT registers
-	void incRatIntWrites() { rat_int_writes++; }
-
-	/// Increment the write count of Register Aliasing Table for FP registers
-	void incRatFpWrites() { rat_fp_writes++; }
-
-	/// Increment the write count of Register Aliasing Table for XMM registers
-	void incRatXmmWrites() { rat_xmm_writes++; }
-
-	/// Decrement the number of occupied physical integer registers
-	void decNumIntegerRegistersOccupied() { num_integer_registers_occupied--; }
-
-	/// Decrement the number of occupied physical float point registers
-	void decNumFloatPointRegistersOccupied() { num_float_point_registers_occupied--; }
-
-	/// Decrement the number of occupied physical xmm registers
-	void decNumXmmRegistersOccupied() { num_xmm_registers_occupied--; }
-
-	/// Decrement the read count of Register Aliasing Table for INT registers
-	void decRatIntReads() { rat_int_reads--; }
-
-	/// Decrement the read count of Register Aliasing Table for FP registers
-	void decRatFpReads() { rat_fp_reads--; }
-
-	/// Decrement the read count of Register Aliasing Table for XMM registers
-	void decRatXmmReads() { rat_xmm_reads--; }
-
-	/// Increment the write count of Register Aliasing Table for INT registers
-	void decRatIntWrites() { rat_int_writes--; }
-
-	/// Increment the write count of Register Aliasing Table for INT registers
-	void decRatFpWrites() { rat_fp_writes--; }
-
-	/// Increment the write count of Register Aliasing Table for INT registers
-	void decRatXmmWrites() { rat_xmm_writes--; }
-
-	/// Get the number of occupied physical integer registers
-	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
-
-	/// Get the number of occupied physical float point registers
-	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
-
-	/// Get the number of occupied physical xmm registers
-	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
-
-	/// Get the read count of Register Aliasing Table for INT registers
-	int getRatIntReads() { return rat_int_reads; }
-
-	/// Get the read count of Register Aliasing Table for INT registers
-	int getRatFpReads() { return rat_fp_reads; }
-
-	/// Get the read count of Register Aliasing Table for INT registers
-	int getRatXmmReads() { return rat_xmm_reads; }
-
-	/// Get the write count of Register Aliasing Table for INT registers
-	int getRatIntWrites() { return rat_int_writes; }
-
-	/// Get the write count of Register Aliasing Table for INT registers
-	int getRatFpWrites() { return rat_fp_writes; }
-
-	/// Get the write count of Register Aliasing Table for INT registers
-	int getRatXmmWrites() { return rat_xmm_writes; }
 
 	/// Increment the number of writes to integer registers
 	void incIntegerRegisterWrites(int count = 1)
