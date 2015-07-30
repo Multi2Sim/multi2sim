@@ -25,7 +25,6 @@
 #include <memory>
 #include <vector>
 
-#include <arch/kepler/disassembler/Inst.h>
 #include <lib/cpp/Bitmap.h>
 #include <lib/util/bit-map.h>
 
@@ -33,6 +32,7 @@
 #include "ReturnAddressStack.h"
 #include "ThreadBlock.h"
 #include "Warp.h"
+#include "../disassembler/Instruction.h"
 
 
 namespace Kepler
@@ -85,7 +85,7 @@ class Warp
 	int target_pc;
 
 	// Current instruction
-	Inst inst;
+	Instruction inst;
 
 	// Pointer points to the starting position of instruction buffer
 	std::vector<unsigned long long>::iterator inst_buffer;

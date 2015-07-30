@@ -34,7 +34,7 @@
 namespace Kepler
 {
 
-Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Inst())
+Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 {
 
 	unsigned am = 0;
@@ -116,10 +116,10 @@ void Warp::Execute()
 	Emulator *emulator = Emulator::getInstance();
 
 	// Instruction binary
-	InstBytes inst_bytes;
+	Instruction::Bytes inst_bytes;
 
 	// Instruction opcode
-	InstOpcode inst_op;
+	Instruction::Opcode inst_op;
 
 	// Read instruction binary
 	inst_bytes.as_uint[0] = inst_buffer[pc / inst_size] >> 32;
@@ -131,7 +131,7 @@ void Warp::Execute()
 			inst.Decode((const char *) &inst_bytes, pc);
 
 			// Execute instruction
-			inst_op = (InstOpcode) inst.getOpcode();
+			inst_op = (Instruction::Opcode) inst.getOpcode();
 
 			if (!inst_op)
 			{
