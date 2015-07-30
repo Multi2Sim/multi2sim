@@ -71,13 +71,13 @@ private:
 	long long uop_id_counter = 0;
 
 	// Number of occupied integer registers
-	int num_integer_registers_occupied = 0;
+	int num_occupied_integer_registers = 0;
 
-	// Number of occupied float point registers
-	int num_float_point_registers_occupied = 0;
+	// Number of occupied floating point registers
+	int num_occupied_floating_point_registers = 0;
 
 	// Number of XMM registers
-	int num_xmm_registers_occupied = 0;
+	int num_occupied_xmm_registers = 0;
 
 	// Total number of instructions in all threads' ROBs
 	int reorder_buffer_occupancy = 0;
@@ -216,42 +216,42 @@ public:
 	//
 
 	/// Get the number of occupied physical integer registers
-	int getNumIntegerRegistersOccupied() { return num_integer_registers_occupied; }
+	int getNumOccupiedIntegerRegisters() { return num_occupied_integer_registers; }
 
 	/// Get the number of occupied physical float point registers
-	int getNumFloatPointRegistersOccupied() { return num_float_point_registers_occupied; }
+	int getNumOccupiedFloatingPointRegisters() { return num_occupied_floating_point_registers; }
 
 	/// Get the number of occupied physical xmm registers
-	int getNumXmmRegistersOccupied() { return num_xmm_registers_occupied; }
+	int getNumOccupiedXmmRegisters() { return num_occupied_xmm_registers; }
 
 	/// Increment the number of occupied physical integer registers
-	void incNumIntegerRegistersOccupied() { num_integer_registers_occupied++; }
+	void incNumOccupiedIntegerRegisters() { num_occupied_integer_registers++; }
 
 	/// Increment the number of occupied physical float point registers
-	void incNumFloatPointRegistersOccupied() { num_float_point_registers_occupied++; }
+	void incNumOccupiedFloatingPointRegisters() { num_occupied_floating_point_registers++; }
 
 	/// Increment the number of occupied physical xmm registers
-	void incNumXmmRegistersOccupied() { num_xmm_registers_occupied++; }
+	void incNumOccupiedXmmRegisters() { num_occupied_xmm_registers++; }
 
 	/// Decrement the number of occupied physical integer registers
-	void decNumIntegerRegistersOccupied()
+	void decNumOccupiedIntegerRegisters()
 	{
-		assert(num_integer_registers_occupied > 0);
-		num_integer_registers_occupied--;
+		assert(num_occupied_integer_registers > 0);
+		num_occupied_integer_registers--;
 	}
 
 	/// Decrement the number of occupied physical float point registers
-	void decNumFloatPointRegistersOccupied()
+	void decNumOccupiedFloatingPointRegisters()
 	{
-		assert(num_float_point_registers_occupied > 0);
-		num_float_point_registers_occupied--;
+		assert(num_occupied_floating_point_registers > 0);
+		num_occupied_floating_point_registers--;
 	}
 
 	/// Decrement the number of occupied physical xmm registers
-	void decNumXmmRegistersOccupied()
+	void decNumOccupiedXmmRegisters()
 	{
-		assert(num_xmm_registers_occupied > 0);
-		num_xmm_registers_occupied--;
+		assert(num_occupied_xmm_registers > 0);
+		num_occupied_xmm_registers--;
 	}
 
 

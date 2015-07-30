@@ -171,8 +171,8 @@ int RegisterFile::RequestIntegerRegister()
 	assert(num_free_integer_registers > 0);
 	int physical_register = free_integer_registers[num_free_integer_registers - 1];
 	num_free_integer_registers--;
-	core->incNumIntegerRegistersOccupied();
-	thread->incNumIntegerRegistersOccupied();
+	core->incNumOccupiedIntegerRegisters();
+	num_occupied_integer_registers++;
 	assert(!integer_registers[physical_register].busy);
 	assert(!integer_registers[physical_register].pending);
 	return physical_register;
@@ -185,8 +185,8 @@ int RegisterFile::RequestFloatingPointRegister()
 	assert(num_free_floating_point_registers > 0);
 	int physical_register = free_floating_point_registers[num_free_floating_point_registers - 1];
 	num_free_floating_point_registers--;
-	core->incNumIntegerRegistersOccupied();
-	thread->incNumIntegerRegistersOccupied();
+	core->incNumOccupiedFloatingPointRegisters();
+	num_occupied_floating_point_registers++;
 	assert(!floating_point_registers[physical_register].busy);
 	assert(!floating_point_registers[physical_register].pending);
 	return physical_register;
@@ -199,8 +199,8 @@ int RegisterFile::RequestXmmRegister()
 	assert(num_free_xmm_registers > 0);
 	int physical_register = free_xmm_registers[num_free_xmm_registers - 1];
 	num_free_xmm_registers--;
-	core->incNumIntegerRegistersOccupied();
-	thread->incNumIntegerRegistersOccupied();
+	core->incNumOccupiedXmmRegisters();
+	num_occupied_xmm_registers++;
 	assert(!xmm_registers[physical_register].busy);
 	assert(!xmm_registers[physical_register].pending);
 	return physical_register;
@@ -213,19 +213,19 @@ bool RegisterFile::canRename(Uop *uop)
 	if (kind == KindPrivate)
 	{
 		// Not enough integer registers
-		if (thread->getNumIntegerRegistersOccupied()
+		if (num_occupied_integer_registers
 				+ uop->getNumIntegerOutputs()
 				> integer_local_size)
 			return false;
 
 		// Not enough floating-point registers
-		if (thread->getNumFloatPointRegistersOccupied()
+		if (num_occupied_floating_point_registers
 				+ uop->getNumFloatingPointOutputs()
 				> floating_point_local_size)
 			return false;
 
 		// Not enough XMM registers
-		if (thread->getNumXmmRegistersOccupied()
+		if (num_occupied_xmm_registers
 				+ uop->getNumXmmOutputs()
 				> xmm_local_size)
 			return false;
@@ -233,19 +233,19 @@ bool RegisterFile::canRename(Uop *uop)
 	else
 	{
 		// Not enough integer registers
-		if (core->getNumIntegerRegistersOccupied()
+		if (core->getNumOccupiedIntegerRegisters()
 				+ uop->getNumIntegerOutputs()
 				> integer_local_size)
 			return false;
 
 		// Not enough floating-point registers
-		if (core->getNumFloatPointRegistersOccupied()
+		if (core->getNumOccupiedFloatingPointRegisters()
 				+ uop->getNumFloatingPointOutputs()
 				> floating_point_local_size)
 			return false;
 
 		// Not enough XMM registers
-		if (core->getNumXmmRegistersOccupied()
+		if (core->getNumOccupiedXmmRegisters()
 				+ uop->getNumXmmOutputs()
 				> xmm_local_size)
 			return false;
@@ -276,9 +276,12 @@ void RegisterFile::Rename(Uop *uop)
 		int logical_register = uop->getUinst()->getIDep(dep);
 		if (Uinst::isIntegerDependency(logical_register))
 		{
+			// Rename register
 			int physical_register = integer_rat[logical_register - Uinst::DepIntFirst];
 			uop->setInput(dep, physical_register);
-			thread->incRatIntReads();
+
+			// Stats
+			num_integer_rat_reads++;
 		}
 		else if (Uinst::isFloatingPointDependency(logical_register))
 		{
@@ -289,16 +292,21 @@ void RegisterFile::Rename(Uop *uop)
 			assert(stack_register >= Uinst::DepFpFirst
 					&& stack_register <= Uinst::DepFpLast);
 
-			// Rename it.
+			// Rename register
 			int physical_register = floating_point_rat[stack_register - Uinst::DepFpFirst];
 			uop->setInput(dep, physical_register);
-			thread->incRatFpReads();
+
+			// Stats
+			num_floating_point_rat_reads++;
 		}
 		else if (Uinst::isXmmDependency(logical_register))
 		{
+			// Rename register
 			int physical_register = xmm_rat[logical_register - Uinst::DepXmmFirst];
 			uop->setInput(dep, physical_register);
-			thread->incRatXmmReads();
+
+			// Stats
+			num_xmm_rat_reads++;
 		}
 		else
 		{
@@ -331,7 +339,9 @@ void RegisterFile::Rename(Uop *uop)
 			uop->setOutput(dep, physical_register);
 			uop->setOldOutput(dep, old_physical_register);
 			integer_rat[logical_register - Uinst::DepIntFirst] = physical_register;
-			thread->incRatIntWrites();
+
+			// Stats
+			num_integer_rat_writes++;
 		}
 		else if (Uinst::isFloatingPointDependency(logical_register))
 		{
@@ -352,7 +362,9 @@ void RegisterFile::Rename(Uop *uop)
 			uop->setOutput(dep, physical_register);
 			uop->setOldOutput(dep, old_physical_register);
 			floating_point_rat[stack_register - Uinst::DepFpFirst] = physical_register;
-			thread->incRatFpWrites();
+
+			// Stats
+			num_floating_point_rat_writes++;
 		}
 		else if (Uinst::isXmmDependency(logical_register))
 		{
@@ -366,7 +378,9 @@ void RegisterFile::Rename(Uop *uop)
 			uop->setOutput(dep, physical_register);
 			uop->setOldOutput(dep, old_physical_register);
 			xmm_rat[logical_register - Uinst::DepXmmFirst] = physical_register;
-			thread->incRatXmmWrites();
+
+			// Stats
+			num_xmm_rat_writes++;
 		}
 		else
 		{
@@ -474,13 +488,18 @@ void RegisterFile::UndoUop(Uop *uop)
 			integer_registers[physical_register].busy--;
 			if (!integer_registers[physical_register].busy)
 			{
+				// Sanity
 				assert(num_free_integer_registers < integer_local_size);
-				assert(core->getNumIntegerRegistersOccupied() > 0
-						&& thread->getNumIntegerRegistersOccupied() > 0);
+				assert(core->getNumOccupiedIntegerRegisters() > 0
+						&& num_occupied_integer_registers > 0);
+
+				// Add to free list
 				free_integer_registers[num_free_integer_registers] = physical_register;
 				num_free_integer_registers++;
-				core->decNumIntegerRegistersOccupied();
-				thread->decNumIntegerRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedIntegerRegisters();
+				num_occupied_integer_registers--;
 			}
 
 			// Return to previous mapping
@@ -502,13 +521,18 @@ void RegisterFile::UndoUop(Uop *uop)
 			floating_point_registers[physical_register].busy--;
 			if (!floating_point_registers[physical_register].busy)
 			{
+				// Sanity
 				assert(num_free_floating_point_registers < floating_point_local_size);
-				assert(core->getNumFloatPointRegistersOccupied() > 0
-						&& thread->getNumFloatPointRegistersOccupied() > 0);
+				assert(core->getNumOccupiedFloatingPointRegisters() > 0
+						&& num_occupied_floating_point_registers > 0);
+
+				// Add to free list
 				free_floating_point_registers[num_free_floating_point_registers] = physical_register;
 				num_free_floating_point_registers++;
-				core->decNumFloatPointRegistersOccupied();
-				thread->decNumFloatPointRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedFloatingPointRegisters();
+				num_occupied_floating_point_registers--;
 			}
 
 			// Return to previous mapping
@@ -523,13 +547,18 @@ void RegisterFile::UndoUop(Uop *uop)
 			xmm_registers[physical_register].busy--;
 			if (!xmm_registers[physical_register].busy)
 			{
+				// Sanity
 				assert(num_free_xmm_registers < xmm_local_size);
-				assert(core->getNumXmmRegistersOccupied() > 0
-						&& thread->getNumXmmRegistersOccupied() > 0);
+				assert(core->getNumOccupiedXmmRegisters() > 0
+						&& num_occupied_xmm_registers > 0);
+
+				// Add to free list
 				free_xmm_registers[num_free_xmm_registers] = physical_register;
 				num_free_xmm_registers++;
-				core->decNumXmmRegistersOccupied();
-				thread->decNumXmmRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedXmmRegisters();
+				num_occupied_xmm_registers--;
 			}
 
 			// Return to previous mapping
@@ -574,14 +603,19 @@ void RegisterFile::CommitUop(Uop *uop)
 			integer_registers[old_physical_register].busy--;
 			if (!integer_registers[old_physical_register].busy)
 			{
+				// Sanity
 				assert(!integer_registers[old_physical_register].pending);
 				assert(num_free_integer_registers < integer_local_size);
-				assert(core->getNumIntegerRegistersOccupied() > 0
-						&& thread->getNumIntegerRegistersOccupied() > 0);
+				assert(core->getNumOccupiedIntegerRegisters() > 0
+						&& num_occupied_integer_registers > 0);
+
+				// Add to free list
 				free_integer_registers[num_free_integer_registers] = old_physical_register;
 				num_free_integer_registers++;
-				core->decNumIntegerRegistersOccupied();
-				thread->decNumIntegerRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedIntegerRegisters();
+				num_occupied_integer_registers--;
 			}
 		}
 		else if (Uinst::isFloatingPointDependency(logical_register))
@@ -591,14 +625,19 @@ void RegisterFile::CommitUop(Uop *uop)
 			floating_point_registers[old_physical_register].busy--;
 			if (!floating_point_registers[old_physical_register].busy)
 			{
+				// Sanity
 				assert(!floating_point_registers[old_physical_register].pending);
 				assert(num_free_floating_point_registers < floating_point_local_size);
-				assert(core->getNumFloatPointRegistersOccupied() > 0
-						&& thread->getNumFloatPointRegistersOccupied() > 0);
+				assert(core->getNumOccupiedFloatingPointRegisters() > 0
+						&& num_occupied_floating_point_registers > 0);
+
+				// Add to free list
 				free_floating_point_registers[num_free_floating_point_registers] = old_physical_register;
 				num_free_floating_point_registers++;
-				core->decNumFloatPointRegistersOccupied();
-				thread->decNumFloatPointRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedFloatingPointRegisters();
+				num_occupied_floating_point_registers--;
 			}
 		}
 		else if (Uinst::isXmmDependency(logical_register))
@@ -608,14 +647,19 @@ void RegisterFile::CommitUop(Uop *uop)
 			xmm_registers[old_physical_register].busy--;
 			if (!xmm_registers[old_physical_register].busy)
 			{
+				// Sanity
 				assert(!xmm_registers[old_physical_register].pending);
 				assert(num_free_xmm_registers < xmm_local_size);
-				assert(core->getNumXmmRegistersOccupied() > 0
-						&& thread->getNumXmmRegistersOccupied() > 0);
+				assert(core->getNumOccupiedXmmRegisters() > 0
+						&& num_occupied_xmm_registers > 0);
+
+				// Add to free list
 				free_xmm_registers[num_free_xmm_registers] = old_physical_register;
 				num_free_xmm_registers++;
-				core->decNumXmmRegistersOccupied();
-				thread->decNumXmmRegistersOccupied();
+
+				// One less register occupied
+				core->decNumOccupiedXmmRegisters();
+				num_occupied_xmm_registers--;
 			}
 		}
 		else
