@@ -19,7 +19,9 @@ TESTS = \
 	\
 	src_memory_test \
 	\
-	src_network_test
+	src_network_test \
+	\
+	src_dram_test
 
 check_PROGRAMS = \
 	src_arch_x86_timing_test \
@@ -32,8 +34,9 @@ check_PROGRAMS = \
 	\
 	src_memory_test \
 	\
-	src_network_test
-
+	src_network_test \
+	\
+	src_dram_test
 
 
 src_lib_esim_test_LDADD = \
@@ -42,8 +45,6 @@ src_lib_esim_test_LDADD = \
 
 src_lib_esim_test_SOURCES = \
 	src/lib/esim/TestEngine.cc 
-
-
 
 src_network_test_LDADD = \
 	$(top_builddir)/src/network/libnetwork.a \
@@ -55,6 +56,13 @@ src_network_test_SOURCES = \
 	src/network/TestNetworkConfig.cc \
 	src/network/TestNetworkEvents.cc
 
+src_dram_test_LDADD = \
+	$(top_builddir)/src/dram/libdram.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a
+
+src_dram_test_SOURCES = \
+	src/dram/TestDramConfig.cc
 
 src_arch_x86_timing_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
