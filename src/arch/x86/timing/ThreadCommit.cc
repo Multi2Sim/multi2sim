@@ -59,6 +59,7 @@ bool Thread::canCommit()
 		return false;
 
 	// Get instruction from reorder buffer head
+	assert(reorder_buffer.size());
 	std::shared_ptr<Uop> uop = reorder_buffer.front();
 	assert(uop->getThread() == this);
 
@@ -81,6 +82,7 @@ void Thread::Commit(int quantum)
 	while (quantum && canCommit())
 	{
 		// Get instruction at the head of the reorder buffer
+		assert(reorder_buffer.size());
 		std::shared_ptr<Uop> uop = reorder_buffer.front();
 		assert(uop->getThread() == this);
 		assert(!recover);

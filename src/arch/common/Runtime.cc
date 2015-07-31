@@ -213,7 +213,9 @@ bool RuntimePool::Redirect(const std::string &library_name,
 		if (matches_redirect_library && !access(library_name.c_str(), R_OK))
 		{
 			runtime->setOpenAttempt(false);
-			return false;  // No redirection
+
+			// No redirection
+			return false;
 		}
 
 		// If this failed, try to open Multi2Sim runtime in current path.
@@ -229,7 +231,9 @@ bool RuntimePool::Redirect(const std::string &library_name,
 					redirect_library_name.c_str(),
 					runtime->getName().c_str(),
 					runtime_err_redirect_current);
-			return true;  // Effective redirection
+			
+			// Effective redirection
+			return true;
 		}
 
 		// Try to open the file in '$(TOPDIR)/lib/.libs' directory
@@ -242,13 +246,16 @@ bool RuntimePool::Redirect(const std::string &library_name,
 			{
 				redirect_library_name = path;
 				runtime->setOpenAttempt(false);
-				misc::Warning("path '%s' has been redirected to "
-						"'%s' while loading the %s runtime.\n\n%s",
+				misc::Warning("Path '%s' has been redirected to "
+						"'%s' while loading the %s "
+						"runtime.\n%s",
 						library_name.c_str(),
 						redirect_library_name.c_str(),
 						runtime->getName().c_str(),
 						runtime_err_redirect_root);
-				return true;  // Effective redirection
+
+				// Effective redirection
+				return true;
 			}
 		}
 

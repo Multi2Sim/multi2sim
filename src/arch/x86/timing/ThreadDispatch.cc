@@ -29,7 +29,7 @@ namespace x86
 Thread::DispatchStall Thread::canDispatch()
 {
 	// Uop queue is empty
-	if (uop_queue.size() == 0)
+	if (uop_queue.empty())
 		return !context || !context->getState(Context::StateRunning) ?
 				DispatchStallContext :
 				DispatchStallUopQueue;
@@ -70,6 +70,7 @@ int Thread::Dispatch(int quantum)
 		}
 
 		// Get uop at the head of the uop queue
+		assert(uop_queue.size());
 		std::shared_ptr<Uop> uop = uop_queue.front();
 	
 		// Extract uop from uop queue

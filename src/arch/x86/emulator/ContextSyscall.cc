@@ -47,15 +47,19 @@
 namespace x86
 {
 
-#define __UNIMPLEMENTED__ misc::fatal("%s: unimplemented system call.\n\n%s", \
-		__FUNCTION__ + 15, syscall_error_note); return 0;
+#define __UNIMPLEMENTED__ \
+		throw misc::Panic(misc::fmt("%s: Unimplemented system call." \
+				"\n%s", \
+				__FUNCTION__ + 15, \
+				syscall_error_note)); \
+		return 0;
 
 static const char *syscall_error_note =
-	"The most common Linux system calls are currently supported by "
+	"\tThe most common Linux system calls are currently supported by "
 	"Multi2Sim, but your application might perform specific unsupported "
 	"system calls or unsupported combinations of its arguments. To request "
-	"support for a given system call, please report a bug in "
-	"www.multi2sim.org.";
+	"support for a given system call, please report a bug in the Multi2Sim "
+	"project manager tools.";
 
 
 const char *Context::syscall_name[SyscallCodeCount + 1] =
@@ -251,7 +255,7 @@ void Context::ExecuteSyscall()
 
 	// Check valid code
 	if (code < 1 || code >= SyscallCodeCount || !execute_syscall_fn[code])
-		misc::fatal("invalid system call (code %d)", code);
+		throw Error(misc::fmt("Invalid system call (code %d)", code));
 
 	// Debug
 	emulator->call_debug << misc::fmt("[%s] System call '%s' "
@@ -358,7 +362,7 @@ bool Context::SyscallReadCanWakeup()
 	// Get file descriptor
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_read_fd);
 	if (!desc)
-		misc::panic("%s: invalid file descriptor", __FUNCTION__);
+		throw misc::Panic("Invalid file descriptor");
 
 	// Check if data is ready in file by polling it
 	struct pollfd host_fds;
@@ -366,8 +370,7 @@ bool Context::SyscallReadCanWakeup()
 	host_fds.events = POLLIN;
 	int err = poll(&host_fds, 1, 0);
 	if (err < 0)
-		misc::panic("%s: unexpected error in host call to 'poll'",
-				__FUNCTION__);
+		throw misc::Panic("Unexpected error in host call to 'poll'");
 
 	// If data is ready, perform host 'read' call and wake up
 	if (host_fds.revents)
@@ -378,8 +381,7 @@ bool Context::SyscallReadCanWakeup()
 
 		count = read(desc->getHostIndex(), buf.get(), count);
 		if (count < 0)
-			misc::panic("%s: unexpected error in host 'read'",
-					__FUNCTION__);
+			throw misc::Panic("Unexpected error in host 'read'");
 
 		regs.setEax(count);
 		memory->Write(pbuf, count, buf.get());
@@ -395,7 +397,7 @@ bool Context::SyscallReadCanWakeup()
 	host_thread_suspend_active = true;
 	if (pthread_create(&host_thread_suspend, nullptr,
 			&Context::HostThreadSuspend, this))
-		misc::panic("%s: could not launch host thread", __FUNCTION__);
+		throw misc::Panic("Could not launch host thread");
 	return false;
 }
 
@@ -423,7 +425,7 @@ int Context::ExecuteSyscall_read()
 	fds.events = POLLIN;
 	int err = poll(&fds, 1, 0);
 	if (err < 0)
-		misc::panic("%s: error executing 'poll'", __FUNCTION__);
+		throw misc::Panic("Error executing 'poll'");
 
 	// Non-blocking read
 	if (fds.revents || (desc->getFlags() & O_NONBLOCK))
@@ -489,7 +491,7 @@ bool Context::SyscallWriteCanWakeup()
 	// Get file descriptor
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_write_fd);
 	if (!desc)
-		misc::panic("%s: invalid file descriptor", __FUNCTION__);
+		throw misc::Panic("Invalid file descriptor");
 
 	// Check if data is ready in file by polling it
 	struct pollfd host_fds;
@@ -497,8 +499,7 @@ bool Context::SyscallWriteCanWakeup()
 	host_fds.events = POLLOUT;
 	int err = poll(&host_fds, 1, 0);
 	if (err < 0)
-		misc::panic("%s: unexpected error in host 'poll'",
-				__FUNCTION__);
+		throw misc::Panic("Unexpected error in host 'poll'");
 
 	// If data is ready in the file, wake up context
 	if (host_fds.revents)
@@ -510,8 +511,7 @@ bool Context::SyscallWriteCanWakeup()
 		memory->Read(pbuf, count, buf.get());
 		count = write(desc->getHostIndex(), buf.get(), count);
 		if (count < 0)
-			misc::panic("%s: unexpected error in host 'write'",
-					__FUNCTION__);
+			throw misc::Panic("Unexpected error in host 'write'");
 
 		regs.setEax(count);
 		emulator->syscall_debug << misc::fmt("[%s] Syscall write - "
@@ -525,8 +525,9 @@ bool Context::SyscallWriteCanWakeup()
 	host_thread_suspend_active = true;
 	if (pthread_create(&host_thread_suspend, nullptr,
 			&Context::HostThreadSuspend, this))
-		misc::panic("%s: could not create child thread",
-				__FUNCTION__);
+		throw misc::Panic("Could not create child thread");
+	
+	// Done
 	return false;
 }
 
@@ -651,8 +652,9 @@ comm::FileDescriptor *Context::SyscallOpenVirtualDevice(const std::string &path,
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
 	comm::Driver *driver = driver_pool->getDriverByPath(path);
 	if (!driver)
-		misc::fatal("%s: Cannot find device in %s", __FUNCTION__,
-				path.c_str());
+		throw Error(misc::fmt("%s: Cannot find device in %s",
+				__FUNCTION__,
+				path.c_str()));
 
 	// Create new file descriptor
 	comm::FileDescriptor *desc = file_table->newFileDescriptor(
@@ -832,8 +834,7 @@ int Context::ExecuteSyscall_waitpid()
 
 	// Supported values for 'pid'
 	if (pid != -1 && pid <= 0)
-		misc::fatal("%s: only supported for pid=-1 or pid > 0.\n%s",
-				__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Only supported for pid=-1 or pid > 0");
 
 	// Look for a zombie child.
 	Context *child = getZombie(pid);
@@ -946,13 +947,11 @@ int Context::ExecuteSyscall_chdir()
 	// Save old host path
 	char old_host_path[200];
 	if (!getcwd(old_host_path, sizeof old_host_path))
-		misc::panic("%s: buffer 'old_host_path' too small",
-				__FUNCTION__);
+		throw misc::Panic("Buffer 'old_host_path' too small");
 
 	// Change host path to guest working directory
 	if (chdir(loader->cwd.c_str()))
-		misc::panic("%s: %s: cannot cd to guest working directory",
-				__FUNCTION__, loader->cwd.c_str());
+		throw misc::Panic("Cannot cd to guest working directory");
 	
 	// Change to specified directory
 	int err = chdir(path.c_str());
@@ -960,7 +959,7 @@ int Context::ExecuteSyscall_chdir()
 	{
 		char new_path[200];
 		if (!getcwd(new_path, sizeof new_path))
-			misc::panic("%s: buffer 'path' too small", __FUNCTION__);
+			throw misc::Panic("Buffer 'path' too small");
 		loader->cwd = new_path;
 		emulator->syscall_debug << misc::fmt("  New working directory "
 				"is '%s'\n", loader->cwd.c_str());
@@ -968,8 +967,7 @@ int Context::ExecuteSyscall_chdir()
 
 	// Go back to old host path
 	if (chdir(old_host_path))
-		misc::panic("%s: cannot cd back into old host path",
-				__FUNCTION__);
+		throw misc::Panic("Cannot cd back into old host path");
 
 	// Return error code received in host call
 	return err;
@@ -1339,11 +1337,11 @@ int Context::ExecuteSyscall_kill()
 	emulator->syscall_debug << misc::fmt("  pid=%d, sig=%d (%s)\n", pid,
 			sig, signal_map.MapValue(sig));
 
-	// Find context. We assume program correctness, so misc::fatal if
+	// Find context. We assume program correctness, so error out if
 	// context is not found, rather than return error code.
 	Context *context = emulator->getContext(pid);
 	if (!context)
-		misc::fatal("%s: invalid pid %d", __FUNCTION__, pid);
+		throw Error(misc::fmt("%s: invalid pid %d", __FUNCTION__, pid));
 
 	// Send signal
 	context->signal_mask_table.getPending().Add(sig);
@@ -1484,7 +1482,7 @@ int Context::ExecuteSyscall_pipe()
 	int host_fd[2];
 	int err = pipe(host_fd);
 	if (err == -1)
-		misc::fatal("%s: cannot create pipe", __FUNCTION__);
+		throw misc::Panic("Cannot create pipe");
 	emulator->syscall_debug << misc::fmt("  host pipe created: fd={%d, %d}\n",
 			host_fd[0], host_fd[1]);
 
@@ -1564,7 +1562,7 @@ int Context::ExecuteSyscall_brk()
 		{
 			if (memory->MapSpace(old_heap_break_aligned, size) !=
 					old_heap_break_aligned)
-				misc::fatal("%s: out of memory", __FUNCTION__);
+				throw misc::Panic("Out of memory");
 			memory->Map(old_heap_break_aligned, size,
 					mem::Memory::AccessRead | mem::Memory::AccessWrite);
 		}
@@ -1739,8 +1737,8 @@ int Context::ExecuteSyscall_ioctl()
 	}
 	else
 	{
-		misc::fatal("%s: not implement for cmd = 0x%x.\n%s",
-			__FUNCTION__, cmd, syscall_error_note);
+		throw misc::Panic(misc::fmt("Not implement for cmd = 0x%x",
+				cmd));
 	}
 
 	// Return 
@@ -2059,9 +2057,9 @@ int Context::ExecuteSyscall_setrlimit()
 	}
 
 	default:
-		misc::fatal("%s: not implemented for res = %s.\n%s",
-				__FUNCTION__, rlimit_res_map.MapValue(res),
-				syscall_error_note);
+
+		throw misc::Panic(misc::fmt("Not implemented for res = %s",
+				rlimit_res_map.MapValue(res)));
 	}
 
 	// Return
@@ -2368,7 +2366,8 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
 	int host_fd = desc ? desc->getHostIndex() : -1;
 	if (guest_fd > 0 && host_fd < 0)
-		misc::fatal("%s: invalid guest descriptor", __FUNCTION__);
+		throw Error(misc::fmt("mmap: Invalid guest descriptor (%d)",
+				guest_fd));
 
 	// Permissions
 	int perm = mem::Memory::AccessInit;
@@ -2384,9 +2383,11 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 	// 'addr' and 'offset' must be aligned to page size boundaries.
 	// 'len' is rounded up to page boundary.
 	if (offset & ~mem::Memory::PageMask)
-		misc::fatal("%s: unaligned offset", __FUNCTION__);
+		throw Error(misc::fmt("mmap: Unaligned offset (0x%x)",
+				offset));
 	if (addr & ~mem::Memory::PageMask)
-		misc::fatal("%s: unaligned address", __FUNCTION__);
+		throw Error(misc::fmt("mmap: Unaligned address (0x%x)",
+				addr));
 	unsigned len_aligned = misc::RoundUp(len, mem::Memory::PageSize);
 
 	// Find region for allocation
@@ -2396,8 +2397,7 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 		// is not just a hint for a possible base address of the
 		// allocated range.
 		if (!addr)
-			misc::fatal("%s: no start specified for fixed mapping",
-					__FUNCTION__);
+			throw Error("mmap: No start specified for fixed mapping");
 
 		// Any allocated page in the range specified by 'addr' and 'len'
 		// must be discarded.
@@ -2409,7 +2409,7 @@ int Context::SyscallMmapAux(unsigned addr, unsigned len,
 			addr = mmap_base_address;
 		addr = memory->MapSpaceDown(addr, len_aligned);
 		if (addr == (unsigned) -1)
-			misc::fatal("%s: out of guest memory", __FUNCTION__);
+			throw Error("mmap: Out of guest memory");
 	}
 
 	// Allocation of memory
@@ -2495,7 +2495,7 @@ int Context::ExecuteSyscall_munmap()
 
 	// Restrictions
 	if (addr & (mem::Memory::PageSize - 1))
-		misc::fatal("%s: address not aligned", __FUNCTION__);
+		throw Error(misc::fmt("munmap: Address not aligned (0x%x)", addr));
 
 	// Unmap
 	unsigned size_aligned = misc::RoundUp(size, mem::Memory::PageSize);
@@ -2917,9 +2917,8 @@ int Context::ExecuteSyscall_clone()
 
 	// Check not supported flags
 	if (flags & ~clone_supported_flags)
-		misc::fatal("%s: not supported flags: %s\n%s",
-				__FUNCTION__, clone_flags_map.MapFlags(flags).c_str(),
-				syscall_error_note);
+		throw misc::Panic(misc::fmt("Unsupported flags: %s",
+				clone_flags_map.MapFlags(flags).c_str()));
 
 	// Flag CLONE_VM
 	Context *context = emulator->newContext();
@@ -2928,8 +2927,7 @@ int Context::ExecuteSyscall_clone()
 		// CLONE_FS, CLONE_FILES, CLONE_SIGHAND must be there, too
 		if ((flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND)) !=
 				(SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
-			misc::fatal("%s: not supported flags with CLONE_VM.\n%s",
-				__FUNCTION__, syscall_error_note);
+			throw misc::Panic("Unsupported flags with CLONE_VM.");
 
 		// Create new context sharing memory image
 		context->Clone(this);
@@ -2938,8 +2936,7 @@ int Context::ExecuteSyscall_clone()
 	{
 		// CLONE_FS, CLONE_FILES, CLONE_SIGHAND must not be there either
 		if (flags & (SIM_CLONE_FS | SIM_CLONE_FILES | SIM_CLONE_SIGHAND))
-			misc::fatal("%s: not supported flags with CLONE_VM.\n%s",
-				__FUNCTION__, syscall_error_note);
+			throw misc::Panic("Unsupported flags with CLONE_VM");
 
 		// Create new context replicating memory image
 		context->Fork(this);
@@ -2988,7 +2985,7 @@ int Context::ExecuteSyscall_clone()
 		emulator->syscall_debug << misc::fmt("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 				uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 		if (!uinfo.seg_32bit)
-			misc::fatal("%s: only 32-bit segments supported", __FUNCTION__);
+			throw misc::Panic("Only 32-bit segments supported");
 
 		// Limit given in pages (4KB units)
 		if (uinfo.limit_in_pages)
@@ -3322,7 +3319,7 @@ int Context::ExecuteSyscall_llseek()
 
 	// Supported offset
 	if (offset_high != (unsigned) -1 && offset_high)
-		misc::fatal("%s: only supported for 32-bit files", __FUNCTION__);
+		throw misc::Panic("llseek: only supported for 32-bit files");
 
 	// Host call
 	offset = lseek(host_fd, offset_low, origin);
@@ -3443,8 +3440,7 @@ int Context::ExecuteSyscall_writev()
 
 	// No pipes allowed 
 	if (desc->getType() == comm::FileDescriptor::TypePipe)
-		misc::fatal("%s: not supported for pipes.\n%s",
-			__FUNCTION__, syscall_error_note);
+		throw misc::Panic("writev: Unsupported for pipes");
 
 	// Proceed 
 	int total_len = 0;
@@ -3540,11 +3536,10 @@ int Context::ExecuteSyscall_sysctl()
 
 	// Supported values
 	if (!args.oldlenp || !args.poldval)
-		misc::fatal("%s: not supported for poldval=0 or oldlenp=0.\n%s",
-			__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Not supported for poldval=0 or oldlenp=0");
 	if (args.pnewval || args.newlen)
-		misc::fatal("%s: not supported for pnewval or newlen other than 0.\n%s",
-			__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Not supported for pnewval or newlen "
+				"other than 0");
 
 	// Return
 	unsigned zero = 0;
@@ -3624,17 +3619,16 @@ int Context::ExecuteSyscall_sched_setparam()
 
 	// Currently only works when pid matches calling context
 	if (pid != getId())
-		misc::panic("%s: only supported for same pid as current "
-				"context.\n%s", __FUNCTION__,
-				syscall_error_note);
+		throw misc::Panic("Not support for pid different than "
+				"current context");
 
 	// Max and min priority
 	int max_priority = 99;
 	int min_priority = 0;
 	if (sched_priority < min_priority || sched_priority > max_priority)
-		misc::fatal("%s: invalid scheduling priority supplied (%d: "
-				"min = %d, max = %d)\n", __FUNCTION__,
-				sched_priority, min_priority, max_priority);
+		throw Error(misc::fmt("sched_setparam: invalid scheduling "
+				"priority supplied (%d: min = %d, max = %d)\n",
+				sched_priority, min_priority, max_priority));
 
 	// Ignore system call
 	return 0;
@@ -3657,9 +3651,8 @@ int Context::ExecuteSyscall_sched_getparam()
 
 	// Currently only works when pid matches calling context
 	if (pid != getId())
-		misc::panic("%s: only supported for same pid as current "
-				"context.\n%s", __FUNCTION__,
-				syscall_error_note);
+		throw misc::Panic("Not supported for pid other than "
+				"current context");
 
 	// Return scheduling priority
 	memory->Write(param_ptr, 4, (char *) &sched_priority);
@@ -3766,9 +3759,8 @@ int Context::ExecuteSyscall_sched_getscheduler()
 
 	// Currently only works when pid matches calling context
 	if (pid != getId())
-		misc::panic("%s: only supported for same pid as current "
-				"context.\n%s", __FUNCTION__,
-				syscall_error_note);
+		throw misc::Panic("Not supported for pid other than "
+				"current context");
 
 	// Debug
 	emulator->syscall_debug << misc::fmt("  returning scheduling policy %d\n",
@@ -3816,8 +3808,8 @@ int Context::ExecuteSyscall_sched_get_priority_max()
 		return 99;
 
 	default:
-		misc::fatal("%s: policy not supported.\n%s",
-				__FUNCTION__, syscall_error_note);
+
+		throw misc::Panic("Policy not supported");
 	}
 
 	// Dead code
@@ -3850,8 +3842,8 @@ int Context::ExecuteSyscall_sched_get_priority_min()
 		return 1;
 
 	default:
-		misc::fatal("%s: policy not supported.\n%s",
-				__FUNCTION__, syscall_error_note);
+		
+		throw misc::Panic("Policy not supported");
 	}
 
 	// Dead code
@@ -3927,8 +3919,9 @@ bool Context::SyscallNanosleepCanWakeup()
 	host_thread_suspend_active = true;
 	if (pthread_create(&host_thread_suspend, nullptr,
 			&Context::HostThreadSuspend, this))
-		misc::panic("%s: could not create child thread",
-				__FUNCTION__);
+		throw misc::Panic("Could not create child thread");
+	
+	// Done
 	return false;
 }
 
@@ -3989,11 +3982,9 @@ int Context::ExecuteSyscall_mremap()
 	assert(!(old_len & (mem::Memory::PageSize - 1)));
 	assert(!(new_len & (mem::Memory::PageSize - 1)));
 	if (!(flags & 0x1))
-		misc::fatal("%s: flags MAP_MAYMOVE must be present",
-				__FUNCTION__);
+		throw Error("mremap: flag MAP_MAYMOVE must be present");
 	if (!old_len || !new_len)
-		misc::fatal("%s: old_len or new_len cannot be zero",
-				__FUNCTION__);
+		throw Error("old_len or new_len cannot be zero");
 
 	// New size equals to old size means no action.
 	if (new_len == old_len)
@@ -4020,7 +4011,7 @@ int Context::ExecuteSyscall_mremap()
 	// A new region must be found for the new size.
 	unsigned new_addr = memory->MapSpaceDown(mmap_base_address, new_len);
 	if (new_addr == (unsigned) -1)
-		misc::fatal("%s: out of guest memory", __FUNCTION__);
+		throw Error("mremap: Out of guest memory");
 
 	// Map new region and copy old one
 	memory->Map(new_addr, new_len,
@@ -4123,8 +4114,7 @@ bool Context::SyscallPollCanWakeup()
 	unsigned prevents = regs.getEbx() + 6;
 	comm::FileDescriptor *desc = file_table->getFileDescriptor(syscall_poll_fd);
 	if (!desc)
-		misc::panic("%s: invalid file descriptor (%d)",
-				__FUNCTION__, syscall_poll_fd);
+		throw misc::Panic("Invalid file descriptor");
 
 	// Context received a signal
 	SignalSet pending_unblocked = signal_mask_table.getPending() &
@@ -4146,8 +4136,7 @@ bool Context::SyscallPollCanWakeup()
 			((syscall_poll_events & 1) ? POLLIN : 0);
 	int err = poll(&host_fds, 1, 0);
 	if (err < 0)
-		misc::panic("%s: unexpected error in host 'poll'",
-				__FUNCTION__);
+		throw misc::Panic("Unexpected error in host 'poll'");
 
 	// POLLOUT event available
 	if (syscall_poll_events & host_fds.revents & POLLOUT)
@@ -4197,7 +4186,9 @@ bool Context::SyscallPollCanWakeup()
 	host_thread_suspend_active = true;
 	if (pthread_create(&host_thread_suspend, nullptr,
 			&Context::HostThreadSuspend, this))
-		misc::panic("%s: could not launch host thread", __FUNCTION__);
+		throw misc::Panic("Could not launch host thread");
+	
+	// Done
 	return false;
 }
 
@@ -4219,8 +4210,7 @@ int Context::ExecuteSyscall_poll()
 
 	// Supported value
 	if (nfds != 1)
-		misc::fatal("%s: not suported for nfds != 1\n%s",
-				__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Not suported for nfds != 1");
 
 	// Read pollfd
 	memory->Read(pfds, sizeof guest_fds, (char *) &guest_fds);
@@ -4237,13 +4227,11 @@ int Context::ExecuteSyscall_poll()
 
 	// Only POLLIN (0x1) and POLLOUT (0x4) supported
 	if (guest_fds.events & ~(POLLIN | POLLOUT))
-		misc::fatal("%s: event not supported.\n%s",
-				__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Unsupported event");
 
 	// Not supported file descriptor
 	if (host_fd < 0)
-		misc::fatal("%s: not supported file descriptor.\n%s",
-				__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Unsupported file descriptor");
 
 	// Perform host 'poll' system call with a 0 timeout to distinguish
 	// blocking from non-blocking cases.
@@ -4279,7 +4267,7 @@ int Context::ExecuteSyscall_poll()
 		}
 
 		// Never should get here
-		misc::panic("%s: unexpected events", __FUNCTION__);
+		throw misc::Panic("Unexpected events");
 	}
 
 	// At this point, host 'poll' returned 0, which means that none of the
@@ -4390,7 +4378,8 @@ int Context::ExecuteSyscall_rt_sigaction()
 
 	// Invalid signal
 	if (sig < 1 || sig > 64)
-		misc::fatal("%s: invalid signal (%d)", __FUNCTION__, sig);
+		throw Error(misc::fmt("rt_sigaction: Invalid signal (%d)",
+				sig));
 
 	// Read new sigaction
 	SignalHandler act;
@@ -4482,7 +4471,8 @@ int Context::ExecuteSyscall_rt_sigprocmask()
 			break;
 
 		default:
-			misc::fatal("%s: invalid value for 'how'", __FUNCTION__);
+			
+			throw Error("rt_sigprocmask: Invalid value for 'how'");
 		}
 	}
 
@@ -4784,9 +4774,9 @@ int Context::ExecuteSyscall_getrlimit()
 	}
 
 	default:
-		misc::fatal("%s: not implemented for res = %s.\n%s",
-			__FUNCTION__, rlimit_res_map.MapValue(res),
-			syscall_error_note);
+		
+		throw misc::Panic(misc::fmt("Unsupported resource: %s",
+				rlimit_res_map.MapValue(res)));
 	}
 
 	// Return structure
@@ -5327,8 +5317,7 @@ int Context::ExecuteSyscall_fcntl64()
 	if (!desc)
 		return -EBADF;
 	if (desc->getHostIndex() < 0)
-		misc::fatal("%s: not supported for this type of file",
-				__FUNCTION__);
+		throw misc::Panic("Unsupported for this file type");
 	emulator->syscall_debug << misc::fmt("    host_fd=%d\n",
 			desc->getHostIndex());
 
@@ -5382,9 +5371,8 @@ int Context::ExecuteSyscall_fcntl64()
 
 	default:
 
-		misc::fatal("%s: command %s not implemented.\n%s",
-				__FUNCTION__, fcntl_cmd_map.MapValue(cmd),
-				syscall_error_note);
+		throw misc::Panic(misc::fmt("Unsupported command: %s\n",
+				fcntl_cmd_map.MapValue(cmd)));
 	}
 
 	// Return
@@ -5681,7 +5669,11 @@ int Context::ExecuteSyscall_futex()
 		// Read timeout
 		if (timeout_ptr)
 		{
-			misc::fatal("syscall futex: FUTEX_WAIT not supported with timeout");
+			// Not supported for now
+			throw misc::Panic("futex: FUTEX_WAIT: "
+					"Timeout not supported");
+
+			// Unreachable
 			memory->Read(timeout_ptr, 4, (char *) &timeout_sec);
 			memory->Read(timeout_ptr + 4, 4, (char *) &timeout_usec);
 			emulator->syscall_debug << misc::fmt("  timeout={sec %d, usec %d}\n",
@@ -5717,7 +5709,8 @@ int Context::ExecuteSyscall_futex()
 	{
 		// 'ptimeout' is interpreted here as an integer; only supported for INTMAX
 		if (timeout_ptr != 0x7fffffff)
-			misc::fatal("%s: FUTEX_CMP_REQUEUE: only supported for ptimeout=INTMAX", __FUNCTION__);
+			throw misc::Panic("futex: FUTEX_CMP_REQUEUE: "
+					"Only supported for ptimeout=INTMAX");
 
 		// The value of val3 must be the same as the value of the futex
 		// at 'addr1' (stored in 'futex')
@@ -5788,7 +5781,10 @@ int Context::ExecuteSyscall_futex()
 			newval = oldval ^ oparg;
 			break;
 		default:
-			misc::fatal("%s: FUTEX_WAKE_OP: invalid operation", __FUNCTION__);
+
+			throw Error(misc::fmt("futex: FUTEX_WAKE_OP: "
+					"invalid operation (%d)", op));
+
 		}
 		memory->Write(addr2, 4, (char *) &newval);
 
@@ -5815,7 +5811,9 @@ int Context::ExecuteSyscall_futex()
 			cond = oldval >= cmparg;
 			break;
 		default:
-			misc::fatal("%s: FUTEX_WAKE_OP: invalid condition", __FUNCTION__);
+			
+			throw Error(misc::fmt("futex: FUTEX_WAKE_OP: "
+					"invalid condition (%d)", cmp));
 		}
 		if (cond)
 			ret += FutexWake(addr2, val2, 0xffffffff);
@@ -5826,9 +5824,9 @@ int Context::ExecuteSyscall_futex()
 	}
 
 	default:
-		misc::fatal("%s: not implemented for cmd=%d (%s).\n%s",
-			__FUNCTION__, cmd, futex_cmd_map.MapValue(cmd),
-			syscall_error_note);
+		
+		throw misc::Panic(misc::fmt("Unimplemented for cmd=%d (%s)",
+				cmd, futex_cmd_map.MapValue(cmd)));
 	}
 
 	// Dead code
@@ -5882,7 +5880,7 @@ int Context::ExecuteSyscall_set_thread_area()
 	emulator->syscall_debug << misc::fmt("  limit_in_pages=0x%x, seg_not_present=0x%x, useable=0x%x\n",
 		uinfo.limit_in_pages, uinfo.seg_not_present, uinfo.useable);
 	if (!uinfo.seg_32bit)
-		misc::fatal("syscall set_thread_area: only 32-bit segments supported");
+		throw misc::Panic("set_thread_area: only 32-bit segments supported");
 
 	// Limit given in pages (4KB units)
 	if (uinfo.limit_in_pages)
@@ -5890,9 +5888,11 @@ int Context::ExecuteSyscall_set_thread_area()
 
 	if (uinfo.entry_number == (unsigned) -1)
 	{
+		// Must not be set yet
 		if (glibc_segment_base)
-			misc::fatal("%s: glibc segment already set", __FUNCTION__);
+			throw Error("set_thread_area: glibc segment already set");
 
+		// Set segment
 		glibc_segment_base = uinfo.base_addr;
 		glibc_segment_limit = uinfo.limit;
 		uinfo.entry_number = 6;
@@ -5900,10 +5900,17 @@ int Context::ExecuteSyscall_set_thread_area()
 	}
 	else
 	{
+		// Must be entry 6
 		if (uinfo.entry_number != 6)
-			misc::fatal("%s: invalid entry number", __FUNCTION__);
+			throw Error(misc::fmt("set_thread_area: "
+					"Invalid entry number (%d)",
+					uinfo.entry_number));
+
+		// Libc segment must be set
 		if (!glibc_segment_base)
-			misc::fatal("%s: glibc segment not set", __FUNCTION__);
+			throw Error("set_thread_area: glib segment not set");
+		
+		// Set segment
 		glibc_segment_base = uinfo.base_addr;
 		glibc_segment_limit = uinfo.limit;
 	}
@@ -6364,13 +6371,12 @@ int Context::ExecuteSyscall_tgkill()
 
 	// Implementation restrictions.
 	if (tgid == -1)
-		misc::panic("%s: not supported for tgid = -1\n%s",
-				__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Not supported for tgid = -1");
 
 	// Find context referred by pid.
 	Context *context = emulator->getContext(pid);
 	if (!context)
-		misc::fatal("%s: invalid pid (%d)", __FUNCTION__, pid);
+		throw Error(misc::fmt("Invalid pid (%d)", pid));
 
 	// Send signal
 	context->signal_mask_table.getPending().Add(sig);
@@ -6876,8 +6882,7 @@ int Context::ExecuteSyscall_set_robust_list()
 
 	// Support
 	if (len != 12)
-		misc::fatal("%s: not supported for len != 12\n%s",
-			__FUNCTION__, syscall_error_note);
+		throw misc::Panic("Unsupported for len != 12");
 
 	// Set robust list
 	robust_list_head = head;
