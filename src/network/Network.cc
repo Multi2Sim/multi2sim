@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <csignal>
+#include <fstream>
 
 #include <lib/esim/Engine.h>
 
@@ -633,7 +634,19 @@ Node *Network::getNodeByUserData(void *user_data) const
 	return nullptr;
 }
 
+void Network::DumpReport(const std::string &path)
+{
+	// Open file
+	std::string net_path = name + "_" + path;
+	std::ofstream f(net_path);
+	if (!f)
+		throw Error(misc::fmt("%s: cannot open file for write",
+				path.c_str()));
 
+	// Dump into file
+	Dump(f);
+
+}
 void Network::Dump(std::ostream &os) const
 {
 	// Dump network information
@@ -644,6 +657,13 @@ void Network::Dump(std::ostream &os) const
 	os << misc::fmt("TranssferredBytes = %lld\n", accumulated_bytes);
 	os << misc::fmt("AverageLatency = %.4f\n", transfers ?
 			(double) accumulated_latency / transfers : 0.0);
+
+	// Cycle related information
+	System *system = System::getInstance();
+	long long cycle = system->getCycle();
+	os << misc::fmt("Cycles = %llu\n", cycle);
+
+	os << "\n";
 
 	// Print links
 	for (auto &link : connections)
@@ -915,6 +935,89 @@ Link *Network::addLink(
 
 	// Return
 	return link;
+}
+
+
+void Network::TraceHeader()
+{
+	// Get instance of the system
+	System *net_system = System::getInstance();
+
+	// Dump general network information in trace file
+	net_system->trace.Header(misc::fmt("net.create name=\"%s\" "
+			"num_nodes=\"%d\" packet_size=\"%d\"\n",
+			 name.c_str(), nodes.size(), packet_size));
+
+	// Dump information about nodes in trace file
+	for (auto &node : nodes)
+	{
+		if (dynamic_cast<EndNode *>(node.get()))
+			net_system->trace.Header(misc::fmt("net.node net_name=\"%s\" "
+					"node_index=\"%d\" node_name=\"%s\" node_type=1\n",
+					name.c_str(),
+					node->getIndex(),
+					node->getName().c_str()));
+		else if (dynamic_cast<Switch *>(node.get()))
+			net_system->trace.Header(misc::fmt("net.node net_name=\"%s\" "
+					"node_index=\"%d\" node_name=\"%s\" node_type=2\n",
+					name.c_str(),
+					node->getIndex(),
+					node->getName().c_str()));
+		else
+			throw misc::Panic("Unknown node type in trace header\n");
+	}
+
+	// Dump information about links in trace file
+	for (auto &connection : connections)
+	{
+		Link *link = dynamic_cast<Link *>(connection.get());
+		if (link)
+			net_system->trace.Header(misc::fmt("net.link net_name=\"%s\" "
+					"link_name=\"%s\" src_node=\"%s\" "
+					"dst_node=\"%s\" vc_num=%d bw=%d\n",
+					name.c_str(), link->getName().c_str(),
+					link->getSourceNode()->getName().c_str(),
+					link->getDestinationNode()->getName().c_str(),
+					link->getNumVirtualChannels(),
+					link->getBandwidth()));
+		else
+			throw misc::Panic("Buses are not supported in the current "
+					"version of visualization tool\n");
+	}
+
+	// Dump information about buffers in the trace file's header
+	for (auto &node : nodes)
+	{
+		// Update the trace header with information on node's input buffers
+		Buffer *buffer = nullptr;
+		for (int i = 0; i < node->getNumInputBuffers(); i++)
+		{
+			buffer = node->getInputBuffer(i);
+			net_system->trace.Header(misc::fmt("net.input_buffer "
+					"net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+					"buffer_size=%d buffer_type=1 connection=\"%s\"\n",
+					name.c_str(),
+					node->getName().c_str(),
+					buffer->getName().c_str(),
+					buffer->getSize(),
+					buffer->getConnection()->getName().c_str()));
+		}
+
+		// Update the trace header with information on node's output buffers
+		for (int i = 0; i < node->getNumOutputBuffers(); i++)
+		{
+			buffer = node->getOutputBuffer(i);
+			net_system->trace.Header(misc::fmt("net.output_buffer "
+					"net_name=\"%s\" node_name=\"%s\" buffer_name=\"%s\" "
+					"buffer_size=%d buffer_type=1 connection=\"%s\"\n",
+					name.c_str(),
+					node->getName().c_str(),
+					buffer->getName().c_str(),
+					buffer->getSize(),
+					buffer->getConnection()->getName().c_str()));
+		}
+
+	}
 }
 
 }

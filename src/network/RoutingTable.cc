@@ -63,7 +63,7 @@ void RoutingTable::Initialize()
 	for (int i = 0; i < dimension; i++)
 	{
 		Node *node = network->getNode(i);
-		for (int j = 0; j < node->getNumOutputBuffer(); j++)
+		for (int j = 0; j < node->getNumOutputBuffers(); j++)
 		{
 			Buffer *source_buffer = node->getOutputBuffer(j);
 			Connection* connection = source_buffer->getConnection();
@@ -146,7 +146,7 @@ void RoutingTable::FloydWarshall()
 			}
 
 			// Get the output buffer based on the next node
-			for (int k = 0; k < node_i->getNumOutputBuffer(); k++)
+			for (int k = 0; k < node_i->getNumOutputBuffers(); k++)
 			{
 				Buffer *buffer = node_i->getOutputBuffer(k);
 				bool found = false;
@@ -255,7 +255,7 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 
 	// Setting the next buffer
 	Buffer *buffer = nullptr;
-	for (int i = 0; i < source->getNumOutputBuffer(); i++)
+	for (int i = 0; i < source->getNumOutputBuffers(); i++)
 	{
 		// Exit the loop if route has already been updated
 		if (route_updated == true)

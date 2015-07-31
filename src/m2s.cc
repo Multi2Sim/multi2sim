@@ -456,6 +456,10 @@ void MainLoop()
 	esim->DisableSignals();
 }
 
+void Done()
+{
+	net::System::Done();
+}
 
 int MainProgram(int argc, char **argv)
 {
@@ -535,6 +539,9 @@ int MainProgram(int argc, char **argv)
 		
 	// Main simulation loop
 	MainLoop();
+
+	// Generating the output files
+	Done();
 
 	// Success
 	return 0;
