@@ -739,7 +739,7 @@ void StringFormatter::NewLine()
 
 void StringFormatter::NewParagraph()
 {
-	stream << '\n';
+	stream << "\n\n";
 	first_word_in_line = true;
 	first_word_in_paragraph = true;
 	current_line_width = 0;

@@ -38,6 +38,7 @@ void Thread::Decode()
 			break;
 
 		// Get uop at the head of the fetch queue
+		assert(!fetch_queue.empty());
 		std::shared_ptr<Uop> uop = fetch_queue.front();
 
 		// If instructions come from the trace cache, i.e., are located
@@ -84,10 +85,15 @@ void Thread::Decode()
 						uop->getIdInCore(),
 						core->getId());
 
+				// Done if no more instructions in fetch queue
+				if (fetch_queue.empty())
+					break;
+
 				// Next instruction in fetch queue
+				assert(fetch_queue.size());
 				uop = fetch_queue.front();
 
-			} while (uop != nullptr && uop->mop_index);
+			} while (uop->mop_index);
 		}
 	}
 }

@@ -944,9 +944,13 @@ void Network::TraceHeader()
 	System *net_system = System::getInstance();
 
 	// Dump general network information in trace file
-	net_system->trace.Header(misc::fmt("net.create name=\"%s\" "
-			"num_nodes=\"%d\" packet_size=\"%d\"\n",
-			 name.c_str(), nodes.size(), packet_size));
+	net_system->trace.Header(misc::fmt("net.create "
+			"name=\"%s\" "
+			"num_nodes=\"%d\" "
+			"packet_size=\"%d\"\n",
+			 name.c_str(),
+			 (int) nodes.size(),
+			 packet_size));
 
 	// Dump information about nodes in trace file
 	for (auto &node : nodes)
