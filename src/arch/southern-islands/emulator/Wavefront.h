@@ -93,7 +93,6 @@ class Wavefront
 	WavefrontPoolEntry *wavefront_pool_entry = nullptr;
 
 	// Fields introduced for timing simulation
-	int id_in_compute_unit = 0;
 	bool barrier_instruction = false;
 
 
@@ -162,6 +161,10 @@ public:
 	// simulator.
 	long long uop_id_counter = 0;
 
+	// Field introduced for the timing simulator.  Contains the Wavefront
+	// ID in the associated compute unit
+	int id_in_compute_unit = 0;
+
 
 
 
@@ -193,7 +196,7 @@ public:
 	// instruction
 	bool lds_write = false;
 	
-	// Indicates if the instruction being performed is a waitcnt instruction
+	// Indicates if the instruction being performed is a wait instruction
 	bool memory_wait = false;
 	
 	// Indicates if the instruction being performed is a barrier instruction
@@ -233,9 +236,6 @@ public:
 	{
 		return wavefront_pool_entry;
 	}
-
-	/// Return the ID in the associated compute unit
-	int getIdInComputeUnit() const { return id_in_compute_unit; }
 
 	/// Return pointer to the workgroup this wavefront belongs to
 	WorkGroup *getWorkGroup() const { return work_group; }
@@ -291,9 +291,6 @@ public:
 
 	/// Increase PC
 	void incPC(int increment) { pc += increment; }
-
-	/// Set the ID in the associated compute unit
-	void setIdInComputeUnit(int id) { id_in_compute_unit = id; }
 
 	/// Flag set during instruction emulation indicating that there was a
 	/// barrier instruction
