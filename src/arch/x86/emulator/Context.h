@@ -975,7 +975,7 @@ public:
 	int sched_policy = SCHED_RR;
 
 	// Scheduling priority, for sched_XXX system calls
-	int sched_priority = 0;
+	int sched_priority = 1;
 
 	// Cycle when the context was allocated to a hardware thread
 	long long allocate_cycle = 0;
