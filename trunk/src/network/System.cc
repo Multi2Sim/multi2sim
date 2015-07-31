@@ -33,6 +33,8 @@ std::string System::config_file;
 
 std::string System::debug_file;
 
+std::string System::report_file;
+
 misc::Debug System::debug;
 
 esim::Trace System::trace;
@@ -50,6 +52,10 @@ bool System::stand_alone = false;
 bool System::help = false;
 
 int System::frequency = 1000;
+
+const int trace_version_major = 1;
+
+const int trace_version_minor = 10;
 
 std::unique_ptr<System> System::instance;
 
@@ -154,7 +160,15 @@ void System::RegisterOptions()
 			help,
 			"Print help message describing the network configuration"
 			" file, passed in option '--net-config <file>'.");
+
+	// Report file
+	command_line->RegisterString("--net-report <file>", report_file,
+			"File to dump detailed statistics for each network defined "
+			"in the network configuration file (option '--net-config'). "
+			"The report includes statistics on bandwidth utilization, "
+			"network traffic, etc.)");
 }
+
 
 
 void System::ProcessOptions()
@@ -184,6 +198,10 @@ void System::ProcessOptions()
 		net_system->ParseConfiguration(&ini_file);
 	}
 
+	// Trace header
+	if (net_system->trace)
+		net_system->TraceHeader();
+
 	// Stand-Alone requires config file
 	if (net_system->stand_alone)
 	{
@@ -192,12 +210,21 @@ void System::ProcessOptions()
 			throw Error(misc::fmt("Option --net-sim requires "
 					" --net-config option "));
 
-		System *system = getInstance();
 		UniformTrafficSimulation(
-				system->getNetworkByName(sim_net_name));
+				net_system->getNetworkByName(sim_net_name));
 	}
 }
 
+void System::TraceHeader()
+{
+	// Trace versions
+	trace.Header(misc::fmt("net.init version=\"%d.%d\"\n",
+				trace_version_major, trace_version_minor));
+
+	// Trace header for each network
+	for (auto &network : networks)
+		network->TraceHeader();
+}
 
 void System::UniformTrafficSimulation(Network *network)
 {
@@ -271,6 +298,19 @@ void System::UniformTrafficSimulation(Network *network)
 
 		// Next cycle
 		esim_engine->ProcessEvents();
+	}
+}
+
+void System::Done()
+{
+	// Get the system
+	System *net_system = System::getInstance();
+
+	// Dump report files
+	if (!report_file.empty())
+	{
+		for (auto &network : net_system->networks)
+			network->DumpReport(report_file);
 	}
 }
 

@@ -123,7 +123,7 @@ public:
 	void setUserData(void *user_data) { this->user_data = user_data; }
 
 	/// Return the number of output buffers
-	int getNumOutputBuffer() { return output_buffers.size(); }
+	int getNumOutputBuffers() { return output_buffers.size(); }
 
 	/// Rreturn output buffer by index
 	Buffer *getOutputBuffer(int index) 
@@ -132,7 +132,7 @@ public:
 	}
 
 	/// Return the number of input buffers
-	int getNumInputBuffer() { return input_buffers.size(); }
+	int getNumInputBuffers() { return input_buffers.size(); }
 
 	/// Return input buffer by index
 	Buffer *getInputBuffer(int index) 
@@ -162,6 +162,9 @@ public:
 
 	/// Increase the number of packets received
 	void incReceivedPackets() { received_packets++; }
+
+	/// Update trace header with node detailed information
+	void TraceHeader();
 };
 
 

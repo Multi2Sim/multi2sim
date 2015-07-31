@@ -1546,8 +1546,8 @@ TEST(TestSystemConfiguration, section_bus_config)
 	EXPECT_TRUE(N1 != nullptr);
 	EXPECT_TRUE(N2 != nullptr);
 	EXPECT_TRUE(B0 != nullptr);
-	EXPECT_EQ(N1->getNumOutputBuffer(), 1);
-	EXPECT_EQ(N1->getNumInputBuffer(), 1);
+	EXPECT_EQ(N1->getNumOutputBuffers(), 1);
+	EXPECT_EQ(N1->getNumInputBuffers(), 1);
 	EXPECT_EQ(B0->getNumSourceBuffers(), 1);
 	EXPECT_EQ(B0->getNumDestinationBuffers(), 1);
 

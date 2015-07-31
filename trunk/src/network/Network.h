@@ -139,6 +139,9 @@ public:
 		return os;
 	}
 
+	/// Update the trace header with network information
+	void TraceHeader();
+
 	/// Get the name of the network.
 	const std::string &getName() const { return name; }
 
@@ -370,6 +373,8 @@ public:
 	/// Return the number of nodes
 	virtual int getNumberConnections() const { return connections.size(); }
 
+	/// Generating the report dump
+	void DumpReport(const std::string &path);
 	
 };
 
