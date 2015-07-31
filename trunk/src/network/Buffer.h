@@ -126,6 +126,9 @@ public:
 	/// Get the scheduled buffer
 	Buffer *getScheduledBuffer() const { return scheduled_buffer; }
 
+	/// Get the buffer's occupancy
+	int getOccupancyByte() const { return occupancy_byte_value; }
+
 	/// Set the scheduled buffer
 	void setScheduledBuffer(Buffer *scheduled_buffer)
 	{
