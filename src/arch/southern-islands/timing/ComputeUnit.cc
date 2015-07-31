@@ -352,9 +352,8 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	// Find an available slot
 	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()
 			&& work_group->id_in_compute_unit < (int) work_groups.size())
-	{
-		work_group->id_in_compute_unit++;
-	}
+				work_group->id_in_compute_unit++;
+
 
 	// Checks
 	assert(work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit());
@@ -375,8 +374,8 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 		Wavefront *wavefront = it->get();
 
 		// Set wavefront Id
-		wavefront->setIdInComputeUnit(work_group->id_in_compute_unit *
-				work_group->getWavefrontsInWorkgroup() + wavefront_id);
+		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
+				work_group->getWavefrontsInWorkgroup() + wavefront_id;
 
 		// Update internal counter
 		wavefront_id++;
@@ -385,10 +384,10 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	// Set wavefront pool for work group
 	int wavefront_pool_id = work_group->id_in_compute_unit %
 			num_wavefront_pools;
-	work_group->setWavefrontPool(wavefront_pools[wavefront_pool_id].get());
+	work_group->wavefront_pool = wavefront_pools[wavefront_pool_id].get();
 
 	// Insert wavefronts into an instruction buffer
-	work_group->getWavefrontPool()->MapWavefronts(work_group);
+	work_group->wavefront_pool->MapWavefronts(work_group);
 
 	Timing::trace << misc::fmt("si.map_wg "
 				   "cu=%d "
@@ -402,11 +401,6 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 				   work_group->getNumWorkItems(),
 				   work_group->getWavefront(0)->getId(),
 				   work_group->getNumWavefronts());
-
-	/* Stats */
-	//self->mapped_work_groups++;
-	//if (si_spatial_report_active)
-	//	SIComputeUnitReportMapWorkGroup(self);
 }
 
 void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
@@ -446,7 +440,7 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	RemoveWorkGroup(work_group);
 
 	// Unmap wavefronts from instruction buffer
-	work_group->getWavefrontPool()->UnmapWavefronts(work_group);
+	work_group->wavefront_pool->UnmapWavefronts(work_group);
 	
 	// If compute unit is not already in the available list, place
 	//  it there
