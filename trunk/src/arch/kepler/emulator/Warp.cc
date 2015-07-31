@@ -79,6 +79,9 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 
 	this->getSyncStack()->get()->setActiveMask(am);
 
+	// Function name
+	kernel_function_name = grid->getKernelFunctionName();
+
 	// Instruction
 	pc = 0;
 	target_pc = 0;

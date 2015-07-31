@@ -78,6 +78,9 @@ class Warp
 	// Program counter
 	unsigned pc;
 
+	// Kernel Function Name
+	std::string kernel_function_name;
+
 	// Instruction size by byte
 	int inst_size;
 
