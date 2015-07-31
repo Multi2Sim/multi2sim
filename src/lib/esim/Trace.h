@@ -133,7 +133,7 @@ public:
 	/// to dump trace information. By checking whether the trace is
 	/// active or not in beforehand, multiple dump \c << calls can be
 	/// saved.
-	operator bool() { return active && trace_system->isActive(); }
+	operator bool() const { return active && trace_system->isActive(); }
 };
 
 

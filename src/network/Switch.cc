@@ -47,11 +47,11 @@ void Switch::Dump(std::ostream &os) const
 
 	// Dumping input buffers' information
 	for (auto &buffer : input_buffers)
-		buffer->Dump();
+		buffer->Dump(os);
 
 	// Dumping output buffers' information
 	for (auto &buffer : output_buffers)
-		buffer->Dump();
+		buffer->Dump(os);
 
 	// Creating an empty line in the dump
 	os << "\n";

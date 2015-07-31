@@ -61,6 +61,9 @@ class System
 	// Configuration file
 	static std::string config_file;
 
+	// Configuration file
+	static std::string report_file;
+
 	// Show help for network configuration file
 	static bool help;
 
@@ -185,6 +188,8 @@ public:
 	/// Parse a configuration INI file
 	void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Update trace file header
+	void TraceHeader();
 
 
 
@@ -197,6 +202,9 @@ public:
 
 	/// Process command-line options
 	static void ProcessOptions();
+
+	/// Finalizing output files
+	static void Done();
 
 	/// Returns whether we are running as a stand alone simulator.
 	static bool isStandAlone() { return stand_alone; }

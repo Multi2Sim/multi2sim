@@ -115,6 +115,9 @@ public:
 	/// Get destination node
 	Node *getDestinationNode() const { return destination_node; }
 
+	/// Get bandwidth
+	int getBandwidth() const { return bandwidth; }
+
 	/// Operator \c << invoking function Dump() on an output stream.
 	friend std::ostream &operator<<(std::ostream &os,
 			const Link &link)
