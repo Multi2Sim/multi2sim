@@ -350,6 +350,10 @@ void Engine::Schedule(Event *event,
 	frame->event = event;
 	frame->period = period;
 
+	// Assign a schedule sequence number of the frame, use to disambiguate
+	// the order of those events scheduled for the same cycle
+	frame->schedule_sequence = ++schedule_sequence_counter;
+
 	// Insert frame into the heap
 	heap.emplace(frame);
 	frame->in_heap = true;
