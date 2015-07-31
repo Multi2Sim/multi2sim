@@ -70,9 +70,6 @@ class WorkGroup
 	// Number of wavefronts that have completed timing simulation
 	unsigned wavefronts_completed_timing = 0;
 
-	// Wavefront pool that the work group is associated with
-	WavefrontPool *wavefront_pool = nullptr;
-
 	// Flag indicating whether the work-group has finished
 	bool finished = false;
 
@@ -131,6 +128,9 @@ public:
 	/// Identifier in compute unit
 	int id_in_compute_unit;
 
+	/// Wavefront pool that the work group is associated with.
+	WavefrontPool *wavefront_pool = nullptr;
+
 	/// Position of this work-group in the ND-Range's list of work-groups.
 	/// This field is managed internally by the ND-Range.
 	std::list<std::unique_ptr<WorkGroup>>::iterator work_groups_iterator;
@@ -174,9 +174,6 @@ public:
 	/// Get counter of finished wavefront, timing mode
 	unsigned getWavefrontsCompletedTiming() const { return wavefronts_completed_timing; }	
 
-	// Wavefront pool that the work group is associated with
-	WavefrontPool *getWavefrontPool() const { return wavefront_pool; }
-	
 	/// Return value of sreg_read_count
 	long long getSregReadCount() const{ return sreg_read_count; }
 
@@ -244,12 +241,6 @@ public:
 	void setWavefrontsAtBarrier(unsigned counter)
 	{
 		wavefronts_at_barrier = counter;
-	}
-
-	/// Set the pointer to the associated wavefront pool
-	void setWavefrontPool(WavefrontPool *wavefront_pool)
-	{
-		this->wavefront_pool = wavefront_pool;
 	}
 
 	/// Attach additional data to the work-group, passing an object derived

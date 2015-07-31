@@ -199,6 +199,10 @@ public:
 	/// Process command-line options
 	static void ProcessOptions();
 
+	/// Return the number of max instructions.  Used in the Timing
+	/// Simulator to determine if the max has been reached.
+	static long long getMaxInstructions () { return max_instructions; }
+
 
 
 
@@ -317,8 +321,6 @@ public:
 
 	/// Increase video memory top
 	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }
-
-	static long long getMaxInstructions () { return max_instructions; }
 
 	};
 
