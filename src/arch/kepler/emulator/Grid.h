@@ -55,7 +55,7 @@ class Grid
 	int id;
 
 	// Name
-	std::string name;
+	std::string kernel_function_name;
 
 	// State
 	GridState state;
@@ -128,6 +128,12 @@ public:
 		return thread_block_size3[index];
 	}
 
+	/// Get kernel function name
+	std::string getKernelFunctionName() const
+	{
+		return kernel_function_name;
+	}
+
 	/// Get 3D thread block count
 	/// \param index range from 0 to 2
 	unsigned getThreadBlockCount3(int index) const
@@ -180,7 +186,7 @@ public:
 
 	/// pop an element from pending thread block list,
 	/// and create a new thread block pushing into running thread block list
-	void WaitingToRunning(int thread_block_id);
+	void WaitingToRunning(int thread_block_id, unsigned *id_3d);
 
 	/// push a thread block into finished thread block list
 	void PushFinishedThreadBlock(std::unique_ptr<ThreadBlock> threadblock);

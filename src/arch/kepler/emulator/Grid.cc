@@ -36,6 +36,7 @@ Grid::Grid(Function *function)
 	temp_buffer = function->getTextBuffer();
 	inst_buffer_size = function->getTextSize();
 	inst_buffer.resize(inst_buffer_size);
+	kernel_function_name = function->getName();
 
 	// Instruction byte
 	unsigned long long inst_byte;
@@ -110,10 +111,11 @@ void Grid::GridSetupConstantMemory()
 					(const char *) &v);
 }
 
-void Grid::WaitingToRunning(int thread_block_id)
+void Grid::WaitingToRunning(int thread_block_id, unsigned *id_3d)
 {
 	running_thread_blocks.push_back
-		(std::unique_ptr<ThreadBlock>(new ThreadBlock(this, thread_block_id)));
+		(std::unique_ptr<ThreadBlock>(new ThreadBlock(this, thread_block_id,
+					id_3d)));
 	pending_thread_blocks.pop_front();
 }
 
