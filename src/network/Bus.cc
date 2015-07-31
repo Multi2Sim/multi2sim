@@ -212,6 +212,22 @@ void Bus::TransferPacket(Packet *packet)
 	packet->setBuffer(destination_buffer);
 	packet->setBusy(cycle + latency - 1);
 
+	// Buffer's trace information
+    System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
+    		"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+    		network->getName().c_str(),
+            source_buffer->getNode()->getName().c_str(),
+            source_buffer->getName().c_str(),
+            message->getId(), packet->getId(),
+            source_buffer->getOccupancyByte());
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			destination_buffer->getNode()->getName().c_str(),
+			destination_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			destination_buffer->getOccupancyByte());
+
 	// Update the statistics
 	lane->incBusyCycles(latency);
 	lane->incTransferredBytes(packet_size);

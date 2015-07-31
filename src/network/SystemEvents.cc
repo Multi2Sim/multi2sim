@@ -92,6 +92,15 @@ void System::EventTypeSendHandler(esim::Event *event,
 	packet->setBuffer(output_buffer);
 	packet->setBusy(cycle);
 
+	// Update trace with buffer information
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			output_buffer->getNode()->getName().c_str(),
+			output_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			output_buffer->getOccupancyByte());
+
 	// Schedule next event
 	esim_engine->Next(event_output_buffer, 1);
 }
@@ -200,10 +209,22 @@ void System::EventTypeReceiveHandler(esim::Event *event,
 	// Check if the packet can be assembled 
 	if (message->Assemble(packet))
 	{
-		if (network_frame->automatic_receive)
-			network->Receive(node, message);
-		else 
-			esim_engine->Return();
+		{
+			// Produce the depacketize in the trace, if message
+			// was packetized
+			if (message->getNumPackets() > 1)
+				System::trace << misc::fmt("net.msg net=\"%s\" "
+						"name=\"M-%lld\" state=\"%s:depacketize\"\n",
+						network->getName().c_str(),
+						message->getId(),
+						node->getName().c_str());
+
+			// Receive the message just when there is no return event
+			if (network_frame->automatic_receive)
+				network->Receive(node, message);
+			else
+				esim_engine->Return();
+		}
 	}
 }
 

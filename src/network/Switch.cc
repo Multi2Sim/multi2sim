@@ -115,6 +115,19 @@ void Switch::Forward(Packet *packet)
 				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
+
+		System::trace << misc::fmt("net.packet "
+				"net=\"%s\" "
+				"name=\"P-%lld:%d\" "
+				"state=\"%s:%s:Dest_buffer_busy\" "
+				"stg=\"DBB\"\n",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getId(),
+				node->getName().c_str(),
+				input_buffer->getName().c_str());
+
+
 		esim_engine->Next(current_event, 
 				output_buffer->write_busy - cycle + 1);
 		return;
@@ -138,6 +151,18 @@ void Switch::Forward(Packet *packet)
 				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
+
+		System::trace << misc::fmt("net.packet "
+				"net=\"%s\" "
+				"name=\"P-%lld:%d\" "
+				"state=\"%s:%s:Dest_buffer_full\" "
+				"stg=\"DBF\"\n",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getId(),
+				node->getName().c_str(),
+				input_buffer->getName().c_str());
+
 		output_buffer->Wait(current_event);
 		return;
 	}
@@ -167,6 +192,22 @@ void Switch::Forward(Packet *packet)
 	output_buffer->InsertPacket(packet);
 	packet->setBuffer(output_buffer);
 	packet->setBusy(cycle + latency - 1);
+
+	// Buffer's trace information
+	System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			input_buffer->getNode()->getName().c_str(),
+			input_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			input_buffer->getOccupancyByte());
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			output_buffer->getNode()->getName().c_str(),
+			output_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			output_buffer->getOccupancyByte());
 
 	// Schedule next event
 	esim_engine->Next(System::event_output_buffer, latency);
