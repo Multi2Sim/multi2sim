@@ -117,6 +117,7 @@ bool Emulator::Run()
 	Grid *grid;
 	std::unique_ptr<ThreadBlock> thread_block;
 	int thread_block_id;
+	unsigned thread_block_3d_id[3];
 	while (pending_grids.size())
 	{
 		grid = pending_grids.front();
@@ -124,7 +125,13 @@ bool Emulator::Run()
 		thread_block_id = 0;
 		while (grid->getPendThreadBlocksize())
 		{
-			grid->WaitingToRunning(thread_block_id);
+			thread_block_3d_id[2] = thread_block_id %
+						grid->getThreadBlockCount3(2);
+			thread_block_3d_id[1] = thread_block_id  /
+				grid->getThreadBlockCount3(2);
+			thread_block_3d_id[0] = thread_block_id / (
+				grid->getThreadBlockCount3(1) * grid->getThreadBlockCount3(2));
+			grid->WaitingToRunning(thread_block_id, thread_block_3d_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
 			while (thread_block.get()->getNumWarpsCompletedEmu()

@@ -32,7 +32,7 @@
 namespace Kepler
 {
 
-ThreadBlock::ThreadBlock(Grid *grid, int id)
+ThreadBlock::ThreadBlock(Grid *grid, int id, unsigned *id_3d)
 {
 
 	//Warp *warp;
@@ -44,6 +44,8 @@ ThreadBlock::ThreadBlock(Grid *grid, int id)
 	// Initialization
 	this->id = id;
 	this->grid = grid;
+	for(int i = 0; i < 3; i++)
+		this->id_3d[i] = id_3d[i];
 
 	// Create warps
 	warp_count = (grid->getThreadBlockSize() + warp_size - 1) /

@@ -105,8 +105,9 @@ public:
 	/// Constructor
 	///
 	/// \param grid Instance of class Grid that it belongs to.
+	///
 	/// \param id Thread-block global 1D ID
-	ThreadBlock(Grid *grid, int id);
+	ThreadBlock(Grid *grid, int id, unsigned *id_3d);
 
 	/// Dump thread-block in human readable format into output stream
 	void Dump(std::ostream &os = std::cout) const;
