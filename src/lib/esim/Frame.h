@@ -48,6 +48,13 @@ class Frame
 	// Time in picoseconds for when the event is scheduled in the event heap
 	long long time = 0;
 
+	// Every time an event is scheduled, it is assigned a new schdule
+	// sequence number. This is used in order to guarantee the strict
+	// ordering requirements for frames inserted in the priority queue,
+	// where, among events scheduled for the same time, those scheduled
+	// first (with lower schedule sequence numbers) will have priority.
+	long long schedule_sequence = 0;
+
 	// Number of cycles after which the event will repeat, in the frequency
 	// domain associated with the event (0 = no repeat)
 	int period = 0;
@@ -82,7 +89,10 @@ public:
 		bool operator()(const std::shared_ptr<Frame> &lhs,
 				const std::shared_ptr<Frame> &rhs) const
 		{
-			return lhs->time > rhs->time;
+			return lhs->time > rhs->time ||
+					(lhs->time == rhs->time &&
+					lhs->schedule_sequence >
+					rhs->schedule_sequence);
 		}
 	};
 
