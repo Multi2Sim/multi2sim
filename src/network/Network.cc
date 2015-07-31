@@ -145,40 +145,29 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		// Create node
 		if (!strcasecmp(type.c_str(), "EndNode"))
 		{
-			int end_node_input_buffer_size = input_buffer_size;
-			int end_node_output_buffer_size = output_buffer_size;
+			int required_buffer_size = 0;
 
 			// End-node should be able to contain an entire msg
 			// or equivalent number of packets for that message.
-			if (input_buffer_size <= System::getMessageSize())
-			{
-				// FIXME
-				// Should we throw an error here and let the user take
-				// care of this and re-run simulation again?
-				// or should we throw a warning saying multi2sim
-				// resized buffer?
-				if (packet_size != 0)
-					end_node_input_buffer_size =
-							((System::getMessageSize() - 1) / packet_size + 1)
-							* packet_size;
-				else
-					end_node_input_buffer_size =
-							System::getMessageSize();
-			}
 
-			if (output_buffer_size <= System::getMessageSize())
-			{
-				if (packet_size != 0)
-					end_node_output_buffer_size =
-							((System::getMessageSize() - 1) / packet_size + 1)
-							* packet_size;
-				else
-					end_node_output_buffer_size =
-							System::getMessageSize();
-			}
+			// If the end-node's buffer size is less than
+			if (packet_size != 0)
+				required_buffer_size =
+						((System::getMessageSize() - 1) / packet_size + 1)
+						* packet_size;
+			else
+				required_buffer_size =
+						System::getMessageSize();
 
-			addEndNode(end_node_input_buffer_size,
-					end_node_output_buffer_size,
+			if (input_buffer_size <= required_buffer_size ||
+					output_buffer_size <= required_buffer_size)
+				throw Error(misc::fmt("%s: Buffer size on the end node"
+						"should be able to fit at least a whole message, "
+						"or all the packets of the message",
+						config->getPath().c_str()));
+
+			addEndNode(input_buffer_size,
+					output_buffer_size,
 					node_name, NULL);
 		}
 		else if (!strcasecmp(type.c_str(), "Switch"))
@@ -856,8 +845,9 @@ void Network::Receive(EndNode *node, Message *message)
 	}
 
 	// Dump debug information
-	System::debug << misc::fmt("[Network %s] message %lld received at [node %s]"
-			"\n", name.c_str(), message->getId(), node->getName().c_str());
+	System::debug << misc::fmt("[Network %s] message %lld received at "
+			"[node %s] \n", name.c_str(), message->getId(),
+			node->getName().c_str());
 
 	// Destroy the message
 	message_table.erase(message->getId());

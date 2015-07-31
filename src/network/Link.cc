@@ -145,6 +145,16 @@ void Link::TransferPacket(Packet *packet)
 				node->getName().c_str(),
 				source_buffer->getName().c_str(),
 				getName().c_str());
+
+		System::trace << misc::fmt("net.packet "
+				"net=\"%s\" name=\"P-%lld:%d\" "
+				"state=\"%s:%s:link_busy\" "
+                "stg=\"LB\"\n",
+                network->getName().c_str(), message->getId(),
+                packet->getId(),
+                node->getName().c_str(),
+                source_buffer->getName().c_str());
+
 		esim_engine->Next(current_event, busy - cycle + 1);
 		return;
 	}
@@ -162,6 +172,17 @@ void Link::TransferPacket(Packet *packet)
 						node->getName().c_str(),
 						source_buffer->getName().c_str(),
 						name.c_str());
+
+		System::trace << misc::fmt("net.packet "
+                "net=\"%s\" "
+                "name=\"P-%lld:%d\" "
+                "state=\"%s:%s:VC_arbitration_fail\" "
+                "stg=\"VCA\"\n",
+                network->getName().c_str(), message->getId(),
+                packet->getId(),
+                node->getName().c_str(),
+                source_buffer->getName().c_str());
+
 				esim_engine->Next(current_event, 1);
 				return;
 	}
@@ -186,6 +207,17 @@ void Link::TransferPacket(Packet *packet)
 				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
+
+		System::trace << misc::fmt("net.packet "
+                "net=\"%s\" "
+                "name=\"P-%lld:%d\" "
+                "state=\"%s:%s:Dest_buffer_busy\" "
+                "stg=\"DBB\"\n",
+                network->getName().c_str(), message->getId(),
+                packet->getId(),
+                node->getName().c_str(),
+                source_buffer->getName().c_str());
+
 		esim_engine->Next(current_event, write_busy - cycle + 1);
 		return;
 	}
@@ -203,6 +235,17 @@ void Link::TransferPacket(Packet *packet)
 				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
+
+		System::trace << misc::fmt("net.packet "
+                "net=\"%s\" "
+                "name=\"P-%lld:%d\" "
+                "state=\"%s:%s:Dest_buffer_full\" "
+                "stg=\"DBF\"\n",
+                network->getName().c_str(), message->getId(),
+                packet->getId(),
+                node->getName().c_str(),
+                source_buffer->getName().c_str());
+
 		destination_buffer->Wait(current_event);
 		return;
 	}
@@ -220,6 +263,22 @@ void Link::TransferPacket(Packet *packet)
 	packet->setBuffer(destination_buffer);
 	packet->setBusy(cycle + latency - 1);
 
+	// Buffer's trace information
+	System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			source_buffer->getNode()->getName().c_str(),
+			source_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			source_buffer->getOccupancyByte());
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
+			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+			network->getName().c_str(),
+			destination_buffer->getNode()->getName().c_str(),
+			destination_buffer->getName().c_str(),
+			message->getId(), packet->getId(),
+			destination_buffer->getOccupancyByte());
+
 	// Statistics
 	busy_cycles += latency;
 	transferred_bytes += packet_size;
@@ -228,6 +287,12 @@ void Link::TransferPacket(Packet *packet)
 	source_node->incSentPackets();
 	destination_node->incReceivedBytes(packet_size);
 	destination_node->incReceivedPackets();
+
+	System::trace << misc::fmt("net.link_transfer net=\"%s\" link=\"%s\" "
+            "transB=%lld last_size=%d busy=%lld\n",
+            network->getName().c_str(), name.c_str(),
+            transferred_bytes,
+            packet->getSize(), busy);
 
 	// Schedule input buffer event	
 	esim_engine->Next(System::event_input_buffer, latency);
