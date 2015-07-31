@@ -114,6 +114,10 @@ class Engine
 	// Otherwise, it is null.
 	std::shared_ptr<Frame> current_frame;
 
+	// Counter used to assign values to the 'schedule_sequence' field
+	// of Frame instances
+	long long schedule_sequence_counter = 0;
+
 	// Number of in-flight events before a warning is shown (10k events)
 	const int max_inflight_events = 10000;
 
