@@ -89,6 +89,23 @@ public:
 	
 	/// Dump configuration
 	void DumpConfiguration(std::ostream &os = std::cout);
+
+
+
+
+	//
+	// Getters
+	//
+
+	// Get the number of instance based on given type count
+	static int getAluCount(int type_count) { return configuration[type_count][0]; }
+
+	// Get the operation latency based on given type count
+	static int getAluOperationLatency(int type_count) { return configuration[type_count][1]; }
+
+	// Get the issue latency based on given type count
+	static int getAluIssueLatency(int type_count) { return configuration[type_count][2]; }
+
 };
 
 }
