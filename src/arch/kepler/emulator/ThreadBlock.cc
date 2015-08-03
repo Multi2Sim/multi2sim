@@ -75,14 +75,14 @@ ThreadBlock::ThreadBlock(Grid *grid, int id, unsigned *id_3d)
 	shared_memory = misc::new_unique<mem::Memory>();
 	shared_memory->setSafe(false);
 	shared_memory_size = 16 * (1 << 20); // current 1MB for local memory
-	shared_memory_top_addr = 0;
-	shared_memory_top_generic_addr = shared_memory_top_addr + id *
+	shared_memory_top_address = 0;
+	shared_memory_top_generic_address = shared_memory_top_address + id *
 				shared_memory_size + emulator->getGlobalMemTotalSize();
 
 	// Shared memory top generic address is recorded in constant memory
 	// c[0x0][0x20]
 	emulator->WriteConstantMemory(0x20, sizeof(unsigned),
-			(char *) &shared_memory_top_generic_addr);
+			(char *) &shared_memory_top_generic_address);
 
 	/* Flags */
 	finished_emu = false;
@@ -105,18 +105,6 @@ void ThreadBlock::Dump(std::ostream &os) const
 	os<<"ID:	"<<id<<std::endl;
 	//os<<"the first of grid inst buffer" <<*grid->getInstBuffer()<<std::endl;
 	os<<"the buffer size of grid is"<<grid->getInstBufferSize()<<std::endl;
-}
-
-
-void ThreadBlock::ReadFromSharedMemory(unsigned address, unsigned length, char* buffer)
-{
-	shared_memory->Read(address, length, buffer);
-}
-
-
-void ThreadBlock::WriteToSharedMemory(unsigned address, unsigned length, char* buffer)
-{
-	shared_memory->Write(address, length, buffer);
 }
 
 

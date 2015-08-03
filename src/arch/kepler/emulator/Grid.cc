@@ -100,13 +100,11 @@ void Grid::SetupSize(unsigned *thread_block_count,
 
 void Grid::GridSetupConstantMemory()
 {
-	unsigned v;
-
 	emulator->WriteConstantMemory(0x28, 3*sizeof(unsigned),
 					(const char *) thread_block_size3);
 	emulator->WriteConstantMemory(0x34, 3*sizeof(unsigned),
 					(const char *) thread_block_count3);
-	v = 0x1000000;
+	unsigned v = 0x1000000;
 	emulator->WriteConstantMemory(0x100000, sizeof(unsigned),
 					(const char *) &v);
 }
