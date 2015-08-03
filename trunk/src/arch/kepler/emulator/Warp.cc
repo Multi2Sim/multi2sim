@@ -180,9 +180,9 @@ void Warp::Execute()
 
 	}
 
-    inst_count++;					//other counter?
+    inst_count++;
     emu_inst_count++;
-    emulator->incNumAluInst();
+    emulator->incNumAluInstruction();
     pc = this->target_pc;
 
     if(pc >= inst_buffer_size - 8)

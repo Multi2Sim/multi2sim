@@ -95,10 +95,10 @@ class ThreadBlock
 	unsigned shared_memory_size;
 
 	// Shared memory top local address. Field initialized in constructor.
-	unsigned shared_memory_top_addr;
+	unsigned shared_memory_top_address;
 
 	// Shared memory top generic address. Field initialized in constructor.
-	unsigned shared_memory_top_generic_addr;
+	unsigned shared_memory_top_generic_address;
 
 public:
 
@@ -178,7 +178,10 @@ public:
 	///
 	/// \return
 	/// No value is returned.
-	void WriteToSharedMemory(unsigned addr, unsigned length, char* buffer);
+	void WriteToSharedMemory(unsigned address, unsigned length, char* buffer)
+	{
+		shared_memory->Write(address, length, buffer);
+	}
 
 	/// Read shared memory
 	///
@@ -190,7 +193,10 @@ public:
 	///
 	/// \return
 	/// No value is returned
-	void ReadFromSharedMemory(unsigned addr, unsigned length, char* buffer);
+	void ReadFromSharedMemory(unsigned address, unsigned length, char* buffer)
+	{
+		shared_memory->Read(address, length, buffer);
+	}
 
 	/// Clear barrier flag in all warps of the threadblock
 	/// To continue simulation
