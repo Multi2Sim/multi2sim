@@ -86,13 +86,13 @@ class Grid
 	std::list<Grid *>::iterator finished_grid_list_iter;
 
 	// Instruction buffer size in bytes
-	int inst_buffer_size;
+	int instruction_buffer_size;
 
 	// Instruction buffer contains the all the instructions in the kernel binary
-	std::vector<unsigned long long> inst_buffer;
+	std::vector<unsigned long long> instruction_buffer;
 
 	// Shared memory top pointer
-	unsigned shared_mem_top;
+	unsigned shared_memory_top;
 
 public:
 	/// Constructor
@@ -115,7 +115,7 @@ public:
 	int getID() const { return id; }
 
 	/// Get shared memory top address
-	unsigned getSharedMemTop() const { return shared_mem_top; }
+	unsigned getSharedMemoryTop() const { return shared_memory_top; }
 
 	/// Get 1D thread block size
 	unsigned getThreadBlockSize() const { return thread_block_size; }
@@ -143,13 +143,16 @@ public:
 	}
 
 	/// Get instruction buffer
-	std::vector<unsigned long long>::iterator getInstBuffer()
+	std::vector<unsigned long long>::iterator getInstructionBuffer()
 	{
-		return inst_buffer.begin();
+		return instruction_buffer.begin();
 	}
 
 	/// Get instruction buffer size
-	unsigned getInstBufferSize() const { return inst_buffer_size; }
+	unsigned getInstructionBufferSize() const
+	{
+		return instruction_buffer_size;
+	}
 
 	/// Get pending_thread_blocks size
 	unsigned getPendThreadBlocksize() const
@@ -158,7 +161,7 @@ public:
 	}
 
 	/// Get running_thread_blocks size
-	unsigned getRunThreadBlocksize() const
+	unsigned getRunningThreadBlocksize() const
 	{
 		return running_thread_blocks.size();
 	}

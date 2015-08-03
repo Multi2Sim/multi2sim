@@ -89,20 +89,29 @@ public:
 
 	/// Get value of a SR
 	/// \param vreg SR identifier
-	unsigned ReadSR(int sr_id) { return sr[sr_id].u32; };
+	unsigned ReadSpecialRegister(int special_register_id)
+	{
+		return sr[special_register_id].u32;
+	}
 
 	/// Set value of a SR
 	/// \param gpr SR identifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteSR(int sr_id, unsigned value) { sr[sr_id].u32 = value; };
+	void WriteSpecialRegister(int special_register_id, unsigned value)
+	{
+		sr[special_register_id].u32 = value;
+	}
 
 	/// Get value of a predicate register
 	/// \param pr Predicate register identifier
-	int ReadPred(int pr_id) { return pr[pr_id]; };
+	int ReadPredicate(int predicate_id) { return pr[predicate_id]; };
 
 	/// Write value of a predicate register
 	/// \param pr predicate register identifier
-	void WritePred(int pr_id, unsigned value) { pr[pr_id] = value; };
+	void WritePredicate(int predicate_id, unsigned value)
+	{
+		pr[predicate_id] = value;
+	};
 
 	/// Read value of Condition Code register
 	unsigned ReadCC_ZF() { return cc.zf; };

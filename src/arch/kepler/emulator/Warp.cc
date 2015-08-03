@@ -86,8 +86,8 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 	pc = 0;
 	target_pc = 0;
 	inst_size = 8;
-	inst_buffer = grid->getInstBuffer();
-	inst_buffer_size = grid->getInstBufferSize();
+	instruction_buffer = grid->getInstructionBuffer();
+	instruction_buffer_size = grid->getInstructionBufferSize();
 
 
 	// Reset flags
@@ -103,8 +103,8 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 
 	// Statistics
 	inst_count = 0;
-	global_mem_inst_count = 0;
-	shared_mem_inst_count = 0;
+	num_global_memory_instructions = 0;
+	num_shared_memory_instructions = 0;
 }
 
 
@@ -125,8 +125,8 @@ void Warp::Execute()
 	Instruction::Opcode inst_op;
 
 	// Read instruction binary
-	inst_bytes.as_uint[0] = inst_buffer[pc / inst_size] >> 32;
-	inst_bytes.as_uint[1] = inst_buffer[pc / inst_size];
+	inst_bytes.as_uint[0] = instruction_buffer[pc / inst_size] >> 32;
+	inst_bytes.as_uint[1] = instruction_buffer[pc / inst_size];
 
 	// Decode instruction
 	if( pc % 64)
@@ -182,10 +182,10 @@ void Warp::Execute()
 
     inst_count++;
     emu_inst_count++;
-    emulator->incNumAluInstruction();
+    emulator->incNumAluInstructions();
     pc = this->target_pc;
 
-    if(pc >= inst_buffer_size - 8)
+    if(pc >= instruction_buffer_size - 8)
     {
     	finished_emu = true;
     	thread_block->incWarpsCompletedEmu();

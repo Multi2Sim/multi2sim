@@ -34,22 +34,22 @@ Grid::Grid(Function *function)
 	id = emulator->getGridSize();
 	const char * temp_buffer;
 	temp_buffer = function->getTextBuffer();
-	inst_buffer_size = function->getTextSize();
-	inst_buffer.resize(inst_buffer_size);
+	instruction_buffer_size = function->getTextSize();
+	instruction_buffer.resize(instruction_buffer_size);
 	kernel_function_name = function->getName();
 
 	// Instruction byte
 	unsigned long long inst_byte;
-	for (int i = 0; i < inst_buffer_size; i++)
+	for (int i = 0; i < instruction_buffer_size; i++)
 	{
 		inst_byte = (unsigned char) temp_buffer[i];
 		if(i % 8 < 4) // 0 1 2 3 byte
 		{
-			inst_buffer[i / 8] |= inst_byte << (i * 8 + 32);
+			instruction_buffer[i / 8] |= inst_byte << (i * 8 + 32);
 		}
 		else // 4 5 6 7 byte
 		{
-			inst_buffer[i / 8] |= inst_byte << (i * 8 - 32);
+			instruction_buffer[i / 8] |= inst_byte << (i * 8 - 32);
 		}
 	}
 	state = GridStateInvalid;
