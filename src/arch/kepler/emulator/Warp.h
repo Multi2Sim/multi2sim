@@ -91,10 +91,10 @@ class Warp
 	Instruction inst;
 
 	// Pointer points to the starting position of instruction buffer
-	std::vector<unsigned long long>::iterator inst_buffer;
+	std::vector<unsigned long long>::iterator instruction_buffer;
 
 	// The whole instruction buffer size in bytes
-	unsigned inst_buffer_size;
+	unsigned instruction_buffer_size;
 	
 	// Return address stack
 	std::unique_ptr<ReturnAddressStack> return_stack;
@@ -124,8 +124,8 @@ class Warp
 
 	// Statistics
 	long long inst_count;
-	long long global_mem_inst_count;
-	long long shared_mem_inst_count;
+	long long num_global_memory_instructions;
+	long long num_shared_memory_instructions;
 
 	// Iterator to the first thread in the warp, pointing to a
 	// thread in the list of thread from the warp. Threads

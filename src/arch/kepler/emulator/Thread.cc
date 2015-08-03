@@ -44,7 +44,7 @@ Thread::Thread(Warp *warp, int id)
 	local_memory_size = 1 << 20; // current 1MB for local memory
 	local_memory_top_address = 0;
 	local_memory_top_generic_address = local_memory_top_address + id *
-			local_memory_size +	emulator->getGlobalMemTotalSize() +
+			local_memory_size +	emulator->getGlobalMemoryTotalSize() +
 			emulator->getSharedMemoryTotalSize();
 
 	// local mem top generic address record in const mem c[0x0][0x24]

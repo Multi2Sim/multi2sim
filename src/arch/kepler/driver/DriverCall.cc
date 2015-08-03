@@ -106,22 +106,22 @@ int Driver::CallMemAlloc(comm::Context *context,
 	mem::Memory *global_mem = kpl_emu->getGlobalMemory();
 
 	// Allocate 4 more bytes of memory
-	global_mem->Map(kpl_emu->getGlobalMemTop(), size + 4,
+	global_mem->Map(kpl_emu->getGlobalMemoryTop(), size + 4,
 			mem::Memory::AccessRead | mem::Memory::AccessWrite);
 	// Use the first word to record the size of memory
-	global_mem->Write(kpl_emu->getGlobalMemTop(), sizeof(unsigned),
+	global_mem->Write(kpl_emu->getGlobalMemoryTop(), sizeof(unsigned),
 					(char *) &size);
 	// Make the pointer point to the second word of the allocated memory
-	unsigned addr = kpl_emu->getGlobalMemTop() + sizeof(unsigned) ;
+	unsigned addr = kpl_emu->getGlobalMemoryTop() + sizeof(unsigned) ;
 
 	// Debug information
 	debug << misc::fmt("\t%u bytes of device memory allocated at 0x%x\n",
-			size + 4, kpl_emu->getGlobalMemTop());
+			size + 4, kpl_emu->getGlobalMemoryTop());
 	debug << misc::fmt("\tmemory base address is = 0x%x\n",
-					kpl_emu->getGlobalMemTop());
+					kpl_emu->getGlobalMemoryTop());
 
 	// Increase global memory top FIXME
-	kpl_emu->incGloablMemTop(size + 4);
+	kpl_emu->incGloablMemoryTop(size + 4);
 
 	return addr;
 }
@@ -162,7 +162,7 @@ int Driver::CallMemRead(comm::Context *context,
 			device_ptr, host_ptr, size);
 
 	// Check memory range
-	if (device_ptr + size > kpl_emu->getGlobalMemTop())
+	if (device_ptr + size > kpl_emu->getGlobalMemoryTop())
 		throw Error("Accessing device memory not allocated");
 
 	// Read memory from device to host
@@ -208,7 +208,8 @@ int Driver::CallMemWrite(comm::Context *context,
 	memory->Read(args_ptr + 8, sizeof(unsigned), (char *) &size);
 	debug << misc::fmt("\tdevice_ptr = 0x%x, host_ptr = 0x%x, size = %d bytes\n",
 			device_ptr, host_ptr, size);
-	debug << misc::fmt("\tMemory top is = 0x%x\n", kpl_emu->getGlobalMemTop());
+	debug << misc::fmt("\tMemory top is = 0x%x\n",
+					kpl_emu->getGlobalMemoryTop());
 
 	// Check memory range
 	//if (device_ptr + size > kpl_emu->getGlobalMemTop())
@@ -388,8 +389,8 @@ int Driver::CallMemGetInfo(comm::Context *context,
 	unsigned total;
 
 	// Read value from device
-	free = kpl_emu->getGlobalMemFreeSize();
-	total = kpl_emu->getGlobalMemTotalSize();
+	free = kpl_emu->getGlobalMemoryFreeSize();
+	total = kpl_emu->getGlobalMemoryTotalSize();
 
 	// Debug Info
 	debug << misc::fmt("\tout: free=%u\n", free);

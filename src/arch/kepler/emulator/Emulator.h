@@ -145,13 +145,16 @@ public:
 	Disassembler *getAsm() const { return disassembler;}
 
 	/// Get global memory top
-	unsigned getGlobalMemTop() const { return global_memory_top; }
+	unsigned getGlobalMemoryTop() const { return global_memory_top; }
 
 	/// Get global memory free size
-	unsigned getGlobalMemFreeSize() const { return global_memory_free_size; }
+	unsigned getGlobalMemoryFreeSize() const { return global_memory_free_size; }
 
 	/// Get global memory Total size
-	unsigned getGlobalMemTotalSize() const { return global_memory_total_size; }
+	unsigned getGlobalMemoryTotalSize() const
+	{
+		return global_memory_total_size;
+	}
 
 	/// Get ALU instruction count
 	unsigned getNumAluInstructions() const { return num_alu_instructions; }
@@ -193,10 +196,10 @@ public:
 	}
 
 	/// Increment ALU instruction counter
-	void incNumAluInstruction() { num_alu_instructions++; }
+	void incNumAluInstructions() { num_alu_instructions++; }
 
 	/// Increse global memory top
-	void incGloablMemTop(unsigned inc) { global_memory_top += inc; }
+	void incGloablMemoryTop(unsigned inc) { global_memory_top += inc; }
 
 	/// Dump Kepler Emulator in a human-readable fashion into an output
 	/// stream (or standard output if argument \a os is omitted.

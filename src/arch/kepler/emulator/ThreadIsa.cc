@@ -2964,18 +2964,18 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 		data_type = (format.op1 >> 2) & 0x7;
 
 		// Execute
-		if (addr > (emulator->getGlobalMemTotalSize() +
+		if (addr > (emulator->getGlobalMemoryTotalSize() +
 						emulator->getSharedMemoryTotalSize())) // Local Memory
 		{
-			unsigned local_mem_addr = addr - emulator->getGlobalMemTotalSize() -
-						emulator->getSharedMemoryTotalSize() -
+			unsigned local_mem_addr = addr - emulator->getGlobalMemoryTotalSize()
+					- emulator->getSharedMemoryTotalSize() -
 							id * local_memory_size;
 			local_memory->Read(local_mem_addr, 4, (char*)dst);
 		}
-		else if (addr > emulator->getGlobalMemTotalSize()) // Shared  Memory
+		else if (addr > emulator->getGlobalMemoryTotalSize()) // Shared  Memory
 		{
 			unsigned shared_memory_addr = addr -
-						emulator->getGlobalMemTotalSize()
+						emulator->getGlobalMemoryTotalSize()
 							- thread_block->getId() *
 								thread_block->getSharedMemorySize();
 			thread_block->ReadFromSharedMemory(shared_memory_addr, 4, (char*)dst);
@@ -2986,19 +2986,19 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 		// Data type > 4
 		if (data_type > 4)
 		{
-			if (addr > (emulator->getGlobalMemTotalSize() +
+			if (addr > (emulator->getGlobalMemoryTotalSize() +
 							emulator->getSharedMemoryTotalSize()))
 			{
 				unsigned local_mem_addr = addr -
-						emulator->getGlobalMemTotalSize() -
+						emulator->getGlobalMemoryTotalSize() -
 							emulator->getSharedMemoryTotalSize() - id *
 								local_memory_size;
 				local_memory->Read(local_mem_addr + 4, 4, (char*)&dst[1]);
 			}
-			else if (addr > emulator->getGlobalMemTotalSize())
+			else if (addr > emulator->getGlobalMemoryTotalSize())
 			{
 				unsigned shared_memory_addr = addr -
-							emulator->getGlobalMemTotalSize()
+							emulator->getGlobalMemoryTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
 				thread_block->ReadFromSharedMemory(shared_memory_addr, 4,
@@ -3010,19 +3010,19 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 
 		if (data_type > 5)										//Really? FIXME
 		{
-			if (addr > (emulator->getGlobalMemTotalSize() +
+			if (addr > (emulator->getGlobalMemoryTotalSize() +
 							emulator->getSharedMemoryTotalSize()))
 			{
 				unsigned local_mem_addr = addr -
-						emulator->getGlobalMemTotalSize() -
+						emulator->getGlobalMemoryTotalSize() -
 							emulator->getSharedMemoryTotalSize() - id *
 								local_memory_size;
 				local_memory->Read(local_mem_addr + 8, 8, (char*)&dst[2]);
 			}
-			else if (addr > emulator->getGlobalMemTotalSize())
+			else if (addr > emulator->getGlobalMemoryTotalSize())
 			{
 				unsigned shared_memory_addr = addr -
-							emulator->getGlobalMemTotalSize()
+							emulator->getGlobalMemoryTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
 				thread_block->ReadFromSharedMemory(shared_memory_addr, 4,
@@ -3349,18 +3349,18 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 
 		// Execute
 		// Write
-		if (addr > (emulator->getGlobalMemTotalSize() +
+		if (addr > (emulator->getGlobalMemoryTotalSize() +
 						emulator->getSharedMemoryTotalSize()))
 		{
-			unsigned local_mem_addr = addr - emulator->getGlobalMemTotalSize() -
-						emulator->getSharedMemoryTotalSize() -
+			unsigned local_mem_addr = addr - emulator->getGlobalMemoryTotalSize()
+					- emulator->getSharedMemoryTotalSize() -
 								id * local_memory_size;
 			local_memory->Write(local_mem_addr, 4, (char*)src);
 		}
-		else if (addr > emulator->getGlobalMemTotalSize()) // Shared  Memory
+		else if (addr > emulator->getGlobalMemoryTotalSize()) // Shared  Memory
 		{
 			unsigned shared_memory_addr = addr -
-						emulator->getGlobalMemTotalSize()
+						emulator->getGlobalMemoryTotalSize()
 							- thread_block->getId() *
 								thread_block->getSharedMemorySize();
 			thread_block->WriteToSharedMemory(shared_memory_addr, 4, (char*)src);
@@ -3371,19 +3371,19 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 		// Data type > 4
 		if (data_type > 4)
 		{
-			if (addr > (emulator->getGlobalMemTotalSize() +
+			if (addr > (emulator->getGlobalMemoryTotalSize() +
 							emulator->getSharedMemoryTotalSize()))
 			{
 				unsigned local_mem_addr = addr -
-						emulator->getGlobalMemTotalSize() -
+						emulator->getGlobalMemoryTotalSize() -
 							emulator->getSharedMemoryTotalSize() - id *
 								local_memory_size;
 				local_memory->Write(local_mem_addr + 4, 4, (char*)&src[1]);
 			}
-			else if (addr > emulator->getGlobalMemTotalSize()) // Shared  Memory
+			else if (addr > emulator->getGlobalMemoryTotalSize()) // Shared  Memory
 			{
 				unsigned shared_memory_addr = addr -
-							emulator->getGlobalMemTotalSize()
+							emulator->getGlobalMemoryTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
 				thread_block->WriteToSharedMemory(shared_memory_addr, 4,
@@ -3396,19 +3396,19 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 		// Data type > 5
 		if (data_type > 5)										//Really? FIXME
 		{
-			if (addr > (emulator->getGlobalMemTotalSize() +
+			if (addr > (emulator->getGlobalMemoryTotalSize() +
 							emulator->getSharedMemoryTotalSize()))
 			{
 				unsigned local_mem_addr = addr -
-						emulator->getGlobalMemTotalSize() -
+						emulator->getGlobalMemoryTotalSize() -
 							emulator->getSharedMemoryTotalSize() - id *
 								local_memory_size;
 				local_memory->Write(local_mem_addr + 8, 8, (char*)&src[2]);
 			}
-			else if (addr > emulator->getGlobalMemTotalSize()) // Shared  Memory
+			else if (addr > emulator->getGlobalMemoryTotalSize()) // Shared  Memory
 			{
 				unsigned shared_memory_addr = addr -
-							emulator->getGlobalMemTotalSize()
+							emulator->getGlobalMemoryTotalSize()
 								- thread_block->getId() *
 									thread_block->getSharedMemorySize();
 				thread_block->WriteToSharedMemory(shared_memory_addr, 4,
