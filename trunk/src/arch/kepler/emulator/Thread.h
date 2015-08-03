@@ -90,8 +90,8 @@ private:
 	Register registers;
 
 	// Last global memory access
-	unsigned global_mem_access_addr;
-	unsigned global_mem_access_size;
+	unsigned global_memory_access_address;
+	unsigned global_memory_access_size;
 
 	// Local Memory
 	std::unique_ptr<mem::Memory> local_memory;
@@ -170,25 +170,31 @@ public :
 
 	/// Get value of a SR
 	/// \param vreg SR identifier
-	unsigned ReadSpecialRegister(int sr_id) { return registers.ReadSR(sr_id); }
+	unsigned ReadSpecialRegister(int special_register_id)
+	{
+		return registers.ReadSpecialRegister(special_register_id);
+	}
 
 	/// Set value of a SR
 	/// \param gpr SR identifier
 	/// \param value Value given as an \a unsigned typed value
-	void WriteSpecialRegister(int sr_id, unsigned value)
+	void WriteSpecialRegister(int special_register_id, unsigned value)
 	{
-		registers.WriteSR(sr_id, value);
+		registers.WriteSpecialRegister(special_register_id, value);
 	}
 
 	/// Read value of a predicate register
 	/// \param pr Predicate register identifier
-	int ReadPredicate(int pr_id) { return registers.ReadPred(pr_id); }
+	int ReadPredicate(int predicate_id)
+	{
+		return registers.ReadPredicate(predicate_id);
+	}
 
 	/// Write value of a predicate register
 	/// \param pr predicate register identifier
 	void WritePredicate(int pr_id, unsigned value)
 	{
-		registers.WritePred(pr_id, value);
+		registers.WritePredicate(pr_id, value);
 	}
 
 	/// Read value of Condition Code register
