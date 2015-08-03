@@ -151,7 +151,7 @@ void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -233,7 +233,7 @@ void Thread::ExecuteInst_IMUL_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -246,8 +246,8 @@ void Thread::ExecuteInst_IMUL_B(Instruction *inst)
 		// Check it
 		if ((format.op0 == 2) && (format.op2 == 1))
 			src2 = ReadGPR(src2_id);	// Register Mode
-		else if (format.op2 == 0)
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2); // const
+		else if (format.op2 == 0)	// Const mode
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		//else
 		//	src2 = format.src2 >> 18 ? format.src2 | 0xfff80000 : format.src2;
 
@@ -317,7 +317,7 @@ void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -435,7 +435,7 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -456,7 +456,7 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 
 		// Read src2 value Check it
 		if (format.op2 == 1) // constant mode
-			emu->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emu->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		else if (format.op2 == 3)
 		{
 			unsigned src2_id;
@@ -558,7 +558,7 @@ void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -662,7 +662,7 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -684,7 +684,7 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 		if (format.op2 == 1) // src2 is const src3 is register
 		{
 			unsigned src3_id;
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 			src3_id = format.src3;
 			src3 = ReadGPR(src3_id);
 		}
@@ -693,7 +693,7 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 			unsigned src2_id;
 			src2_id = format.src3;
 			src2 = ReadGPR(src2_id);
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src3);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src3);
 		}
 		else if (format.op2 == 3) // both src2 src3 register
 		{
@@ -779,7 +779,7 @@ void Thread::ExecuteInst_BFI_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	if (active == 1 && pred == 1)
 	{
@@ -872,7 +872,7 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	if (active == 1 && pred == 1)
 	{
@@ -884,7 +884,7 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 
 		// Read Src2
 		if (format.op2 == 1) // Const Mode
-			emulator->ReadGlobalMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadGlobalMemory(format.src2 << 2, 4, (char*)&src2);
 		else if (format.op2 == 3) // Register Mode
 		{
 			src2_id = format.src2;
@@ -983,7 +983,7 @@ void Thread::ExecuteInst_IMAD(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	if ( active == 1 && pred == 1)
 	{
@@ -995,7 +995,7 @@ void Thread::ExecuteInst_IMAD(Instruction *inst)
 		if (format.srcB_mod == 0)
 		{
 			src_id = format.srcB;
-			emulator->ReadConstMem(src_id << 2, 4, (char*)&srcB);
+			emulator->ReadConstantMemory(src_id << 2, 4, (char*)&srcB);
 		}
 		else if (format.srcB_mod == 1)
 		{
@@ -1072,7 +1072,7 @@ void Thread::ExecuteInst_IADD_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -1208,7 +1208,7 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src1_id;
@@ -1234,7 +1234,7 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 			src2 = ReadGPR(src2_id);
 		}
 		else if (format.op2 == 1) // constant mode
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 
 		// Determine least significant bit value for the add
 		unsigned lsb = 0;
@@ -1486,7 +1486,7 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -1500,7 +1500,7 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 		srcB_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
-			emulator->ReadConstMem(srcB_id << 2, 4, (char*)&srcB);
+			emulator->ReadConstantMemory(srcB_id << 2, 4, (char*)&srcB);
 		}
 		else if (format.srcB_mod == 1)
 			srcB = ReadGPR(srcB_id);
@@ -1616,7 +1616,7 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -1747,7 +1747,7 @@ void Thread::ExecuteInst_LOP_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1825,7 +1825,7 @@ void Thread::ExecuteInst_LOP_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id;
@@ -1842,7 +1842,7 @@ void Thread::ExecuteInst_LOP_B(Instruction *inst)
 
 		// Read Src2
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
 			// src2 ID
@@ -1908,7 +1908,7 @@ void Thread::ExecuteInst_EXIT(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	if (id_in_warp == 0)
 		stack->resetTempMask();
@@ -2148,7 +2148,7 @@ void Thread::ExecuteInst_MOV_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2157,7 +2157,7 @@ void Thread::ExecuteInst_MOV_B(Instruction *inst)
 		src_id = format.srcB;
 		if (format.srcB_mod == 0)
 		{
-			emulator->ReadConstMem(src_id << 2, 4, (char*)&src);
+			emulator->ReadConstantMemory(src_id << 2, 4, (char*)&src);
 		}
 		else if (format.srcB_mod == 1)
 			//src = ReadGPR(src_id);
@@ -2289,7 +2289,7 @@ void Thread::ExecuteInst_SEL_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2361,7 +2361,7 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src1_id, dst_id, pred_src_id;
@@ -2378,7 +2378,7 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 
 		// Read Src2
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
-			emulator->ReadConstMem(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
 			// src2 ID
@@ -2441,7 +2441,7 @@ void Thread::ExecuteInst_I2F_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2516,7 +2516,7 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2530,7 +2530,7 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 	{
 
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
-			emulator->ReadConstMem(format.src << 2, 4, (char*)&src);
+			emulator->ReadConstantMemory(format.src << 2, 4, (char*)&src);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
 			// src2 ID
@@ -2598,7 +2598,7 @@ void Thread::ExecuteInst_I2I_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2672,7 +2672,7 @@ void Thread::ExecuteInst_I2I_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2685,7 +2685,7 @@ void Thread::ExecuteInst_I2I_B(Instruction *inst)
 	{
 
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
-			emulator->ReadConstMem(format.src << 2, 4, (char*)&src);
+			emulator->ReadConstantMemory(format.src << 2, 4, (char*)&src);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
 			// src2 ID
@@ -2753,7 +2753,7 @@ void Thread::ExecuteInst_F2I_A(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2843,7 +2843,7 @@ void Thread::ExecuteInst_F2I_B(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id;
@@ -2858,7 +2858,7 @@ void Thread::ExecuteInst_F2I_B(Instruction *inst)
 	{
 
 		if ((format.op0 == 2) && (format.op2 == 1 )) // src is const
-			emulator->ReadConstMem(format.src << 2, 4, (char*)&src);
+			emulator->ReadConstantMemory(format.src << 2, 4, (char*)&src);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
 			// src ID
@@ -2950,7 +2950,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -2981,7 +2981,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 			thread_block->ReadFromSharedMemory(shared_memory_addr, 4, (char*)dst);
 		}
 		else
-			emulator->ReadGlobalMem(addr, 4, (char*)dst); // Global Memory
+			emulator->ReadGlobalMemory(addr, 4, (char*)dst); // Global Memory
 
 		// Data type > 4
 		if (data_type > 4)
@@ -3005,7 +3005,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 								(char*)&dst[1]);
 			}
 			else
-				emulator->ReadGlobalMem(addr + 4, 4, (char*)&dst[1]);
+				emulator->ReadGlobalMemory(addr + 4, 4, (char*)&dst[1]);
 		}
 
 		if (data_type > 5)										//Really? FIXME
@@ -3029,7 +3029,7 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 							(char*)&dst[2]);
 			}
 			else
-				emulator->ReadGlobalMem(addr + 8, 8, (char*)&dst[2]);
+				emulator->ReadGlobalMemory(addr + 8, 8, (char*)&dst[2]);
 		}
 
 		/* Write */
@@ -3222,7 +3222,7 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 
 			// Caculate mem_addr and read const mem
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
-			emulator->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
+			emulator->ReadConstantMemory(mem_addr, 4, (char*)&srcB.u32);
 
 			// Execute
 			dst.u32 = srcB.u32;
@@ -3248,7 +3248,7 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 			mem_addr = srcB_id2 + srcA.s32 + (srcB_id1 << 16);
 
 			// Read the lower 32 bits
-			emulator->ReadConstMem(mem_addr, 4, (char*)&srcB.u32);
+			emulator->ReadConstantMemory(mem_addr, 4, (char*)&srcB.u32);
 
 			// Execute
 			dst.u32 = srcB.u32;
@@ -3258,7 +3258,7 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 			WriteGPR(dst_id, dst.u32);
 
 			// Read the upper 32 bits
-			emulator->ReadConstMem(mem_addr + 4, 4, (char*)&srcB.u32);
+			emulator->ReadConstantMemory(mem_addr + 4, 4, (char*)&srcB.u32);
 
 			// Execute the upper 32 bits
 			dst.u32 = srcB.u32;
@@ -3326,7 +3326,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -3366,7 +3366,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 			thread_block->WriteToSharedMemory(shared_memory_addr, 4, (char*)src);
 		}
 		else
-			emulator->WriteGlobalMem(addr, 4, (char*)src);
+			emulator->WriteGlobalMemory(addr, 4, (char*)src);
 
 		// Data type > 4
 		if (data_type > 4)
@@ -3390,7 +3390,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 								(char*)&src[1]);
 			}
 			else
-				emulator->WriteGlobalMem(addr + 4, 4, (char*)&src[1]);
+				emulator->WriteGlobalMemory(addr + 4, 4, (char*)&src[1]);
 		}
 
 		// Data type > 5
@@ -3415,7 +3415,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 								(char*)&src[2]);
 			}
 			else
-				emulator->WriteGlobalMem(addr + 8, 8, (char*)&src[2]);
+				emulator->WriteGlobalMemory(addr + 8, 8, (char*)&src[2]);
 		}
 	}
 
@@ -3469,7 +3469,7 @@ void Thread::ExecuteInst_STS(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 
 	// Execute
@@ -3575,7 +3575,7 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3604,7 +3604,7 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 
 		if (format.srcB_mod == 0)
 		{
-			emulator->ReadConstMem(src_id << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
 			src2 = ReadFloatGPR(src_id);
@@ -3671,7 +3671,7 @@ void Thread::ExecuteInst_FADD(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned dst_id, src_id;
@@ -3700,7 +3700,7 @@ void Thread::ExecuteInst_FADD(Instruction *inst)
 
 		if (format.srcB_mod == 0)
 		{
-			emulator->ReadConstMem(src_id << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(src_id << 2, 4, (char*)&src2);
 		}
 		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
 			src2 = ReadFloatGPR(src_id);
@@ -3760,7 +3760,7 @@ void Thread::ExecuteInst_MUFU(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Operand ID
 	unsigned src_id, dst_id;
@@ -3878,7 +3878,7 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4061,7 +4061,7 @@ void Thread::ExecuteInst_BAR(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4165,7 +4165,7 @@ void Thread::ExecuteInst_CAL(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)
@@ -4259,7 +4259,7 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
         {
 			// check this
 			if (isconstmem == 1)
-              	emulator->ReadConstMem(offset << 2,4, (char*) &address);
+              	emulator->ReadConstantMemory(offset << 2,4, (char*) &address);
         }
 
 		stack->push(address,
@@ -4441,7 +4441,7 @@ void Thread::ExecuteInst_RET(Instruction *inst)
 	if (pred_id <= 7)
 		pred = ReadPredicate(pred_id);
 	else
-		pred = ! ReadPredicate(pred_id - 8);
+		pred = !ReadPredicate(pred_id - 8);
 
 	// Execute
 	if (active == 1 && pred == 1)

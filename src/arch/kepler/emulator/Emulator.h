@@ -71,12 +71,6 @@ class Emulator : public comm::Emulator
 	std::unique_ptr<mem::Memory> constant_memory;
 	std::unique_ptr<mem::Memory> shared_memory;
 
-	// Field initialized in constructor. Global memory top address
-	unsigned global_memory_top;
-
-	// Field initialized in constructor. Global memory freed size
-	unsigned global_memory_free_size;
-
 	// Field initialized in constructor. Global memory total size
 	unsigned global_memory_total_size;
 
@@ -133,6 +127,12 @@ public:
 	/// Warp size
 	static const int warp_size = 32;
 
+	// Field initialized in constructor. Global memory top address
+	unsigned global_memory_top;
+
+	// Field initialized in constructor. Global memory freed size
+	unsigned global_memory_free_size;
+
 	/// Get the only instance of the Kepler emulator. If the instance does not
 	/// exist yet, it will be created, and will remain allocated until the
 	/// end of the execution.
@@ -146,9 +146,6 @@ public:
 
 	/// Get global memory top
 	unsigned getGlobalMemTop() const { return global_memory_top; }
-
-	/// Get global memory top
-	unsigned* getGlobalMemTopAddress() { return &global_memory_top; }
 
 	/// Get global memory free size
 	unsigned getGlobalMemFreeSize() const { return global_memory_free_size; }
@@ -166,10 +163,10 @@ public:
 	}
 
 	/// Get global memory
-	mem::Memory* getGlobalMem() const  { return global_memory.get(); }
+	mem::Memory *getGlobalMemory() const  { return global_memory.get(); }
 
 	/// Get constant memory
-	mem::Memory * getConstMem() const { return constant_memory.get();}
+	mem::Memory *getConstMemory() const { return constant_memory.get();}
 
 	/// Return the number of available grids
 	int getNumGrids() { return grids.size(); }
@@ -184,22 +181,19 @@ public:
 	}
 
 	/// Set global memory top
-	void SetGlobalMemTop(unsigned value) { global_memory_top = value; }
-
-	/// Set global memory free size
-	void setGlobalMemFreeSize(unsigned value)
+	void SetGlobalMemoryTop(unsigned global_memory_top)
 	{
-		global_memory_free_size = value;
+		this->global_memory_top = global_memory_top;
 	}
 
-	/// Set global memory total size
-	void setGlobalMemTotalSize(unsigned value)
+	/// Set global memory free size
+	void setGlobalMemoryFreeSize(unsigned global_memory_free_size)
 	{
-		global_memory_total_size = value;
+		this->global_memory_free_size = global_memory_free_size;
 	}
 
 	/// Increment ALU instruction counter
-	void incNumAluInst() { num_alu_instructions ++; }
+	void incNumAluInstruction() { num_alu_instructions++; }
 
 	/// Increse global memory top
 	void incGloablMemTop(unsigned inc) { global_memory_top += inc; }
@@ -225,25 +219,37 @@ public:
 	/// \param starting address to be written in
 	/// \param size of data
 	/// \param data buffer
-	void WriteConstantMemory(unsigned addr, unsigned size, const char *buf);
+	void WriteConstantMemory(unsigned address, unsigned size, const char *buffer)
+	{
+		constant_memory->Write(address, size, buffer);
+	}
 
 	/// Write Global Memory
 	/// \param starting address to be written in
 	/// \param size of data
 	/// \param data buffer
-	void WriteGlobalMem(unsigned addr, unsigned size, const char *buf);
+	void WriteGlobalMemory(unsigned address, unsigned size, const char *buffer)
+	{
+		global_memory->Write(address, size, buffer);
+	}
 
 	/// Read Global Memory
 	/// \param starting address to be read in
 	/// \param size of data
 	/// \param data buffer
-	void ReadConstMem(unsigned addr, unsigned size, char *buf);
+	void ReadConstantMemory(unsigned address, unsigned size, char *buffer)
+	{
+		constant_memory->Read(address, size, buffer);
+	}
 
 	/// Read Global Memory
 	/// \param starting address to be read in
 	/// \param size of data
 	/// \param data buffer
-	void ReadGlobalMem(unsigned addr, unsigned size, char *buf);
+	void ReadGlobalMemory(unsigned address, unsigned size, char *buffer)
+	{
+		global_memory->Read(address, size, buffer);
+	}
 
 	/// Push an element into pending grid list
 	void PushPendingGrid(Grid *grid);

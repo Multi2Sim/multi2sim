@@ -160,27 +160,6 @@ bool Emulator::Run()
 	return true;
 }
 
-void Emulator::ReadConstMem(unsigned addr, unsigned size, char *buf)
-{
-	constant_memory->Read(addr, size, buf);
-}
-
-void Emulator::ReadGlobalMem(unsigned addr, unsigned size, char *buf)
-{
-	global_memory->Read(addr, size, buf);
-}
-
-void Emulator::WriteGlobalMem(unsigned addr, unsigned size, const char *buf)
-{
-	global_memory->Write(addr, size, buf);
-}
-
-
-void Emulator::WriteConstantMemory(unsigned addr, unsigned size, const char *buf)
-{
-	constant_memory->Write(addr, size, buf);
-}
-
 
 void Emulator::PushPendingGrid(Grid *grid)
 {
