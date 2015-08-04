@@ -357,6 +357,12 @@ void Emulator::RegisterOptions()
 			"Debug information for dynamic execution of Southern "
 			"Islands instructions, tracking state changes in "
 			"register values and memory positions.");
+
+	// Option --si-max-inst <int>
+	command_line->RegisterInt64("--si-max-inst <inst>", max_instructions,
+			"Maximum number of ISA instructions. An instruction "
+			"executed by an entire wavefront counts as 1 toward "
+			"this limit. Use 0 (default) for no limit.");
 }
 
 

@@ -36,14 +36,14 @@ static void Cleanup()
 
 // This test checks to see if the correct error message is returned when
 // a frequency is passed that is larger than the acceptable bounds
-TEST(TestTiming, config_section_general_frequency_0)
+TEST(TestTiming, config_section_device_frequency_0)
 {
 	// Cleanup singleton instances
 	Cleanup();
 
 	// Create config file
 	std::string config =
-			"[ General ]\n"
+			"[ Device ]\n"
 			"Frequency = 10000000";
 	
 	// Load config file
@@ -71,14 +71,14 @@ TEST(TestTiming, config_section_general_frequency_0)
 
 // This test checks to see if the correct error message is returned when
 // a frequency is passed that is smaller than the acceptable bounds
-TEST(TestTiming, config_section_general_frequency_1)
+TEST(TestTiming, config_section_device_frequency_1)
 {
 	// Cleanup singleton instances
 	Cleanup();
 
 	// Try frequency lower than bounds
 	std::string config =
-		"[ General ]\n"
+		"[ Device ]\n"
 		"Frequency = 0";
 
 	// Load config file
