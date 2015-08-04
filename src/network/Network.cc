@@ -623,6 +623,7 @@ Node *Network::getNodeByUserData(void *user_data) const
 	return nullptr;
 }
 
+
 void Network::DumpReport(const std::string &path)
 {
 	// Open file
@@ -634,8 +635,9 @@ void Network::DumpReport(const std::string &path)
 
 	// Dump into file
 	Dump(f);
-
 }
+
+
 void Network::Dump(std::ostream &os) const
 {
 	// Dump network information
@@ -652,6 +654,7 @@ void Network::Dump(std::ostream &os) const
 	long long cycle = system->getCycle();
 	os << misc::fmt("Cycles = %llu\n", cycle);
 
+	// Creating an empty link before starting the links
 	os << "\n";
 
 	// Print links
@@ -662,7 +665,7 @@ void Network::Dump(std::ostream &os) const
 	for (auto &node : nodes)
 		node->Dump(os);
 
-	//Creating an empty line in the dump
+	//Creating an empty line in the dump before starting the next network
 	os << "\n";
 }
 
@@ -775,15 +778,30 @@ Message *Network::Send(EndNode *source_node,
 	if (packet_size == 0)
 		message->Packetize(size);
 	else 
-	{
-		// TODO generate trace here
 		message->Packetize(packet_size);
-	}
+
+	// Updating the trace with the message's packetization information
+	net::System::trace << misc::fmt("net.msg net=\"%s\" name=\"M-%lld\" "
+			"state=\"%s:packetize\"\n",
+			name.c_str(), message->getId(),
+			source_node->getName().c_str());
+
 
 	// Send the message out
 	for (int i = 0; i < message->getNumPackets(); i++)
 	{
 		Packet *packet = message->getPacket(i);
+
+		// Update the trace with the new packet and its location
+		net::System::trace << misc::fmt("net.new_packet net=\"%s\" "
+				"name=\"P-%lld:%d\" size=%d state=\"%s:packetizer\"\n",
+				name.c_str(), message->getId(),
+				packet->getId(), packet->getSize(),
+				source_node->getName().c_str());
+		net::System::trace << misc::fmt("net.packet_msg net=\"%s\" "
+				"name=\"P-%lld:%d\" message=\"M-%lld\"\n",
+				name.c_str(), message->getId(),
+				packet->getId(), message->getId());
 
 		// Create event frame
 		auto frame = misc::new_shared<Frame>(packet);
@@ -842,12 +860,28 @@ void Network::Receive(EndNode *node, Message *message)
 		Packet *packet = message->getPacket(i);
 		Buffer *buffer = packet->getBuffer();
 		buffer->RemovePacket(packet);
+
+		// Updating the trace with extraction of the packet and ending it
+	    System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
+	    		"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	    		name.c_str(),
+	    		buffer->getNode()->getName().c_str(),
+	    		buffer->getName().c_str(),
+	    		message->getId(), packet->getId(),
+	    		buffer->getOccupancyByte());
+	    System::trace << misc::fmt("net.end_packet net=\"%s\" "
+	    		"name=\"P-%lld:%d\"\n",
+	    		name.c_str(), message->getId(), packet->getId());
 	}
 
 	// Dump debug information
 	System::debug << misc::fmt("[Network %s] message %lld received at "
 			"[node %s] \n", name.c_str(), message->getId(),
 			node->getName().c_str());
+
+	// Updating the trace with the end of the message
+	System::trace << misc::fmt("net.end_msg net=\"%s\" name=\"M-%lld\"\n",
+			name.c_str(), message->getId());
 
 	// Destroy the message
 	message_table.erase(message->getId());
@@ -938,9 +972,9 @@ void Network::TraceHeader()
 			"name=\"%s\" "
 			"num_nodes=\"%d\" "
 			"packet_size=\"%d\"\n",
-			 name.c_str(),
-			 (int) nodes.size(),
-			 packet_size));
+			name.c_str(),
+			(int) nodes.size(),
+			packet_size));
 
 	// Dump information about nodes in trace file
 	for (auto &node : nodes)
@@ -1010,7 +1044,6 @@ void Network::TraceHeader()
 					buffer->getSize(),
 					buffer->getConnection()->getName().c_str()));
 		}
-
 	}
 }
 

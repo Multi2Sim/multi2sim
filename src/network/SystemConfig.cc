@@ -107,6 +107,7 @@ const char *System::err_config_note =
 		"Please run 'm2s --net-help' or consult the Multi2Sim Guide for "
 		"a description of the network system configuration file format.";
 
+
 void System::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Debug

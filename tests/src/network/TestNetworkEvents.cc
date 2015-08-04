@@ -1650,11 +1650,6 @@ TEST(TestSystemConfiguration, event_config_12_manual_vs_fw_routing)
 		// Getting the network
 		Network *network = system->getNetworkByName("net0");
 
-		// Getting esim
-		esim::TraceSystem *system_trace = esim::TraceSystem::getInstance();
-		system_trace->setPath("stdout");
-		system->trace.On();
-
 		// Getting the source, destination and switch nodes
 		EndNode *N0 = dynamic_cast<EndNode *>(network->getNodeByName("N0"));
 		EndNode *N1 = dynamic_cast<EndNode *>(network->getNodeByName("N1"));

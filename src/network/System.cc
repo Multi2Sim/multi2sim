@@ -53,10 +53,6 @@ bool System::help = false;
 
 int System::frequency = 1000;
 
-const int trace_version_major = 1;
-
-const int trace_version_minor = 10;
-
 std::unique_ptr<System> System::instance;
 
 
@@ -173,9 +169,6 @@ void System::RegisterOptions()
 
 void System::ProcessOptions()
 {
-	// Get the system
-	System *net_system = System::getInstance();
-
 	// Network help
 	if (help)
 	{
@@ -189,35 +182,38 @@ void System::ProcessOptions()
 
 	// Stand-Alone activation
 	if (!sim_net_name.empty())
-		net_system->stand_alone = true;
-
-	// Configuration
-	if (!config_file.empty())
-	{
-		misc::IniFile ini_file(config_file);
-		net_system->ParseConfiguration(&ini_file);
-	}
-
-	// Trace header
-	if (net_system->trace)
-		net_system->TraceHeader();
+		stand_alone = true;
 
 	// Stand-Alone requires config file
-	if (net_system->stand_alone)
-	{
-		// Check config file
-		if (config_file.empty())
-			throw Error(misc::fmt("Option --net-sim requires "
-					" --net-config option "));
+	if (stand_alone && config_file.empty())
+		throw Error(misc::fmt("Option --net-sim requires "
+				" --net-config option "));
+}
 
-		UniformTrafficSimulation(
-				net_system->getNetworkByName(sim_net_name));
+
+void System::ReadConfiguration()
+{
+	// Load network configuration file
+	if (!config_file.empty())
+	{
+		// Load and parse the configuration file
+		misc::IniFile ini_file(config_file);
+		ParseConfiguration(&ini_file);
+
+		// Currently network trace info will be created only if
+		// we have external configuration file. Here we activate the
+		// trace, since we have a configuration file, but the trace
+		// will be updated only if the traceSystem is active as well.
+		trace.On();
+		if (trace)
+			TraceHeader();
 	}
 }
 
+
 void System::TraceHeader()
 {
-	// Trace versions
+	// Update the trace header with network information
 	trace.Header(misc::fmt("net.init version=\"%d.%d\"\n",
 				trace_version_major, trace_version_minor));
 
@@ -225,6 +221,7 @@ void System::TraceHeader()
 	for (auto &network : networks)
 		network->TraceHeader();
 }
+
 
 void System::UniformTrafficSimulation(Network *network)
 {
@@ -301,15 +298,22 @@ void System::UniformTrafficSimulation(Network *network)
 	}
 }
 
-void System::Done()
+void System::StandAlone()
 {
-	// Get the system
-	System *net_system = System::getInstance();
+	// Generate a uniform traffic pattern on the network.
+	// Later, this function can be easily extended (via a switch)
+	// to support other traffic patterns, hence the stand-alone
+	// function is not combined with the uniform traffic function.
+	UniformTrafficSimulation(getNetworkByName(sim_net_name));
+}
 
+
+void System::DumpReport()
+{
 	// Dump report files
 	if (!report_file.empty())
 	{
-		for (auto &network : net_system->networks)
+		for (auto &network : networks)
 			network->DumpReport(report_file);
 	}
 }
