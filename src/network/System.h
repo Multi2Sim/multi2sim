@@ -54,6 +54,9 @@ public:
 /// Network system singleton.
 class System
 {
+	//
+	//	Static members
+	//
 
 	// Debugger file
 	static std::string debug_file;
@@ -91,11 +94,26 @@ class System
 	/// Message size in stand alone network
 	static int message_size;
 
+	// Network trace version identifiers
+	static const int trace_version_major = 1;
+	static const int trace_version_minor = 10;
+
 	// Get a exponential random valueclass Network;
 	static double RandomExponential(double lambda);
 
-	// Uniform traffic simulation
-	static void UniformTrafficSimulation(Network *network);
+
+
+
+
+	//
+	// Event driven simulation
+	//
+
+	// Network event handlers
+	static void EventTypeSendHandler(esim::Event *, esim::Frame *);
+	static void EventTypeOutputBufferHandler(esim::Event *, esim::Frame *);
+	static void EventTypeInputBufferHandler(esim::Event *, esim::Frame *);
+	static void EventTypeReceiveHandler(esim::Event *, esim::Frame *);
 
 
 
@@ -116,20 +134,11 @@ class System
 	// List of networks in the system
 	std::vector<std::unique_ptr<Network>> networks;
 
-
-
-
-	//
-	// Event driven simulation
-	//
-
-	// Network event handlers
-	static void EventTypeSendHandler(esim::Event *, esim::Frame *);
-	static void EventTypeOutputBufferHandler(esim::Event *, esim::Frame *);
-	static void EventTypeInputBufferHandler(esim::Event *, esim::Frame *);
-	static void EventTypeReceiveHandler(esim::Event *, esim::Frame *);
-
 public:
+
+	//
+	// Static members
+	//
 
 	//
 	// Error messages
@@ -158,8 +167,31 @@ public:
 	/// Get instance of singleton
 	static System *getInstance();
 
+	/// Returns true if the instance exists
+	static bool hasInstance() { return instance.get(); }
+
 	/// Destroy the singleton if allocated.
 	static void Destroy() { instance = nullptr; }
+
+
+
+
+	//
+	// Configuration
+	//
+
+	/// Register command-line options
+	static void RegisterOptions();
+
+	/// Process command-line options
+	static void ProcessOptions();
+
+	/// Returns whether we are running as a stand alone simulator.
+	static bool isStandAlone() { return stand_alone; }
+
+	/// Return the message size for stand-alone simulation, as configured
+	/// by the user.
+	static int getMessageSize() { return message_size; }
 
 
 
@@ -188,30 +220,21 @@ public:
 	/// Parse a configuration INI file
 	void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Output the report file
+	void DumpReport();
+
 	/// Update trace file header
 	void TraceHeader();
 
+	// Initialize the network system by parsing the network configuration
+	// file passed with '--net-config' by the user.
+	void ReadConfiguration();
 
+	// Uniform traffic simulation
+	void UniformTrafficSimulation(Network *network);
 
-	//
-	// Configuration
-	//
-
-	/// Register command-line options
-	static void RegisterOptions();
-
-	/// Process command-line options
-	static void ProcessOptions();
-
-	/// Finalizing output files
-	static void Done();
-
-	/// Returns whether we are running as a stand alone simulator.
-	static bool isStandAlone() { return stand_alone; }
-
-	/// Return the message size for stand-alone simulation, as configured
-	/// by the user.
-	static int getMessageSize() { return message_size; }
+	// Stand-Alone simulation
+	void StandAlone();
 };
 
 }  // namespace net

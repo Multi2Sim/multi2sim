@@ -456,10 +456,6 @@ void MainLoop()
 	esim->DisableSignals();
 }
 
-void Done()
-{
-	net::System::Done();
-}
 
 int MainProgram(int argc, char **argv)
 {
@@ -530,18 +526,37 @@ int MainProgram(int argc, char **argv)
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 	if (arch_pool->getNumTiming())
 	{
+		// We need to load the network configuration file prior to
+		// parsing memory config file. The memory config file searches
+		// for the external network if it cannot find the network
+		// in the memory configuration file sections.
+		net::System *net_system = net::System::getInstance();
+		net_system->ReadConfiguration();
+
+		// Parse the memory configuration file
 		mem::System *memory_system = mem::System::getInstance();
 		memory_system->ReadConfiguration();
 	}
 
+	// Initialize network system, only if the option --net-sim is used
+	if (net::System::isStandAlone())
+	{
+		net::System *net_system = net::System::getInstance();
+		net_system->ReadConfiguration();
+		net_system->StandAlone();
+	}
 	// Load programs
 	LoadPrograms();
 		
 	// Main simulation loop
 	MainLoop();
 
-	// Generating the output files
-	Done();
+	// Dumping network report
+	if (net::System::hasInstance())
+	{
+		net::System *net_system = net::System::getInstance();
+		net_system->DumpReport();
+	}
 
 	// Success
 	return 0;

@@ -123,7 +123,7 @@ public:
 	void setUserData(void *user_data) { this->user_data = user_data; }
 
 	/// Return the number of output buffers
-	int getNumOutputBuffers() { return output_buffers.size(); }
+	int getNumOutputBuffers() const { return output_buffers.size(); }
 
 	/// Rreturn output buffer by index
 	Buffer *getOutputBuffer(int index) 
@@ -132,7 +132,7 @@ public:
 	}
 
 	/// Return the number of input buffers
-	int getNumInputBuffers() { return input_buffers.size(); }
+	int getNumInputBuffers() const { return input_buffers.size(); }
 
 	/// Return input buffer by index
 	Buffer *getInputBuffer(int index) 

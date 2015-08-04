@@ -84,6 +84,13 @@ bool Message::Assemble(Packet *packet)
 	// Mark the packet has been received
 	received_packets.push_back(packet);
 
+	// Update the trace with the position of the packet, the depacketizer
+	net::System::trace << misc::fmt("net.packet net=\"%s\" "
+			"name=\"P-%lld:%d\" state=\"%s:depacketizer\" stg=\"DC\"\n",
+			network->getName().c_str(), id,
+			packet->getId(),
+			packet->getNode()->getName().c_str());
+
 	// Check if all the packets of the message received
 	if (received_packets.size() == packets.size())
 	{
