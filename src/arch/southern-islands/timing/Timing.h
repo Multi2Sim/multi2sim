@@ -67,8 +67,8 @@ class Timing : public comm::Timing
 	// Member fields
 	//
 
-	// The GPU object
-	Gpu gpu;
+	// Unique pointer to the gpu object
+	std::unique_ptr<Gpu> gpu;
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;

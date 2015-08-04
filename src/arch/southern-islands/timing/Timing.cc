@@ -239,6 +239,9 @@ Timing::Timing() : comm::Timing("SouthernIslands")
 {
 	// Configure frequency domain with the frequency given by the user
 	ConfigureFrequencyDomain(frequency);
+
+	// Create GPU
+	gpu = misc::new_unique<Gpu>();
 }
 
 
@@ -281,7 +284,7 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 	ini_file->WriteString(section, "Policy", "LRU");
 
 	// Create scalar L1 caches
-	for (int i = 0; i < (Gpu::getNumComputeUnits() + 3) / 4; i++)
+	for (int i = 0; i < (Gpu::num_compute_units + 3) / 4; i++)
 	{
 		section = misc::fmt("Module si-scalar-l1-%d", i);
 		ini_file->WriteString(section, "Type", "Cache");
@@ -294,7 +297,7 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 	}
 
 	// Create vector L1 caches
-	for (int i = 0; i < Gpu::getNumComputeUnits(); i++)
+	for (int i = 0; i < Gpu::num_compute_units; i++)
 	{
 		section = misc::fmt("Module si-vector-l1-%d", i);
 		ini_file->WriteString(section, "Type", "Cache");
@@ -307,7 +310,7 @@ void Timing::WriteMemoryConfiguration(misc::IniFile *ini_file)
 	}
 
 	// Create entries from compute units to L1s
-	for (int i = 0; i < Gpu::getNumComputeUnits(); i++)
+	for (int i = 0; i < Gpu::num_compute_units; i++)
 	{
 		// Entry
 		section = misc::fmt("Entry si-cu-%d", i);
@@ -502,7 +505,7 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 				section.c_str()));
 
 	// Check compute unit boundaries
-	if (compute_unit_id >= Gpu::getNumComputeUnits())
+	if (compute_unit_id >= Gpu::num_compute_units)
 	{
 		misc::Warning("%s: section [%s] ignored, referring "
 				"to Southern Islands compute unit %d. This "
@@ -517,7 +520,7 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 	}
 
 	// Check that entry has not been assigned before
-	ComputeUnit *compute_unit = gpu.getComputeUnit(compute_unit_id);
+	ComputeUnit *compute_unit = gpu->getComputeUnit(compute_unit_id);
 	if (compute_unit->vector_cache)
 		throw misc::Error(misc::fmt("%s: section [%s]: entry from "
 				"compute unit %d already assigned. "
@@ -590,8 +593,8 @@ void Timing::ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 void Timing::CheckMemoryConfiguration(misc::IniFile *ini_file)
 {
 	// Check that all compute units have an entry to the memory hierarchy.
-	for (auto it = gpu.getComputeUnitsBegin(),
-			e = gpu.getComputeUnitsEnd();
+	for (auto it = gpu->getComputeUnitsBegin(),
+			e = gpu->getComputeUnitsEnd();
 			it != e;
 			++it)
 	{
@@ -637,6 +640,12 @@ void Timing::RegisterOptions()
 			"together with a detailed GPU simulation (option "
 			"'--si-sim detailed').");
 
+	// Option --si-max-cycles <int>
+	command_line->RegisterInt64("--si-max-cycles <cycles>", Gpu::max_cycles,
+			"Maximum number of cycles for the timing simulator "
+			"to run.  If this maximum is reached, the simulation "
+			"will finish with the SIMaxCycles string.");
+
 	// Option --si-help
 	command_line->RegisterBool("--si-help", help,
 			"Display a help message describing the format of the "
@@ -676,8 +685,8 @@ void Timing::ProcessOptions()
 
 void Timing::ParseConfiguration(misc::IniFile *ini_file)
 {
-	// Section [General]
-	std::string section = "General";
+	// Section [Device]
+	std::string section = "Device";
 
 	// Frequency domain
 	frequency = ini_file->ReadInt(section, "Frequency", frequency);
@@ -685,7 +694,152 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 		throw Error(misc::fmt("%s: The value for 'Frequency' "
 				"must be between 1MHz and 1000GHz.\n",
 				ini_file->getPath().c_str()));
+	Gpu::num_compute_units = ini_file->ReadInt(section, "NumComputeUnits",
+						   Gpu::num_compute_units);
 
+	// Section [ComputeUnit]
+	section = "ComputeUnit";
+	ComputeUnit::num_wavefront_pools = ini_file->ReadInt(section, "NumWavefrontPools",
+					ComputeUnit::num_wavefront_pools);
+	ComputeUnit::max_work_groups_per_wavefront_pool = ini_file->ReadInt(section,
+					"MaxWorkGroupsPerWavefrontPool",
+					ComputeUnit::max_work_groups_per_wavefront_pool);
+	ComputeUnit::max_wavefronts_per_wavefront_pool = ini_file->ReadInt(section,
+					"MaxWavefrontsPerWavefrontPool",
+					ComputeUnit::max_wavefronts_per_wavefront_pool);
+	//TODO ComputeUnit::num_vector_registers
+	//TODO ComputeUnit::num_scalar_register
+
+	// Section [FrontEnd]
+	section = "FrontEnd";
+	ComputeUnit::fetch_latency = ini_file->ReadInt(section, "FetchLatency",
+					ComputeUnit::fetch_latency);
+	ComputeUnit::fetch_width = ini_file->ReadInt(section, "FetchWidth",
+					ComputeUnit::fetch_width);
+	ComputeUnit::fetch_buffer_size = ini_file->ReadInt(section, "FetchBufferSize",
+					ComputeUnit::fetch_buffer_size);
+	ComputeUnit::issue_latency = ini_file->ReadInt(section, "IssueLatency",
+					ComputeUnit::issue_latency);
+	ComputeUnit::issue_width = ini_file->ReadInt(section, "IssueWidth",
+					ComputeUnit::issue_width);
+	ComputeUnit::max_instructions_issued_per_type = ini_file->ReadInt(section,
+					"MaxInstructionsIssuedPerType",
+					ComputeUnit::max_instructions_issued_per_type);
+
+	// Section [SimdUnit]
+	section = "SimdUnit";
+	SimdUnit::num_simd_lanes = ini_file->ReadInt(section, "NumSIMDLanes",
+					SimdUnit::num_simd_lanes);
+	SimdUnit::width = ini_file->ReadInt(section, "Width", SimdUnit::width);
+	SimdUnit::issue_buffer_size = ini_file->ReadInt(section, "IssueBufferSize",
+					SimdUnit::issue_buffer_size);
+	SimdUnit::decode_latency = ini_file->ReadInt(section, "DecodeLatency",
+					SimdUnit::decode_latency);
+	// TODO SimdUnit::decode_width
+	SimdUnit::decode_buffer_size = ini_file->ReadInt(section, "DecodeBufferSize",
+					SimdUnit::decode_buffer_size);
+	SimdUnit::read_exec_write_latency = ini_file->ReadInt(section,
+					"ReadExecWriteLatency",
+					SimdUnit::read_exec_write_latency);
+	SimdUnit::read_exec_write_buffer_size = ini_file->ReadInt(section,
+					"ReadExecWriteBufferSize",
+					SimdUnit::read_exec_write_buffer_size);
+
+	// Section [ScalarUnit]
+	section = "ScalarUnit";
+	ScalarUnit::width = ini_file->ReadInt(section, "Width", ScalarUnit::width);
+	ScalarUnit::issue_buffer_size = ini_file->ReadInt(section, "IssueBufferSize",
+					ScalarUnit::issue_buffer_size);
+	ScalarUnit::decode_latency = ini_file->ReadInt(section, "DecodeLatency",
+					ScalarUnit::decode_latency);
+	// TODO ScalarUnit::decode_width
+	ScalarUnit::read_latency = ini_file->ReadInt(section, "ReadLatency",
+					ScalarUnit::read_latency);
+	ScalarUnit::read_buffer_size = ini_file->ReadInt(section,
+					"ReadBufferSize",
+					ScalarUnit::read_buffer_size);
+	// TODO ScalarUnit::alu_latency
+	ScalarUnit::exec_buffer_size = ini_file->ReadInt(section,
+					"ExecBufferSize",
+					ScalarUnit::exec_buffer_size);
+	ScalarUnit::write_latency = ini_file->ReadInt(section, "WriteLatency",
+					ScalarUnit::write_latency);
+	ScalarUnit::write_buffer_size = ini_file->ReadInt(section,
+					"write_buffer_size",
+					ScalarUnit::write_buffer_size);
+
+	// Section [BranchUnit]
+	section = "BranchUnit";
+	BranchUnit::width = ini_file->ReadInt(section, "Width", BranchUnit::width);
+	BranchUnit::issue_buffer_size = ini_file->ReadInt(section,
+					"IssueBufferSize",
+					BranchUnit::issue_buffer_size);
+	BranchUnit::decode_latency = ini_file->ReadInt(section, "DecodeLatency",
+					BranchUnit::decode_latency);
+	// TODO BranchUnit::decode_width
+	BranchUnit::read_latency = ini_file->ReadInt(section, "ReadLatency",
+					BranchUnit::read_latency);
+	BranchUnit::read_buffer_size = ini_file->ReadInt(section, "ReadBufferSize",
+					BranchUnit::read_buffer_size);
+	BranchUnit::exec_latency = ini_file->ReadInt(section, "ExecLatency",
+					BranchUnit::exec_latency);
+	BranchUnit::exec_buffer_size = ini_file->ReadInt(section, "ExecBufferSize",
+					BranchUnit::exec_buffer_size);
+	BranchUnit::write_latency = ini_file->ReadInt(section, "WriteLatency",
+					BranchUnit::write_latency);
+	BranchUnit::write_buffer_size = ini_file->ReadInt(section,
+					"WriteBufferSize",
+					BranchUnit::write_buffer_size);
+
+	// Section [LDSUnit]
+	section = "LDSUnit";
+	LdsUnit::width = ini_file->ReadInt(section, "Width", LdsUnit::width);
+	LdsUnit::issue_buffer_size = ini_file->ReadInt(section, "IssueBufferSize",
+					LdsUnit::issue_buffer_size);
+	LdsUnit::decode_latency = ini_file->ReadInt(section, "DecodeLatency",
+					LdsUnit::decode_latency);
+	// TODO LdsUnit::decode_width
+	LdsUnit::read_latency = ini_file->ReadInt(section, "ReadLatency",
+					LdsUnit::read_latency);
+	LdsUnit::read_buffer_size = ini_file->ReadInt(section,
+					"ReadBufferSize",
+					LdsUnit::read_buffer_size);
+	LdsUnit::max_in_flight_mem_accesses = ini_file->ReadInt(section,
+					"MaxInflightMem",
+					LdsUnit::max_in_flight_mem_accesses);
+	LdsUnit::write_latency = ini_file->ReadInt(section, "WriteLatency",
+					LdsUnit::write_latency);
+	LdsUnit::write_buffer_size = ini_file->ReadInt(section,
+					"WriteBufferSize",
+					LdsUnit::write_buffer_size);
+
+	// Section [VectorMemUnit]
+	VectorMemoryUnit::width = ini_file->ReadInt(section, "Width",
+					VectorMemoryUnit::width);
+	VectorMemoryUnit::issue_buffer_size = ini_file->ReadInt(section,
+					"IssueBufferSize",
+					VectorMemoryUnit::issue_buffer_size);
+	VectorMemoryUnit::decode_latency = ini_file->ReadInt(section,
+					"DecodeLatency",
+					VectorMemoryUnit::decode_latency);
+	// TODO VectorMemoryUnit::decode_width
+	VectorMemoryUnit::read_latency = ini_file->ReadInt(section,
+					"ReadLatency",
+					VectorMemoryUnit::read_latency);
+	VectorMemoryUnit::read_buffer_size = ini_file->ReadInt(section,
+					"ReadBufferSize",
+					VectorMemoryUnit::read_buffer_size);
+	VectorMemoryUnit::max_inflight_mem_accesses = ini_file->ReadInt(section,
+					"MaxInflightMem",
+					VectorMemoryUnit::max_inflight_mem_accesses);
+	VectorMemoryUnit::write_latency = ini_file->ReadInt(section,
+					"WriteLatency",
+					VectorMemoryUnit::write_latency);
+	VectorMemoryUnit::write_buffer_size = ini_file->ReadInt(section,
+					"WriteBufferSize",
+					VectorMemoryUnit::write_buffer_size);
+
+	// TODO Section [LDS]
 }
 
 
@@ -757,8 +911,8 @@ bool Timing::Run()
 
 	// Stop if maximum number of GPU cycles exceeded
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	if (Gpu::getMaxCycles() && getCycle() >=
-			Gpu::getMaxCycles())
+	if (Gpu::max_cycles && getCycle() >=
+			Gpu::max_cycles)
 		esim_engine->Finish("SIMaxCycles");
 
 	// Stop if maximum number of GPU instructions exceeded
@@ -767,7 +921,7 @@ bool Timing::Run()
 		esim_engine->Finish("SIMaxInstructions");
 
 	// Stop if there was a simulation stall
-	if (gpu.last_complete_cycle > 1000000)
+	if (gpu->last_complete_cycle > 1000000)
 	{
 		//warning("Southern Islands GPU simulation stalled.\n%s",
 		//	si_err_stall);
@@ -779,7 +933,7 @@ bool Timing::Run()
 		return true;
 
 	// Run one loop iteration on each busy compute unit
-	gpu.Run();
+	gpu->Run();
 
 	// Still running
 	return true;
