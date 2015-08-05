@@ -396,7 +396,8 @@ void Engine::Next(Event *event,
 }
 
 
-void Engine::Execute(Event *event)
+void Engine::Execute(Event *event, std::shared_ptr<Frame> frame,
+		Event *receive_event)
 {
 	// Null event
 	if (event == nullptr || event == null_event)
@@ -406,8 +407,9 @@ void Engine::Execute(Event *event)
 	std::shared_ptr<Frame> old_current_frame = current_frame;
 
 	// Create new frame if none exists
-	if (!current_frame)
-		current_frame = misc::new_shared<Frame>();
+	frame->parent_frame = current_frame;
+	frame->return_event = receive_event;
+	current_frame = frame;
 
 	// Execute event handler
 	EventHandler event_handler = event->getEventHandler();

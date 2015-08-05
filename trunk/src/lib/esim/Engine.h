@@ -306,7 +306,19 @@ public:
 	///
 	/// \param event
 	///	Type of event to execute
-	void Execute(Event *event);
+	///
+	/// \param event_frame
+	///	Data associated with the event, given as a shared pointer. This
+	///	object will be freed automatically when the last reference to
+	///	it disappears.
+	///
+	/// \param return_event
+	///	During the execution of the event handler of \a event, an
+	///	invocation to Return() will cause \a return_event to be
+	///	scheduled, using the current frame as the event data.
+	///
+	void Execute(Event *event, std::shared_ptr<Frame> event_frame,
+			Event *return_event);
 
 	/// Schedule an event, creating a new event chain with its new event
 	/// frame. The next invocation to Return() in an event handler of any
