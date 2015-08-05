@@ -638,6 +638,35 @@ void Network::DumpReport(const std::string &path)
 }
 
 
+void Network::StaticGraph(const std::string &path)
+{
+	// Open file
+	std::string graph_path = name + "_" + path;
+	std::ofstream f(graph_path);
+	if (!f)
+		throw Error(misc::fmt("%s: cannot open file for write",
+				path.c_str()));
+
+	// Create a graph
+	this->graph = misc::new_unique<net::Graph>(this);
+
+	// Get the graph pointer
+	Graph *graph = this->graph.get();
+
+	// Populate the graph
+	graph->Populate();
+
+	// Calculate the coordinations of vertices for the graph
+	graph->LayeredDrawing();
+
+	// Scale the graph appropriately for the static version
+	graph->Scale();
+
+	// Dump the required data into the output file
+	graph->DumpGraph(f);
+}
+
+
 void Network::Dump(std::ostream &os) const
 {
 	// Dump network information

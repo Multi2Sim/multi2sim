@@ -30,6 +30,7 @@
 #include "Link.h"
 #include "Bus.h"
 #include "Buffer.h"
+#include "Graph.h"
 #include "Message.h"
 #include "RoutingTable.h"
 
@@ -118,6 +119,15 @@ class Network
 
 	// Accumulation of size of all messages in the network
 	long long accumulated_bytes = 0;
+
+
+
+
+	//
+	// Visualization graph
+	//
+
+	std::unique_ptr<net::Graph> graph;
 
 public:
 
@@ -376,6 +386,8 @@ public:
 	/// Generating the report dump
 	void DumpReport(const std::string &path);
 	
+	/// Generating the static graph file
+	void StaticGraph(const std::string &path);
 };
 
 
