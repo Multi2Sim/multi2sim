@@ -21,6 +21,8 @@
 
 #include <arch/southern-islands/disassembler/Argument.h>
 #include <arch/southern-islands/emulator/Emulator.h>
+#include <arch/southern-islands/timing/Gpu.h>
+#include <arch/southern-islands/timing/Timing.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -556,9 +558,13 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Get emulator instance
-	SI::Emulator *emulator = SI::Emulator::getInstance();
+	// Get emulator and timing instance
+	Emulator *emulator = Emulator::getInstance();
+	Timing *timing = Timing::getInstance();
 	
+	// Get gpu object from timing instance
+	Gpu *gpu  = timing->getGpu();
+
 	// Arguments
 	int kernel_id;
 	int work_dim;
@@ -611,9 +617,9 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	// Set the global and local sizes
 	ndrange->SetupSize(global_size, local_size, work_dim);
 
-	// FIXME
-	// if (si_gpu)
-	// 	SIGpuMapNDRange(si_gpu, ndrange);
+	// Calculate the allowed work groups per wavefront pool and compute unit
+	if (gpu)
+	 	gpu->MapNDRange(ndrange);
 	
 	// Return ID of new nd-range 
 	return ndrange->getId();

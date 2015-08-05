@@ -40,7 +40,8 @@ int ComputeUnit::issue_width = 5;
 int ComputeUnit::max_instructions_issued_per_type = 1;
 	
 
-ComputeUnit::ComputeUnit(int index) :
+ComputeUnit::ComputeUnit(int index, Gpu *gpu) :
+		gpu(gpu),
 		index(index),
 		scalar_unit(this),
 		branch_unit(this),
@@ -189,7 +190,8 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		Wavefront *wavefront = wavefront_pool_entry->getWavefront();
 
 		// Checks
-		assert(wavefront);
+		if (!wavefront)
+			continue;
 
 		// This should always be checked, regardless of how many
 		// instructions have been fetched
@@ -363,6 +365,11 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 	// Checks
 	assert((int) work_groups.size() <= gpu->getWorkGroupsPerComputeUnit());
+	
+	// If compute unit is not full, add it back to the available list
+	if ((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit())
+		gpu->setComputeUnitAvailable(index, true);
+
 
 	// Assign wavefront identifiers in compute unit
 	int wavefront_id = 0;
@@ -445,6 +452,8 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	// If compute unit is not already in the available list, place
 	//  it there
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+	if (!gpu->isComputeUnitAvailable(index))
+		gpu->setComputeUnitAvailable(index, true);
 
 	// Trace
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,

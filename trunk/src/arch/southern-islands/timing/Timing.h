@@ -161,6 +161,9 @@ public:
 		assert(index >= 0 && index < (int) entry_modules.size());
 		return entry_modules[index];
 	}
+
+	/// Get the pointer to the gpu object
+	Gpu *getGpu() const { return gpu.get(); }
 };
 
 

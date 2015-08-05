@@ -854,7 +854,6 @@ bool Timing::Run()
 	if (!emulator->getNumNDRanges())
 		return false;
 
-	/*
 	// Add any available work groups to the waiting list
 	for (auto it = emulator->getNDRangesBegin();
 			it != emulator->getNDRangesEnd();
@@ -864,50 +863,32 @@ bool Timing::Run()
 		NDRange *ndrange = it->get();
 
 		// Break if there are no waiting work groups
-		if (!ndrange->getNumWaitingWorkgroups())
+		if (ndrange->isWaitingWorkGroupsEmpty())
 			break;
 
-		for (int i = 0; i < ndrange->getNumWaitingWorkgroups();
+		// Setup WorkGroup pointer
+		WorkGroup *work_group = nullptr;
+		
+		// Map work groups to compute units
+		for (unsigned i = 0; i < ndrange->getNumWaitingWorkgroups(); 
 				i++)
 		{
 			// Remove work group from list and get its ID
-			long work_group_id = ndrange->waiting_work_groups.front();
+			long work_group_id = ndrange->GetWaitingWorkGroup();
+			work_group = ndrange->ScheduleWorkGroup(work_group_id);
 
-			// Instantiate the work group
-			WorkGroup *work_group = misc::new_unique<WorkGroup>(ndrange, work_group_id);
-			ndrange->AddWorkgroupIdToWaitingList(work_group_id);
+			// Get an available compute unit
+			int compute_unit_id = gpu->getAvailableComputeUnit();
+			assert(compute_unit_id >= 0);
+			gpu->setComputeUnitAvailable(compute_unit_id, false);
+			ComputeUnit *compute_unit = gpu->getComputeUnit(
+					compute_unit_id);
+
+			// Map the work group to a compute unit
+			compute_unit->MapWorkGroup(work_group);
 		}
 	}
-	*/
 
-
-	/*
-	// Allocate work-groups to compute units
-	while (list_count(gpu->available_compute_units) && 
-		list_count(gpu->waiting_work_groups))
-	{
-		work_group = (SIWorkGroup*) list_dequeue(
-			gpu->waiting_work_groups);
-
-		list_enqueue(gpu->running_work_groups, work_group);
-
-		SIComputeUnitMapWorkGroup(
-			list_dequeue(gpu->available_compute_units),
-			work_group);
-
-		// Let the driver when all work groups have been scheduled
-		if (opencl_driver && 
-			!list_count(gpu->waiting_work_groups))
-		{
-			OpenclDriverRequestWork(opencl_driver, ndrange);
-		}
-	}
-	*/
-
-	/*
-	// One more cycle
-	asTiming(self)->cycle++;
-	*/
 
 	// Stop if maximum number of GPU cycles exceeded
 	esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -921,7 +902,7 @@ bool Timing::Run()
 		esim_engine->Finish("SIMaxInstructions");
 
 	// Stop if there was a simulation stall
-	if (gpu->last_complete_cycle > 1000000)
+	if (gpu->last_complete_cycle && gpu->last_complete_cycle > 1000000)
 	{
 		//warning("Southern Islands GPU simulation stalled.\n%s",
 		//	si_err_stall);
