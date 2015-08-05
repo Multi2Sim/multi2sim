@@ -23,6 +23,9 @@ libcpp_a_SOURCES = \
 	Error.cc \
 	Error.h \
 	\
+	Graph.cc \
+	Graph.h \
+	\
 	IniFile.cc \
 	IniFile.h \
 	\

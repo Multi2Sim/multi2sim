@@ -67,6 +67,9 @@ class System
 	// Configuration file
 	static std::string report_file;
 
+	// Static graph file
+	static std::string graph_file;
+
 	// Show help for network configuration file
 	static bool help;
 
@@ -222,6 +225,9 @@ public:
 
 	/// Output the report file
 	void DumpReport();
+
+	/// Output the static graph file
+	void StaticGraph();
 
 	/// Update trace file header
 	void TraceHeader();
