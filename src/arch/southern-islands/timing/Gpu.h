@@ -78,6 +78,9 @@ private:
 
 	// Vector of compute units
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
+	
+	// List of available compute units
+	std::vector<bool> available_compute_units;
 
 	// Granularity of the register allocation
 	RegisterAllocationGranularity register_allocation_granularity = 
@@ -110,10 +113,38 @@ public:
 	//
 
 	/// Last cycle when uop completed execution
-	long long last_complete_cycle;
+	long long last_complete_cycle = 0;
 
 	/// Constructor
 	Gpu();
+
+	/// Set the availablity status of a compute unit
+	void setComputeUnitAvailable(int index, bool available) 
+	{ 
+		assert(misc::inRange(index, 0, 
+				available_compute_units.size() - 1));
+		available_compute_units[index] = available;
+	}
+	
+	/// Check if a compute unit is available
+	bool isComputeUnitAvailable(int index) 
+	{ 
+		assert(misc::inRange(index, 0, 
+				available_compute_units.size() - 1));
+		return available_compute_units[index];
+	}
+
+	/// Return the index of an available compute unit. If no compute units
+	/// are available '-1' is is returned
+	int getAvailableComputeUnit()
+	{
+		for (int i = 0; i < num_compute_units; i++)
+		{
+			if (available_compute_units[i])
+				return i;
+		}
+		return -1;
+	}
 
 	/// Return the compute unit with the given index.
 	ComputeUnit *getComputeUnit(int index) const
@@ -122,7 +153,7 @@ public:
 		return compute_units[index].get();
 	}
 
-	/// return the number of work groups per compute unit
+	/// Return the number of work groups per compute unit
 	int getWorkGroupsPerComputeUnit() const 
 	{
 		return work_groups_per_compute_unit; 

@@ -145,7 +145,7 @@ public:
 	//
 
 	/// Constructor
-	ComputeUnit(int index);
+	ComputeUnit(int index, Gpu *gpu);
 
 	/// Advance compute unit state by one cycle
 	void Run();
