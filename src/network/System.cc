@@ -35,6 +35,8 @@ std::string System::debug_file;
 
 std::string System::report_file;
 
+std::string System::graph_file;
+
 misc::Debug System::debug;
 
 esim::Trace System::trace;
@@ -163,6 +165,13 @@ void System::RegisterOptions()
 			"in the network configuration file (option '--net-config'). "
 			"The report includes statistics on bandwidth utilization, "
 			"network traffic, etc.)");
+
+	// Static graph file
+	command_line->RegisterString("--net-visual <file>", graph_file,
+			"File for graphically representing the interconnection network. "
+			"This file is an input for a supplementary tool called "
+			"'graphplot' which is located in samples/network folder "
+			"in multi2sim trunk.");
 }
 
 
@@ -320,6 +329,16 @@ void System::DumpReport()
 	{
 		for (auto &network : networks)
 			network->DumpReport(report_file);
+	}
+}
+
+
+void System::StaticGraph()
+{
+	if (!graph_file.empty())
+	{
+		for (auto &network : networks)
+			network->StaticGraph(graph_file);
 	}
 }
 

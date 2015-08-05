@@ -15,6 +15,9 @@ libnetwork_a_SOURCES = \
 	\
 	Frame.h \
 	\
+	Graph.h \
+	Graph.cc \
+	\
 	Link.h \
 	Link.cc \
 	\
@@ -39,6 +42,6 @@ libnetwork_a_SOURCES = \
 	SystemEvents.cc \
 	\
 	Switch.h \
-	Switch.cc
+	Switch.cc 
 
 AM_CPPFLAGS = @M2S_INCLUDES@

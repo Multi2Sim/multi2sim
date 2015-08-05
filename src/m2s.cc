@@ -555,7 +555,12 @@ int MainProgram(int argc, char **argv)
 	if (net::System::hasInstance())
 	{
 		net::System *net_system = net::System::getInstance();
+
+		// Dump the network report
 		net_system->DumpReport();
+
+		// Dump the network data for static visualization
+		net_system->StaticGraph();
 	}
 
 	// Success
