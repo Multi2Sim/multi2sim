@@ -159,9 +159,9 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 				required_buffer_size =
 						System::getMessageSize();
 
-			if (input_buffer_size <= required_buffer_size ||
-					output_buffer_size <= required_buffer_size)
-				throw Error(misc::fmt("%s: Buffer size on the end node"
+			if (input_buffer_size < required_buffer_size ||
+					output_buffer_size < required_buffer_size)
+				throw Error(misc::fmt("%s: Buffer size on the end node "
 						"should be able to fit at least a whole message, "
 						"or all the packets of the message",
 						config->getPath().c_str()));
@@ -811,7 +811,7 @@ Message *Network::Send(EndNode *source_node,
 		frame->automatic_receive = !receive_event;
 
 		// Schedule send event
-		esim_engine->Call(System::event_send, frame, receive_event);
+		esim_engine->Execute(System::event_send, frame, receive_event);
 	}
 
 	// Return message
