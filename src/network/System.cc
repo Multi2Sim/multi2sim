@@ -304,7 +304,12 @@ void System::StandAlone()
 	// Later, this function can be easily extended (via a switch)
 	// to support other traffic patterns, hence the stand-alone
 	// function is not combined with the uniform traffic function.
-	UniformTrafficSimulation(getNetworkByName(sim_net_name));
+	Network *network = getNetworkByName(sim_net_name);
+	if (!network)
+		throw Error(misc::fmt("%s: The network does not exist for "
+				"stand-alone simulation\n",
+				config_file.c_str()));
+	UniformTrafficSimulation(network);
 }
 
 
