@@ -54,7 +54,7 @@ WavefrontPool::WavefrontPool(int id, ComputeUnit *compute_unit) :
 	// Populate wavefront_pool_entries vector
 	wavefront_pool_entries.resize(
 			ComputeUnit::max_wavefronts_per_wavefront_pool);
-	for (int i = 0; i < ComputeUnit::num_wavefront_pools; i++)
+	for (int i = 0; i < ComputeUnit::max_wavefronts_per_wavefront_pool; i++)
 		wavefront_pool_entries[i] = 
 				misc::new_unique<WavefrontPoolEntry>(i, this);	
 }

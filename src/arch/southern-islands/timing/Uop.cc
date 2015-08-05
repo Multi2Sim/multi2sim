@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/emulator/Wavefront.h>
+#include <arch/southern-islands/emulator/WorkGroup.h>
 
 #include "ComputeUnit.h"
 #include "Uop.h"
@@ -43,6 +44,9 @@ Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
 	id_in_wavefront = wavefront->getUopId();
 	compute_unit = wavefront_pool_entry->getWavefrontPool()->getComputeUnit();
 	id_in_compute_unit = compute_unit->getUopId();
+	
+	// Allocate room for the work item info structures
+	work_item_info_list.resize(WorkGroup::WavefrontSize);
 }
 
 }

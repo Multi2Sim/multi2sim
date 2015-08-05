@@ -249,13 +249,13 @@ public:
 
 
 	/// Last global memory address
-	unsigned global_memory_access_address;
+	unsigned global_memory_access_address = 0;
 
 	/// Last global memory access size
-	unsigned global_memory_access_size;
+	unsigned global_memory_access_size = 0;
 
 	/// Last LDS accesses by last instruction
-	int lds_access_count;
+	int lds_access_count = 0;
 
 	/// Information for each lds access
 	MemoryAccess lds_access[MaxLdsAccessesPerInst];

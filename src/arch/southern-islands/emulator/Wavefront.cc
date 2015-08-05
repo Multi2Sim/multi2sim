@@ -154,6 +154,7 @@ void Wavefront::Execute()
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
 	Instruction inst;
+	this->inst = &inst;
 
 	// Reset instruction flags
 	vector_memory_write = 0;
