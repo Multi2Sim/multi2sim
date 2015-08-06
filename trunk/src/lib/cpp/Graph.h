@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef LIB_CPP_GRAPH_H
+#define LIB_CPP_GRAPH_H
+
 #include "String.h"
 
 namespace misc
@@ -25,6 +28,8 @@ namespace misc
 // Class vertex
 class Vertex
 {
+public:
+
 	// Vertex kind
 	enum VertexKind
 	{
@@ -33,20 +38,42 @@ class Vertex
 		VertexKindDummy
 	};
 
+protected:
+
 	// Vertex name
 	std::string name;
+
+	// Vertex kind
+	VertexKind vertex_kind;
 
 	// Vertex coordinations
 	int xValue;
 	int yValue;
 
-	// Vertex degrees and list of connected vertices
-	int in_degree;
-	std::vector<Vertex *> input_vertices;
-	int out_degree;
-	std::vector<Vertex *> output_vertices;
+	// List of connected vertices to the vertex
+	std::vector<Vertex *> incoming_vertices;
+	std::vector<Vertex *> outgoing_vertices;
 
+public:
 
+	// Constructor
+	Vertex(std::string name, VertexKind kind) :
+		name(name),
+		vertex_kind(kind)
+	{
+	}
+
+	// Adding a vertex to the outgoing list of the current vertex
+	void addOutgoingVertex(Vertex *vertex)
+	{
+		outgoing_vertices.emplace_back(vertex);
+	}
+
+	// Adding a vertex to the incoming list of the current vertex
+	void addIncomingVertex(Vertex *vertex)
+	{
+		incoming_vertices.emplace_back(vertex);
+	}
 };
 
 // Class edge
@@ -68,10 +95,27 @@ class Edge
 
 	// Reversed is set when the edge is reversed in cycle removal process
 	bool reveresed = false;
+
+public:
+
+	// Constructor
+	Edge(Vertex *source_vertex, Vertex *destination_vertex) :
+		source_vertex(source_vertex),
+		destination_vertex(destination_vertex)
+	{
+	}
+
+	// Return edge's source vertex
+	Vertex *getSourceVertex() const { return source_vertex; }
+
+	// Return edge's destination vertex
+	Vertex *getDestinationVertex() const { return destination_vertex; }
 };
 
 class Graph
 {
+
+protected:
 
 	// Maximum number of vertices in each layer of the graph
 	int max_layer_vertices;
@@ -104,3 +148,5 @@ public:
 };
 
 }
+
+#endif

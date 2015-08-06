@@ -17,12 +17,53 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef NETWORK_GRAPH_H
+#define NETWORK_GRAPH_H
+
 #include <lib/cpp/Graph.h>
+#include "Network.h"
+#include "Node.h"
+#include "Link.h"
 
 namespace net
 {
 
-class Network;
+class Vertex : public misc::Vertex
+{
+	// Associated node with the vertex
+	Node *node;
+
+public:
+	// Constructor
+	Vertex(Node *node, std::string name, VertexKind kind):
+			misc::Vertex(name, kind),
+			node(node)
+	{
+	}
+};
+
+class Edge : public misc::Edge
+{
+	// Associated link with the edge, in unidirectional case
+	Link *downstream_link;
+
+	// Other associated link with the edge, in case it is bidirectional
+	Link *upstream_link;
+
+public:
+
+	// Constructor
+	Edge(Link *link,
+			misc::Vertex *source_vertex,
+			misc::Vertex *destination_vertex):
+		misc::Edge(source_vertex, destination_vertex),
+		downstream_link(link)
+	{
+	}
+
+	// Setting the upstream link for the network edge
+	void setUpstreamLink(Link *link) { upstream_link = link; }
+};
 
 class Graph : public misc::Graph
 {
@@ -38,10 +79,12 @@ public:
 	void DumpGraph(std::ostream &os) const {};
 
 	// Populate the graph based on the information provided by the network
-	void Populate() {};
+	void Populate();
 
 	// Scale the graph, appropriately for the eps output file
 	void Scale() {};
 };
 
 }
+
+#endif
