@@ -815,7 +815,6 @@ Message *Network::Send(EndNode *source_node,
 			name.c_str(), message->getId(),
 			source_node->getName().c_str());
 
-
 	// Send the message out
 	for (int i = 0; i < message->getNumPackets(); i++)
 	{
