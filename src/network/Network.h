@@ -25,14 +25,14 @@
 #include <lib/esim/Event.h>
 #include <lib/esim/Engine.h>
 
-#include "System.h"
-#include "Node.h"
-#include "Link.h"
 #include "Bus.h"
 #include "Buffer.h"
 #include "Graph.h"
+#include "Link.h"
 #include "Message.h"
+#include "Node.h"
 #include "RoutingTable.h"
+#include "System.h"
 
 namespace net
 {
@@ -40,6 +40,7 @@ class Connection;
 class EndNode;
 class Node;
 class Switch;
+class Graph;
 
 class Network
 {
@@ -59,7 +60,7 @@ class Network
 	// Total number of end nodes in the network
 	int num_end_nodes = 0;
 
-	// List of links in the network
+	// List of connections in the network
 	std::vector<std::unique_ptr<Connection>> connections;
 
 	// Last cycle the snapshot is recorded
@@ -127,7 +128,7 @@ class Network
 	// Visualization graph
 	//
 
-	std::unique_ptr<net::Graph> graph;
+	std::unique_ptr<Graph> graph;
 
 public:
 
@@ -377,11 +378,18 @@ public:
 	/// Find and returns connection in the network using connection name.
 	///
 	/// \param name
-	///	node name
+	///	connection name
 	Connection *getConnectionByName(const std::string &name) const;
 
-	/// Return the number of nodes
-	virtual int getNumberConnections() const { return connections.size(); }
+	/// Return a connection by its index.
+	Connection *getConnection(int index)
+	{
+		assert(index >= 0 && index < (int) connections.size());
+		return connections[index].get();
+	}
+
+	/// Return the number of connection
+	int getNumConnections() const { return connections.size(); }
 
 	/// Generating the report dump
 	void DumpReport(const std::string &path);

@@ -1022,7 +1022,7 @@ TEST(TestSystemConfiguration, config_1_net_4_node_1_switch)
 	EXPECT_TRUE(net0->getConnectionByName("link_s0_n2") != nullptr);
 	EXPECT_TRUE(net0->getConnectionByName("link_n3_s0") != nullptr);
 	EXPECT_TRUE(net0->getConnectionByName("link_s0_n3") != nullptr);
-	EXPECT_TRUE(net0->getNumberConnections() == 8);
+	EXPECT_TRUE(net0->getNumConnections() == 8);
 }
 
 TEST(TestSystemConfiguration, section_bus_unknown_varialbe)
