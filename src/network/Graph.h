@@ -30,6 +30,8 @@ namespace net
 
 class Vertex : public misc::Vertex
 {
+	friend class Graph;
+
 	// Associated node with the vertex
 	Node *node;
 
@@ -44,6 +46,8 @@ public:
 
 class Edge : public misc::Edge
 {
+	friend class Graph;
+
 	// Associated link with the edge, in unidirectional case
 	Link *downstream_link;
 
@@ -76,13 +80,21 @@ public:
 	Graph(Network *network);
 
 	/// Dump the information related to static visualization graph
-	void DumpGraph(std::ostream &os) const {};
+	void DumpGraph(std::ostream &os) const;
 
 	// Populate the graph based on the information provided by the network
 	void Populate();
 
-	// Scale the graph, appropriately for the eps output file
-	void Scale() {};
+	// Draw the layered graph drawing.
+	void LayeredDrawing();
+
+	// Adding dummy vertices to the graph
+	void AddDummyVertices();
+
+	/// Function to scale the graph for the screen. This function
+	/// is dependent on where the graph is used, and what is the output
+	/// medium (e.g. file, screen)
+	void Scale();
 };
 
 }

@@ -31,6 +31,9 @@ void Graph::GreedyCycleRemoval()
 	int start = 1;
 	int end = vertices.size() + 1;
 
+	// Create a vector of vertexes for sorting
+	std::vector<Vertex *> sort_list;
+
 	// We use the x_value and key_value of the vertex for sorting the list,
 	// to avoid adding new variable that will never be used again.
 	for (auto &vertex : vertices)
@@ -48,6 +51,8 @@ void Graph::GreedyCycleRemoval()
 
 		vertex->key = vertex->getNumOutgoingVertecies() -
 				vertex->getNumIncomingVertices();
+
+		sort_list.emplace_back(vertex.get());
 	}
 
 	// At this point, vertices with just outgoing edges have the least
@@ -59,7 +64,7 @@ void Graph::GreedyCycleRemoval()
 	// with vertices having the most number of outgoing, and the least number
 	// of incoming edges to vertices with the least number of outgoing, and
 	// most number of incoming edges.
-	std::sort(vertices.begin(), vertices.end());
+	std::sort(sort_list.begin(), sort_list.end(), Vertex::Compare);
 	for (auto &vertex : vertices)
 	{
 		if (vertex->x_value == 0)
@@ -115,7 +120,7 @@ void Graph::GreedyCycleRemoval()
 }
 
 
-void Graph::CoffmanGrahamLayering(int width)
+int Graph::CoffmanGrahamLayering(int width)
 {
 	//
 	// Phase 1: Assigning labels
@@ -340,20 +345,150 @@ void Graph::CoffmanGrahamLayering(int width)
 			ordered_list.emplace_back(candidate);
 		}
 	}
+
+	// Returning the number of layers we have in the layered drawing
+	int num_layers = 0;
+	for (auto &vertex : vertices)
+		if (vertex->y_value > num_layers)
+			num_layers = vertex->y_value;
+	return num_layers;
 }
 
 
-void Graph::LayeredDrawing()
+void Graph::InitializeXValues(int num_layers)
 {
-	// First remove the cycles in the graph
-	GreedyCycleRemoval();
+	// Setting the initial x_value and counting the number of vertices in
+	// each layer
+	for (int layer = 0; layer <= num_layers; layer++)
+	{
+		int num_vertices_in_layer = 0;
+		for (auto &vertex : vertices)
+			if (vertex->y_value == layer)
+			{
+				vertex->x_value = num_vertices_in_layer;
+				num_vertices_in_layer++;
+			}
 
-	// Maximum number of nodes in each layer
-	int width = vertices.size() / 2 + 1;
+		// Finding the number of vertices in most crowded layer
+		if (max_vertices_in_layers < num_vertices_in_layer)
+			max_vertices_in_layers = num_vertices_in_layer;
 
-	// Applying the main layering algorithm
-	CoffmanGrahamLayering(width);
+		// Calculating the number of neighbors for each vertex
+		for (auto &vertex : vertices)
+			if (vertex->y_value == layer)
+				vertex->neighbors = num_vertices_in_layer;
+	}
+}
 
+
+void Graph::CrossReduction(int num_layers)
+{
+	// Number of times we apply the cross reduction
+	int reduction_count = 10;
+
+	for (int it = 0 ; it < reduction_count; it++)
+	{
+		// Cross reduction can be in two directions/cases.
+		// Case 0) Upper layers to lower layers
+		// Case 1) Lower layers to upper layers
+		// Each iteration is identified by the which layer to begin,
+		// which layer to end, and the direction itself.
+		int begin = 0;
+		int end = 0;
+		int direction = 0;
+		if (it / 2)
+		{
+			begin = 0;
+			end = num_layers;
+			direction = 1;
+		}
+		else
+		{
+			begin = num_layers;
+			end = 0;
+			direction = -1;
+		}
+
+		// The number of intersections between two levels are minimum
+		// if we move the vertex, which is one layer apart from its
+		// source vertices of its edges, closest to these source vertices.
+		// Since we cannot change the layer (Y value), we reduce the
+		// distance by changing the position in the layer (X value).
+		// The vertex is optimally close to all the source vertices,
+		// if we get the position of the source vertices, and place
+		// the vertices right between them.
+		for (int layer = begin; layer <= end; layer += direction)
+		{
+			// For every vertex we create a cross reduction key value
+			for (auto &vertex : vertices)
+			{
+				// If the vertex is in the current layer under examination
+				if (vertex->y_value == layer)
+				{
+					// The vertex's key is used to store the optimal position
+					// for cross reduction value of vertices in the current
+					// list. Since this value might be float, we will have
+					// vertices with overlapping keys
+					vertex->key = 0;
+
+					// If the number of incoming vertices is zero, keep the
+					// previous position, which it is likely that it was
+					// calculated in iteration of the reduction in previous
+					// layer.
+					if (vertex->incoming_vertices.size() == 0)
+						vertex->key = vertex->x_value;
+					else
+					{
+						// Calculate vertex's optimal cross value by adding
+						// the x value of the source vertices of its edges
+						// and dividing it by the number of source vertices
+						for (Vertex *incoming_vertex :
+								vertex->incoming_vertices)
+							vertex->key += incoming_vertex->x_value;
+						vertex->key /= vertex->incoming_vertices.size();
+					}
+				}
+			}
+
+			// At this point we have updated all the vertices. We will again
+			// identify the vertices in the current layer, add them to a
+			// separate list, and sort them in the correct order by their
+			// optimal position in the layer
+			std::vector<Vertex *> neighboring_vertices;
+			for (auto &vertex : vertices)
+				if (vertex->y_value == layer)
+					neighboring_vertices.emplace_back(vertex.get());
+			std::sort(neighboring_vertices.begin(),
+					neighboring_vertices.end(), Vertex::Compare);
+
+			// To overcome the overlapping vertices problem, we traverse
+			// the sorted list, and move the vertices to the next available
+			// spot in the x direction.
+			Vertex *first_vertex = neighboring_vertices[0];
+			first_vertex->x_value = first_vertex->key;
+			int next_position = first_vertex->key + 1;
+
+			for (unsigned i = 1; i < neighboring_vertices.size(); i++)
+			{
+				Vertex *vertex = neighboring_vertices[i];
+				if (vertex->key < next_position)
+					vertex->x_value = next_position;
+				else
+					vertex->x_value = vertex->key;
+				next_position = vertex->x_value + 1;
+
+				// The above method keeps the distance between two adjacent
+				// vertices, intact. For finalizing the x_value, we
+				// left-align the layer. i.e. position the first vertex
+				// at x value of 0 and the next vertex in the layer based
+				// on the optimal distant from the first vertex, and so on.
+				vertex->x_value -= first_vertex->x_value;
+			}
+
+			// Last step in left-aligning the layer
+			first_vertex->x_value = 0;
+		}
+	}
 }
 
 }
