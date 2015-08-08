@@ -653,14 +653,8 @@ void Network::StaticGraph(const std::string &path)
 	// Get the graph pointer
 	Graph *graph = this->graph.get();
 
-	// Populate the graph
-	graph->Populate();
-
 	// Calculate the coordinations of vertices for the graph
 	graph->LayeredDrawing();
-
-	// Scale the graph appropriately for the static version
-	graph->Scale();
 
 	// Dump the required data into the output file
 	graph->DumpGraph(f);

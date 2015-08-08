@@ -1,9 +1,9 @@
 ;--------------------------------------------Network
 [Network.net0]
-DefaultInputBufferSize = 528
-DefaultOutputBufferSize = 528
-DefaultBandwidth = 16
-DefaultPacketSize = 16
+DefaultInputBufferSize = 100
+DefaultOutputBufferSize = 100
+DefaultBandwidth = 1
+DefaultPacketSize = 1
 
 ;--------------------------------------------------Nodes
 [Network.net0.Node.n0]
