@@ -49,9 +49,6 @@ protected:
 	// Vertex name
 	std::string name;
 
-	// Vertex kind
-	VertexKind vertex_kind;
-
 	// Vertex coordinations
 	int x_value = 0;
 	int y_value = -1;
@@ -59,9 +56,15 @@ protected:
 	// Key value that is used in different algorithm including sorting
 	int key = 0;
 
+	// Number of vertices in the layer which the vertex is located
+	int neighbors = 0;
+
 	// List of connected vertices to the vertex
 	std::vector<Vertex *> incoming_vertices;
 	std::vector<Vertex *> outgoing_vertices;
+
+	// Vertex kind
+	VertexKind vertex_kind;
 
 public:
 
@@ -71,6 +74,9 @@ public:
 		vertex_kind(kind)
 	{
 	}
+
+	// Destructor
+	virtual ~Vertex() {};
 
 	// Adding a vertex to the outgoing list of the current vertex
 	void addOutgoingVertex(Vertex *vertex)
@@ -90,6 +96,14 @@ public:
 	// Return the size of the incoming list, also known as in-degree
 	int getNumIncomingVertices() const { return incoming_vertices.size(); }
 
+	// Return an incoming vertex by index
+	Vertex *getIncomingVertex(int index) const {
+		return incoming_vertices[index];
+	}
+
+	// Return the vertex kind
+	VertexKind getVertexKind() const { return vertex_kind; }
+
 	// Sorting compare function based on the key
 	static bool Compare(const Vertex* vertex_a, const Vertex* vertex_b)
 	{
@@ -103,13 +117,7 @@ class Edge
 
 	friend class Graph;
 
-	// Edge direction
-	enum EdgeDirectionKind
-	{
-		EdgeDirectionKindInvalid = 0,
-		EdgeDirectionKindUnidirectional,
-		EdgeDirectionKindBidirectional
-	};
+protected:
 
 	// The source vertex for the edge
 	Vertex *source_vertex;
@@ -129,6 +137,9 @@ public:
 	{
 	}
 
+	// Destructor
+	virtual ~Edge() {};
+
 	// Return edge's source vertex
 	Vertex *getSourceVertex() const { return source_vertex; }
 
@@ -139,7 +150,7 @@ public:
 class Graph
 {
 
-private:
+protected:
 
 	// Removes the cycles in the graph, by reversing on of the edges that
 	// creates the cycle. The algorithm successively removes vertices of
@@ -164,13 +175,46 @@ private:
 	/// \param width
 	///	Predefined value equal to the maximum number of vertices allowed
 	/// in each layer.
-	void CoffmanGrahamLayering(int width);
+	///
+	/// \return
+	///	The number of layers created by the algorithm
+	int CoffmanGrahamLayering(int width);
 
+	// Vertex Promote Heuristics modifies a given layered graph by promoting
+	// vertices from the layer where they are placed to the layer above.
+	// To promote a vertex, is to add a new layer if and only if the new
+	// layer would reduce the total number of dummy nodes that has to
+	// be created for the layered graph.
+	void VertexPromoteHeuristics() {};
 
-protected:
+	// This function adds dummy vertices to layers in order to clarify the path
+	// of the connections between vertices that are distant from each other.
+	virtual void AddDummyVertices() = 0;
 
-	/// Maximum number of vertices in each layer of the graph
-	int max_layer_vertices;
+	/// This function gives an initial value to the x coordinate of each
+	/// vertices. This value later changes by another function, to
+	/// optimize the placement of the vertex in the layer.
+	///
+	/// \param num_layer
+	/// Number of layers in the graph
+	void InitializeXValues(int num_layers);
+
+	/// This function reduces the number of intersections between the edges
+	/// of two consecutive layer by interchanging the position of pairs
+	/// of vertices in one of the layers. It continues this procedure for
+	/// all the layers. The more the cross-reduction is applied the cleaner
+	/// the graph becomes, until it stops changing, which means we reached
+	/// the least possible number of intersections. Since the problem is
+	/// NP-Complete, we never reach the most optimal case. The cross-reduction
+	/// works perfectly for two layers.
+	///
+	/// \param num_layers
+	///	Number of layers in the graph
+	void CrossReduction(int num_layers);
+
+	// Number of vertices in the most crowded layer. This value can be less
+	// than the width, and is required for the cross reduction.
+	int max_vertices_in_layers = 0;
 
 	/// List of vertices in the graph
 	std::vector<std::unique_ptr<Vertex>> vertices;
@@ -181,22 +225,16 @@ protected:
 public:
 
 	/// Return the maximum number of vertices in the layer
-	int getMaxLayerVertices() const { return max_layer_vertices; }
+	int getMaxVerticesInLayers() const { return max_vertices_in_layers; }
 
 	/// Returns the layered drawing of the graph, by updating the
 	/// coordinations of each vertices, xValue and yValue
-	void LayeredDrawing();
+	virtual void LayeredDrawing() = 0;
 
 	/// Virtual function for populate. Populating the graph with
 	/// edges and vertices depends on the data structure that uses
 	/// the graph.
 	virtual void Populate() = 0;
-
-	/// Virtual function to scale the graph for the screen. This function
-	/// is dependent on where the graph is used, and what is the output
-	/// medium (e.g. file, screen)
-	virtual void Scale() = 0;
-
 };
 
 }

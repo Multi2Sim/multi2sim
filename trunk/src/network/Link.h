@@ -109,7 +109,7 @@ public:
 	/// Get the number of busy cycles
 	long long getBusyCycle() const { return busy_cycles; }
 
-	/// Get th amount of transfered bytes
+	/// Get the amount of transfered bytes
 	long long getTransferredBytes() const { return transferred_bytes; }
 
 	/// Get destination node
