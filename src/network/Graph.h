@@ -49,10 +49,10 @@ class Edge : public misc::Edge
 	friend class Graph;
 
 	// Associated link with the edge, in unidirectional case
-	Link *downstream_link;
+	Link *downstream_link = nullptr;
 
 	// Other associated link with the edge, in case it is bidirectional
-	Link *upstream_link;
+	Link *upstream_link = nullptr;
 
 public:
 

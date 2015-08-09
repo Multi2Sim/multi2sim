@@ -46,13 +46,14 @@ void Graph::Populate()
 	// Create the initial edges
 	for (int i = 0; i < network->getNumConnections(); i++)
 	{
-		// Get the link associated with the edge
-		Link *link = dynamic_cast<Link *>(network->getConnection(i));
 
 		// Create edge based on the connection
 		bool reverse_edge = false;
-		if (link)
+		if (dynamic_cast<Link *>(network->getConnection(i)))
 		{
+			// Get the link associated with the edge
+			Link *link = misc::cast<Link *>(network->getConnection(i));
+
 			// Get the edge's source vertex
 			int index = link->getSourceNode()->getIndex();
 			misc::Vertex *source_vertex = vertices[index].get();
@@ -85,6 +86,9 @@ void Graph::Populate()
 				destination_vertex->addIncomingVertex(source_vertex);
 			}
 		}
+		else
+			throw misc::Panic("Network contains unknown link to "
+					"graph generation");
 	}
 }
 
@@ -261,6 +265,7 @@ void Graph::DumpGraph(std::ostream &os) const
 
 			// The information on the upstream link
 			link = edge->upstream_link;
+			assert(link);
 			utilization = (int) ((cycle ? (double)
 					link->getTransferredBytes() / (cycle *
 							link->getBandwidth()) : 0) * 10);
@@ -273,7 +278,6 @@ void Graph::DumpGraph(std::ostream &os) const
 		}
 		// The information on the downstream link
 		link = edge->downstream_link;
-		assert(link);
 		utilization = (int) ((cycle ? (double)
 				link->getTransferredBytes() / (cycle *
 						link->getBandwidth()) : 0) * 10);
