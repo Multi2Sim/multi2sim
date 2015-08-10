@@ -26,6 +26,8 @@
 #include <vector>
 
 #include <lib/cpp/Debug.h>
+#include <lib/cpp/Error.h>
+#include <lib/cpp/IniFile.h>
 #include <lib/esim/FrequencyDomain.h>
 #include <lib/esim/Event.h>
 
@@ -36,6 +38,20 @@ namespace dram
 // Forward declarations
 class Controller;
 class Request;
+
+
+/// Class representing a runtime error in network system
+class Error : public misc::Error
+{
+public:
+
+	/// Constructor
+	Error(const std::string &message) : misc::Error(message)
+	{
+		// Set module prefix
+		AppendPrefix("DRAM");
+	}
+};
 
 
 class System
@@ -61,6 +77,9 @@ class System
 	int row_size = 0;
 	int column_size = 0;
 
+    /// Frequency
+    static int frequency;
+
 	// Counter of commands created in the system.  This serves to let every
 	// command have a unique id for logging purposes.
 	int next_command_id = -1;
@@ -73,6 +92,12 @@ class System
 	void GenerateAddressSizes();
 
 public:
+
+    // Error messages
+    static const char *err_config_note;
+
+	/// Destroy the singleton if allocated.
+	static void Destroy();
 
 	/// Debugger
 	static misc::Debug debug;
@@ -116,7 +141,7 @@ public:
 	static void ProcessOptions();
 
 	/// Parse a configuration file
-	void ParseConfiguration(const std::string &path);
+	void ParseConfiguration(misc::IniFile *ini_file);
 
 	/// Run the stand-alone DRAM simulation loop.
 	void Run();

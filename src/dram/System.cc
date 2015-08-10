@@ -22,7 +22,7 @@
 #include <iostream>
 
 #include <lib/cpp/CommandLine.h>
-#include <lib/cpp/IniFile.h>
+#include <lib/cpp/Misc.h>
 #include <lib/cpp/String.h>
 #include <lib/esim/Engine.h>
 
@@ -50,6 +50,8 @@ std::string config_file;
 
 bool stand_alone_setting = false;
 
+int System::frequency = 667;
+
 
 //
 // Static variables
@@ -67,6 +69,10 @@ esim::Event *System::ACTION_REQUEST(nullptr);
 
 esim::Event *System::COMMAND_RETURN(nullptr);
 
+const char *System::err_config_note =
+		"Please run 'm2s --net-help' or consult the Multi2Sim Guide for "
+		"a description of the network system configuration file format.";
+
 
 System *System::getInstance()
 {
@@ -79,6 +85,10 @@ System *System::getInstance()
 	return instance.get();
 }
 
+void System::Destroy()
+{
+    instance = nullptr;
+}
 
 System::System()
 {
@@ -123,7 +133,7 @@ void System::RegisterOptions()
 
 void System::ProcessOptions()
 {
-	System *dram = System::getInstance();
+    System *dram = System::getInstance();
 
 	// Debugger
 	if (!debug_file.empty())
@@ -135,8 +145,10 @@ void System::ProcessOptions()
 
 	// Configuration
 	if (!config_file.empty())
-		dram->ParseConfiguration(config_file);
-
+    {
+        misc::IniFile ini_file(config_file);
+		dram->ParseConfiguration(&ini_file);
+    }
 	// Stand-alone simulator
 	if (stand_alone_setting)
 	{
@@ -145,13 +157,22 @@ void System::ProcessOptions()
 }
 
 
-void System::ParseConfiguration(const std::string &path)
+void System::ParseConfiguration(misc::IniFile *ini_file)
 {
-	esim::Engine *esim = esim::Engine::getInstance();
-	misc::IniFile ini_file(path);
+    // Debug 
+    System::debug << ini_file->getPath() << ": Loading DRAM "
+            "Configuration file\n";
 
-	// Get the frequency and make the FrequencyDomain.
-	int frequency = ini_file.ReadInt("General", "Frequency", 1000);
+	// Get the frequency
+	frequency = ini_file->ReadInt("General", "Frequency", frequency);
+	if (!esim::Engine::isValidFrequency(frequency))
+		throw Error(misc::fmt("%s: The value for 'Frequency' "
+				"must be between 1MHz and 1000GHz.\n%s",
+				ini_file->getPath().c_str(),
+				err_config_note));
+
+    // Register frequency domain
+	esim::Engine *esim = esim::Engine::getInstance();
 	DRAM_DOMAIN = esim->RegisterFrequencyDomain(
 			"DRAM_DOMAIN", frequency);
 
@@ -162,13 +183,13 @@ void System::ParseConfiguration(const std::string &path)
 	// Iterate through each section.
 	// Parse it if it is a MemoryController section.
 	int num_controller = 0;
-	for (int i = 0; i < ini_file.getNumSections(); i++)
+	for (int i = 0; i < ini_file->getNumSections(); i++)
 	{
-		std::string section_name = ini_file.getSection(i);
+		std::string section_name = ini_file->getSection(i);
 		if (misc::StringPrefix(section_name, "MemoryController"))
 		{
 			controllers.emplace_back(new Controller(num_controller,
-					section_name, ini_file));
+					section_name, *ini_file));
 			num_controller++;
 		}
 	}
@@ -178,10 +199,10 @@ void System::ParseConfiguration(const std::string &path)
 	GenerateAddressSizes();
 
 	// Parse actions if the section exists.
-	if (ini_file.Exists("Actions"))
+	if (ini_file->Exists("Actions"))
 	{
 		Actions *actions = Actions::getInstance();
-		actions->ParseConfiguration(ini_file);
+		actions->ParseConfiguration(*ini_file);
 	}
 }
 
