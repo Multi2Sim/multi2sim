@@ -23,7 +23,7 @@
 #include <regex>
 #include <exception>
 #include <dram/System.h>
-#include <lib/cpp/IniFile.h>
+#include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
@@ -33,6 +33,9 @@ namespace dram
 
 static void Cleanup()
 {
+    esim::Engine::Destroy();
+
+    System::Destroy();
 }
 
 TEST(TestSystemConfiguration, section_general_frequency)
@@ -45,7 +48,11 @@ TEST(TestSystemConfiguration, section_general_frequency)
 			"[ General ]\n"
 			"Frequency = 2000000";
 
-	// Set up network instance
+    // Set up INI file
+    misc::IniFile ini_file;
+    ini_file.LoadFromString(config);
+
+	// Set up dram instance
 	System *dram_system = System::getInstance();
 	EXPECT_TRUE(dram_system != nullptr);
 
@@ -53,15 +60,16 @@ TEST(TestSystemConfiguration, section_general_frequency)
 	std::string message;
 	try
 	{
-		dram_system->ParseConfiguration(config);
+		dram_system->ParseConfiguration(&ini_file);
 	}
 	catch (misc::Error &error)
 	{
 		message = error.getMessage();
 	}
 
-	EXPECT_REGEX_MATCH(".*: The value for 'Frequency' "
-			"must be between 1MHz and 1000GHz.\n.*",	
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: The value for 'Frequency' "
+			"must be between 1MHz and 1000GHz.\n.*",
+			ini_file.getPath().c_str()).c_str(),
 			message.c_str());
 }
 
