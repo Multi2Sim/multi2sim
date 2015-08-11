@@ -125,12 +125,22 @@ bool Emulator::Run()
 		thread_block_id = 0;
 		while (grid->getPendThreadBlocksize())
 		{
-			thread_block_3d_id[2] = thread_block_id %
-						grid->getThreadBlockCount3(2);
-			thread_block_3d_id[1] = thread_block_id  /
-				grid->getThreadBlockCount3(2);
-			thread_block_3d_id[0] = thread_block_id / (
-				grid->getThreadBlockCount3(1) * grid->getThreadBlockCount3(2));
+			// Threadblock.X
+			thread_block_3d_id[0] = thread_block_id /
+					(grid->getThreadBlockCount3(1) *
+							grid->getThreadBlockCount3(2));
+
+			// Threadblock.Y
+			thread_block_3d_id[1] = (thread_block_id %
+					(grid->getThreadBlockCount3(1) *
+							grid->getThreadBlockCount3(2))) /
+								grid->getThreadBlockCount3(2);
+
+			// ThreadBlock.Z
+			thread_block_3d_id[1] = ((thread_block_id %
+					(grid->getThreadBlockCount3(1) *
+							grid->getThreadBlockCount3(2))) %
+								grid->getThreadBlockCount3(2))  ;
 			grid->WaitingToRunning(thread_block_id, thread_block_3d_id);
 			thread_block_id ++;
 			thread_block.reset(grid->getRunningThreadBlocksBegin()->release());
