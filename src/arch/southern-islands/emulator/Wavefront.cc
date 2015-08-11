@@ -153,8 +153,7 @@ void Wavefront::Execute()
 	NDRange *ndrange = work_group->getNDRange();
 	Emulator *emulator = ndrange->getEmulator();
 	WorkItem *work_item = NULL;
-	Instruction inst;
-	this->inst = &inst;
+	this->instruction = misc::new_unique<Instruction>();
 
 	// Reset instruction flags
 	vector_memory_write = 0;
@@ -189,14 +188,14 @@ void Wavefront::Execute()
 	// Decode the next instruction in the instruction memory
 	// Note: We need to pass the whole buffer for a single instruction
 	// because we don't know the size of the next instruction yet
-	inst.Decode(inst_buffer.get(), pc);
+	instruction->Decode(inst_buffer.get(), pc);
 
 	// Extract the properties of the newest instruction
-	this->inst_size = inst.getSize();
-	Instruction::Opcode opcode = inst.getOpcode();
-	Instruction::Format format = inst.getFormat();
-	Instruction::Bytes *bytes = inst.getBytes();
-	int op = inst.getOp();
+	this->inst_size = instruction->getSize();
+	Instruction::Opcode opcode = instruction->getOpcode();
+	Instruction::Format format = instruction->getFormat();
+	Instruction::Bytes *bytes = instruction->getBytes();
+	int op = instruction->getOp();
 
 	// Create stringstream for debugging
 	std::stringstream ss;
@@ -209,8 +208,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSOP1:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 
 		// Stats
@@ -219,7 +218,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -230,8 +229,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSOP2:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -240,7 +239,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -251,8 +250,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPP:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -269,7 +268,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -280,8 +279,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPC:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -290,7 +289,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -301,8 +300,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPK:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -311,7 +310,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -323,8 +322,8 @@ void Wavefront::Execute()
 	case Instruction::FormatSMRD:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -333,7 +332,7 @@ void Wavefront::Execute()
 
 		// Only one work item executes the instruction
 		work_item = scalar_work_item.get();
-		work_item->Execute(opcode, &inst);
+		work_item->Execute(opcode, instruction.get());
 
 		// Add newlines between each instruction
 		Emulator::isa_debug << "\n\n";
@@ -345,8 +344,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP2:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -359,7 +358,7 @@ void Wavefront::Execute()
 		{
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 		}
 
 		// Add newlines between each instruction
@@ -371,8 +370,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP1:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -390,7 +389,7 @@ void Wavefront::Execute()
 			if (work_item->ReadSReg(Instruction::RegisterExec) == 0 && 
 				work_item->ReadSReg(Instruction::RegisterExec + 1) == 0)
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 			else 
 			{
@@ -400,7 +399,7 @@ void Wavefront::Execute()
 					work_item = (*it).get();
 					if (isWorkItemActive(work_item->getIdInWavefront()))
 					{
-						work_item->Execute(opcode, &inst);
+						work_item->Execute(opcode, instruction.get());
 					}
 				}
 			}
@@ -414,7 +413,7 @@ void Wavefront::Execute()
 				work_item = (*it).get();
 				if (isWorkItemActive(work_item->getIdInWavefront()))
 				{
-					work_item->Execute(opcode, &inst);
+					work_item->Execute(opcode, instruction.get());
 				}
 			}
 		}
@@ -428,8 +427,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVOPC:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -443,7 +442,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -456,8 +455,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP3a:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -471,7 +470,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -484,8 +483,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP3b:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -499,7 +498,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -512,8 +511,8 @@ void Wavefront::Execute()
 	case Instruction::FormatVINTRP:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -527,7 +526,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -540,8 +539,8 @@ void Wavefront::Execute()
 	case Instruction::FormatDS:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -573,7 +572,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -587,8 +586,8 @@ void Wavefront::Execute()
 	case Instruction::FormatMTBUF:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -616,7 +615,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -629,8 +628,8 @@ void Wavefront::Execute()
 	case Instruction::FormatMUBUF:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -665,7 +664,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
@@ -678,8 +677,8 @@ void Wavefront::Execute()
 	case Instruction::FormatEXP:
 	{
 		// Dump instruction string when debugging
-		inst.Dump(ss);
-		inst.DumpAddress(ss);
+		instruction->Dump(ss);
+		instruction->DumpAddress(ss);
 		Emulator::isa_debug << ss.str();
 		
 		// Stats
@@ -696,7 +695,7 @@ void Wavefront::Execute()
 			work_item = (*it).get();
 			if (isWorkItemActive(work_item->getIdInWavefront()))
 			{
-				work_item->Execute(opcode, &inst);
+				work_item->Execute(opcode, instruction.get());
 			}
 		}
 
