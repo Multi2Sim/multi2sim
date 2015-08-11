@@ -74,7 +74,7 @@ ThreadBlock::ThreadBlock(Grid *grid, int id, unsigned *id_3d)
 	// Shared Memory Initialization
 	shared_memory = misc::new_unique<mem::Memory>();
 	shared_memory->setSafe(false);
-	shared_memory_size = 16 * (1 << 20); // current 1MB for local memory
+	shared_memory_size = (1 << 20); // current 1MB for local memory
 	shared_memory_top_address = 0;
 	shared_memory_top_generic_address = shared_memory_top_address + id *
 				shared_memory_size + emulator->getGlobalMemoryTotalSize();
