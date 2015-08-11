@@ -67,7 +67,7 @@ class Wavefront
 	unsigned pc = 0;
 
 	// Current instruction
-	Instruction *inst = nullptr;
+	std::unique_ptr<Instruction> instruction;
 	int inst_size = 0;
 
 	// Associated scalar work-item
@@ -250,7 +250,7 @@ public:
 	unsigned getWorkItemCount() const { return work_item_count; }
 
 	/// Get the associated instruction
-	Instruction *getInstruction() const { return inst; }
+	Instruction *getInstruction() const { return instruction.get(); }
 
 	/// Return true if work-item is active. The work-item identifier is
 	/// given relative to the first work-item in the wavefront

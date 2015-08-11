@@ -206,25 +206,21 @@ void ScalarUnit::Complete()
 			uop->getWavefrontPoolEntry()->wavefront_finished = true;
 			work_group->incWavefrontsCompletedTiming();
 
-			// if (work_group->getWavefrontsCompletedTiming() ==
-			//	work_group->getWavefrontsInWorkgroup())
-			//		work_group->setFinishedTiming(true);
+			if (work_group->getWavefrontsCompletedTiming() ==
+					work_group->getWavefrontsInWorkgroup())
+				work_group->finished_timing = true;
 
 			// Check if wavefront finishes a work-group
-			assert(work_group);
 			assert(work_group->getWavefrontsCompletedTiming() <=
 					work_group->getWavefrontsInWorkgroup());
 
-			// if (work_group->getFinishedTiming())
-			// {
-			//	assert(work_group->getWavefrontsCompletedTiming() ==
-			//			work_group->getWavefrontsInWorkgroup());
+			if (work_group->finished_timing)
+			{
+				assert(work_group->getWavefrontsCompletedTiming() 
+				== work_group->getWavefrontsInWorkgroup());
 			
-				// SIComputeUnitUnmapWorkGroup(
-				// scalar_unit->compute_unit,
-				// uop->work_group);
-			// }
-
+				compute_unit->UnmapWorkGroup(uop->getWorkGroup());
+			}
 		}
 
 		// Trace
