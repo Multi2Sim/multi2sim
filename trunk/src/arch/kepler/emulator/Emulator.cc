@@ -137,7 +137,7 @@ bool Emulator::Run()
 								grid->getThreadBlockCount3(2);
 
 			// ThreadBlock.Z
-			thread_block_3d_id[1] = ((thread_block_id %
+			thread_block_3d_id[2] = ((thread_block_id %
 					(grid->getThreadBlockCount3(1) *
 							grid->getThreadBlockCount3(2))) %
 								grid->getThreadBlockCount3(2))  ;
