@@ -66,17 +66,17 @@ void Link::Dump(std::ostream &os) const
 			name.c_str());
 
 	// Dump source buffers
-	os << misc::fmt("Source buffers = ");
+	os << misc::fmt("SourceBuffers = ");
 	for (auto buffer : source_buffers)
-		os << misc::fmt("%s:%s \t",
+		os << misc::fmt("%s:%s ",
 				buffer->getNode()->getName().c_str(),
 				buffer->getName().c_str());
 	os << "\n" ;
 
 	// Dump destination buffers
-	os << misc::fmt("Destination buffers = ");
+	os << misc::fmt("DestinationBuffers = ");
 	for (auto buffer : destination_buffers)
-		os << misc::fmt("%s:%s \t",
+		os << misc::fmt("%s:%s ",
 				buffer->getNode()->getName().c_str(),
 				buffer->getName().c_str());
 	os << "\n" ;

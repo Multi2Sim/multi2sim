@@ -730,16 +730,9 @@ bool Network::CanSend(EndNode *source_node,
 			destination_node);
 	Buffer *output_buffer = entry->getBuffer();
 
-	// Check if source and destination are different
-	if (source_node == destination_node)
-		throw Error("Source and destination cannot "
-			"be the same.");
-
-	// Check if route exist
+	// If there is no route, return
 	if (!output_buffer)
-		throw Error(misc::fmt("No route from '%s' to '%s'",
-				source_node->getName().c_str(),
-				destination_node->getName().c_str()));
+		return false;
 
 	// Get current cycle
 	System *system = System::getInstance();
@@ -847,6 +840,17 @@ Message *Network::TrySend(EndNode *source_node,
 		esim::Event *receive_event,
 		esim::Event *retry_event)
 {
+	// Get output buffer
+	RoutingTable::Entry *entry = routing_table.Lookup(source_node, 
+			destination_node);
+	Buffer *output_buffer = entry->getBuffer();
+	
+	// Check if route exist
+	if (!output_buffer)
+		throw Error(misc::fmt("No route from '%s' to '%s'.",
+				source_node->getName().c_str(),
+				destination_node->getName().c_str()));
+
 	// Check if message can be sent
 	if (!CanSend(source_node, destination_node, size, retry_event))
 		return nullptr;

@@ -30,9 +30,13 @@ class Buffer;
 class Lane
 {
 
+	friend class Bus;
+
 	// Lane bandwidth
 	int bandwidth;
 
+	// Bus lane index
+	int index;
 
 
 

@@ -26,28 +26,36 @@ namespace net
 {
 
 
-Bus::Bus(Network *network, const std::string &name, int bandwidth, int num_lanes) :
+Bus::Bus(Network *network, const std::string &name, 
+		int bandwidth, int num_lanes) :
 		Connection(name, network)
 {
 	for (int i = 0; i < num_lanes; i++)
+	{
 		lanes.emplace_back(misc::new_unique<Lane>(bandwidth));
+		Lane *lane = lanes.back().get();
+		lane->index = i;
+	}
 }
 
 
 void Lane::Dump(std::ostream &os) const
 {
 	// Dumping lane statistic informations
-	os << misc::fmt("Bandwidth = %d\n", bandwidth);
-	os << misc::fmt("TransferredPackets = %lld\n", transferred_packets);
-	os << misc::fmt("TransferredBytes = %lld\n", transferred_bytes);
-	os << misc::fmt("BusyCycles = %lld\n", busy_cycles);
+	os << misc::fmt("BusLane.%d.Bandwidth = %d\n", index, bandwidth);
+	os << misc::fmt("BusLane.%d.TransferredPackets = %lld\n", index, 
+		transferred_packets);
+	os << misc::fmt("BusLane.%d.TransferredBytes = %lld\n", index,
+		transferred_bytes);
+	os << misc::fmt("BuseLane.%d.BusyCycles = %lld\n", index,
+		busy_cycles);
 
 	// Statistics that depends on the cycle
 	System *system = System::getInstance();
 	long long cycle = system->getCycle();
-	os << misc::fmt("BytesPerCycle = %0.4f\n", cycle ?
+	os << misc::fmt("BusLane.%d.BytesPerCycle = %0.4f\n", index, cycle ?
 			(double) transferred_bytes / cycle : 0.0);
-	os << misc::fmt("Utilization = %0.4f\n", cycle ?
+	os << misc::fmt("BusLane.%d.Utilization = %0.4f\n", index, cycle ?
 			(double) transferred_bytes / (cycle * bandwidth) : 0.0);
 }
 
@@ -59,28 +67,24 @@ void Bus::Dump(std::ostream &os = std::cout) const
 			name.c_str());
 
 	// Dump source buffers
-	os << misc::fmt("Source buffers = ");
+	os << misc::fmt("SourceBuffers = ");
 	for (auto buffer : source_buffers)
-		os << misc::fmt("%s:%s \t",
+		os << misc::fmt("%s:%s ",
 				buffer->getNode()->getName().c_str(),
 				buffer->getName().c_str());
 	os << "\n" ;
 
 	// Dump destination buffers
-	os << misc::fmt("Destination buffers = ");
+	os << misc::fmt("DestinationBuffers = ");
 	for (auto buffer : destination_buffers)
-		os << misc::fmt("%s:%s \t",
+		os << misc::fmt("%s:%s ",
 				buffer->getNode()->getName().c_str(),
 				buffer->getName().c_str());
 	os << "\n" ;
 
 	// Dump statistics
 	for (unsigned i = 0 ; i < lanes.size() ; i++)
-	{
-		Lane *lane = lanes[i].get();
-		os << misc::fmt("Bus lane = %d\n", i);
-		lane->Dump(os);
-	}
+		lanes[i]->Dump(os);
 
 	// Creating and empty line in dump
 	os << "\n";

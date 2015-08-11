@@ -82,8 +82,8 @@ TEST(TestSystemConfiguration, event_config_0_same_src_dest_not_allowed)
 	{
 		message = e.getMessage();
 	}
-	EXPECT_REGEX_MATCH(misc::fmt("Source and destination cannot "
-			"be the same\\.").c_str(), message.c_str());
+	EXPECT_REGEX_MATCH("No route from 'n0' to 'n0'\\.",
+		message.c_str());
 }
 
 TEST(TestSystemConfiguration, event_config_1_no_route)
@@ -133,7 +133,7 @@ TEST(TestSystemConfiguration, event_config_1_no_route)
 	{
 		message = e.getMessage();
 	}
-	EXPECT_REGEX_MATCH(misc::fmt("No route from 'n0' to 'n1'").c_str(),
+	EXPECT_REGEX_MATCH("No route from 'n0' to 'n1'\\.",
 			message.c_str());
 }
 
@@ -632,8 +632,8 @@ TEST(TestSystemConfiguration, event_config_5_same_src_does_not_allowed)
 	{
 		message = e.getMessage();
 	}
-	EXPECT_REGEX_MATCH(misc::fmt("Source and destination cannot "
-			"be the same\\.").c_str(), message.c_str());
+	EXPECT_REGEX_MATCH("No route from 'n0' to 'n0'\\.",
+		 message.c_str());
 }
 
 TEST(TestSystemConfiguration, event_config_6_no_route)
@@ -685,7 +685,7 @@ TEST(TestSystemConfiguration, event_config_6_no_route)
 	{
 		message = e.getMessage();
 	}
-	EXPECT_REGEX_MATCH(misc::fmt("No route from 'n0' to 'n1'").c_str(),
+	EXPECT_REGEX_MATCH("No route from 'n0' to 'n1'\\.",
 			message.c_str());
 }
 
