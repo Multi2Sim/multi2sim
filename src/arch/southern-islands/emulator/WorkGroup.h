@@ -127,6 +127,10 @@ public:
 
 	/// Identifier in compute unit
 	int id_in_compute_unit;
+	
+	/// Boolean value indicating the status of the work group in the timing
+	/// simulator
+	bool finished_timing = false;
 
 	/// Wavefront pool that the work group is associated with.
 	WavefrontPool *wavefront_pool = nullptr;
