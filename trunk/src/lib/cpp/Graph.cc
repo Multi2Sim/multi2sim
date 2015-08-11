@@ -463,26 +463,15 @@ void Graph::CrossReduction(int num_layers)
 
 			// To overcome the overlapping vertices problem, we traverse
 			// the sorted list, and move the vertices to the next available
-			// spot in the x direction.
+			// spot in the x direction, starting from zero.
 			Vertex *first_vertex = neighboring_vertices[0];
-			first_vertex->x_value = first_vertex->key;
-			int next_position = first_vertex->key + 1;
+			int next_position = 0;
 
-			for (unsigned i = 1; i < neighboring_vertices.size(); i++)
+			for (unsigned i = 0; i < neighboring_vertices.size(); i++)
 			{
 				Vertex *vertex = neighboring_vertices[i];
-				if (vertex->key < next_position)
-					vertex->x_value = next_position;
-				else
-					vertex->x_value = vertex->key;
-				next_position = vertex->x_value + 1;
-
-				// The above method keeps the distance between two adjacent
-				// vertices, intact. For finalizing the x_value, we
-				// left-align the layer. i.e. position the first vertex
-				// at x value of 0 and the next vertex in the layer based
-				// on the optimal distant from the first vertex, and so on.
-				vertex->x_value -= first_vertex->x_value;
+				vertex->x_value = next_position;
+				next_position++;
 			}
 
 			// Last step in left-aligning the layer
