@@ -839,7 +839,98 @@ void Thread::ExecuteInst_BFI_B(Instruction *inst)
 
 void Thread::ExecuteInst_BFE_A(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Inst Bytes Format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesBFE format = inst_bytes.bfe;
+
+	// Predicates and active masks
+	SyncStack *stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Predicate
+	unsigned pred, pred_id;
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	if (active == 1 && pred == 1)
+	{
+		unsigned src1_id, src1, src2;
+
+		// Read Src1
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+
+		// Read Src2
+		src2 = format.src2; // IMM 20
+		if (((format.op1 >> 5) & 1) == 1)
+			src2 = src2 | 0xfff8000;
+
+		// Read position and size
+		unsigned position, size;
+		position = src2 & 0xff;
+		size = (src2 >> 8) & 0xff;
+
+		// Operation
+		unsigned temp;
+		temp = src1;
+		if (format.bit_reverse == 1)
+			temp ^= 0xffffffff;
+		if (size == 0)
+			temp = 0;
+		else if (position + size < 32)
+		{
+			// Shift the MSB of the field to bit 31
+			temp = temp << (32 - (position + size));
+
+			// Shift the LSB of the field to bit 0
+			if (format.u_s == 1) // arithmetic shift
+				temp = (int)temp >> (32 - size);
+			else if (format.u_s == 0)
+				temp = temp >> (32 - size);
+		}
+		else
+		{
+			if (position > 32)
+				position = 32;
+
+			if (format.u_s == 1) // arithmetic shift
+				temp = (int)temp >> size;
+			else if (format.u_s == 0)
+				temp = temp >> size;
+		}
+
+		// CC update
+		if (format.cc == 1)
+		{
+			WriteCC_ZF((temp >> 31 == 0) ? 1 : 0);
+			WriteCC_SF(temp >> 31);
+			WriteCC_CF(0);
+			WriteCC_OF(0);
+		}
+
+		// Write Results
+		unsigned dst_id;
+		dst_id = format.dst;
+		WriteGPR(dst_id, temp);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_BFE_B(Instruction *inst)
