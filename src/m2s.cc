@@ -545,6 +545,14 @@ int MainProgram(int argc, char **argv)
 		net_system->ReadConfiguration();
 		net_system->StandAlone();
 	}
+
+	// Initialize dram system, only if the option --dram-sim is used
+	if (dram::System::isStandAlone())
+	{
+		dram::System *dram_system = dram::System::getInstance();
+		dram_system->ReadConfiguration();
+		dram_system->Run();
+	}
 	// Load programs
 	LoadPrograms();
 		
