@@ -40,7 +40,7 @@ class Controller;
 class Request;
 
 
-/// Class representing a runtime error in network system
+/// Class representing a runtime error in dram system
 class Error : public misc::Error
 {
 public:
@@ -63,9 +63,6 @@ class System
 	// a call to getInstance() instead.
 	System();
 
-	// Stand alone simulation
-	bool stand_alone = false;
-
 	// List of all the memory controllers
 	std::vector<std::unique_ptr<Controller>> controllers;
 
@@ -77,8 +74,14 @@ class System
 	int row_size = 0;
 	int column_size = 0;
 
-    /// Frequency
-    static int frequency;
+	/// Frequency
+	static int frequency;
+
+	// Stand-alone simulator instantiator
+	static bool stand_alone;
+
+	// Message to display with '--net-help'
+	static const std::string help_message;
 
 	// Counter of commands created in the system.  This serves to let every
 	// command have a unique id for logging purposes.
@@ -93,8 +96,11 @@ class System
 
 public:
 
-    // Error messages
-    static const char *err_config_note;
+	// Error messages
+	static const char *err_config_note;
+
+	// Show help for the dram configuration
+	static bool help;
 
 	/// Destroy the singleton if allocated.
 	static void Destroy();
@@ -114,7 +120,7 @@ public:
 	static System *getInstance();
 
 	/// Returns whether or not DRAM is running as a stand alone simulator.
-	bool isStandAlone() { return stand_alone; }
+	static bool isStandAlone() { return stand_alone; }
 
 	/// Returns the size in bits of the physical channel address component.
 	int getPhysicalSize() const { return physical_size; }
@@ -142,6 +148,10 @@ public:
 
 	/// Parse a configuration file
 	void ParseConfiguration(misc::IniFile *ini_file);
+
+	// Initialize the dram system by parsing the dram configuration
+	// file passed with '--dram-config'
+	void ReadConfiguration();
 
 	/// Run the stand-alone DRAM simulation loop.
 	void Run();

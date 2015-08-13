@@ -74,6 +74,11 @@ void Controller::ParseConfiguration(const std::string &section,
 
 	// Load the name of the Controller
 	// Format of section title is "MemoryController <name>"
+	if (section_tokens.size() < 2)
+		throw Error(misc::fmt("%s: MemoryController must have a name "
+				"in the form 'MemoryController <name>'.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 	name = section_tokens[1];
 
 	// Load the page policy, defaulting to PagePolicyOpen
@@ -87,12 +92,37 @@ void Controller::ParseConfiguration(const std::string &section,
 
 	// Read DRAM size settings
 	num_channels = config.ReadInt(section, "NumChannels", 1);
+	if (num_channels <= 0)
+		throw Error(misc::fmt("%s: NumChannels must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 	num_ranks = config.ReadInt(section, "NumRanks", 2);
+	if (num_ranks <= 0)
+		throw Error(misc::fmt("%s: NumRanks must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
+
 	// int num_devices = config.ReadInt(section, "NumDevices", 8);
 	num_banks = config.ReadInt(section, "NumBanks", 8);
+	if (num_banks <= 0)
+		throw Error(misc::fmt("%s: NumBanks must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 	num_rows = config.ReadInt(section, "NumRows", 1024);
+	if (num_rows <= 0)
+		throw Error(misc::fmt("%s: NumRows must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 	num_columns = config.ReadInt(section, "NumColumns", 1024);
+	if (num_columns <= 0)
+		throw Error(misc::fmt("%s: NumColumns must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 	num_bits = config.ReadInt(section, "NumBits", 8);
+	if (num_bits <= 0)
+		throw Error(misc::fmt("%s: NumBits must be at least 1.\n%s",
+				config.getPath().c_str(),
+				System::err_config_note));
 
 	// Create channels 
 	for (int i = 0; i < num_channels; i++)
