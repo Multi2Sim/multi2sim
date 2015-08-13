@@ -48,9 +48,9 @@ TEST(TestSystemConfiguration, section_general_frequency)
 			"[ General ]\n"
 			"Frequency = 2000000";
 
-    // Set up INI file
-    misc::IniFile ini_file;
-    ini_file.LoadFromString(config);
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -69,6 +69,397 @@ TEST(TestSystemConfiguration, section_general_frequency)
 
 	EXPECT_REGEX_MATCH(misc::fmt(".*%s: The value for 'Frequency' "
 			"must be between 1MHz and 1000GHz.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+
+TEST(TestSystemConfiguration, section_no_controller_name)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController]\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: MemoryController must have a name "
+			"in the form 'MemoryController <name>'.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+
+}
+
+TEST(TestSystemConfiguration, section_negative_channels)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumChannels = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumChannels must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_negative_ranks)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumRanks = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumRanks must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_negative_banks)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumBanks = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumBanks must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_negative_Rows)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumRows = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumRows must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_negative_Columns)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumColumns = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumColumns must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_negative_bits)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumBits = -1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s: NumBits must be at least 1.\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_invalid_format)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumChannels = 'String'\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s:.*invalid format\n.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_duplicated_section)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumChannels = 2\n"
+			"[MemoryController One]\n"
+			"NumChannels = 2\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	std::string message;
+	try
+	{
+		ini_file.LoadFromString(config);
+	
+	}
+	catch(misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s:.*duplicated section.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_duplicated_variable)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"NumChannels = 2\n"
+			"[MemoryController Two]\n"
+			"NumChannels = 2\n"
+			"NumChannels = 2\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	std::string message;
+	try
+	{
+		ini_file.LoadFromString(config);
+	
+	}
+	catch(misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s:.*duplicated variable.*",
+			ini_file.getPath().c_str()).c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_invalid_vaiable)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"String = 4\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+
+	EXPECT_REGEX_MATCH(misc::fmt(".*%s:.*invalid variable.*",
 			ini_file.getPath().c_str()).c_str(),
 			message.c_str());
 }

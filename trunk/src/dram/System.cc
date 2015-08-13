@@ -48,7 +48,9 @@ std::string activity_file;
 
 std::string config_file;
 
-bool stand_alone_setting = false;
+bool System::stand_alone = false;
+
+bool System::help = false;
 
 int System::frequency = 667;
 
@@ -70,8 +72,11 @@ esim::Event *System::ACTION_REQUEST(nullptr);
 esim::Event *System::COMMAND_RETURN(nullptr);
 
 const char *System::err_config_note =
-		"Please run 'm2s --net-help' or consult the Multi2Sim Guide for "
+		"Please run 'm2s --dram-help' or consult the Multi2Sim Guide for "
 		"a description of the network system configuration file format.";
+
+const std::string System::help_message =
+	"Placeholder help message\n";
 
 
 System *System::getInstance()
@@ -85,10 +90,12 @@ System *System::getInstance()
 	return instance.get();
 }
 
+
 void System::Destroy()
 {
     instance = nullptr;
 }
+
 
 System::System()
 {
@@ -122,9 +129,15 @@ void System::RegisterOptions()
 			"DRAM configuration file. Memory controllers and "
 			"their components can be defined here.");
 
+	// Help message for dram configuration
+	command_line->RegisterBool("--dram-help",
+			help,
+			"Print help message describing the network configuration"
+			" file, passed in option '--dram-config <file>'.");
+
 	// Stand-alone simulator
 	command_line->RegisterBool("--dram-sim",
-			stand_alone_setting,
+			stand_alone,
 			"Runs a DRAM simulation using the actions provided "
 			"in the DRAM configuration file (option "
 			"'--dram-config').");
@@ -133,7 +146,12 @@ void System::RegisterOptions()
 
 void System::ProcessOptions()
 {
-    System *dram = System::getInstance();
+	// DRAM help
+	if (help)
+	{
+		std::cerr << help_message;
+		exit(1);
+	}
 
 	// Debugger
 	if (!debug_file.empty())
@@ -143,25 +161,30 @@ void System::ProcessOptions()
 	if (!activity_file.empty())
 		setActivityDebugPath(activity_file);
 
-	// Configuration
+	// Stand-Alone requires config file
+	if (stand_alone && config_file.empty())
+		throw Error(misc::fmt("Option --dram-sim requires "
+				" --dram-config option "));
+}
+
+
+void System::ReadConfiguration()
+{
+	// Load network configuration file
 	if (!config_file.empty())
-    {
-        misc::IniFile ini_file(config_file);
-		dram->ParseConfiguration(&ini_file);
-    }
-	// Stand-alone simulator
-	if (stand_alone_setting)
 	{
-		dram->Run();
+		// Load and parse the configuration file
+		misc::IniFile ini_file(config_file);
+		ParseConfiguration(&ini_file);
 	}
 }
 
 
 void System::ParseConfiguration(misc::IniFile *ini_file)
 {
-    // Debug 
-    System::debug << ini_file->getPath() << ": Loading DRAM "
-            "Configuration file\n";
+	// Debug 
+	System::debug << ini_file->getPath() << ": Loading DRAM "
+		"Configuration file\n";
 
 	// Get the frequency
 	frequency = ini_file->ReadInt("General", "Frequency", frequency);
@@ -171,7 +194,7 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 				ini_file->getPath().c_str(),
 				err_config_note));
 
-    // Register frequency domain
+	// Register frequency domain
 	esim::Engine *esim = esim::Engine::getInstance();
 	DRAM_DOMAIN = esim->RegisterFrequencyDomain(
 			"DRAM_DOMAIN", frequency);
@@ -194,24 +217,17 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 		}
 	}
 
+	// Check for invalid variables
+	ini_file->Check();
+
 	// All controllers and all the memory hierarchy under them has been
 	// made, so now calculate the sizes of address components.
 	GenerateAddressSizes();
-
-	// Parse actions if the section exists.
-	if (ini_file->Exists("Actions"))
-	{
-		Actions *actions = Actions::getInstance();
-		actions->ParseConfiguration(*ini_file);
-	}
 }
 
 
 void System::Run()
 {
-	// Running a simulation separate from the rest of m2s.
-	stand_alone = true;
-
 	// Get the simulation engine and actions.
 	esim::Engine *engine = esim::Engine::getInstance();
 	Actions *actions = Actions::getInstance();
@@ -222,10 +238,6 @@ void System::Run()
 	{
 		engine->ProcessEvents();
 	}
-
-	// Dump the system and actions to the debug file.
-	dump(debug);
-	actions->dump(debug);
 
 	// Run checks from actions.
 	actions->DoChecks();
@@ -290,6 +302,7 @@ void System::GenerateAddressSizes()
 
 void System::dump(std::ostream &os) const
 {
+	
 	// Print header
 	os << "\n\n--------------------\n\n";
 	os << "Dumping DRAM system\n";
