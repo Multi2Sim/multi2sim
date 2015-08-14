@@ -1535,6 +1535,136 @@ void Thread::ExecuteInst_IADD32I(Instruction *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
+void Thread::ExecuteInst_ISET_A(Instruction *inst)
+{
+	ISAUnimplemented(inst);
+}
+
+void Thread::ExecuteInst_ISET_B(Instruction *inst)
+{
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesISET format = inst_bytes.iset;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+
+	// Predicate register
+	unsigned pred;
+
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id, pred_src_id;
+
+	// Operand
+	unsigned src1, src2, dst, pred_src;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+
+		// Read Src2
+		if (format.op2 == 1) // src is const
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+		else if (format.op2 == 3) // src is register mode
+		{
+			// src2 ID
+			unsigned src2_id;
+
+			// Read src2 value
+			src2_id = format.src2;
+			src2 = ReadGPR(src2_id);
+		}
+
+		// Read Predicate Src
+		pred_src_id = format.pred_src;
+		if (pred_src_id <= 7)
+			pred_src = ReadPredicate(pred_src_id);
+		else
+			pred_src = !ReadPredicate(pred_src_id - 8);
+
+		// Read Boolean mask .BM is default(.bval=0) .BF(.bavl=1)
+		unsigned mask_value = (format.bval == 1) ? 0x3f800000 : 0xffffffff;
+
+		// Compare operation
+        unsigned cmp_op = format.comp;
+        bool cmp_result;
+
+        if (format.x == 1)
+        	ISAUnsupportedFeature(inst);
+        else
+        {
+
+			if (cmp_op == 0)
+				cmp_result = false;
+			else if (cmp_op == 1)
+				cmp_result = format.u_s ? ((signed) src1 < (signed) src2) :
+							(src1 < src2);
+			else if (cmp_op == 2)
+				cmp_result = format.u_s ? ((signed) src1 == (signed) src2) :
+							(src1 == src2);
+			else if (cmp_op == 3)
+				cmp_result = format.u_s ? ((signed) src1 <+ (signed) src2) :
+							(src1 <= src2);
+			else if (cmp_op == 4)
+				cmp_result = format.u_s ? ((signed) src1 > (signed) src2) :
+							(src1 > src2);
+			else if (cmp_op == 5)
+				cmp_result = format.u_s ? ((signed) src1 != (signed) src2) :
+							(src1 != src2);
+			else if (cmp_op == 6)
+				cmp_result = format.u_s ? ((signed) src1 >= (signed) src2) :
+							(src1 >= src2);
+			else if (cmp_op == 7)
+				cmp_result = true;
+        }
+
+		// Boolean operation
+		unsigned bool_op = format.bop;
+		if (bool_op == 0) // AND
+			dst = (cmp_result && pred_src) ? mask_value : 0;
+		else if (bool_op == 1) // OR
+			dst = (cmp_result || pred_src) ? mask_value : 0;
+		else if (cmp_op == 2) // XOR
+			dst = (cmp_result ^ pred_src) ? mask_value : 0;
+
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Execute
+		dst_id = format.dst;
+		dst = pred_src ? src1 : src2;
+		Write_register(&dst, dst_id);
+	}
+
+}
+
 void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 {
 	// Inst bytes format
@@ -2999,7 +3129,107 @@ void Thread::ExecuteInst_F2F_A(Instruction *inst)
 
 void Thread::ExecuteInst_F2F_B(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Get Warp
+	Emulator* emulator = Emulator::getInstance();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	unsigned active;
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesF2F format = inst_bytes.f2f;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id;
+
+	// Operand
+	float src;
+	unsigned dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+
+		if (format.op2 == 1) // src is const
+			emulator->ReadConstantMemory(format.src << 2, 4, (char*)&src);
+		else if (format.op2 == 3) // src is register mode
+		{
+			// src ID
+			unsigned src_id;
+
+			// Read src value
+			src_id = format.src;
+			src = ReadFloatGPR(src_id);
+		}
+
+		// Absolute Value
+		if (format.src_abs == 1)
+			src = fabsf(src);
+
+		// Negate
+		if (format.src_negate == 1)
+			src = -src;
+
+		// Handle source denormal flush
+		if ((format.s_fmt == 2) && (format.d_fmt != 3) && (format.ftz == 1))
+		{
+			if (std::fpclassify(src) == FP_SUBNORMAL)
+				src = 0.0f;
+		}
+
+		// Execute
+		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
+		{
+			if (format.pass == 0) // pass mode
+				dst = src;
+			else if (format.pass == 1) // round mode
+			{
+				if (format.round == 0)
+					dst = roundf(src);
+				else if (format.round == 1)
+					dst = floorf(src);
+				else if (format.round == 2)
+					dst = ceilf(src);
+				else if (format.round == 3)
+					dst = truncf(src);
+			}
+		}
+		else
+			ISAUnsupportedFeature(inst);
+
+		// Write Result
+		dst_id = format.dst;
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_LD(Instruction *inst)
@@ -3896,7 +4126,115 @@ void Thread::ExecuteInst_FFMA_A(Instruction *inst)
 
 void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesFFMA format = inst_bytes.ffma;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id;
+
+	// Operand
+	float src1, src2, src3, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = ReadFloatGPR(src1_id);
+
+		// Read src2 and src3
+		if (format.op2 == 1) // src2 is const src3 is register
+		{
+			Emulator *emulator = Emulator::getInstance();
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+			unsigned src3_id;
+			src3_id = format.src3;
+			src3 = ReadFloatGPR(src3_id);
+		}
+		else if (format.op2 == 2) // src2 is register src3 is const
+		{
+			unsigned src2_id;
+			src2_id = format.src3; // format.src3 is for register mode
+			src2 = ReadFloatGPR(src2_id);
+			Emulator *emulator = Emulator::getInstance();
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src3);
+		}
+		else if (format.op2 == 3) // both src2 and src3 are register mode
+		{
+			unsigned src2_id, src3_id;
+			src2_id = format.src2;
+			src2 = ReadFloatGPR(src2_id);
+			src3_id = format.src3;
+			src3 = ReadFloatGPR(src3_id);
+		}
+
+		if(format.fmz == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Multiply src1 and src2
+		float temp;
+		temp = src1 * src2;
+
+		// Negate
+		if (format.negate_ab == 1)
+			temp = -temp;
+		else if (format.negate_c == 1)
+			src3 = -src3;
+
+		// Add src3
+		temp += src3;
+
+		// Round mode
+		if (format.round == 0)
+			dst = roundf(temp);
+		else if (format.round == 1)
+			dst = floorf(temp);
+		else if (format.round == 2)
+			dst = ceilf(temp);
+		else if (format.round == 3)
+			dst = truncf(temp);
+
+		// Saturate
+		if (format.sat == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Write Result
+		dst_id = format.dst;
+		WriteFloatGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_NOP(Instruction *inst)
@@ -4748,7 +5086,80 @@ void Thread::ExecuteInst_IDE(Instruction *inst)
 
 void Thread::ExecuteInst_LOP32I(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesLOP32I format = inst_bytes.lop32i;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id;
+
+	// Operand
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+
+		// Read Src2
+		if (format.op0 == 1) // src2 is IMM32
+			src2 = format.src2;
+
+		// Execute
+		if (format.src1_negate == 1)
+			src1 = ~src1;
+		if (format.src2_negate == 1)
+			src2 = ~src2;
+		if (format.lop == 0)
+			dst = src1 & src2;
+		else if (format.lop == 1)
+			dst = src1 | src2;
+		else if (format.lop == 2)
+			dst = src1 ^ src2;
+		else if (format.lop == 3)
+			dst = src2;
+
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Write Result
+		dst_id = format.dst;
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_FADD32I(Instruction *inst)
@@ -4771,7 +5182,7 @@ void Thread::ExecuteInst_ISCADD32I(Instruction *inst)
 	ISAUnimplemented(inst);
 }
 
-void Thread::ExecuteInst_SHL(Instruction *inst)
+void Thread::ExecuteInst_SHL_A(Instruction *inst)
 {
 	// Get Warp
 	SyncStack* stack = warp->getSyncStack()->get();
@@ -4822,14 +5233,23 @@ void Thread::ExecuteInst_SHL(Instruction *inst)
 		srcA = ReadGPR(srcA_id);
 
 		// Read SrcB
-		if ((format.op2 == 1) && (format.op0 == 1)) // src2 is immediate value
+		if ((format.op2 == 3) && (format.op0 == 1)) // src2 is immediate value
 		{
 			srcB = format.src2;
+
+			// Shift mode
+			if ((format.mode == 0) && (srcB > 32)) // Clamp(default)
+				srcB = 32;
+			else if (format.mode == 1) // Wrap
+				srcB &= 0x1f;
 		}
 		else
 		{
-			throw misc::Panic("Unsupported feature in Kepler SHL instruction");
+			throw misc::Panic("Unsupported feature in Kepler SHL_A instruction");
 		}
+
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
 
 		// Read destination id
 		dst_id = format.dst;
@@ -4843,7 +5263,96 @@ void Thread::ExecuteInst_SHL(Instruction *inst)
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
+}
 
+void Thread::ExecuteInst_SHL_B(Instruction *inst)
+{
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSHL format = inst_bytes.shl;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// Get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operands
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1 id
+		src1_id = format.src1;
+
+		// Get Src1 value
+		src1 = ReadGPR(src1_id);
+
+		// Read SrcB
+		if (format.op2 == 1) // src2 is constant mode
+		{
+			// Get emulator instance
+			Emulator *emulator = Emulator::getInstance();
+
+			// Read src2
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+		}
+		else if (format.op2 == 3) // src2 is register mode
+		{
+			unsigned src2_id;
+			src2_id = format.src2;
+			src2 = ReadGPR(src2_id);
+		}
+
+		// Shift mode
+		if ((format.mode == 0) && (src2 > 32)) // Clamp(default)
+			src2 = 32;
+		else if (format.mode == 1) // Wrap
+			src2 &= 0x1f;
+
+		// Conditional code
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Read destination id
+		dst_id = format.dst;
+
+		// Calculate result
+		dst = src1 << src2;
+
+		// Write the value to destination register
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_SHR_A(Instruction *inst)
@@ -4931,7 +5440,100 @@ void Thread::ExecuteInst_SHR_A(Instruction *inst)
 
 void Thread::ExecuteInst_SHR_B(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesSHR format = inst_bytes.shr;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// Get predicate register value
+	pred_id = format.pred;
+
+	// Predicate register
+	unsigned pred;
+
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id; //srcB_id to be added for register
+
+	// Operands
+	unsigned src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read SrcA id
+		src1_id = format.src1;
+
+		// Get SrcA value
+		src1 = ReadGPR(src1_id);
+
+		// Read Src2
+		if (format.op2 == 1) // src2 is const mode
+		{
+			// Get emulator instance
+			Emulator *emulator = Emulator::getInstance();
+
+			// Read src2
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+		}
+		else if (format.op2 == 3) // src2 is register mode
+		{
+			// Get src2 ID
+			unsigned src2_id;
+			src2_id = format.src2;
+
+			// Read src2
+			src2 = ReadGPR(src2_id);
+		}
+
+		if ((format.shift_mode == 0) && (src2 > 32)) // .C Clamp mode default
+			src2 = 32;
+		else if (format.shift_mode == 1)
+			src2 &= 0x001f;
+
+		if (format.bit_reverse == 1)
+			src1 ^= 0xffffffff;
+
+		// Calculate result
+		if (format.shift_mode == 1) // arithmatic shift
+			dst = (int)src1 >> src2;
+		else if (format.shift_mode == 0) // logic shift
+			dst = src1 >> src2;
+
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Read destination id
+		dst_id = format.dst;
+
+		// Write the value to destination register
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 }	// namespace Kepler
