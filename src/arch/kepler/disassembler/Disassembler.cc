@@ -85,6 +85,7 @@ static const int AsmOpcode_C_B_E_4 = 7;
 static const int AsmOpcode_C_B_E_5 = 13;
 static const int AsmOpcode_C_B_E_6 = 14;
 static const int AsmOpcode_C_B_E_7 = 15;
+static const int AsmOpcode_C_B_F = 8;
 
 static const int AsmOpcode_C_B_C_A = 1;
 static const int AsmOpcode_C_B_C_B = 2;
@@ -236,10 +237,6 @@ Disassembler::Disassembler() : comm::Disassembler("Kepler")
 	dec_table_b[AsmOpcode_B_D].next_table = dec_table_b_d;
 	dec_table_b[AsmOpcode_B_D].next_table_low = 60;
 	dec_table_b[AsmOpcode_B_D].next_table_high = 61;
-
-	dec_table_b_c[AsmOpcode_B_C_A].next_table = dec_table_b_c_a;
-	dec_table_b_c[AsmOpcode_B_C_A].next_table_low = 58;
-	dec_table_b_c[AsmOpcode_B_C_A].next_table_high = 58;
 
 	dec_table_b_c[AsmOpcode_B_C_B].next_table = dec_table_b_c_b;
 	dec_table_b_c[AsmOpcode_B_C_B].next_table_low = 58;
