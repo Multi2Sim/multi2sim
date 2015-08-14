@@ -138,6 +138,22 @@ DEFINST(IADD32I,
 		0x01,
 		0x00)
 		
+DEFINST(ISET_A,
+		"ISET_A",
+		0x01,
+		0x02,
+		0x03,
+		0x01,
+		0x01)
+		
+DEFINST(ISET_B,
+		"ISET_B",
+		0x02,
+		0x01,
+		0x0b,
+		0x01,
+		0x01)
+		
 DEFINST(ISETP_A,
 		"%pred0 ISETP%f%U32%x%and%s %pred1, %pred2, %srcA, %srcB, %pred3;",
 		0x02,
@@ -610,12 +626,19 @@ DEFINST(ISCADD32I,
 		0x00,
 		0x05)
 		
-DEFINST(SHL,
-		"SHL",
+DEFINST(SHL_A,
+		"SHL_A",
 		0x01,
 		0x03,
 		0x00,
 		0x09)
+
+DEFINST(SHL_B,
+		"SHL_B",
+		0x02,
+		0x01,
+		0x0c,
+		0x09)		
 		
 DEFINST(SHR_A,
 		"SHR_A",
