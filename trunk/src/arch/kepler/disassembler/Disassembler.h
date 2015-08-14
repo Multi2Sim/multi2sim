@@ -53,7 +53,7 @@ class Disassembler : public comm::Disassembler
 	Instruction::DecodeInfo dec_table_b_c[4];
 	Instruction::DecodeInfo dec_table_b_d[4];
 
-	Instruction::DecodeInfo dec_table_b_c_a[2];
+	// DecodeInfo dec_table_b_c_a[2] is deleted due to FSET
 	Instruction::DecodeInfo dec_table_b_c_b[2];
 	Instruction::DecodeInfo dec_table_b_c_c[2];
 	Instruction::DecodeInfo dec_table_b_c_d[4];
@@ -79,6 +79,7 @@ class Disassembler : public comm::Disassembler
 	Instruction::DecodeInfo dec_table_c_b_c[4];
 	Instruction::DecodeInfo dec_table_c_b_d[32];
 	Instruction::DecodeInfo dec_table_c_b_e[4];
+	// Instruction::DecodeInfo dec_table_c_b_f[1];
 
 	Instruction::DecodeInfo dec_table_c_b_c_a[4];
 	Instruction::DecodeInfo dec_table_c_b_c_b[4];
