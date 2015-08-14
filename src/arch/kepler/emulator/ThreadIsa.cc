@@ -4239,6 +4239,16 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
+void Thread::ExecuteInst_FSET_A(Instruction *inst)
+{
+	ISAUnimplemented(inst);
+}
+
+void Thread::ExecuteInst_FSET_B(Instruction *inst)
+{
+	ISAUnimplemented(inst);
+}
+
 void Thread::ExecuteInst_NOP(Instruction *inst)
 {
 	// Get Warp

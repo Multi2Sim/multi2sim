@@ -401,6 +401,18 @@ DEFINST(FFMA_B,
 		0x01,
 		0x01,
 		0x01)
+
+DEFINST(FSET_A,
+		"FSET_A",
+		0x01,
+		0x02,
+		0x00)
+		
+DEFINST(FSET_B,
+		"FSET_B",
+		0x02,
+		0x01,
+		0x08)		
 				
 /* Misc catogory instructions:
  * S2R, NOP
