@@ -1663,6 +1663,8 @@ void Thread::ExecuteInst_ISET_B(Instruction *inst)
 		Write_register(&dst, dst_id);
 	}
 
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_ISETP_A(Instruction *inst)
