@@ -40,11 +40,13 @@ class ExecutionUnit
 	// Compute unit that it belongs to, assigned in constructor
 	ComputeUnit *compute_unit;
 
-	// Issue buffer absorbing instructions from the front end
-	std::deque<std::shared_ptr<Uop>> issue_buffer;
-
 	// Number of instructions issued to this execution unit
 	long long num_instructions = 0;
+
+protected:
+
+	// Issue buffer absorbing instructions from the front end
+	std::deque<std::unique_ptr<Uop>> issue_buffer;
 
 public:
 
@@ -70,7 +72,7 @@ public:
 	/// Issue the given uop into the execution unit. Child classes can
 	/// override this function to extend its behavior, but should invoke the
 	/// parent class function, too.
-	virtual void Issue(std::shared_ptr<Uop> uop);
+	virtual void Issue(std::unique_ptr<Uop> uop);
 
 	/// Return the number of instructions currently present in the issue
 	/// buffer.

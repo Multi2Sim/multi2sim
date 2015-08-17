@@ -60,14 +60,14 @@ bool BranchUnit::isValidUop(Uop *uop) const
 }
 
 
-void BranchUnit::Issue(std::shared_ptr<Uop> uop)
+void BranchUnit::Issue(std::unique_ptr<Uop> uop)
 {
 	// One more instruction of this kind
 	ComputeUnit *compute_unit = getComputeUnit();
 	compute_unit->num_branch_instructions++;
 
 	// Issue it
-	ExecutionUnit::Issue(uop);
+	ExecutionUnit::Issue(std::move(uop));
 }
 
 void BranchUnit::Complete()

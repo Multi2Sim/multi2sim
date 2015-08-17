@@ -75,7 +75,7 @@ bool ScalarUnit::isValidUop(Uop *uop) const
 }
 
 
-void ScalarUnit::Issue(std::shared_ptr<Uop> uop)
+void ScalarUnit::Issue(std::unique_ptr<Uop> uop)
 {
 	// One more instruction of this kind
 	ComputeUnit *compute_unit = getComputeUnit();
@@ -92,7 +92,7 @@ void ScalarUnit::Issue(std::shared_ptr<Uop> uop)
 	}
 
 	// Issue it
-	ExecutionUnit::Issue(uop);
+	ExecutionUnit::Issue(std::move(uop));
 }
 
 void ScalarUnit::Complete()

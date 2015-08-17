@@ -133,7 +133,7 @@ public:
 	bool isValidUop(Uop *uop) const override;
 
 	/// Issue the given instruction into the vector memory unit
-	void Issue(std::shared_ptr<Uop> uop) override;
+	void Issue(std::unique_ptr<Uop> uop) override;
 };
 
 }

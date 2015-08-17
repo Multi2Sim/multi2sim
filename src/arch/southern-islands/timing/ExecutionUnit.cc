@@ -24,16 +24,16 @@
 namespace SI
 {
 
-void ExecutionUnit::Issue(std::shared_ptr<Uop> uop)
+void ExecutionUnit::Issue(std::unique_ptr<Uop> uop)
 {
-	// Insert into issue buffer
-	assert(canIssue());
-	issue_buffer.push_back(uop);
-
 	// Spend issue latency
 	Timing *timing = Timing::getInstance();
 	assert(uop->issue_ready == 0);
-	uop->issue_ready = timing->getCycle() + ComputeUnit::issue_latency;
+	uop->issue_ready = timing->getCycle() + ComputeUnit::issue_latency;	
+	
+	// Insert into issue buffer
+	assert(canIssue());
+	issue_buffer.push_back(std::move(uop));
 }
 
 }
