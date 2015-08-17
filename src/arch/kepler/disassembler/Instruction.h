@@ -778,6 +778,46 @@ public:
 		unsigned long long int op2:			2; // 63:62
 	};
 
+	/// FSET
+	struct BytesFSET
+	{
+		unsigned long long int op0:			2; // 1:0
+		unsigned long long int dst:			8; // 9:2
+		unsigned long long int src1:			8; // 17:10
+		unsigned long long int pred:			4; // 21:18
+		unsigned long long int s:			1; // 22
+		unsigned long long int src2:			19; // 41:23
+		unsigned long long int pred_src:		4; // 45:42
+		unsigned long long int src1_negate:		1; // 46
+		unsigned long long int src2_abs:		1; // 47
+		unsigned long long int bop:			2; // 49:48
+		unsigned long long int cc:			1; // 50
+		unsigned long long int comp:			4; // 54:51
+		unsigned long long int bval:			1; // 55
+		unsigned long long int src2_negate:		1; // 56
+		unsigned long long int src1_abs:		1; // 57
+		unsigned long long int ftz:			1; // 58
+		unsigned long long int op1:			3; // 61:59
+		unsigned long long int op2:			2; // 63:62
+	};
+
+	/// ICMP
+	struct BytesICMP
+	{
+		unsigned long long int op0:			2; // 1:0
+		unsigned long long int dst:			8; // 9:2
+		unsigned long long int src1:			8; // 17:10
+		unsigned long long int pred:			4; // 21:18
+		unsigned long long int s: 			1; // 22
+		unsigned long long int src2:			19; // 41:23
+		unsigned long long int src3:			8; // 49:42
+		unsigned long long int unused:			1; // 50
+		unsigned long long int u_s:			1; // 51
+		unsigned long long int comp:			3; // 54:52
+		unsigned long long int op1:			7; // 61:55
+		unsigned long long int op2:			2; // 63:62
+	};
+
 	/// Instruction bytes
 	union Bytes
 	{
@@ -818,6 +858,8 @@ public:
 		BytesBFE      bfe;
 		BytesLOP32I	  lop32i;
 		BytesISET     iset;
+		BytesFSET     fset;
+		BytesICMP     icmp;
 	};
 
 private:
