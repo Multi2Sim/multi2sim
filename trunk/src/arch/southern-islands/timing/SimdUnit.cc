@@ -61,14 +61,14 @@ bool SimdUnit::isValidUop(Uop *uop) const
 	return true;
 }
 
-void SimdUnit::Issue(std::shared_ptr<Uop> uop)
+void SimdUnit::Issue(std::unique_ptr<Uop> uop)
 {
 	// One more instruction of this kind
 	ComputeUnit *compute_unit = getComputeUnit();
 	compute_unit->num_simd_instructions++;
 
 	// Issue it
-	ExecutionUnit::Issue(uop);
+	ExecutionUnit::Issue(std::move(uop));
 }
 
 

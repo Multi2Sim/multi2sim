@@ -43,7 +43,7 @@ class FetchBuffer
 	ComputeUnit *compute_unit;
 
 	// Buffer of instructions
-	std::list<std::shared_ptr<Uop>> buffer;
+	std::list<std::unique_ptr<Uop>> buffer;
 
 public:
 	
@@ -62,26 +62,27 @@ public:
 	int getId() const { return id; }
 
 	/// Add instruction to the end of the buffer
-	void addUop(std::shared_ptr<SI::Uop> uop)
+	void addUop(std::unique_ptr<SI::Uop> uop)
 	{
-		buffer.push_back(uop);
+		buffer.push_back(std::move(uop));
 	}
 
 	/// Return an iterator to the first uop in the fetch buffer
-	std::list<std::shared_ptr<Uop>>::iterator begin()
+	std::list<std::unique_ptr<Uop>>::iterator begin()
 	{
 		return buffer.begin();
 	}
 
 	/// Return a past-the-end iterator to the fetch buffer
-	std::list<std::shared_ptr<Uop>>::iterator end()
+	std::list<std::unique_ptr<Uop>>::iterator end()
 	{
 		return buffer.end();
 	}
 
 	/// Remove the uop pointed to by the given iterator, and return a
 	/// shared pointer reference to the removed entry.
-	std::shared_ptr<Uop> Remove(std::list<std::shared_ptr<Uop>>::iterator it);
+	//std::unique_ptr<Uop> 
+	void Remove(std::list<std::unique_ptr<Uop>>::iterator it);
 };
 
 }

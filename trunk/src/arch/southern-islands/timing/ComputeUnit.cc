@@ -101,9 +101,15 @@ void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
 		if (oldest_uop_iterator == fetch_buffer->end())
 			break;
 
+		Uop *uop = oldest_uop_iterator->get();
+		long long compute_unit_id = uop->getIdInComputeUnit();
+		int wavefront_id = uop->getWavefront()->getId();
+		long long id_in_wavefront = uop->getIdInWavefront();
+
 		// Erase from fetch buffer, issue to execution unit
-		std::shared_ptr<Uop> uop = fetch_buffer->Remove(oldest_uop_iterator);
-		execution_unit->Issue(uop);
+		execution_unit->Issue(std::move(*oldest_uop_iterator));
+		//std::unique_ptr<Uop> uop = 
+		fetch_buffer->Remove(oldest_uop_iterator);
 
 		// Trace
 		Timing::trace << misc::fmt("si.instruction "
@@ -112,10 +118,10 @@ void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
 				"wf=%d "
 				"uop_id=%lld "
 				"stg=\"i\"\n", 
-				uop->getIdInComputeUnit(),
+				compute_unit_id,
 				index,
-				uop->getWavefront()->getId(),
-				uop->getIdInWavefront());
+				wavefront_id,
+				id_in_wavefront);
 	}
 }
 
@@ -254,7 +260,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		wavefront_pool_entry->ready = true;
 
 		// Create uop
-		auto uop = misc::new_shared<Uop>(
+		auto uop = misc::new_unique<Uop>(
 				wavefront,
 				wavefront_pool_entry,
 				timing->getCycle(),
@@ -337,7 +343,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		uop->fetch_ready = timing->getCycle() + fetch_latency;
 
 		// Insert uop into fetch buffer
-		fetch_buffer->addUop(uop);
+		fetch_buffer->addUop(std::move(uop));
 
 		instructions_processed++;
 		num_total_instructions++;

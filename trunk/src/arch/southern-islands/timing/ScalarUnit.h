@@ -34,7 +34,7 @@ class ComputeUnit;
 class ScalarUnit : public ExecutionUnit
 {
 	// Variable number of issued Uops
-	std::deque<std::unique_ptr<Uop>> issue_buffer;
+	//std::deque<std::unique_ptr<Uop>> issue_buffer;
 
 	// Variable number of decoded Uops
 	std::deque<std::unique_ptr<Uop>> decode_buffer;
@@ -113,7 +113,7 @@ public:
 	bool isValidUop(Uop *uop) const override;
 	
 	/// Issue the given instruction into the scalar unit.
-	void Issue(std::shared_ptr<Uop> uop) override;
+	void Issue(std::unique_ptr<Uop> uop) override;
 
 	/// Complete the instruction
 	void Complete();

@@ -62,7 +62,7 @@ bool LdsUnit::isValidUop(Uop *uop) const
 }
 
 
-void LdsUnit::Issue(std::shared_ptr<Uop> uop)
+void LdsUnit::Issue(std::unique_ptr<Uop> uop)
 {
 	// Get compute unit
 	ComputeUnit *compute_unit = getComputeUnit();
@@ -72,7 +72,7 @@ void LdsUnit::Issue(std::shared_ptr<Uop> uop)
 	uop->getWavefrontPoolEntry()->lgkm_cnt++;
 
 	// Issue it
-	ExecutionUnit::Issue(uop);
+	ExecutionUnit::Issue(std::move(uop));
 }
 
 void LdsUnit::Complete()

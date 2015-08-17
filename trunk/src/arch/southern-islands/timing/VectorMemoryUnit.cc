@@ -64,7 +64,7 @@ bool VectorMemoryUnit::isValidUop(Uop *uop) const
 	return true;
 }
 
-void VectorMemoryUnit::Issue(std::shared_ptr<Uop> uop)
+void VectorMemoryUnit::Issue(std::unique_ptr<Uop> uop)
 {
 	// One more instruction of this kind
 	ComputeUnit *compute_unit = getComputeUnit();
@@ -74,7 +74,7 @@ void VectorMemoryUnit::Issue(std::shared_ptr<Uop> uop)
 	uop->getWavefrontPoolEntry()->lgkm_cnt++;
 
 	// Issue it
-	ExecutionUnit::Issue(uop);
+	ExecutionUnit::Issue(std::move(uop));
 }
 
 void VectorMemoryUnit::Complete()

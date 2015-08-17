@@ -142,7 +142,7 @@ public:
 	bool isValidUop(Uop *uop) const override;
 
 	/// Issue the given instruction into the branch unit.
-	void Issue(std::shared_ptr<Uop> uop) override;
+	void Issue(std::unique_ptr<Uop> uop) override;
 
 	/// Return the current size of the issue buffer
 	unsigned getIssueBufferSize() { return issue_buffer.size(); };
