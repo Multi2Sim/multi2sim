@@ -80,7 +80,8 @@ src_arch_x86_timing_test_SOURCES = \
 	src/arch/x86/timing/ObjectPool.cc \
 	src/arch/x86/timing/TestBranchPredictor.cc \
 	src/arch/x86/timing/TestTraceCache.cc \
-	src/arch/x86/timing/TestAlu.cc
+	src/arch/x86/timing/TestAlu.cc \
+	src/arch/x86/timing/TestRegisterFile.cc
 	
 	
 src_arch_southern_islands_emu_test_LDADD = \
