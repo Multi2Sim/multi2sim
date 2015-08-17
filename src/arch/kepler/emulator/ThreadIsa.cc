@@ -114,7 +114,6 @@ void Thread::ExecuteInst_Special()
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
-
 void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 {
 	// Inst bytes format
@@ -393,7 +392,6 @@ void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 		WriteGPR(dst_id, dst);
 	}
 
-
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
@@ -621,7 +619,6 @@ void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 		WriteGPR(dst_id, dst);
 	}
 
-
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
@@ -744,7 +741,6 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
 	}
-
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
@@ -1630,7 +1626,7 @@ void Thread::ExecuteInst_ISET_B(Instruction *inst)
 				cmp_result = format.u_s ? ((signed) src1 == (signed) src2) :
 							(src1 == src2);
 			else if (cmp_op == 3)
-				cmp_result = format.u_s ? ((signed) src1 <+ (signed) src2) :
+				cmp_result = format.u_s ? ((signed) src1 <= (signed) src2) :
 							(src1 <= src2);
 			else if (cmp_op == 4)
 				cmp_result = format.u_s ? ((signed) src1 > (signed) src2) :
@@ -1660,7 +1656,7 @@ void Thread::ExecuteInst_ISET_B(Instruction *inst)
 		// Execute
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
-		Write_register(&dst, dst_id);
+		WriteGPR(dst_id, dst);
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2091,6 +2087,121 @@ void Thread::ExecuteInst_LOP_B(Instruction *inst)
 		else if (format.lop == 3)
 			dst = src2;
 
+		// Write Result
+		dst_id = format.dst;
+		WriteGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
+}
+
+void Thread::ExecuteInst_ICMP_A(Instruction *inst)
+{
+	this->ISAUnimplemented(inst);
+}
+
+void Thread::ExecuteInst_ICMP_B(Instruction *inst)
+{
+	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesICMP format = inst_bytes.icmp;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned dst_id, src1_id;
+
+	// Operand
+	unsigned src1, src2, src3, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read src1 value
+		src1_id = format.src1;
+		src1 = ReadGPR(src1_id);
+
+		// Read src2 value and src3 value
+		if (format.op2 == 1) // src2 is const src3 is register
+		{
+			unsigned src3_id;
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+			src3_id = format.src3;
+			src3 = ReadGPR(src3_id);
+		}
+		else if ((format.op2 == 2)) // src2 is register src3 is const
+		{
+			unsigned src2_id;
+			src2_id = format.src3;
+			src2 = ReadGPR(src2_id);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src3);
+		}
+		else if (format.op2 == 3) // both src2 src3 register
+		{
+			unsigned src2_id, src3_id;
+			src2_id = format.src2;
+			src3_id = format.src3;
+			src2 = ReadGPR(src2_id);
+			src3 = ReadGPR(src3_id);
+		}
+
+		unsigned int src3_signed;
+
+		// signed mode
+		if (format.u_s == 1) // sign mode
+			src3_signed = src3;
+
+		unsigned cmp_op = format.comp;
+		bool cmp_result;
+
+		if (cmp_op == 0)
+			cmp_result = false;
+		else if (cmp_op == 1)
+			cmp_result = format.u_s ? (src3_signed < 0) : (src3 < 0);
+		else if (cmp_op == 2)
+			cmp_result = format.u_s ? (src3_signed == 0) : (src3 == 0);
+		else if (cmp_op == 3)
+			cmp_result = format.u_s ? (src3_signed <= 0) : (src3 <= 0);
+		else if (cmp_op == 4)
+			cmp_result = format.u_s ? (src3_signed > 0) : (src3 > 0);
+		else if (cmp_op == 5)
+			cmp_result = format.u_s ? (src3_signed != 0) : (src3_signed != 0);
+		else if (cmp_op == 6)
+			cmp_result = format.u_s ? (src3_signed >= 0) : (src3_signed >= 0);
+		else if (cmp_op == 7)
+			cmp_result = true;
+
+		dst = cmp_result ? src1 : src2;
+		// no Update for overflow flag (for signed arithmetic)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
@@ -4246,7 +4357,150 @@ void Thread::ExecuteInst_FSET_A(Instruction *inst)
 
 void Thread::ExecuteInst_FSET_B(Instruction *inst)
 {
-	ISAUnimplemented(inst);
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesFSET format = inst_bytes.fset;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+
+	// Predicate register
+	unsigned pred;
+
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand ID
+	unsigned src1_id, dst_id, pred_src_id;
+
+	// Operand
+	float src1, src2, dst;
+	unsigned pred_src;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = ReadFloatGPR(src1_id);
+
+		// Read Src2
+		if (format.op2 == 1) // src is const
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+		else if (format.op2 == 3) // src is register mode
+		{
+			// src2 ID
+			unsigned src2_id;
+
+			// Read src2 value
+			src2_id = format.src2;
+			src2 = ReadFloatGPR(src2_id);
+		}
+
+		// Absolute Value for src1
+		if (format.src1_abs == 1)
+			src1 = fabsf(src1);
+
+		// Negate src1
+		if (format.src1_negate == 1)
+			src1 = -src1;
+
+		// Absolute Value for src2
+		if (format.src2_abs == 1)
+			src2 = fabsf(src2);
+
+		// Negate src2
+		if (format.src2_negate == 1)
+			src2 = -src2;
+
+		// Read Predicate Src
+		pred_src_id = format.pred_src;
+		if (pred_src_id <= 7)
+			pred_src = ReadPredicate(pred_src_id);
+		else
+			pred_src = !ReadPredicate(pred_src_id - 8);
+
+		// Read Boolean mask .BM is default(.bval=0) .BF(.bavl=1)
+		unsigned mask_value = (format.bval == 1) ? 0x3f800000 : 0xffffffff;
+
+		// Compare operation
+        unsigned cmp_op = format.comp;
+        bool cmp_result;
+
+ 		if (cmp_op == 0)
+			cmp_result = false;
+		else if (cmp_op == 1)
+			cmp_result = ((src1 < src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 2)
+			cmp_result = ((src1 == src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 3)
+			cmp_result = ((src1 <= src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 4)
+			cmp_result = ((src1 > src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 5)
+			cmp_result = ((src1 != src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 6)
+			cmp_result = ((src1 >= src2) && (!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 7)
+			cmp_result = ((!isnan(src1)) && (!isnan(src2)));
+		else if (cmp_op == 8)
+			cmp_result = ((isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 9)
+			cmp_result = ((src1 < src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 10)
+			cmp_result = ((src1 == src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 11)
+			cmp_result = ((src1 <= src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 12)
+			cmp_result = ((src1 > src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 13)
+			cmp_result = ((src1 != src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 14)
+			cmp_result = ((src1 >= src2) && (isnan(src1)) && (isnan(src2)));
+		else if (cmp_op == 15)
+			cmp_result = true;
+
+		// Boolean operation
+		unsigned bool_op = format.bop;
+		if (bool_op == 0) // AND
+			dst = (cmp_result && pred_src) ? mask_value : 0;
+		else if (bool_op == 1) // OR
+			dst = (cmp_result || pred_src) ? mask_value : 0;
+		else if (cmp_op == 2) // XOR
+			dst = (cmp_result ^ pred_src) ? mask_value : 0;
+
+		if (format.cc == 1)
+			ISAUnsupportedFeature(inst);
+
+		// Execute
+		dst_id = format.dst;
+		dst = pred_src ? src1 : src2;
+		WriteFloatGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
 }
 
 void Thread::ExecuteInst_NOP(Instruction *inst)

@@ -188,7 +188,22 @@ DEFINST(LOP32I,
 		"LOP32I",
 		0x00,
 		0x01)
+DEFINST(ICMP_A,
+		"ICMP_A",
+		0x01,
+		0x02,
+		0x03,
+		0x01,
+		0x00)
 		
+DEFINST(ICMP_B,
+		"ICMP_B",
+		0x02,
+		0x01,
+		0x03,
+		0x01,
+		0x00)
+				
 		
 /* Control catogory instructions:
  * EXIT, BRA
