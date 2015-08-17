@@ -107,7 +107,7 @@ public:
 	bool isValidUop(Uop *uop) const override;
 
 	/// Issue the given instruction into the SIMD unit.
-	void Issue(std::shared_ptr<Uop> uop) override;
+	void Issue(std::unique_ptr<Uop> uop) override;
 
 	/// Complete the instruction
 	void Complete();
