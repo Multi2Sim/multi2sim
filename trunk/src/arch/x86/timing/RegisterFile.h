@@ -263,6 +263,10 @@ public:
 
 	/// Check integrity of register file
 	void CheckRegisterFile();
+
+	/// Increment the number of occupied integer registers.  Used only
+	/// in testing.
+	void incNumOccupiedIntegerRegisters() { num_occupied_integer_registers++; };
 };
 
 }
