@@ -52,6 +52,8 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
 			object_pool->getContext(),
 			uinst_1);
+
+	// Set up register file
 	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
 
 	// Set output dependency to eax
@@ -69,35 +71,165 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 // registers available in a private register
 TEST(TestRegisterFile, can_rename_private_register_1)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Set output dependency to St0
+	uop->setOutput(0, 23);
+
+	// Occupy all integer registers
+	for (int i = 0; i < 63; i++)
+		register_file->incNumOccupiedFloatingPointRegisters();
+
+	// Check that canRename() returns false
+	EXPECT_FALSE(register_file->canRename(uop.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
 // available in a private register
 TEST(TestRegisterFile, can_rename_private_register_2)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Set output dependency to Xmm0
+	uop->setOutput(0, 34);
+
+	// Occupy all integer registers
+	for (int i = 0; i < 63; i++)
+		register_file->incNumOccupiedXmmRegisters();
+
+	// Check that canRename() returns false
+	EXPECT_FALSE(register_file->canRename(uop.get()));
 }
 
 // Tests that canRename() returns false when there are no more integer
 // registers available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
+	// Config file
+	std::string config =
+			"[ Queues ]\n"
+			"RfKind = Shared\n";
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
+
+	// Set output dependency to eax
+	uop->setOutput(0, 1);
+
+	// Occupy all integer registers
+	for (int i = 0; i < 63; i++)
+		register_file->incNumOccupiedIntegerRegisters();
+
+	// Check that canRename() returns false
+	EXPECT_FALSE(register_file->canRename(uop.get()));
 }
 
 // Tests that canRename() returns false when there are no more floating-point
 // registers available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_1)
 {
+	// Config file
+	std::string config =
+			"[ Queues ]\n"
+			"RfKind = Shared\n";
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
+
+	// Set output dependency to St0
+	uop->setOutput(0, 23);
+
+	// Occupy all integer registers
+	for (int i = 0; i < 63; i++)
+		register_file->incNumOccupiedFloatingPointRegisters();
+
+	// Check that canRename() returns false
+	EXPECT_FALSE(register_file->canRename(uop.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
 // available in a public register
 TEST(TestRegisterFile, can_rename_shared_register_2)
 {
+	// Config file
+	std::string config =
+			"[ Queues ]\n"
+			"RfKind = Shared\n";
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
+
+	// Set output dependency to Xmm0
+	uop->setOutput(0, 34);
+
+	// Occupy all integer registers
+	for (int i = 0; i < 63; i++)
+		register_file->incNumOccupiedXmmRegisters();
+
+	// Check that canRename() returns false
+	EXPECT_FALSE(register_file->canRename(uop.get()));
 }
 
 
