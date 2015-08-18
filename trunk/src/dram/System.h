@@ -188,6 +188,12 @@ public:
 		activity.setPrefix("[dram-activity]");
 	}
 
+	/// Send a read request to the dram device
+	void Read();
+
+	/// Send a write request to the dram device
+	void Write();
+
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;
 

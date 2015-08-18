@@ -300,6 +300,18 @@ void System::GenerateAddressSizes()
 }
 
 
+// TODO: Implement this
+void System::Read()
+{
+}
+
+
+// TODO: Implement this
+void System::Write()
+{
+}
+
+
 void System::dump(std::ostream &os) const
 {
 	

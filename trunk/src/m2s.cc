@@ -553,6 +553,7 @@ int MainProgram(int argc, char **argv)
 		dram_system->ReadConfiguration();
 		dram_system->Run();
 	}
+
 	// Load programs
 	LoadPrograms();
 		
