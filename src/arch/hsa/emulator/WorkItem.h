@@ -228,7 +228,7 @@ private:
 		{
 			// Get the vector modifier
 			unsigned vector_size = inst->getVectorModifier();
-			for (int i = 0; i < vector_size; i++)
+			for (unsigned int i = 0; i < vector_size; i++)
 			{
 				auto op_item = operand->getOperandElement(i);	
 				switch (op_item->getKind())
@@ -291,7 +291,7 @@ private:
 		{
 			// Get the vector modifier
 			unsigned vector_size = inst->getVectorModifier();
-			for (int i = 0; i < vector_size; i++)
+			for (unsigned int i = 0; i < vector_size; i++)
 			{
 				auto op_item = operand->getOperandElement(i);	
 				switch (op_item->getKind())
