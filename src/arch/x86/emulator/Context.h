@@ -722,6 +722,11 @@ public:
 	/// Destructor
 	~Context();
 
+	/// Initialize the context, by initiating new memory, spec memory and
+	/// other member fields. This function is only intended to be used
+	/// in unit tests
+	void Initialize();
+
 	/// Load a program on the context. The meaning of each argument is
 	/// identical to the prototype of comm::Emulator::Load().
 	void Load(const std::vector<std::string> &args,

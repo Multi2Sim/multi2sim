@@ -393,6 +393,9 @@ public:
 	/// Fetch stage function
 	void Fetch();
 
+	/// Get the fetch queue size
+	int getFetchQueueSize() { return fetch_queue.size(); }
+
 
 
 

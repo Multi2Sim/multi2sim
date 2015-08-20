@@ -344,6 +344,21 @@ std::string Context::OpenProcCPUInfo()
 	return path;
 }
 
+void Context::Initialize() {
+	// Create new memory image
+	assert(!memory.get());
+	memory = misc::new_shared<mem::Memory>();
+
+	// Create signal handler table
+	signal_handler_table = misc::new_shared<SignalHandlerTable>();
+
+	// Create speculative memory, and link it with the real memory
+	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());
+
+	// Create file descriptor table
+	file_table = misc::new_shared<comm::FileTable>();
+}
+
 
 void Context::Load(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,

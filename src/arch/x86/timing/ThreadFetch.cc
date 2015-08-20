@@ -248,9 +248,10 @@ void Thread::Fetch()
 	if (block_address != fetch_block_address)
 	{
 		// Translate address
-		unsigned physical_address = context->mmu->TranslateVirtualAddress(
-				context->mmu_space,
-				fetch_neip);
+		unsigned physical_address =
+				context->mmu->TranslateVirtualAddress(
+						context->mmu_space,
+						fetch_neip);
 
 		// Save last fetched block
 		fetch_block_address = block_address;
