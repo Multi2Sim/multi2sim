@@ -194,32 +194,34 @@ class LivenessAnalysisPass : public comm::Pass
 	/// Function to run LivenessAnalysis on
 	llvm2si::Function *lap_function;
 
-	public:
+public:
 
-		/// Constructor
-		LivenessAnalysisPass(llvm2si::Function *function) :
-			lap_function(function)
-		{
+	/// Constructor
+	LivenessAnalysisPass(llvm2si::Function *function) :
+		lap_function(function)
+	{
 
-		}
+	}
 
-		/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
-		template<typename ConcreteType> ConcreteType* getInfo(BasicBlock *basic_block)
-		{
-			return basic_block->getPassInfoPool()->get<ConcreteType>(getId());
-		}
+	/// Return a pointer of BasicBlockLivenessAnalysisPassInfo
+	template<typename ConcreteType>
+	ConcreteType* getInfo(BasicBlock *basic_block)
+	{
+		return basic_block->getPassInfoPool()->
+				get<ConcreteType>(getId());
+	}
 
-		/// Execute the liveness analysis pass
-		void run();
+	/// Execute the liveness analysis pass
+	void run();
 
-		void runScalar();
+	void runScalar();
 
-		void runVector();
+	void runVector();
 
-		/// Dump debug information related to liveness analysis pass
-		void dump();
+	/// Dump debug information related to liveness analysis pass
+	void dump();
 
-		~LivenessAnalysisPass() {}
+	~LivenessAnalysisPass() {}
 };
 
 } // namespace llvm2si

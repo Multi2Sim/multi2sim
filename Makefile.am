@@ -1,7 +1,6 @@
 SUBDIRS = \
 	runtime \
 	src \
-	m2c \
 	tests
 
 images = \
