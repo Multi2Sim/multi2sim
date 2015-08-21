@@ -30,6 +30,7 @@
 #include "Error.h"
 #include "Misc.h"
 #include "String.h"
+#include "Terminal.h"
 
 
 namespace misc
@@ -75,15 +76,16 @@ void fatal(const char *fmt, ...)
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
 
-	// Colors
-	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
-	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
-	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
-
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << buf;
-	std::cerr << '\n' << red << formatter << reset_color << "\n\n";
+
+	// Dump to standard error output
+	Terminal::Red(std::cerr);
+	std::cerr << '\n' << formatter << "\n\n";
+	Terminal::Reset(std::cerr);
+
+	// Finish program
 	exit(1);
 }
 
@@ -97,15 +99,14 @@ void panic(const char *fmt, ...)
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
 
-	// Colors
-	std::string red = std::cerr.tellp() == -1 ? "\033[31m" : "";
-	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
-	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
-
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << "Panic: " << buf;
-	std::cerr << '\n' << red << formatter << reset_color << "\n\n";
+
+	// Dump to standard error output
+	Terminal::Red(std::cerr);
+	std::cerr << '\n' << formatter << "\n\n";
+	Terminal::Reset(std::cerr);
 
 	// Abort program
 	abort();
@@ -121,15 +122,14 @@ void Warning(const char *fmt, ...)
 	va_start(va, fmt);
 	vsnprintf(buf, sizeof buf, fmt, va);
 	
-	// Colors
-	std::string blue = std::cerr.tellp() == -1 ? "\033[34m" : "";
-	std::string black = std::cerr.tellp() == -1 ? "\033[30m" : "";
-	std::string reset_color = std::cerr.tellp() == -1 ? "\e[m" : "";
-
 	// Print in clean paragraphs
 	StringFormatter formatter;
 	formatter << "Warning: " << buf;
-	std::cerr << '\n' << blue << formatter << reset_color << "\n\n";
+
+	// Dump to standard error output
+	Terminal::Blue(std::cerr);
+	std::cerr << '\n' << formatter << "\n\n";
+	Terminal::Reset(std::cerr);
 }
 
 

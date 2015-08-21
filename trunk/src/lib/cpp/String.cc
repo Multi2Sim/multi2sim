@@ -574,6 +574,65 @@ long long StringToInt64(const std::string &_s, StringError &error)
 }
 
 
+std::string StringIntToAlnum(unsigned value)
+{
+	// Parse value
+	std::string result;
+	while (value)
+	{
+		unsigned digit = value % 62;
+		char c;
+		if (inRange(digit, 0, 9))
+			c = '0' + digit;
+		else if (inRange(digit, 10, 35))
+			c = digit - 10 + 'a';
+		else
+			c = digit - 36 + 'A';
+		result += c;
+		value /= 62;
+	}
+
+	// Mirror string
+	for (unsigned i = 0; i < result.length() / 2; i++)
+	{
+		char c = result[i];
+		result[i] = result[result.length() - i - 1];
+		result[result.length() - i - 1] = c;
+	}
+
+	// Return
+	return result;
+}
+
+
+unsigned StringAlnumToInt(const std::string &s)
+{
+	// Empty string
+	if (s.empty())
+		return 0;
+
+	// Parse string
+	unsigned power = 1;
+	unsigned result = 0;
+	for (int i = s.length() - 1; i >= 0; i--)
+	{
+		unsigned char c = s[i];
+		unsigned digit;
+		if (inRange(c, '0', '9'))
+			digit = c - '0';
+		else if (inRange(c, 'a', 'z'))
+			digit = c - 'a' + 10;
+		else if (inRange(c, 'A', 'Z'))
+			digit = c - 'A' + 36;
+		else
+			return 0;
+		result += digit * power;
+		power *= 62;
+	}
+	return result;
+}
+
+
 std::string StringBinaryBuffer(char *buffer, int size, int truncate)
 {
 	// Truncate size to

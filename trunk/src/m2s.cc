@@ -19,6 +19,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <sys/time.h>
 
 #include <arch/common/CallStack.h>
 #include <arch/common/Driver.h>
@@ -51,6 +52,7 @@
 #include <lib/cpp/Environment.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/Terminal.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
 
@@ -109,6 +111,33 @@ long long m2s_loop_iterations = 0;
 //
 // Functions
 //
+
+
+void WelcomeMessage(std::ostream &os)
+{
+	// Compute simulation ID
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	unsigned min_id = misc::StringAlnumToInt("10000");
+	unsigned max_id = misc::StringAlnumToInt("ZZZZZ");
+	unsigned id = (tv.tv_sec * 1000000000 + tv.tv_usec)
+			% (max_id - min_id + 1)
+			+ min_id;
+	std::string alnum_id = misc::StringIntToAlnum(id);
+	
+	// Blue color
+	misc::Terminal::Blue(os);
+
+	// Print welcome message in the standard error output
+	os << '\n' << "; Multi2Sim " << VERSION << " - ";
+	os << "A Simulation Framework for CPU-GPU Heterogeneous Computing\n";
+	os << "; Please use command 'm2s --help' for a list of command-line options.\n";
+	os << "; Simulation alpha-numeric ID: " << alnum_id << '\n';
+	os << '\n';
+	
+	// Reset terminal color
+	misc::Terminal::Reset(os);
+}
 
 
 void RegisterRuntimes()
@@ -457,8 +486,56 @@ void MainLoop()
 }
 
 
+void DumpStatisticsSummary(std::ostream &os = std::cerr)
+{
+	// No summary dumped if no simulation was run
+	if (m2s_loop_iterations < 2)
+		return;
+	
+	// Print in blue
+	misc::Terminal::Blue(os);
+
+	// Header
+	os << '\n' << ";\n"
+			<< "; Simulation Statistics Summary\n"
+			<< ";\n"
+			<< "\n";
+
+	// Calculate real time in seconds
+	esim::Engine *esim_engine = esim::Engine::getInstance();
+	double time_in_seconds = (double) esim_engine->getRealTime() / 1.0e6;
+
+	// General statistics
+	os << "[ General ]\n";
+	os << misc::fmt("RealTime = %.2f [s]\n", time_in_seconds);
+	os << "SimEnd = " << esim_engine->getFinishReason() << '\n';
+
+	// General detailed simulation statistics
+	if (esim_engine->getTime())
+	{
+		long long cycles = esim_engine->getCycle();
+		os << misc::fmt("SimTime = %.2f [ns]\n", esim_engine->getTime() / 1000.0);
+		os << misc::fmt("Frequency = %d [MHz]\n", esim_engine->getFrequency());
+		os << misc::fmt("Cycles = %lld\n", cycles);
+	}
+
+	// End
+	os << '\n';
+
+	// Summary for all architectures
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+	arch_pool->DumpSummary();
+
+	// Reset terminal color
+	misc::Terminal::Reset(os);
+}
+
+
 int MainProgram(int argc, char **argv)
 {
+	// Print welcome message in standard error output
+	WelcomeMessage(std::cerr);
+
 	// Read command line
 	RegisterOptions();
 	HSA::Disassembler::RegisterOptions();
@@ -559,6 +636,9 @@ int MainProgram(int argc, char **argv)
 		
 	// Main simulation loop
 	MainLoop();
+
+	// Statistics summary
+	DumpStatisticsSummary();
 
 	// Dumping network report
 	if (net::System::hasInstance())

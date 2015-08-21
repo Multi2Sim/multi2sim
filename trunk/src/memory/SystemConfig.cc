@@ -1109,8 +1109,8 @@ void System::ConfigReadEntries(misc::IniFile *ini_file)
 	// After processing all [Entry <name>] sections, check that all
 	// architectures satisfy their entries to the memory hierarchy. Do it
 	// for those architectures with active timing simulation.
-	for (auto it = arch_pool->timing_begin(),
-			e = arch_pool->timing_end();
+	for (auto it = arch_pool->getTimingBegin(),
+			e = arch_pool->getTimingEnd();
 			it != e;
 			++it)
 	{
@@ -1336,8 +1336,8 @@ void System::ConfigCalculateModuleLevels()
 	// Start recursive level assignment with L1 modules (entries to memory)
 	// for all architectures.
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-	for (auto it = arch_pool->timing_begin(),
-			e = arch_pool->timing_end();
+	for (auto it = arch_pool->getTimingBegin(),
+			e = arch_pool->getTimingEnd();
 			it != e;
 			++it)
 	{
@@ -1386,8 +1386,8 @@ void System::ReadConfiguration()
 	{
 		// Create default configuration files for each architecture
 		comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
-		for (auto it = arch_pool->timing_begin(),
-				e = arch_pool->timing_end();
+		for (auto it = arch_pool->getTimingBegin(),
+				e = arch_pool->getTimingEnd();
 				it != e;
 				++it)
 		{

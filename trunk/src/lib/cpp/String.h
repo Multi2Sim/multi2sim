@@ -144,6 +144,25 @@ int StringToInt(const std::string &s);
 long long StringToInt64(const std::string &s, StringError &error);
 long long StringToInt64(const std::string &s);
 
+/// Convert an integer value into a sequence of alphanumeric characters. Each
+/// position of the destination string can encode a value between 0 and 61,
+/// where:
+///
+///  0-9    =>   '0'...'9'
+///  10-35  =>   'a'...'z'
+///  36-61  =>   'A'...'Z'
+///
+std::string StringIntToAlnum(unsigned value);
+
+/// Convert an alphanumeric string in base 62 into an integer number. Each
+/// digit in the string is interpreted as:
+///
+///  0-9    =>   '0'...'9'
+///  10-35  =>   'a'...'z'
+///  36-61  =>   'A'...'Z'
+///
+unsigned StringAlnumToInt(const std::string &s);
+
 /// Return a string with a human-readable representation of a binary buffer.
 /// \param buffer Pointer to the binary buffer.
 /// \param size Number of bytes available in the buffer.
@@ -176,7 +195,9 @@ class StringMap
 		}
 	};
 
+	// Items in the string map
 	std::vector<Item> items;
+
 public:
 
 	/// Constructor
