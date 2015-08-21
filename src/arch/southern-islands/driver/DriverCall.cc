@@ -617,9 +617,13 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	// Set the global and local sizes
 	ndrange->SetupSize(global_size, local_size, work_dim);
 
-	// Calculate the allowed work groups per wavefront pool and compute unit
+	// Calculate the allowed work groups per wavefront pool and 
+	// compute unit. Create the address space for the MMU.
 	if (gpu)
+	{
 	 	gpu->MapNDRange(ndrange);
+		ndrange->newAddressSpace(gpu->getMmu());
+	}
 	
 	// Return ID of new nd-range 
 	return ndrange->getId();

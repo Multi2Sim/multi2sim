@@ -360,7 +360,7 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	// Find an available slot
 	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()
 			&& work_group->id_in_compute_unit < (int) work_groups.size())
-				work_group->id_in_compute_unit++;
+		work_group->id_in_compute_unit++;
 
 
 	// Checks

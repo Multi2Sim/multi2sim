@@ -43,6 +43,9 @@ const misc::StringMap Gpu::register_allocation_granularity_map =
 
 Gpu::Gpu()
 {
+	// Create MMU
+	mmu = misc::new_unique<mem::MMU>("SouthernIslandsTimingSimulator");
+
 	// Create compute units
 	compute_units.reserve(num_compute_units);
 	available_compute_units.resize(num_compute_units);

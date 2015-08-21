@@ -79,9 +79,7 @@ public:
 		return buffer.end();
 	}
 
-	/// Remove the uop pointed to by the given iterator, and return a
-	/// shared pointer reference to the removed entry.
-	//std::unique_ptr<Uop> 
+	/// Remove the uop pointed to by the given iterator.
 	void Remove(std::list<std::unique_ptr<Uop>>::iterator it);
 };
 

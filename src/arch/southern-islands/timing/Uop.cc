@@ -37,6 +37,7 @@ Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
 		int wavefront_pool_id) :
 		wavefront(wavefront),
 		wavefront_pool_entry(wavefront_pool_entry),
+		work_group(work_group),
 		wavefront_pool_id(wavefront_pool_id)
 {
 	// Assign unique identifier
@@ -45,7 +46,7 @@ Uop::Uop(Wavefront *wavefront, WavefrontPoolEntry *wavefront_pool_entry,
 	compute_unit = wavefront_pool_entry->getWavefrontPool()->getComputeUnit();
 	id_in_compute_unit = compute_unit->getUopId();
 	
-	// Allocate room for the work item info structures
+	// Allocate room for the work-item info structures
 	work_item_info_list.resize(WorkGroup::WavefrontSize);
 }
 
