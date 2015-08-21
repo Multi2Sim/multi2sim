@@ -62,7 +62,8 @@ src_dram_test_LDADD = \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 src_dram_test_SOURCES = \
-	src/dram/TestDramConfig.cc
+	src/dram/TestDramConfig.cc \
+	src/dram/TestDramEvents.cc
 
 src_arch_x86_timing_test_LDADD = \
 	$(top_builddir)/src/arch/x86/timing/libtiming.a \
