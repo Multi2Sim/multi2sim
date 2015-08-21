@@ -24,6 +24,8 @@
 #include <memory>
 #include <string>
 
+#include <lib/cpp/String.h>
+
 #include "Request.h"
 
 

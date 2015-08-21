@@ -113,11 +113,16 @@ public:
 
 	// EventTypes and FrequencyDomains for DRAM
 	static esim::FrequencyDomain *DRAM_DOMAIN;
+	static esim::Event *REQUEST;
 	static esim::Event *ACTION_REQUEST;
 	static esim::Event *COMMAND_RETURN;
 
 	/// Obtain the instance of the dram simulator singleton.
 	static System *getInstance();
+
+	/// Returns a channel that belongs to this controller with the
+	/// specified id.
+	Controller *getController(int id) { return controllers[id].get(); }
 
 	/// Returns whether or not DRAM is running as a stand alone simulator.
 	static bool isStandAlone() { return stand_alone; }
@@ -189,10 +194,10 @@ public:
 	}
 
 	/// Send a read request to the dram device
-	void Read();
+	void Read(long long address);
 
 	/// Send a write request to the dram device
-	void Write();
+	void Write(long long address);
 
 	/// Dump the object to an output stream.
 	void dump(std::ostream &os = std::cout) const;

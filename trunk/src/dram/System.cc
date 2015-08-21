@@ -300,15 +300,37 @@ void System::GenerateAddressSizes()
 }
 
 
-// TODO: Implement this
-void System::Read()
+void System::Read(long long address)
 {
+	// Create the request object that will be inserted into the queue.
+	std::shared_ptr<Request> request = std::make_shared<Request>();
+
+	// Set the request's address
+	request->setEncodedAddress(address);
+
+	// Set the request's type.
+	request->setType(RequestRead);
+
+	// Add request to the system
+	System *dram = System::getInstance();
+	dram->AddRequest(request);
 }
 
 
-// TODO: Implement this
-void System::Write()
+void System::Write(long long address)
 {
+	// Create the request object that will be inserted into the queue.
+	std::shared_ptr<Request> request = std::make_shared<Request>();
+
+	// Set the request's address
+	request->setEncodedAddress(address);
+
+	// Set the request's type.
+	request->setType(RequestWrite);
+
+	// Add request to the system
+	System *dram = System::getInstance();
+	dram->AddRequest(request);
 }
 
 

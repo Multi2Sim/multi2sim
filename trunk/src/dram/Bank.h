@@ -107,9 +107,9 @@ public:
 	int getNumCommandsInQueue() const { return (int) command_queue.size(); }
 
 	/// Returns the command in the queue at a certain position.
-	CommandType getCommandInQueueType(int position = 0)
+	std::string getCommandInQueueType(int position = 0)
 	{
-		return command_queue[position]->getType();
+		return command_queue[position]->getTypeString();
 	}
 
 	/// Returns the cycle when the command at the front of the queue was

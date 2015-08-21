@@ -20,6 +20,8 @@
 #ifndef DRAM_ADDRESS_H
 #define DRAM_ADDRESS_H
 
+#include <iostream>
+
 
 namespace dram
 {

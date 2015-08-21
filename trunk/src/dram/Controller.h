@@ -28,8 +28,10 @@
 
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/String.h>
+#include <lib/esim/Engine.h>
 #include <lib/esim/Event.h>
 
+#include "Command.h"
 
 namespace dram
 {
