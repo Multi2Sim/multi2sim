@@ -18,6 +18,7 @@
  */
 
 #include <lib/cpp/Misc.h>
+#include <lib/cpp/Terminal.h>
 
 #include "Arch.h"
 #include "Emulator.h"
@@ -168,6 +169,42 @@ void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
 			throw misc::Panic("Invalid simulation kind");
 		}
 	}
+}
+
+
+void ArchPool::DumpSummary(std::ostream &os) const
+{
+	// Print in blue
+	misc::Terminal::Blue(os);
+
+	// Dump summary for each architecture
+	for (auto &arch : arch_list)
+	{
+		// Skip if no instructions were run for this architecture
+		Emulator *emulator = arch->getEmulator();
+		if (emulator->getNumInstructions() == 0)
+			continue;
+
+		// Header
+		os << "[ " << arch->getName() << " ]\n";
+
+		// Print statistics summary for emulator
+		emulator->DumpSummary(os);
+
+		// Statistics summary for timing simulator
+		if (arch->getSimKind() == Arch::SimDetailed)
+		{
+			Timing *timing = arch->getTiming();
+			assert(timing);
+			timing->DumpSummary(os);
+		}
+
+		// New line
+		os << '\n';
+	}
+
+	// Reset color
+	misc::Terminal::Reset(os);
 }
 	
 

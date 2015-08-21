@@ -38,6 +38,9 @@ libcpp_a_SOURCES = \
 	String.cc \
 	String.h \
 	\
+	Terminal.cc \
+	Terminal.h \
+	\
 	Timer.cc \
 	Timer.h \
 	\

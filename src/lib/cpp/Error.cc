@@ -23,6 +23,7 @@
 
 #include "Error.h"
 #include "String.h"
+#include "Terminal.h"
 
 
 namespace misc
@@ -36,11 +37,6 @@ Exception::~Exception()
 
 void Exception::Dump(std::ostream &os) const
 {
-	// Colors
-	std::string red = os.tellp() == -1 ? "\033[31m" : "";
-	std::string black = os.tellp() == -1 ? "\033[30m" : "";
-	std::string reset_color = os.tellp() == -1 ? "\e[m" : "";
-
 	// Print in clean paragraphs
 	StringFormatter formatter;
 
@@ -54,8 +50,8 @@ void Exception::Dump(std::ostream &os) const
 	// Message
 	formatter << getMessage();
 
-	// Start red
-	os << red;
+	// Print in red
+	Terminal::Red(os);
 
 	// Dump it
 	os << '\n' << formatter << "\n\n";
@@ -71,7 +67,7 @@ void Exception::Dump(std::ostream &os) const
 	}
 
 	// Recover original color
-	os << reset_color;
+	Terminal::Reset(os);
 }
 
 
