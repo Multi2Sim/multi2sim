@@ -37,18 +37,10 @@ long long Timer::getTime()
 }
 
 
-Timer::Timer(const std::string &name)
-{
-	// Initialize
-	this->name = name;
-	state = TimerStateStopped;
-}
-
-
 long long Timer::getValue() const
 {
 	// Timer is stopped
-	if (state == TimerStateStopped)
+	if (state == StateStopped)
 		return total_time;
 
 	// Timer is running
@@ -60,11 +52,11 @@ long long Timer::getValue() const
 void Timer::Start()
 {
 	// Timer already running
-	if (state == TimerStateRunning)
+	if (state == StateRunning)
 		return;
 	
 	// Start timer
-	state = TimerStateRunning;
+	state = StateRunning;
 	start_time = getTime();
 }
 
@@ -72,12 +64,12 @@ void Timer::Start()
 void Timer::Stop()
 {
 	// Timer already stopped
-	if (state == TimerStateStopped)
+	if (state == StateStopped)
 		return;
 	
 	// Stop timer
 	long long ellapsed = getTime() - start_time;
-	state = TimerStateStopped;
+	state = StateStopped;
 	total_time += ellapsed;
 }
 

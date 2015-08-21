@@ -46,7 +46,6 @@ void Emulator::DumpSummary(std::ostream &os) const
 			(double) num_instructions / time_in_sec :
 			0.0;
 
-	os << misc::fmt("[ %s ]\n", name.c_str());
 	os << misc::fmt("RealTime = %.2f [s]\n", time_in_sec);
 	os << misc::fmt("Instructions = %lld\n", num_instructions);
 	os << misc::fmt("InstructionsPerSecond = %.0f\n", inst_per_sec);

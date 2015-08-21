@@ -72,8 +72,8 @@ class Engine
 	// Flag set when simulation should finish
 	bool finish = false;
 
-	// Reason why we finish
-	std::string finish_why;
+	// Reason why simulation has finished
+	std::string finish_reason;
 
 	// Signal received from the user
 	volatile int signal_received = false;
@@ -156,14 +156,18 @@ public:
 	static void Destroy() { instance = nullptr; }
 
 	/// Force end of simulation with a specific reason.
-	void Finish(const std::string &why)
+	void Finish(const std::string &reason)
 	{
 		finish = true;
-		finish_why = why;
+		finish_reason = reason;
 	}
 
 	/// Return whether the simulation finished
 	bool hasFinished() { return finish; }
+
+	/// If the simulation has finished, return the reason as a string. If
+	/// not, return an empty string.
+	const std::string &getFinishReason() { return finish_reason; }
 
 	/// Return the number of micro-seconds ellapsed since the start of the
 	/// simulation. This is real time, not simulated time.
@@ -191,11 +195,29 @@ public:
 	/// Return the current simulated time in picoseconds.
 	long long getTime() const { return current_time; }
 
-	/// Return the current cycle in the fastest registered frequency domain
+	/// Return the current cycle in the fastest registered frequency domain.
+	/// At least one frequency domain must have been registered.
 	long long getCycle() const
 	{
 		assert(shortest_cycle_time);
 		return current_time / shortest_cycle_time + 1;
+	}
+
+	/// Return the fastest registered frequency domain. At least one
+	/// frequency domain must have been registered.
+	int getFrequency() const
+	{
+		assert(fastest_frequency);
+		return fastest_frequency;
+	}
+
+	/// Return the shortest cycle time corresponding to the fastest
+	/// registered frequency domain. At least one frequency domain must
+	/// have been registered.
+	long long getCycleTime() const
+	{
+		assert(shortest_cycle_time);
+		return shortest_cycle_time;
 	}
 
 	/// Return a null event type. This type can be used in calls to

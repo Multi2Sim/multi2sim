@@ -222,6 +222,9 @@ public:
 	///	decide whether the main simulation loop should stop.
 	void Run(int &num_emu_active, int &num_timing_active);
 
+	/// Dump a summary for all architectures in the pool.
+	void DumpSummary(std::ostream &os = std::cerr) const;
+
 	/// Return an iterator to the first architecture in the architecture
 	/// list.
 	std::list<std::unique_ptr<Arch>>::iterator begin()
@@ -236,14 +239,14 @@ public:
 	}
 
 	/// Return an iterator to the first architecture with timing simulation.
-	std::list<Arch *>::iterator timing_begin()
+	std::list<Arch *>::iterator getTimingBegin()
 	{
 		return timing_arch_list.begin();
 	}
 
 	/// Return a past-the-end iterator to the list of architectures with
 	/// timing simulation.
-	std::list<Arch *>::iterator timing_end()
+	std::list<Arch *>::iterator getTimingEnd()
 	{
 		return timing_arch_list.end();
 	}
