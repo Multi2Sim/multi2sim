@@ -126,7 +126,7 @@ public:
 	}
 
 	/// Identifier in compute unit
-	int id_in_compute_unit;
+	int id_in_compute_unit = 0;
 	
 	/// Boolean value indicating the status of the work group in the timing
 	/// simulator

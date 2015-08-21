@@ -67,7 +67,7 @@ private:
 	static int lds_size;
 	
 	// MMU used by this GPU
-	mem::MMU *mmu;
+	std::unique_ptr<mem::MMU> mmu;
 
 
 
@@ -160,7 +160,7 @@ public:
 	}
 
 	/// Return the associated MMU
-	mem::MMU *getMmu() const { return mmu; }
+	mem::MMU *getMmu() const { return mmu.get(); }
 
 	/// Map an NDRange to the GPP object
 	void MapNDRange(NDRange *ndrange);

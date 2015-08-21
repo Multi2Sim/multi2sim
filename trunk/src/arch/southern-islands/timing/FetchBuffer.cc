@@ -25,13 +25,10 @@
 namespace SI
 {
 
-//std::unique_ptr<Uop> 
 void FetchBuffer::Remove(std::list<std::unique_ptr<Uop>>::iterator it)
 {
 	assert(it != buffer.end());
-	//std::shared_ptr<Uop> uop = *it;
 	buffer.erase(it);
-	//return uop;
 }
 
 }
