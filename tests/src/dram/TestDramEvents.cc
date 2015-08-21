@@ -17,16 +17,22 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "gtest/gtest.h"
-
 #include <string>
 #include <regex>
 #include <exception>
+
+#include <dram/Address.h>
+#include <dram/Bank.h>
+#include <dram/Channel.h>
+#include <dram/Controller.h>
+#include <dram/Rank.h>
 #include <dram/System.h>
+#include <gtest/gtest.h>
 #include <lib/cpp/IniFile.h>
 #include <lib/cpp/Error.h>
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
+
 
 namespace dram
 {
@@ -38,12 +44,12 @@ static void Cleanup()
 	System::Destroy();
 }
 
-static std:string default_config = 
+static std::string default_config = 
 			"[ General ]\n"
 			"Frequency = 100000\n"
 			"[ MemoryController One ]\n";
 			
-TEST(TestSystemConfiguration, event_one_read)
+TEST(TestSystemEvents, section_one_read)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -54,23 +60,44 @@ TEST(TestSystemConfiguration, event_one_read)
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after a single read
+	std::array<std::string,3> expected = { "", "Activate", "Read" };
+
+	// Initialze array to store test results
+	std::array<std::string,3>  results;
 
 	// Test body
 	std::string message;
 	try
 	{
-		System::Read();
+		// Submit a sigle read request
+		dram_system->Read(0);
 		esim::Engine *engine = esim::Engine::getInstance();
-		engine->ProcessEvents();
+		for (int i = 0; i < results.size(); i++){
+
+			// Step through cycle by cycle
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->
+				getBank(0)->getCommandInQueueType();
+		}
 	}
 	catch (misc::Error &e)
 	{
 		message = e.getMessage();
 	}
 	EXPECT_TRUE(message.empty());
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
 }
 
-TEST(TestSystemConfiguration, event_one_write)
+TEST(TestSystemEvents, section_one_write)
 {
 	// cleanup singleton instance
 	Cleanup();
@@ -81,20 +108,42 @@ TEST(TestSystemConfiguration, event_one_write)
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after a single write
+	std::array<std::string,3> expected = { "", "Activate", "Write" };
+
+	// Initialze array to store test results
+	std::array<std::string,3>  results;
 
 	// Test body
 	std::string message;
 	try
 	{
-		System::Write();
+		// Submit a single write request
+		dram_system->Write(0);
 		esim::Engine *engine = esim::Engine::getInstance();
-		engine->ProcessEvents();
+		for (int i = 0; i < results.size(); i++){
+
+			// Step through cycle by cycle
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->
+				getBank(0)->getCommandInQueueType();
+			std::cout << results[i] << "\n";
+		}
 	}
 	catch (misc::Error &e)
 	{
 		message = e.getMessage();
 	}
 	EXPECT_TRUE(message.empty());
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
 }
 
 }
