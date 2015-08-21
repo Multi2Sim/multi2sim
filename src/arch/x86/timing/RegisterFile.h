@@ -264,26 +264,6 @@ public:
 	/// Check integrity of register file
 	void CheckRegisterFile();
 
-	/// Increment the number of occupied integer registers.  Used only
-	/// in testing.
-	void incNumOccupiedIntegerRegisters()
-	{
-		num_occupied_integer_registers++;
-	}
-
-	/// Increment the number of occupied float point registers.
-	/// Used only in testing.
-	void incNumOccupiedFloatingPointRegisters()
-	{
-		num_occupied_floating_point_registers++;
-	}
-
-	/// Increment the number of occupied xmm registers.
-	/// Used only in testing
-	void incNumOccupiedXmmRegisters()
-	{
-		num_occupied_xmm_registers++;
-	}
 };
 
 }
