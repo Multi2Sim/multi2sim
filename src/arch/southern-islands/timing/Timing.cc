@@ -659,7 +659,7 @@ void Timing::ProcessOptions()
 	misc::IniFile ini_file;
 	if (!config_file.empty())
 		ini_file.Load(config_file);
-
+		
 	// Instantiate timing simulator if '--si-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
 	{
@@ -669,8 +669,22 @@ void Timing::ProcessOptions()
 
 		// Second: generate instance of timing simulator. The constructor
 		// of each class will use the previously initialized static
-		// variables to initialize the instances.
-		getInstance();
+		// variables to initialize the instances. 
+		Timing *timing = getInstance();
+
+		// Initialize the memory structures according to the default
+		// memory configuration.
+		timing->WriteMemoryConfiguration(&ini_file);
+		
+		// Parse the memory configuration. This will initialize the 
+		// scalar and vector caches of the compute units.
+		std::string section;
+		for (int i = 0; i < Gpu::num_compute_units; i++)
+		{
+			section = misc::fmt("Entry si-cu-%d", i);
+			timing->ParseMemoryConfigurationEntry(&ini_file, 
+					section);
+		}
 	}
 
 	// Print configuration INI file format

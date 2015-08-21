@@ -208,9 +208,12 @@ void Wavefront::Execute()
 	case Instruction::FormatSOP1:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
 
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -229,9 +232,12 @@ void Wavefront::Execute()
 	case Instruction::FormatSOP2:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
 		
 		// Stats
 		emulator->incScalarAluInstCount();
@@ -250,10 +256,13 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPP:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		if (bytes->sopp.op > 1 &&
 			bytes->sopp.op < 10)
@@ -279,10 +288,13 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPC:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_instruction_count++;
@@ -300,10 +312,13 @@ void Wavefront::Execute()
 	case Instruction::FormatSOPK:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incScalarAluInstCount();
 		scalar_alu_instruction_count++;
@@ -322,10 +337,13 @@ void Wavefront::Execute()
 	case Instruction::FormatSMRD:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incScalarMemInstCount();
 		scalar_memory_instruction_count++;
@@ -344,10 +362,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP2:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -370,10 +391,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP1:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -427,10 +451,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVOPC:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -455,10 +482,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP3a:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -483,10 +513,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVOP3b:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -511,10 +544,13 @@ void Wavefront::Execute()
 	case Instruction::FormatVINTRP:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorAluInstCount();
 		vector_alu_instruction_count++;
@@ -539,10 +575,13 @@ void Wavefront::Execute()
 	case Instruction::FormatDS:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incLdsInstCount();
 		lds_instruction_count++;
@@ -586,10 +625,13 @@ void Wavefront::Execute()
 	case Instruction::FormatMTBUF:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorMemInstCount();
 		vector_memory_instruction_count++;
@@ -628,10 +670,13 @@ void Wavefront::Execute()
 	case Instruction::FormatMUBUF:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incVectorMemInstCount();
 		vector_memory_instruction_count++;
@@ -677,10 +722,13 @@ void Wavefront::Execute()
 	case Instruction::FormatEXP:
 	{
 		// Dump instruction string when debugging
-		instruction->Dump(ss);
-		instruction->DumpAddress(ss);
-		Emulator::isa_debug << ss.str();
-		
+		if (Emulator::isa_debug)
+		{
+			instruction->Dump(ss);
+			instruction->DumpAddress(ss);
+			Emulator::isa_debug << ss.str();
+		}
+
 		// Stats
 		emulator->incExportInstCount();
 		export_instruction_count++;

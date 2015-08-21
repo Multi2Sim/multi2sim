@@ -206,6 +206,8 @@ void ScalarUnit::Complete()
 			uop->getWavefrontPoolEntry()->wavefront_finished = true;
 			work_group->incWavefrontsCompletedTiming();
 
+			// Set the work group as finished with timing simulation
+			// if all the wavefonts in the work group are complete
 			if (work_group->getWavefrontsCompletedTiming() ==
 					work_group->getWavefrontsInWorkgroup())
 				work_group->finished_timing = true;
@@ -214,13 +216,10 @@ void ScalarUnit::Complete()
 			assert(work_group->getWavefrontsCompletedTiming() <=
 					work_group->getWavefrontsInWorkgroup());
 
+			// Check if the work group is finished. If so, unmap
+			// the work group
 			if (work_group->finished_timing)
-			{
-				assert(work_group->getWavefrontsCompletedTiming() 
-				== work_group->getWavefrontsInWorkgroup());
-			
 				compute_unit->UnmapWorkGroup(uop->getWorkGroup());
-			}
 		}
 
 		// Trace
