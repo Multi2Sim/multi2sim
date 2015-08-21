@@ -44,81 +44,174 @@ namespace x86
 // registers available in a private register
 TEST(TestRegisterFile, can_rename_private_register_0)
 {
+	// Config file
+	// Sets number of physical integer registers to 26
+	std::string config =
+			"[ Queues ]\n"
+			"RfIntSize = 26";
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
-			object_pool->getContext(),
-			uinst_1);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 2);
+	uinst_0->setIDep(2, 3);
+	uinst_0->setODep(0, 4);
+	uinst_0->setODep(1, 5);
+	uinst_0->setODep(2, 6);
+	uinst_0->setODep(3, 7);
+
+	uinst_1->setIDep(0, 1);
+	uinst_1->setIDep(1, 2);
+	uinst_1->setIDep(2, 3);
+	uinst_1->setODep(0, 4);
+	uinst_1->setODep(1, 5);
+	uinst_1->setODep(2, 6);
+	uinst_1->setODep(3, 7);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Set output dependency to eax
-	uop->setOutput(0, 1);
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
 
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedIntegerRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more floating-point
 // registers available in a private register
 TEST(TestRegisterFile, can_rename_private_register_1)
 {
+	// Config file
+	// Sets number of physical integer registers to 26
+	std::string config =
+			"[ Queues ]\n"
+			"RfFpSize = 15";
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
-			object_pool->getContext(),
-			uinst_1);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 23);
+	uinst_0->setIDep(1, 24);
+	uinst_0->setIDep(2, 25);
+	uinst_0->setODep(0, 26);
+	uinst_0->setODep(1, 27);
+	uinst_0->setODep(2, 28);
+	uinst_0->setODep(3, 29);
+
+	uinst_1->setIDep(0, 23);
+	uinst_1->setIDep(1, 24);
+	uinst_1->setIDep(2, 25);
+	uinst_1->setODep(0, 26);
+	uinst_1->setODep(1, 27);
+	uinst_1->setODep(2, 28);
+	uinst_1->setODep(3, 29);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Set output dependency to St0
-	uop->setOutput(0, 23);
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
 
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedFloatingPointRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
 // available in a private register
 TEST(TestRegisterFile, can_rename_private_register_2)
 {
+	// Config file
+	// Sets number of physical integer registers to 26
+	std::string config =
+			"[ Queues ]\n"
+			"RfXmmSize = 15";
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
-			object_pool->getContext(),
-			uinst_1);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 34);
+	uinst_0->setIDep(1, 35);
+	uinst_0->setIDep(2, 36);
+	uinst_0->setODep(0, 37);
+	uinst_0->setODep(1, 38);
+	uinst_0->setODep(2, 39);
+	uinst_0->setODep(3, 40);
+
+	uinst_1->setIDep(0, 41);
+	uinst_1->setIDep(1, 34);
+	uinst_1->setIDep(2, 35);
+	uinst_1->setODep(0, 36);
+	uinst_1->setODep(1, 37);
+	uinst_1->setODep(2, 38);
+	uinst_1->setODep(3, 39);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Set output dependency to Xmm0
-	uop->setOutput(0, 34);
+	// Parse register config file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	register_file->ParseConfiguration(&ini_file);
 
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedXmmRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more integer
@@ -126,36 +219,58 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
 	// Config file
+	// Sets number of physical integer registers to 26
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared\n";
+			"RfKind = Shared"
+			"RfIntSize = 26";
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 2);
+	uinst_0->setIDep(2, 3);
+	uinst_0->setODep(0, 4);
+	uinst_0->setODep(1, 5);
+	uinst_0->setODep(2, 6);
+	uinst_0->setODep(3, 7);
+
+	uinst_1->setIDep(0, 1);
+	uinst_1->setIDep(1, 2);
+	uinst_1->setIDep(2, 3);
+	uinst_1->setODep(0, 4);
+	uinst_1->setODep(1, 5);
+	uinst_1->setODep(2, 6);
+	uinst_1->setODep(3, 7);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
 					object_pool->getContext(),
 					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Parse register config file
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 	register_file->ParseConfiguration(&ini_file);
 
-	// Set output dependency to eax
-	uop->setOutput(0, 1);
-
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedIntegerRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more floating-point
@@ -163,73 +278,117 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 TEST(TestRegisterFile, can_rename_shared_register_1)
 {
 	// Config file
+	// Sets number of physical integer registers to 26
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared\n";
+			"RfKind = Shared"
+			"RfFpSize = 15";
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
-			object_pool->getContext(),
-			uinst_1);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 23);
+	uinst_0->setIDep(1, 24);
+	uinst_0->setIDep(2, 25);
+	uinst_0->setODep(0, 26);
+	uinst_0->setODep(1, 27);
+	uinst_0->setODep(2, 28);
+	uinst_0->setODep(3, 29);
+
+	uinst_1->setIDep(0, 23);
+	uinst_1->setIDep(1, 24);
+	uinst_1->setIDep(2, 25);
+	uinst_1->setODep(0, 26);
+	uinst_1->setODep(1, 27);
+	uinst_1->setODep(2, 28);
+	uinst_1->setODep(3, 29);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Parse register config file
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 	register_file->ParseConfiguration(&ini_file);
 
-	// Set output dependency to St0
-	uop->setOutput(0, 23);
-
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedFloatingPointRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
-// available in a public register
+// available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_2)
 {
 	// Config file
+	// Sets number of physical integer registers to 26
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared\n";
+			"RfKind = Shared"
+			"RfXmmSize = 15";
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
 	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
-			object_pool->getContext(),
-			uinst_1);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 34);
+	uinst_0->setIDep(1, 35);
+	uinst_0->setIDep(2, 36);
+	uinst_0->setODep(0, 37);
+	uinst_0->setODep(1, 38);
+	uinst_0->setODep(2, 39);
+	uinst_0->setODep(3, 40);
+
+	uinst_1->setIDep(0, 41);
+	uinst_1->setIDep(1, 34);
+	uinst_1->setIDep(2, 35);
+	uinst_1->setODep(0, 36);
+	uinst_1->setODep(1, 37);
+	uinst_1->setODep(2, 38);
+	uinst_1->setODep(3, 39);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+					 object_pool->getContext(),
+					 uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+					object_pool->getContext(),
+					uinst_1);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Parse register config file
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 	register_file->ParseConfiguration(&ini_file);
 
-	// Set output dependency to Xmm0
-	uop->setOutput(0, 34);
-
-	// Occupy all integer registers
-	for (int i = 0; i < 63; i++)
-		register_file->incNumOccupiedXmmRegisters();
+	// Occupy integer registers
+	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 
@@ -240,33 +399,128 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 //
 
 
-// Check correct logical-to-physical register renaming in a uop with 1 integer
-// input + 1 integer output.
+// Checks correct logical-to-physical register renaming in a uop with 1 integer
+// input and 1 integer output.
 TEST(TestRegisterFile, rename_0)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uinst with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Manually set uinst dependencies
+	uinst_1->setIDep(0, 1);
+	uinst_1->setIDep(1, 2);
+	uinst_1->setODep(0, 3);
+
+	// Create uop with one uinst
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Rename uop
+	register_file->Rename(uop.get());
+
+	// Check values
+	EXPECT_EQ(uop->getInput(0), 79);
+	EXPECT_EQ(uop->getInput(1), 78);
+	EXPECT_EQ(uop->getOutput(0), 61);
 }
 
 // Check correct logical-to-physical register renaming in a uop with with 1
 // floating point input + 1 floating point output.  Verifies that the proper
-// FP stack register is selected based on the current floating-point stack top.
+// floating point stack register is selected based on the current
+// floating-point stack top.
 TEST(TestRegisterFile, rename_1)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Set uinst dependencies
+	uinst_1->setIDep(0, 23);
+	uinst_1->setODep(0, 24);
+
+	// Rename uop
+	register_file->Rename(uop.get());
+
+	// Check values
+	EXPECT_EQ(uop->getInput(0), 39);
+	EXPECT_EQ(uop->getOutput(0), 28);
 }
 
 // Check correct logical-to-physical register renaming in a uop
 // with 1 XMM input + 1 XMM output.
 TEST(TestRegisterFile, rename_2)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Set uinst dependencies
+	uinst_1->setIDep(0, 34);
+	uinst_1->setODep(0, 35);
+
+	// Rename uop
+	register_file->Rename(uop.get());
+
+	// Check values
+	EXPECT_EQ(uop->getInput(0), 39);
+	EXPECT_EQ(uop->getOutput(0), 30);
 }
 
 // Test renaming uop with flag dependencies, requiring additional
 // integer registers.
 TEST(TestRegisterFile, rename_3)
 {
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
+	// Create uop with integer register dependency
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Set up register file
+	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
+
+	// Set uinst dependencies
+	uinst_1->setIDep(0, 1);
+	uinst_1->setODep(0, 2);
+
+	// Set uinst flag dependencies
+	uinst_1->setIDep(1, 15);
+	uinst_1->setIDep(2, 16);
+
+	// Rename uop
+	register_file->Rename(uop.get());
+
+	// Check values
+	EXPECT_EQ(uop->getInput(0), 79);
+	EXPECT_EQ(uop->getOutput(0), 61);
+	EXPECT_EQ(uop->getInput(1), 66);
+	EXPECT_EQ(uop->getInput(2), 66);
 }
 
 
