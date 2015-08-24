@@ -179,6 +179,9 @@ void Cpu::ParseConfiguration(misc::IniFile *ini_file)
 
 void Cpu::Run()
 {
+	// Invoke scheduler
+	Schedule();
+
 	// Run all cores
 	for (auto &core : cores)
 		core->Run();
