@@ -344,10 +344,16 @@ std::string Context::OpenProcCPUInfo()
 	return path;
 }
 
-void Context::Initialize() {
+
+void Context::Initialize()
+{
 	// Create new memory image
 	assert(!memory.get());
 	memory = misc::new_shared<mem::Memory>();
+
+	// Memory management unit
+	mmu = misc::new_shared<mem::MMU>();
+	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
 	signal_handler_table = misc::new_shared<SignalHandlerTable>();
@@ -379,6 +385,10 @@ void Context::Load(const std::vector<std::string> &args,
 	// Create new memory image
 	assert(!memory.get());
 	memory = misc::new_shared<mem::Memory>();
+
+	// Memory management unit
+	mmu = misc::new_shared<mem::MMU>();
+	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
 	signal_handler_table = misc::new_shared<SignalHandlerTable>();
@@ -450,6 +460,10 @@ void Context::Fork(Context *parent)
 	// Memory
 	memory = misc::new_shared<mem::Memory>();
 	memory->Clone(*parent->memory);
+	
+	// Memory management unit
+	mmu = misc::new_shared<mem::MMU>();
+	mmu_space = mmu->newSpace();
 	
 	// Create speculative memory, linked with the real memory
 	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());

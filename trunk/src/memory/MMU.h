@@ -186,7 +186,7 @@ public:
 	/// \param name
 	///	Name of the MMU used for debugging purposes.
 	///
-	MMU(const std::string &name);
+	MMU(const std::string &name = "");
 
 	/// Return the name of the MMU
 	const std::string &getName() const { return name; }
@@ -196,7 +196,7 @@ public:
 	/// \param name
 	///	Name of the virtual address space used for debugging purposes.
 	///
-	Space *newSpace(const std::string &name);
+	Space *newSpace(const std::string &name = "");
 
 	/// Translate virtual to physical address.
 	///
