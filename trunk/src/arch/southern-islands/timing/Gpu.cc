@@ -50,10 +50,7 @@ Gpu::Gpu()
 	compute_units.reserve(num_compute_units);
 	available_compute_units.resize(num_compute_units);
 	for (int i = 0; i < num_compute_units; i++)
-	{
 		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i, this));
-		available_compute_units[i] = true;
-	}
 }
 
 
