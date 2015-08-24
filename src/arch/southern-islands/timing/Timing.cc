@@ -892,11 +892,10 @@ bool Timing::Run()
 			work_group = ndrange->ScheduleWorkGroup(work_group_id);
 
 			// Get an available compute unit
-			int compute_unit_id = gpu->getAvailableComputeUnit();
-			assert(compute_unit_id >= 0);
-			gpu->setComputeUnitAvailable(compute_unit_id, false);
-			ComputeUnit *compute_unit = gpu->getComputeUnit(
-					compute_unit_id);
+			ComputeUnit *compute_unit = 
+					gpu->getAvailableComputeUnit();
+			assert(compute_unit);
+			compute_unit->setAvailable(false);
 
 			// Map the work group to a compute unit
 			compute_unit->MapWorkGroup(work_group);

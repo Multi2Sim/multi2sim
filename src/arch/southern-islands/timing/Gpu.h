@@ -80,7 +80,7 @@ private:
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
 	
 	// List of available compute units
-	std::vector<bool> available_compute_units;
+	std::list<ComputeUnit*> available_compute_units;
 
 	// Granularity of the register allocation
 	RegisterAllocationGranularity register_allocation_granularity = 
@@ -118,32 +118,25 @@ public:
 	/// Constructor
 	Gpu();
 
-	/// Set the availablity status of a compute unit
-	void setComputeUnitAvailable(int index, bool available) 
-	{ 
-		assert(misc::inRange(index, 0, 
-				available_compute_units.size() - 1));
-		available_compute_units[index] = available;
-	}
-	
-	/// Check if a compute unit is available
-	bool isComputeUnitAvailable(int index) 
-	{ 
-		assert(misc::inRange(index, 0, 
-				available_compute_units.size() - 1));
-		return available_compute_units[index];
+	/// Return a pointer to an available compute unit. If no compute units
+	/// are available a nullptr is returned.
+	ComputeUnit *getAvailableComputeUnit()
+	{
+		if (available_compute_units.empty())
+			return nullptr;
+		else
+			return available_compute_units.front();
 	}
 
-	/// Return the index of an available compute unit. If no compute units
-	/// are available '-1' is is returned
-	int getAvailableComputeUnit()
-	{
-		for (int i = 0; i < num_compute_units; i++)
+	/// Add a compute unit to the list of available units if the compute
+	/// unit is not already there.
+	void InsertAvailableComputeUnit(ComputeUnit *compute_unit) 
+	{ 
+		if (!compute_unit->isAvailable())
 		{
-			if (available_compute_units[i])
-				return i;
+			compute_unit->setAvailable(true);
+			available_compute_units.push_back(compute_unit);
 		}
-		return -1;
 	}
 
 	/// Return the compute unit with the given index.

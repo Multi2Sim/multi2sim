@@ -374,8 +374,7 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	
 	// If compute unit is not full, add it back to the available list
 	if ((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit())
-		gpu->setComputeUnitAvailable(index, true);
-
+		gpu->InsertAvailableComputeUnit(this);
 
 	// Assign wavefront identifiers in compute unit
 	int wavefront_id = 0;
@@ -458,8 +457,7 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	// If compute unit is not already in the available list, place
 	//  it there
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
-	if (!gpu->isComputeUnitAvailable(index))
-		gpu->setComputeUnitAvailable(index, true);
+	gpu->InsertAvailableComputeUnit(this);
 
 	// Trace
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
