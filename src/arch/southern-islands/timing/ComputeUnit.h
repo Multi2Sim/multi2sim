@@ -162,6 +162,12 @@ public:
 
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
+	
+	/// Returns a boolean value indicating if the compute unit is available.
+	bool isAvailable() const { return available; }
+	
+	/// Set the availability status of the compute unit
+	void setAvailable(bool status) { available = status; }
 
 	/// Map a work group to the compute unit
 	void MapWorkGroup(WorkGroup *work_group);
@@ -183,6 +189,10 @@ public:
 
 	/// Cache used for scalar data
 	mem::Module *scalar_cache = nullptr;
+
+	/// Iterator of the compute unit location in the available compute 
+	/// units list
+	std::list<ComputeUnit*>::iterator available_compute_units_iterator;
 
 
 
