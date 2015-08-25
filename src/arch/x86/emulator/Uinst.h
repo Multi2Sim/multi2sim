@@ -450,7 +450,6 @@ public:
 	{
 		this->address = address;
 		this->size = size;
-		assert(size != 0);
 	}
 
 	/// Dump the micro-instruction into an output stream

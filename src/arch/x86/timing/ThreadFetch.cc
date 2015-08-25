@@ -103,7 +103,6 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 
 		// Other fields
 		uop->eip = fetch_eip;
-		uop->in_fetch_queue = true;
 		uop->from_trace_cache = fetch_from_trace_cache;
 		uop->speculative_mode = context->getState(Context::StateSpecMode);
 		uop->fetch_address = fetch_address;
@@ -153,7 +152,7 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 			ret_uop = uop.get();
 
 		// Insert into fetch queue
-		fetch_queue.push_back(uop);
+		InsertInFetchQueue(uop);
 		if (fetch_from_trace_cache)
 			trace_cache_queue_occupancy++;
 
