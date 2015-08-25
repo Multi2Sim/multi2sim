@@ -26,7 +26,7 @@ misc::StringMap AsmService::opcode_to_str_map =
 {
 #define DEFINST(name, opcode, opstr ) \
 	{opstr, opcode},	
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 
 	{"invalid", 140}

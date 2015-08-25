@@ -44,7 +44,7 @@ enum InstOpcode
 {
 #define DEFINST(name, opcode, opstr) \
 	INST_##name,
-#include <arch/hsa/disassembler/Inst.def>
+#include <arch/hsa/disassembler/Instruction.def>
 #undef DEFINST
 	// Max
 	InstOpcodeCount
@@ -99,11 +99,11 @@ private:
  	// execution of HSA virtual ISA instructions.
  	typedef void (WorkItem::*ExecuteInstFn)();
 
- 	// Instruction emulation functions. Each entry of Inst.def will be
- 	// expanded into a function prototype.
+ 	// Instruction emulation functions. Each entry of Instruction.def will
+	// be expanded into a function prototype.
 #define DEFINST(name, opcode, opstr) \
  		void ExecuteInst_##name();
-#include <arch/hsa/disassembler/Inst.def>
+#include <arch/hsa/disassembler/Instruction.def>
 #undef DEFINST
 
  	// Unsupported opcode
