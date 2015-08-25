@@ -81,9 +81,9 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	// Create a context
 	Context *context = Emulator::getInstance()->newContext();
 	context->Initialize();
-	auto mmu = misc::new_shared<mem::MMU>("mmu");
+	auto mmu = misc::new_shared<mem::Mmu>("mmu");
 	context->mmu = mmu;
-	mem::MMU::Space space("space", mmu.get());
+	mem::Mmu::Space space("space", mmu.get());
 	context->mmu_space = &space;
 	mem::Memory memory = context->getMem();
 	mem::Manager manager(&memory);

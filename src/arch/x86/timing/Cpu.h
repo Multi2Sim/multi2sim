@@ -24,7 +24,7 @@
 #include <list>
 #include <vector>
 
-#include <memory/MMU.h>
+#include <memory/Mmu.h>
 #include <memory/Module.h>
 #include <arch/x86/emulator/Emulator.h>
 #include <arch/x86/emulator/Uinst.h>
@@ -179,7 +179,7 @@ private:
 	std::vector<std::unique_ptr<Core>> cores;
 
 	// MMU used by this CPU
-	std::shared_ptr<mem::MMU> mmu;
+	std::shared_ptr<mem::Mmu> mmu;
 
 	// Name of currently simulated stage 
 	std::string stage;
@@ -462,7 +462,7 @@ public:
 	}
 
 	/// Get the MMU
-	mem::MMU *getMMU() { return mmu.get(); }
+	mem::Mmu *getMmu() { return mmu.get(); }
 
 	/// Return the current cycle in the CPU's frequency domain. We cannot
 	/// make this function inline to avoid the cross-dependency between

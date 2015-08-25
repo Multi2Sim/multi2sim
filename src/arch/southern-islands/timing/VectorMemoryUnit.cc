@@ -21,7 +21,7 @@
 #include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/NDRange.h>
 #include <memory/Module.h>
-#include <memory/MMU.h>
+#include <memory/Mmu.h>
 
 #include "VectorMemoryUnit.h"
 #include "ComputeUnit.h"

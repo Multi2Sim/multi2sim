@@ -31,7 +31,7 @@
 #include <lib/cpp/ELFReader.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
-#include <memory/MMU.h>
+#include <memory/Mmu.h>
 #include <memory/SpecMem.h>
 
 #include "Regs.h"
@@ -964,10 +964,10 @@ public:
 
 	// Memory management unit, which can be shared by multiple contexts.
 	// The MMU is used for timing simulation purposes.
-	std::shared_ptr<mem::MMU> mmu;
+	std::shared_ptr<mem::Mmu> mmu;
 
 	// Address space within the mmu;
-	mem::MMU::Space *mmu_space = nullptr;
+	mem::Mmu::Space *mmu_space = nullptr;
 	
 
 
