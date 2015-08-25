@@ -29,7 +29,7 @@
 #include <lib/cpp/Error.h>
 #include <lib/cpp/ELFReader.h>
 
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace ARM

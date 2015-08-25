@@ -23,7 +23,7 @@
 
 #include <pthread.h>
 
-#include <arch/arm/disassembler/Inst.h>
+#include <arch/arm/disassembler/Instruction.h>
 #include <arch/common/Arch.h>
 #include <arch/common/Emulator.h>
 #include <lib/cpp/CommandLine.h>
