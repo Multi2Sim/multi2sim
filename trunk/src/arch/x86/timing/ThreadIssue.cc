@@ -36,22 +36,17 @@ int Thread::IssueLoadQueue(int quantum)
 	// Traverse list
 	while (it != e && quantum > 0)
 	{
-		// Get the uop
+		// Get the uop and forward iterator
 		std::shared_ptr<Uop> uop = *it;
+		++it;
 
 		// If the uop is not ready, skip it
 		if (!register_file->isUopReady(uop.get()))
-		{
-			++it;
 			continue;
-		}
 
 		// Check that memory system is accessible
 		if (!data_module->canAccess(uop->physical_address))
-		{
-			++it;
 			continue;
-		}
 
 		// Remove uop from load queue
 		ExtractFromLoadQueue(uop.get());
@@ -116,8 +111,11 @@ int Thread::IssueStoreQueue(int quantum)
 	// Traverse list
 	while (it != e && quantum > 0)
 	{
-		// Get the uop
+		// Get the uop and forward iterator
 		std::shared_ptr<Uop> uop = *it;
+		++it;
+
+		// Sanity
 		assert(uop->getOpcode() == Uinst::OpcodeStore);
 
 		// Only committed stores can issue
@@ -194,16 +192,16 @@ int Thread::IssueInstructionQueue(int quantum)
 	// Traverse list
 	while (it != e && quantum > 0)
 	{
-		// Get the uop
+		// Get the uop and forward iterator
 		std::shared_ptr<Uop> uop = *it;
+		++it;
+
+		// Sanity
 		assert(!(uop->getFlags() & Uinst::FlagMem));
 
 		// If the uop is not ready, skip it
 		if (!register_file->isUopReady(uop.get()))
-		{
-			++it;
 			continue;
-		}
 
 		// Run the instruction in its corresponding functional unit in
 		// the ALU. If the instruction does not require a functional
@@ -212,10 +210,7 @@ int Thread::IssueInstructionQueue(int quantum)
 		Alu *alu = core->getAlu();
 		int latency = alu->Reserve(uop.get());
 		if (!latency)
-		{
-			++it;
 			continue;
-		}
 
 		// Instruction was successfully issued, remove from instruction
 		// queue.

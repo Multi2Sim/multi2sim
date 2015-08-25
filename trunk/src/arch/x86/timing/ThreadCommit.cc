@@ -86,7 +86,7 @@ void Thread::Commit(int quantum)
 		std::shared_ptr<Uop> uop = reorder_buffer.front();
 		assert(uop->getThread() == this);
 		assert(!recover);
-		
+
 		// Mispredicted branch
 		if (Cpu::getRecoverKind() == Cpu::RecoverKindCommit
 				&& (uop->getFlags() & Uinst::FlagCtrl)

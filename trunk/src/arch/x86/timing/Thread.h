@@ -428,6 +428,9 @@ public:
 		DispatchStallMax
 	};
 
+	/// String map for values of type DispatchStall
+	static const misc::StringMap dispatch_stall_map;
+
 	/// Determine if it is possible to dispatch an instruction for the
 	/// thread. If so, the function returns `DispatchStallUsed`. If not
 	/// possible, the function returns the reason why it was not possible
