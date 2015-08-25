@@ -23,7 +23,7 @@
 #include <lib/cpp/String.h>
 
 #include "Memory.h"
-#include "MMU.h"
+#include "Mmu.h"
 
 
 namespace mem
@@ -31,10 +31,10 @@ namespace mem
 
 
 //
-// Class 'MMU::Space'
+// Class 'Mmu::Space'
 //
 
-MMU::Space::Space(const std::string &name, MMU *mmu) :
+Mmu::Space::Space(const std::string &name, Mmu *mmu) :
 		name(name),
 		mmu(mmu)
 {
@@ -45,7 +45,7 @@ MMU::Space::Space(const std::string &name, MMU *mmu) :
 }
 
 
-void MMU::Space::addPage(Page *page)
+void Mmu::Space::addPage(Page *page)
 {
 	// Sanity
 	unsigned virtual_address = page->getVirtualAddress();
@@ -55,7 +55,7 @@ void MMU::Space::addPage(Page *page)
 }
 
 
-MMU::Page *MMU::Space::getPage(unsigned virtual_address)
+Mmu::Page *Mmu::Space::getPage(unsigned virtual_address)
 {
 	assert((virtual_address & ~PageMask) == 0);
 	auto it = virtual_pages.find(virtual_address);
@@ -66,15 +66,15 @@ MMU::Page *MMU::Space::getPage(unsigned virtual_address)
 
 
 //
-// Class 'MMU'
+// Class 'Mmu'
 //
 
-std::string MMU::debug_file;
+std::string Mmu::debug_file;
 
-misc::Debug MMU::debug;
+misc::Debug Mmu::debug;
 
 
-void MMU::RegisterOptions()
+void Mmu::RegisterOptions()
 {
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
@@ -90,7 +90,7 @@ void MMU::RegisterOptions()
 }
 
 
-void MMU::ProcessOptions()
+void Mmu::ProcessOptions()
 {
 	// Debug file
 	if (!debug_file.empty())
@@ -98,7 +98,7 @@ void MMU::ProcessOptions()
 }
 
 
-MMU::MMU(const std::string &name) :
+Mmu::Mmu(const std::string &name) :
 		name(name)
 {
 	// Debug
@@ -107,18 +107,18 @@ MMU::MMU(const std::string &name) :
 }
 
 
-MMU::Space *MMU::newSpace(const std::string &name)
+Mmu::Space *Mmu::newSpace(const std::string &name)
 {
 	spaces.emplace_back(new Space(name, this));
 	return spaces.back().get();
 }
 
 
-unsigned MMU::TranslateVirtualAddress(Space *space,
+unsigned Mmu::TranslateVirtualAddress(Space *space,
 		unsigned virtual_address)
 {
 	// Space must belong to current MMU
-	assert(space->getMMU() == this);
+	assert(space->getMmu() == this);
 
 	// Calculate tag and offset
 	unsigned virtual_tag = virtual_address & PageMask;
@@ -166,7 +166,7 @@ unsigned MMU::TranslateVirtualAddress(Space *space,
 }
 
 
-bool MMU::TranslatePhysicalAddress(unsigned physical_address,
+bool Mmu::TranslatePhysicalAddress(unsigned physical_address,
 		Space *&space,
 		unsigned &virtual_address)
 {
@@ -209,7 +209,7 @@ bool MMU::TranslatePhysicalAddress(unsigned physical_address,
 }
 	
 
-bool MMU::isValidPhysicalAddress(unsigned physical_address)
+bool Mmu::isValidPhysicalAddress(unsigned physical_address)
 {
 	unsigned physical_tag = physical_address & PageMask;
 	auto it = physical_pages.find(physical_tag);

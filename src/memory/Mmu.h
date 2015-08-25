@@ -34,7 +34,7 @@ namespace mem
 /// Memory management unit. This class represents a 32-bit physical memory
 /// space and provides virtual-to-physical memory translations. The physical
 /// memory space supports creation of multiple virtual memory spaces.
-class MMU
+class Mmu
 {
 public:
 
@@ -107,7 +107,7 @@ public:
 		std::string name;
 
 		// Memory management unit that it belongs to
-		MMU *mmu;
+		Mmu *mmu;
 
 		// Hash table of pages in this virtual space indexed by their
 		// virtual address.
@@ -116,14 +116,14 @@ public:
 	public:
 
 		/// Constructor
-		Space(const std::string &name, MMU *mmu);
+		Space(const std::string &name, Mmu *mmu);
 
 		/// Return the name of the virtual memory space
 		const std::string &getName() const { return name; }
 
 		/// Return memory management unit that the virtual memory
 		/// space belongs to.
-		MMU *getMMU() const { return mmu; }
+		Mmu *getMmu() const { return mmu; }
 
 		/// Add a new page to the virtual address space. A page must
 		/// not exist with the same address.
@@ -186,7 +186,7 @@ public:
 	/// \param name
 	///	Name of the MMU used for debugging purposes.
 	///
-	MMU(const std::string &name = "");
+	Mmu(const std::string &name = "");
 
 	/// Return the name of the MMU
 	const std::string &getName() const { return name; }

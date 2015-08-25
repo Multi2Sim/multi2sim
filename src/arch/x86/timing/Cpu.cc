@@ -107,7 +107,7 @@ Cpu::Cpu(Timing *timing) : timing(timing)
 {
 	// Initialize
 	emulator = Emulator::getInstance();
-	mmu = misc::new_unique<mem::MMU>("x86");
+	mmu = misc::new_unique<mem::Mmu>("x86");
 
 	// Memory access events
 	esim::Engine *esim_engine = esim::Engine::getInstance();

@@ -23,7 +23,7 @@
 #include <vector>
 
 #include <lib/cpp/Misc.h>
-#include <memory/MMU.h>
+#include <memory/Mmu.h>
 
 #include "ComputeUnit.h"
 
@@ -67,7 +67,7 @@ private:
 	static int lds_size;
 	
 	// MMU used by this GPU
-	std::unique_ptr<mem::MMU> mmu;
+	std::unique_ptr<mem::Mmu> mmu;
 
 
 
@@ -153,7 +153,7 @@ public:
 	}
 
 	/// Return the associated MMU
-	mem::MMU *getMmu() const { return mmu.get(); }
+	mem::Mmu *getMmu() const { return mmu.get(); }
 
 	/// Map an NDRange to the GPP object
 	void MapNDRange(NDRange *ndrange);

@@ -44,7 +44,7 @@
 #include <arch/arm/disassembler/Disassembler.h>
 #include <arch/arm/emulator/Emulator.h>
 #include <dram/System.h>
-#include <memory/MMU.h>
+#include <memory/Mmu.h>
 #include <memory/Manager.h>
 #include <memory/System.h>
 #include <network/System.h>
@@ -544,7 +544,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Disassembler::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emulator::RegisterOptions();
-	mem::MMU::RegisterOptions();
+	mem::Mmu::RegisterOptions();
 	mem::Manager::RegisterOptions();
 	MIPS::Disassembler::RegisterOptions();
 	MIPS::Emulator::RegisterOptions();
@@ -573,7 +573,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Disassembler::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emulator::ProcessOptions();
-	mem::MMU::ProcessOptions();
+	mem::Mmu::ProcessOptions();
 	mem::Manager::ProcessOptions();
 	MIPS::Disassembler::ProcessOptions();
 	MIPS::Emulator::ProcessOptions();
