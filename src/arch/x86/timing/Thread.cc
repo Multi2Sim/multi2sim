@@ -26,6 +26,20 @@
 namespace x86
 {
 
+const misc::StringMap Thread::dispatch_stall_map =
+{
+	{ "Invalid", DispatchStallInvalid },
+	{ "Used", DispatchStallUsed },
+	{ "Speculative", DispatchStallSpeculative },
+	{ "UopQueue", DispatchStallUopQueue },
+	{ "ReorderBuffer", DispatchStallReorderBuffer },
+	{ "InstructionQueue", DispatchStallInstructionQueue },
+	{ "LoadStoreQueue", DispatchStallLoadStoreQueue },
+	{ "Rename", DispatchStallRename },
+	{ "Context", DispatchStallContext }
+};
+
+
 Thread::Thread(Core *core,
 		int id_in_core) :
 		core(core),
@@ -67,6 +81,7 @@ void Thread::ExtractFromFetchQueue(Uop *uop)
 	// Sanity: uop must be in the fetch queue, and must be either the first
 	// or the last element in it.
 	assert(uop->in_fetch_queue);
+	assert(uop->fetch_queue_iterator != fetch_queue.end());
 	assert(fetch_queue.size() > 0);
 	assert(uop == fetch_queue.front().get() ||
 			uop == fetch_queue.back().get());
@@ -170,6 +185,9 @@ void Thread::ExtractFromReorderBuffer(Uop *uop)
 
 	// Extract uop as last step, since this may free it
 	reorder_buffer.erase(it);
+
+	// Decrease per-core counter
+	core->decReorderBufferOccupancy();
 }
 
 
@@ -205,6 +223,8 @@ void Thread::InsertInInstructionQueue(std::shared_ptr<Uop> uop)
 {
 	// Sanity
 	assert(!uop->in_instruction_queue);
+	assert(!uop->in_load_queue);
+	assert(!uop->in_store_queue);
 
 	// Insert into instruction queue
 	uop->in_instruction_queue = true;
@@ -232,6 +252,9 @@ void Thread::ExtractFromInstructionQueue(Uop *uop)
 	
 	// Remove from queue as the last step, as this may free the uop
 	instruction_queue.erase(it);
+
+	// Decrease per-core counter
+	core->decInstructionQueueOccupancy();
 }
 
 
@@ -311,6 +334,9 @@ void Thread::ExtractFromLoadQueue(Uop *uop)
 	
 	// Remove from queue as last step, as this may free uop
 	load_queue.erase(it);
+
+	// Decrease per-core counter
+	core->decLoadStoreQueueOccupancy();
 }
 
 
@@ -330,6 +356,9 @@ void Thread::ExtractFromStoreQueue(Uop *uop)
 
 	// Remove from queue as last step, as this may free uop
 	store_queue.erase(it);
+
+	// Decrease per-core counter
+	core->decLoadStoreQueueOccupancy();
 }
 
 }
