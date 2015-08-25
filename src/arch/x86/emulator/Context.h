@@ -724,7 +724,15 @@ public:
 
 	/// Initialize the context, by initiating new memory, spec memory and
 	/// other member fields. This function is only intended to be used
-	/// in unit tests
+	/// in unit tests.
+	/// This function initialize memory object, speculative memory, 
+	/// memory management unit, spaces in memory management unit,
+	/// and an empty file_table.
+	/// This function shoule only be used from unit test. In real 
+	/// execution environment, function Load can initialize all these
+	/// field and loading an executable into the Loader. If a context
+	/// is cloned or forked, Clone and Fork will use these fields 
+	/// from parent context. 
 	void Initialize();
 
 	/// Load a program on the context. The meaning of each argument is
@@ -901,6 +909,11 @@ public:
 	//
 	// Micro-instructions
 	//
+
+	/// Set uinst_active
+	void setUinstActive(bool uinst_active) {
+		this->uinst_active = uinst_active;
+	}
 
 	/// Add a new memory micro-instruction to the list only if we're running
 	/// in timing simulation mode.
