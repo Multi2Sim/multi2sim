@@ -352,7 +352,7 @@ void Context::Initialize()
 	memory = misc::new_shared<mem::Memory>();
 
 	// Memory management unit
-	mmu = misc::new_shared<mem::MMU>();
+	mmu = misc::new_shared<mem::Mmu>();
 	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
@@ -387,7 +387,7 @@ void Context::Load(const std::vector<std::string> &args,
 	memory = misc::new_shared<mem::Memory>();
 
 	// Memory management unit
-	mmu = misc::new_shared<mem::MMU>();
+	mmu = misc::new_shared<mem::Mmu>();
 	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
@@ -462,7 +462,7 @@ void Context::Fork(Context *parent)
 	memory->Clone(*parent->memory);
 	
 	// Memory management unit
-	mmu = misc::new_shared<mem::MMU>();
+	mmu = misc::new_shared<mem::Mmu>();
 	mmu_space = mmu->newSpace();
 	
 	// Create speculative memory, linked with the real memory

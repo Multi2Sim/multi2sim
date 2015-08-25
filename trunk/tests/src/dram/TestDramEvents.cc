@@ -76,15 +76,15 @@ TEST(TestSystemEvents, section_one_read)
 		// Submit a sigle read request
 		dram_system->Read(0);
 		esim::Engine *engine = esim::Engine::getInstance();
-		for (int i = 0; i < results.size(); i++){
-
+		for (unsigned i = 0; i < results.size(); i++)
+		{
 			// Step through cycle by cycle
 			engine->ProcessEvents();
 
 			// Store Current Bank Command in results
 			results[i] = dram_system->getController(0)->
-				getChannel(0)->getRank(0)->
-				getBank(0)->getCommandInQueueType();
+					getChannel(0)->getRank(0)->
+					getBank(0)->getCommandInQueueType();
 		}
 	}
 	catch (misc::Error &e)
@@ -112,10 +112,10 @@ TEST(TestSystemEvents, section_one_write)
 
 	// TODO: Verify that these are the expected commands 
 	// after a single write
-	std::array<std::string,3> expected = { "", "Activate", "Write" };
+	std::array<std::string, 3> expected = { "", "Activate", "Write" };
 
-	// Initialze array to store test results
-	std::array<std::string,3>  results;
+	// Initialize array to store test results
+	std::array<std::string, 3> results;
 
 	// Test body
 	std::string message;
@@ -124,15 +124,15 @@ TEST(TestSystemEvents, section_one_write)
 		// Submit a single write request
 		dram_system->Write(0);
 		esim::Engine *engine = esim::Engine::getInstance();
-		for (int i = 0; i < results.size(); i++){
-
+		for (unsigned i = 0; i < results.size(); i++)
+		{
 			// Step through cycle by cycle
 			engine->ProcessEvents();
 
 			// Store Current Bank Command in results
 			results[i] = dram_system->getController(0)->
-				getChannel(0)->getRank(0)->
-				getBank(0)->getCommandInQueueType();
+					getChannel(0)->getRank(0)->
+					getBank(0)->getCommandInQueueType();
 			std::cout << results[i] << "\n";
 		}
 	}

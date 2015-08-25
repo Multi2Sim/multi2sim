@@ -17,8 +17,8 @@ libmemory_a_SOURCES = \
 	Manager.cc \
 	Manager.h \
 	\
-	MMU.cc \
-	MMU.h \
+	Mmu.cc \
+	Mmu.h \
 	\
 	Module.cc \
 	Module.h \
