@@ -42,10 +42,7 @@ libcpp_a_SOURCES = \
 	Terminal.h \
 	\
 	Timer.cc \
-	Timer.h \
-	\
-	Wrapper.cc \
-	Wrapper.h
+	Timer.h
 
 AM_CPPFLAGS = @M2S_INCLUDES@
 

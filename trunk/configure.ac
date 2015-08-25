@@ -1012,7 +1012,6 @@ AC_CONFIG_FILES([
 		src/arch/x86/emulator/Makefile
 		src/arch/x86/timing/Makefile
 
-		src/lib/class/Makefile
 		src/lib/cpp/Makefile
 		src/lib/esim/Makefile
 		src/lib/gtest/Makefile
