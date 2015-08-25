@@ -17,6 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/kepler/driver/Driver.h>
+#include <arch/hsa/driver/Driver.h>
+#include <arch/southern-islands/driver/Driver.h>
 #include <lib/cpp/Misc.h>
 
 #include "Driver.h"
@@ -41,17 +44,33 @@ DriverPool* DriverPool::getInstance()
 }
 
 
+DriverPool::DriverPool()
+{
+	// HSA driver
+	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	Register(hsa_driver);
+
+	// Kepler driver
+	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
+	Register(kepler_driver);
+
+	// Southern Islands driver
+	SI::Driver *si_driver = SI::Driver::getInstance();
+	Register(si_driver);
+}
+
+
 void DriverPool::Register(Driver *driver)
 {
 	// Add it to the pool
-	driver_list.push_back(driver);
+	drivers.push_back(driver);
 }
 
 
 Driver *DriverPool::getDriverByPath(const std::string &path)
 {
 	// Traverse all drivers
-	for (auto driver : driver_list)
+	for (auto driver : drivers)
 		if (driver->getPath() == path)
 			return driver;
 	

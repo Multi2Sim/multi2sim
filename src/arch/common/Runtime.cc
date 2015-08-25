@@ -47,28 +47,9 @@ static const char *runtime_err_redirect_root =
 	"build tree root. As a safer and portable option, please link "
 	"your guest program statically with the corresponding runtime.";
 
-//
-// Class 'Runtime'
-//
-
-Runtime::Runtime(const std::string &name,
-		const std::string &library_name, 
-		const std::string &redirect_library_name)
-{
-	// Initialize
-	this->name = name;
-	this->library_name = library_name;
-	this->redirect_library_name = redirect_library_name;
-}
-
-
-
-
-//
-// Class 'RuntimePool'
-//
 
 std::unique_ptr<RuntimePool> RuntimePool::instance;
+
 
 RuntimePool* RuntimePool::getInstance()
 {
@@ -77,8 +58,21 @@ RuntimePool* RuntimePool::getInstance()
 		return instance.get();
 	
 	// Create new runtime pool
-	instance.reset(new RuntimePool());
+	instance = misc::new_unique<RuntimePool>();
 	return instance.get();	
+}
+
+
+RuntimePool::RuntimePool()
+{
+	// CUDA runtime
+	Register("CUDA", "libCUDA", "libm2s-cuda");
+
+	// OpenCL runtime
+	Register("OpenCL", "libOpenCL", "libm2s-opencl");
+
+	// HSA runtime
+	Register("HSA", "libHSA", "libm2s-hsa");
 }
 
 
@@ -86,13 +80,11 @@ void RuntimePool::Register(const std::string &name,
 		const std::string &library_name, 
 		const std::string &redirect_library_name)
 {
-	// Create new runtime
-	Runtime *runtime = new Runtime(name,
-			library_name,
-			redirect_library_name);
-	
 	// Add it to the pool
-	runtime_list.emplace_back(runtime);
+	runtimes.emplace_back(misc::new_unique<Runtime>(
+			name,
+			library_name,
+			redirect_library_name));
 }
 
 
@@ -195,7 +187,7 @@ bool RuntimePool::Redirect(const std::string &library_name,
 	//  - The current working directory.
 	//  - Multi2Sim's build tree at $(TOPDIR)/lib/.libs, which is where
 	//    libtool places the library when running 'make'.
-	for (auto &runtime : runtime_list)
+	for (auto &runtime : runtimes)
 	{
 		// Check if path matches the original runtime name (e.g.,
 		// 'libOpenCL.so'), or the runtime it should be redirected to

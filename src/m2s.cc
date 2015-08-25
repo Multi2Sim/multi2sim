@@ -22,8 +22,6 @@
 #include <sys/time.h>
 
 #include <arch/common/CallStack.h>
-#include <arch/common/Driver.h>
-#include <arch/common/Runtime.h>
 #include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/driver/Driver.h>
 #include <arch/kepler/emulator/Emulator.h>
@@ -140,54 +138,19 @@ void WelcomeMessage(std::ostream &os)
 }
 
 
-void RegisterRuntimes()
-{
-	// Get runtime pool
-	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
-
-	// CUDA runtime
-	runtime_pool->Register("CUDA", "libCUDA", "libm2s-cuda");
-
-	// OpenCL runtime
-	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
-
-	// HSA runtime
-	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
-}
-
-
-void RegisterDrivers()
-{
-	// Get driver pool
-	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
-
-	// HSA driver
-	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	driver_pool->Register(hsa_driver);
-
-	// Kepler driver
-	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
-	driver_pool->Register(kepler_driver);
-
-	// Southern Islands driver
-	SI::Driver *si_driver = SI::Driver::getInstance();
-	driver_pool->Register(si_driver);
-}
-
-
 // Load a program from the command line
-void LoadProgram(const std::vector<std::string> &args,
-		const std::vector<std::string> &env = { },
-		const std::string &cwd = "",
+void LoadProgram(const std::vector<std::string> &arguments,
+		const std::vector<std::string> &environment = {},
+		const std::string &current_directory = "",
 		const std::string &stdin_file_name = "",
 		const std::string &stdout_file_name = "")
 {
 	// Skip if no program specified
-	if (args.size() == 0)
+	if (arguments.size() == 0)
 		return;
 	
 	// Choose emulator based on ELF header
-	std::string exe = misc::getFullPath(args[0], cwd);
+	std::string exe = misc::getFullPath(arguments[0], current_directory);
 	ELFReader::File elf_file(exe, false);
 	comm::Emulator *emulator;
 	switch (elf_file.getMachine())
@@ -214,7 +177,11 @@ void LoadProgram(const std::vector<std::string> &args,
 	}
 
 	// Load the program in selected emulator
-	emulator->LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
+	emulator->LoadProgram(arguments,
+			environment,
+			current_directory,
+			stdin_file_name,
+			stdout_file_name);
 }
 
 
@@ -240,23 +207,27 @@ void LoadPrograms()
 
 		// Load
 		std::string exe = ini_file.ReadString(section, "Exe");
-		std::string cwd = ini_file.ReadString(section, "Cwd");
+		std::string current_directory = ini_file.ReadString(section, "Cwd");
 		std::string stdin_file_name = ini_file.ReadString(section, "Stdin");
 		std::string stdout_file_name = ini_file.ReadString(section, "Stdout");
 		
 		// Arguments
-		std::vector<std::string> args;
+		std::vector<std::string> arguments;
 		std::string args_str = ini_file.ReadString(section, "Args");
-		misc::StringTokenize(args_str, args);
-		args.insert(args.begin(), exe);
+		misc::StringTokenize(args_str, arguments);
+		arguments.insert(arguments.begin(), exe);
 
 		// Environment variables
-		std::vector<std::string> env;
+		std::vector<std::string> environment;
 		std::string env_str = ini_file.ReadString(section, "Env");
-		misc::Environment::getFromString(env_str, env);
+		misc::Environment::getFromString(env_str, environment);
 
 		// Load program
-		LoadProgram(args, env, cwd, stdin_file_name, stdout_file_name);
+		LoadProgram(arguments,
+				environment,
+				current_directory,
+				stdin_file_name,
+				stdout_file_name);
 	}
 }
 
@@ -588,14 +559,6 @@ int MainProgram(int argc, char **argv)
 	net::System::ProcessOptions();
 	ARM::Disassembler::ProcessOptions();
 	ARM::Emulator::ProcessOptions();
-
-	// Register architectures, runtimes, and drivers
-	// FIXME - This initialization should be lazy, meaning that a particular
-	// emulator, timing simulator, runtime, or driver should only be
-	// initialized once we find that it is actually needed, leveraging
-	// calls to getInstance() of singletons.
-	RegisterRuntimes();
-	RegisterDrivers();
 
 	// Initialize memory system, only if there is at least one timing
 	// simulation active. Check this in the architecture pool after all
