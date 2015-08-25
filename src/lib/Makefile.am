@@ -1,5 +1,4 @@
 SUBDIRS = \
-	class \
 	cpp \
 	esim \
 	gtest \
