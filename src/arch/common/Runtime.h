@@ -66,9 +66,15 @@ public:
 	/// \param redirect_library_name
 	///	Library name representing a Multi2Sim runtime library, used to
 	///	redirect the application (e.g., 'libm2s-opencl').
+	///
 	Runtime(const std::string &name,
 			const std::string &library_name,
-			const std::string &redirect_library_name);
+			const std::string &redirect_library_name) :
+			name(name),
+			library_name(library_name),
+			redirect_library_name(redirect_library_name)
+	{
+	}
 
 	/// Return the runtime name
 	const std::string &getName() const { return name; }
@@ -93,10 +99,7 @@ class RuntimePool
 	static std::unique_ptr<RuntimePool> instance;
 
 	// List of runtimes
-	std::list<std::unique_ptr<Runtime>> runtime_list;
-
-	// Private constructor for singleton
-	RuntimePool() { }
+	std::list<std::unique_ptr<Runtime>> runtimes;
 
 	// Check if a file name matches a library name
 	static bool isLibraryMatch(const std::string &file_name,
@@ -106,6 +109,12 @@ class RuntimePool
 	// TOPDIR/bin/m2s, directoy TOPDIR is returned. If Multi2Sim is running
 	// as an installed package (e.g. /usr/bin), an empty string is returned.
 	static std::string getBuildTreeRoot();
+	
+	// Register a runtime. See the constructor of class Runtime for details
+	// on the argument meaning.
+	void Register(const std::string &name,
+			const std::string &library_name,
+			const std::string &redirect_library_name);
 	
 public:
 
@@ -124,12 +133,12 @@ public:
 	/// Return a unique instance of the singleton
 	static RuntimePool *getInstance();
 
-	/// Register a runtime. See the constructor of class Runtime for details
-	/// on the argument meaning.
-	void Register(const std::string &name,
-			const std::string &library_name,
-			const std::string &redirect_library_name);
-	
+	/// Class constructor. This constructor should not be invoked externally
+	/// since this class is a singleton. Use getInstance() instead. This is
+	/// the point where all of Multi2Sim runtimes are instantiated and
+	/// added to the runtime pool.
+	RuntimePool();
+
 	/// Check all runtimes in the pool for a matching library name, and if
 	/// so, redirect.
 	///
