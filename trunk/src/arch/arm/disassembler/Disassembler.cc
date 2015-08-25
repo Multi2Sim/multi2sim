@@ -22,7 +22,7 @@
 #include <lib/cpp/String.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace ARM
@@ -70,7 +70,7 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	SetupInstInfo(#_name, _fmt_str, InstCategory##_category, \
 			_arg1, _arg2, InstOpcode##_name);
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 
 
@@ -524,7 +524,7 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 	Thumb32SetupTable(#_name, _fmt_str, InstThumb32Category##_cat, _op1, _op2,\
 		_op3, _op4, _op5, _op6, _op7, _op8, InstThumb32Opcode##_name);
-#include "InstThumb32.def"
+#include "InstructionThumb32.def"
 #undef DEFINST
 
 
@@ -656,7 +656,7 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 	Thumb16SetupTable(#_name, _fmt_str, InstThumb16Category##_cat, _op1, _op2,\
 		_op3, _op4, _op5, _op6, InstThumb16Opcode##_name);
-#include "InstThumb.def"
+#include "InstructionThumb.def"
 #undef DEFINST
 
 }

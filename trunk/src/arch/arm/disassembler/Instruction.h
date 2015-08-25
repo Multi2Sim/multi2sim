@@ -752,7 +752,7 @@ enum InstOpcode
 	InstOpcodeInvalid = 0,
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
 	InstOpcode##_name,
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 	// Max
 	InstOpcodeCount
@@ -764,7 +764,7 @@ enum InstThumb16Opcode
 	InstThumb16OpcodeInvalid = 0,
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 	InstThumb16Opcode##_name,
-#include "InstThumb.def"
+#include "InstructionThumb.def"
 #undef DEFINST
 	// Max
 	InstThumb16OpcodeCount
@@ -777,7 +777,7 @@ enum InstThumb32Opcode
 	InstThumb32OpcodeInvalid = 0,
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 	InstThumb32Opcode##_name,
-#include "InstThumb32.def"
+#include "InstructionThumb32.def"
 #undef DEFINST
 	// Max
 	InstThumb32OpcodeCount

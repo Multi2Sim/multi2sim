@@ -2,11 +2,12 @@ lib_LIBRARIES = libdisassembler.a
 
 libdisassembler_a_SOURCES = \
 	\
-	Inst.cc \
-	Inst.def \
-	InstThumb.def \
-	InstThumb32.def \
-	Inst.h \
+	Instruction.cc \
+	Instruction.h \
+	\
+	Instruction.def \
+	InstructionThumb.def \
+	InstructionThumb32.def \
 	\
 	Disassembler.cc \
 	Disassembler.h 
