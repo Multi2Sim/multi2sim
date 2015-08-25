@@ -27,7 +27,8 @@
 #include <arch/x86/timing/Cpu.h>
 #include <arch/x86/timing/Thread.h>
 
-namespace x86 {
+namespace x86 
+{
 
 TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 {
@@ -44,7 +45,7 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 			"[ General ]\n"
 			"[ Module mod-mm ]\n"
 			"Type = MainMemory\n"
-			"Latency = 100\n"
+			"Latency = 50\n"
 			"BlockSize = 64\n"
 			"[ Entry core-1 ]\n"
 			"Arch = x86\n"
@@ -76,7 +77,9 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 
 	// Code to execute
 	// mov ebx, 5;
-	const unsigned char code[] = { 0xBB, 0x05, 0x00, 0x00, 0x00 };
+	unsigned char code[128] = {0};
+	code[0] = 0xBB;
+	code[1] = 0x05;
 
 	// Create a context
 	Context *context = Emulator::getInstance()->newContext();
@@ -89,7 +92,9 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	mem::Manager manager(&memory);
 	unsigned eip = manager.Allocate(sizeof(code));
 	memory.Write(eip, sizeof(code), (const char *)code);
-	context->setEip(eip);
+	//context->setEip(eip);
+	context->setUinstActive(true);
+	context->setState(Context::StateRunning);
 
 	// Fetch
 	Cpu *cpu = Timing::getInstance()->getCpu();
@@ -111,9 +116,10 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	// After fetching,
 	EXPECT_EQ(0, thread->getFetchQueueSize());
 	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 101; i++) {
+	for (int i = 0; i < 101; i++) 
+	{
 		engine->ProcessEvents();
-		//std::cout << i << ": "<< thread->getFetchQueueSize() << "\n";
+		std::cout << i << ": "<< thread->getFetchQueueSize() << "\n";
 	}
 	EXPECT_EQ(1, thread->getFetchQueueSize());
 }
