@@ -100,15 +100,24 @@ class DriverPool
 	static std::unique_ptr<DriverPool> instance;
 
 	// List of drivers
-	std::list<Driver *> driver_list;
+	std::list<Driver *> drivers;
+
+	// Register a driver object by adding it into the driver list
+	void Register(Driver *driver);
 
 public:
 
 	/// Return a unique instance of the singleton
 	static DriverPool *getInstance();
 
-	/// Register a driver
-	void Register(Driver *driver);
+	/// Constructor. This constructor should not be invoked directly, since
+	/// this class is a singleton. Instead, use getInstance().
+	///
+	/// When the driver pool is instantiated, the constructor invokes
+	/// getInstance() for each of the Multi2Sim drivers. This is when
+	/// drivers are instantiated as well.
+	///
+	DriverPool();
 
 	/// Return a driver object given the path of its associated virtual
 	/// device, or \c nullptr if no driver is found with that path.
