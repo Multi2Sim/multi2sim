@@ -27,7 +27,7 @@
 #include <lib/cpp/String.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace ARM
