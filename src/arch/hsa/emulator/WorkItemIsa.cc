@@ -33,7 +33,7 @@ WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 {
 #define DEFINST(name, opcode, opstr) \
 		&WorkItem::ExecuteInst_##name ,
-#include <arch/hsa/disassembler/Inst.def>
+#include <arch/hsa/disassembler/Instruction.def>
 #undef DEFINST
 	&WorkItem::ExecuteInst_unsupported
 };
