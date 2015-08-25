@@ -393,8 +393,8 @@ public:
 	/// Fetch stage function
 	void Fetch();
 
-	/// Get the fetch queue size
-	int getFetchQueueSize() { return fetch_queue.size(); }
+	/// Get the fetch queue size in number of uops
+	int getFetchQueueSize() const { return fetch_queue.size(); }
 
 
 
