@@ -218,20 +218,24 @@ bool Directory::LockEntry(
 		int set_id,
 		int way_id,
 		esim::Event *event,
-		Frame *frame)
+		long long access_id)
 {
 	// Get lock
+	assert(access_id > 0);
 	assert(misc::inRange(set_id, 0, num_sets - 1));
 	assert(misc::inRange(way_id, 0, num_ways - 1));
 	Lock *lock = &locks[set_id * num_ways + way_id];
 
 	// If the entry is already locked, enqueue a new waiter and return
 	// failure to lock.
-	if (lock->frame)
+	if (lock->access_id)
 	{
 		lock->queue.Wait(event);
-		System::debug << misc::fmt("    0x%x access suspended\n",
-				frame->tag);
+		System::debug << misc::fmt("    "
+				"A-%lld suspended, "
+				"A-%lld has directory entry lock\n",
+				access_id,
+				lock->access_id);
 		return false;
 	}
 
@@ -242,30 +246,48 @@ bool Directory::LockEntry(
 			"set=%d "
 			"way=%d\n",
 			name.c_str(),
-			frame->getId(),
+			access_id,
+			set_id,
+			way_id);
+	
+	// Debug
+	System::debug << misc::fmt("    "
+			"A-%lld acquires directory lock "
+			"at set %d, way %d\n",
+			access_id,
 			set_id,
 			way_id);
 
 	// Lock entry
-	lock->frame = frame;
+	lock->access_id = access_id;
 	return true;
 }
 
 
-void Directory::UnlockEntry(int set_id, int way_id)
+void Directory::UnlockEntry(int set_id, int way_id, long long access_id)
 {
 	// Get lock
 	assert(misc::inRange(set_id, 0, num_sets - 1));
 	assert(misc::inRange(way_id, 0, num_ways - 1));
 	Lock *lock = &locks[set_id * num_ways + way_id];
-	assert(lock->frame);
+	assert(lock->access_id > 0);
+	assert(access_id == lock->access_id);
+
+	// Debug
+	System::debug << misc::fmt("    "
+			"A-%lld releases directory lock "
+			"at set %d, way %d\n",
+			access_id,
+			set_id,
+			way_id);
 
 	// Wake up first waiter
 	if (lock->queue.getHead())
 	{
 		// Debug
 		Frame *frame = misc::cast<Frame *>(lock->queue.getHead());
-		System::debug << misc::fmt("    A-%lld resumed\n",
+		System::debug << misc::fmt("      "
+				"A-%lld resumed to retry lock\n",
 				frame->getId());
 
 		// Wake up access
@@ -279,16 +301,16 @@ void Directory::UnlockEntry(int set_id, int way_id)
 			"set=%d "
 			"way=%d\n",
 			name.c_str(),
-			lock->frame->getId(),
+			access_id,
 			set_id,
 			way_id);
 
 	// Unlock entry
-	lock->frame = nullptr;
+	lock->access_id = 0;
 }
 
 
-Frame *Directory::getEntryFrame(int set_id, int way_id) const
+long long Directory::getEntryAccessId(int set_id, int way_id) const
 {
 	// Get lock
 	assert(misc::inRange(set_id, 0, num_sets - 1));
@@ -296,7 +318,7 @@ Frame *Directory::getEntryFrame(int set_id, int way_id) const
 	Lock *lock = &locks[set_id * num_ways + way_id];
 
 	// Return frame locking entry
-	return lock->frame;
+	return lock->access_id;
 }
 
 

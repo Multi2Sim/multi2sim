@@ -286,7 +286,9 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 		if (frame->error)
 		{
 			// Unlock directory entry
-			directory->UnlockEntry(frame->set, frame->way);
+			directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 			
 			// Calculate retry latency
 			int retry_latency = module->getRetryLatency();
@@ -331,7 +333,9 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 				module->getName().c_str());
 
 		// Unlock directory entry
-		directory->UnlockEntry(frame->set, frame->way);
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		module->incDataAccesses();
@@ -447,7 +451,7 @@ void System::EventStoreHandler(esim::Event *event,
 				module->getName().c_str());
 
 		// If there is any older access, wait for it
-		auto it = frame->access_list_iterator;
+		auto it = frame->accesses_iterator;
 		assert(it != module->getAccessListEnd());
 		if (it != module->getAccessListBegin())
 		{
@@ -563,7 +567,9 @@ void System::EventStoreHandler(esim::Event *event,
 					"%d cycles\n", retry_latency);
 
 			// Unlock directory entry
-			directory->UnlockEntry(frame->set, frame->way);
+			directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 
 			// Continue with 'store-lock' after latency
 			frame->retry = true;
@@ -571,10 +577,14 @@ void System::EventStoreHandler(esim::Event *event,
 			return;
 		}
 
-		// Update tag/state and unlock
+		// Update tag/state
 		cache->setBlock(frame->set, frame->way, frame->tag,
 				Cache::BlockModified);
-		directory->UnlockEntry(frame->set, frame->way);
+
+		// Unlock directory entry
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Continue to 'store-finish' after data latency
 		module->incDataAccesses();
@@ -903,7 +913,9 @@ void System::EventNCStoreHandler(esim::Event *event,
 			int retry_latency = module->getRetryLatency();
 
 			// Unlock directory entry
-			directory->UnlockEntry(frame->set, frame->way);
+			directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 
 			// Debug
 			debug << misc::fmt("    lock error, retrying in "
@@ -942,7 +954,9 @@ void System::EventNCStoreHandler(esim::Event *event,
 				Cache::BlockNonCoherent);
 
 		// Unlock directory entry
-		directory->UnlockEntry(frame->set, frame->way);
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		module->incDataAccesses();
@@ -1123,8 +1137,8 @@ void System::EventFindAndLockHandler(esim::Event *event,
 					module->getName().c_str(),
 					frame->set,
 					frame->way,
-					directory->getEntryFrame(frame->set,
-							frame->way)->getId());
+					directory->getEntryAccessId(frame->set,
+							frame->way));
 
 			// Return error code to parent frame
 			parent_frame->error = true;
@@ -1145,8 +1159,10 @@ void System::EventFindAndLockHandler(esim::Event *event,
 		// released to prevent deadlock.  When the directory entry 
 		// is released, locking port and directory entry will be 
 		// retried.
-		if (!directory->LockEntry(frame->set, frame->way,
-				event_find_and_lock, frame))
+		if (!directory->LockEntry(frame->set,
+				frame->way,
+				event_find_and_lock,
+				frame->getId()))
 		{
 			// Debug
 			debug << misc::fmt("    %lld 0x%x %s block locked at "
@@ -1158,8 +1174,8 @@ void System::EventFindAndLockHandler(esim::Event *event,
 					module->getName().c_str(),
 					frame->set,
 					frame->way,
-					directory->getEntryFrame(frame->set,
-							frame->way)->getId());
+					directory->getEntryAccessId(frame->set,
+							frame->way));
 
 			// Unlock port
 			module->UnlockPort(port, frame);
@@ -1296,7 +1312,9 @@ void System::EventFindAndLockHandler(esim::Event *event,
 			assert(frame->eviction);
 
 			// Unlock directory entry
-			directory->UnlockEntry(frame->set, frame->way);
+			directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 			
 			// Return error
 			parent_frame->error = true;
@@ -1649,7 +1667,9 @@ void System::EventEvictHandler(esim::Event *event,
 		}
 
 		// Unlock the directory entry
-		directory->UnlockEntry(frame->set, frame->way);
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		target_module->incDataAccesses();
@@ -1755,7 +1775,9 @@ void System::EventEvictHandler(esim::Event *event,
 		}
 
 		// Unlock the directory entry
-		directory->UnlockEntry(frame->set, frame->way);
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		target_module->incDataAccesses();
@@ -2164,7 +2186,9 @@ void System::EventWriteRequestHandler(esim::Event *event,
 			frame->reply_size = 8;
 
 			// Unlock directory entry
-			target_directory->UnlockEntry(frame->set, frame->way);
+			target_directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 
 			// Continue with 'write-request-reply'
 			esim_engine->Next(event_write_request_reply);
@@ -2221,7 +2245,9 @@ void System::EventWriteRequestHandler(esim::Event *event,
 			throw misc::Panic("Invalid reply size");
 
 		// Unlock directory entry
-		target_directory->UnlockEntry(frame->set, frame->way);
+		target_directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		target_module->incDataAccesses();
@@ -2305,7 +2331,9 @@ void System::EventWriteRequestHandler(esim::Event *event,
 				Cache::BlockInvalid);
 
 		// Unlock directory entry
-		target_directory->UnlockEntry(frame->set, frame->way);
+		target_directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Latency will depend of reply kind
 		switch (parent_frame->reply)
@@ -2744,7 +2772,9 @@ void System::EventReadRequestHandler(esim::Event *event,
 		{
 			// Unlock directory entry
 			Directory *directory = target_module->getDirectory();
-			directory->UnlockEntry(frame->set, frame->way);
+			directory->UnlockEntry(frame->set,
+					frame->way,
+					frame->getId());
 
 			// Return error
 			parent_frame->error = true;
@@ -2888,7 +2918,9 @@ void System::EventReadRequestHandler(esim::Event *event,
 		}
 
 		// Unlock directory entry
-		directory->UnlockEntry(frame->set, frame->way);
+		directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		target_module->incDataAccesses();
@@ -3082,7 +3114,9 @@ void System::EventReadRequestHandler(esim::Event *event,
 		}
 
 		// Unlock directory entry
-		target_directory->UnlockEntry(frame->set, frame->way);
+		target_directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Stats
 		target_module->incDataAccesses();
@@ -3466,7 +3500,9 @@ void System::EventMessageHandler(esim::Event *event,
 		}
 
 		// Unlock directory entry
-		target_directory->UnlockEntry(frame->set, frame->way);
+		target_directory->UnlockEntry(frame->set,
+				frame->way,
+				frame->getId());
 
 		// Schedule event
 		esim_engine->Next(event_message_reply, 0);
@@ -3823,7 +3859,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 				module->getName().c_str());
 
 		// If there is any older access, wait for it
-		auto it = frame->access_list_iterator;
+		auto it = frame->accesses_iterator;
 		assert(it != module->getAccessListEnd());
 		if (it != module->getAccessListBegin())
 		{

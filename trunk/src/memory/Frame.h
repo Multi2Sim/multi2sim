@@ -97,12 +97,12 @@ public:
 	int *witness = nullptr;
 
 	/// Iterator to the current position of this frame in
-	/// Module::access_list.
-	std::list<Frame *>::iterator access_list_iterator;
+	/// Module::accesses.
+	std::list<Frame *>::iterator accesses_iterator;
 	
 	/// Iterator to the current position of this frame in
-	/// Module::write_access_list.
-	std::list<Frame *>::iterator write_access_list_iterator;
+	/// Module::write_accesses
+	std::list<Frame *>::iterator write_accesses_iterator;
 
 	/// Type of memory access
 	Module::AccessType access_type = Module::AccessInvalid;
