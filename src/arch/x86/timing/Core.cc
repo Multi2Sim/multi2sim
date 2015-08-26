@@ -95,7 +95,7 @@ void Core::Fetch()
 	{
 		// Fetch from all threads
 		for (int i = 0; i < Cpu::getNumThreads(); i++)
-			if (threads[i]->canFetch())
+			if (threads[i]->canFetch() == Thread::FetchStallUsed)
 				threads[i]->Fetch();
 		break;
 	}
@@ -111,7 +111,7 @@ void Core::Fetch()
 
 			// Try to fetch from this thread
 			Thread *thread = threads[current_fetch_thread].get();
-			if (thread->canFetch())
+			if (thread->canFetch() == Thread::FetchStallUsed)
 			{
 				thread->Fetch();
 				break;
