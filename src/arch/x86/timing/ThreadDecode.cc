@@ -71,6 +71,13 @@ void Thread::Decode()
 		{
 			do
 			{
+				///////////////
+				std::cout << *uop;
+				std::cout << misc::fmt(", fetch_access = %lld, ", uop->fetch_access);
+				std::cout << misc::fmt(", in_flight = %c\n",
+						instruction_module->isInFlightAccess(uop->fetch_access) ? 't' : 'f');
+				/////////////
+
 				// Extract from fetch queue
 				ExtractFromFetchQueue(uop.get());
 

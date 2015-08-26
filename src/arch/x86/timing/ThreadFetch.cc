@@ -121,6 +121,7 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 		// Trace
 		if (Timing::trace)
 		{
+			// New instruction
 			Timing::trace << misc::fmt("x86.new_inst "
 					"id=%lld "
 					"core=%d",

@@ -62,7 +62,8 @@ public:
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump value, same as Dump()
-	friend std::ostream &operator<<(std::ostream &os, const Extended &e) {
+	friend std::ostream &operator<<(std::ostream &os, const Extended &e)
+	{
 		e.Dump(os);
 		return os;
 	}

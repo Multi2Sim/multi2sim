@@ -63,19 +63,6 @@ RuntimePool* RuntimePool::getInstance()
 }
 
 
-RuntimePool::RuntimePool()
-{
-	// CUDA runtime
-	Register("CUDA", "libCUDA", "libm2s-cuda");
-
-	// OpenCL runtime
-	Register("OpenCL", "libOpenCL", "libm2s-opencl");
-
-	// HSA runtime
-	Register("HSA", "libHSA", "libm2s-hsa");
-}
-
-
 void RuntimePool::Register(const std::string &name, 
 		const std::string &library_name, 
 		const std::string &redirect_library_name)
