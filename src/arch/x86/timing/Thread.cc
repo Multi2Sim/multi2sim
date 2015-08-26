@@ -98,6 +98,27 @@ void Thread::ExtractFromFetchQueue(Uop *uop)
 }
 
 
+void Thread::DumpFetchQueue(std::ostream &os)
+{
+	// Title
+	std::string title = "Fetch queue";
+	os << title << '\n';
+	os << std::string(title.size(), '=') << "\n\n";
+
+	// Dump content
+	int index = 0;
+	for (auto &uop : fetch_queue)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// End
+	os << '\n';
+}
+
+
 void Thread::InsertInUopQueue(std::shared_ptr<Uop> uop)
 {
 	assert(!uop->in_uop_queue);
@@ -123,6 +144,27 @@ void Thread::ExtractFromUopQueue(Uop *uop)
 
 	// Extract uop as last step, since this may free it
 	uop_queue.erase(it);
+}
+
+
+void Thread::DumpUopQueue(std::ostream &os)
+{
+	// Title
+	std::string title = "Uop queue";
+	os << title << '\n';
+	os << std::string(title.size(), '=') << "\n\n";
+
+	// Dump content
+	int index = 0;
+	for (auto &uop : uop_queue)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// End
+	os << '\n';
 }
 
 

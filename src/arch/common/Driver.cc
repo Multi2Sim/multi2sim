@@ -44,22 +44,6 @@ DriverPool* DriverPool::getInstance()
 }
 
 
-DriverPool::DriverPool()
-{
-	// HSA driver
-	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
-	Register(hsa_driver);
-
-	// Kepler driver
-	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
-	Register(kepler_driver);
-
-	// Southern Islands driver
-	SI::Driver *si_driver = SI::Driver::getInstance();
-	Register(si_driver);
-}
-
-
 void DriverPool::Register(Driver *driver)
 {
 	// Add it to the pool

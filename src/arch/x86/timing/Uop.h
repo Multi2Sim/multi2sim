@@ -139,7 +139,14 @@ public:
 			std::shared_ptr<Uinst> uinst);
 
 	/// Dump uop information
-	void Dump();
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Alternative invocation to Dump()
+	friend std::ostream &operator<<(std::ostream &os, const Uop &uop)
+	{
+		uop.Dump(os);
+		return os;
+	}
 
 	/// Get thread that the uop belongs to
 	Thread *getThread() const { return thread; }

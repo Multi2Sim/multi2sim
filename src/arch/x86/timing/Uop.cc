@@ -96,16 +96,17 @@ void Uop::CountDependencies()
 }
 
 
-/*
-int Uop::Compare(Uop *uop)
+void Uop::Dump(std::ostream &os) const
 {
-	// If the time when is ready for these two Uops is different, then return the time difference
-	// If the time when is ready for these two Uops is same, then return the ID difference
-	// (Uop with smaller ID should be handled first)
-	return ready_when != uop->ready_when ?
-			ready_when - uop->ready_when :
-			id - uop->id;
+	// Fields
+	os << "id = " << id << ", ";
+	os << misc::fmt("eip = 0x%x, ", eip);
+	os << misc::fmt("spec = %c, ", speculative_mode ? 't' : 'f');
+	os << misc::fmt("trace_cache = %c, ", from_trace_cache ? 't' : 'f');
+
+	// Micro-instruction
+	os << "uinst = '" << *uinst << "'";
 }
-*/
+
 
 }

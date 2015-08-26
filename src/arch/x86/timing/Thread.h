@@ -91,6 +91,9 @@ private:
 	// at the head or at the tail of the fetch queue.
 	void ExtractFromFetchQueue(Uop *uop);
 
+	// Dump content of fetch queue
+	void DumpFetchQueue(std::ostream &os = std::cout);
+
 
 
 
@@ -107,6 +110,9 @@ private:
 	// Extract a uop from the uop queue. The uop must be located either at
 	// the head or at the tail of the uop queue.
 	void ExtractFromUopQueue(Uop *uop);
+
+	// Dump content of uop queue
+	void DumpUopQueue(std::ostream &os = std::cout);
 
 
 
