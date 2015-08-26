@@ -26,20 +26,20 @@
 namespace x86
 {
 
-bool Thread::canFetch()
+Thread::FetchStall Thread::canFetch()
 {
 	// There must be a context mapped to this thread
 	if (!context)
-		return false;
+		return FetchStallContext;
 	
 	// The context must be running
 	if (!context->getState(Context::StateRunning))
-		return false;
+		return FetchStallSuspended;
 
 	// Fetch queue must have not exceeded the limit of stored bytes to be
 	// able to store new macro-instructions.
 	if (fetch_queue_occupancy >= Cpu::getFetchQueueSize())
-		return false;
+		return FetchStallFetchQueue;
 
 	// If the next fetch address belongs to a new block, cache system
 	// must be accessible to read it.
@@ -50,11 +50,11 @@ bool Thread::canFetch()
 				context->mmu_space,
 				fetch_neip);
 		if (!instruction_module->canAccess(physical_address))
-			return false;
+			return FetchStallInstructionMemory;
 	}
 	
 	// We can fetch
-	return true;
+	return FetchStallUsed;
 }
 
 
@@ -154,8 +154,6 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 
 		// Insert into fetch queue
 		InsertInFetchQueue(uop);
-		if (fetch_from_trace_cache)
-			trace_cache_queue_occupancy++;
 
 		// Stats
 		cpu->incNumFetchedUinsts();
@@ -167,11 +165,6 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 		uinst_index++;
 	}
 
-	// Increase fetch queue occupancy if instruction does not come from
-	// trace cache.
-	if (ret_uop && !fetch_from_trace_cache)
-		fetch_queue_occupancy += ret_uop->mop_size;
-	
 	// Return first uop, or last branch uop if any.
 	return ret_uop;
 }
