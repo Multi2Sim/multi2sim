@@ -23,6 +23,7 @@
 #include <list>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
@@ -214,19 +215,22 @@ private:
 	//
 
 	// List of all in-flight accesses
-	std::list<Frame *> access_list;
+	std::list<Frame *> accesses;
 
 	// List of all in-flight write accesses
-	std::list<Frame *> write_access_list;
+	std::list<Frame *> write_accesses;
 	
 	// Number of in-flight coalesced accesses. This is a number
 	// between 0 and access_list.size() at all times.
-	int access_list_coalesced_count = 0;
+	int num_coalesced_accesses = 0;
 
 	// Hash table of accesses, indexed by a block address (that is, a
 	// memory address divided by the module's block size). There can be
 	// multiple in-flight accesses for the same block.
-	std::unordered_multimap<unsigned, Frame *> access_map;
+	std::unordered_multimap<unsigned, Frame *> in_flight_block_addresses;
+
+	// Set containing all in-flight access identifiers
+	std::unordered_set<long long> in_flight_access_ids;
 
 
 
@@ -254,51 +258,51 @@ private:
 	// Statistics
 	//
 
-	long long accesses = 0;
-	long long retry_accesses = 0;
+	long long num_accesses = 0;
+	long long num_retry_accesses = 0;
 
-	long long evictions = 0;
+	long long num_evictions = 0;
 
-	long long directory_entry_conflicts = 0;
-	long long retry_directory_entry_conflicts = 0;
+	long long num_directory_entry_conflicts = 0;
+	long long num_retry_directory_entry_conflicts = 0;
 
-	long long conflict_invalidations = 0;
+	long long num_conflict_invalidations = 0;
 
 	// Statistics for up-down accesses
-	long long reads = 0;
-	long long read_hits = 0;
-	long long read_misses = 0;
-	long long coalesced_reads = 0;
-	long long writes = 0;
-	long long write_hits = 0;
-	long long write_misses = 0;
-	long long coalesced_writes = 0;
-	long long nc_writes = 0;
-	long long nc_write_hits = 0;
-	long long nc_write_misses = 0;
-	long long coalesced_nc_writes = 0;
-	long long retry_reads = 0;
-	long long retry_read_hits = 0;
-	long long retry_read_misses = 0;
-	long long retry_writes = 0;
-	long long retry_write_hits = 0;
-	long long retry_write_misses = 0;
-	long long retry_nc_writes = 0;
-	long long retry_nc_write_hits = 0;
-	long long retry_nc_write_misses = 0;
+	long long num_reads = 0;
+	long long num_read_hits = 0;
+	long long num_read_misses = 0;
+	long long num_coalesced_reads = 0;
+	long long num_writes = 0;
+	long long num_write_hits = 0;
+	long long num_write_misses = 0;
+	long long num_coalesced_writes = 0;
+	long long num_nc_writes = 0;
+	long long num_nc_write_hits = 0;
+	long long num_nc_write_misses = 0;
+	long long num_coalesced_nc_writes = 0;
+	long long num_retry_reads = 0;
+	long long num_retry_read_hits = 0;
+	long long num_retry_read_misses = 0;
+	long long num_retry_writes = 0;
+	long long num_retry_write_hits = 0;
+	long long num_retry_write_misses = 0;
+	long long num_retry_nc_writes = 0;
+	long long num_retry_nc_write_hits = 0;
+	long long num_retry_nc_write_misses = 0;
 
 	// Statistics for down-up accesses
-	long long read_probes = 0;
-	long long write_probes = 0;
-	long long retry_read_probes = 0;
-	long long retry_write_probes = 0;
+	long long num_read_probes = 0;
+	long long num_write_probes = 0;
+	long long num_retry_read_probes = 0;
+	long long num_retry_write_probes = 0;
 
 	// Statistics for other coherence traffic
-	long long hlc_evictions = 0;
+	long long num_hlc_evictions = 0;
 
 	// Statistics that are possibly power related
-	long long directory_accesses = 0;
-	long long data_accesses = 0;
+	long long num_directory_accesses = 0;
+	long long num_data_accesses = 0;
 
 public:
 
@@ -657,9 +661,14 @@ public:
 	/// write. Return `nullptr` if there is no in-flight write.
 	Frame *getInFlightWrite(Frame *older_than_frame = nullptr);
 
-	/// Given a block address, return whether the access is currently in
-	/// flight in the module.
-	bool isInFlightAccess(unsigned address);
+	/// Given a byte address, return whether there is an in-flight access
+	/// to that same byte address or to any other byte address within the
+	/// same block.
+	bool isInFlightAddress(unsigned address);
+
+	/// Return whether an access with the given identifier is still in
+	/// flight. The access identifier is that returned by Access()
+	bool isInFlightAccess(long long id);
 
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,
@@ -731,27 +740,27 @@ public:
 	/// Return an iterator to the first element of the access list.
 	std::list<Frame *>::iterator getAccessListBegin()
 	{
-		return access_list.begin();
+		return accesses.begin();
 	}
 
 	/// Return a past-the-end iterator for the list of in-flight accesses.
 	std::list<Frame *>::iterator getAccessListEnd()
 	{
-		return access_list.end();
+		return accesses.end();
 	}
 
 	/// Return an iterator to the first element of the list of in-flight
 	/// write accesses.
 	std::list<Frame *>::iterator getWriteAccessListBegin()
 	{
-		return write_access_list.begin();
+		return write_accesses.begin();
 	}
 
 	/// Return a past-the-end iterator to the list of in-flight write
 	/// accesses.
 	std::list<Frame *>::iterator getWriteAccessListEnd()
 	{
-		return write_access_list.end();
+		return write_accesses.end();
 	}
 
 
@@ -762,39 +771,39 @@ public:
 	//
 
 	/// Increment number of accesses
-	void incAccesses() { accesses++; }
+	void incAccesses() { num_accesses++; }
 
 	/// Increment number of retried accesses
-	void incRetryAccesses() { retry_accesses++; }
+	void incRetryAccesses() { num_retry_accesses++; }
 
 	/// Increment the number of evictions
-	void incEvictions() { evictions++; }
+	void incEvictions() { num_evictions++; }
 
 	/// Increment number of coalesced reads
-	void incCoalescedReads() { coalesced_reads++; }
+	void incCoalescedReads() { num_coalesced_reads++; }
 
 	/// Increment number of coalesced writes
-	void incCoalescedWrites() { coalesced_writes++; }
+	void incCoalescedWrites() { num_coalesced_writes++; }
 
 	/// Increment number of coealesced non-coherent writes
-	void incCoalescedNCWrites() { coalesced_nc_writes++; }
+	void incCoalescedNCWrites() { num_coalesced_nc_writes++; }
 
 	/// Increment the number of conflicts while trying to lock directory
 	/// entries.
-	void incDirectoryEntryConflicts() { directory_entry_conflicts++; }
+	void incDirectoryEntryConflicts() { num_directory_entry_conflicts++; }
 
 	/// Increment the number of invalidations due to conflicts.
-	void incConflictInvalidations() { conflict_invalidations++; }
+	void incConflictInvalidations() { num_conflict_invalidations++; }
 
 	/// Increment the number of conflicts found when trying to lock a
 	/// directory entry in a retried access.
-	void incRetryDirectoryEntryConflicts() { retry_directory_entry_conflicts++; }
+	void incRetryDirectoryEntryConflicts() { num_retry_directory_entry_conflicts++; }
 
 	/// Increment the number of accesses to the directory.
-	void incDirectoryAccesses() { directory_accesses++; }
+	void incDirectoryAccesses() { num_directory_accesses++; }
 
 	/// Increment the number of accesses to the data.
-	void incDataAccesses() { data_accesses++; }
+	void incDataAccesses() { num_data_accesses++; }
 
 	/// Update the following statistics based on the information collected
 	/// from the given frame:

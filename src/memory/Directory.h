@@ -79,8 +79,9 @@ private:
 	// Entry lock
 	struct Lock
 	{
-		// Access frame locking entry, or nullptr if entry is unlocked.
-		Frame *frame = nullptr;
+		// Unique identifier of access locking directory entry, or 0
+		// if the directory entry is not locked.
+		long long access_id = 0;
 
 		// Queue of frames waiting for the lock to be released.
 		esim::Queue queue;
@@ -187,14 +188,17 @@ public:
 	/// \param way_id
 	///	Directory entry way.
 	///
-	/// \param event_type
-	///	Event to be scheduled once the directory entry has been
-	///	successfully locked. If the directory entry was not locked, this
-	///	will happen in 0 time. Otherwise, the current event chain is
-	///	enqueued at the tail of the queue of the directory entry.
+	/// \param event
+	///	If the directory entry is successfully locked, this is event is
+	///	scheduled for the current cycle. If the directory entry is
+	///	occupied, the current event chain is enqueued in the lock's
+	///	queue, and this event will be called when the lock becomes
+	///	available again. The event handler is responsible for retrying
+	///	to acquire it by invoking LockEntry() again.
 	///
-	/// \param frame
-	///	Current frame in event handler.
+	/// \param access_id
+	///	Access identifier locking the directory entry. Must be greater
+	///	than 0.
 	///
 	/// \return
 	///	The function returns true if the directory entry was locked
@@ -203,22 +207,22 @@ public:
 	///
 	bool LockEntry(int set_id,
 			int way_id,
-			esim::Event *event_type,
-			Frame *frame);
+			esim::Event *event,
+			long long access_id);
 
 	/// Unlock the given directory entry, and wake up the next event chain
 	/// suspended in the directory entry queue.
-	void UnlockEntry(int set_id, int way_id);
+	void UnlockEntry(int set_id, int way_id, long long access_id);
 
 	/// Return whether the given directory entry is currently locked.
 	bool isEntryLocked(int set_id, int way_id) const
 	{
-		return getEntryFrame(set_id, way_id);
+		return getEntryAccessId(set_id, way_id);
 	}
 
-	/// Return the frame locking the given directory entry, or `nullptr`
-	/// if the entry is not locked.
-	Frame *getEntryFrame(int set_id, int way_id) const;
+	/// Return the access ID of the access locking the given directory
+	/// entry, or 0 if there is no access locking this entry.
+	long long getEntryAccessId(int set_id, int way_id) const;
 };
 
 

@@ -103,9 +103,67 @@ static void Cleanup()
 	comm::ArchPool::Destroy();
 }
 
-// This test checks the isInFlightAccess() function.
+// This test checks the isInFlightAddress() function.
 // The test schedules an access and then checks that the function
 // returns true until the access has completed
+//
+// The latency of the MM module is 200 cycles so that is how long
+// it takes for the access to complete.
+TEST(TestModule, is_in_flight_address)
+{
+	try
+	{
+                // Cleanup singleton instances
+                Cleanup();
+
+		// Load configuration file
+		misc::IniFile ini_file_mem;
+		misc::IniFile ini_file_x86;
+		ini_file_mem.LoadFromString(mem_config_0);
+		ini_file_x86.LoadFromString(x86_config_0);
+
+		// Set up x86 timing simulator
+		x86::Timing::ParseConfiguration(&ini_file_x86);
+		x86::Timing::getInstance();
+
+		// Set up memory system
+		System *memory_system = System::getInstance();
+		memory_system->ReadConfiguration(&ini_file_mem);
+
+		// Get Module
+		Module *module_mm = memory_system->getModule("mod-mm");
+		ASSERT_NE(module_mm, nullptr);
+
+		// Set up block
+		module_mm->getCache()->getBlock(4, 15)->setStateTag(Cache::BlockExclusive, 0x400);
+
+		// Set up access
+		module_mm->Access(Module::AccessLoad, 0x400);
+		EXPECT_FALSE(module_mm->isInFlightAddress(0x400));
+
+		// Simulation loop for 200 cycles
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		for (int i = 0; i < 201; i++)
+		{
+			esim_engine->ProcessEvents();
+			EXPECT_TRUE(module_mm->isInFlightAddress(0x400));
+		}
+
+		// Check that the access finishes after 1 more cycle
+		esim_engine->ProcessEvents();
+		EXPECT_FALSE(module_mm->isInFlightAddress(0x400));
+	}
+	catch (misc::Exception &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
+
+// This test checks the isInFlightAccess() function. The test schedules an
+// access and then checks that the function returns true until the access has
+// completed.
 //
 // The latency of the MM module is 200 cycles so that is how long
 // it takes for the access to complete.
@@ -138,20 +196,20 @@ TEST(TestModule, is_in_flight_access)
 		module_mm->getCache()->getBlock(4, 15)->setStateTag(Cache::BlockExclusive, 0x400);
 
 		// Set up access
-		module_mm->Access(Module::AccessLoad, 0x400);
-		EXPECT_FALSE(module_mm->isInFlightAccess(0x400));
+		long long id = module_mm->Access(Module::AccessLoad, 0x400);
+		EXPECT_FALSE(module_mm->isInFlightAccess(id));
 
 		// Simulation loop for 200 cycles
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		for (int i = 0; i < 201; i++)
 		{
 			esim_engine->ProcessEvents();
-			EXPECT_TRUE(module_mm->isInFlightAccess(0x400));
+			EXPECT_TRUE(module_mm->isInFlightAccess(id));
 		}
 
 		// Check that the access finishes after 1 more cycle
 		esim_engine->ProcessEvents();
-		EXPECT_FALSE(module_mm->isInFlightAccess(0x400));
+		EXPECT_FALSE(module_mm->isInFlightAccess(id));
 	}
 	catch (misc::Exception &e)
 	{
