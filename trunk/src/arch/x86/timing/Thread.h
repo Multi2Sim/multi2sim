@@ -369,12 +369,27 @@ public:
 	// Fetch stage (ThreadFetch.cc)
 	//
 
+	/// Possible reasons for a fetch stall
+	enum FetchStall
+	{
+		FetchStallInvalid = 0,		// Shouldn't happen
+		FetchStallUsed,			// No stall, fetch slot used
+		FetchStallContext,		// No context mapped to thread
+		FetchStallSuspended,		// Mapped context is suspended
+		FetchStallFetchQueue,		// Fetch queue is full
+		FetchStallInstructionMemory	// Instruction memory is busy
+	};
+
+	/// String map for values of type FetchStall
+	static const misc::StringMap fetch_stall_map;
+
 	/// Set the address in instruction memory used for the next instruction
 	/// fetch cycle.
 	void setFetchNeip(unsigned fetch_neip) { this->fetch_neip = fetch_neip; }
 
-	/// Check whether or not the fecth is allowed
-	bool canFetch();
+	/// Check whether an instruction can be fetch. If not, return the
+	/// reason why fetch is stalled.
+	FetchStall canFetch();
 
 	/// Fetch one x86 macro-instruction, run emulation for it, and create
 	/// its corresponding set of uops, which are stored at the end of the

@@ -26,6 +26,17 @@
 namespace x86
 {
 
+const misc::StringMap Thread::fetch_stall_map =
+{
+	{ "Invalid", FetchStallInvalid },
+	{ "Used", FetchStallUsed },
+	{ "Context", FetchStallContext },
+	{ "Suspended", FetchStallSuspended },
+	{ "FetchQueue", FetchStallFetchQueue },
+	{ "InstructionMemory", FetchStallInstructionMemory }
+};
+
+
 const misc::StringMap Thread::dispatch_stall_map =
 {
 	{ "Invalid", DispatchStallInvalid },
@@ -70,9 +81,28 @@ Thread::Thread(Core *core,
 
 void Thread::InsertInFetchQueue(std::shared_ptr<Uop> uop)
 {
+	// Sanity
 	assert(!uop->in_fetch_queue);
+
+	// Insert in queue
 	uop->in_fetch_queue = true;
 	uop->fetch_queue_iterator = fetch_queue.insert(fetch_queue.end(), uop);
+
+	// Increase occupancy of fetch queue or trace queue
+	if (uop->from_trace_cache)
+	{
+		// Trace queue occupancy is increased by 1 for each uop
+		// inserted in it.
+		trace_cache_queue_occupancy++;
+	}
+	else
+	{
+		// Fetch queue occupancy is increased by the number of bytes
+		// of the associated macro-instruction, only for the first uop
+		// in each macro-instruction.
+		if (uop->mop_index == 0)
+			fetch_queue_occupancy += uop->mop_size;
+	}
 }
 
 
@@ -92,6 +122,26 @@ void Thread::ExtractFromFetchQueue(Uop *uop)
 	// Mark uop as extracted
 	uop->in_fetch_queue = false;
 	uop->fetch_queue_iterator = fetch_queue.end();
+
+	// Decrease occupancy of fetch queue or trace queue
+	if (uop->from_trace_cache)
+	{
+		// Trace queue occupancy is decreased by 1 for each uop
+		// extracted from it.
+		assert(trace_cache_queue_occupancy > 0);
+		trace_cache_queue_occupancy--;
+	}
+	else
+	{
+		// Fetch queue occupancy is decreased by the number of bytes
+		// of the associated macro-instruction, only for the first
+		// uop in each macro-instruction.
+		if (uop->mop_index == 0)
+		{
+			assert(fetch_queue_occupancy >= uop->mop_size);
+			fetch_queue_occupancy -= uop->mop_size;
+		}
+	}
 
 	// Extract uop as last step, since uop may be freed here
 	fetch_queue.erase(it);
