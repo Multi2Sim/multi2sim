@@ -38,8 +38,8 @@ Frame::Frame(long long id, Module *module, unsigned address) :
 {
 	// Initialize iterators to past-the-end iterators
 	assert(module);
-	access_list_iterator = module->getAccessListEnd();
-	write_access_list_iterator = module->getWriteAccessListEnd();
+	accesses_iterator = module->getAccessListEnd();
+	write_accesses_iterator = module->getWriteAccessListEnd();
 }
 
 

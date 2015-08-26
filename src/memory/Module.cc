@@ -148,8 +148,8 @@ bool Module::canAccess(int address) const
 
 	// Module can be accessed if number of non-coalesced in-flight accesses
 	// is smaller than the MSHR size.
-	int num_non_coalesced_accesses = access_list.size() -
-			access_list_coalesced_count;
+	int num_non_coalesced_accesses = accesses.size() -
+			num_coalesced_accesses;
 	return num_non_coalesced_accesses < mshr_size;
 }
 
@@ -239,38 +239,41 @@ void Module::StartAccess(Frame *frame, AccessType access_type)
 	frame->access_type = access_type;
 
 	// Insert in access list
-	frame->access_list_iterator = access_list.insert(access_list.end(),
+	frame->accesses_iterator = accesses.insert(accesses.end(),
 			frame);
 
 	// Insert in write access list
 	if (access_type == AccessStore)
-		frame->write_access_list_iterator = write_access_list.insert(
-				write_access_list.end(),
+		frame->write_accesses_iterator = write_accesses.insert(
+				write_accesses.end(),
 				frame);
 
-	// Insert in access hash table
+	// Insert in hash table of block addresses
 	unsigned block_address = frame->getAddress() >> log_block_size;
-	access_map.emplace(std::make_pair(block_address, frame));
+	in_flight_block_addresses.emplace(std::make_pair(block_address, frame));
+
+	// Insert in set of access identifiers
+	in_flight_access_ids.emplace(frame->getId());
 }
 
 
 void Module::FinishAccess(Frame *frame)
 {
 	// Remove from access list
-	access_list.erase(frame->access_list_iterator);
-	frame->access_list_iterator = access_list.end();
+	accesses.erase(frame->accesses_iterator);
+	frame->accesses_iterator = accesses.end();
 
 	// Remove from write access list
 	assert(frame->access_type);
 	if (frame->access_type == Module::AccessStore)
 	{
-		write_access_list.erase(frame->write_access_list_iterator);
-		frame->write_access_list_iterator = write_access_list.end();
+		write_accesses.erase(frame->write_accesses_iterator);
+		frame->write_accesses_iterator = write_accesses.end();
 	}
 
 	// Remove from hash table
 	unsigned block_address = frame->getAddress() >> log_block_size;
-	auto range = access_map.equal_range(block_address);
+	auto range = in_flight_block_addresses.equal_range(block_address);
 	bool found = false;
 	for (auto it = range.first; it != range.second; ++it)
 	{
@@ -278,7 +281,7 @@ void Module::FinishAccess(Frame *frame)
 		if (frame == other_frame)
 		{
 			found = true;
-			access_map.erase(it);
+			in_flight_block_addresses.erase(it);
 			break;
 		}
 	}
@@ -287,11 +290,14 @@ void Module::FinishAccess(Frame *frame)
 	if (!found)
 		throw misc::Panic("Frame not found");
 
+	// Remove from set of in-flight access identifiers
+	in_flight_access_ids.erase(frame->getId());
+
 	// If this was a coalesced access, update counter
 	if (frame->coalesced)
 	{
-		assert(access_list_coalesced_count > 0);
-		access_list_coalesced_count--;
+		assert(num_coalesced_accesses > 0);
+		num_coalesced_accesses--;
 	}
 }
 
@@ -301,7 +307,7 @@ Frame *Module::getInFlightAddress(unsigned address,
 {
 	// Look for address
 	unsigned block_address = address >> log_block_size;
-	auto range = access_map.equal_range(block_address);
+	auto range = in_flight_block_addresses.equal_range(block_address);
 	for (auto it = range.first; it != range.second; ++it)
 	{
 		// Get frame
@@ -328,13 +334,13 @@ Frame *Module::getInFlightWrite(Frame *older_than_frame)
 	// No 'older_than_frame' given, return youngest write, or nullptr if
 	// there is no in-flight write.
 	if (!older_than_frame)
-		return write_access_list.size() ?
-				write_access_list.back() :
+		return write_accesses.size() ?
+				write_accesses.back() :
 				nullptr;
 	
 	// Search
-	auto it = older_than_frame->access_list_iterator;
-	while (it != access_list.begin())
+	auto it = older_than_frame->accesses_iterator;
+	while (it != accesses.begin())
 	{
 		// Rewind
 		--it;
@@ -350,11 +356,18 @@ Frame *Module::getInFlightWrite(Frame *older_than_frame)
 }
 
 
-bool Module::isInFlightAccess(unsigned address)
+bool Module::isInFlightAddress(unsigned address)
 {
 	unsigned block_address = address >> log_block_size;
-	auto it = access_map.find(block_address);
-	return it != access_map.end();
+	auto it = in_flight_block_addresses.find(block_address);
+	return it != in_flight_block_addresses.end();
+}
+
+
+bool Module::isInFlightAccess(long long id)
+{
+	auto it = in_flight_access_ids.find(id);
+	return it != in_flight_access_ids.end();
 }
 
 
@@ -363,7 +376,7 @@ Frame *Module::canCoalesce(AccessType access_type,
 		Frame *older_than_frame)
 {
 	// Nothing if there is no in-flight access
-	if (!access_list.size())
+	if (!accesses.size())
 		return nullptr;
 
 	// For efficiency, first check in the hash table of accesses
@@ -374,16 +387,16 @@ Frame *Module::canCoalesce(AccessType access_type,
 
 	// Nothing if 'older_than_frame' is in the head of the in-flight
 	// access list (i.e., there is nothing older).
-	if (older_than_frame->access_list_iterator == access_list.begin())
+	if (older_than_frame->accesses_iterator == accesses.begin())
 		return nullptr;
 	
 	// Get iterator to youngest access older than 'older_than_frame', or an
 	// iterator to the overall youngest access if 'older_than_frame' is
 	// null.
 	auto tail = older_than_frame ?
-			older_than_frame->access_list_iterator :
-			access_list.end();
-	assert(tail != access_list.begin());
+			older_than_frame->accesses_iterator :
+			accesses.end();
+	assert(tail != accesses.begin());
 	--tail;
 
 	// Coalesce depending on access type
@@ -408,7 +421,7 @@ Frame *Module::canCoalesce(AccessType access_type,
 						frame;
 			
 			// Done when head reached
-			if (it == access_list.begin())
+			if (it == accesses.begin())
 				break;
 
 			// Previous
@@ -495,10 +508,10 @@ void Module::Coalesce(Frame *master_frame, Frame *frame)
 	// Set slave frame as a coalesced access
 	frame->coalesced = true;
 	frame->master_frame = master_frame;
-	assert(access_list_coalesced_count <= (int) access_list.size());
+	assert(num_coalesced_accesses <= (int) accesses.size());
 
 	// Record in-flight coalesced access in module
-	access_list_coalesced_count++;
+	num_coalesced_accesses++;
 }
 
 
@@ -726,57 +739,57 @@ void Module::UpdateStats(Frame *frame)
 	{
 		if (frame->read)
 		{
-			reads++;
+			num_reads++;
 			if (frame->retry)
-				retry_reads++;
+				num_retry_reads++;
 			if (frame->hit)
 			{
-				read_hits++;
+				num_read_hits++;
 				if (frame->retry)
-					retry_read_hits++;
+					num_retry_read_hits++;
 			}
 			else
 			{
-				read_misses++;
+				num_read_misses++;
 				if (frame->retry)
-					retry_read_misses++;
+					num_retry_read_misses++;
 			}
 
 		}
 		else if (frame->nc_write)  // Must go after read
 		{
-			nc_writes++;
+			num_nc_writes++;
 			if (frame->retry)
-				retry_nc_writes++;
+				num_retry_nc_writes++;
 			if (frame->hit)
 			{
-				nc_write_hits++;
+				num_nc_write_hits++;
 				if (frame->retry)
-					retry_nc_write_hits++;
+					num_retry_nc_write_hits++;
 			}
 			else
 			{
-				nc_write_misses++;
+				num_nc_write_misses++;
 				if (frame->retry)
-					retry_nc_write_misses++;
+					num_retry_nc_write_misses++;
 			}
 		}
 		else if (frame->write)
 		{
-			writes++;
+			num_writes++;
 			if (frame->retry)
-				retry_writes++;
+				num_retry_writes++;
 			if (frame->hit)
 			{
-				write_hits++;
+				num_write_hits++;
 				if (frame->retry)
-					retry_write_hits++;
+					num_retry_write_hits++;
 			}
 			else
 			{
-				write_misses++;
+				num_write_misses++;
 				if (frame->retry)
-					retry_write_misses++;
+					num_retry_write_misses++;
 			}
 		}
 		else 
@@ -789,15 +802,15 @@ void Module::UpdateStats(Frame *frame)
 		assert(frame->hit);
 		if (frame->write)
 		{
-			write_probes++;
+			num_write_probes++;
 			if (frame->retry)
-				retry_write_probes++;
+				num_retry_write_probes++;
 		}
 		else if (frame->read)
 		{
-			read_probes++;
+			num_read_probes++;
 			if (frame->retry)
-				retry_read_probes++;
+				num_retry_read_probes++;
 		}
 		else
 		{
@@ -806,7 +819,7 @@ void Module::UpdateStats(Frame *frame)
 	}
 	else
 	{
-		hlc_evictions++;
+		num_hlc_evictions++;
 	}
 }
 
