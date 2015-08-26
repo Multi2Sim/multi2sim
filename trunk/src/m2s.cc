@@ -22,6 +22,8 @@
 #include <sys/time.h>
 
 #include <arch/common/CallStack.h>
+#include <arch/common/Driver.h>
+#include <arch/common/Runtime.h>
 #include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/driver/Driver.h>
 #include <arch/kepler/emulator/Emulator.h>
@@ -408,6 +410,41 @@ void ProcessOptions()
 }
 
 
+void RegisterRuntimes()
+{
+	// Get runtime pool
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+
+	// CUDA runtime
+	runtime_pool->Register("CUDA", "libCUDA", "libm2s-cuda");
+
+	// OpenCL runtime
+	runtime_pool->Register("OpenCL", "libOpenCL", "libm2s-opencl");
+
+	// HSA runtime
+	runtime_pool->Register("HSA", "libHSA", "libm2s-hsa");
+}
+
+
+void RegisterDrivers()
+{
+	// Get driver pool
+	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
+
+	// HSA driver
+	HSA::Driver *hsa_driver = HSA::Driver::getInstance();
+	driver_pool->Register(hsa_driver);
+
+	// Kepler driver
+	Kepler::Driver *kepler_driver = Kepler::Driver::getInstance();
+	driver_pool->Register(kepler_driver);
+
+	// Southern Islands driver
+	SI::Driver *si_driver = SI::Driver::getInstance();
+	driver_pool->Register(si_driver);
+}
+
+
 void MainLoop()
 {
 	// Activate signal handler
@@ -593,6 +630,10 @@ int MainProgram(int argc, char **argv)
 		dram_system->ReadConfiguration();
 		dram_system->Run();
 	}
+
+	// Register drivers and runtimes
+	RegisterDrivers();
+	RegisterRuntimes();
 
 	// Load programs
 	LoadPrograms();

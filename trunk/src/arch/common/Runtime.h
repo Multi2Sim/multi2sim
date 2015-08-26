@@ -83,12 +83,16 @@ public:
 	const std::string &getLibraryName() const { return library_name; }
 
 	/// Return the redirection library name
-	const std::string &getRedirectLibraryName() const {
-			return redirect_library_name; }
+	const std::string &getRedirectLibraryName() const
+	{
+		return redirect_library_name;
+	}
 
 	/// Record or clear attempt to open this runtime
-	void setOpenAttempt(bool open_attempt) {
-			this->open_attempt = open_attempt; }
+	void setOpenAttempt(bool open_attempt)
+	{
+		this->open_attempt = open_attempt;
+	}
 };
 
 
@@ -110,12 +114,6 @@ class RuntimePool
 	// as an installed package (e.g. /usr/bin), an empty string is returned.
 	static std::string getBuildTreeRoot();
 	
-	// Register a runtime. See the constructor of class Runtime for details
-	// on the argument meaning.
-	void Register(const std::string &name,
-			const std::string &library_name,
-			const std::string &redirect_library_name);
-	
 public:
 
 	/// Runtime pool error
@@ -133,12 +131,12 @@ public:
 	/// Return a unique instance of the singleton
 	static RuntimePool *getInstance();
 
-	/// Class constructor. This constructor should not be invoked externally
-	/// since this class is a singleton. Use getInstance() instead. This is
-	/// the point where all of Multi2Sim runtimes are instantiated and
-	/// added to the runtime pool.
-	RuntimePool();
-
+	/// Register a runtime. See the constructor of class Runtime for details
+	/// on the argument meaning.
+	void Register(const std::string &name,
+			const std::string &library_name,
+			const std::string &redirect_library_name);
+	
 	/// Check all runtimes in the pool for a matching library name, and if
 	/// so, redirect.
 	///

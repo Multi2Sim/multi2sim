@@ -44,8 +44,8 @@ bool Thread::canCommit()
 	if (cycle - last_commit_cycle > 1000000)
 	{
 		// Show warning
-		misc::Warning("[x86] Thread %s: simulation ended "
-				"due to commit stall.\n\t%s",
+		misc::Warning("[x86] %s: simulation ended due to a commit "
+				"stall.\n\t%s",
 				name.c_str(),
 				commit_stall_error);
 
