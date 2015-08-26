@@ -299,6 +299,9 @@ void Module::FinishAccess(Frame *frame)
 		assert(num_coalesced_accesses > 0);
 		num_coalesced_accesses--;
 	}
+
+	// Wake up dependent accesses
+	frame->queue.WakeupAll();
 }
 
 

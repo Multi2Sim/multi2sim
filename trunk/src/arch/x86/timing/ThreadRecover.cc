@@ -55,6 +55,10 @@ void Thread::RecoverFetchQueue()
 			cpu->InsertInTraceList(uop);
 		}
 	}
+
+	// Sanity
+	assert(fetch_queue_occupancy == 0);
+	assert(trace_cache_queue_occupancy == 0);
 }
 
 

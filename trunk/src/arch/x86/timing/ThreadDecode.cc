@@ -54,10 +54,15 @@ void Thread::Decode()
 				// Add to uop queue
 				InsertInUopQueue(uop);
 
+				// Done if fetch queue empty
+				if (fetch_queue.empty())
+					break;
+
 				// Next instruction from fetch queue
+				assert(fetch_queue.size());
 				uop = fetch_queue.front();
 
-			} while (uop != nullptr && uop->from_trace_cache);
+			} while (uop->from_trace_cache);
 
 			// Consume entire decode width
 			break;
