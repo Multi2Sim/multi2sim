@@ -64,34 +64,42 @@ TEST(TestSystemEvents, section_one_read)
 
 	// TODO: Verify that these are the expected commands 
 	// after a single read
-	std::array<std::string,3> expected = { "", "Activate", "Read" };
+	std::array<std::string, 2> expected = { "Activate", "Read" };
 
 	// Initialze array to store test results
-	std::array<std::string,3>  results;
+	std::array<std::string, 2>  results;
 
 	// Test body
 	std::string message;
 	try
 	{
-		// Submit a sigle read request
+		// Submit a single read request
 		dram_system->Read(0);
 		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
 		for (unsigned i = 0; i < results.size(); i++)
 		{
-			// Step through cycle by cycle
 			engine->ProcessEvents();
 
 			// Store Current Bank Command in results
-			results[i] = dram_system->getController(0)->
-					getChannel(0)->getRank(0)->
-					getBank(0)->getCommandInQueueType();
+			results[i] = bank->getCommandInQueueType();
 		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
-	EXPECT_TRUE(message.empty());
 	
 	// Compare results to expected
 	EXPECT_TRUE(results == expected);
@@ -112,10 +120,10 @@ TEST(TestSystemEvents, section_one_write)
 
 	// TODO: Verify that these are the expected commands 
 	// after a single write
-	std::array<std::string, 3> expected = { "", "Activate", "Write" };
+	std::array<std::string, 2> expected = { "Activate", "Write" };
 
 	// Initialize array to store test results
-	std::array<std::string, 3> results;
+	std::array<std::string, 2> results;
 
 	// Test body
 	std::string message;
@@ -124,23 +132,260 @@ TEST(TestSystemEvents, section_one_write)
 		// Submit a single write request
 		dram_system->Write(0);
 		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
 		for (unsigned i = 0; i < results.size(); i++)
 		{
-			// Step through cycle by cycle
 			engine->ProcessEvents();
 
 			// Store Current Bank Command in results
-			results[i] = dram_system->getController(0)->
-					getChannel(0)->getRank(0)->
-					getBank(0)->getCommandInQueueType();
-			std::cout << results[i] << "\n";
+			results[i] = bank->getCommandInQueueType();
 		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
 	}
 	catch (misc::Error &e)
 	{
-		message = e.getMessage();
+		e.Dump();
+		FAIL();
 	}
-	EXPECT_TRUE(message.empty());
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
+}
+
+TEST(TestSystemEvents, section_two_reads_same_address)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after two reads to same address
+	std::array<std::string, 3> expected = { "Activate", "Read", "Read" };
+
+	// Initialze array to store test results
+	std::array<std::string, 3>  results;
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit two read requests
+		dram_system->Read(0);
+		dram_system->Read(0);
+		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
+		for (unsigned i = 0; i < results.size(); i++)
+		{
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = bank->getCommandInQueueType();
+		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
+}
+
+TEST(TestSystemEvents, section_two_writes_same_address)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after two writes to same address
+	std::array<std::string, 3> expected = { "Activate", "Write", "Write" };
+
+	// Initialze array to store test results
+	std::array<std::string, 3>  results;
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit two write requests
+		dram_system->Write(0);
+		dram_system->Write(0);
+		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
+		for (unsigned i = 0; i < results.size(); i++)
+		{
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = bank->getCommandInQueueType();
+		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
+}
+
+TEST(TestSystemEvents, section_two_reads_different_row)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after two reads to different rows
+	std::array<std::string, 5> expected = { "Activate", "Read",
+		"Precharge", "Activate", "Read" };
+
+	// Initialze array to store test results
+	std::array<std::string, 5>  results;
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit two read requests one row apart
+		dram_system->Read(0);
+		dram_system->Read(1024);
+		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
+		for (unsigned i = 0; i < results.size(); i++)
+		{
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = bank->getCommandInQueueType();
+		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+	
+	// Compare results to expected
+	EXPECT_TRUE(results == expected);
+}
+
+TEST(TestSystemEvents, section_two_writes_different_row)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// TODO: Verify that these are the expected commands 
+	// after two writes to different rows
+	std::array<std::string, 5> expected = { "Activate", "Write",
+		"Precharge", "Activate", "Write" };
+
+	// Initialze array to store test results
+	std::array<std::string, 5>  results;
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit two write requests one row apart
+		dram_system->Write(0);
+		dram_system->Write(1024);
+		esim::Engine *engine = esim::Engine::getInstance();
+		engine->ProcessEvents();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Step through cycle by cycle
+		for (unsigned i = 0; i < results.size(); i++)
+		{
+			engine->ProcessEvents();
+
+			// Store Current Bank Command in results
+			results[i] = bank->getCommandInQueueType();
+		}
+
+		// Check that command queue is now empty
+		engine->ProcessEvents();
+		EXPECT_TRUE(bank->getNumCommandsInQueue() == 0);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
 	
 	// Compare results to expected
 	EXPECT_TRUE(results == expected);
