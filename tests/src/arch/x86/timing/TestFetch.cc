@@ -30,7 +30,7 @@
 namespace x86 
 {
 
-TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
+TEST(TestX86TimingFetchStage, simple_fetch)
 {
 	// CPU configuration file
 	std::string config_string =
@@ -76,10 +76,16 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	}
 
 	// Code to execute
-	// mov ebx, 5;
+	// mov eax, 1;
+	// int 0x80;
 	unsigned char code[128] = {0};
-	code[0] = 0xBB;
-	code[1] = 0x05;
+	code[0] = 0xB8;
+	code[1] = 0x01;
+	code[2] = 0x00;
+	code[3] = 0x00;
+	code[4] = 0x00;
+	code[5] = 0xcd;
+	code[6] = 0x80;
 
 	// Create a context
 	Context *context = Emulator::getInstance()->newContext();
@@ -88,13 +94,19 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	context->mmu = mmu;
 	mem::Mmu::Space space("space", mmu.get());
 	context->mmu_space = &space;
-	mem::Memory memory = context->getMem();
-	mem::Manager manager(&memory);
+	std::shared_ptr<mem::Memory> memory = context->__getMemSharedPtr();
+	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
+				mem::Memory::PageSize));
+	mem::Manager manager(memory.get());
 	unsigned eip = manager.Allocate(sizeof(code));
-	memory.Write(eip, sizeof(code), (const char *)code);
-	//context->setEip(eip);
+	// Should be able to get page
+	mem::Memory::Page *page = memory->getPage(eip);
+	ASSERT_TRUE(page);
+
+	memory->Write(eip, sizeof(code), (const char *)code);
 	context->setUinstActive(true);
 	context->setState(Context::StateRunning);
+	context->getRegs().setEip(eip);
 
 	// Fetch
 	Cpu *cpu = Timing::getInstance()->getCpu();
@@ -114,14 +126,13 @@ TEST(X86_TIMING_FETCH, fetches_instruction_from_memory)
 	}
 
 	// After fetching,
-	EXPECT_EQ(0, thread->getFetchQueueSize());
+	EXPECT_EQ(2, thread->getFetchQueueSize());
 	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 101; i++) 
+	for (int i = 0; i < 200; i++)
 	{
+		//std::cout << i << ": "<< thread->getFetchQueueSize() << "\n";
 		engine->ProcessEvents();
-		std::cout << i << ": "<< thread->getFetchQueueSize() << "\n";
 	}
-	EXPECT_EQ(1, thread->getFetchQueueSize());
 }
 
 }  // namespace x86
