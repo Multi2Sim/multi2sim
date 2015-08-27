@@ -82,7 +82,7 @@ private:
 	//
 
 	// Fetch queue
-	std::deque<std::shared_ptr<Uop>> fetch_queue;
+	std::list<std::shared_ptr<Uop>> fetch_queue;
 
 	// Insert a uop into the tail of the fetch queue
 	void InsertInFetchQueue(std::shared_ptr<Uop> uop);
@@ -102,7 +102,7 @@ private:
 	//
 
 	// Uop queue
-	std::deque<std::shared_ptr<Uop>> uop_queue;
+	std::list<std::shared_ptr<Uop>> uop_queue;
 
 	// Insert a uop into the tail of the uop queue
 	void InsertInUopQueue(std::shared_ptr<Uop> uop);
@@ -122,7 +122,7 @@ private:
 	//
 
 	// Reorder buffer
-	std::deque<std::shared_ptr<Uop>> reorder_buffer;
+	std::list<std::shared_ptr<Uop>> reorder_buffer;
 
 	// Insert a uop into the tail of the reorder buffer
 	void InsertInReorderBuffer(std::shared_ptr<Uop> uop);
