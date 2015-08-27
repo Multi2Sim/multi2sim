@@ -741,7 +741,7 @@ void Context::HostThreadTimerCancel()
 
 void Context::Execute()
 {
-	// Memory permissioContext.cc:358:9:ns should not be checked if the context is executing in
+	// Memory permissions should not be checked if the context is executing in
 	// speculative mode. This will prevent guest segmentation faults to occur.
 	bool spec_mode = getState(StateSpecMode);
 	if (spec_mode)
