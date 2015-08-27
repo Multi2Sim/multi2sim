@@ -185,7 +185,7 @@ private:
 	std::string stage;
 
 	// List containing uops that need to report an 'end_inst' trace event 
-	std::deque<std::shared_ptr<Uop>> trace_list;
+	std::list<std::shared_ptr<Uop>> trace_list;
 
 
 
