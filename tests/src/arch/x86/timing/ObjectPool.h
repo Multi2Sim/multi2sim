@@ -46,8 +46,9 @@ class ObjectPool
 	// A context
 	Context *context;
 
-	// A empty ini file
-	misc::IniFile ini_file;
+	// A ini file.  Empty by default but can be updated with a call to
+	// SetInifile()
+	static misc::IniFile ini_file;
 
 	// Unique instance of singleton
 	static std::unique_ptr<ObjectPool> instance;
@@ -68,14 +69,23 @@ public:
 		return instance.get();
 	}
 
-	/// Return the core
+	/// Destroy instance of this class if allocated.
+	static void Destroy() { instance = nullptr; }
+
+	/// Return the core.
 	Core *getCore() const { return core.get(); }
 
-	/// Return the thread
+	/// Return the thread.
 	Thread *getThread() const { return thread.get(); }
 
-	/// Return the context
+	/// Return the context.
 	Context *getContext() const { return context; }
+
+	/// Set the ini_file to be parsed in the constructor
+	static void SetInifile(misc::IniFile new_ini_file)
+	{
+		ini_file = new_ini_file;
+	}
 };
 
 }

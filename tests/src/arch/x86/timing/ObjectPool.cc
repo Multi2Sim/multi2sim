@@ -26,6 +26,8 @@ namespace x86
 // Singleton instance of object pool
 std::unique_ptr<ObjectPool> ObjectPool::instance;
 
+misc::IniFile ObjectPool::ini_file;
+
 
 ObjectPool::ObjectPool()
 {
@@ -33,7 +35,8 @@ ObjectPool::ObjectPool()
 	Timing::Destroy();
 	Emulator::Destroy();
 
-	// Parse default parameter
+	// Parse ini_file parameters.  If ini_file is empty, the
+	// default values will be set.
 	Timing::ParseConfiguration(&ini_file);
 
 	// Timing simulator
