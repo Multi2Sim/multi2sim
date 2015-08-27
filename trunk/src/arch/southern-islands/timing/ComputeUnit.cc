@@ -108,7 +108,6 @@ void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
 
 		// Erase from fetch buffer, issue to execution unit
 		execution_unit->Issue(std::move(*oldest_uop_iterator));
-		//std::unique_ptr<Uop> uop = 
 		fetch_buffer->Remove(oldest_uop_iterator);
 
 		// Trace
@@ -362,7 +361,6 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 			&& work_group->id_in_compute_unit < (int) work_groups.size())
 		work_group->id_in_compute_unit++;
 
-
 	// Checks
 	assert(work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit());
 
@@ -374,7 +372,10 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	
 	// If compute unit is not full, add it back to the available list
 	if ((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit())
-		gpu->InsertAvailableComputeUnit(this);
+	{
+		if (!in_available_compute_units)
+			gpu->InsertInAvailableComputeUnits(this);
+	}
 
 	// Assign wavefront identifiers in compute unit
 	int wavefront_id = 0;
@@ -455,9 +456,10 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	work_group->wavefront_pool->UnmapWavefronts(work_group);
 	
 	// If compute unit is not already in the available list, place
-	//  it there
+	// it there
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
-	gpu->InsertAvailableComputeUnit(this);
+	if (!in_available_compute_units)
+		gpu->InsertInAvailableComputeUnits(this);
 
 	// Trace
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
