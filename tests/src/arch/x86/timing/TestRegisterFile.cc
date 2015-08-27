@@ -28,11 +28,20 @@
 #include <arch/x86/timing/Thread.h>
 #include <arch/x86/timing/Timing.h>
 #include <arch/x86/timing/Uop.h>
+#include <arch/common/Arch.h>
 
 #include "ObjectPool.h"
 
 namespace x86
 {
+
+static void Cleanup()
+{
+	ObjectPool::Destroy();
+	Timing::Destroy();
+	Emulator::Destroy();
+	comm::ArchPool::Destroy();
+}
 
 
 //
@@ -44,16 +53,21 @@ namespace x86
 // registers available in a private register
 TEST(TestRegisterFile, can_rename_private_register_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical integer registers
 	std::string config =
 			"[ Queues ]\n"
 			"RfIntSize = 26";
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -89,6 +103,9 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_0.get()));
 
 	// Occupy integer registers
 	register_file->Rename(uop_0.get());
@@ -102,17 +119,22 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 // registers available in a private register
 TEST(TestRegisterFile, can_rename_private_register_1)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical floating point registers
 	std::string config =
 			"[ Queues ]\n"
 			"RfFpSize = 15";
 
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -149,28 +171,35 @@ TEST(TestRegisterFile, can_rename_private_register_1)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Occupy integer registers
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+
+	// Occupy floating point registers
 	register_file->Rename(uop_0.get());
-	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_0.get()));
+	EXPECT_FALSE(register_file->canRename(uop_1.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
 // available in a private register
 TEST(TestRegisterFile, can_rename_private_register_2)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical Xmm registers
 	std::string config =
 			"[ Queues ]\n"
 			"RfXmmSize = 15";
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -207,29 +236,36 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Occupy integer registers
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+
+	// Occupy Xmm registers
 	register_file->Rename(uop_0.get());
-	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_0.get()));
+	EXPECT_FALSE(register_file->canRename(uop_1.get()));
 }
 
 // Tests that canRename() returns false when there are no more integer
 // registers available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical integer registers
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared"
+			"RfKind = Shared\n"
 			"RfIntSize = 26";
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -266,29 +302,36 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+
 	// Occupy integer registers
 	register_file->Rename(uop_0.get());
-	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_0.get()));
+	EXPECT_FALSE(register_file->canRename(uop_1.get()));
 }
 
 // Tests that canRename() returns false when there are no more floating-point
 // registers available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_1)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical floating point registers
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared"
+			"RfKind = Shared\n"
 			"RfFpSize = 15";
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -325,29 +368,36 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Occupy integer registers
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+
+	// Occupy floating point registers
 	register_file->Rename(uop_0.get());
-	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_0.get()));
+	EXPECT_FALSE(register_file->canRename(uop_1.get()));
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
 // available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_2)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical Xmm registers
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Shared"
+			"RfKind = Shared\n"
 			"RfXmmSize = 15";
 
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -383,12 +433,14 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	// Occupy integer registers
+	// Check that canRename() returns true
+	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+
+	// Occupy Xmm registers
 	register_file->Rename(uop_0.get());
-	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_0.get()));
+	EXPECT_FALSE(register_file->canRename(uop_1.get()));
 }
 
 
@@ -403,18 +455,21 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 // input and 1 integer output.
 TEST(TestRegisterFile, rename_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	// Config file
-	// Sets number of physical integer registers to 26
+	// Sets number of physical integer registers
 	std::string config =
 			"[ Queues ]\n"
-			"RfKind = Private"
 			"RfIntSize = 26";
 
-
-	// Parse register config file
+	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
-	RegisterFile::ParseConfiguration(&ini_file);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -443,8 +498,7 @@ TEST(TestRegisterFile, rename_0)
 
 	// Check values
 	EXPECT_EQ(uop_0->getInput(0), 25);
-	EXPECT_EQ(uop_0->getOutput(0), 24);
-
+	EXPECT_EQ(uop_0->getOutput(0), 7);
 }
 
 
@@ -454,6 +508,9 @@ TEST(TestRegisterFile, rename_0)
 // floating-point stack top.
 TEST(TestRegisterFile, rename_1)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	/*
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -484,6 +541,9 @@ TEST(TestRegisterFile, rename_1)
 // with 1 XMM input + 1 XMM output.
 TEST(TestRegisterFile, rename_2)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	/*
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -514,6 +574,9 @@ TEST(TestRegisterFile, rename_2)
 // integer registers.
 TEST(TestRegisterFile, rename_3)
 {
+	// Cleanup singleton instances
+	Cleanup();
+
 	/*
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
