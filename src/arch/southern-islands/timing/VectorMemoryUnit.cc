@@ -320,7 +320,7 @@ void VectorMemoryUnit::Memory()
 						TranslateVirtualAddress(
 						uop->getWorkGroup()->
 						getNDRange()->
-						getAddressSpace(),
+						address_space,
 						work_item_info->
 						global_memory_access_address);
 

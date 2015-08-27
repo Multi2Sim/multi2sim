@@ -560,10 +560,6 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 {
 	// Get emulator and timing instance
 	Emulator *emulator = Emulator::getInstance();
-	Timing *timing = Timing::getInstance();
-	
-	// Get gpu object from timing instance
-	Gpu *gpu  = timing->getGpu();
 
 	// Arguments
 	int kernel_id;
@@ -619,10 +615,14 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 
 	// Calculate the allowed work groups per wavefront pool and 
 	// compute unit. Create the address space for the MMU.
-	if (gpu)
+	
+	// Get gpu object from timing instance
+	if (Timing::getSimKind() == comm::Arch::SimDetailed)
 	{
+		Gpu *gpu  = Timing::getInstance()->getGpu();
 	 	gpu->MapNDRange(ndrange);
-		ndrange->newAddressSpace(gpu->getMmu());
+		ndrange->address_space = gpu->getMmu()
+				->newSpace("Southern Islands");
 	}
 	
 	// Return ID of new nd-range 

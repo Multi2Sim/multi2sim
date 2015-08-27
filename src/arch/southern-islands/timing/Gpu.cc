@@ -44,13 +44,57 @@ const misc::StringMap Gpu::register_allocation_granularity_map =
 Gpu::Gpu()
 {
 	// Create MMU
-	mmu = misc::new_unique<mem::Mmu>("SouthernIslandsTimingSimulator");
+	mmu = misc::new_unique<mem::Mmu>("Southern Islands");
 
 	// Create compute units
 	compute_units.reserve(num_compute_units);
 	available_compute_units.resize(num_compute_units);
 	for (int i = 0; i < num_compute_units; i++)
+	{
+		// Add new compute unit to the overall list of compute units
 		compute_units.emplace_back(misc::new_unique<ComputeUnit>(i, this));
+		
+		// Add compute units to the list of available compute units
+		ComputeUnit *compute_unit = compute_units.back().get();
+		InsertInAvailableComputeUnits(compute_unit);
+	}
+}
+
+
+ComputeUnit *Gpu::getAvailableComputeUnit()
+{
+	if (available_compute_units.empty())
+		return nullptr;
+	else
+		return available_compute_units.back();
+}
+
+
+void Gpu::InsertInAvailableComputeUnits(ComputeUnit *compute_unit)
+{
+	// Sanity
+	assert(!compute_unit->in_available_compute_units);
+	
+	// Insert compute_unit
+	compute_unit->in_available_compute_units = true;
+	compute_unit->available_compute_units_iterator = 
+			available_compute_units.insert(
+			available_compute_units.end(), 
+			compute_unit);
+}
+
+
+void Gpu::RemoveFromAvailableComputeUnits(ComputeUnit *compute_unit)
+{
+	// Sanity
+	assert(compute_unit->in_available_compute_units);
+	
+	// Remove context
+	available_compute_units.erase(
+			compute_unit->available_compute_units_iterator);
+	compute_unit->in_available_compute_units = false;
+	compute_unit->available_compute_units_iterator = 
+			available_compute_units.end();
 }
 
 

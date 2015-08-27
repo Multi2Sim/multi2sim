@@ -165,9 +165,6 @@ private:
 	// kernel function.
 	int local_mem_top = 0;
 
-	// Associated memory address space
-	std::unique_ptr<mem::Mmu::Space> address_space;
-
 	// If true, it indicates that a flush of the caches is being performed,
 	// evicting data modified by this kernel
 	bool flushing = false;
@@ -210,6 +207,9 @@ public:
 	/// emulator.
 	std::list<std::unique_ptr<NDRange>>::iterator ndranges_iterator;
 
+	// Associated memory address space
+	mem::Mmu::Space *address_space = nullptr;
+
 	/// Constructor
 	NDRange();
 
@@ -225,13 +225,6 @@ public:
 		return os;
 	}
 	
-	/// Create a new address space
-	void newAddressSpace(mem::Mmu *mmu)
-	{ 
-		address_space = misc::new_unique<mem::Mmu::Space>(
-				"SouthernIslands", mmu); 
-	}
-
 	/// Get work dim
 	unsigned getWorkDim() const { return work_dim; }
 
@@ -254,9 +247,6 @@ public:
 	
 	/// Get local memory top address
 	unsigned getLocalMemTop() const { return local_mem_top; }
-
-	/// Get associated address space
-	mem::Mmu::Space *getAddressSpace() const { return address_space.get(); }
 
 	/// Get num_vgpr_used
 	unsigned getNumVgprUsed() const { return num_vgpr_used; }

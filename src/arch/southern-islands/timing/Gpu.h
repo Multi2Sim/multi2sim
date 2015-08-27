@@ -80,7 +80,7 @@ private:
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
 	
 	// List of available compute units
-	std::list<ComputeUnit*> available_compute_units;
+	std::list<ComputeUnit *> available_compute_units;
 
 	// Granularity of the register allocation
 	RegisterAllocationGranularity register_allocation_granularity = 
@@ -118,26 +118,17 @@ public:
 	/// Constructor
 	Gpu();
 
-	/// Return a pointer to an available compute unit. If no compute units
-	/// are available a nullptr is returned.
-	ComputeUnit *getAvailableComputeUnit()
-	{
-		if (available_compute_units.empty())
-			return nullptr;
-		else
-			return available_compute_units.front();
-	}
+	/// Return the iterator of an available compute unit. If no compute
+	/// units are available a nullptr is returned.
+	ComputeUnit *getAvailableComputeUnit();
 
-	/// Add a compute unit to the list of available units if the compute
-	/// unit is not already there.
-	void InsertAvailableComputeUnit(ComputeUnit *compute_unit) 
-	{ 
-		if (!compute_unit->isAvailable())
-		{
-			compute_unit->setAvailable(true);
-			available_compute_units.push_back(compute_unit);
-		}
-	}
+	/// Insert the given compute unit in the list of available units. The
+	/// compute unit must not be currently present in the list.
+	void InsertInAvailableComputeUnits(ComputeUnit *compute_unit);
+	
+	/// Remove the compute unit from the list of available units. The
+	/// compute unit must be present in the list.
+	void RemoveFromAvailableComputeUnits(ComputeUnit *compute_unit); 
 
 	/// Return the compute unit with the given index.
 	ComputeUnit *getComputeUnit(int index) const
@@ -174,6 +165,18 @@ public:
 	std::vector<std::unique_ptr<ComputeUnit>>::iterator getComputeUnitsEnd()
 	{
 		return compute_units.end();
+	}
+
+	/// Return an iterator to the first available compute unit
+	std::list<ComputeUnit *>::iterator getAvailableComputeUnitsBegin()
+	{
+		return available_compute_units.begin();
+	}
+
+	/// Return a past-the-end iterator to the list of compute units
+	std::list<ComputeUnit *>::iterator getAvailableComputeUnitsEnd()
+	{
+		return available_compute_units.end();
 	}
 
 	/// Advance one cycle in the GPU state

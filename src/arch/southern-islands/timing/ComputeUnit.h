@@ -101,9 +101,6 @@ class ComputeUnit
 	// Counter of identifiers assigned to uops in this compute unit
 	long long uop_id_counter = 0;
 
-	// Flag to indicate if the compute unit is currently available or not
-	bool available = true;
-
 public:
 
 	//
@@ -163,12 +160,6 @@ public:
 	/// Return the associated timing simulator
 	Timing *getTiming() const { return timing; }
 	
-	/// Returns a boolean value indicating if the compute unit is available.
-	bool isAvailable() const { return available; }
-	
-	/// Set the availability status of the compute unit
-	void setAvailable(bool status) { available = status; }
-
 	/// Map a work group to the compute unit
 	void MapWorkGroup(WorkGroup *work_group);
 
@@ -192,7 +183,10 @@ public:
 
 	/// Iterator of the compute unit location in the available compute 
 	/// units list
-	std::list<ComputeUnit*>::iterator available_compute_units_iterator;
+	std::list<ComputeUnit *>::iterator available_compute_units_iterator;
+
+	/// Flag to indicate if the compute unit is currently available or not
+	bool in_available_compute_units = false;
 
 
 

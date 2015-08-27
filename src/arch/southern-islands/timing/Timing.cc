@@ -671,20 +671,6 @@ void Timing::ProcessOptions()
 		// of each class will use the previously initialized static
 		// variables to initialize the instances. 
 		Timing *timing = getInstance();
-
-		// Initialize the memory structures according to the default
-		// memory configuration.
-		timing->WriteMemoryConfiguration(&ini_file);
-		
-		// Parse the memory configuration. This will initialize the 
-		// scalar and vector caches of the compute units.
-		std::string section;
-		for (int i = 0; i < Gpu::num_compute_units; i++)
-		{
-			section = misc::fmt("Entry si-cu-%d", i);
-			timing->ParseMemoryConfigurationEntry(&ini_file, 
-					section);
-		}
 	}
 
 	// Print configuration INI file format
@@ -895,7 +881,11 @@ bool Timing::Run()
 			ComputeUnit *compute_unit = 
 					gpu->getAvailableComputeUnit();
 			assert(compute_unit);
-			compute_unit->setAvailable(false);
+
+			// Remove it from the available compute units list.
+			// It will be re-added later if it still has room for
+			// more work groups.
+			gpu->RemoveFromAvailableComputeUnits(compute_unit);
 
 			// Map the work group to a compute unit
 			compute_unit->MapWorkGroup(work_group);
