@@ -493,7 +493,7 @@ void ScalarUnit::Execute()
 					getMmu()->TranslateVirtualAddress(
 							uop->getWorkGroup()->
 							getNDRange()->
-							getAddressSpace(),
+							address_space,
 						uop->global_memory_access_address);
 
 			// Submit the access
