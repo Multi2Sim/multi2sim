@@ -2,9 +2,6 @@ lib_LIBRARIES = libdram.a
 
 libdram_a_SOURCES = \
 	\
-	Action.cc \
-	Action.h \
-	\
 	Address.cc \
 	Address.h \
 	\
