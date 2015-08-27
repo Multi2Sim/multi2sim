@@ -266,13 +266,13 @@ public:
 	bool in_fetch_queue = false;
 
 	/// Position of the uop in the thread's fetch queue
-	std::deque<std::shared_ptr<Uop>>::iterator fetch_queue_iterator;
+	std::list<std::shared_ptr<Uop>>::iterator fetch_queue_iterator;
 
 	/// True if the instruction is currently in the uop queue
 	bool in_uop_queue = false;
 
 	/// Position of the uop in the thread's uop queue
-	std::deque<std::shared_ptr<Uop>>::iterator uop_queue_iterator;
+	std::list<std::shared_ptr<Uop>>::iterator uop_queue_iterator;
 
 	/// True if the instruction is currently in the core's event queue
 	bool in_event_queue = false;
@@ -286,7 +286,7 @@ public:
 	bool in_reorder_buffer = false;
 
 	/// Position of the uop in the reorder buffer, if present
-	std::deque<std::shared_ptr<Uop>>::iterator reorder_buffer_iterator;
+	std::list<std::shared_ptr<Uop>>::iterator reorder_buffer_iterator;
 
 	/// True if the instruction is currently present in the thread's
 	/// instruction queue
@@ -317,7 +317,7 @@ public:
 	bool in_trace_list = false;
 
 	/// Position of the uop in the CPU's trace list, if present
-	std::deque<std::shared_ptr<Uop>>::iterator trace_list_iterator;
+	std::list<std::shared_ptr<Uop>>::iterator trace_list_iterator;
 
 
 

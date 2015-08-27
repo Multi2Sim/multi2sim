@@ -20,6 +20,7 @@
 #ifndef ARCH_X86_TIMING_REGISTER_FILE_H
 #define ARCH_X86_TIMING_REGISTER_FILE_H
 
+#include <lib/cpp/Debug.h>
 #include <lib/cpp/IniFile.h>
 #include <arch/x86/emulator/Uinst.h>
 
@@ -60,6 +61,10 @@ public:
 
 private:
 
+	//
+	// Class members
+	//
+
 	// Core that the register file belongs to, initialized in constructor
 	Core *core;
 
@@ -69,8 +74,12 @@ private:
 	// Structure of physical register
 	struct PhysicalRegister
 	{
-		int pending;  // not completed (bit) 
-		int busy;  // number of mapped logical registers 
+		// Flag indicating whether the result of this physical register
+		// is still being computed.
+		bool pending = false;
+
+		// Number of logical registers mapped to this physical register
+		int busy = 0;
 	};
 
 
@@ -222,6 +231,12 @@ public:
 	// Static members
 	//
 
+	// File to dump debug information
+	static std::string debug_file;
+
+	// Debug information
+	static misc::Debug debug;
+	
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
@@ -263,9 +278,9 @@ public:
 
 	/// Check integrity of register file
 	void CheckRegisterFile();
-
 };
 
 }
 
-#endif // ARCH_X86_TIMING_REGISTER_FILE_H
+#endif
+
