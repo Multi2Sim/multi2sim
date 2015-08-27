@@ -489,10 +489,6 @@ TEST(TestRegisterFile, rename_0)
 	// Set up register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
-	register_file->PrintNumIntegerRegisters();
-
-	register_file->PrintNumIntegerRegisters();
-
 	// Rename uop
 	register_file->Rename(uop_0.get());
 
