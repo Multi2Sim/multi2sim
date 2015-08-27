@@ -26,7 +26,6 @@
 #include <lib/cpp/String.h>
 #include <lib/esim/Engine.h>
 
-#include "Action.h"
 #include "Address.h"
 #include "Bank.h"
 #include "Controller.h"
@@ -66,8 +65,6 @@ misc::Debug System::activity;
 std::unique_ptr<System> System::instance;
 
 esim::FrequencyDomain *System::DRAM_DOMAIN(nullptr);
-
-esim::Event *System::ACTION_REQUEST(nullptr);
 
 esim::Event *System::COMMAND_RETURN(nullptr);
 
@@ -228,19 +225,14 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 void System::Run()
 {
-	// Get the simulation engine and actions.
+	// Get the simulation engine.
 	esim::Engine *engine = esim::Engine::getInstance();
-	Actions *actions = Actions::getInstance();
 
 	// Run a simulation with 1000 cycles.
-	// FIXME: Make this dependent on actions.
 	for (int i = 0; i < 1000; i++)
 	{
 		engine->ProcessEvents();
 	}
-
-	// Run checks from actions.
-	actions->DoChecks();
 }
 
 

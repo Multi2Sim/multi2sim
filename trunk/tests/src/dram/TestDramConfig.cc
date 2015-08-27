@@ -22,6 +22,7 @@
 #include <string>
 #include <regex>
 #include <exception>
+#include <dram/Controller.h>
 #include <dram/System.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
@@ -462,6 +463,56 @@ TEST(TestSystemConfiguration, section_invalid_vaiable)
 	EXPECT_REGEX_MATCH(misc::fmt(".*%s:.*invalid variable.*",
 			ini_file.getPath().c_str()).c_str(),
 			message.c_str());
+}
+
+TEST(TestSystemConfiguration, section_correct_timings_DDR3_1600)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ General ]\n"
+			"Frequency = 20000\n"
+			"[MemoryController One]\n"
+			"Default = DDR3_1600\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	EXPECT_TRUE(dram_system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		dram_system->ParseConfiguration(&ini_file);
+		Controller *controller = dram_system->getController(0);
+		
+		// Check Precharge timing
+		EXPECT_TRUE(controller->
+				getCommandDuration((CommandType) 1) == 11);
+
+		// Check Activate timing
+		EXPECT_TRUE(controller->
+				getCommandDuration((CommandType) 2) == 11);
+
+		// Check Read timing
+		EXPECT_TRUE(controller->
+				getCommandDuration((CommandType) 3) == 15);
+
+		// Check Write timing
+		EXPECT_TRUE(controller->
+				getCommandDuration((CommandType) 4) == 15);
+	}
+	catch (misc::Error &error)
+	{
+		error.Dump();
+		FAIL();
+	}
 }
 
 }
