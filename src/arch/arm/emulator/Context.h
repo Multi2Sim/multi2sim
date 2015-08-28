@@ -161,7 +161,7 @@ class Context
 	Regs regs;
 
 	// Current emulated instruction
-	Inst inst;
+	Instruction inst;
 
 	// File descriptor table, shared by contexts
 	std::shared_ptr<comm::FileTable> file_table;
@@ -386,7 +386,7 @@ class Context
 #undef DEFINST
 
 	// Table of functions
-	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+	static ExecuteInstFn execute_inst_fn[Instruction::OpcodeCount];
 
 	// Prototype of a member function of class Context devoted to the
 	// execution of ISA thumb16 instructions. The emulator has a table indexed by an
@@ -406,7 +406,7 @@ class Context
 #undef DEFINST
 
 	// Table of functions
-	static ExecuteInstThumb16Fn execute_inst_thumb16_fn[InstThumb16OpcodeCount];
+	static ExecuteInstThumb16Fn execute_inst_thumb16_fn[Instruction::Thumb16OpcodeCount];
 
 	// Prototype of a member function of class Context devoted to the
 	// execution of ISA thumb 32 instructions. The emulator has a table indexed by an
@@ -427,7 +427,7 @@ class Context
 #undef DEFINST
 
 	// Table of functions
-	static ExecuteInstFn execute_inst_thumb32_fn[InstThumb32OpcodeCount];
+	static ExecuteInstFn execute_inst_thumb32_fn[Instruction::Thumb32OpcodeCount];
 
 	// Perform rotation right operation
 	unsigned int IsaRotr(unsigned int value, int shift);
@@ -518,7 +518,7 @@ class Context
 		unsigned int op3, unsigned int flag_set);
 
 	// FIXME
-	unsigned int IsaThumb32Immd12(InstThumb32Category cat);
+	unsigned int IsaThumb32Immd12(Instruction::Thumb32Category cat);
 
 	// Thumb32 branch link
 	void IsaThumb32BranchLink();
