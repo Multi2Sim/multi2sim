@@ -68,109 +68,109 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 {
 	// Form the Instruction table and read Information from table
 #define DEFINST(_name, _fmt_str, _category, _arg1, _arg2) \
-	SetupInstInfo(#_name, _fmt_str, InstCategory##_category, \
-			_arg1, _arg2, InstOpcode##_name);
+	SetupInstInfo(#_name, _fmt_str, Instruction::Category##_category, \
+			_arg1, _arg2, Instruction::Opcode##_name);
 #include "Instruction.def"
 #undef DEFINST
 
 
 	// Allocate Memory 
-	dec_table_thumb32_asm			= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv1		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv2		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv3		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv4		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv5		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv6		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv7		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv8		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv9		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv10		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv11		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv12		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv13		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv14		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_lv15		= new InstThumb32Info[16]();
+	dec_table_thumb32_asm			= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv1		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv2		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv3		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv4		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv5		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv6		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv7		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv8		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv9		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv10		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv11		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv12		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv13		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv14		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_lv15		= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_asm_ldst_mul		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul1		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul2		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul3		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul4		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul5		= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst_mul6		= new InstThumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul1		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul2		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul3		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul4		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul5		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst_mul6		= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_asm_ldst_dual		= new InstThumb32Info[32]();
-	dec_table_thumb32_asm_ldst1_dual	= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst2_dual	= new InstThumb32Info[16]();
-	dec_table_thumb32_asm_ldst3_dual	= new InstThumb32Info[16]();
+	dec_table_thumb32_asm_ldst_dual		= new Instruction::Thumb32Info[32]();
+	dec_table_thumb32_asm_ldst1_dual	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst2_dual	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_asm_ldst3_dual	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_dproc_shft_reg	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg1	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg2	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg3	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg4	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg5	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_shft_reg6	= new InstThumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg3	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg4	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg5	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_shft_reg6	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_dproc_imm	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm1	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm2	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm3	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm4	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm5	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_imm6	= new InstThumb32Info[16]();
+	dec_table_thumb32_dproc_imm	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm3	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm4	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm5	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_imm6	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_dproc_reg	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg1	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg2	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg3	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg4	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg5	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg6	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_reg7	= new InstThumb32Info[16]();
+	dec_table_thumb32_dproc_reg	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg3	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg4	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg5	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg6	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_reg7	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_dproc_misc	= new InstThumb32Info[8]();
-	dec_table_thumb32_dproc_misc1	= new InstThumb32Info[8]();
+	dec_table_thumb32_dproc_misc	= new Instruction::Thumb32Info[8]();
+	dec_table_thumb32_dproc_misc1	= new Instruction::Thumb32Info[8]();
 
-	dec_table_thumb32_dproc_bin_imm		= new InstThumb32Info[32]();
-	dec_table_thumb32_dproc_bin_imm1	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_bin_imm2	= new InstThumb32Info[16]();
-	dec_table_thumb32_dproc_bin_imm3	= new InstThumb32Info[16]();
+	dec_table_thumb32_dproc_bin_imm		= new Instruction::Thumb32Info[32]();
+	dec_table_thumb32_dproc_bin_imm1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_bin_imm2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_dproc_bin_imm3	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_brnch_ctrl	= new InstThumb32Info[16]();
-	dec_table_thumb32_brnch_ctrl1 	= new InstThumb32Info[8]();
+	dec_table_thumb32_brnch_ctrl	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_brnch_ctrl1 	= new Instruction::Thumb32Info[8]();
 
-	dec_table_thumb32_st_single	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single1	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single2	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single3	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single4	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single5	= new InstThumb32Info[16]();
-	dec_table_thumb32_st_single6	= new InstThumb32Info[16]();
+	dec_table_thumb32_st_single	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single3	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single4	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single5	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_st_single6	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_ld_byte	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte1	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte2	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte3	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte4	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte5	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_byte6	= new InstThumb32Info[16]();
+	dec_table_thumb32_ld_byte	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte2	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte3	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte4	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte5	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_byte6	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_ld_hfword	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_hfword1	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_hfword2	= new InstThumb32Info[16]();
+	dec_table_thumb32_ld_hfword	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_hfword1	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_hfword2	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_ld_word	= new InstThumb32Info[16]();
-	dec_table_thumb32_ld_word1	= new InstThumb32Info[16]();
+	dec_table_thumb32_ld_word	= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_ld_word1	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_mult		= new InstThumb32Info[16]();
-	dec_table_thumb32_mult1		= new InstThumb32Info[16]();
+	dec_table_thumb32_mult		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_mult1		= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_mult_long	= new InstThumb32Info[16]();
+	dec_table_thumb32_mult_long	= new Instruction::Thumb32Info[16]();
 
-	dec_table_thumb32_mov		= new InstThumb32Info[16]();
-	dec_table_thumb32_mov1		= new InstThumb32Info[16]();
+	dec_table_thumb32_mov		= new Instruction::Thumb32Info[16]();
+	dec_table_thumb32_mov1		= new Instruction::Thumb32Info[16]();
 
 
 	// Load store Multiple tables 
@@ -522,38 +522,38 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 	dec_table_thumb32_asm_lv10[1].next_table_low 	= 20;
 
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
-	Thumb32SetupTable(#_name, _fmt_str, InstThumb32Category##_cat, _op1, _op2,\
-		_op3, _op4, _op5, _op6, _op7, _op8, InstThumb32Opcode##_name);
+	Thumb32SetupTable(#_name, _fmt_str, Instruction::Thumb32Category##_cat, _op1, _op2,\
+		_op3, _op4, _op5, _op6, _op7, _op8, Instruction::Thumb32Opcode##_name);
 #include "InstructionThumb32.def"
 #undef DEFINST
 
 
-	dec_table_thumb16_asm 			= new InstThumb16Info[8]();
-	dec_table_thumb16_shft_ins		= new InstThumb16Info[16]();
-	dec_table_thumb16_shft_ins_lv2		= new InstThumb16Info[16]();
+	dec_table_thumb16_asm 			= new Instruction::Thumb16Info[8]();
+	dec_table_thumb16_shft_ins		= new Instruction::Thumb16Info[16]();
+	dec_table_thumb16_shft_ins_lv2		= new Instruction::Thumb16Info[16]();
 
-	dec_table_thumb16_asm_lv1		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv2		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv3		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv4		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv5		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv6		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv7		= new InstThumb16Info[64]();
-	dec_table_thumb16_asm_lv8		= new InstThumb16Info[4]();
-	dec_table_thumb16_asm_lv9		= new InstThumb16Info[64]();
-
-
-	dec_table_thumb16_data_proc		= new InstThumb16Info[32]();
-	dec_table_thumb16_spcl_data_brex	= new InstThumb16Info[32]();
-	dec_table_thumb16_spcl_data_brex_lv1	= new InstThumb16Info[4]();
-
-	dec_table_thumb16_ld_st			= new InstThumb16Info[64]();
-	dec_table_thumb16_ld_st_lv1		= new InstThumb16Info[64]();
-	dec_table_thumb16_ld_st_lv2		= new InstThumb16Info[64]();
+	dec_table_thumb16_asm_lv1		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv2		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv3		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv4		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv5		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv6		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv7		= new Instruction::Thumb16Info[64]();
+	dec_table_thumb16_asm_lv8		= new Instruction::Thumb16Info[4]();
+	dec_table_thumb16_asm_lv9		= new Instruction::Thumb16Info[64]();
 
 
-	dec_table_thumb16_misc			= new InstThumb16Info[128]();
-	dec_table_thumb16_it			= new InstThumb16Info[256]();
+	dec_table_thumb16_data_proc		= new Instruction::Thumb16Info[32]();
+	dec_table_thumb16_spcl_data_brex	= new Instruction::Thumb16Info[32]();
+	dec_table_thumb16_spcl_data_brex_lv1	= new Instruction::Thumb16Info[4]();
+
+	dec_table_thumb16_ld_st			= new Instruction::Thumb16Info[64]();
+	dec_table_thumb16_ld_st_lv1		= new Instruction::Thumb16Info[64]();
+	dec_table_thumb16_ld_st_lv2		= new Instruction::Thumb16Info[64]();
+
+
+	dec_table_thumb16_misc			= new Instruction::Thumb16Info[128]();
+	dec_table_thumb16_it			= new Instruction::Thumb16Info[256]();
 
 
 	// Directing to Shift Instructions 
@@ -654,8 +654,8 @@ Disassembler::Disassembler() : comm::Disassembler("ARM")
 
 
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
-	Thumb16SetupTable(#_name, _fmt_str, InstThumb16Category##_cat, _op1, _op2,\
-		_op3, _op4, _op5, _op6, InstThumb16Opcode##_name);
+	Thumb16SetupTable(#_name, _fmt_str, Instruction::Thumb16Category##_cat, _op1, _op2,\
+		_op3, _op4, _op5, _op6, Instruction::Thumb16Opcode##_name);
 #include "InstructionThumb.def"
 #undef DEFINST
 
@@ -805,12 +805,12 @@ Disassembler::~Disassembler()
 
 
 void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
-		InstCategory category, int arg1, int arg2, InstOpcode inst_name)
+		Instruction::Category category, int arg1, int arg2, Instruction::Opcode inst_name)
 {
-	InstInfo *info;
+	Instruction::Info *info;
 	switch (category)
 	{
-	case InstCategoryDprReg:
+	case Instruction::CategoryDprReg:
 
 		info = &inst_info[arg1 * 16 + 0];
 		info->inst = inst_name;
@@ -898,7 +898,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryDprImm:
+	case Instruction::CategoryDprImm:
 
 		for (unsigned int i = 0; i < 16; i++ )
 		{
@@ -912,7 +912,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		}
 		break;
 
-	case InstCategoryDprSat:
+	case Instruction::CategoryDprSat:
 
 		info = &inst_info[arg1 * 16 + 5];
 		info->inst = inst_name;
@@ -923,7 +923,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryPsr:
+	case Instruction::CategoryPsr:
 
 		info = &inst_info[arg1 * 16 + 0];
 		info->inst = inst_name;
@@ -934,7 +934,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryMult:
+	case Instruction::CategoryMult:
 
 		info = &inst_info[arg1 * 16 + 9];
 		info->inst = inst_name;
@@ -945,7 +945,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryMultSign:
+	case Instruction::CategoryMultSign:
 
 		info = &inst_info[arg1 * 16 + 8];
 		info->inst = inst_name;
@@ -977,7 +977,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryMultLn:
+	case Instruction::CategoryMultLn:
 
 		info = &inst_info[arg1 * 16 + 9];
 		info->inst = inst_name;
@@ -988,7 +988,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryMultLnSign:
+	case Instruction::CategoryMultLnSign:
 
 		info = &inst_info[arg1 * 16 + 8];
 		info->inst = inst_name;
@@ -999,7 +999,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategorySdswp:
+	case Instruction::CategorySdswp:
 
 		info = &inst_info[arg1 * 16 + 9];
 		info->inst = inst_name;
@@ -1010,7 +1010,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryBax:
+	case Instruction::CategoryBax:
 
 		info = &inst_info[arg1 * 16 + arg2];
 		info->inst = inst_name;
@@ -1021,7 +1021,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryHfwrdReg:
+	case Instruction::CategoryHfwrdReg:
 
 		info = &inst_info[arg1 * 16 + arg2];
 		info->inst = inst_name;
@@ -1032,7 +1032,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryHfwrdImm:
+	case Instruction::CategoryHfwrdImm:
 
 		info = &inst_info[arg1 * 16 + arg2];
 		info->inst = inst_name;
@@ -1043,7 +1043,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategorySdtr:
+	case Instruction::CategorySdtr:
 
 		if (arg2 == 0xff)
 		{
@@ -1076,7 +1076,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		}
 		break;
 
-	case InstCategoryBrnch:
+	case Instruction::CategoryBrnch:
 
 		for (unsigned int i = 0 ; i < 16; i++)
 		{
@@ -1093,7 +1093,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		}
 		break;
 
-	case InstCategoryBdtr:
+	case Instruction::CategoryBdtr:
 
 		for (unsigned int i = 0; i < 16; i++)
 		{
@@ -1107,7 +1107,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		}
 		break;
 
-	case InstCategorySwiSvc:
+	case Instruction::CategorySwiSvc:
 
 		for (unsigned int i = 0 ; i < 16; i++)
 		{
@@ -1124,7 +1124,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		}
 		break;
 
-	case InstCategoryCprDtr:
+	case Instruction::CategoryCprDtr:
 
 		info = &inst_info[arg1 * 16 + arg2];
 		info->inst = inst_name;
@@ -1135,7 +1135,7 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 		info->opcode = inst_name;
 		break;
 
-	case InstCategoryVfp:
+	case Instruction::CategoryVfp:
 
 		for (unsigned int i = 0; i < 16; i++)
 		{
@@ -1157,10 +1157,10 @@ void Disassembler::SetupInstInfo(const char* name, const char* fmt_str,
 
 
 void Disassembler::Thumb32SetupTable(const char* name , const char* fmt_str ,
-		InstThumb32Category cat32 , int op1 , int op2 , int op3 ,
-		int op4 , int op5 , int op6, int op7, int op8, InstThumb32Opcode inst_name)
+		Instruction::Thumb32Category cat32 , int op1 , int op2 , int op3 ,
+		int op4 , int op5 , int op6, int op7, int op8, Instruction::Thumb32Opcode inst_name)
 {
-	InstThumb32Info *current_table;
+	Instruction::Thumb32Info *current_table;
 
 	// We initially start with the first table arm_asm_table, with the opcode field as argument 
 	current_table = dec_table_thumb32_asm;
@@ -1189,12 +1189,12 @@ void Disassembler::Thumb32SetupTable(const char* name , const char* fmt_str ,
 
 
 void Disassembler::Thumb16SetupTable(const char* name , const char* fmt_str ,
-	InstThumb16Category cat16 , int op1 , int op2 , int op3 ,
-	int op4 , int op5 , int op6, InstThumb16Opcode inst_name)
+	Instruction::Thumb16Category cat16 , int op1 , int op2 , int op3 ,
+	int op4 , int op5 , int op6, Instruction::Thumb16Opcode inst_name)
 {
 	// We initially start with the first table arm_asm_table, with the
 	// opcode field as argument.
-	struct InstThumb16Info *current_table = dec_table_thumb16_asm;
+	struct Instruction::Thumb16Info *current_table = dec_table_thumb16_asm;
 
 	// FIXME - comment
 	int op[6] = {op1, op2, op3, op4, op5, op6};
@@ -1381,7 +1381,7 @@ int Disassembler::TestThumb32(const char *inst_ptr)
 {
 	unsigned int byte_index;
 	unsigned int arg1;
-	Inst inst;
+	Instruction inst;
 	for (byte_index = 0; byte_index < 4; ++byte_index)
 		inst.getBytes()->bytes[byte_index] = *(inst_ptr
 			+ byte_index);
@@ -1404,7 +1404,7 @@ void Disassembler::DisassembleBinary(const std::string &path)
 	ELFReader::File file(path);
 	ELFReader::Section *section;
 	std::vector<ELFReader::Symbol*> symbol_list;
-	Inst inst;
+	Instruction inst;
 	static DisassemblyMode disasm_mode;
 
 	// Find the section

@@ -28,9 +28,9 @@
 namespace ARM
 {
 
-Context::ExecuteInstThumb32Fn Context::execute_inst_thumb32_fn[InstThumb32OpcodeCount] =
+Context::ExecuteInstThumb32Fn Context::execute_inst_thumb32_fn[Instruction::Thumb32OpcodeCount] =
 {
-	nullptr  // For InstThumb32OpcodeNone
+	nullptr  // For Instruction::Thumb32OpcodeNone
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6,_op7,_op8) \
 		 , &Context::ExecuteInstThumb32_##_name
 #include <arch/arm/disassembler/InstructionThumb32.def>
@@ -484,13 +484,13 @@ void Context::ExecuteInstThumb32_POP()
 	int reg_val;
 	void* buf;
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	buf = &reg_val;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		regs = inst.getThumb32Bytes()->ld_st_mult.reglist;
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		regs = inst.getThumb32Bytes()->push_pop.reglist;
 
 	else
@@ -540,13 +540,13 @@ void Context::ExecuteInstThumb32_PUSH()
 
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	buf = &reg_val;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		regs = inst.getThumb32Bytes()->ld_st_mult.reglist;
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		regs = inst.getThumb32Bytes()->push_pop.reglist;
 
 	else
@@ -714,13 +714,13 @@ void Context::ExecuteInstThumb32_AND_reg9()
 	int rn_val;
 	int result;
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	//prev_regs_cpsr = regs.getCPSR();
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rn, rn_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -733,19 +733,19 @@ void Context::ExecuteInstThumb32_AND_reg9()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -821,13 +821,13 @@ void Context::ExecuteInstThumb32_BIC_reg()
 
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	//prev_regs_cpsr = regs.getCPSR();
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rn, rn_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -840,19 +840,19 @@ void Context::ExecuteInstThumb32_BIC_reg()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -914,13 +914,13 @@ void Context::ExecuteInstThumb32_ORR_reg2()
 
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	//prev_regs_cpsr = regs.getCPSR();
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rn, rn_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -933,19 +933,19 @@ void Context::ExecuteInstThumb32_ORR_reg2()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1212,11 +1212,11 @@ void Context::ExecuteInstThumb32_ADD_reg0()
 	int rm_val;
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -1229,19 +1229,19 @@ void Context::ExecuteInstThumb32_ADD_reg0()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1262,11 +1262,11 @@ void Context::ExecuteInstThumb32_ADD_reg1()
 	int rm_val;
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -1279,19 +1279,19 @@ void Context::ExecuteInstThumb32_ADD_reg1()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1312,11 +1312,11 @@ void Context::ExecuteInstThumb32_ADD_reg2()
 	int rm_val;
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -1329,19 +1329,19 @@ void Context::ExecuteInstThumb32_ADD_reg2()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1367,11 +1367,11 @@ void Context::ExecuteInstThumb32_ADD_reg4()
 	int rm_val;
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -1384,19 +1384,19 @@ void Context::ExecuteInstThumb32_ADD_reg4()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -1437,11 +1437,11 @@ void Context::ExecuteInstThumb32_ADD_reg9()
 	int rm_val;
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
 	IsaRegLoad(inst.getThumb32Bytes()->data_proc_shftreg.rm, rm_val);
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = inst.getThumb32Bytes()->data_proc_shftreg.type;
 		shift = (inst.getThumb32Bytes()->data_proc_shftreg.imm3 << 2) | (inst.getThumb32Bytes()->data_proc_shftreg.imm2);
@@ -1454,19 +1454,19 @@ void Context::ExecuteInstThumb32_ADD_reg9()
 	{
 		switch(type)
 		{
-		case (Inst::ShiftOperatorLsl):
+		case (Instruction::ShiftOperatorLsl):
 			rm_val = rm_val << shift;
 		break;
 
-		case (Inst::ShiftOperatorLsr):
+		case (Instruction::ShiftOperatorLsr):
 			rm_val = rm_val >> shift;
 		break;
 
-		case (Inst::ShiftOperatorAsr):
+		case (Instruction::ShiftOperatorAsr):
 			rm_val = rm_val / (1 << shift);
 		break;
 
-		case (Inst::ShiftOperatorRor):
+		case (Instruction::ShiftOperatorRor):
 			rm_val = IsaRotr(rm_val, shift);
 		break;
 		}
@@ -2694,9 +2694,9 @@ void Context::ExecuteInstThumb32_MOVT_binimm()
 
 	IsaRegLoad(inst.getThumb32Bytes()->bit_field.rd, rd_val);
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
-		if (cat == InstThumb32CategoryDprBinImm)
+		if (cat == Instruction::Thumb32CategoryDprBinImm)
 		{
 			immd8 = inst.getThumb32Bytes()->data_proc_immd.immd8;
 			immd3 = inst.getThumb32Bytes()->data_proc_immd.immd3;
@@ -2728,9 +2728,9 @@ void Context::ExecuteInstThumb32_MOVW_binimm()
 
 
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 
-		if (cat == InstThumb32CategoryDprBinImm)
+		if (cat == Instruction::Thumb32CategoryDprBinImm)
 		{
 			immd8 = inst.getThumb32Bytes()->data_proc_immd.immd8;
 			immd3 = inst.getThumb32Bytes()->data_proc_immd.immd3;
