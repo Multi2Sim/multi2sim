@@ -477,7 +477,7 @@ void Context::Execute()
 					mem::Memory::AccessExec);
 			inst.Thumb32Decode(buffer_ptr, (regs.getPC() - 4));
 			setInstType(ContextInstTypeThumb32);
-			if (inst.getThumb32Opcode() == InstThumb32OpcodeInvalid)
+			if (inst.getThumb32Opcode() == Instruction::Thumb32OpcodeInvalid)
 				throw misc::Panic(misc::fmt("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
 					(regs.getPC() - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
 		}
@@ -491,7 +491,7 @@ void Context::Execute()
 	{
 		inst.Decode((regs.getPC() - 4), buffer_ptr);
 		setInstType(ContextInstTypeArm32);
-		if (inst.getOpcode() == InstOpcodeInvalid)
+		if (inst.getOpcode() == Instruction::OpcodeInvalid)
 			throw misc::Panic(misc::fmt("0x%x: not supported arm instruction (%02x %02x %02x %02x...)",
 					(regs.getPC() - 4), buffer_ptr[0], buffer_ptr[1], buffer_ptr[2], buffer_ptr[3]));
 	}

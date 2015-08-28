@@ -670,7 +670,7 @@ void Timing::ProcessOptions()
 		// Second: generate instance of timing simulator. The constructor
 		// of each class will use the previously initialized static
 		// variables to initialize the instances. 
-		Timing *timing = getInstance();
+		getInstance();
 	}
 
 	// Print configuration INI file format

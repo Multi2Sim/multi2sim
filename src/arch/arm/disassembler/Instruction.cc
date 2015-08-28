@@ -33,7 +33,7 @@
 namespace ARM
 {
 
-Inst::Inst()
+Instruction::Instruction()
 {
 	// Initialize
 	this->disassembler = Disassembler::getInstance();
@@ -44,7 +44,7 @@ Inst::Inst()
 }
 
 
-unsigned int Inst::Rotl(unsigned int value, int shift)
+unsigned int Instruction::Rotl(unsigned int value, int shift)
 {
 	shift = shift * 2;
 	if ((shift &= sizeof(value) * 8 - 1) == 0)
@@ -53,7 +53,7 @@ unsigned int Inst::Rotl(unsigned int value, int shift)
 }
 
 
-unsigned int Inst::Rotr(unsigned int value, int shift)
+unsigned int Instruction::Rotr(unsigned int value, int shift)
 {
 	// Rotating 32 bits on a 32-bit integer is the same as rotating 0 bits; 33 bits -> 1 bit; etc.
 	if (shift >= 32 || shift <= -32) {
@@ -72,7 +72,7 @@ unsigned int Inst::Rotr(unsigned int value, int shift)
 }
 
 
-void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
+void Instruction::Amode2Disasm(std::ostream &os, Category cat)
 {
 	unsigned int rn;
 	unsigned int rm;
@@ -158,12 +158,12 @@ void Inst::Amode2Disasm(std::ostream &os, InstCategory cat)
 }
 
 
-void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
+void Instruction::Amode3Disasm(std::ostream &os, Category cat)
 {
 	unsigned int rn;
 	unsigned int rm;
 	unsigned int offset;
-	if (cat == InstCategoryHfwrdReg)
+	if (cat == Instruction::CategoryHfwrdReg)
 	{
 		rn = this->dword.hfwrd_reg.base_rn;
 		rm = this->dword.hfwrd_reg.off_reg;
@@ -198,7 +198,7 @@ void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 			}
 		}
 	}
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 	{
 		rn = this->dword.hfwrd_imm.base_rn;
 		offset = (this->dword.hfwrd_imm.imm_off_hi << 4)
@@ -241,42 +241,42 @@ void Inst::Amode3Disasm(std::ostream &os, InstCategory cat)
 }
 
 
-void Inst::DumpRd(std::ostream &os)
+void Instruction::DumpRd(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rd;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		rd = this->dword.dpr.dst_reg;
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		rd = this->dword.dpr.dst_reg;
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		rd = this->dword.dpr_sat.dst_reg;
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		rd = this->dword.psr.dst_reg;
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		rd = this->dword.mult.dst_rd;
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		rd = this->dword.mult.dst_rd;
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		rd = this->dword.hfwrd_reg.dst_rd;
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		rd = this->dword.hfwrd_imm.dst_rd;
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		rd = this->dword.sdtr.src_dst_rd;
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		rd = this->dword.sngl_dswp.dst_rd;
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		rd = this->dword.cpr_rtr.rd;
-	else if (cat == InstCategoryCprDtr)
+	else if (cat == Instruction::CategoryCprDtr)
 		rd = this->dword.cpr_dtr.cpr_sr_dst;
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -309,44 +309,44 @@ void Inst::DumpRd(std::ostream &os)
 }
 
 
-void Inst::DumpRn(std::ostream &os)
+void Instruction::DumpRn(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rn;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		rn = this->dword.dpr.op1_reg;
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		rn = this->dword.dpr.op1_reg;
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		rn = this->dword.dpr_sat.op1_reg;
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: rn  fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		rn = this->dword.mult.op2_rn;
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		rn = this->dword.mult.op2_rn;
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: rn  fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		rn = this->dword.hfwrd_reg.base_rn;
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		rn = this->dword.hfwrd_imm.base_rn;
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		rn = this->dword.bax.op0_rn;
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		rn = this->dword.sdtr.base_rn;
-	else if (cat == InstCategoryBdtr)
+	else if (cat == Instruction::CategoryBdtr)
 		rn = this->dword.bdtr.base_rn;
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		rn = this->dword.sngl_dswp.base_rn;
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		rn = this->dword.cpr_rtr.cpr_rn;
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstCategoryVfp)
+	else if (cat == Instruction::CategoryVfp)
 		rn = this->dword.vfp_mv.vfp_rn;
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -357,7 +357,7 @@ void Inst::DumpRn(std::ostream &os)
 	{
 	case (UserRegistersR12):
 
-		if (cat == InstCategoryVfp)
+		if (cat == Instruction::CategoryVfp)
 		{
 			if(this->dword.vfp_mv.w)
 				os << misc::fmt("ip!");
@@ -370,11 +370,11 @@ void Inst::DumpRn(std::ostream &os)
 
 	case (UserRegistersR13):
 
-		if (cat != InstCategoryBdtr)
+		if (cat != Instruction::CategoryBdtr)
 		{
 			os << misc::fmt("sp");
 		}
-		else if (cat == InstCategoryBdtr)
+		else if (cat == Instruction::CategoryBdtr)
 		{
 			os << misc::fmt(" ");
 		}
@@ -398,39 +398,39 @@ void Inst::DumpRn(std::ostream &os)
 }
 
 
-void Inst::DumpRm(std::ostream &os)
+void Instruction::DumpRm(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rm = 0;
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		rm = this->dword.mult.op0_rm;
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		rm = this->dword.mult.op0_rm;
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		rm = this->dword.mult_ln.op0_rm;
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		rm = this->dword.mult_ln.op0_rm;
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		rm = this->dword.hfwrd_reg.off_reg;
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		rm = this->dword.sngl_dswp.op0_rm;
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		rm = this->dword.cpr_rtr.cpr_op_rm;
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -461,40 +461,40 @@ void Inst::DumpRm(std::ostream &os)
 	}
 }
 
-void Inst::DumpRs(std::ostream &os)
+void Instruction::DumpRs(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rs;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		rs = this->dword.mult.op1_rs;
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		rs = this->dword.mult.op1_rs;
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		rs = this->dword.mult_ln.op1_rs;
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		rs = this->dword.mult_ln.op1_rs;
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rs fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -526,9 +526,9 @@ void Inst::DumpRs(std::ostream &os)
 }
 
 
-void Inst::DumpOp2(std::ostream &os)
+void Instruction::DumpOp2(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 
 	unsigned int op2;
 	unsigned int rm;
@@ -538,35 +538,35 @@ void Inst::DumpOp2(std::ostream &os)
 	unsigned int rotate;
 	unsigned int imm_8r;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		op2 = this->dword.dpr.op2;
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		op2 = this->dword.dpr.op2;
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		op2 = this->dword.dpr_sat.op2;
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		op2 = this->dword.psr.op2;
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: op2 fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -646,48 +646,48 @@ void Inst::DumpOp2(std::ostream &os)
 }
 
 
-void Inst::DumpCond(std::ostream &os)
+void Instruction::DumpCond(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int cond;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		cond = this->dword.dpr.cond;
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		cond = this->dword.dpr.cond;
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		cond = this->dword.dpr_sat.cond;
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		cond = this->dword.psr.cond;
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		cond = this->dword.mult.cond;
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		cond = this->dword.mult.cond;
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		cond = this->dword.mult_ln.cond;
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		cond = this->dword.mult_ln.cond;
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		cond = this->dword.hfwrd_reg.cond;
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		cond = this->dword.hfwrd_imm.cond;
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		cond = this->dword.bax.cond;
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		cond = this->dword.sdtr.cond;
-	else if (cat == InstCategoryBdtr)
+	else if (cat == Instruction::CategoryBdtr)
 		cond = this->dword.bdtr.cond;
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		cond = this->dword.sngl_dswp.cond;
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		cond = this->dword.cpr_rtr.cond;
-	else if (cat == InstCategoryCprDtr)
+	else if (cat == Instruction::CategoryCprDtr)
 		cond = this->dword.cpr_dtr.cond;
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		cond = this->dword.brnch.cond;
-	else if (cat == InstCategorySwiSvc)
+	else if (cat == Instruction::CategorySwiSvc)
 		cond = this->dword.swi_svc.cond;
-	else if (cat == InstCategoryVfp)
+	else if (cat == Instruction::CategoryVfp)
 		cond = this->dword.vfp_mv.cond;
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -775,40 +775,40 @@ void Inst::DumpCond(std::ostream &os)
 }
 
 
-void Inst::DumpRdlo(std::ostream &os)
+void Instruction::DumpRdlo(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rdlo;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		rdlo = this->dword.mult_ln.dst_lo;
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		rdlo = this->dword.mult_ln.dst_lo;
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -820,40 +820,40 @@ void Inst::DumpRdlo(std::ostream &os)
 }
 
 
-void Inst::DumpRdhi(std::ostream &os)
+void Instruction::DumpRdhi(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rdhi;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		rdhi = this->dword.mult_ln.dst_hi;
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		rdhi = this->dword.mult_ln.dst_hi;
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -865,40 +865,40 @@ void Inst::DumpRdhi(std::ostream &os)
 }
 
 
-void Inst::DumpPsr(std::ostream &os)
+void Instruction::DumpPsr(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int psr;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		psr = this->dword.psr.psr_loc;
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: psr fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -920,43 +920,43 @@ void Inst::DumpPsr(std::ostream &os)
 }
 
 
-void Inst::DumpOp2Psr(std::ostream &os)
+void Instruction::DumpOp2Psr(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int op2_psr;
 	unsigned int rotate;
 	unsigned int immd_8r;
 	unsigned int rm;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		op2_psr = this->dword.psr.op2;
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: op2 psr fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -998,39 +998,39 @@ void Inst::DumpOp2Psr(std::ostream &os)
 }
 
 
-void Inst::DumpAMode3(std::ostream &os)
+void Instruction::DumpAMode3(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		Amode3Disasm(os, cat);
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		Amode3Disasm(os, cat);
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: amode 3 fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -1039,39 +1039,39 @@ void Inst::DumpAMode3(std::ostream &os)
 }
 
 
-void Inst::DumpAMode2(std::ostream &os)
+void Instruction::DumpAMode2(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		Amode2Disasm(os, cat);
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: amode 2 fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -1080,46 +1080,46 @@ void Inst::DumpAMode2(std::ostream &os)
 }
 
 
-void Inst::DumpIdx(std::ostream &os)
+void Instruction::DumpIdx(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int idx, wb;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 	{
 		idx = this->dword.hfwrd_imm.idx_typ;
 		wb = this->dword.hfwrd_imm.wb;
 	}
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 	{
 		idx = this->dword.sdtr.idx_typ;
 		wb = this->dword.sdtr.wb;
 	}
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: idx fmt not recognized", cat));
 
 	// TODO: destinations for BDTR CDTR CDO
@@ -1136,40 +1136,40 @@ void Inst::DumpIdx(std::ostream &os)
 }
 
 
-void Inst::DumpBaddr(std::ostream &os)
+void Instruction::DumpBaddr(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	signed int offset;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: brnch fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		offset = (this->dword.brnch.off << 2);
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1179,43 +1179,43 @@ void Inst::DumpBaddr(std::ostream &os)
 }
 
 
-void Inst::DumpRegs(std::ostream &os)
+void Instruction::DumpRegs(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int reg_list;
 	int i;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryBdtr)
+	else if (cat == Instruction::CategoryBdtr)
 		reg_list = this->dword.bdtr.reg_lst;
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
 	// TODO: destinations for CDTR CDO
 	else
@@ -1234,42 +1234,42 @@ void Inst::DumpRegs(std::ostream &os)
 }
 
 
-void Inst::DumpImmd24(std::ostream &os)
+void Instruction::DumpImmd24(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int immd24;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: swi_svc fmt not recognized", cat));
-	else if (cat == InstCategorySwiSvc)
+	else if (cat == Instruction::CategorySwiSvc)
 		immd24 = this->dword.swi_svc.cmnt;
 	// TODO: destinations for CDTR CDO
 	else
@@ -1279,43 +1279,43 @@ void Inst::DumpImmd24(std::ostream &os)
 }
 
 
-void Inst::DumpImmd16(std::ostream &os)
+void Instruction::DumpImmd16(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int immd16;
 
-	if (cat == InstCategoryDprReg)
+	if (cat == Instruction::CategoryDprReg)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryDprImm)
+	else if (cat == Instruction::CategoryDprImm)
 		immd16 = ((this->dword.dpr.op1_reg << 12)
 			| this->dword.dpr.op2);
-	else if (cat == InstCategoryDprSat)
+	else if (cat == Instruction::CategoryDprSat)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryPsr)
+	else if (cat == Instruction::CategoryPsr)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryMult)
+	else if (cat == Instruction::CategoryMult)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryMultSign)
+	else if (cat == Instruction::CategoryMultSign)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryMultLn)
+	else if (cat == Instruction::CategoryMultLn)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryMultLnSign)
+	else if (cat == Instruction::CategoryMultLnSign)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdReg)
+	else if (cat == Instruction::CategoryHfwrdReg)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryHfwrdImm)
+	else if (cat == Instruction::CategoryHfwrdImm)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryBax)
+	else if (cat == Instruction::CategoryBax)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategorySdtr)
+	else if (cat == Instruction::CategorySdtr)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategorySdswp)
+	else if (cat == Instruction::CategorySdswp)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryCprRtr)
+	else if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategoryBrnch)
+	else if (cat == Instruction::CategoryBrnch)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
-	else if (cat == InstCategorySwiSvc)
+	else if (cat == Instruction::CategorySwiSvc)
 		throw misc::Panic(misc::fmt("%d: movt_movw fmt not recognized", cat));
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1325,14 +1325,14 @@ void Inst::DumpImmd16(std::ostream &os)
 }
 
 
-void Inst::DumpCopr(std::ostream &os)
+void Instruction::DumpCopr(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int copr;
 
-	if (cat == InstCategoryCprRtr)
+	if (cat == Instruction::CategoryCprRtr)
 		copr = this->dword.cpr_rtr.cpr_num;
-	else if (cat == InstCategoryCprDtr)
+	else if (cat == Instruction::CategoryCprDtr)
 		copr = this->dword.cpr_dtr.cpr_num;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1342,15 +1342,15 @@ void Inst::DumpCopr(std::ostream &os)
 }
 
 
-void Inst::DumpAMode5(std::ostream &os)
+void Instruction::DumpAMode5(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int offset;
 	unsigned int rn;
 
-	if (cat == InstCategoryCprRtr)
+	if (cat == Instruction::CategoryCprRtr)
 		throw misc::Panic(misc::fmt("%d: copr num fmt not recognized", cat));
-	else if (cat == InstCategoryCprDtr)
+	else if (cat == Instruction::CategoryCprDtr)
 		offset = this->dword.cpr_dtr.off;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1366,12 +1366,12 @@ void Inst::DumpAMode5(std::ostream &os)
 }
 
 
-void Inst::DumpVfp1stm(std::ostream &os)
+void Instruction::DumpVfp1stm(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int vfp1;
 
-	if (cat == InstCategoryVfp)
+	if (cat == Instruction::CategoryVfp)
 		vfp1 = this->dword.vfp_mv.immd8;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1384,12 +1384,12 @@ void Inst::DumpVfp1stm(std::ostream &os)
 }
 
 
-void Inst::DumpVfp1ldm(std::ostream &os)
+void Instruction::DumpVfp1ldm(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int vfp1;
 
-	if (cat == InstCategoryVfp)
+	if (cat == Instruction::CategoryVfp)
 		vfp1 = this->dword.vfp_mv.immd8;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1402,13 +1402,13 @@ void Inst::DumpVfp1ldm(std::ostream &os)
 }
 
 
-void Inst::DumpVfpRegs(std::ostream &os)
+void Instruction::DumpVfpRegs(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int immd8;
 	unsigned int reg_start;
 
-	if (cat == InstCategoryVfp)
+	if (cat == Instruction::CategoryVfp)
 	{
 		immd8 = this->dword.vfp_mv.immd8;
 		reg_start = ((this->dword.vfp_mv.d << 4)
@@ -1423,13 +1423,13 @@ void Inst::DumpVfpRegs(std::ostream &os)
 }
 
 
-void Inst::DumpFreg(std::ostream &os)
+void Instruction::DumpFreg(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int freg;
 
 
-	if (cat == InstCategoryCprDtr)
+	if (cat == Instruction::CategoryCprDtr)
 		freg = this->dword.cpr_dtr.cpr_sr_dst;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1442,12 +1442,12 @@ void Inst::DumpFreg(std::ostream &os)
 }
 
 
-void Inst::DumpFp(std::ostream &os)
+void Instruction::DumpFp(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int freg;
 
-	if (cat == InstCategoryCprDtr)
+	if (cat == Instruction::CategoryCprDtr)
 		freg = this->dword.cpr_dtr.cpr_sr_dst;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1460,12 +1460,12 @@ void Inst::DumpFp(std::ostream &os)
 }
 
 
-void Inst::DumpRt(std::ostream &os)
+void Instruction::DumpRt(std::ostream &os)
 {
-	InstCategory cat = this->info->category;
+	Category cat = this->info->category;
 	unsigned int rt;
 
-	if (cat == InstCategoryVfp)
+	if (cat == Instruction::CategoryVfp)
 		rt = this->dword.vfp_strreg_tr.vfp_rt;
 	// TODO: destinations for BDTR CDTR CDO
 	else
@@ -1496,13 +1496,13 @@ void Inst::DumpRt(std::ostream &os)
 }
 
 
-void Inst::DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr)
+void Instruction::DumpHex(std::ostream &os, unsigned int *inst_ptr, unsigned int inst_addr)
 {
 	os << misc::fmt("%8x:\t%08x\t",inst_addr, *inst_ptr);
 }
 
 
-void Inst::Dump(std::ostream &os)
+void Instruction::Dump(std::ostream &os)
 {
 	const char *fmt_str;
 	int token_len;
@@ -1587,43 +1587,43 @@ void Inst::Dump(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpRD(std::ostream &os)
+void Instruction::Thumb16DumpRD(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 
 	unsigned int rd;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		rd = this->dword_16.movshift_reg_ins.reg_rd;
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		rd = this->dword_16.addsub_ins.reg_rd;
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		rd = this->dword_16.immd_oprs_ins.reg_rd;
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		rd = this->dword_16.dpr_ins.reg_rd;
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		rd = ((this->dword_16.high_oprs_ins.h1 << 3) |  this->dword_16.high_oprs_ins.reg_rd);
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		rd = this->dword_16.pcldr_ins.reg_rd;
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		rd = this->dword_16.ldstr_reg_ins.reg_rd;
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		rd = this->dword_16.ldstr_exts_ins.reg_rd;
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		rd = this->dword_16.ldstr_immd_ins.reg_rd;
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		rd = this->dword_16.ldstr_hfwrd_ins.reg_rd;
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		rd = this->dword_16.sp_immd_ins.reg_rd;
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		rd = this->dword_16.addsp_ins.reg_rd;
-	else if (cat == InstThumb16CategoryMiscRev)
+	else if (cat == Instruction::Thumb16CategoryMiscRev)
 		rd = this->dword_16.rev_ins.reg_rd;
-	else if (cat == InstThumb16CategoryCmpT2)
+	else if (cat == Instruction::Thumb16CategoryCmpT2)
 		rd = (this->dword_16.cmp_t2.N << 3 | this->dword_16.cmp_t2.reg_rn);
 
 	else
@@ -1654,42 +1654,42 @@ void Inst::Thumb16DumpRD(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpRM(std::ostream &os)
+void Instruction::Thumb16DumpRM(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int rm;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		rm = this->dword_16.movshift_reg_ins.reg_rs;
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		rm = this->dword_16.addsub_ins.reg_rs;
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		rm = this->dword_16.dpr_ins.reg_rs;
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		rm = this->dword_16.high_oprs_ins.reg_rs;
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		rm = this->dword_16.ldstr_reg_ins.reg_ro;
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		rm = this->dword_16.ldstr_exts_ins.reg_rb;
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscRev)
+	else if (cat == Instruction::Thumb16CategoryMiscRev)
 		rm = this->dword_16.rev_ins.reg_rm;
-	else if (cat == InstThumb16CategoryCmpT2)
+	else if (cat == Instruction::Thumb16CategoryCmpT2)
 		rm = this->dword_16.cmp_t2.reg_rm;
 	else
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
@@ -1719,40 +1719,40 @@ void Inst::Thumb16DumpRM(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpRN(std::ostream &os)
+void Instruction::Thumb16DumpRN(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int rn;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		rn = this->dword_16.addsub_ins.reg_rs;
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		rn = this->dword_16.immd_oprs_ins.reg_rd;
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		rn = this->dword_16.ldstr_reg_ins.reg_rb;
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		rn = this->dword_16.ldstr_exts_ins.reg_rb;
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		rn = this->dword_16.ldstr_immd_ins.reg_rb;
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		rn = this->dword_16.ldstr_hfwrd_ins.reg_rb;
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		rn = this->dword_16.ldm_stm_ins.reg_rb;
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscCbnz)
+	else if (cat == Instruction::Thumb16CategoryMiscCbnz)
 		rn = this->dword_16.cbnz_ins.reg_rn;
 	else
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
@@ -1781,52 +1781,52 @@ void Inst::Thumb16DumpRN(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpIMMD8(std::ostream &os)
+void Instruction::Thumb16DumpIMMD8(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int inst_addr = this->addr;
 	unsigned int immd8;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		immd8 = this->dword_16.immd_oprs_ins.offset8;
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		immd8 =(this->dword_16.pcldr_ins.immd_8 << 2);
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		immd8 = 4 * this->dword_16.sp_immd_ins.immd_8;
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		immd8 = 4 * this->dword_16.addsp_ins.immd_8;
-	else if (cat == InstThumb16CategoryMiscSubspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSubspIns)
 		immd8 = 4 * this->dword_16.sub_sp_ins.immd_8;
-	else if (cat == InstThumb16CategoryMiscBr)
+	else if (cat == Instruction::Thumb16CategoryMiscBr)
 		immd8 = this->dword_16.cond_br_ins.s_offset;
-	else if (cat == InstThumb16CategoryMiscUcbr)
+	else if (cat == Instruction::Thumb16CategoryMiscUcbr)
 		immd8 = this->dword_16.br_ins.immd11;
-	else if (cat == InstThumb16CategoryMiscSvcIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSvcIns)
 		immd8 = this->dword_16.svc_ins.value;
 	else
 		throw misc::Panic(misc::fmt("%d: immd8 fmt not recognized", cat));
 
-	if(cat == InstThumb16CategoryMiscBr)
+	if(cat == Instruction::Thumb16CategoryMiscBr)
 	{
 		if((immd8 >> 7))
 		{
@@ -1838,7 +1838,7 @@ void Inst::Thumb16DumpIMMD8(std::ostream &os)
 		}
 		os << misc::fmt("%x",immd8);
 	}
-	else if(cat == InstThumb16CategoryMiscUcbr)
+	else if(cat == Instruction::Thumb16CategoryMiscUcbr)
 	{
 		immd8 = immd8 << 1;
 		immd8 = misc::SignExtend32(immd8, 12);
@@ -1853,42 +1853,42 @@ void Inst::Thumb16DumpIMMD8(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpIMMD3(std::ostream &os)
+void Instruction::Thumb16DumpIMMD3(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int immd3;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		immd3 = this->dword_16.addsub_ins.rn_imm;
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscSubspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSubspIns)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscBr)
+	else if (cat == Instruction::Thumb16CategoryMiscBr)
 		throw misc::Panic(misc::fmt("%d: immd3 fmt not recognized", cat));
 
 	else
@@ -1901,48 +1901,48 @@ void Inst::Thumb16DumpIMMD3(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpIMMD5(std::ostream &os)
+void Instruction::Thumb16DumpIMMD5(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int inst_addr = this->addr;
 	unsigned int immd5;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		immd5 = this->dword_16.movshift_reg_ins.offset;
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		immd5 = this->dword_16.ldstr_immd_ins.offset << 2;
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		immd5 = this->dword_16.ldstr_hfwrd_ins.offset;
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscSubspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSubspIns)
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscCbnz)
+	else if (cat == Instruction::Thumb16CategoryMiscCbnz)
 		immd5 = this->dword_16.cbnz_ins.immd_5;
 	else
 		throw misc::Panic(misc::fmt("%d: immd5 fmt not recognized", cat));
 
-	if(cat == InstThumb16CategoryMiscCbnz)
+	if(cat == Instruction::Thumb16CategoryMiscCbnz)
 	{
 		if((inst_addr + 2) % 4)
 			immd5 = (inst_addr + 4) + (immd5 << 1);
@@ -1957,44 +1957,44 @@ void Inst::Thumb16DumpIMMD5(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpCOND(std::ostream &os)
+void Instruction::Thumb16DumpCOND(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int cond;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		cond = this->dword_16.if_eq_ins.first_cond;
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscSubspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSubspIns)
 		throw misc::Panic(misc::fmt("%d: cond fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscBr)
+	else if (cat == Instruction::Thumb16CategoryMiscBr)
 		cond = this->dword_16.cond_br_ins.cond;
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		cond = this->dword_16.if_eq_ins.first_cond;
 
 	else
@@ -2081,45 +2081,45 @@ void Inst::Thumb16DumpCOND(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpREGS(std::ostream &os)
+void Instruction::Thumb16DumpREGS(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int regs;
 	unsigned int i;
 
-	if (cat == InstThumb16CategoryMovshiftReg)
+	if (cat == Instruction::Thumb16CategoryMovshiftReg)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryAddsub)
+	else if (cat == Instruction::Thumb16CategoryAddsub)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryImmdOprs)
+	else if (cat == Instruction::Thumb16CategoryImmdOprs)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryDprIns)
+	else if (cat == Instruction::Thumb16CategoryDprIns)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryHiRegOprs)
+	else if (cat == Instruction::Thumb16CategoryHiRegOprs)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryPcLdr)
+	else if (cat == Instruction::Thumb16CategoryPcLdr)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrReg)
+	else if (cat == Instruction::Thumb16CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrExts)
+	else if (cat == Instruction::Thumb16CategoryLdstrExts)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrHfwrd)
+	else if (cat == Instruction::Thumb16CategoryLdstrHfwrd)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdstrSpImmd)
+	else if (cat == Instruction::Thumb16CategoryLdstrSpImmd)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryIfThen)
+	else if (cat == Instruction::Thumb16CategoryIfThen)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryLdmStm)
+	else if (cat == Instruction::Thumb16CategoryLdmStm)
 		regs = this->dword_16.ldm_stm_ins.reg_list;
-	else if (cat == InstThumb16CategoryMiscAddspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscAddspIns)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscSubspIns)
+	else if (cat == Instruction::Thumb16CategoryMiscSubspIns)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscBr)
+	else if (cat == Instruction::Thumb16CategoryMiscBr)
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
-	else if (cat == InstThumb16CategoryMiscPushPop)
+	else if (cat == Instruction::Thumb16CategoryMiscPushPop)
 		regs = this->dword_16.push_pop_ins.reg_list;
 	else
 		throw misc::Panic(misc::fmt("%d: regs fmt not recognized", cat));
@@ -2137,13 +2137,13 @@ void Inst::Thumb16DumpREGS(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpItEqX(std::ostream &os)
+void Instruction::Thumb16DumpItEqX(std::ostream &os)
 {
-	InstThumb16Category cat = this->info_16->cat16;
+	Thumb16Category cat = this->info_16->cat16;
 	unsigned int first_cond;
 	unsigned int mask;
 
-	if (cat == InstThumb16CategoryIfThen)
+	if (cat == Instruction::Thumb16CategoryIfThen)
 	{
 		mask = this->dword_16.if_eq_ins.mask;
 		first_cond = this->dword_16.if_eq_ins.first_cond;
@@ -2161,13 +2161,13 @@ void Inst::Thumb16DumpItEqX(std::ostream &os)
 }
 
 
-void Inst::Thumb16DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
+void Instruction::Thumb16DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
 {
 	os << misc::fmt("%8x:	%04x		", inst_addr, *inst_ptr);
 }
 
 
-void Inst::Thumb16Dump(std::ostream &os)
+void Instruction::Thumb16Dump(std::ostream &os)
 {
 
 	const char *fmt_str;
@@ -2221,40 +2221,40 @@ void Inst::Thumb16Dump(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRD(std::ostream &os)
+void Instruction::Thumb32DumpRD(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rd;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryTableBrnch)
+	else if (cat == Instruction::Thumb32CategoryTableBrnch)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryDprShftreg)
+	else if (cat == Instruction::Thumb32CategoryDprShftreg)
 		rd = this->dword_32.data_proc_shftreg.rd;
-	else if (cat == InstThumb32CategoryDprImm)
+	else if (cat == Instruction::Thumb32CategoryDprImm)
 		rd = this->dword_32.data_proc_immd.rd;
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 		rd = this->dword_32.data_proc_immd.rd;
-	else if (cat == InstThumb32CategoryBranch)
+	else if (cat == Instruction::Thumb32CategoryBranch)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdstrByte)
+	else if (cat == Instruction::Thumb32CategoryLdstrByte)
 		rd = this->dword_32.ldstr_reg.rd;
-	else if (cat == InstThumb32CategoryLdstrReg)
+	else if (cat == Instruction::Thumb32CategoryLdstrReg)
 		rd = this->dword_32.ldstr_reg.rd;
-	else if (cat == InstThumb32CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb32CategoryLdstrImmd)
 		rd = this->dword_32.ldstr_imm.rd;
-	else if (cat == InstThumb32CategoryDprReg)
+	else if (cat == Instruction::Thumb32CategoryDprReg)
 		rd = this->dword_32.dproc_reg.rd;
-	else if (cat == InstThumb32CategoryMult)
+	else if (cat == Instruction::Thumb32CategoryMult)
 		rd = this->dword_32.mult.rd;
-	else if (cat == InstThumb32CategoryMultLong)
+	else if (cat == Instruction::Thumb32CategoryMultLong)
 		throw misc::Panic(misc::fmt("%d: rd fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryBitField)
+	else if (cat == Instruction::Thumb32CategoryBitField)
 		rd = this->dword_32.bit_field.rd;
 
 	else
@@ -2285,40 +2285,40 @@ void Inst::Thumb32DumpRD(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRN(std::ostream &os)
+void Instruction::Thumb32DumpRN(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rn;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		rn = this->dword_32.ld_st_mult.rn;
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		rn = this->dword_32.ld_st_double.rn;
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryTableBrnch)
+	else if (cat == Instruction::Thumb32CategoryTableBrnch)
 		rn = this->dword_32.table_branch.rn;
-	else if (cat == InstThumb32CategoryDprShftreg)
+	else if (cat == Instruction::Thumb32CategoryDprShftreg)
 		rn = this->dword_32.data_proc_shftreg.rn;
-	else if (cat == InstThumb32CategoryDprImm)
+	else if (cat == Instruction::Thumb32CategoryDprImm)
 		rn = this->dword_32.data_proc_immd.rn;
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 		rn = this->dword_32.data_proc_immd.rn;
-	else if (cat == InstThumb32CategoryBranch)
+	else if (cat == Instruction::Thumb32CategoryBranch)
 		throw misc::Panic(misc::fmt("%d: rn fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdstrByte)
+	else if (cat == Instruction::Thumb32CategoryLdstrByte)
 		rn = this->dword_32.ldstr_reg.rn;
-	else if (cat == InstThumb32CategoryLdstrReg)
+	else if (cat == Instruction::Thumb32CategoryLdstrReg)
 		rn = this->dword_32.ldstr_reg.rn;
-	else if (cat == InstThumb32CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb32CategoryLdstrImmd)
 		rn = this->dword_32.ldstr_imm.rn;
-	else if (cat == InstThumb32CategoryDprReg)
+	else if (cat == Instruction::Thumb32CategoryDprReg)
 		rn = this->dword_32.dproc_reg.rn;
-	else if (cat == InstThumb32CategoryMult)
+	else if (cat == Instruction::Thumb32CategoryMult)
 		rn = this->dword_32.mult.rn;
-	else if (cat == InstThumb32CategoryMultLong)
+	else if (cat == Instruction::Thumb32CategoryMultLong)
 		rn = this->dword_32.mult_long.rn;
-	else if (cat == InstThumb32CategoryBitField)
+	else if (cat == Instruction::Thumb32CategoryBitField)
 		rn = this->dword_32.bit_field.rn;
 
 	else
@@ -2350,40 +2350,40 @@ void Inst::Thumb32DumpRN(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRM(std::ostream &os)
+void Instruction::Thumb32DumpRM(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rm;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryTableBrnch)
+	else if (cat == Instruction::Thumb32CategoryTableBrnch)
 		rm = this->dword_32.table_branch.rm;
-	else if (cat == InstThumb32CategoryDprShftreg)
+	else if (cat == Instruction::Thumb32CategoryDprShftreg)
 		rm = this->dword_32.data_proc_shftreg.rm;
-	else if (cat == InstThumb32CategoryDprImm)
+	else if (cat == Instruction::Thumb32CategoryDprImm)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryBranch)
+	else if (cat == Instruction::Thumb32CategoryBranch)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdstrByte)
+	else if (cat == Instruction::Thumb32CategoryLdstrByte)
 		rm = this->dword_32.ldstr_reg.rm;
-	else if (cat == InstThumb32CategoryLdstrReg)
+	else if (cat == Instruction::Thumb32CategoryLdstrReg)
 		rm = this->dword_32.ldstr_reg.rm;
-	else if (cat == InstThumb32CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb32CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryDprReg)
+	else if (cat == Instruction::Thumb32CategoryDprReg)
 		rm = this->dword_32.dproc_reg.rm;
-	else if (cat == InstThumb32CategoryMult)
+	else if (cat == Instruction::Thumb32CategoryMult)
 		rm = this->dword_32.mult.rm;
-	else if (cat == InstThumb32CategoryMultLong)
+	else if (cat == Instruction::Thumb32CategoryMultLong)
 		rm = this->dword_32.mult_long.rm;
-	else if (cat == InstThumb32CategoryBitField)
+	else if (cat == Instruction::Thumb32CategoryBitField)
 		throw misc::Panic(misc::fmt("%d: rm fmt not recognized", cat));
 
 	else
@@ -2415,14 +2415,14 @@ void Inst::Thumb32DumpRM(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRT(std::ostream &os)
+void Instruction::Thumb32DumpRT(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rt;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		throw misc::Panic(misc::fmt("%d: rt fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		rt = this->dword_32.ld_st_double.rt;
 	else
 		throw misc::Panic(misc::fmt("%d: rt fmt not recognized", cat));
@@ -2452,14 +2452,14 @@ void Inst::Thumb32DumpRT(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRT2(std::ostream &os)
+void Instruction::Thumb32DumpRT2(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rt2;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		throw misc::Panic(misc::fmt("%d: rt fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		rt2 = this->dword_32.ld_st_double.rt2;
 	else
 		throw misc::Panic(misc::fmt("%d: rt2 fmt not recognized", cat));
@@ -2489,13 +2489,13 @@ void Inst::Thumb32DumpRT2(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRA(std::ostream &os)
+void Instruction::Thumb32DumpRA(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int ra;
 
 
-	if (cat == InstThumb32CategoryMult)
+	if (cat == Instruction::Thumb32CategoryMult)
 		ra = this->dword_32.mult.ra;
 	else
 		throw misc::Panic(misc::fmt("%d: ra fmt not recognized", cat));
@@ -2525,13 +2525,13 @@ void Inst::Thumb32DumpRA(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRDLO(std::ostream &os)
+void Instruction::Thumb32DumpRDLO(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rdlo;
 
 
-	if (cat == InstThumb32CategoryMultLong)
+	if (cat == Instruction::Thumb32CategoryMultLong)
 		rdlo = this->dword_32.mult_long.rdlo;
 	else
 		throw misc::Panic(misc::fmt("%d: rdlo fmt not recognized", cat));
@@ -2561,13 +2561,13 @@ void Inst::Thumb32DumpRDLO(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpRDHI(std::ostream &os)
+void Instruction::Thumb32DumpRDHI(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int rdhi;
 
 
-	if (cat == InstThumb32CategoryMultLong)
+	if (cat == Instruction::Thumb32CategoryMultLong)
 		rdhi = this->dword_32.mult_long.rdhi;
 	else
 		throw misc::Panic(misc::fmt("%d: rdhi fmt not recognized", cat));
@@ -2597,40 +2597,40 @@ void Inst::Thumb32DumpRDHI(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpS(std::ostream &os)
+void Instruction::Thumb32DumpS(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int sign;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdStDouble)
+	else if (cat == Instruction::Thumb32CategoryLdStDouble)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryTableBrnch)
+	else if (cat == Instruction::Thumb32CategoryTableBrnch)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryDprShftreg)
+	else if (cat == Instruction::Thumb32CategoryDprShftreg)
 		sign = this->dword_32.data_proc_shftreg.sign;
-	else if (cat == InstThumb32CategoryDprImm)
+	else if (cat == Instruction::Thumb32CategoryDprImm)
 		sign = this->dword_32.data_proc_immd.sign;
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 		sign = this->dword_32.data_proc_immd.sign;
-	else if (cat == InstThumb32CategoryBranch)
+	else if (cat == Instruction::Thumb32CategoryBranch)
 		sign = this->dword_32.branch.sign;
-	else if (cat == InstThumb32CategoryLdstrByte)
+	else if (cat == Instruction::Thumb32CategoryLdstrByte)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdstrReg)
+	else if (cat == Instruction::Thumb32CategoryLdstrReg)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryLdstrImmd)
+	else if (cat == Instruction::Thumb32CategoryLdstrImmd)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryDprReg)
+	else if (cat == Instruction::Thumb32CategoryDprReg)
 		sign = this->dword_32.dproc_reg.sign;
-	else if (cat == InstThumb32CategoryMult)
+	else if (cat == Instruction::Thumb32CategoryMult)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryMultLong)
+	else if (cat == Instruction::Thumb32CategoryMultLong)
 		throw misc::Panic(misc::fmt("%d: S fmt not recognized", cat));
-	else if (cat == InstThumb32CategoryBitField)
+	else if (cat == Instruction::Thumb32CategoryBitField)
 		throw misc::Panic(misc::fmt("%d: sign fmt not recognized", cat));
 
 	else
@@ -2640,14 +2640,14 @@ void Inst::Thumb32DumpS(std::ostream &os)
 }
 
 
-void Inst::Thumb32dumpREGS(std::ostream &os)
+void Instruction::Thumb32dumpREGS(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int regs;
 
-	if (cat == InstThumb32CategoryLdStMult)
+	if (cat == Instruction::Thumb32CategoryLdStMult)
 		regs = this->dword_32.ld_st_mult.reglist;
-	else if (cat == InstThumb32CategoryPushPop)
+	else if (cat == Instruction::Thumb32CategoryPushPop)
 		regs = this->dword_32.push_pop.reglist;
 
 	else
@@ -2667,13 +2667,13 @@ void Inst::Thumb32dumpREGS(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpSHFTREG(std::ostream &os)
+void Instruction::Thumb32DumpSHFTREG(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int shift;
 	unsigned int type;
 
-	if (cat == InstThumb32CategoryDprShftreg)
+	if (cat == Instruction::Thumb32CategoryDprShftreg)
 	{
 		type = this->dword_32.data_proc_shftreg.type;
 		shift = (this->dword_32.data_proc_shftreg.imm3 << 2) | (this->dword_32.data_proc_shftreg.imm2);
@@ -2711,17 +2711,17 @@ void Inst::Thumb32DumpSHFTREG(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpIMM12(std::ostream &os)
+void Instruction::Thumb32DumpIMM12(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd12;
 	unsigned int idx;
 	unsigned int wback;
 	unsigned int add;
 
-	if (cat == InstThumb32CategoryLdstrImmd)
+	if (cat == Instruction::Thumb32CategoryLdstrImmd)
 		immd12 = this->dword_32.ldstr_imm.immd12;
-	else if (cat == InstThumb32CategoryLdstrByte)
+	else if (cat == Instruction::Thumb32CategoryLdstrByte)
 		immd12 = this->dword_32.ldstr_imm.immd12;
 	else
 		throw misc::Panic(misc::fmt("%d: imm12 fmt not recognized", cat));
@@ -2759,9 +2759,9 @@ void Inst::Thumb32DumpIMM12(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpIMMD12(std::ostream &os)
+void Instruction::Thumb32DumpIMMD12(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd8;
 	unsigned int immd3;
 	unsigned int i;
@@ -2770,13 +2770,13 @@ void Inst::Thumb32DumpIMMD12(std::ostream &os)
 	unsigned int shft;
 	unsigned int const_val;
 
-	if (cat == InstThumb32CategoryDprImm)
+	if (cat == Instruction::Thumb32CategoryDprImm)
 	{
 		immd8 = this->dword_32.data_proc_immd.immd8;
 		immd3 = this->dword_32.data_proc_immd.immd3;
 		i = this->dword_32.data_proc_immd.i_flag;
 	}
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 	{
 		immd8 = this->dword_32.data_proc_immd.immd8;
 		immd3 = this->dword_32.data_proc_immd.immd3;
@@ -2826,12 +2826,12 @@ void Inst::Thumb32DumpIMMD12(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpIMMD8(std::ostream &os)
+void Instruction::Thumb32DumpIMMD8(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd8;
 
-	if (cat == InstThumb32CategoryLdStDouble)
+	if (cat == Instruction::Thumb32CategoryLdStDouble)
 		immd8 = (this->dword_32.ld_st_double.immd8 << 2);
 	else
 		throw misc::Panic(misc::fmt("%d: immd12 fmt not recognized", cat));
@@ -2863,16 +2863,16 @@ void Inst::Thumb32DumpIMMD8(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpIMM2(std::ostream &os)
+void Instruction::Thumb32DumpIMM2(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd2;
 
-	if (cat == InstThumb32CategoryLdstrByte)
+	if (cat == Instruction::Thumb32CategoryLdstrByte)
 	{
 		immd2 = this->dword_32.ldstr_reg.immd2;
 	}
-	else if (cat == InstThumb32CategoryLdstrReg)
+	else if (cat == Instruction::Thumb32CategoryLdstrReg)
 	{
 		immd2 = this->dword_32.ldstr_reg.immd2;
 	}
@@ -2883,12 +2883,12 @@ void Inst::Thumb32DumpIMM2(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpCOND(std::ostream &os)
+void Instruction::Thumb32DumpCOND(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int cond;
 
-	if (cat == InstThumb32CategoryBranchCond)
+	if (cat == Instruction::Thumb32CategoryBranchCond)
 	{
 		cond = this->dword_32.branch.cond;
 	}
@@ -2976,13 +2976,13 @@ void Inst::Thumb32DumpCOND(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpLSB(std::ostream &os)
+void Instruction::Thumb32DumpLSB(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd2;
 	unsigned int immd3;
 
-	if (cat == InstThumb32CategoryBitField)
+	if (cat == Instruction::Thumb32CategoryBitField)
 	{
 		immd2 = this->dword_32.bit_field.immd2;
 		immd3 = this->dword_32.bit_field.immd3;
@@ -2994,15 +2994,15 @@ void Inst::Thumb32DumpLSB(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpWID(std::ostream &os)
+void Instruction::Thumb32DumpWID(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int msb;
 	unsigned int immd2;
 	unsigned int immd3;
 	unsigned int lsb;
 
-	if (cat == InstThumb32CategoryBitField)
+	if (cat == Instruction::Thumb32CategoryBitField)
 	{
 		msb = this->dword_32.bit_field.msb;
 		immd2 = this->dword_32.bit_field.immd2;
@@ -3016,9 +3016,9 @@ void Inst::Thumb32DumpWID(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpIMMD16(std::ostream &os)
+void Instruction::Thumb32DumpIMMD16(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int immd16;
 	unsigned int immd8;
 	unsigned int immd3;
@@ -3026,7 +3026,7 @@ void Inst::Thumb32DumpIMMD16(std::ostream &os)
 	unsigned int immd4;
 
 
-	if (cat == InstThumb32CategoryDprBinImm)
+	if (cat == Instruction::Thumb32CategoryDprBinImm)
 	{
 		immd8 = this->dword_32.data_proc_immd.immd8;
 		immd3 = this->dword_32.data_proc_immd.immd3;
@@ -3043,13 +3043,13 @@ void Inst::Thumb32DumpIMMD16(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpADDR(std::ostream &os)
+void Instruction::Thumb32DumpADDR(std::ostream &os)
 {
-	InstThumb32Category cat = this->info_32->cat32;
+	Thumb32Category cat = this->info_32->cat32;
 	unsigned int addr;
 	unsigned int inst_addr = this->addr;
 	addr = 0;
-	if (cat == InstThumb32CategoryBranch)
+	if (cat == Instruction::Thumb32CategoryBranch)
 	{
 		addr = (this->dword_32.branch_link.sign << 24)
 					| ((!(this->dword_32.branch.j1 ^ this->dword_32.branch_link.sign)) << 23)
@@ -3058,7 +3058,7 @@ void Inst::Thumb32DumpADDR(std::ostream &os)
 					| (this->dword_32.branch_link.immd11 << 1);
 		addr = misc::SignExtend32(addr,25);
 	}
-	else if (cat == InstThumb32CategoryBranchLx)
+	else if (cat == Instruction::Thumb32CategoryBranchLx)
 	{
 		addr = (this->dword_32.branch_link.sign << 24)
 					| ((!(this->dword_32.branch.j1 ^ this->dword_32.branch_link.sign)) << 23)
@@ -3067,7 +3067,7 @@ void Inst::Thumb32DumpADDR(std::ostream &os)
 					| ((this->dword_32.branch_link.immd11 & 0xfffffffe) << 1);
 		addr = misc::SignExtend32(addr,25);
 	}
-	else if (cat == InstThumb32CategoryBranchCond)
+	else if (cat == Instruction::Thumb32CategoryBranchCond)
 	{
 		addr = (this->dword_32.branch.sign << 20)
 					| (((this->dword_32.branch.j2)) << 19)
@@ -3085,7 +3085,7 @@ void Inst::Thumb32DumpADDR(std::ostream &os)
 }
 
 
-void Inst::Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
+void Instruction::Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned int inst_addr)
 {
 	int thumb_32;
 	thumb_32 = *inst_ptr;
@@ -3094,7 +3094,7 @@ void Inst::Thumb32DumpHex(std::ostream &os, unsigned int *inst_ptr , unsigned in
 }
 
 
-void Inst::Thumb32Dump(std::ostream &os)
+void Instruction::Thumb32Dump(std::ostream &os)
 {
 
 	const char *fmt_str;
@@ -3173,9 +3173,9 @@ void Inst::Thumb32Dump(std::ostream &os)
 }
 
 
-void Inst::Thumb32InstTableDecode()
+void Instruction::Thumb32InstTableDecode()
 {
-	struct InstThumb32Info *current_table;
+	struct Thumb32Info *current_table;
 
 	// We initially start with the first table mips_asm_table, with the opcode field as argument 
 	current_table = disassembler->dec_table_thumb32_asm;
@@ -3207,9 +3207,9 @@ void Inst::Thumb32InstTableDecode()
 }
 
 
-void Inst::Thumb16InstTableDecode()
+void Instruction::Thumb16InstTableDecode()
 {
-	struct InstThumb16Info *current_table;
+	struct Thumb16Info *current_table;
 
 	// We initially start with the first table mips_asm_table, with the opcode field as argument 
 	current_table = disassembler->dec_table_thumb16_asm;
@@ -3242,7 +3242,7 @@ void Inst::Thumb16InstTableDecode()
 }
 
 
-void Inst::Decode(unsigned int addr, const char *buf)
+void Instruction::Decode(unsigned int addr, const char *buf)
 {
 
 	unsigned int arg1;
@@ -3259,7 +3259,7 @@ void Inst::Decode(unsigned int addr, const char *buf)
 }
 
 
-void Inst::Thumb16Decode(const char *buf, unsigned int ip)
+void Instruction::Thumb16Decode(const char *buf, unsigned int ip)
 {
 	unsigned int byte_index;
 	this->addr = ip;
@@ -3270,7 +3270,7 @@ void Inst::Thumb16Decode(const char *buf, unsigned int ip)
 }
 
 
-void Inst::Thumb32Decode(const char *buf, unsigned int ip)
+void Instruction::Thumb32Decode(const char *buf, unsigned int ip)
 {
 	unsigned int byte_index;
 	this->addr = ip;

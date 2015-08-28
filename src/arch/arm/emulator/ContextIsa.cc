@@ -78,22 +78,22 @@ int Context::IsaGetOp2(unsigned int op2, ContextOp2Catecory cat)
 
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case Inst::ShiftOperatorLsl:
+			case Instruction::ShiftOperatorLsl:
 
 				op_val = rm_val << (rs_val & 0x000000ff);
 				break;
 
-			case Inst::ShiftOperatorLsr:
+			case Instruction::ShiftOperatorLsr:
 
 				op_val = ((unsigned int)rm_val) >> (rs_val & 0x000000ff) ;
 				break;
 
-			case Inst::ShiftOperatorAsr:
+			case Instruction::ShiftOperatorAsr:
 
 				op_val = rm_val / (1 << (rs_val & 0x000000ff));
 				break;
 
-			case Inst::ShiftOperatorRor:
+			case Instruction::ShiftOperatorRor:
 
 				op_val = IsaRotr(rm_val, (rs_val & 0x000000ff));
 				break;
@@ -107,22 +107,22 @@ int Context::IsaGetOp2(unsigned int op2, ContextOp2Catecory cat)
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case Inst::ShiftOperatorLsl:
+			case Instruction::ShiftOperatorLsl:
 
 				op_val = rm_val << shift_imm;
 				break;
 
-			case Inst::ShiftOperatorLsr:
+			case Instruction::ShiftOperatorLsr:
 
 				op_val = ((unsigned int)rm_val) >> shift_imm;
 				break;
 
-			case Inst::ShiftOperatorAsr:
+			case Instruction::ShiftOperatorAsr:
 
 				op_val = rm_val /(1 << shift_imm);
 				break;
 
-			case Inst::ShiftOperatorRor:
+			case Instruction::ShiftOperatorRor:
 
 				op_val = IsaRotr(rm_val, shift_imm);
 				break;
@@ -191,7 +191,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 			IsaRegLoad( rs, rs_val);
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case Inst::ShiftOperatorLsl:
+			case Instruction::ShiftOperatorLsl:
 
 				cry_bit = (32 - (rs_val & 0x000000ff));
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -212,7 +212,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorLsr:
+			case Instruction::ShiftOperatorLsr:
 
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -233,7 +233,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorAsr:
+			case Instruction::ShiftOperatorAsr:
 
 				cry_bit = ((rs_val & 0x000000ff) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -261,7 +261,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorRor:
+			case Instruction::ShiftOperatorRor:
 
 				cry_bit = ((rs_val & 0x0000000f) - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -289,7 +289,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 		{
 			switch ((shift >> 1) & 0x00000003)
 			{
-			case Inst::ShiftOperatorLsl:
+			case Instruction::ShiftOperatorLsl:
 
 				cry_bit = (32 - shift_imm);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -306,7 +306,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorLsr:
+			case Instruction::ShiftOperatorLsr:
 
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -323,7 +323,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorAsr:
+			case Instruction::ShiftOperatorAsr:
 
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -347,7 +347,7 @@ int Context::IsaOp2Carry(unsigned int op2, ContextOp2Catecory cat)
 				}
 				break;
 
-			case Inst::ShiftOperatorRor:
+			case Instruction::ShiftOperatorRor:
 
 				cry_bit = (shift_imm - 1);
 				cry_mask = (unsigned int)(1 << cry_bit);
@@ -424,25 +424,25 @@ unsigned int Context::IsaGetAddrAmode2()
 				// Increment
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case Inst::ShiftOperatorLsl:
+				case Instruction::ShiftOperatorLsl:
 
 					ret_addr = rn_val
 						+ (rm_val << shift_val);
 					break;
 
-				case Inst::ShiftOperatorLsr:
+				case Instruction::ShiftOperatorLsr:
 
 					ret_addr = rn_val
 						+ (rm_val >> shift_val);
 					break;
 
-				case Inst::ShiftOperatorAsr:
+				case Instruction::ShiftOperatorAsr:
 
 					ret_addr = rn_val
 						+ (rm_val / (1 << shift_val));
 					break;
 
-				case Inst::ShiftOperatorRor:
+				case Instruction::ShiftOperatorRor:
 
 					ret_addr = rn_val + IsaRotr(
 						rm_val, shift_val);
@@ -458,25 +458,25 @@ unsigned int Context::IsaGetAddrAmode2()
 				// Decrement
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case Inst::ShiftOperatorLsl:
+				case Instruction::ShiftOperatorLsl:
 
 					ret_addr = rn_val
 						- (rm_val << shift_val);
 					break;
 
-				case Inst::ShiftOperatorLsr:
+				case Instruction::ShiftOperatorLsr:
 
 					ret_addr = rn_val
 						- (rm_val >> shift_val);
 					break;
 
-				case Inst::ShiftOperatorAsr:
+				case Instruction::ShiftOperatorAsr:
 
 					ret_addr = rn_val
 						- (rm_val / (1 << shift_val));
 					break;
 
-				case Inst::ShiftOperatorRor:
+				case Instruction::ShiftOperatorRor:
 
 					ret_addr = rn_val - IsaRotr(
 						rm_val, shift_val);
@@ -498,28 +498,28 @@ unsigned int Context::IsaGetAddrAmode2()
 				// Increment
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case Inst::ShiftOperatorLsl:
+				case Instruction::ShiftOperatorLsl:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val << shift_val);
 					break;
 
-				case Inst::ShiftOperatorLsr:
+				case Instruction::ShiftOperatorLsr:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val >> shift_val);
 					break;
 
-				case Inst::ShiftOperatorAsr:
+				case Instruction::ShiftOperatorAsr:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						+ (rm_val / (1 << shift_val));
 					break;
 
-				case Inst::ShiftOperatorRor:
+				case Instruction::ShiftOperatorRor:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr + IsaRotr(
@@ -536,28 +536,28 @@ unsigned int Context::IsaGetAddrAmode2()
 				// Decrement
 				switch ((shift >> 1) & 0x00000003)
 				{
-				case Inst::ShiftOperatorLsl:
+				case Instruction::ShiftOperatorLsl:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val << shift_val);
 					break;
 
-				case Inst::ShiftOperatorLsr:
+				case Instruction::ShiftOperatorLsr:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val >> shift_val);
 					break;
 
-				case Inst::ShiftOperatorAsr:
+				case Instruction::ShiftOperatorAsr:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr
 						- (rm_val / (1 << shift_val));
 					break;
 
-				case Inst::ShiftOperatorRor:
+				case Instruction::ShiftOperatorRor:
 
 					ret_addr = rn_val;
 					rn_val = ret_addr - IsaRotr(
@@ -696,82 +696,82 @@ void Context::IsaRegStore(unsigned int reg_no, int value)
 	emulator->isa_debug << misc::fmt("  r%d <= %d; (0x%x)\n", reg_no, value, value);
 	switch (reg_no)
 	{
-	case Inst::UserRegistersR0:
+	case Instruction::UserRegistersR0:
 
 		regs.setRegister(0, value);
 		break;
 
-	case Inst::UserRegistersR1:
+	case Instruction::UserRegistersR1:
 
 		regs.setRegister(1, value);
 		break;
 
-	case Inst::UserRegistersR2:
+	case Instruction::UserRegistersR2:
 
 		regs.setRegister(2, value);
 		break;
 
-	case Inst::UserRegistersR3:
+	case Instruction::UserRegistersR3:
 
 		regs.setRegister(3, value);
 		break;
 
-	case Inst::UserRegistersR4:
+	case Instruction::UserRegistersR4:
 
 		regs.setRegister(4, value);
 		break;
 
-	case Inst::UserRegistersR5:
+	case Instruction::UserRegistersR5:
 
 		regs.setRegister(5, value);
 		break;
 
-	case Inst::UserRegistersR6:
+	case Instruction::UserRegistersR6:
 
 		regs.setRegister(6, value);
 		break;
 
-	case Inst::UserRegistersR7:
+	case Instruction::UserRegistersR7:
 
 		regs.setRegister(7, value);
 		break;
 
-	case Inst::UserRegistersR8:
+	case Instruction::UserRegistersR8:
 
 		regs.setRegister(8, value);
 		break;
 
-	case Inst::UserRegistersR9:
+	case Instruction::UserRegistersR9:
 
 		regs.setRegister(9, value);
 		break;
 
-	case Inst::UserRegistersR10:
+	case Instruction::UserRegistersR10:
 
 		regs.setSL(value);
 		break;
 
-	case Inst::UserRegistersR11:
+	case Instruction::UserRegistersR11:
 
 		regs.setFP(value);
 		break;
 
-	case Inst::UserRegistersR12:
+	case Instruction::UserRegistersR12:
 
 		regs.setIP(value);
 		break;
 
-	case Inst::UserRegistersR13:
+	case Instruction::UserRegistersR13:
 
 		regs.setSP(value);
 		break;
 
-	case Inst::UserRegistersR14:
+	case Instruction::UserRegistersR14:
 
 		regs.setLR(value);
 		break;
 
-	case Inst::UserRegistersR15:
+	case Instruction::UserRegistersR15:
 
 		regs.setPC(value + 4);
 		break;
@@ -788,82 +788,82 @@ void Context::IsaRegStoreSafe(unsigned int reg_no, unsigned int value)
 	emulator->isa_debug << misc::fmt("  r%d <= %d; (0x%x); safe_store\n", reg_no, value, value);
 	switch (reg_no)
 	{
-	case Inst::UserRegistersR0:
+	case Instruction::UserRegistersR0:
 
 		regs.setRegister(0, value);
 		break;
 
-	case Inst::UserRegistersR1:
+	case Instruction::UserRegistersR1:
 
 		regs.setRegister(1, value);
 		break;
 
-	case Inst::UserRegistersR2:
+	case Instruction::UserRegistersR2:
 
 		regs.setRegister(2, value);
 		break;
 
-	case Inst::UserRegistersR3:
+	case Instruction::UserRegistersR3:
 
 		regs.setRegister(3, value);
 		break;
 
-	case Inst::UserRegistersR4:
+	case Instruction::UserRegistersR4:
 
 		regs.setRegister(4, value);
 		break;
 
-	case Inst::UserRegistersR5:
+	case Instruction::UserRegistersR5:
 
 		regs.setRegister(5, value);
 		break;
 
-	case Inst::UserRegistersR6:
+	case Instruction::UserRegistersR6:
 
 		regs.setRegister(6, value);
 		break;
 
-	case Inst::UserRegistersR7:
+	case Instruction::UserRegistersR7:
 
 		regs.setRegister(7, value);
 		break;
 
-	case Inst::UserRegistersR8:
+	case Instruction::UserRegistersR8:
 
 		regs.setRegister(8, value);
 		break;
 
-	case Inst::UserRegistersR9:
+	case Instruction::UserRegistersR9:
 
 		regs.setRegister(9, value);
 		break;
 
-	case Inst::UserRegistersR10:
+	case Instruction::UserRegistersR10:
 
 		regs.setSL(value);
 		break;
 
-	case Inst::UserRegistersR11:
+	case Instruction::UserRegistersR11:
 
 		regs.setFP(value);
 		break;
 
-	case Inst::UserRegistersR12:
+	case Instruction::UserRegistersR12:
 
 		regs.setIP(value);
 		break;
 
-	case Inst::UserRegistersR13:
+	case Instruction::UserRegistersR13:
 
 		regs.setSP(value);
 		break;
 
-	case Inst::UserRegistersR14:
+	case Instruction::UserRegistersR14:
 
 		regs.setLR(value);
 		break;
 
-	case Inst::UserRegistersR15:
+	case Instruction::UserRegistersR15:
 
 		regs.setPC(value + 4);
 		break;
@@ -879,97 +879,97 @@ void Context::IsaRegLoad(unsigned int reg_no, int &value)
 {
 	switch (reg_no)
 	{
-	case Inst::UserRegistersR0:
+	case Instruction::UserRegistersR0:
 
 		value = regs.getRegister(0);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(0));
 		break;
 
-	case Inst::UserRegistersR1:
+	case Instruction::UserRegistersR1:
 
 		value = regs.getRegister(1);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(1));
 		break;
 
-	case Inst::UserRegistersR2:
+	case Instruction::UserRegistersR2:
 
 		value = regs.getRegister(2);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(2));
 		break;
 
-	case Inst::UserRegistersR3:
+	case Instruction::UserRegistersR3:
 
 		value = regs.getRegister(3);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(3));
 		break;
 
-	case Inst::UserRegistersR4:
+	case Instruction::UserRegistersR4:
 
 		value = regs.getRegister(4);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(4));
 		break;
 
-	case Inst::UserRegistersR5:
+	case Instruction::UserRegistersR5:
 
 		value = regs.getRegister(5);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(5));
 		break;
 
-	case Inst::UserRegistersR6:
+	case Instruction::UserRegistersR6:
 
 		value = regs.getRegister(6);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(6));
 		break;
 
-	case Inst::UserRegistersR7:
+	case Instruction::UserRegistersR7:
 
 		value = regs.getRegister(7);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(7));
 		break;
 
-	case Inst::UserRegistersR8:
+	case Instruction::UserRegistersR8:
 
 		value = regs.getRegister(8);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(8));
 		break;
 
-	case Inst::UserRegistersR9:
+	case Instruction::UserRegistersR9:
 
 		value = regs.getRegister(9);
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getRegister(9));
 		break;
 
-	case Inst::UserRegistersR10:
+	case Instruction::UserRegistersR10:
 
 		value = regs.getSL();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSL());
 		break;
 
-	case Inst::UserRegistersR11:
+	case Instruction::UserRegistersR11:
 
 		value = regs.getFP();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getFP());
 		break;
 
-	case Inst::UserRegistersR12:
+	case Instruction::UserRegistersR12:
 
 		value = regs.getIP();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getIP());
 		break;
 
-	case Inst::UserRegistersR13:
+	case Instruction::UserRegistersR13:
 
 		value = regs.getSP();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getSP());
 		break;
 
-	case Inst::UserRegistersR14:
+	case Instruction::UserRegistersR14:
 
 		value = regs.getLR();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getLR());
 		break;
 
-	case Inst::UserRegistersR15:
+	case Instruction::UserRegistersR15:
 
 		value = regs.getPC();
 		emulator->isa_debug << misc::fmt("  r%d = 0x%x\n", reg_no, regs.getPC());
@@ -988,7 +988,7 @@ void Context::IsaBranch()
 	unsigned int br_add;
 	int rm_val;
 
-	if (inst.getInstInfo()->category == InstCategoryBrnch)
+	if (inst.getInstInfo()->category == Instruction::CategoryBrnch)
 	{
 		offset = inst.getBytes()->brnch.off << 2;
 		br_add = offset + regs.getPC();
@@ -1002,9 +1002,9 @@ void Context::IsaBranch()
 		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= %d\n",
 				regs.getPC() - 4, regs.getPC());
 	}
-	else if (inst.getInstInfo()->category == InstCategoryBax)
+	else if (inst.getInstInfo()->category == Instruction::CategoryBax)
 	{
-		if((inst.getOpcode() == InstOpcodeBLX))
+		if((inst.getOpcode() == Instruction::OpcodeBLX))
 		{
 			IsaRegLoad(inst.getBytes()->bax.op0_rn, rm_val);
 			IsaRegStore(14, regs.getPC() - 4);
@@ -1027,80 +1027,80 @@ bool Context::IsaCheckCond()
 	unsigned int cond = inst.getBytes()->brnch.cond;
 	switch (cond)
 	{
-	case (Inst::ConditionCodesEQ):
+	case (Instruction::ConditionCodesEQ):
 
 		ret_val = (regs.getCPSR().z) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = EQ\n");
 		break;
 
-	case (Inst::ConditionCodesNE):
+	case (Instruction::ConditionCodesNE):
 
 		ret_val = (!(regs.getCPSR().z)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = NE\n");
 		break;
 
-	case (Inst::ConditionCodesCS):
+	case (Instruction::ConditionCodesCS):
 
 		ret_val = (regs.getCPSR().C) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = CS\n");
 		break;
 
-	case (Inst::ConditionCodesCC):
+	case (Instruction::ConditionCodesCC):
 
 		ret_val = (!(regs.getCPSR().C)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = CC\n");
 		break;
 
-	case (Inst::ConditionCodesMI):
+	case (Instruction::ConditionCodesMI):
 		ret_val = (regs.getCPSR().n) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = MI\n");
 		break;
 
-	case (Inst::ConditionCodesPL):
+	case (Instruction::ConditionCodesPL):
 
 		ret_val = (!(regs.getCPSR().n)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = PL\n");
 		break;
 
-	case (Inst::ConditionCodesVS):
+	case (Instruction::ConditionCodesVS):
 
 		ret_val = (regs.getCPSR().v) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = VS\n");
 		break;
 
-	case (Inst::ConditionCodesVC):
+	case (Instruction::ConditionCodesVC):
 
 		ret_val = (!(regs.getCPSR().v)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = VC\n");
 		break;
 
-	case (Inst::ConditionCodesHI):
+	case (Instruction::ConditionCodesHI):
 
 		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = HI\n");
 		break;
 
-	case (Inst::ConditionCodesLS):
+	case (Instruction::ConditionCodesLS):
 
 		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = LS\n");
 		break;
 
-	case (Inst::ConditionCodesGE):
+	case (Instruction::ConditionCodesGE):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = GE\n");
 		break;
 
-	case (Inst::ConditionCodesLT):
+	case (Instruction::ConditionCodesLT):
 
 		ret_val = (((regs.getCPSR().n) & !(regs.getCPSR().v))
 			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = LT\n");
 		break;
 
-	case (Inst::ConditionCodesGT):
+	case (Instruction::ConditionCodesGT):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v) & !(regs.getCPSR().z))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v)
@@ -1108,14 +1108,14 @@ bool Context::IsaCheckCond()
 		emulator->isa_debug << misc::fmt("  Cond = GT\n");
 		break;
 
-	case (Inst::ConditionCodesLE):
+	case (Instruction::ConditionCodesLE):
 
 		ret_val = (((regs.getCPSR().z) | (!(regs.getCPSR().n) && (regs.getCPSR().v))
 			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? true : false;
 		emulator->isa_debug << misc::fmt("  Cond = LE\n");
 		break;
 
-	case (Inst::ConditionCodesAL):
+	case (Instruction::ConditionCodesAL):
 
 		ret_val = true;
 		break;
@@ -2112,7 +2112,7 @@ void Context::IsaThumbRevSubtract(unsigned int rd, unsigned int rn, int op2,
 }
 
 
-unsigned int Context::IsaThumb32Immd12(InstThumb32Category cat)
+unsigned int Context::IsaThumb32Immd12(Instruction::Thumb32Category cat)
 {
 	unsigned int immd8;
 	unsigned int immd3;
@@ -2122,13 +2122,13 @@ unsigned int Context::IsaThumb32Immd12(InstThumb32Category cat)
 	unsigned int shft;
 	unsigned int const_val;
 
-	if (cat == InstThumb32CategoryDprImm)
+	if (cat == Instruction::Thumb32CategoryDprImm)
 	{
 		immd8 = inst.getThumb32Bytes()->data_proc_immd.immd8;
 		immd3 = inst.getThumb32Bytes()->data_proc_immd.immd3;
 		i = inst.getThumb32Bytes()->data_proc_immd.i_flag;
 	}
-	else if (cat == InstThumb32CategoryDprBinImm)
+	else if (cat == Instruction::Thumb32CategoryDprBinImm)
 	{
 		immd8 = inst.getThumb32Bytes()->data_proc_immd.immd8;
 		immd3 = inst.getThumb32Bytes()->data_proc_immd.immd3;
@@ -2181,8 +2181,8 @@ void Context::IsaThumb32BranchLink()
 {
 	unsigned int addr = 0;
 
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
-	if (cat == InstThumb32CategoryBranch)
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
+	if (cat == Instruction::Thumb32CategoryBranch)
 	{
 		addr = (inst.getThumb32Bytes()->branch_link.sign << 24)
 				| ((!(inst.getThumb32Bytes()->branch.j1 ^ inst.getThumb32Bytes()->branch_link.sign)) << 23)
@@ -2193,7 +2193,7 @@ void Context::IsaThumb32BranchLink()
 		emulator->isa_debug << misc::fmt("  Inst_32 addr = 0x%x, Branch offset = 0x%x\n", inst.getAddress(), addr);
 		addr = (inst.getAddress() + 4) + addr;
 	}
-	else if (cat == InstThumb32CategoryBranchLx)
+	else if (cat == Instruction::Thumb32CategoryBranchLx)
 	{
 		addr = (inst.getThumb32Bytes()->branch_link.sign << 24)
 				| ((!(inst.getThumb32Bytes()->branch.j1 ^ inst.getThumb32Bytes()->branch_link.sign)) << 23)
@@ -2207,7 +2207,7 @@ void Context::IsaThumb32BranchLink()
 		else
 			addr = (inst.getAddress() + 2) + addr;
 	}
-	else if (cat == InstThumb32CategoryBranchCond)
+	else if (cat == Instruction::Thumb32CategoryBranchCond)
 	{
 		addr = (inst.getThumb32Bytes()->branch.sign << 20)
 				| (((inst.getThumb32Bytes()->branch.j2)) << 19)
@@ -2231,9 +2231,9 @@ void Context::IsaThumb32BranchLink()
 void Context::IsaThumb32Branch()
 {
 	unsigned int addr = 0;
-	InstThumb32Category cat = inst.getInstThumb32Info()->cat32;
+	Instruction::Thumb32Category cat = inst.getInstThumb32Info()->cat32;
 	unsigned int cond;
-	if (cat == InstThumb32CategoryBranch)
+	if (cat == Instruction::Thumb32CategoryBranch)
 	{
 		addr = (inst.getThumb32Bytes()->branch_link.sign << 24)
 				| ((!(inst.getThumb32Bytes()->branch.j1 ^ inst.getThumb32Bytes()->branch_link.sign)) << 23)
@@ -2246,7 +2246,7 @@ void Context::IsaThumb32Branch()
 		regs.setPC(addr + 4);
 		emulator->isa_debug << misc::fmt("  Branch addr = 0x%x, pc <= 0x%x\n", regs.getPC() - 2, regs.getPC());
 	}
-	else if (cat == InstThumb32CategoryBranchCond)
+	else if (cat == Instruction::Thumb32CategoryBranchCond)
 	{
 		addr = (inst.getThumb32Bytes()->branch.sign << 20)
 						| (((inst.getThumb32Bytes()->branch.j2)) << 19)
@@ -2277,81 +2277,81 @@ unsigned int Context::IsaThumbCheckCond(unsigned int cond)
 	unsigned int ret_val;
 	switch (cond)
 	{
-	case (Inst::ConditionCodesEQ):
+	case (Instruction::ConditionCodesEQ):
 
 		ret_val = (regs.getCPSR().z) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = EQ\n");
 		break;
 
-	case (Inst::ConditionCodesNE):
+	case (Instruction::ConditionCodesNE):
 
 		ret_val = (!(regs.getCPSR().z)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = NE\n");
 		break;
 
-	case (Inst::ConditionCodesCS):
+	case (Instruction::ConditionCodesCS):
 
 		ret_val = (regs.getCPSR().C) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = CS\n");
 		break;
 
-	case (Inst::ConditionCodesCC):
+	case (Instruction::ConditionCodesCC):
 
 		ret_val = (!(regs.getCPSR().C)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = CC\n");
 		break;
 
-	case (Inst::ConditionCodesMI):
+	case (Instruction::ConditionCodesMI):
 
 		ret_val = (regs.getCPSR().n) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = MI\n");
 		break;
 
-	case (Inst::ConditionCodesPL):
+	case (Instruction::ConditionCodesPL):
 
 		ret_val = (!(regs.getCPSR().n)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = PL\n");
 		break;
 
-	case (Inst::ConditionCodesVS):
+	case (Instruction::ConditionCodesVS):
 
 		ret_val = (regs.getCPSR().v) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = VS\n");
 		break;
 
-	case (Inst::ConditionCodesVC):
+	case (Instruction::ConditionCodesVC):
 
 		ret_val = (!(regs.getCPSR().v)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = VC\n");
 		break;
 
-	case (Inst::ConditionCodesHI):
+	case (Instruction::ConditionCodesHI):
 
 		ret_val = (!(regs.getCPSR().z) && (regs.getCPSR().C)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = HI\n");
 		break;
 
-	case (Inst::ConditionCodesLS):
+	case (Instruction::ConditionCodesLS):
 
 		ret_val = ((regs.getCPSR().z) | !(regs.getCPSR().C)) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = LS\n");
 		break;
 
-	case (Inst::ConditionCodesGE):
+	case (Instruction::ConditionCodesGE):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v))) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = GE\n");
 		break;
 
-	case (Inst::ConditionCodesLT):
+	case (Instruction::ConditionCodesLT):
 
 		ret_val = (((regs.getCPSR().n) & !(regs.getCPSR().v))
 			| (!(regs.getCPSR().n) && (regs.getCPSR().v))) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = LT\n");
 		break;
 
-	case (Inst::ConditionCodesGT):
+	case (Instruction::ConditionCodesGT):
 
 		ret_val = (((regs.getCPSR().n) & (regs.getCPSR().v) & !(regs.getCPSR().z))
 			| (!(regs.getCPSR().n) & !(regs.getCPSR().v)
@@ -2359,14 +2359,14 @@ unsigned int Context::IsaThumbCheckCond(unsigned int cond)
 		emulator->isa_debug << misc::fmt("  Cond = GT\n");
 		break;
 
-	case (Inst::ConditionCodesLE):
+	case (Instruction::ConditionCodesLE):
 
 		ret_val = (((regs.getCPSR().z) | (!(regs.getCPSR().n) && (regs.getCPSR().v))
 			| ((regs.getCPSR().n) && !(regs.getCPSR().v)))) ? 1 : 0;
 		emulator->isa_debug << misc::fmt("  Cond = LE\n");
 		break;
 
-	case (Inst::ConditionCodesAL):
+	case (Instruction::ConditionCodesAL):
 
 		ret_val = 1;
 		break;

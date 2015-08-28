@@ -28,9 +28,9 @@
 namespace ARM
 {
 
-Context::ExecuteInstThumb16Fn Context::execute_inst_thumb16_fn[InstThumb16OpcodeCount] =
+Context::ExecuteInstThumb16Fn Context::execute_inst_thumb16_fn[Instruction::Thumb16OpcodeCount] =
 {
-	nullptr  // For InstThumb16OpcodeNone
+	nullptr  // For Instruction::Thumb16OpcodeNone
 #define DEFINST(_name,_fmt_str,_cat,_op1,_op2,_op3,_op4,_op5,_op6) \
 		 , &Context::ExecuteInstThumb16_##_name
 #include <arch/arm/disassembler/InstructionThumb.def>
