@@ -31,10 +31,6 @@ misc::IniFile ObjectPool::ini_file;
 
 ObjectPool::ObjectPool()
 {
-	// Destroy previous singletons
-	Timing::Destroy();
-	Emulator::Destroy();
-
 	// Parse ini_file parameters.  If ini_file is empty, the
 	// default values will be set.
 	Timing::ParseConfiguration(&ini_file);

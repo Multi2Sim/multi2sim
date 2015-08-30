@@ -87,7 +87,7 @@ private:
 
 	// Number of cycles since an operation begins until it completes,
 	// initialized in constructor
-	int latency;
+	int operation_latency;
 
 	// Number of cycles since an operation begins until the next operation
 	// can begin, initialized in constructor
@@ -117,12 +117,12 @@ public:
 	FunctionalUnit(Type type,
 			const std::string &name,
 			int num_instances,
-			int latency,
+			int operation_latency,
 			int issue_latency) :
 			type(type),
 			name(name),
 			num_instances(num_instances),
-			latency(latency),
+			operation_latency(operation_latency),
 			issue_latency(issue_latency)
 	{
 	}
