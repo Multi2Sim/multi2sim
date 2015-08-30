@@ -215,4 +215,70 @@ TEST(TestAlu, read_ini_configuration_file_xmm)
 	}
 }
 
+TEST(TestAlu, reserve_functional_unit_int_add)
+{
+	// Setup the simulation engine
+	esim::Engine *esim = esim::Engine::getInstance();
+
+	// Setup the configuration
+	std::string config =
+			"[ FunctionalUnits ]\n"
+			"IntAdd.Count = 2\n"
+			"IntAdd.OpLat = 2\n"
+			"IntAdd.IssueLat = 3";
+
+	// Parse default configuraiton
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+	Alu::ParseConfiguration(&ini_file);
+
+	// Setup the timing simulator related object pool
+	ObjectPool::Destroy();
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Setup the simulated running cycle
+	const int running_cycle = 6;
+
+	// Setup mock micro-op list
+	std::vector<std::unique_ptr<Uop>> uops;
+
+	// Create running_cycle number of Uop with type intAdd
+	for (int i = 0; i < running_cycle; i++)
+	{
+		auto uinst = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+		uops.emplace_back(misc::new_unique<Uop>(
+			object_pool->getThread(),
+			object_pool->getContext(),
+			uinst));
+	}
+
+	// Start simulation----->timing by cycle
+	// Uop ID:    |0   |1   |2   |3   |4   |5   |
+	// ---------------------------------------------------------------------
+	// F.U. status
+	// instance 0 |null|Uop0|Uop0|null|Uop3|Uop3|
+	// instance 1 |null|null|Uop1|Uop1|null|Uop4|
+	// reserve status: S/Successfull F/Fail
+	//            |S   |S   |F   |S   |S   |F   |
+	int ref_value[running_cycle] = {2,
+			2,
+			0,
+			2,
+			2,
+			0};
+	int ret_value;
+	for (int i = 0; i < running_cycle; i++)
+	{
+		// Reserve
+		ret_value = object_pool->getCore()->getAlu()->Reserve(uops[i].get());
+
+		// Check the value
+		EXPECT_EQ(ref_value[i], ret_value);
+
+		// Advance one cycle of simulated system time
+		esim->ProcessEvents();
+	}
+
+}
+
 }

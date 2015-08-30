@@ -68,7 +68,7 @@ int FunctionalUnit::Reserve(Uop *uop)
 			continue;
 
 		// Reserve instance
-		assert(latency > 0);
+		assert(operation_latency > 0);
 		assert(issue_latency > 0);
 		cycle_free[i] = cycle + issue_latency;
 
@@ -77,7 +77,7 @@ int FunctionalUnit::Reserve(Uop *uop)
 		waiting_time += cycle - uop->first_alu_cycle;
 
 		// Return the total operation latency
-		return latency;
+		return operation_latency;
 	}
 
 	// No free instance found
