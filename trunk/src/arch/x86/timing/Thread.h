@@ -417,6 +417,9 @@ public:
 	/// Get the fetch queue size in number of uops
 	int getFetchQueueSize() const { return fetch_queue.size(); }
 
+	/// Get the fetch queue occupancy
+	int getFetchQueueOccupency() const { return fetch_queue_occupancy; }
+
 	/// Get the uop queue size in number of uops
 	int getUopQueueSize() const { return uop_queue.size(); }
 

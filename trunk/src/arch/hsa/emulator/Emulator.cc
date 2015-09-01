@@ -103,8 +103,8 @@ void Emulator::ProcessOptions()
 Emulator::Emulator() : comm::Emulator("hsa")
 {
 	InstallComponents("");
-	memory = std::make_shared<mem::Memory>();
-	manager.reset(new mem::Manager(memory.get()));
+	//memory = null;
+	//manager.reset(new mem::Manager(memory.get()));
 	Disassembler::getInstance()->DisableIndentation();
 	if (loader_debug)
 	{

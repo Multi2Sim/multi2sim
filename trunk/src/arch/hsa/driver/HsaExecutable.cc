@@ -150,11 +150,6 @@ std::unique_ptr<BrigCodeEntry> HsaExecutable::loadArguments(
 	// Load output arguments
 	for (int i = 0; i < num_arg; i++)
 	{
-		// Retrieve argument pointer
-		// BrigDirEntry arg_entry(next_dir, binary.get());
-		// struct BrigDirectiveSymbol *arg_struct =
-		// 		(struct BrigDirectiveSymbol *)next_dir;
-
 		// Get argument information
 		std::string name = entry->getName();
 		BrigType type = entry->getType();
@@ -257,7 +252,6 @@ HsaExecutableSymbol *HsaExecutable::getSymbol(const char *symbol_name)
 	HsaExecutableSymbol *symbol = new HsaExecutableSymbol(
 			this, function->getFunctionDirective());
 	return symbol;
-
 }
 
 }  // namespace HSA
