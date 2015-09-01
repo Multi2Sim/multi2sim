@@ -89,7 +89,7 @@ class Emulator : public comm::Emulator
 	void setHostCpuDevice(Component *cpu) { host_cpu = cpu; }
 
 	// Flattened memory space, the only memory space of the virtual memory
-	std::shared_ptr<mem::Memory> memory;
+	mem::Memory *memory;
 
 	// Global memory manager
 	std::unique_ptr<mem::Manager> manager;
@@ -170,13 +170,13 @@ public:
 	mem::Manager *getMemoryManager() { return manager.get(); };
 
 	/// Return the pointer to the global memory
-	mem::Memory *getMemory() { return memory.get(); };
+	mem::Memory *getMemory() { return memory; };
 
 	/// Set the memory object
-	void setMemory(std::shared_ptr<mem::Memory> mem)
+	void setMemory(mem::Memory *memory)
 	{
-		memory = mem;
-		manager.reset(new mem::Manager(memory.get()));
+		this->memory = memory;
+		manager.reset(new mem::Manager(memory));
 	}
 
 	/// Create a singal

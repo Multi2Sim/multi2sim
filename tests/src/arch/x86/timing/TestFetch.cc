@@ -23,6 +23,8 @@
 #include <lib/cpp/Error.h>
 #include <memory/System.h>
 #include <memory/Manager.h>
+#include <arch/x86/disassembler/Disassembler.h>
+#include <arch/x86/emulator/Emulator.h>
 #include <arch/x86/timing/Timing.h>
 #include <arch/x86/timing/Cpu.h>
 #include <arch/x86/timing/Thread.h>
@@ -32,6 +34,8 @@ namespace x86
 
 TEST(TestX86TimingFetchStage, simple_fetch)
 {
+
+
 	// CPU configuration file
 	std::string config_string =
 			"[ General ]\n"
@@ -39,6 +43,20 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 			"Present = f";
 	misc::IniFile config_ini;
 	config_ini.LoadFromString(config_string);
+	try
+	{
+		Timing::ParseConfiguration(&config_ini);
+	}
+	catch (misc::Exception &e)
+	{
+		std::cerr << "Exception in reading x86 configuration" <<
+				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
+	}
+
+	// Get instance of Timing
+	Emulator *emulator = Emulator::getInstance();
+	Timing *timing = Timing::getInstance();
 
 	// Memory configuration file
 	std::string mem_config_string =
@@ -64,16 +82,9 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 	{
 		std::cerr << "Exception in reading mem configuration" <<
 				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
 	}
-	try
-	{
-		Timing::getInstance()->ParseConfiguration(&config_ini);
-	}
-	catch (misc::Exception &e)
-	{
-		std::cerr << "Exception in reading x86 configuration" <<
-				e.getMessage() << "\n";
-	}
+
 
 	// Code to execute
 	// mov eax, 1;
@@ -87,52 +98,52 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 	code[5] = 0xcd;
 	code[6] = 0x80;
 
-	// Create a context
-	Context *context = Emulator::getInstance()->newContext();
+	// Create a context]
+	Context *context = emulator->newContext();
 	context->Initialize();
 	auto mmu = misc::new_shared<mem::Mmu>("mmu");
 	context->mmu = mmu;
 	mem::Mmu::Space space("space", mmu.get());
 	context->mmu_space = &space;
-	std::shared_ptr<mem::Memory> memory = context->__getMemSharedPtr();
+	mem::Memory *memory = context->getMemory();
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
 				mem::Memory::PageSize));
-	mem::Manager manager(memory.get());
-	unsigned eip = manager.Allocate(sizeof(code));
-	// Should be able to get page
-	mem::Memory::Page *page = memory->getPage(eip);
-	ASSERT_TRUE(page);
 
+	// Allocate memory and save the instructions into memory
+	mem::Manager manager(memory);
+	unsigned eip = manager.Allocate(sizeof(code), 128);
 	memory->Write(eip, sizeof(code), (const char *)code);
+
+	// Update context status, including eip
 	context->setUinstActive(true);
 	context->setState(Context::StateRunning);
 	context->getRegs().setEip(eip);
 
-	// Fetch
+	// Map the thread onto cpu hardware
 	Cpu *cpu = Timing::getInstance()->getCpu();
-	ASSERT_TRUE(cpu != nullptr);
 	Thread *thread = cpu->getThread(0, 0);
-	thread->context = context;
-	ASSERT_TRUE(thread != nullptr);
+	thread->MapContext(context);
+	thread->Schedule();
+
+	// Fetch
 	thread->setFetchNeip(eip);
-	try
-	{
-		thread->Fetch();
-	}
-	catch (misc::Exception &e)
-	{
-		std::cerr << "Exception in fetching instructions" <<
-				e.getMessage() << "\n";
-	}
+	timing->Run();
 
 	// After fetching,
-	EXPECT_EQ(2, thread->getFetchQueueSize());
 	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 200; i++)
+	for (int i = 0; i < 500; i++)
 	{
-		//std::cout << i << ": "<< thread->getFetchQueueSize() << "\n";
+		EXPECT_EQ(2, thread->getFetchQueueSize());
+		EXPECT_EQ(7, thread->getFetchQueueOccupency());
+
+		// Process events
 		engine->ProcessEvents();
+		timing->Run();
 	}
+	engine->ProcessEvents();
+	timing->Run();
+	EXPECT_EQ(0, thread->getFetchQueueSize());
+	EXPECT_EQ(0, thread->getFetchQueueOccupency());
 }
 
 }  // namespace x86

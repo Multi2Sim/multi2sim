@@ -1597,7 +1597,7 @@ int Driver::CallInitFromX86(comm::Context *context,
 	// program.
 	x86::Emulator *x86_emu = x86::Emulator::getInstance();
 	x86::Context *host_context = x86_emu->getContext(args_ptr);
-	Emulator::getInstance()->setMemory(host_context->__getMemSharedPtr());
+	Emulator::getInstance()->setMemory(host_context->getMemory());
 
 	return 0;
 }
