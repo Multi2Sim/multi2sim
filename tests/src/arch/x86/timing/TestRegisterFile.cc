@@ -507,30 +507,43 @@ TEST(TestRegisterFile, rename_1)
 	// Cleanup singleton instances
 	Cleanup();
 
-	/*
+	// Config file
+	// Sets number of physical integer registers
+	std::string config =
+			"[ Queues ]\n"
+			"RfFpSize = 15";
+
+	// Create ini file with config
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
-	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+	// Create uinst with floating point register dependency
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeFpAdd);
+
+	// Manually set uinst dependencies
+	uinst_0->setIDep(0, 23);
+	uinst_0->setODep(0, 24);
+
+	// Create uop with one uinst
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
 			object_pool->getContext(),
-			uinst_1);
+			uinst_0);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
-
-	// Set uinst dependencies
-	uinst_1->setIDep(0, 23);
-	uinst_1->setODep(0, 24);
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Rename uop
-	register_file->Rename(uop.get());
+	register_file->Rename(uop_0.get());
 
 	// Check values
-	EXPECT_EQ(uop->getInput(0), 39);
-	EXPECT_EQ(uop->getOutput(0), 28);
-	*/
+	EXPECT_EQ(uop_0->getInput(0), 14);
+	EXPECT_EQ(uop_0->getOutput(0), 3);
 }
 
 // Check correct logical-to-physical register renaming in a uop
@@ -540,30 +553,43 @@ TEST(TestRegisterFile, rename_2)
 	// Cleanup singleton instances
 	Cleanup();
 
-	/*
+	// Config file
+	// Sets number of physical integer registers
+	std::string config =
+			"[ Queues ]\n"
+			"RfXmmSize = 15";
+
+	// Create ini file with config
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
-	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+	// Create uinst with Xmm sregister dependency
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeXmmAdd);
+
+	// Manually set uinst dependencies
+	uinst_0->setIDep(0, 34);
+	uinst_0->setODep(0, 35);
+
+	// Create uop with one uinst
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
 			object_pool->getContext(),
-			uinst_1);
+			uinst_0);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
-
-	// Set uinst dependencies
-	uinst_1->setIDep(0, 34);
-	uinst_1->setODep(0, 35);
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Rename uop
-	register_file->Rename(uop.get());
+	register_file->Rename(uop_0.get());
 
 	// Check values
-	EXPECT_EQ(uop->getInput(0), 39);
-	EXPECT_EQ(uop->getOutput(0), 30);
-	*/
+	EXPECT_EQ(uop_0->getInput(0), 14);
+	EXPECT_EQ(uop_0->getOutput(0), 5);
 }
 
 // Test renaming uop with flag dependencies, requiring additional
@@ -573,36 +599,47 @@ TEST(TestRegisterFile, rename_3)
 	// Cleanup singleton instances
 	Cleanup();
 
-	/*
+	// Config file
+	// Sets number of physical integer registers
+	std::string config =
+			"[ Queues ]\n"
+			"RfIntSize = 26";
+
+	// Create ini file with config
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set ini file in Object Pool
+	ObjectPool::SetInifile(ini_file);
+
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
 
-	// Create uop with integer register dependency
-	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
-	auto uop = misc::new_unique<Uop>(object_pool->getThread(),
+	// Create uinst with integer register dependency
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Manually set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setODep(0, 2);
+
+	// Set flag dependency "Zps"
+	uinst_0->setODep(1, 15);
+
+	// Create uop with one uinst
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
 			object_pool->getContext(),
-			uinst_1);
+			uinst_0);
 
 	// Set up register file
-	auto register_file = misc::new_unique<RegisterFile>(object_pool->getThread());
-
-	// Set uinst dependencies
-	uinst_1->setIDep(0, 1);
-	uinst_1->setODep(0, 2);
-
-	// Set uinst flag dependencies
-	uinst_1->setIDep(1, 15);
-	uinst_1->setIDep(2, 16);
+	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Rename uop
-	register_file->Rename(uop.get());
+	register_file->Rename(uop_0.get());
 
 	// Check values
-	EXPECT_EQ(uop->getInput(0), 79);
-	EXPECT_EQ(uop->getOutput(0), 61);
-	EXPECT_EQ(uop->getInput(1), 66);
-	EXPECT_EQ(uop->getInput(2), 66);
-	*/
+	EXPECT_EQ(uop_0->getInput(0), 25);
+	EXPECT_EQ(uop_0->getOutput(1), 7);
+	EXPECT_EQ(uop_0->getOutput(0), 7);
 }
 
 
@@ -618,13 +655,73 @@ TEST(TestRegisterFile, rename_3)
 // missing FP input, and missing XMM input.
 TEST(TestRegisterFile, is_uop_ready_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 23);
+	uinst_0->setIDep(2, 34);
+	uinst_1->setODep(0, 1);
+	uinst_1->setODep(1, 23);
+	uinst_1->setODep(2, 34);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Rename uop_1 to change physical register values to pending
+	register_file->Rename(uop_1.get());
+
+	// Rename uop_0 to map logical registers
+	register_file->Rename(uop_0.get());
+
+	// Check that the input deps for uop_0 are pending
+	EXPECT_FALSE(register_file->isUopReady(uop_0.get()));
 }
 
-// Test function returning true with all of them ready.
+// Test isUopReady() returning true with all of them ready.
 TEST(TestRegisterFile, is_uop_ready_1)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 23);
+	uinst_0->setIDep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Map logical registers for uop_0
+	register_file->Rename(uop_0.get());
+
+	// This should return true since the deps are not pending
+	EXPECT_TRUE(register_file->isUopReady(uop_0.get()));
 }
 
 // Test function returning true in the fast path (first "if")
@@ -632,7 +729,41 @@ TEST(TestRegisterFile, is_uop_ready_1)
 // state in field "->ready".
 TEST(TestRegisterFile, is_uop_ready_2)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinst
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 23);
+	uinst_0->setIDep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	// This should be false by default.  We just created the uop.
+	EXPECT_FALSE(uop_0->ready);
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Map the logical register values
+	register_file->Rename(uop_0.get());
+
+	// This should return true since the deps are not pending.  This will
+	// also set the 'ready' value to true
+	EXPECT_TRUE(register_file->isUopReady(uop_0.get()));
+
+	// The ready value should have been set by isUopReady() so that it
+	// does not need to be evaluated later
+	EXPECT_TRUE(uop_0->ready);
 }
 
 
@@ -649,7 +780,49 @@ TEST(TestRegisterFile, is_uop_ready_2)
 // second should return true.
 TEST(TestRegisterFile, write_uop_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinsts
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+	auto uinst_1 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set uinst dependencies
+	uinst_0->setIDep(0, 1);
+	uinst_0->setIDep(1, 23);
+	uinst_0->setIDep(2, 34);
+	uinst_1->setODep(0, 1);
+	uinst_1->setODep(1, 23);
+	uinst_1->setODep(2, 34);
+
+	// Create uops
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+	auto uop_1 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_1);
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Rename uop_1 to change physical register values to pending
+	register_file->Rename(uop_1.get());
+
+	// Rename uop_0 to map logical registers
+	register_file->Rename(uop_0.get());
+
+	// Check that the input deps for uop_0 are pending
+	EXPECT_FALSE(register_file->isUopReady(uop_0.get()));
+
+	// Update state of register file and resolve deps
+	register_file->WriteUop(uop_1.get());
+
+	// This should now return true since the deps are no longer pending
+	EXPECT_TRUE(register_file->isUopReady(uop_0.get()));
 }
 
 
@@ -661,13 +834,41 @@ TEST(TestRegisterFile, write_uop_0)
 
 
 // Test UndoUop(): sets an initial state of the register file,
-// creates uop with 1 integer + 1 FP + 1 XMM output, invokes RanameUop()
+// creates uop with 1 integer + 1 FP + 1 XMM output, invokes RenameUop()
 // for the uop, checks valid new state, then UndoUop(), then checks
 // that the state is back to the original. Verifies state of physical
 // registers, number of free registers, and free lists.
 TEST(TestRegisterFile, undo_uop_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinst
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set dependencies
+	uinst_0->setODep(0, 1);
+	uinst_0->setODep(1, 23);
+	uinst_0->setODep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	uop_0->speculative_mode = true;
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	register_file->Rename(uop_0.get());
+
+//	register_file->WriteUop(uop_0.get());
+
+	register_file->UndoUop(uop_0.get());
 }
 
 // Special case for FpPop
