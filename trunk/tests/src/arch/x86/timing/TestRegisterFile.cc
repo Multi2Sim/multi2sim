@@ -837,7 +837,7 @@ TEST(TestRegisterFile, write_uop_0)
 // creates uop with 1 integer + 1 FP + 1 XMM output, invokes RenameUop()
 // for the uop, checks valid new state, then UndoUop(), then checks
 // that the state is back to the original. Verifies state of physical
-// registers, number of free registers, and free lists.
+// registers
 TEST(TestRegisterFile, undo_uop_0)
 {
 	// Cleanup singleton instances
@@ -864,23 +864,133 @@ TEST(TestRegisterFile, undo_uop_0)
 	// Get register file
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
+	// Rename uop
 	register_file->Rename(uop_0.get());
 
-//	register_file->WriteUop(uop_0.get());
+	// Store physical registers in temporary variables
+	int new_physical_register_0 = uop_0->getOutput(0);
+	int new_physical_register_1 = uop_0->getOutput(1);
+	int new_physical_register_2 = uop_0->getOutput(2);
 
+	// Check that the physical registers have been allocated
+	EXPECT_FALSE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_FALSE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_FALSE(register_file->isXmmRegisterFree(new_physical_register_2));
+
+	// Write uop to remove pending value from registers
+	register_file->WriteUop(uop_0.get());
+
+	// Undo uop
 	register_file->UndoUop(uop_0.get());
+
+	// Check that the physical registers have been deallocated
+	EXPECT_TRUE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_TRUE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_TRUE(register_file->isXmmRegisterFree(new_physical_register_2));
 }
 
 // Special case for FpPop
 TEST(TestRegisterFile, undo_uop_1)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinst
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeFpPop);
+
+	// Set dependencies
+	uinst_0->setODep(0, 1);
+	uinst_0->setODep(1, 23);
+	uinst_0->setODep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	uop_0->speculative_mode = true;
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Rename uop
+	register_file->Rename(uop_0.get());
+
+	// Store physical registers in temporary variables
+	int new_physical_register_0 = uop_0->getOutput(0);
+	int new_physical_register_1 = uop_0->getOutput(1);
+	int new_physical_register_2 = uop_0->getOutput(2);
+
+	// Check that the physical registers have been allocated
+	EXPECT_FALSE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_FALSE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_FALSE(register_file->isXmmRegisterFree(new_physical_register_2));
+
+	// Write uop to remove pending value from registers
+	register_file->WriteUop(uop_0.get());
+
+	// Undo uop
+	register_file->UndoUop(uop_0.get());
+
+	// Check that the physical registers have been deallocated
+	EXPECT_TRUE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_TRUE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_TRUE(register_file->isXmmRegisterFree(new_physical_register_2));
 }
 
 // Special case for FpPush
 TEST(TestRegisterFile, undo_uop_2)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinst
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeFpPush);
+
+	// Set dependencies
+	uinst_0->setODep(0, 1);
+	uinst_0->setODep(1, 23);
+	uinst_0->setODep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	uop_0->speculative_mode = true;
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Rename uop
+	register_file->Rename(uop_0.get());
+
+	// Store physical registers in temporary variables
+	int new_physical_register_0 = uop_0->getOutput(0);
+	int new_physical_register_1 = uop_0->getOutput(1);
+	int new_physical_register_2 = uop_0->getOutput(2);
+
+	// Check that the physical registers have been allocated
+	EXPECT_FALSE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_FALSE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_FALSE(register_file->isXmmRegisterFree(new_physical_register_2));
+
+	// Write uop to remove pending value from registers
+	register_file->WriteUop(uop_0.get());
+
+	// Undo uop
+	register_file->UndoUop(uop_0.get());
+
+	// Check that the physical registers have been deallocated
+	EXPECT_TRUE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_TRUE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_TRUE(register_file->isXmmRegisterFree(new_physical_register_2));
 }
 
 
@@ -896,7 +1006,51 @@ TEST(TestRegisterFile, undo_uop_2)
 // invokes WriteUop(), checks state, invokes CommitUop().
 TEST(TestRegisterFile, commit_uop_0)
 {
+	// Cleanup singleton instances
+	Cleanup();
 
+	// Get object pool instance
+	ObjectPool *object_pool = ObjectPool::getInstance();
+
+	// Create uinst
+	auto uinst_0 = misc::new_shared<Uinst>(Uinst::OpcodeAdd);
+
+	// Set dependencies
+	uinst_0->setODep(0, 1);
+	uinst_0->setODep(1, 23);
+	uinst_0->setODep(2, 34);
+
+	// Create uop
+	auto uop_0 = misc::new_unique<Uop>(object_pool->getThread(),
+			object_pool->getContext(),
+			uinst_0);
+
+	// Get register file
+	auto register_file = object_pool->getThread()->getRegisterFile();
+
+	// Rename uop
+	register_file->Rename(uop_0.get());
+
+	// Store physical registers in temporary variables
+	int new_physical_register_0 = uop_0->getOutput(0);
+	int new_physical_register_1 = uop_0->getOutput(1);
+	int new_physical_register_2 = uop_0->getOutput(2);
+
+	// Check that the physical registers have been allocated
+	EXPECT_FALSE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_FALSE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_FALSE(register_file->isXmmRegisterFree(new_physical_register_2));
+
+	// Write uop to remove pending value from registers
+	register_file->WriteUop(uop_0.get());
+
+	// Undo uop
+	register_file->CommitUop(uop_0.get());
+
+	// Check that the physical registers are still allocated
+	EXPECT_FALSE(register_file->isIntegerRegisterFree(new_physical_register_0));
+	EXPECT_FALSE(register_file->isFloatingPointRegisterFree(new_physical_register_1));
+	EXPECT_FALSE(register_file->isXmmRegisterFree(new_physical_register_2));
 }
 
 
