@@ -278,6 +278,34 @@ public:
 
 	/// Check integrity of register file
 	void CheckRegisterFile();
+
+	/// Check if integer register at certain index is free.
+	/// Used only in testing.
+	bool isIntegerRegisterFree(int index)
+	{
+		if (integer_registers[index].busy > 0)
+			return false;
+		return true;
+	}
+
+	/// Check if floating point register at certain index is free
+	/// Used only in testing.
+	bool isFloatingPointRegisterFree(int index)
+	{
+		if (floating_point_registers[index].busy > 0)
+			return false;
+		return true;
+	}
+
+	/// Check if xmm register at certain index is free
+	/// Used only in testing
+	bool isXmmRegisterFree(int index)
+	{
+		if (xmm_registers[index].busy > 0)
+			return false;
+		return true;
+	}
+
 };
 
 }
