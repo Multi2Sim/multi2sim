@@ -111,7 +111,7 @@ Bank *RankBankRoundRobin::FindNext()
 		}
 
 		// Debug
-		long long cycle = System::DRAM_DOMAIN->getCycle();
+		long long cycle = System::frequency_domain->getCycle();
 		System::debug << misc::fmt("[%lld] Scheduler returns %d : %d "
 				"for next command scheduling\n", cycle,
 				current_rank, current_bank);

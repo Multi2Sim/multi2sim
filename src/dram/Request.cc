@@ -39,7 +39,7 @@ void Request::setFinished()
 	// through cache hierarchy.
 
 	// Debug
-	long long cycle = System::DRAM_DOMAIN->getCycle();
+	long long cycle = System::frequency_domain->getCycle();
 	System::activity << misc::fmt("[%lld] Request complete for 0x%llx\n",
 		cycle, address->getEncoded());
 }
