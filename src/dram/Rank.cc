@@ -47,7 +47,7 @@ Rank::Rank(int id,
 
 void Rank::setLastScheduledCommand(CommandType type)
 {
-	last_scheduled_commands[type] = System::DRAM_DOMAIN->getCycle();
+	last_scheduled_commands[type] = System::frequency_domain->getCycle();
 	last_scheduled_command_type = type;
 }
 

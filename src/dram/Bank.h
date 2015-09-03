@@ -124,7 +124,7 @@ public:
 	long long getFrontCommandTiming();
 
 	/// Pops off the top command in the queue.
-	void runFrontCommand();
+	void RunFrontCommand();
 
 	/// Breaks a request down into it's component commands and adds them to the
 	/// bank's command queue.

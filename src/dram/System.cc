@@ -64,9 +64,9 @@ misc::Debug System::activity;
 
 std::unique_ptr<System> System::instance;
 
-esim::FrequencyDomain *System::DRAM_DOMAIN(nullptr);
+esim::FrequencyDomain *System::frequency_domain(nullptr);
 
-esim::Event *System::COMMAND_RETURN(nullptr);
+esim::Event *System::event_command_return(nullptr);
 
 const char *System::err_config_note =
 		"Please run 'm2s --dram-help' or consult the Multi2Sim Guide for "
@@ -193,12 +193,12 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Register frequency domain
 	esim::Engine *esim = esim::Engine::getInstance();
-	DRAM_DOMAIN = esim->RegisterFrequencyDomain(
-			"DRAM_DOMAIN", frequency);
+	frequency_domain = esim->RegisterFrequencyDomain(
+			"frequency_domain", frequency);
 
 	// Create events used by the entire system
-	COMMAND_RETURN = esim->RegisterEvent("COMMAND_RETURN",
-			Controller::CommandReturnHandler, DRAM_DOMAIN);
+	event_command_return = esim->RegisterEvent("command_return",
+			Controller::CommandReturnHandler, frequency_domain);
 
 	// Iterate through each section.
 	// Parse it if it is a MemoryController section.
@@ -251,7 +251,7 @@ void System::AddRequest(std::shared_ptr<Request> request)
 
 	// Debug
 	debug << misc::fmt("[%lld] Adding request for 0x%llx to controller %d\n",
-			DRAM_DOMAIN->getCycle(), address->getEncoded(),
+			frequency_domain->getCycle(), address->getEncoded(),
 			address->getPhysical());
 }
 
@@ -276,7 +276,7 @@ void System::GenerateAddressSizes()
 	// must be able to decode to any location in the system.
 	// Controllers can potentially each have different sizes for everything
 	// but all sizes under the controller are uniform.
-	for (auto const& controller : controllers)
+	for (auto const &controller : controllers)
 	{
 		logical_size = std::max(logical_size,
 				Log2(controller->getNumChannels()));
@@ -326,7 +326,7 @@ void System::Write(long long address)
 }
 
 
-void System::dump(std::ostream &os) const
+void System::Dump(std::ostream &os) const
 {
 	
 	// Print header
