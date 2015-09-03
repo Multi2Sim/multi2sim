@@ -68,9 +68,8 @@ TEST(TestSystemConfiguration, section_general_frequency)
 		message = error.getMessage();
 	}
 
-	EXPECT_REGEX_MATCH(misc::fmt(".*%s: The value for 'Frequency' "
-			"must be between 1MHz and 1000GHz.\n.*",
-			ini_file.getPath().c_str()).c_str(),
+	EXPECT_REGEX_MATCH(misc::fmt(".*The value for 'Frequency' "
+			"must be between 1MHz and 1000GHz.\n.*").c_str(),
 			message.c_str());
 }
 
@@ -494,19 +493,19 @@ TEST(TestSystemConfiguration, section_correct_timings_DDR3_1600)
 		
 		// Check Precharge timing
 		EXPECT_TRUE(controller->
-				getCommandDuration((CommandType) 1) == 11);
+				getCommandDuration(CommandPrecharge) == 11);
 
 		// Check Activate timing
 		EXPECT_TRUE(controller->
-				getCommandDuration((CommandType) 2) == 11);
+				getCommandDuration(CommandActivate) == 11);
 
 		// Check Read timing
 		EXPECT_TRUE(controller->
-				getCommandDuration((CommandType) 3) == 15);
+				getCommandDuration(CommandRead) == 15);
 
 		// Check Write timing
 		EXPECT_TRUE(controller->
-				getCommandDuration((CommandType) 4) == 15);
+				getCommandDuration(CommandWrite) == 15);
 	}
 	catch (misc::Error &error)
 	{

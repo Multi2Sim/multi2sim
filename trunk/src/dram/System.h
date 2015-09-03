@@ -112,10 +112,9 @@ public:
 	static misc::Debug activity;
 
 	// EventTypes and FrequencyDomains for DRAM
-	static esim::FrequencyDomain *DRAM_DOMAIN;
-	static esim::Event *REQUEST;
-	static esim::Event *ACTION_REQUEST;
-	static esim::Event *COMMAND_RETURN;
+	static esim::FrequencyDomain *frequency_domain;
+	static esim::Event *event_request;
+	static esim::Event *event_command_return;
 
 	/// Obtain the instance of the dram simulator singleton.
 	static System *getInstance();
@@ -200,13 +199,13 @@ public:
 	void Write(long long address);
 
 	/// Dump the object to an output stream.
-	void dump(std::ostream &os = std::cout) const;
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Dump object with the << operator
 	friend std::ostream &operator<<(std::ostream &os,
 			const System &object)
 	{
-		object.dump(os);
+		object.Dump(os);
 		return os;
 	}
 };

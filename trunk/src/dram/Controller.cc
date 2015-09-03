@@ -220,7 +220,7 @@ void Controller::CreateRequestProcessor(int controller)
 	REQUEST_PROCESSORS[controller] = esim->RegisterEvent(
 			misc::fmt("%d_REQUEST_PROCESSOR", controller),
 			Controller::RequestProcessorHandler,
-			System::DRAM_DOMAIN);
+			System::frequency_domain);
 }
 
 
@@ -234,7 +234,7 @@ void Controller::CreateSchedulers(int num_channels)
 		SCHEDULERS[i] = esim->RegisterEvent(
 				misc::fmt("%d_%d_SCHEDULER", id, i),
 				Channel::SchedulerHandler,
-				System::DRAM_DOMAIN);
+				System::frequency_domain);
 }
 
 
@@ -313,7 +313,7 @@ void Controller::CommandReturnHandler(esim::Event *type, esim::Frame *frame)
 	command->setFinished();
 
 	// Debug
-	long long cycle = System::DRAM_DOMAIN->getCycle();
+	long long cycle = System::frequency_domain->getCycle();
 	System::activity << misc::fmt("[%lld] [%d : %d] Finished command #%d "
 			"%s for 0x%llx\n", cycle, command->getRankId(),
 			command->getBankId(), command->getId(),

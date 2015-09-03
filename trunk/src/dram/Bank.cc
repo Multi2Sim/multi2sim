@@ -49,7 +49,7 @@ Bank::Bank(int id,
 void Bank::setLastScheduledCommand(CommandType type)
 {
 	// Update the last scheduled command matrix for this bank.
-	last_scheduled_commands[type] = System::DRAM_DOMAIN->getCycle();
+	last_scheduled_commands[type] = System::frequency_domain->getCycle();
 	last_scheduled_command_type = type;
 
 	// Make the rank that this bank belongs to do the same update.
@@ -60,7 +60,7 @@ void Bank::setLastScheduledCommand(CommandType type)
 void Bank::ProcessRequest(std::shared_ptr<Request> request)
 {
 	// Get the current cycle.
-	long long cycle = System::DRAM_DOMAIN->getCycle();
+	long long cycle = System::frequency_domain->getCycle();
 
 	// Pull the address out of the request.
 	Address *address = request->getAddress();
@@ -158,9 +158,9 @@ long long Bank::getFrontCommandTiming()
 }
 
 
-void Bank::runFrontCommand()
+void Bank::RunFrontCommand()
 {
-	long long cycle = System::DRAM_DOMAIN->getCycle();
+	long long cycle = System::frequency_domain->getCycle();
 
 	// Get the command that is being run.
 	std::shared_ptr<Command> command = command_queue.front();
@@ -173,7 +173,7 @@ void Bank::runFrontCommand()
 
 	// Create return event
 	auto frame = std::make_shared<CommandReturnFrame>(command);
-	esim->Call(System::COMMAND_RETURN, frame, nullptr,
+	esim->Call(System::event_command_return, frame, nullptr,
 			command->getDuration());
 
 	// Debug

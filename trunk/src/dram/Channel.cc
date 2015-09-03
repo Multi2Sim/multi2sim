@@ -107,7 +107,7 @@ void Channel::SchedulerHandler(esim::Event *type, esim::Frame *frame)
 void Channel::RunScheduler()
 {
 	// Get the current cycle
-	long long cycle = System::DRAM_DOMAIN->getCycle();
+	long long cycle = System::frequency_domain->getCycle();
 
 	// Debug
 	System::debug << misc::fmt("[%lld] Controller %d Channel %d running "
@@ -136,7 +136,7 @@ void Channel::RunScheduler()
 	if (cycle >= cycle_ready)
 	{
 		// Run the command.
-		bank->runFrontCommand();
+		bank->RunFrontCommand();
 		next_scheduled_bank = nullptr;
 
 		// Call the scheduler again for next cycle.
@@ -160,7 +160,7 @@ long long Channel::CalculateReadyCycle(Command *cmd)
 	// Yes, Rafa, this is ugly.
 
 	// Set the ready cycle to be this cycle.
-	long long ready = System::DRAM_DOMAIN->getCycle();
+	long long ready = System::frequency_domain->getCycle();
 
 	// Get the rank and bank ids of the commands location.
 	int cmd_bank = cmd->getBankId();
