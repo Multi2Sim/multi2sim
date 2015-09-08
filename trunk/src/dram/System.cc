@@ -70,10 +70,38 @@ esim::Event *System::event_command_return(nullptr);
 
 const char *System::err_config_note =
 		"Please run 'm2s --dram-help' or consult the Multi2Sim Guide for "
-		"a description of the network system configuration file format.";
+		"a description of the dram system configuration file format.";
 
 const std::string System::help_message =
-	"Placeholder help message\n";
+		"Option '--dram-config <file>' is used to configure the dram system. The\n"
+		"configuration file is a plain-text file in the IniFile format. The dram\n"
+		"system is comprised of one or more memory controllers.\n"
+		"\n"
+		"The following sections and variables can be used in the dram system\n"
+		"configuration file:\n"
+		"\n"
+		"Section [General] defines global parameters affecting the entire dram\n"
+		"system.\n"
+		"\n"
+		"  Frequency = <value>  (Default = 1000)\n"
+		"      Frequency of the dram system in MHz.\n"
+		"\n"
+		"Section [MemoryController <name>] defines a generic dram device. This section is\n"
+		"used to define the modes of the dram as well as size of compon. The default\n"
+		"configuration results in an 8GB dram device.\n"
+		"\n"
+		"  NumChannels = <num> (Default =  1)\n"
+		"      Number of channels in the dram system.\n"
+		"  NumRanks = <num> (Default = 2)\n"
+		"      Number of ranks in each channel.\n"
+		"  NumBanks = <num> (Default = 8)\n"
+		"      Number of banks in each rank.\n"
+		"  NumRows = <num> (Default = 1024)\n"
+		"      Number of rows in each bank.\n"
+		"  NumColumns = <num> (Default = 1024)\n"
+		"      Number of columns in each row.\n"
+		"  NumBits = <num> (Default = 8)\n"
+		"      Number of bits in each column.\n";
 
 
 System *System::getInstance()
