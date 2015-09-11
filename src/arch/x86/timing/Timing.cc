@@ -269,10 +269,10 @@ Timing *Timing::getInstance()
 
 bool Timing::Run()
 {
-	// Stop if no context is running
+	// Stop if there are no more contexts left
 	Emulator *emulator = Emulator::getInstance();
 	assert(emulator->getNumFinishedContexts() <= emulator->getNumContexts());
-	if (emulator->getNumFinishedContexts() == emulator->getNumContexts())
+	if (emulator->getNumContexts() == 0)
 		return false;
 
 	// Fast-forward simulation
