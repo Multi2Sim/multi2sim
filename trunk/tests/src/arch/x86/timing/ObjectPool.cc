@@ -26,16 +26,10 @@ namespace x86
 // Singleton instance of object pool
 std::unique_ptr<ObjectPool> ObjectPool::instance;
 
-misc::IniFile ObjectPool::ini_file;
-
-
 ObjectPool::ObjectPool()
 {
-	// Parse ini_file parameters.  If ini_file is empty, the
-	// default values will be set.
-	Timing::ParseConfiguration(&ini_file);
-
 	// Timing simulator
+	// Gets default values for all instances
 	Timing *timing = Timing::getInstance();
 	cpu = misc::new_unique<Cpu>(timing);
 	core = misc::new_unique<Core>(cpu.get(), 0);
