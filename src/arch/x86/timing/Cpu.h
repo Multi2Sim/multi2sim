@@ -499,25 +499,25 @@ public:
 	// Scheduler (CpuScheduler.cc)
 	//
 
-	// Allocate (effectively start running) a context that is already mapped
-	// to a hardware thread.
+	/// Allocate (effectively start running) a context that is already
+	/// mapped to a hardware thread.
 	void AllocateContext(Context *context);
 
-	// Map a context to a thread. The thread is chosen with the minimum
-	// number contexts currently mapped to it.
+	/// Map a context to a thread. The thread is chosen with the minimum
+	/// number contexts currently mapped to it.
 	void MapContext(Context *context);
 
-	// Recalculate the oldest allocation cycle from all allocated contexts
-	// (i.e., contexts currently occupying the nodes' pipelines). Discard
-	// from the calculation those contexts that have received an eviction
-	// signal (pipelines are being flushed for impending eviction. By
-	// looking at this variable later, we can know right away whether there
-	// is any allocated context that has exceeded its quantum.
+	/// Recalculate the oldest allocation cycle from all allocated contexts
+	/// (i.e., contexts currently occupying the nodes' pipelines). Discard
+	/// from the calculation those contexts that have received an eviction
+	/// signal (pipelines are being flushed for impending eviction. By
+	/// looking at this variable later, we can know right away whether there
+	/// is any allocated context that has exceeded its quantum.
 	void UpdateContextAllocationCycle();
 
-	// Main scheduler function. This function should be called every timing
-	// simulation cycle. If no scheduling is required, the function will
-	// exit with practically no cost.
+	/// Main scheduler function. This function should be called every timing
+	/// simulation cycle. If no scheduling is required, the function will
+	/// exit with practically no cost.
 	void Schedule();
 
 
