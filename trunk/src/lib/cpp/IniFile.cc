@@ -169,11 +169,11 @@ void IniFile::Dump(std::ostream &os) const
 
 
 static const char *ini_file_err_format =
-	"\tA syntax error was detected while parsing a configuration INI file.\n"
-	"\tThese files are formed of sections in brackets (e.g. '[ SectionName ]')\n"
-	"\tfollowed by pairs 'VariableName = Value'. Comments preceded with ';'\n"
-	"\tor '#' characters can be used, as well as blank lines. Please verify\n"
-	"\tthe integrity of your input file and retry.\n";
+	"\tA syntax error was detected while parsing a configuration INI file. "
+	"These files are formed of sections in brackets (e.g. '[ SectionName ]') "
+	"followed by pairs 'VariableName = Value'. Comments preceded with ';' "
+	"or '#' characters can be used, as well as blank lines. Please verify "
+	"the integrity of your input file and retry.\n";
 
 
 void IniFile::Load(const std::string &path)
