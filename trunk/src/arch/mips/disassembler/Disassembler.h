@@ -25,7 +25,7 @@
 #include <arch/common/Disassembler.h>
 #include <lib/cpp/Error.h>
 
-#include "Inst.h"
+#include "Instruction.h"
 
 
 namespace MIPS
@@ -57,36 +57,36 @@ public:
 	};
 
 	// Decoding tables
-	InstInfo *dec_table;
-	InstInfo *dec_table_special;
-	InstInfo *dec_table_special_movci;
-	InstInfo *dec_table_special_srl;
-	InstInfo *dec_table_special_srlv;
+	Instruction::Info *dec_table;
+	Instruction::Info *dec_table_special;
+	Instruction::Info *dec_table_special_movci;
+	Instruction::Info *dec_table_special_srl;
+	Instruction::Info *dec_table_special_srlv;
 
-	InstInfo *dec_table_regimm;
+	Instruction::Info *dec_table_regimm;
 
-	InstInfo *dec_table_cop0;
-	InstInfo *dec_table_cop0_c0;
-	InstInfo *dec_table_cop0_notc0;
-	InstInfo *dec_table_cop0_notc0_mfmc0;
+	Instruction::Info *dec_table_cop0;
+	Instruction::Info *dec_table_cop0_c0;
+	Instruction::Info *dec_table_cop0_notc0;
+	Instruction::Info *dec_table_cop0_notc0_mfmc0;
 
-	InstInfo *dec_table_cop1;
-	InstInfo *dec_table_cop1_bc1;
-	InstInfo *dec_table_cop1_s;
-	InstInfo *dec_table_cop1_s_movcf;
-	InstInfo *dec_table_cop1_d;
-	InstInfo *dec_table_cop1_d_movcf;
-	InstInfo *dec_table_cop1_w;
-	InstInfo *dec_table_cop1_l;
-	InstInfo *dec_table_cop1_ps;
+	Instruction::Info *dec_table_cop1;
+	Instruction::Info *dec_table_cop1_bc1;
+	Instruction::Info *dec_table_cop1_s;
+	Instruction::Info *dec_table_cop1_s_movcf;
+	Instruction::Info *dec_table_cop1_d;
+	Instruction::Info *dec_table_cop1_d_movcf;
+	Instruction::Info *dec_table_cop1_w;
+	Instruction::Info *dec_table_cop1_l;
+	Instruction::Info *dec_table_cop1_ps;
 
-	InstInfo *dec_table_cop2;
-	InstInfo *dec_table_cop2_bc2;
+	Instruction::Info *dec_table_cop2;
+	Instruction::Info *dec_table_cop2_bc2;
 
-	InstInfo *dec_table_special2;
+	Instruction::Info *dec_table_special2;
 
-	InstInfo *dec_table_special3;
-	InstInfo *dec_table_special3_bshfl;
+	Instruction::Info *dec_table_special3;
+	Instruction::Info *dec_table_special3_bshfl;
 	
 	
 	/// Return an instance of the singleton

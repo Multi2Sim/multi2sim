@@ -84,7 +84,6 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 	uinst_0->setODep(1, 5);
 	uinst_0->setODep(2, 6);
 	uinst_0->setODep(3, 7);
-
 	uinst_1->setIDep(0, 1);
 	uinst_1->setIDep(1, 2);
 	uinst_1->setIDep(2, 3);
@@ -128,7 +127,6 @@ TEST(TestRegisterFile, can_rename_private_register_1)
 			"[ Queues ]\n"
 			"RfFpSize = 15";
 
-
 	// Create ini file with config
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
@@ -151,7 +149,6 @@ TEST(TestRegisterFile, can_rename_private_register_1)
 	uinst_0->setODep(1, 27);
 	uinst_0->setODep(2, 28);
 	uinst_0->setODep(3, 29);
-
 	uinst_1->setIDep(0, 23);
 	uinst_1->setIDep(1, 24);
 	uinst_1->setIDep(2, 25);
@@ -216,7 +213,6 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 	uinst_0->setODep(1, 38);
 	uinst_0->setODep(2, 39);
 	uinst_0->setODep(3, 40);
-
 	uinst_1->setIDep(0, 41);
 	uinst_1->setIDep(1, 34);
 	uinst_1->setIDep(2, 35);
@@ -247,7 +243,7 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 }
 
 // Tests that canRename() returns false when there are no more integer
-// registers available in a shared register
+// registers available in a shared register file
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
 	// Cleanup singleton instances
@@ -282,7 +278,6 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	uinst_0->setODep(1, 5);
 	uinst_0->setODep(2, 6);
 	uinst_0->setODep(3, 7);
-
 	uinst_1->setIDep(0, 1);
 	uinst_1->setIDep(1, 2);
 	uinst_1->setIDep(2, 3);
@@ -348,7 +343,6 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 	uinst_0->setODep(1, 27);
 	uinst_0->setODep(2, 28);
 	uinst_0->setODep(3, 29);
-
 	uinst_1->setIDep(0, 23);
 	uinst_1->setIDep(1, 24);
 	uinst_1->setIDep(2, 25);
