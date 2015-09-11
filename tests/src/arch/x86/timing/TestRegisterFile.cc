@@ -35,6 +35,14 @@
 namespace x86
 {
 
+// Default ini file to reset all relevant values to their defaults
+const std::string default_config =
+		"[ Queues ]\n"
+		"RfKind = Private\n"
+		"RfIntSize = 80\n"
+		"RfFpSize = 40\n"
+		"RfXmmSize = 40";
+
 static void Cleanup()
 {
 	ObjectPool::Destroy();
@@ -66,8 +74,8 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -131,8 +139,8 @@ TEST(TestRegisterFile, can_rename_private_register_1)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -195,8 +203,8 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -260,8 +268,8 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -325,8 +333,8 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -390,8 +398,8 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -462,8 +470,8 @@ TEST(TestRegisterFile, rename_0)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -511,8 +519,8 @@ TEST(TestRegisterFile, rename_1)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -557,8 +565,8 @@ TEST(TestRegisterFile, rename_2)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -603,8 +611,8 @@ TEST(TestRegisterFile, rename_3)
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 
-	// Set ini file in Object Pool
-	ObjectPool::SetInifile(ini_file);
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
