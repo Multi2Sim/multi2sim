@@ -22,7 +22,8 @@
 #include <lib/cpp/String.h>
 
 #include "Disassembler.h"
-#include "Inst.h"
+
+#include "Instruction.h"
 
 
 namespace MIPS
@@ -102,36 +103,36 @@ void Disassembler::ProcessOptions()
 Disassembler::Disassembler() : comm::Disassembler("MIPS")
 {
 	// Allocate storage for the instruction tables
-	dec_table                   = new InstInfo[64]();
-	dec_table_special           = new InstInfo[64]();
-	dec_table_special_movci     = new InstInfo[2]();
-	dec_table_special_srl       = new InstInfo[2]();
-	dec_table_special_srlv      = new InstInfo[2]();
+	dec_table                   = new Instruction::Info[64]();
+	dec_table_special           = new Instruction::Info[64]();
+	dec_table_special_movci     = new Instruction::Info[2]();
+	dec_table_special_srl       = new Instruction::Info[2]();
+	dec_table_special_srlv      = new Instruction::Info[2]();
 
-	dec_table_regimm            = new InstInfo[32]();
+	dec_table_regimm            = new Instruction::Info[32]();
 
-	dec_table_cop0              = new InstInfo[32]();
-	dec_table_cop0_c0           = new InstInfo[64]();
-	dec_table_cop0_notc0        = new InstInfo[32]();
-	dec_table_cop0_notc0_mfmc0  = new InstInfo[2]();
+	dec_table_cop0              = new Instruction::Info[32]();
+	dec_table_cop0_c0           = new Instruction::Info[64]();
+	dec_table_cop0_notc0        = new Instruction::Info[32]();
+	dec_table_cop0_notc0_mfmc0  = new Instruction::Info[2]();
 
-	dec_table_cop1              = new InstInfo[32]();
-	dec_table_cop1_bc1          = new InstInfo[4]();
-	dec_table_cop1_s            = new InstInfo[64]();
-	dec_table_cop1_s_movcf      = new InstInfo[2]();
-	dec_table_cop1_d            = new InstInfo[64]();
-	dec_table_cop1_d_movcf      = new InstInfo[2]();
-	dec_table_cop1_w            = new InstInfo[64]();
-	dec_table_cop1_l            = new InstInfo[64]();
-	dec_table_cop1_ps           = new InstInfo[64]();
+	dec_table_cop1              = new Instruction::Info[32]();
+	dec_table_cop1_bc1          = new Instruction::Info[4]();
+	dec_table_cop1_s            = new Instruction::Info[64]();
+	dec_table_cop1_s_movcf      = new Instruction::Info[2]();
+	dec_table_cop1_d            = new Instruction::Info[64]();
+	dec_table_cop1_d_movcf      = new Instruction::Info[2]();
+	dec_table_cop1_w            = new Instruction::Info[64]();
+	dec_table_cop1_l            = new Instruction::Info[64]();
+	dec_table_cop1_ps           = new Instruction::Info[64]();
 
-	dec_table_cop2              = new InstInfo[32]();
-	dec_table_cop2_bc2          = new InstInfo[4]();
+	dec_table_cop2              = new Instruction::Info[32]();
+	dec_table_cop2_bc2          = new Instruction::Info[4]();
 
-	dec_table_special2          = new InstInfo[64]();
+	dec_table_special2          = new Instruction::Info[64]();
 
-	dec_table_special3          = new InstInfo[64]();
-	dec_table_special3_bshfl    = new InstInfo[32]();
+	dec_table_special3          = new Instruction::Info[64]();
+	dec_table_special3_bshfl    = new Instruction::Info[32]();
 
 	// Initiate values for the 'next_table', 'next_table_low' and 'next_table_high'
 	// fields of the tables
@@ -245,7 +246,7 @@ Disassembler::Disassembler() : comm::Disassembler("MIPS")
 	dec_table_special3[OPCODE_SPECIAL3_BSHFL].next_table_high       = 10;
 
 	// Build the tables from Inst.def
-	InstInfo *current_table;
+	Instruction::Info *current_table;
 	unsigned int table_arg[4];
 	int i = 0;
 
@@ -262,11 +263,11 @@ Disassembler::Disassembler() : comm::Disassembler("MIPS")
 		else							\
 			break;						\
 	}								\
-	current_table[table_arg[i]].opcode = INST_##_name;		\
+	current_table[table_arg[i]].opcode = Instruction::Opcode##_name;\
 	current_table[table_arg[i]].name = #_name;			\
 	current_table[table_arg[i]].fmt_str = _fmt_str;			\
 	current_table[table_arg[i]].size = 4;
-#include "Inst.def"
+#include "Instruction.def"
 #undef DEFINST
 }
 
@@ -323,7 +324,7 @@ Disassembler::~Disassembler()
 void Disassembler::DisassembleBinary(const std::string &path)
 {
 	ELFReader::File file(path);
-	Inst inst;
+	Instruction inst;
 
 	unsigned int curr_sym;
 	unsigned int pos;

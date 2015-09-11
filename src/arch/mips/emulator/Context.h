@@ -24,11 +24,11 @@
 #include <vector>
 
 #include <arch/common/CallStack.h>
-#include <arch/mips/disassembler/Inst.h>
 #include <lib/cpp/ELFReader.h>
 #include <memory/Memory.h>
 #include <memory/SpecMem.h>
 #include <arch/common/FileTable.h>
+#include "../disassembler/Instruction.h"
 
 #include "Regs.h"
 #include "Signal.h"
@@ -127,7 +127,7 @@ class Context
 	Regs regs;
 
 	// Current emulated instruction
-	Inst inst;
+	Instruction inst;
 
 	// LLbit Bit of virtual state used to
 	// specify operation for instructions that provide atomic read-modify-write
@@ -324,11 +324,11 @@ class Context
 	// is expanded to
 	//	void ExecuteInst_adc_al_imm8();
 #define DEFINST(_name, _fmt_str, _op0, _op1, _op2, _op3) void ExecuteInst_##_name();
-#include <arch/mips/disassembler/Inst.def>
+#include "../disassembler/Instruction.def"
 #undef DEFINST
 
 	// Table of functions
-	static ExecuteInstFn execute_inst_fn[InstOpcodeCount];
+	static ExecuteInstFn execute_inst_fn[Instruction::OpcodeCount];
 
 	///////////////////////////////////////////////////////////////////////
 	//
