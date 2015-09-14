@@ -36,48 +36,23 @@ TimingParameters::TimingParameters(const std::string &section,
 void TimingParameters::ParseTiming(const std::string &section,
 		misc::IniFile &ini_file)
 {
-	// Set the default timing parameters if set.  If a default is not set,
-	// the parameters are all set to 0 and the user must set all of them.
-	std::string set_default = ini_file.ReadString(section, "Default", "");
-	if (set_default == "DDR3_1600")
-		DefaultDDR3_1600();
-
-	// Read the timing parameters set by the user.
-	tRC = ini_file.ReadInt(section, "tRC", tRC);
-	tRRD = ini_file.ReadInt(section, "tRRD", tRRD);
-	tRP = ini_file.ReadInt(section, "tRP", tRP);
-	tRFC = ini_file.ReadInt(section, "tRFC", tRFC);
-	tCCD = ini_file.ReadInt(section, "tCCD", tCCD);
-	tRTRS = ini_file.ReadInt(section, "tRTRS", tRTRS);
-	tCWD = ini_file.ReadInt(section, "tCWD", tCWD);
-	tWTR = ini_file.ReadInt(section, "tWTR", tWTR);
-	tCAS = ini_file.ReadInt(section, "tCAS", tCAS);
-	tRCD = ini_file.ReadInt(section, "tRCD", tRCD);
-	tOST = ini_file.ReadInt(section, "tOST", tOST);
-	tRAS = ini_file.ReadInt(section, "tRAS", tRAS);
-	tWR = ini_file.ReadInt(section, "tWR", tWR);
-	tRTP = ini_file.ReadInt(section, "tRTP", tRTP);
-	tBURST = ini_file.ReadInt(section, "tBURST", tBURST);
-}
-
-
-void TimingParameters::DefaultDDR3_1600()
-{
-	tRC = 49;
-	tRRD = 5;
-	tRP = 11;
-	tRFC = 128;
-	tCCD = 4;
-	tRTRS = 1;
-	tCWD = 5;
-	tWTR = 6;
-	tCAS = 11;
-	tRCD = 11;
-	tOST = 1;
-	tRAS = 28;
-	tWR = 12;
-	tRTP = 6;
-	tBURST = 4;
+	// Set the timing parameters if present, else default to timings of 
+	// a typical DDR3 device at 1600Mhz, the default frequency
+	tRC = ini_file.ReadInt(section, "tRC", 49);
+	tRRD = ini_file.ReadInt(section, "tRRD", 5);
+	tRP = ini_file.ReadInt(section, "tRP", 11);
+	tRFC = ini_file.ReadInt(section, "tRFC", 128);
+	tCCD = ini_file.ReadInt(section, "tCCD", 4);
+	tRTRS = ini_file.ReadInt(section, "tRTRS", 1);
+	tCWD = ini_file.ReadInt(section, "tCWD", 5);
+	tWTR = ini_file.ReadInt(section, "tWTR", 6);
+	tCAS = ini_file.ReadInt(section, "tCAS", 11);
+	tRCD = ini_file.ReadInt(section, "tRCD", 11);
+	tOST = ini_file.ReadInt(section, "tOST", 1);
+	tRAS = ini_file.ReadInt(section, "tRAS", 28);
+	tWR = ini_file.ReadInt(section, "tWR", 12);
+	tRTP = ini_file.ReadInt(section, "tRTP", 6);
+	tBURST = ini_file.ReadInt(section, "tBURST", 4);
 }
 
 

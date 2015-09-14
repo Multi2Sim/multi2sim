@@ -48,6 +48,25 @@ static std::string default_config =
 			"[ General ]\n"
 			"Frequency = 100000\n"
 			"[ MemoryController One ]\n";
+
+// Testing config used to simplify testing that is not
+// intended to verify timings.
+static std::string testing_config = default_config + 
+			"tRC = 0\n"
+			"tRRD = 0\n"
+			"tRP = 0\n"
+			"tRFC = 0\n"
+			"tCCD = 0\n"
+			"tRTRS = 0\n"
+			"tCWD = 0\n"
+			"tWTR = 0\n"
+			"tCAS = 0\n"
+			"tRCD = 0\n"
+			"tOST = 0\n"
+			"tRAS = 0\n"
+			"tWR = 0\n"
+			"tRTP = 0\n"
+			"tBURST = 0\n";
 			
 TEST(TestSystemEvents, section_one_read)
 {
@@ -56,7 +75,7 @@ TEST(TestSystemEvents, section_one_read)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -111,7 +130,7 @@ TEST(TestSystemEvents, section_one_write)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -166,7 +185,7 @@ TEST(TestSystemEvents, section_two_reads_same_address)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -222,7 +241,7 @@ TEST(TestSystemEvents, section_two_writes_same_address)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -278,7 +297,7 @@ TEST(TestSystemEvents, section_two_reads_different_row)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -335,7 +354,7 @@ TEST(TestSystemEvents, section_two_writes_different_row)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(default_config);
+	ini_file.LoadFromString(testing_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -393,7 +412,7 @@ TEST(TestSystemEvents, section_two_reads_same_row_closed_page_policy)
 	// Set up INI file
 	misc::IniFile ini_file;
 	std::string closed_page_config = 
-			default_config + "PagePolicy = Closed\n";
+			testing_config + "PagePolicy = Closed\n";
 	ini_file.LoadFromString(closed_page_config);
 
 	// Set up dram instance
@@ -452,7 +471,7 @@ TEST(TestSystemEvents, section_two_writes_same_row_closed_page_policy)
 	// Set up INI file
 	misc::IniFile ini_file;
 	std::string closed_page_config = 
-			default_config + "PagePolicy = Closed\n";
+			testing_config + "PagePolicy = Closed\n";
 	ini_file.LoadFromString(closed_page_config);
 
 	// Set up dram instance
@@ -510,9 +529,7 @@ TEST(TestSystemEvents, section_test_precharge_timing)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	std::string DDR3_1600_config = 
-			default_config + "Default = DDR3_1600\n";
-	ini_file.LoadFromString(DDR3_1600_config);
+	ini_file.LoadFromString(default_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -565,9 +582,7 @@ TEST(TestSystemEvents, section_test_activate_timing_same_bank)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	std::string DDR3_1600_config = 
-			default_config + "Default = DDR3_1600\n";
-	ini_file.LoadFromString(DDR3_1600_config);
+	ini_file.LoadFromString(default_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -627,9 +642,7 @@ TEST(TestSystemEvents, section_test_single_read_timing)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	std::string DDR3_1600_config = 
-			default_config + "Default = DDR3_1600\n";
-	ini_file.LoadFromString(DDR3_1600_config);
+	ini_file.LoadFromString(default_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -672,9 +685,7 @@ TEST(TestSystemEvents, section_test_single_write_timing)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	std::string DDR3_1600_config = 
-			default_config + "Default = DDR3_1600\n";
-	ini_file.LoadFromString(DDR3_1600_config);
+	ini_file.LoadFromString(default_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
