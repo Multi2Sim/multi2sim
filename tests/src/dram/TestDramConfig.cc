@@ -473,8 +473,7 @@ TEST(TestSystemConfiguration, section_correct_timings_DDR3_1600)
 	std::string config =
 			"[ General ]\n"
 			"Frequency = 20000\n"
-			"[MemoryController One]\n"
-			"Default = DDR3_1600\n";
+			"[MemoryController One]\n";
 
 	// Set up INI file
 	misc::IniFile ini_file;

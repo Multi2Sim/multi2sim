@@ -28,26 +28,21 @@ namespace dram
 
 struct TimingParameters
 {
-	int tRC = 0;
-	int tRRD = 0;
-	int tRP = 0;
-	int tRFC = 0;
-	int tCCD = 0;
-	int tRTRS = 0;
-	int tCWD = 0;
-	int tWTR = 0;
-	int tCAS = 0;
-	int tRCD = 0;
-	int tOST = 0;
-	int tRAS = 0;
-	int tWR = 0;
-	int tRTP = 0;
-	int tBURST = 0;
-
-	/// Create a new TimingParameters instance with all parameters set to 0
-	TimingParameters()
-	{
-	}
+	int tRC;
+	int tRRD;
+	int tRP;
+	int tRFC;
+	int tCCD;
+	int tRTRS;
+	int tCWD;
+	int tWTR;
+	int tCAS;
+	int tRCD;
+	int tOST;
+	int tRAS;
+	int tWR;
+	int tRTP;
+	int tBURST;
 
 	/// Create a new TimingParameters instance with all parameters
 	/// parsed from the configuration file MemoryController section.
@@ -58,9 +53,6 @@ struct TimingParameters
 	/// configuration file.
 	void ParseTiming(const std::string &section,
 			misc::IniFile &ini_file);
-
-	/// Set the parameters to what they would in a system with DRR3-1600.
-	void DefaultDDR3_1600();
 };
 
 }  // namespace dram
