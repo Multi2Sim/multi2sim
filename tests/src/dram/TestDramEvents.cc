@@ -620,4 +620,93 @@ TEST(TestSystemEvents, section_test_activate_timing_same_bank)
 	}
 }
 
+TEST(TestSystemEvents, section_test_single_read_timing)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	std::string DDR3_1600_config = 
+			default_config + "Default = DDR3_1600\n";
+	ini_file.LoadFromString(DDR3_1600_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// Test body
+	try
+	{
+		// Submit one read
+		dram_system->Read(0);
+		esim::Engine *engine = esim::Engine::getInstance();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Schedule the command
+		engine->ProcessEvents();
+		engine->ProcessEvents();
+
+		// ProcessEvents until the command queue is empty
+		while(bank->getNumCommandsInQueue() > 0){
+			engine->ProcessEvents();
+		}
+
+		// 15 cycles to do single read
+		EXPECT_TRUE(System::frequency_domain->getCycle() == 15);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
+TEST(TestSystemEvents, section_test_single_write_timing)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	std::string DDR3_1600_config = 
+			default_config + "Default = DDR3_1600\n";
+	ini_file.LoadFromString(DDR3_1600_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// Test body
+	try
+	{
+		// Submit one write
+		dram_system->Write(0);
+		esim::Engine *engine = esim::Engine::getInstance();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Schedule the commands
+		engine->ProcessEvents();
+		engine->ProcessEvents();
+
+		// ProcessEvents until the command queue is empty
+		while(bank->getNumCommandsInQueue() > 0){
+			engine->ProcessEvents();
+		}
+
+		// 15 cycles to do single write
+		EXPECT_TRUE(System::frequency_domain->getCycle() == 15);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
 }
