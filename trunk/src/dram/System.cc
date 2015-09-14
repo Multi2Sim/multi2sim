@@ -70,7 +70,7 @@ esim::Event *System::event_command_return(nullptr);
 
 const char *System::err_config_note =
 		"Please run 'm2s --dram-help' or consult the Multi2Sim Guide for "
-		"a description of the dram system configuration file format.";
+		"a description of the DRAM system configuration file format.";
 
 const std::string System::help_message =
 		"Option '--dram-config <file>' is used to configure the dram system. The\n"
