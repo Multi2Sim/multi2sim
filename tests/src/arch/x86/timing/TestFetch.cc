@@ -39,9 +39,10 @@ static void Cleanup() {
 	comm::ArchPool::Destroy();
 }
 
-TEST(TestX86TimingFetchStage, simple_fetch)
+TEST(TestX86TimingFetchStage, pipeline_flush)
 {
-
+	// Cleanup the environment
+	Cleanup();
 
 	// CPU configuration file
 	std::string config_string =
@@ -61,16 +62,17 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 		ASSERT_TRUE(false);
 	}
 
-	// Get instance of Timing
+	// Get instance of Timing， register emulator and timing simulator in
+	// the arch_pool
 	Emulator *emulator = Emulator::getInstance();
-	Timing::getInstance();
+	Timing *timing = Timing::getInstance();
 
 	// Memory configuration file
 	std::string mem_config_string =
 			"[ General ]\n"
 			"[ Module mod-mm ]\n"
 			"Type = MainMemory\n"
-			"Latency = 50\n"
+			"Latency = 10\n"
 			"BlockSize = 64\n"
 			"[ Entry core-1 ]\n"
 			"Arch = x86\n"
@@ -94,8 +96,152 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 
 
 	// Code to execute
-	// mov eax, ebx
+	// mov eax, 1
+	// int 0x80
 	unsigned char code[] = {
+		0xB8, 0x01, 0x00, 0x00, 0x00, 0xCD, 0x80
+	};
+
+	// Create a context]
+	Context *context = emulator->newContext();
+	context->Initialize();
+	auto mmu = misc::new_shared<mem::Mmu>("mmu");
+	context->mmu = mmu;
+	mem::Mmu::Space space("space", mmu.get());
+	context->mmu_space = &space;
+	mem::Memory *memory = context->getMemory();
+	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
+				mem::Memory::PageSize));
+
+	// Allocate memory and save the instructions into memory
+	mem::Manager manager(memory);
+	unsigned eip = manager.Allocate(sizeof(code), 128);
+	memory->Write(eip, sizeof(code), (const char *)code);
+
+	// Update context status, including eip
+	context->setUinstActive(true);
+	context->setState(Context::StateRunning);
+	context->getRegs().setEip(eip);
+
+	// Map the thread onto cpu hardware
+	Cpu *cpu = Timing::getInstance()->getCpu();
+	Thread *thread = cpu->getThread(0, 0);
+	thread->MapContext(context);
+	thread->Schedule();
+
+	// Fetch
+	thread->setFetchNeip(eip);
+
+	// The expected number of uops in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_size[] =
+	{
+		2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+		2, 2, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	// The expected number of bytes in the fetch queue, indexed by cycle
+	// number. The first instruction is 5 bytes and the second intruction
+	// is 2 bytes. Therefore, in total, there should be 7 bytes
+	int expected_fetch_queue_occupency[] =
+	{
+		7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+		7, 7, 0, 0, 0, 0, 0, 0, 0, 0
+	};
+
+	// Run the pipeline for a certain number of  cycles, a whole cache line
+	// should be in the fetch queue. Since the data have not been fetched
+	// from the memory yet, it should not be consumed by the DECODE stage.
+	// After 10 cycles, the instruction is consumed by the DECODE stage,
+	// at a speed of 4 instructions per cycle.
+	esim::Engine *engine = esim::Engine::getInstance();
+	for (int i = 0; i < 20; i++)
+	{
+		// Run the timing simulator for one cycle
+		try
+		{
+			timing->Run();
+			engine->ProcessEvents();
+		}
+		catch (misc::Exception &e)
+		{
+			std::cerr << "Exception in running x86 timing "
+					"simulation" <<
+					e.getMessage() << "\n";
+			ASSERT_TRUE(false);
+		}
+
+		// A full cache line should be in fetch queue
+		EXPECT_EQ(expected_fetch_queue_size[i],
+				thread->getFetchQueueSize());
+		EXPECT_EQ(expected_fetch_queue_occupency[i],
+				thread->getFetchQueueOccupency());
+	}
+
+	Cleanup();
+}
+
+/*
+TEST(TestX86TimingFetchStage, simple_fetch)
+{
+	// Cleanup the environment
+	Cleanup();
+
+	// CPU configuration file
+	std::string config_string =
+			"[ General ]\n"
+			"[ TraceCache ]\n"
+			"Present = f";
+	misc::IniFile config_ini;
+	config_ini.LoadFromString(config_string);
+	try
+	{
+		Timing::ParseConfiguration(&config_ini);
+	}
+	catch (misc::Exception &e)
+	{
+		std::cerr << "Exception in reading x86 configuration" <<
+				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
+	}
+
+	// Get instance of Timing， register emulator and timing simulator in
+	// the arch_pool
+	Emulator *emulator = Emulator::getInstance();
+	Timing *timing = Timing::getInstance();
+
+	// Memory configuration file
+	std::string mem_config_string =
+			"[ General ]\n"
+			"[ Module mod-mm ]\n"
+			"Type = MainMemory\n"
+			"Latency = 10\n"
+			"BlockSize = 64\n"
+			"[ Entry core-1 ]\n"
+			"Arch = x86\n"
+			"Core = 0\n"
+			"Thread = 0\n"
+			"Module = mod-mm\n";
+	misc::IniFile mem_config_ini;
+	mem_config_ini.LoadFromString(mem_config_string);
+
+	// Configure
+	try
+	{
+		mem::System::getInstance()->ReadConfiguration(&mem_config_ini);
+	}
+	catch (misc::Exception &e)
+	{
+		std::cerr << "Exception in reading mem configuration" <<
+				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
+	}
+
+
+	// Code to execute
+	// Four cache blocks of the instruction mov eax, ebx
+	unsigned char code[] =
+	{
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
@@ -159,68 +305,57 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 
 	// Fetch
 	thread->setFetchNeip(eip);
-	//timing->Run();
-	thread->Fetch();
-	EXPECT_EQ(32, thread->getFetchQueueSize());
-	EXPECT_EQ(64, thread->getFetchQueueOccupency());
 
-	// After fetching,
-	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 51; i++)
+	// The expected number of uops in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_size[] =
 	{
-		EXPECT_EQ(32, thread->getFetchQueueSize());
-		EXPECT_EQ(64, thread->getFetchQueueOccupency());
+		32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+		28, 24, 20, 16, 12, 8, 4, 0, 0, 0
+	};
 
+	// The expected number of bytes in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_occupency[] =
+	{
+		64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+		56, 48, 40, 32, 24, 16, 8, 0, 0, 0
+	};
+
+	// Run the pipeline for a certain number of  cycles, a whole cache line
+	// should be in the fetch queue. Since the data have not been fetched
+	// from the memory yet, it should not be consumed by the DECODE stage.
+	// After 10 cycles, the instruction is consumed by the DECODE stage,
+	// at a speed of 4 instructions per cycle.
+	esim::Engine *engine = esim::Engine::getInstance();
+	for (int i = 0; i < 20; i++)
+	{
 		// Process events
 		// thread->Decode();
-		// 	Why the result is different if this line
-		// 	is behind engine->ProcessEvents();?
+		// thread->Fetch();
+		timing->Run();
 		engine->ProcessEvents();
-		thread->Decode();
-		//timing->Run();
-	}
 
-	// Decoding
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(28, thread->getFetchQueueSize());
-	EXPECT_EQ(56, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(24, thread->getFetchQueueSize());
-	EXPECT_EQ(48, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(20, thread->getFetchQueueSize());
-	EXPECT_EQ(40, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(16, thread->getFetchQueueSize());
-	EXPECT_EQ(32, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(12, thread->getFetchQueueSize());
-	EXPECT_EQ(24, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(8, thread->getFetchQueueSize());
-	EXPECT_EQ(16, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(4, thread->getFetchQueueSize());
-	EXPECT_EQ(8, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(0, thread->getFetchQueueSize());
-	EXPECT_EQ(0, thread->getFetchQueueOccupency());
+		printf("Cycle: %d, uops: %d, bytes: %d\n", i,
+				thread->getFetchQueueSize(),
+				thread->getFetchQueueOccupency());
+
+		// A full cache line should be in fetch queue
+		EXPECT_EQ(expected_fetch_queue_size[i],
+				thread->getFetchQueueSize());
+		EXPECT_EQ(expected_fetch_queue_occupency[i],
+				thread->getFetchQueueOccupency());
+	}
 
 	Cleanup();
 }
+*/
 
 
 TEST(TestX86TimingFetchStage, fetch_same_block)
 {
-
+	// Cleanup the environment
+	Cleanup();
 
 	// CPU configuration file
 	std::string config_string =
@@ -242,14 +377,14 @@ TEST(TestX86TimingFetchStage, fetch_same_block)
 
 	// Get instance of Timing
 	Emulator *emulator = Emulator::getInstance();
-	Timing::getInstance();
+	Timing *timing = Timing::getInstance();
 
 	// Memory configuration file
 	std::string mem_config_string =
 			"[ General ]\n"
 			"[ Module mod-mm ]\n"
 			"Type = MainMemory\n"
-			"Latency = 50\n"
+			"Latency = 10\n"
 			"BlockSize = 64\n"
 			"[ Entry core-1 ]\n"
 			"Arch = x86\n"
@@ -273,8 +408,11 @@ TEST(TestX86TimingFetchStage, fetch_same_block)
 
 
 	// Code to execute
-	// mov eax, ebx
-	unsigned char code[] = {
+	// Four cache lines of mov eax, ebx, except for the 9th instruction.
+	// The 9th instruction is jmp -16, which jumps back to the beginning of
+	// the code.
+	unsigned char code[] =
+	{
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0xEB, 0xF0, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
@@ -338,82 +476,47 @@ TEST(TestX86TimingFetchStage, fetch_same_block)
 
 	// Fetch
 	thread->setFetchNeip(eip);
-	//timing->Run();
-	thread->Fetch();
-	EXPECT_EQ(32, thread->getFetchQueueSize());
-	EXPECT_EQ(64, thread->getFetchQueueOccupency());
+
+	// The expected number of uops in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_size[] =
+	{
+		32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+		32, 32, 32, 32, 32, 32, 32, 0, 0, 0,
+		0, 0, 0, 0, 8, 16, 24, 32, 32, 32
+	};
+
+	// The expected number of bytes in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_occupency[] =
+	{
+		64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+		64, 64, 64, 64, 64, 64, 64, 0, 0, 0,
+		0, 0, 0, 0, 16, 32, 48, 64, 64, 64
+	};
 
 	// After fetching,
 	esim::Engine *engine = esim::Engine::getInstance();
-	for (int i = 0; i < 51; i++)
+	for (int i = 0; i < 30; i++)
 	{
-		EXPECT_EQ(32, thread->getFetchQueueSize());
-		EXPECT_EQ(64, thread->getFetchQueueOccupency());
-
-		// Process events
-		// thread->Decode();
-		// 	Why the result is different if this line
-		// 	is behind engine->ProcessEvents();?
+		// Run the timing simulation for one cycle
+		timing->Run();
 		engine->ProcessEvents();
-		thread->Decode();
-		//timing->Run();
-	}
 
-	// Decoding
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(28, thread->getFetchQueueSize());
-	EXPECT_EQ(56, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(24, thread->getFetchQueueSize());
-	EXPECT_EQ(48, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(20, thread->getFetchQueueSize());
-	EXPECT_EQ(40, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(16, thread->getFetchQueueSize());
-	EXPECT_EQ(32, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(12, thread->getFetchQueueSize());
-	EXPECT_EQ(24, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(8, thread->getFetchQueueSize());
-	EXPECT_EQ(16, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(4, thread->getFetchQueueSize());
-	EXPECT_EQ(8, thread->getFetchQueueOccupency());
-	engine->ProcessEvents();
-	thread->Decode();
-	EXPECT_EQ(0, thread->getFetchQueueSize());
-	EXPECT_EQ(0, thread->getFetchQueueOccupency());
-
-	// Never fetch again
-	for (int i = 0; i < 51; i++)
-	{
-		EXPECT_EQ(0, thread->getFetchQueueSize());
-		EXPECT_EQ(0, thread->getFetchQueueOccupency());
-
-		// Process events
-		// thread->Decode();
-		// 	Why the result is different if this line
-		// 	is behind engine->ProcessEvents();?
-		engine->ProcessEvents();
-		thread->Decode();
-		//timing->Run();
+		EXPECT_EQ(expected_fetch_queue_size[i],
+				thread->getFetchQueueSize());
+		EXPECT_EQ(expected_fetch_queue_occupency[i],
+				thread->getFetchQueueOccupency());
 	}
 
 	Cleanup();
 }
 
+/*
 TEST(TestX86TimingFetchStage, fetch_another_block)
 {
-
+	// Cleanup the environment
+	Cleanup();
 
 	// CPU configuration file
 	std::string config_string =
@@ -467,7 +570,8 @@ TEST(TestX86TimingFetchStage, fetch_another_block)
 
 	// Code to execute
 	// mov eax, ebx
-	unsigned char code[] = {
+	unsigned char code[] =
+	{
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
 		0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8, 0x89, 0xD8,
@@ -532,7 +636,7 @@ TEST(TestX86TimingFetchStage, fetch_another_block)
 	// Fetch
 	thread->setFetchNeip(eip);
 
-/*
+
 	int expected_fetch_queue_size[] = {
 		0,
 		32, 32, 32, 32, 32, 32, 32, 32, 32, 32, // 10
@@ -568,7 +672,7 @@ TEST(TestX86TimingFetchStage, fetch_another_block)
 		19, 19, 19, 19, 19, 19, 19, 19, 19, 19, // 310
 		19, 19, 28, 24, 20, 16, 13, 13, 13, 13, // 320
 	};
-	*/
+
 
 
 
@@ -593,5 +697,6 @@ TEST(TestX86TimingFetchStage, fetch_another_block)
 
 	Cleanup();
 }
+*/
 
 }  // namespace x86
