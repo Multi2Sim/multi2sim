@@ -258,7 +258,7 @@ void Uinst::Dump(std::ostream &os) const
 	/* Input operands */
 	comma = "";
 	dep_count = 0;
-	for (int i = 0; i < MaxODeps; i++)
+	for (int i = 0; i < MaxIDeps; i++)
 	{
 		Dep dep = idep[i];
 		if (!dep)
