@@ -24,50 +24,50 @@
 
 #include "Type.h"
 
-struct cl2llvm_built_in_func_t
+namespace cl2llvm
+{
+
+class BuiltInFunction
 {
 	int arg_count;
+	vector<BuiltInFunctionInst> format_list;
 
-	struct list_t* format_list;
+public:
+
+	BuiltInFunction(int, string, string);
 };
 
-struct cl2llvm_built_in_func_llvm_name_t
+class BuiltInFunctionInst
 {
-	char* llvm_name;
+	// Name of function as it appears in llvm
+	string llvm_name;
 
 	/* Arguments */
 	int arg_count;
-	struct cl2llvmTypeWrap** arg_list;
+	vector<Type> arg_list;
 
 	/* Return type */
-	struct cl2llvmTypeWrap* ret_type;
+	Type ret_type;
+
+public:
+
+	BuiltInFunctionInst();
 };
 
-struct hash_table_t *built_in_func_table_create(void);
+hash_table<BuiltInFunction> BuiltInFunctionTableCreate(void);
 
-void cl2llvm_built_in_func_table_free(struct hash_table_t *built_in_func_table);
+void BuiltInFunctionAnalyze(string name, vector<Value> param_list);
 
-struct cl2llvm_built_in_func_t *cl2llvm_built_in_func_create(int, char*, char*);
+void FunctionDeclare(int arg_count, vector<Type> arg_list, Type ret_type, 
+	string name, string param_spec_name);
 
-void cl2llvm_built_in_func_free(struct cl2llvm_built_in_func_t* built_in_Func);
-
-struct cl2llvm_built_in_func_llvm_name_t* cl2llvm_built_in_func_llvm_name_create(void);
-
-void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name_t*);
-
-void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list);
-
-void func_declare(int arg_count, struct cl2llvmTypeWrap** arg_list, struct cl2llvmTypeWrap *ret_type, 
-	char* name, char* param_spec_name);
-
-int *intptr(int num);
-
-struct cl2llvmTypeWrap *string_to_type(char*);
+Type StringToType(string);
 
 /* This function creates an error message for argument type mismatches based
-   on and arg_info string and a list of the attempted argument types. */
-char *cl2llvm_error_built_in_func_arg_mismatch(struct list_t *param_list,
-	struct cl2llvm_built_in_func_t *func_info,  char *func_name, 
-	char *error_message);
+   on an arg_info string and a list of the attempted argument types. */
+string ErrorBuiltInFunctionArgMismatch(vector<Value> param_list,
+	BuiltInFunction func_info,  string func_name, 
+	string error_message);
 
+} // cl2llvm
 #endif
