@@ -24,50 +24,50 @@
 
 #include "Type.h"
 
-namespace cl2llvm
-{
-
-class BuiltInFunction
+struct cl2llvm_built_in_func_t
 {
 	int arg_count;
-	vector<BuiltInFunctionInst> format_list;
 
-public:
-
-	BuiltInFunction(int, string, string);
+	struct list_t* format_list;
 };
 
-class BuiltInFunctionInst
+struct cl2llvm_built_in_func_llvm_name_t
 {
-	// Name of function as it appears in llvm
-	string llvm_name;
+	char* llvm_name;
 
 	/* Arguments */
 	int arg_count;
-	vector<Type> arg_list;
+	struct cl2llvmTypeWrap** arg_list;
 
 	/* Return type */
-	Type ret_type;
-
-public:
-
-	BuiltInFunctionInst();
+	struct cl2llvmTypeWrap* ret_type;
 };
 
-hash_table<BuiltInFunction> BuiltInFunctionTableCreate(void);
+struct hash_table_t *built_in_func_table_create(void);
 
-void BuiltInFunctionAnalyze(string name, vector<Value> param_list);
+void cl2llvm_built_in_func_table_free(struct hash_table_t *built_in_func_table);
 
-void FunctionDeclare(int arg_count, vector<Type> arg_list, Type ret_type, 
-	string name, string param_spec_name);
+struct cl2llvm_built_in_func_t *cl2llvm_built_in_func_create(int, char*, char*);
 
-Type StringToType(string);
+void cl2llvm_built_in_func_free(struct cl2llvm_built_in_func_t* built_in_Func);
+
+struct cl2llvm_built_in_func_llvm_name_t* cl2llvm_built_in_func_llvm_name_create(void);
+
+void cl2llvm_built_in_func_llvm_name_free(struct cl2llvm_built_in_func_llvm_name_t*);
+
+void cl2llvm_built_in_func_analyze(char* name, struct list_t *param_list);
+
+void func_declare(int arg_count, struct cl2llvmTypeWrap** arg_list, struct cl2llvmTypeWrap *ret_type, 
+	char* name, char* param_spec_name);
+
+int *intptr(int num);
+
+struct cl2llvmTypeWrap *string_to_type(char*);
 
 /* This function creates an error message for argument type mismatches based
-   on an arg_info string and a list of the attempted argument types. */
-string ErrorBuiltInFunctionArgMismatch(vector<Value> param_list,
-	BuiltInFunction func_info,  string func_name, 
-	string error_message);
+   on and arg_info string and a list of the attempted argument types. */
+char *cl2llvm_error_built_in_func_arg_mismatch(struct list_t *param_list,
+	struct cl2llvm_built_in_func_t *func_info,  char *func_name, 
+	char *error_message);
 
-} // cl2llvm
 #endif
