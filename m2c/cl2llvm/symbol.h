@@ -22,29 +22,14 @@
 
 #include <llvm-c/Core.h>
 
-namespace cl2llvm {
-
-class Symbol
+struct cl2llvm_symbol_t
 {
-	string name;
-	Value value;
-
-public:
-
-	// Constructors
-	Symbol() {}
-	Symbol(string name, Value value):
-		name(name), value(value) {}
-	
-	// Setters
-	void setName(string name) { this->name = name; }
-	void setValue(Value value) { this->value = value; }
-
-	// Getters
-	string getName() { return name; }
-	Value getValue() { return value; }
-
+	char * name;
+	struct cl2llvm_val_t *cl2llvm_val;
 };
 
-}
+struct cl2llvm_symbol_t *cl2llvm_symbol_create(char *name);
+struct cl2llvm_symbol_t *cl2llvm_symbol_create_w_init(LLVMValueRef val, int sign, char *name);
+void cl2llvm_symbol_free(struct cl2llvm_symbol_t *symbol);
+
 #endif

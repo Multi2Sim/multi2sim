@@ -48,7 +48,7 @@ void cl2llvm_yyerror_fmt(char *fmt, ...);
 void cl2llvm_warning(char *s);
 
 extern FILE *cl2llvm_yyin;
-extern char *cl2llvm_file_name;
+extern const char *cl2llvm_file_name;
 
 extern struct hash_table_t *cl2llvm_symbol_table;
 
@@ -71,7 +71,7 @@ void Cl2llvmParse(Cl2llvm *self,
 		const char *in,
 		const char *out,
 		int opt_level);
-	
+
 void Cl2llvmCompile(Cl2llvm *self,
 		struct list_t *source_file_list,
 		struct list_t *llvm_file_list,

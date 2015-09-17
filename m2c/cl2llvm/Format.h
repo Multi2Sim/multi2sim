@@ -24,9 +24,7 @@
 
 char *extract_file_name(char *text);
 
-/* This function takes cl2llvm_type and an empty string.  The string is
-   then filled with the type of the cl2llvm_type */
-void cl2llvm_type_to_string(struct cl2llvmTypeWrap *type, char *type_string);
+
 
 #endif
 
