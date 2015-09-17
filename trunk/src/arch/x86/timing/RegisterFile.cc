@@ -88,7 +88,7 @@ RegisterFile::RegisterFile(Thread *thread) :
 			physical_register < xmm_local_size;
 			physical_register++)
 		free_xmm_registers[physical_register] = physical_register;
-	
+
 	// Initial mappings for the integer register file. Map each logical
 	// register to a new physical register, and map all flags to the first
 	// allocated physical register.
@@ -282,6 +282,7 @@ bool RegisterFile::canRename(Uop *uop)
 
 void RegisterFile::Rename(Uop *uop)
 {
+
 	// Update floating-point top of stack
 	if (uop->getOpcode() == Uinst::OpcodeFpPop)
 	{
@@ -474,11 +475,11 @@ void RegisterFile::Rename(Uop *uop)
 			// Rename
 			integer_registers[flag_physical_register].busy++;
 			integer_registers[flag_physical_register].pending = true;
-			int old_physical_register = integer_rat[logical_register - Uinst::DepIntFirst];
+			int old_physical_register = integer_rat[logical_register - Uinst::DepFlagFirst];
 			uop->setOutput(dep, flag_physical_register);
 			uop->setOldOutput(dep, old_physical_register);
 			integer_rat[logical_register - Uinst::DepFlagFirst] = flag_physical_register;
-			
+
 			// Debug
 			debug << "  Output flag " << Uinst::dep_map[logical_register]
 					<< " -> Integer register "
@@ -496,7 +497,7 @@ bool RegisterFile::isUopReady(Uop *uop)
 	// false.
 	if (uop->ready)
 		return true;
-	
+
 	// Traverse dependencies
 	for (int dep = 0; dep < Uinst::MaxIDeps; dep++)
 	{
@@ -530,6 +531,7 @@ bool RegisterFile::isUopReady(Uop *uop)
 
 void RegisterFile::WriteUop(Uop *uop)
 {
+
 	for (int dep = 0; dep < Uinst::MaxODeps; dep++)
 	{
 		int logical_register = uop->getUinst()->getODep(dep);
@@ -546,6 +548,7 @@ void RegisterFile::WriteUop(Uop *uop)
 
 void RegisterFile::UndoUop(Uop *uop)
 {
+
 	// Debug
 	debug << "Undo uop " << *uop << '\n';
 
@@ -656,7 +659,7 @@ void RegisterFile::UndoUop(Uop *uop)
 				// One less register occupied
 				core->decNumOccupiedXmmRegisters();
 				num_occupied_xmm_registers--;
-				
+
 				// Debug
 				debug << misc::fmt("  XMM register %d freed\n",
 						physical_register);
@@ -665,7 +668,7 @@ void RegisterFile::UndoUop(Uop *uop)
 			// Return to previous mapping
 			xmm_rat[logical_register - Uinst::DepXmmFirst] = old_physical_register;
 			assert(xmm_registers[old_physical_register].busy);
-			
+
 			// Debug
 			debug << "  Output " << Uinst::dep_map[logical_register]
 					<< " -> From XMM register "
@@ -696,8 +699,9 @@ void RegisterFile::UndoUop(Uop *uop)
 
 void RegisterFile::CommitUop(Uop *uop)
 {
+
 	// Debug
-	debug << "Undo uop " << *uop << '\n';
+	debug << "Commit uop " << *uop << '\n';
 
 	// Traverse output dependencies
 	assert(!uop->speculative_mode);
@@ -727,7 +731,7 @@ void RegisterFile::CommitUop(Uop *uop)
 				// One less register occupied
 				core->decNumOccupiedIntegerRegisters();
 				num_occupied_integer_registers--;
-				
+
 				// Debug
 				debug << misc::fmt("  Integer register %d freed\n",
 						physical_register);
@@ -753,7 +757,7 @@ void RegisterFile::CommitUop(Uop *uop)
 				// One less register occupied
 				core->decNumOccupiedFloatingPointRegisters();
 				num_occupied_floating_point_registers--;
-				
+
 				// Debug
 				debug << misc::fmt("  Floating-point register %d freed\n",
 						physical_register);
@@ -779,7 +783,7 @@ void RegisterFile::CommitUop(Uop *uop)
 				// One less register occupied
 				core->decNumOccupiedXmmRegisters();
 				num_occupied_xmm_registers--;
-				
+
 				// Debug
 				debug << misc::fmt("  XMM register %d freed\n",
 						physical_register);
