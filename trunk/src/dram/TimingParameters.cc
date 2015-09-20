@@ -25,34 +25,34 @@ namespace dram
 {
 
 
-TimingParameters::TimingParameters(const std::string &section,
-		misc::IniFile &ini_file)
+TimingParameters::TimingParameters(misc::IniFile *ini_file,
+		const std::string &section)
 {
 	// Parse the configuration file section
-	ParseTiming(section, ini_file);
+	ParseTiming(ini_file, section);
 }
 
 
-void TimingParameters::ParseTiming(const std::string &section,
-		misc::IniFile &ini_file)
+void TimingParameters::ParseTiming(misc::IniFile *ini_file,
+		const std::string &section)
 {
 	// Set the timing parameters if present, else default to timings of 
 	// a typical DDR3 device at 1600Mhz, the default frequency
-	tRC = ini_file.ReadInt(section, "tRC", 49);
-	tRRD = ini_file.ReadInt(section, "tRRD", 5);
-	tRP = ini_file.ReadInt(section, "tRP", 11);
-	tRFC = ini_file.ReadInt(section, "tRFC", 128);
-	tCCD = ini_file.ReadInt(section, "tCCD", 4);
-	tRTRS = ini_file.ReadInt(section, "tRTRS", 1);
-	tCWD = ini_file.ReadInt(section, "tCWD", 5);
-	tWTR = ini_file.ReadInt(section, "tWTR", 6);
-	tCAS = ini_file.ReadInt(section, "tCAS", 11);
-	tRCD = ini_file.ReadInt(section, "tRCD", 11);
-	tOST = ini_file.ReadInt(section, "tOST", 1);
-	tRAS = ini_file.ReadInt(section, "tRAS", 28);
-	tWR = ini_file.ReadInt(section, "tWR", 12);
-	tRTP = ini_file.ReadInt(section, "tRTP", 6);
-	tBURST = ini_file.ReadInt(section, "tBURST", 4);
+	tRC = ini_file->ReadInt(section, "tRC", 49);
+	tRRD = ini_file->ReadInt(section, "tRRD", 5);
+	tRP = ini_file->ReadInt(section, "tRP", 11);
+	tRFC = ini_file->ReadInt(section, "tRFC", 128);
+	tCCD = ini_file->ReadInt(section, "tCCD", 4);
+	tRTRS = ini_file->ReadInt(section, "tRTRS", 1);
+	tCWD = ini_file->ReadInt(section, "tCWD", 5);
+	tWTR = ini_file->ReadInt(section, "tWTR", 6);
+	tCAS = ini_file->ReadInt(section, "tCAS", 11);
+	tRCD = ini_file->ReadInt(section, "tRCD", 11);
+	tOST = ini_file->ReadInt(section, "tOST", 1);
+	tRAS = ini_file->ReadInt(section, "tRAS", 28);
+	tWR = ini_file->ReadInt(section, "tWR", 12);
+	tRTP = ini_file->ReadInt(section, "tRTP", 6);
+	tBURST = ini_file->ReadInt(section, "tBURST", 4);
 }
 
 
