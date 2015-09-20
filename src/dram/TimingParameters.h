@@ -44,15 +44,13 @@ struct TimingParameters
 	int tRTP;
 	int tBURST;
 
-	/// Create a new TimingParameters instance with all parameters
-	/// parsed from the configuration file MemoryController section.
-	TimingParameters(const std::string &section,
-			misc::IniFile &ini_file);
+	/// Create a new TimingParameters instance with all parameters parsed
+	/// from the configuration file MemoryController section.
+	TimingParameters(misc::IniFile *ini_file, const std::string &section);
 
 	/// Parse timings out of a MemoryController section of a dram
 	/// configuration file.
-	void ParseTiming(const std::string &section,
-			misc::IniFile &ini_file);
+	void ParseTiming(misc::IniFile *ini_file, const std::string &section);
 };
 
 }  // namespace dram

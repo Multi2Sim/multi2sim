@@ -49,9 +49,9 @@ static std::string default_config =
 			"Frequency = 100000\n"
 			"[ MemoryController One ]\n";
 
-// Testing config used to simplify testing that is not
-// intended to verify timings.
-static std::string testing_config = default_config + 
+// Testing config used to simplify testing that is not intended to verify
+// timings.
+static std::string zero_time_config = default_config + 
 			"tRC = 0\n"
 			"tRRD = 0\n"
 			"tRP = 0\n"
@@ -75,7 +75,7 @@ TEST(TestSystemEvents, section_one_read)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -130,7 +130,7 @@ TEST(TestSystemEvents, section_one_write)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -185,7 +185,7 @@ TEST(TestSystemEvents, section_two_reads_same_address)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -241,7 +241,7 @@ TEST(TestSystemEvents, section_two_writes_same_address)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -297,7 +297,7 @@ TEST(TestSystemEvents, section_two_reads_different_row)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -354,7 +354,7 @@ TEST(TestSystemEvents, section_two_writes_different_row)
 
 	// Set up INI file
 	misc::IniFile ini_file;
-	ini_file.LoadFromString(testing_config);
+	ini_file.LoadFromString(zero_time_config);
 
 	// Set up dram instance
 	System *dram_system = System::getInstance();
@@ -412,7 +412,7 @@ TEST(TestSystemEvents, section_two_reads_same_row_closed_page_policy)
 	// Set up INI file
 	misc::IniFile ini_file;
 	std::string closed_page_config = 
-			testing_config + "PagePolicy = Closed\n";
+			zero_time_config + "PagePolicy = Closed\n";
 	ini_file.LoadFromString(closed_page_config);
 
 	// Set up dram instance
@@ -471,7 +471,7 @@ TEST(TestSystemEvents, section_two_writes_same_row_closed_page_policy)
 	// Set up INI file
 	misc::IniFile ini_file;
 	std::string closed_page_config = 
-			testing_config + "PagePolicy = Closed\n";
+			zero_time_config + "PagePolicy = Closed\n";
 	ini_file.LoadFromString(closed_page_config);
 
 	// Set up dram instance

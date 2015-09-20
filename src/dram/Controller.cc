@@ -56,17 +56,17 @@ Controller::Controller(int id)
 }
 
 
-Controller::Controller(int id, const std::string &section,
-		misc::IniFile &config)
+Controller::Controller(int id, misc::IniFile *config,
+		const std::string &section)
 		:
 		Controller(id)
 {
-	ParseConfiguration(section, config);
+	ParseConfiguration(config, section);
 }
 
 
-void Controller::ParseConfiguration(const std::string &section,
-		misc::IniFile &config)
+void Controller::ParseConfiguration(misc::IniFile *config,
+		const std::string &section)
 {
 	// Tokenize the section title
 	std::vector<std::string> section_tokens;
@@ -77,51 +77,51 @@ void Controller::ParseConfiguration(const std::string &section,
 	if (section_tokens.size() < 2)
 		throw Error(misc::fmt("%s: MemoryController must have a name "
 				"in the form 'MemoryController <name>'.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
 	name = section_tokens[1];
 
 	// Load the page policy, defaulting to PagePolicyOpen
-	page_policy = (PagePolicyType) config.ReadEnum(section, "PagePolicy",
+	page_policy = (PagePolicyType) config->ReadEnum(section, "PagePolicy",
 			PagePolicyTypeMap, PagePolicyOpen);
 
 	// Load the scheduling algorithm, defaulting to SchedulerOldestFirst.
-	SchedulerType scheduler_type = (SchedulerType) config.ReadEnum(section,
+	SchedulerType scheduler_type = (SchedulerType) config->ReadEnum(section,
 			"SchedulingPolicy", SchedulerTypeMap,
 			SchedulerOldestFirst);
 
 	// Read DRAM size settings
-	num_channels = config.ReadInt(section, "NumChannels", 1);
+	num_channels = config->ReadInt(section, "NumChannels", 1);
 	if (num_channels <= 0)
 		throw Error(misc::fmt("%s: NumChannels must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
-	num_ranks = config.ReadInt(section, "NumRanks", 2);
+	num_ranks = config->ReadInt(section, "NumRanks", 2);
 	if (num_ranks <= 0)
 		throw Error(misc::fmt("%s: NumRanks must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
 
 	// int num_devices = config.ReadInt(section, "NumDevices", 8);
-	num_banks = config.ReadInt(section, "NumBanks", 8);
+	num_banks = config->ReadInt(section, "NumBanks", 8);
 	if (num_banks <= 0)
 		throw Error(misc::fmt("%s: NumBanks must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
-	num_rows = config.ReadInt(section, "NumRows", 1024);
+	num_rows = config->ReadInt(section, "NumRows", 1024);
 	if (num_rows <= 0)
 		throw Error(misc::fmt("%s: NumRows must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
-	num_columns = config.ReadInt(section, "NumColumns", 1024);
+	num_columns = config->ReadInt(section, "NumColumns", 1024);
 	if (num_columns <= 0)
 		throw Error(misc::fmt("%s: NumColumns must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
-	num_bits = config.ReadInt(section, "NumBits", 8);
+	num_bits = config->ReadInt(section, "NumBits", 8);
 	if (num_bits <= 0)
 		throw Error(misc::fmt("%s: NumBits must be at least 1.\n%s",
-				config.getPath().c_str(),
+				config->getPath().c_str(),
 				System::err_config_note));
 
 	// Create channels 
@@ -131,19 +131,19 @@ void Controller::ParseConfiguration(const std::string &section,
 				scheduler_type));
 
 	// Read DRAM timing parameters
-	ParseConfigurationTiming(section, config);
+	ParseConfigurationTiming(config, section);
 
 	// Create a set of new scheduler events for all the channels.
 	CreateSchedulers(num_channels);
 }
 
 
-void Controller::ParseConfigurationTiming(const std::string &section,
-		misc::IniFile &ini_file)
+void Controller::ParseConfigurationTiming(misc::IniFile *ini_file,
+		const std::string &section)
 {
 	// Create a timings object to use to read the parameters and pass it
 	// the configuration file and section to parse.
-	TimingParameters parameters(section, ini_file);
+	TimingParameters parameters(ini_file, section);
 
 	// Build the timing matrix.
 	// A A s s

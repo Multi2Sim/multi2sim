@@ -257,7 +257,7 @@ void System::ParseConfiguration(misc::IniFile *ini_file)
 		if (misc::StringPrefix(section_name, "MemoryController"))
 		{
 			controllers.emplace_back(new Controller(num_controller,
-					section_name, *ini_file));
+					ini_file, section_name));
 			num_controller++;
 		}
 	}

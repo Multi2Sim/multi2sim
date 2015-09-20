@@ -112,8 +112,7 @@ class Controller
 public:
 
 	Controller(int id);
-	Controller(int id, const std::string &section,
-			misc::IniFile &config);
+	Controller(int id, misc::IniFile *config, const std::string &section);
 
 	/// Returns the id of this controller, which is unique for all
 	/// controllers.
@@ -138,7 +137,6 @@ public:
 	int getTiming(TimingCommand prev, TimingCommand next,
 			TimingLocation rank, TimingLocation bank) const
 	{
-		// FIXME: this is a hack, initialize everything to 1 instead.
 		return std::max(timings[prev][next][rank][bank], 1);
 	}
 
@@ -149,10 +147,10 @@ public:
 	}
 
 	/// Parse a MemoryController section of a dram configuration file
-	void ParseConfiguration(const std::string &section,
-			misc::IniFile &ini_file);
-	void ParseConfigurationTiming(const std::string &section,
-			misc::IniFile &config);
+	void ParseConfiguration(misc::IniFile *ini_file,
+			const std::string &section);
+	void ParseConfigurationTiming(misc::IniFile *config,
+			const std::string &section);
 
 	/// Add a request to the controller's incoming request queue.
 	void AddRequest(std::shared_ptr<Request> request);
