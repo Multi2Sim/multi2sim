@@ -17,8 +17,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  */
 
-#ifndef DRAM_TIMINGPARAMETERS_H
-#define DRAM_TIMINGPARAMETERS_H
+#ifndef DRAM_TIMING_PARAMETERS_H
+#define DRAM_TIMING_PARAMETERS_H
 
 #include <lib/cpp/IniFile.h>
 
@@ -26,23 +26,27 @@
 namespace dram
 {
 
-struct TimingParameters
+class TimingParameters
 {
-	int tRC;
-	int tRRD;
-	int tRP;
-	int tRFC;
-	int tCCD;
-	int tRTRS;
-	int tCWD;
-	int tWTR;
-	int tCAS;
-	int tRCD;
-	int tOST;
-	int tRAS;
-	int tWR;
-	int tRTP;
-	int tBURST;
+	// These values are initialized in the contructor while parcing the
+	// IniFile
+	int time_rc;
+	int time_rrd;
+	int time_rp;
+	int time_rfc;
+	int time_ccd;
+	int time_rtrs;
+	int time_cwd;
+	int time_wtr;
+	int time_cas;
+	int time_rcd;
+	int time_ost;
+	int time_ras;
+	int time_wr;
+	int time_rtp;
+	int time_burst;
+
+public:
 
 	/// Create a new TimingParameters instance with all parameters parsed
 	/// from the configuration file MemoryController section.
@@ -51,6 +55,23 @@ struct TimingParameters
 	/// Parse timings out of a MemoryController section of a dram
 	/// configuration file.
 	void ParseTiming(misc::IniFile *ini_file, const std::string &section);
+	
+	// Getters for the timing values
+	int getTimeRc() { return time_rc; }
+	int getTimeRrd() { return time_rrd; }
+	int getTimeRp() { return time_rp; }
+	int getTimeRfc() { return time_rfc; }
+	int getTimeCcd() { return time_ccd; }
+	int getTimeRtrs() { return time_rtrs; }
+	int getTimeCwd() { return time_cwd; }
+	int getTimeWtr() { return time_wtr; }
+	int getTimeCas() { return time_cas; }
+	int getTimeRcd() { return time_rcd; }
+	int getTimeOst() { return time_ost; }
+	int getTimeRas() { return time_ras; }
+	int getTimeWr() { return time_wr; }
+	int getTimeRtp() { return time_rtp; }
+	int getTimeBurst() { return time_burst; }
 };
 
 }  // namespace dram
