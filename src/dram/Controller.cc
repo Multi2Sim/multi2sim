@@ -148,56 +148,64 @@ void Controller::ParseConfigurationTiming(misc::IniFile *ini_file,
 	// Build the timing matrix.
 	// A A s s
 	timings[TimingActivate][TimingActivate][TimingSame][TimingSame] =
-			parameters.tRC;
+			parameters.getTimeRc();
 	// A A s d
 	timings[TimingActivate][TimingActivate][TimingSame][TimingDifferent] =
-			parameters.tRRD;
+			parameters.getTimeRrd();
 	// P A s s
 	timings[TimingPrecharge][TimingActivate][TimingSame][TimingSame] =
-			parameters.tRP;
+			parameters.getTimeRp();
 	// A R s s
 	timings[TimingActivate][TimingRead][TimingSame][TimingSame] =
-			parameters.tRCD;
+			parameters.getTimeRcd();
 	// R R s a
 	timings[TimingRead][TimingRead][TimingSame][TimingAny] =
-			std::max(parameters.tBURST, parameters.tCCD);
+			std::max(parameters.getTimeBurst(),
+					parameters.getTimeCcd());
 	// R R d a
 	timings[TimingRead][TimingRead][TimingDifferent][TimingAny] =
-			parameters.tBURST + parameters.tRTRS;
+			parameters.getTimeBurst() + parameters.getTimeRtrs();
 	// W R s a
 	timings[TimingWrite][TimingRead][TimingSame][TimingAny] =
-			parameters.tCWD + parameters.tBURST + parameters.tWTR;
+			parameters.getTimeCwd() + parameters.getTimeBurst() +
+			parameters.getTimeWtr();
 	// W R d a
 	timings[TimingWrite][TimingRead][TimingDifferent][TimingAny] =
-			parameters.tCWD + parameters.tBURST + parameters.tRTRS - parameters.tCAS;
+			parameters.getTimeCwd() + parameters.getTimeBurst() +
+			parameters.getTimeRtrs() - parameters.getTimeCas();
 	// A W s s
 	timings[TimingActivate][TimingWrite][TimingSame][TimingSame] =
-			parameters.tRCD;
+			parameters.getTimeRcd();
 	// R W a a
 	timings[TimingRead][TimingWrite][TimingAny][TimingAny] =
-			parameters.tCAS + parameters.tBURST + parameters.tRTRS - parameters.tCWD;
+			parameters.getTimeCas() + parameters.getTimeBurst() +
+			parameters.getTimeRtrs() - parameters.getTimeCwd();
 	// W W s a
 	timings[TimingWrite][TimingWrite][TimingSame][TimingAny] =
-			std::max(parameters.tBURST, parameters.tCCD);
+			std::max(parameters.getTimeBurst(),
+					parameters.getTimeCcd());
 	// W W d a
 	timings[TimingWrite][TimingWrite][TimingDifferent][TimingAny] =
-			parameters.tBURST + parameters.tOST;
+			parameters.getTimeBurst() + parameters.getTimeOst();
 	// A P s s
 	timings[TimingActivate][TimingPrecharge][TimingSame][TimingSame] =
-			parameters.tRAS;
+			parameters.getTimeRas();
 	// R P s s
 	timings[TimingRead][TimingPrecharge][TimingSame][TimingSame] =
-			parameters.tBURST + parameters.tRTP - parameters.tCCD;
+			parameters.getTimeBurst() + parameters.getTimeRtp() -
+			parameters.getTimeCcd();
 	// W P s s
 	timings[TimingWrite][TimingPrecharge][TimingSame][TimingSame] =
-			parameters.tCWD + parameters.tBURST + parameters.tWR;
+			parameters.getTimeCwd() + parameters.getTimeBurst() +
+			parameters.getTimeWr();
 
 	// Store command durations.
-	command_durations[CommandPrecharge] = parameters.tRP;
-	command_durations[CommandActivate] = parameters.tRCD;
-	command_durations[CommandRead] = parameters.tCAS + parameters.tBURST;
-	command_durations[CommandWrite] =
-			parameters.tCWD + parameters.tBURST + parameters.tWTR;
+	command_durations[CommandPrecharge] = parameters.getTimeRp();
+	command_durations[CommandActivate] = parameters.getTimeRcd();
+	command_durations[CommandRead] = parameters.getTimeCas() +
+		parameters.getTimeBurst();
+	command_durations[CommandWrite] = parameters.getTimeCwd() +
+		parameters.getTimeBurst() + parameters.getTimeWtr();
 }
 
 
