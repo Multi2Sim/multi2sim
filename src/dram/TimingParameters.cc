@@ -38,21 +38,21 @@ void TimingParameters::ParseTiming(misc::IniFile *ini_file,
 {
 	// Set the timing parameters if present, else default to timings of 
 	// a typical DDR3 device at 1600Mhz, the default frequency
-	tRC = ini_file->ReadInt(section, "tRC", 49);
-	tRRD = ini_file->ReadInt(section, "tRRD", 5);
-	tRP = ini_file->ReadInt(section, "tRP", 11);
-	tRFC = ini_file->ReadInt(section, "tRFC", 128);
-	tCCD = ini_file->ReadInt(section, "tCCD", 4);
-	tRTRS = ini_file->ReadInt(section, "tRTRS", 1);
-	tCWD = ini_file->ReadInt(section, "tCWD", 5);
-	tWTR = ini_file->ReadInt(section, "tWTR", 6);
-	tCAS = ini_file->ReadInt(section, "tCAS", 11);
-	tRCD = ini_file->ReadInt(section, "tRCD", 11);
-	tOST = ini_file->ReadInt(section, "tOST", 1);
-	tRAS = ini_file->ReadInt(section, "tRAS", 28);
-	tWR = ini_file->ReadInt(section, "tWR", 12);
-	tRTP = ini_file->ReadInt(section, "tRTP", 6);
-	tBURST = ini_file->ReadInt(section, "tBURST", 4);
+	time_rc = ini_file->ReadInt(section, "tRC", 49);
+	time_rrd = ini_file->ReadInt(section, "tRRD", 5);
+	time_rp = ini_file->ReadInt(section, "tRP", 11);
+	time_rfc = ini_file->ReadInt(section, "tRFC", 128);
+	time_ccd = ini_file->ReadInt(section, "tCCD", 4);
+	time_rtrs = ini_file->ReadInt(section, "tRTRS", 1);
+	time_cwd = ini_file->ReadInt(section, "tCWD", 5);
+	time_wtr = ini_file->ReadInt(section, "tWTR", 6);
+	time_cas = ini_file->ReadInt(section, "tCAS", 11);
+	time_rcd = ini_file->ReadInt(section, "tRCD", 11);
+	time_ost = ini_file->ReadInt(section, "tOST", 1);
+	time_ras = ini_file->ReadInt(section, "tRAS", 28);
+	time_wr = ini_file->ReadInt(section, "tWR", 12);
+	time_rtp = ini_file->ReadInt(section, "tRTP", 6);
+	time_burst = ini_file->ReadInt(section, "tBURST", 4);
 }
 
 
