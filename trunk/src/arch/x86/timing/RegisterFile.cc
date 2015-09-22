@@ -468,17 +468,16 @@ void RegisterFile::Rename(Uop *uop)
 		{
 			// Ignore if not a flag
 			int logical_register = uop->getUinst()->getODep(dep);
-			if (!(logical_register >= Uinst::DepFlagFirst
-					&& logical_register <= Uinst::DepFlagLast))
+			if (!Uinst::isFlagDependency(logical_register))
 				continue;
 
 			// Rename
 			integer_registers[flag_physical_register].busy++;
 			integer_registers[flag_physical_register].pending = true;
-			int old_physical_register = integer_rat[logical_register - Uinst::DepFlagFirst];
+			int old_physical_register = integer_rat[logical_register - Uinst::DepIntFirst];
 			uop->setOutput(dep, flag_physical_register);
 			uop->setOldOutput(dep, old_physical_register);
-			integer_rat[logical_register - Uinst::DepFlagFirst] = flag_physical_register;
+			integer_rat[logical_register - Uinst::DepIntFirst] = flag_physical_register;
 
 			// Debug
 			debug << "  Output flag " << Uinst::dep_map[logical_register]
