@@ -7,8 +7,6 @@ AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
 	     $(top_srcdir)/src/lib/gtest/lib/libgtest.la \
 	     $(GTEST_LIBS) $(GTEST_LDFLAGS) -pthread
 
-SUBDIRS = src
-
 
 TESTS = \
 	src_arch_x86_timing_test \
@@ -84,7 +82,8 @@ src_arch_x86_timing_test_SOURCES = \
 	src/arch/x86/timing/TestBranchPredictor.cc \
 	src/arch/x86/timing/TestTraceCache.cc \
 	src/arch/x86/timing/TestAlu.cc \
-	src/arch/x86/timing/TestRegisterFile.cc
+	src/arch/x86/timing/TestRegisterFile.cc \
+	src/arch/x86/timing/TestFetch.cc
 	
 	
 	
