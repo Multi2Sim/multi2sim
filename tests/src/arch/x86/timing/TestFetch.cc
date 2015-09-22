@@ -503,12 +503,170 @@ TEST(TestX86TimingFetchStage, fetch_same_block)
 		timing->Run();
 		engine->ProcessEvents();
 
+		// Assertion the fetch queue is correct
 		EXPECT_EQ(expected_fetch_queue_size[i],
 				thread->getFetchQueueSize());
 		EXPECT_EQ(expected_fetch_queue_occupency[i],
 				thread->getFetchQueueOccupency());
 	}
 
+	// Cleanup environment
+	Cleanup();
+}
+
+
+TEST(TestX86TimingFetchStage, fetch_undecodable_code)
+{
+	// Cleanup the environment
+	Cleanup();
+
+	// CPU configuration file
+	std::string config_string =
+			"[ General ]\n"
+			"[ TraceCache ]\n"
+			"Present = f";
+	misc::IniFile config_ini;
+	config_ini.LoadFromString(config_string);
+	try
+	{
+		Timing::ParseConfiguration(&config_ini);
+	}
+	catch (misc::Exception &e)
+	{
+		std::cerr << "Exception in reading x86 configuration" <<
+				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
+	}
+
+	// Get instance of Timing
+	Emulator *emulator = Emulator::getInstance();
+	Timing *timing = Timing::getInstance();
+
+	// Memory configuration file
+	std::string mem_config_string =
+			"[ General ]\n"
+			"[ Module mod-mm ]\n"
+			"Type = MainMemory\n"
+			"Latency = 10\n"
+			"BlockSize = 64\n"
+			"[ Entry core-1 ]\n"
+			"Arch = x86\n"
+			"Core = 0\n"
+			"Thread = 0\n"
+			"Module = mod-mm\n";
+	misc::IniFile mem_config_ini;
+	mem_config_ini.LoadFromString(mem_config_string);
+
+	// Configure
+	try
+	{
+		mem::System::getInstance()->ReadConfiguration(&mem_config_ini);
+	}
+	catch (misc::Exception &e)
+	{
+		std::cerr << "Exception in reading mem configuration" <<
+				e.getMessage() << "\n";
+		ASSERT_TRUE(false);
+	}
+
+
+	// Code to execute
+	// Two cache lines of undecodable instructions
+	// 0F 3E is not a valid opcode
+	unsigned char code[] =
+	{
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E,
+		0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E, 0x0F, 0x3E
+	};
+
+	// Create a context]
+	Context *context = emulator->newContext();
+	context->Initialize();
+	auto mmu = misc::new_shared<mem::Mmu>("mmu");
+	context->mmu = mmu;
+	mem::Mmu::Space space("space", mmu.get());
+	context->mmu_space = &space;
+	mem::Memory *memory = context->getMemory();
+	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
+				mem::Memory::PageSize));
+
+	// Allocate memory and save the instructions into memory
+	mem::Manager manager(memory);
+	unsigned eip = manager.Allocate(sizeof(code), 128);
+	memory->Write(eip, sizeof(code), (const char *)code);
+
+	// Update context status, including eip
+	context->setUinstActive(true);
+	context->setState(Context::StateRunning);
+	context->getRegs().setEip(eip);
+
+	// Map the thread onto cpu hardware
+	Cpu *cpu = Timing::getInstance()->getCpu();
+	Thread *thread = cpu->getThread(0, 0);
+	thread->MapContext(context);
+	thread->Schedule();
+
+	// Fetch
+	thread->setFetchNeip(eip);
+
+	// The expected number of uops in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_size[] =
+	{
+		32, 32, 32, 32, 32, 32, 32, 32, 32, 32,
+		32, 32, 32, 32, 32, 32, 32, 0, 0, 0,
+		0, 0, 0, 0, 8, 16, 24, 32, 32, 32
+	};
+
+	// The expected number of bytes in the fetch queue, indexed by cycle
+	// number
+	int expected_fetch_queue_occupency[] =
+	{
+		64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+		64, 64, 64, 64, 64, 64, 64, 0, 0, 0,
+		0, 0, 0, 0, 16, 32, 48, 64, 64, 64
+	};
+
+	// After fetching,
+	esim::Engine *engine = esim::Engine::getInstance();
+	for (int i = 0; i < 30; i++)
+	{
+		// Run the timing simulation for one cycle
+		try
+		{
+			timing->Run();
+			engine->ProcessEvents();
+		}
+		catch (misc::Exception &e)
+		{
+			std::cerr << "Exception in executing pipeline" <<
+					e.getMessage() << "\n";
+			ASSERT_TRUE(false);
+		}
+
+		// Assertion the fetch queue is correct
+		EXPECT_EQ(expected_fetch_queue_size[i],
+				thread->getFetchQueueSize());
+		EXPECT_EQ(expected_fetch_queue_occupency[i],
+				thread->getFetchQueueOccupency());
+	}
+
+	// Cleanup environment
 	Cleanup();
 }
 
