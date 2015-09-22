@@ -419,9 +419,13 @@ Frame *Module::canCoalesce(AccessType access_type,
 			// Same block address, coalesce
 			if (frame->getAddress() >> log_block_size ==
 					address >> log_block_size)
+			{
+				assert(!frame->master_frame ||
+						!frame->master_frame->master_frame);
 				return frame->master_frame ?
 						frame->master_frame :
 						frame;
+			}
 			
 			// Done when head reached
 			if (it == accesses.begin())
@@ -450,6 +454,8 @@ Frame *Module::canCoalesce(AccessType access_type,
 			return nullptr;
 
 		// Coalesce
+		assert(!frame->master_frame ||
+				!frame->master_frame->master_frame);
 		return frame->master_frame ?
 				frame->master_frame :
 				frame;
@@ -472,6 +478,8 @@ Frame *Module::canCoalesce(AccessType access_type,
 			return nullptr;
 
 		// Coalesce
+		assert(!frame->master_frame ||
+				!frame->master_frame->master_frame);
 		return frame->master_frame ?
 				frame->master_frame :
 				frame;
