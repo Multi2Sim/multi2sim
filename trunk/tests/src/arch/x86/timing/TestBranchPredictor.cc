@@ -73,15 +73,6 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 
 TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 {
-	// Local variable declaration
-	const int num_branch_uop = 3;
-	BranchPredictor::Prediction pred;
-	char bimod_status;
-	unsigned int branch_addr = 0;
-	unsigned int branch_inst_size = 4;
-	unsigned int branch_target_distance = 8;
-	ObjectPool *object_pool = ObjectPool::getInstance();
-
 	// Setup configuration file for branch predictor
 	std::string config =
 			"[ BranchPredictor ]\n"
@@ -91,6 +82,18 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 	// Set up INI file
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
+
+	// Set ini file in Timing
+	Timing::ParseConfiguration(&ini_file);
+
+	// Local variable declaration
+	const int num_branch_uop = 3;
+	BranchPredictor::Prediction pred;
+	char bimod_status;
+	unsigned int branch_addr = 0;
+	unsigned int branch_inst_size = 4;
+	unsigned int branch_target_distance = 8;
+	ObjectPool *object_pool = ObjectPool::getInstance();
 
 	// Setup mock micro-op list
 	std::vector<std::unique_ptr<Uop>> uops;
