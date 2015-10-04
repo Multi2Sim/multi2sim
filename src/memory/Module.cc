@@ -300,6 +300,19 @@ void Module::FinishAccess(Frame *frame)
 		num_coalesced_accesses--;
 	}
 
+	// When a frame finishes its access, we need to check each of the frames
+	// in the access list and make sure that no remaining frames use the 
+	// finished frame as a master frame. If they are, their master frame
+	// pointer is resest to null. This is to prevent a situation where the
+	// finishing frame makes a later access and adopts a master frame from
+	// a frame in the access list which points to itself.
+	for (auto it = accesses.begin(); it != accesses.end(); it++)
+	{
+		Frame *list_frame = *it;
+		if (list_frame->master_frame == frame)
+			list_frame->master_frame = nullptr;
+	}
+
 	// Wake up dependent accesses
 	frame->queue.WakeupAll();
 }
