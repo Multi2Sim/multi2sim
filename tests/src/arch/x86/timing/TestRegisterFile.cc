@@ -262,7 +262,7 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfIntSize = 26";
+			"RfIntSize = 31";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
@@ -327,7 +327,7 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfFpSize = 15";
+			"RfFpSize = 28";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
@@ -392,7 +392,7 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfXmmSize = 15";
+			"RfXmmSize = 25";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
