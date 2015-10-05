@@ -1076,7 +1076,6 @@ void System::EventFindAndLockHandler(esim::Event *event,
 				frame->state);
 		if (frame->hit)
 		{
-			assert(frame->state);
 			debug << misc::fmt("    %lld 0x%x %s "
 					"hit: set=%d, way=%d, "
 					"state=%s\n",

@@ -4219,6 +4219,9 @@ TEST(TestSystemEvents, config_1_evict_0)
 	}
 }
 
+// TODO: Add find_and_lock, find_and_lock_port, find_and_lock_action, and
+// find_and_lock_finish tests.
+
 }
 
 
