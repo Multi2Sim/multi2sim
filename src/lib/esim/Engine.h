@@ -354,7 +354,7 @@ public:
 	/// \param event
 	///	Type of event to schedule
 	///
-	/// \param event_frame
+	/// \param frame
 	///	Data associated with the event, given as a shared pointer. This
 	///	object will be freed automatically when the last reference to
 	///	it disappears.
@@ -374,7 +374,7 @@ public:
 	///	respect to the event's frequency domain.
 	///
 	void Call(Event *event,
-			std::shared_ptr<Frame> event_frame = nullptr,
+			std::shared_ptr<Frame> frame = nullptr,
 			Event *return_event = nullptr,
 			int after = 0,
 			int period = 0);

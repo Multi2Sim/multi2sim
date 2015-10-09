@@ -73,9 +73,12 @@ fi
 
 
 
-################################################
-# Test of GCC version >= 4.7 (support for C++11)
-################################################
+###############################################################################
+# Test of GCC version >= 4.8 (support for C++11). Even though GCC 4.7 already
+# supports C++11, some standard library features are not available, which are
+# required in Multi2Sim. An example is functions std::map::emplace() or
+# std::unordered_map::emplace().
+###############################################################################
 
 # Check for option -dumpversion
 AC_MSG_CHECKING([for option -dumpversion])
@@ -85,7 +88,7 @@ then
 	AC_MSG_ERROR([
 
 	The version of the GCC compiler could not be determined, since option
-	-dumpversion is not available. Please install GCC 4.7 or later in your
+	-dumpversion is not available. Please install GCC 4.8 or later in your
 	system to compile Multi2Sim.]
 	)
 fi
@@ -99,11 +102,11 @@ AC_MSG_RESULT($cxx_version)
 # Check version
 cxx_major_version=`echo $cxx_version | cut -d. -f1`
 cxx_minor_version=`echo $cxx_version | cut -d. -f2`
-if test \( $cxx_major_version -lt 4 \) -o \( $cxx_major_version -eq 4 -a $cxx_minor_version -lt 7 \)
+if test \( $cxx_major_version -lt 4 \) -o \( $cxx_major_version -eq 4 -a $cxx_minor_version -lt 8 \)
 then
 	AC_MSG_ERROR([
 
-	The version of the GCC compiler must be 4.7 or higher to support the
+	The version of the GCC compiler must be 4.8 or higher to support the
 	C++11 code introduced in Multi2Sim. Please install a more recent version
 	of GCC and recompile.]
 	)
@@ -1018,16 +1021,6 @@ AC_CONFIG_FILES([
 		src/lib/mhandle/Makefile
 		src/lib/util/Makefile
 
-		m2c/Makefile
-		m2c/amd/Makefile
-		m2c/common/Makefile
-		m2c/cl2llvm/Makefile
-		m2c/gl/Makefile
-		m2c/llvm2si/Makefile
-		m2c/llvm2si/passes/Makefile
-		m2c/preprocessor/Makefile
-		m2c/si2bin/Makefile
-	
 		tests/Makefile
 		tests/src/Makefile
 		tests/src/arch/Makefile
