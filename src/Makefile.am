@@ -69,9 +69,5 @@ AM_CFLAGS = @GTK_CFLAGS@
 LDADD += @GTK_LIBS@
 endif
 
-if HAVE_OPENGL
-LDADD += @OPENGL_LDFLAGS@
-endif
-
 LDADD += -lpthread -lz -lm -lstdc++
 
