@@ -3943,7 +3943,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	if (event == event_local_find_and_lock)
 	{
 		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"find and lock (blocking=%d)\n",
+				"local find and lock (blocking=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3975,7 +3975,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s find and lock port\n",
+		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock port\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -4031,7 +4031,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s find and lock action\n",
+		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -4057,7 +4057,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	if (event == event_local_find_and_lock_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s find and lock finish\n",
+		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
