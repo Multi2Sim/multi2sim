@@ -173,6 +173,7 @@ void ScalarUnit::Complete()
 					++it)
 			{
 				Wavefront *wavefront = it->get();
+				assert(wavefront->getWavefrontPoolEntry());
 				if (!wavefront->getWavefrontPoolEntry()->
 						wait_for_barrier)
 							barrier_complete = false;
