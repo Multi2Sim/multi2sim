@@ -76,13 +76,11 @@ void WavefrontPool::MapWavefronts(WorkGroup *work_group)
 			it != e;
 			++it)
 	{
-		// Get the wavefront object and associated wavefront pool entry
+		// Get the wavefront object
 		Wavefront *wavefront = it->get();
-		WavefrontPoolEntry *wavefront_pool_entry = 
-				wavefront->getWavefrontPoolEntry();
 
 		// Set entry pointer to an entry in the wavefront pool
-		wavefront_pool_entry = 
+		WavefrontPoolEntry *wavefront_pool_entry = 
 			wavefront_pool_entries[first_entry + entry_index].get();
 
 		// Make sure the entry was set and that it is not yet valid.
@@ -95,10 +93,14 @@ void WavefrontPool::MapWavefronts(WorkGroup *work_group)
 		wavefront_pool_entry->valid = true;
 		wavefront_pool_entry->ready = true;
 		wavefront_pool_entry->setWavefront(wavefront);
+		wavefront->setWavefrontPoolEntry(wavefront_pool_entry);
 		
 		// Increment the number of wavefronts associated with the 
 		// wavefront pool
 		num_wavefronts++;
+
+		// Increment the entry index
+		entry_index++;
 	}
 }
 
