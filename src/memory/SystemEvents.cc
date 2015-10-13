@@ -2030,7 +2030,12 @@ void System::EventWriteRequestHandler(esim::Event *event,
 		if (frame->error)
 		{
 			// Return error
-			assert(frame->request_direction == Frame::RequestDirectionUpDown);
+			//assert(frame->request_direction == Frame::RequestDirectionUpDown);
+			if (frame->request_direction != Frame::RequestDirectionUpDown)
+			{
+				std::cout<<"\n\n"<<frame->request_direction<<"\n\n";
+				abort();
+			}
 			parent_frame->error = true;
 			
 			// Adjust reply size
