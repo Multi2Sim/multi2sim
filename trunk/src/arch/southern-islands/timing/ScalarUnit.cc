@@ -322,6 +322,11 @@ void ScalarUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
+
+			// Move uop to write buffer and get the iterator for
+			// the next element
+			write_buffer.push_back(std::move(*it));
+			it = exec_buffer.erase(it);
 		}
 
 		// ALU instruction
@@ -512,7 +517,11 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			break;
+
+			// Move uop to the execution buffer and get the
+			// iterator for the next element
+			exec_buffer.push_back(std::move(*it));
+			it = read_buffer.erase(it);
 		}
 
 		// ALU instruction
@@ -532,7 +541,6 @@ void ScalarUnit::Execute()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
-			break;
 
 			// Move uop to the execution buffer and get the
 			// iterator for the next element
@@ -683,7 +691,7 @@ void ScalarUnit::Decode()
 		assert((int) decode_buffer.size() <= decode_buffer_size);
 
 		// Stall if decode buffer is full
-		if ((int) read_buffer.size() == read_buffer_size)
+		if ((int) decode_buffer.size() == decode_buffer_size)
 		{
 			// Trace
 			Timing::trace << misc::fmt("si.inst "
