@@ -324,6 +324,12 @@ public:
 	/// Set scalar register as an unsigned int
 	void setSregUint(int id, unsigned int value);
 
+	/// Set the wavefront pool entry associated with the wavefront
+	void setWavefrontPoolEntry(WavefrontPoolEntry *entry)
+	{
+		wavefront_pool_entry = entry;
+	}
+
 	/// Set work_items_begin iterator
 	void setWorkItemsBegin(std::vector<std::unique_ptr<WorkItem>>::iterator work_items_begin)
 	{
