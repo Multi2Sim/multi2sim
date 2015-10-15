@@ -342,6 +342,9 @@ void System::GenerateAddressSizes()
 
 void System::Read(long long address)
 {
+	if (address < 0)
+		throw misc::Error("Invalid Address");
+
 	// Create the request object that will be inserted into the queue.
 	std::shared_ptr<Request> request = std::make_shared<Request>();
 
@@ -359,6 +362,9 @@ void System::Read(long long address)
 
 void System::Write(long long address)
 {
+	if (address < 0)
+		throw misc::Error("Invalid Address");
+
 	// Create the request object that will be inserted into the queue.
 	std::shared_ptr<Request> request = std::make_shared<Request>();
 

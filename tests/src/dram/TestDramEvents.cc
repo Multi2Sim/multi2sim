@@ -720,4 +720,90 @@ TEST(TestSystemEvents, section_test_single_write_timing)
 		FAIL();
 	}
 }
+
+TEST(TestSystemEvents, section_test_negtive_address)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit a write to a negaive address
+		dram_system->Write(-1);
+		esim::Engine *engine = esim::Engine::getInstance();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Schedule the commands
+		engine->ProcessEvents();
+		engine->ProcessEvents();
+
+		// ProcessEvents until the command queue is empty
+		while(bank->getNumCommandsInQueue() > 0){
+			engine->ProcessEvents();
+		}
+
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("Invalid Address").c_str(),
+			message.c_str());
+}
+
+TEST(TestSystemEvents, section_test_address_out_of_bounds)
+{
+	// cleanup singleton instance
+	Cleanup();
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(default_config);
+
+	// Set up dram instance
+	System *dram_system = System::getInstance();
+	dram_system->ParseConfiguration(&ini_file);
+
+	// Test body
+	std::string message;
+	try
+	{
+		// Submit a write to an address that is too large
+		dram_system->Write(10000000000);
+		esim::Engine *engine = esim::Engine::getInstance();
+
+		// Get relevent bank
+		Bank *bank = dram_system->getController(0)->
+				getChannel(0)->getRank(0)->getBank(0);
+
+		// Schedule the commands
+		engine->ProcessEvents();
+		engine->ProcessEvents();
+
+		// ProcessEvents until the command queue is empty
+		while(bank->getNumCommandsInQueue() > 0){
+			engine->ProcessEvents();
+		}
+
+	}
+	catch (misc::Error &e)
+	{
+		message = e.getMessage();
+	}
+	EXPECT_REGEX_MATCH(misc::fmt("Invalid Address").c_str(),
+			message.c_str());
+}
 }
