@@ -12,17 +12,16 @@ addons:
                         - gcc-multilib
 
 before_install:
-        - sudo apt-get update -qq
         - export CXX="g++-4.9"
-        - $CXX -dumpversion
+        
+install:
         - libtoolize
         - aclocal
         - autoconf
         - automake --add-missing
-
-install:
         - ./configure --enable-debug
-        - make
+        - make -j
 
-script: make check
+script:
+        - make check
 
