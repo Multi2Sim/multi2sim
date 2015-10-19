@@ -1,0 +1,33 @@
+# http://www.gnu.org/software/automake
+
+Makefile.in
+Makefile
+*.o
+*.a
+*.lo
+.deps
+
+INSTALL
+bin
+config.guess
+config.log
+config.status
+config.sub
+lib/
+libtool
+ltmain.sh
+m4/
+test-driver
+
+
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/configure
+/depcomp
+/install-sh
+/missing
+/stamp-h1
