@@ -12,6 +12,7 @@ addons:
 before_install:
         - sudo apt-get update -qq
         - export CXX="g++-4.9"
+        - g++ -dumpversion
         - libtoolize
         - aclocal
         - autoconf
