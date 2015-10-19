@@ -3,6 +3,8 @@ compiler: g++
 
 addons:
         apt:
+                sources:
+                        - ubuntu-toolchain-r-test
                 packages:
                         - g++-4.9
                         - zlib1g-dev
