@@ -64,7 +64,7 @@ public:
 	void setPath(const std::string &path);
 
 	/// Return whether trace system has been activated by the user
-	bool isActive() { return active; }
+	bool isActive() { return active; } const
 
 	/// Dump a message to the trace system if it was activated with a
 	/// previous call to setPath(). A line with the current cycle will be
@@ -83,7 +83,9 @@ public:
 		return *this;
 	}
 	
-	/// 
+	/// Write a line of output in the beginning of the trace file. This
+	/// function must be invoked before dumping trace information with
+	/// the '<<' operator, that is, before cycle 1 begins in the trace.
 	void Header(const std::string &s);
 };
 
@@ -111,7 +113,7 @@ public:
 	/// by-cycle information has been dumped with the "<<" operator.
 	void Header(const std::string &s)
 	{
-		if (active)
+		if (trace_system->isActive() && active)
 			trace_system->Header(s);
 	}
 
