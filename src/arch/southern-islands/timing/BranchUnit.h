@@ -36,9 +36,6 @@ class ComputeUnit;
 /// Class representing the branch unit of a compute unit
 class BranchUnit : public ExecutionUnit
 {
-	// Variable number of issued Uops
-	std::deque<std::unique_ptr<Uop>> issue_buffer;
-
 	// Variable number of decoded Uops
 	std::deque<std::unique_ptr<Uop>> decode_buffer;
 

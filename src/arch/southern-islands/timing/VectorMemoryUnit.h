@@ -32,9 +32,6 @@ class ComputeUnit;
 /// Class representing the vector memory unit of a compute unit
 class VectorMemoryUnit : public ExecutionUnit
 {
-	// Variable number of issued Uops
-	std::deque<std::unique_ptr<Uop>> issue_buffer;
-
 	// Variable number of decoded Uops
 	std::deque<std::unique_ptr<Uop>> decode_buffer;
 
