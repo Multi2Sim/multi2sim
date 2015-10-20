@@ -64,7 +64,7 @@ public:
 	void setPath(const std::string &path);
 
 	/// Return whether trace system has been activated by the user
-	bool isActive() { return active; } const
+	bool isActive() const { return active; }
 
 	/// Dump a message to the trace system if it was activated with a
 	/// previous call to setPath(). A line with the current cycle will be
