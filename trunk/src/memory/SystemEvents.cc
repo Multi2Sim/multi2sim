@@ -1124,7 +1124,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 		// If directory entry is locked and the call to find-and-lock
 		// is not blocking, release port and return error.
 		if (directory->isEntryLocked(frame->set, frame->way) &&
-				frame->blocking)
+				!frame->blocking)
 		{
 			// Debug
 			debug << misc::fmt("    %lld 0x%x %s block locked at "
