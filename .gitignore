@@ -31,3 +31,7 @@ test-driver
 /install-sh
 /missing
 /stamp-h1
+
+*.dirstamp
+*.log
+*.trs
