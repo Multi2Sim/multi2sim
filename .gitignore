@@ -20,6 +20,11 @@ ltmain.sh
 m4/
 test-driver
 
+.autotools
+.cproject
+.project
+.settings/
+
 
 
 # http://www.gnu.org/software/autoconf
@@ -41,3 +46,5 @@ tests/*_test
 # Vim
 *.swp
 
+# Eclipse
+build-
