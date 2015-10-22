@@ -349,8 +349,8 @@ void VectorMemoryUnit::Memory()
 
 		// Move uop to exec buffer and get the iterator for the next
 		// element
-		write_buffer.push_back(std::move(*it));
-		it = mem_buffer.erase(it);
+		mem_buffer.push_back(std::move(*it));
+		it = read_buffer.erase(it);
 	}
 }
 
