@@ -22,6 +22,4 @@ install:
         - ./configure --enable-debug
         - make -j
 
-script:
-        - make check
 
