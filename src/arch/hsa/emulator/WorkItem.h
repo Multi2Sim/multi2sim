@@ -133,6 +133,7 @@ private:
  	template<typename T> void Inst_BITEXTRACT_Aux();
 	template<typename T> void Inst_LDA_Aux();
  	template<typename T> void Inst_MOV_Aux();
+ 	template<typename T> void Inst_CMOV_Aux();
  	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
  	template<typename SrcType, typename DstType> void Inst_CVT_chop_Aux();
 	template<typename SrcType, typename DstType> void Inst_CVT_sext_Aux();
