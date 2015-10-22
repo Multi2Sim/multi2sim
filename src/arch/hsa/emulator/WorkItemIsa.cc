@@ -2703,6 +2703,10 @@ void WorkItem::ExecuteInst_WAVEID()
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
+void WorkItem::ExecuteInst_GCNMIN() 
+{
+	ExecuteInst_MIN();
+}
 
 
 void WorkItem::ExecuteInst_unsupported()

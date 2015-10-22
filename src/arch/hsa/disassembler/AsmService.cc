@@ -29,7 +29,7 @@ misc::StringMap AsmService::opcode_to_str_map =
 #include "Instruction.def"
 #undef DEFINST
 
-	{"invalid", 140}
+	{"invalid", 65535}
 };
 
 
