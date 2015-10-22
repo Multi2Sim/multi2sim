@@ -1847,6 +1847,16 @@ void WorkItem::ExecuteInst_CMP()
 		Inst_CMP_Aux<long long, unsigned char>();
 		break;
 
+	case BRIG_TYPE_F32:
+
+		Inst_CMP_Aux<float, unsigned char>();
+		break;
+
+	case BRIG_TYPE_F64:
+
+		Inst_CMP_Aux<double, unsigned char>();
+		break;	
+
 	default:
 
 		throw misc::Panic("Unsupported source type for CMP.");
