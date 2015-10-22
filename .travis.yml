@@ -20,6 +20,8 @@ install:
         - autoconf
         - automake --add-missing
         - ./configure --enable-debug
+
+script:
         - make -j
 
 
