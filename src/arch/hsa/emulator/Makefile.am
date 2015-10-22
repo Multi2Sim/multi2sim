@@ -10,14 +10,17 @@ libemulator_a_SOURCES = \
 		Component.h \
 		Component.cc \
 		\
+		Emulator.h \
+		Emulator.cc \
+		\
 		Function.h \
 		Function.cc \
 		\
+		HsaInstructionWorker.h \
+		HsaInstructionWorker.cc \
+		\
 		Grid.h \
 		Grid.cc \
-		\
-		Emulator.h \
-		Emulator.cc \
 		\
 		SegmentManager.h \
 		SegmentManager.cc \

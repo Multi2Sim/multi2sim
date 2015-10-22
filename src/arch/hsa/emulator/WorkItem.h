@@ -31,6 +31,7 @@
 #include "Function.h"
 #include "StackFrame.h"
 #include "WorkGroup.h"
+#include "HsaInstructionWorker.h"
 
 namespace HSA
 {
@@ -95,6 +96,14 @@ private:
  	// Stack of current work item.
  	std::vector<std::unique_ptr<StackFrame>> stack;
 
+ 	// A list of instruction workers.
+ 	// Instruction works are saved, to avoid allocating repeatly
+ 	std::map<BrigOpcode, std::unique_ptr<HsaInstructionWorker>>
+ 			instruction_workers;
+
+ 	// Get the instruction worker according to the opcode
+ 	HsaInstructionWorker *GetInstructionWorker(BrigOpcode);
+
  	// Prototype of member function of class WorkItem devoted to the 
  	// execution of HSA virtual ISA instructions.
  	typedef void (WorkItem::*ExecuteInstFn)();
@@ -153,7 +162,7 @@ private:
  		BrigCodeEntry *inst = stack_top->getPc();
  		auto operand = inst->getOperand(index);
 
- 		// Do coresponding action according to the type of operand
+ 		// Do corresponding action according to the type of operand
  		switch (operand->getKind())
  		{
  		case BRIG_KIND_OPERAND_CONSTANT_BYTES:
@@ -372,7 +381,7 @@ public:
  			Function *root_function);
 
  	/// Destructor
- 	~WorkItem();
+ 	virtual ~WorkItem();
 
  	/// Run one instruction for the workitem at the position pointed 
  	bool Execute();

@@ -489,6 +489,12 @@ void WorkItem::DeclareVariable()
 			name.c_str(), AsmService::TypeToSize(type), dim);
 }
 
+HsaInstructionWorker *WorkItem::GetInstructionWorker(BrigOpcode opcode)
+{
+	throw misc::Panic(misc::fmt("Unsupported instruction, opcode: %u\n",
+			opcode));
+}
+
 
 bool WorkItem::Execute()
 {
@@ -496,6 +502,8 @@ bool WorkItem::Execute()
 	if (status != WorkItemStatusActive)
 		return true;
 
+	// The root function has returned, then stop the execution of the
+	// work-item.
 	if (stack.size() == 0)
 	{
 		return false;
@@ -504,7 +512,7 @@ bool WorkItem::Execute()
 	// Retrieve stack top
 	StackFrame *stack_top = getStackTop();
 
-	// Record frame status before the instruction is executed
+	// Execute the instruction or directory
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
@@ -523,6 +531,10 @@ bool WorkItem::Execute()
 
 		// Get the function according to the opcode and perform the inst
 		BrigOpcode opcode = inst->getOpcode();
+		HsaInstructionWorker *worker =
+				GetInstructionWorker(opcode);
+		worker->Execute();
+		/*
 		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 		try
 		{
@@ -533,6 +545,8 @@ bool WorkItem::Execute()
 			std::cerr << panic.getMessage();
 			exit(1);
 		}
+		*/
+
 		// Return false if execution finished
 		if (stack.empty())
 			return false;
@@ -560,6 +574,7 @@ bool WorkItem::Execute()
 			return false;
 		}
 	}
+
 	// Return false if execution finished
 	if (stack.empty())
 		return false;
