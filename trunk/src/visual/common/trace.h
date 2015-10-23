@@ -25,7 +25,7 @@
 
 struct vi_trace_t;
 
-struct vi_trace_t *vi_trace_create(char *file_name);
+struct vi_trace_t *vi_trace_create(const char *file_name);
 void vi_trace_free(struct vi_trace_t *trace);
 
 
