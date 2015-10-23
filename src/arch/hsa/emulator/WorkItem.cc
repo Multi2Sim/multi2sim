@@ -531,10 +531,11 @@ bool WorkItem::Execute()
 
 		// Get the function according to the opcode and perform the inst
 		BrigOpcode opcode = inst->getOpcode();
+		/*
 		HsaInstructionWorker *worker =
 				GetInstructionWorker(opcode);
 		worker->Execute();
-		/*
+		*/
 		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 		try
 		{
@@ -545,7 +546,7 @@ bool WorkItem::Execute()
 			std::cerr << panic.getMessage();
 			exit(1);
 		}
-		*/
+
 
 		// Return false if execution finished
 		if (stack.empty())

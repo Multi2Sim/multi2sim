@@ -150,12 +150,10 @@ private:
  	template<typename SrcType, typename DstType> void Inst_CVT_u2f_Aux();
  	template<typename T> void Inst_LD_Aux();
  	template<typename T> void Inst_ST_Aux();
- 	template<typename T> void Inst_LDI_Aux();
 
  	// Get the value of the index-th operand, stores the result in 
 	// the \a buffer 
-  	template <typename Type>
- 	void getOperandValue(unsigned int index, Type *buffer)
+ 	void getOperandValue(unsigned int index, void *buffer)
  	{
  		// Get the operand entry
  		StackFrame *stack_top = getStackTop();
@@ -170,22 +168,21 @@ private:
  		{
  			BrigImmed immed(operand->getBytes(),
  					inst->getOperandType(index));
- 			Type value = immed.getImmedValue<Type>();
-			*buffer = value;
+
+ 			immed.getImmedValue(buffer);
  			return;
  		}
 
  		case BRIG_KIND_OPERAND_WAVESIZE:
 
-			*buffer = 1;
+			*(unsigned int *)buffer = 1;
  			return;
 
  		case BRIG_KIND_OPERAND_REGISTER:
 
  		{
  			std::string register_name = operand->getRegisterName();
- 			*buffer = stack_top->getRegisterValue<Type>(
-					register_name);
+ 			stack_top->getRegisterValue(register_name, buffer);
 			return;
  		}
 
@@ -225,11 +222,11 @@ private:
 			{
 				std::string register_name = operand->getReg()
 							->getRegisterName();
-				address = stack_top->getRegisterValue<unsigned>(
-						register_name);
+				stack_top->getRegisterValue(register_name,
+						&address);
 			}
 			address += offset;
-			*buffer = address;
+			*(unsigned *)buffer = address;
 			return;
 		}
 
@@ -249,9 +246,12 @@ private:
 					std::string register_name = 
 							op_item->
 							getRegisterName();
-					*(buffer + i) = stack_top->
-							getRegisterValue<Type>
-							(register_name);
+					unsigned size = AsmService::getSizeInByteByRegisterName(
+									register_name);
+					stack_top->getRegisterValue
+							(register_name,
+							(unsigned char *)buffer
+							+ size);
 					break;
 				}
 
@@ -276,8 +276,7 @@ private:
 
  	// Store the value into registers marked by the operand, from the 
 	// value pointer
- 	template <typename Type>
- 	void setOperandValue(unsigned int index, Type *value)
+ 	void setOperandValue(unsigned int index, void *value)
  	{
  		// Get the operand entry
  		StackFrame *stack_top = stack.back().get();
@@ -291,8 +290,7 @@ private:
 
  		{
  			std::string register_name = operand->getRegisterName();
- 			stack_top->setRegisterValue<Type>(register_name, 
-					*value);
+ 			stack_top->setRegisterValue(register_name, value);
  			break;
  		}
 
@@ -312,9 +310,11 @@ private:
 					std::string register_name = 
 							op_item->
 							getRegisterName();
-					stack_top->setRegisterValue<Type>
+					unsigned size = AsmService::getSizeInByteByRegisterName(
+							register_name);
+					stack_top->setRegisterValue
 							(register_name, 
-							 *(value + i));
+							 (unsigned char *)value + size);
 					break;
 				}
 
