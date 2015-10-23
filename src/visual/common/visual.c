@@ -76,7 +76,7 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 }
 
 
-void visual_run(char *file_name)
+void visual_run(const char *file_name)
 {
 	char *m2s_images_path = "images";
 	char vi_icon_path[MAX_STRING_SIZE];
