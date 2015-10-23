@@ -31,7 +31,7 @@ typedef void (*vi_state_process_trace_line_func_t)(void *user_data, struct vi_tr
 	for ((trace_line) = vi_state_header_first(); \
 	(trace_line); (trace_line) = vi_state_header_next())
 
-void vi_state_init(char *trace_file_name);
+void vi_state_init(const char *trace_file_name);
 void vi_state_done(void);
 
 long long vi_state_get_num_cycles(void);

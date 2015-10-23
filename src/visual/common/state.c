@@ -233,7 +233,7 @@ static void vi_state_write_checkpoint(void)
 }
 
 
-void vi_state_init(char *trace_file_name)
+void vi_state_init(const char *trace_file_name)
 {
 	struct vi_trace_t *trace_file;
 	struct vi_trace_line_t *trace_line;

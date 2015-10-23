@@ -358,7 +358,7 @@ unsigned int vi_trace_line_get_symbol_hex(struct vi_trace_line_t *line, char *sy
  */
 
 
-struct vi_trace_t *vi_trace_create(char *file_name)
+struct vi_trace_t *vi_trace_create(const char *file_name)
 {
 	struct vi_trace_t *trace;
 
