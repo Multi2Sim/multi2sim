@@ -251,7 +251,7 @@ private:
 					stack_top->getRegisterValue
 							(register_name,
 							(unsigned char *)buffer
-							+ size);
+							+ i * size);
 					break;
 				}
 
@@ -314,7 +314,7 @@ private:
 							register_name);
 					stack_top->setRegisterValue
 							(register_name, 
-							 (unsigned char *)value + size);
+							 (unsigned char *)value + i * size);
 					break;
 				}
 

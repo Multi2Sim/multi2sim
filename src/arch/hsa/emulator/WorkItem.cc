@@ -523,10 +523,10 @@ bool WorkItem::Execute()
 			Emulator::isa_debug << "Executing: ";
 			Emulator::isa_debug << *inst;
 
-			Emulator::isa_debug << "Before: ";
-			if (Emulator::isa_debug)
-				stack_top->Dump(Emulator::isa_debug);
-			Emulator::isa_debug << "\n";
+//			Emulator::isa_debug << "Before: ";
+//			if (Emulator::isa_debug)
+//				stack_top->Dump(Emulator::isa_debug);
+//			Emulator::isa_debug << "\n";
 		}
 
 		// Get the function according to the opcode and perform the inst
