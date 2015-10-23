@@ -58,7 +58,8 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
-	if (getAbsoluteFlattenedId() == 0) {
+	if (getAbsoluteFlattenedId() == 0) 
+	{
 		if (Emulator::isa_debug)
 		{
 			frame->Dump(Emulator::isa_debug);
@@ -69,7 +70,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 }
 
 
-WorkItem::~WorkItem()
+WorkItem::~WorkItem() 
 {
 }
 
@@ -100,6 +101,190 @@ bool WorkItem::MovePcForwardByOne()
 }
 
 
+void WorkItem::getOperandValue(unsigned int index, void *buffer)
+{
+	// Get the operand entry
+	StackFrame *stack_top = getStackTop();
+	BrigCodeEntry *inst = stack_top->getPc();
+	auto operand = inst->getOperand(index);
+
+	// Do corresponding action according to the type of operand
+	switch (operand->getKind())
+	{
+	case BRIG_KIND_OPERAND_CONSTANT_BYTES:
+
+	{
+		BrigImmed immed(operand->getBytes(),
+				inst->getOperandType(index));
+
+		immed.getImmedValue(buffer);
+		return;
+	}
+
+	case BRIG_KIND_OPERAND_WAVESIZE:
+
+		*(unsigned int *)buffer = 1;
+		return;
+
+	case BRIG_KIND_OPERAND_REGISTER:
+
+	{
+		std::string register_name = operand->getRegisterName();
+		stack_top->getRegisterValue(register_name, buffer);
+		return;
+	}
+
+	case BRIG_KIND_OPERAND_ADDRESS:
+
+	{
+		unsigned address;
+		unsigned long long offset = operand->getOffset();
+		if (operand->getSymbol().get())
+		{
+			auto symbol = operand->getSymbol();
+			std::string name = symbol->getName();
+
+			// Get the variable
+			Variable *variable = 
+				stack_top->getSymbol(name);
+			
+			// If the variable is not found in stack frame
+			// try kernel argument
+			if (!variable)
+				variable = getGrid()->
+						getKernelArgument(
+								name);
+
+			// If the variable is still not found
+			if (!variable)
+				throw misc::Error(misc::fmt(
+						"Symbol %s is not"
+						" defined", 
+						name.c_str()));
+
+			// Variable not in stack frame, try kernel 
+			// argument
+			address = variable->getAddress();
+		}
+		else
+		{
+			std::string register_name = operand->getReg()
+						->getRegisterName();
+			stack_top->getRegisterValue(register_name,
+					&address);
+		}
+		address += offset;
+		*(unsigned *)buffer = address;
+		return;
+	}
+
+	case BRIG_KIND_OPERAND_OPERAND_LIST:
+
+	{
+		// Get the vector modifier
+		unsigned vector_size = inst->getVectorModifier();
+		for (unsigned int i = 0; i < vector_size; i++)
+		{
+			auto op_item = operand->getOperandElement(i);	
+			switch (op_item->getKind())
+			{
+			case BRIG_KIND_OPERAND_REGISTER:
+
+			{
+				std::string register_name = 
+						op_item->
+						getRegisterName();
+				unsigned size = AsmService::getSizeInByteByRegisterName(
+								register_name);
+				stack_top->getRegisterValue
+						(register_name,
+						(unsigned char *)buffer
+						+ i * size);
+				break;
+			}
+
+			default:
+				throw misc::Panic(misc::fmt(
+						"Unsupported operand "
+						"type in operand list")
+						);
+			}
+		}
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Unsupported operand type "
+				"for getOperandValue");
+		break;
+
+	}
+}
+
+
+void WorkItem::setOperandValue(unsigned int index, void *value)
+{
+	// Get the operand entry
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+	auto operand = inst->getOperand(index);
+
+	// Do corresponding action according to the type of operand
+	switch (operand->getKind())
+	{
+	case BRIG_KIND_OPERAND_REGISTER:
+
+	{
+		std::string register_name = operand->getRegisterName();
+		stack_top->setRegisterValue(register_name, value);
+		break;
+	}
+
+	case BRIG_KIND_OPERAND_OPERAND_LIST:
+
+	{
+		// Get the vector modifier
+		unsigned vector_size = inst->getVectorModifier();
+		for (unsigned int i = 0; i < vector_size; i++)
+		{
+			auto op_item = operand->getOperandElement(i);	
+			switch (op_item->getKind())
+			{
+			case BRIG_KIND_OPERAND_REGISTER:
+
+			{
+				std::string register_name = 
+						op_item->
+						getRegisterName();
+				unsigned size = AsmService::getSizeInByteByRegisterName(
+						register_name);
+				stack_top->setRegisterValue
+						(register_name, 
+						 (unsigned char *)value + i * size);
+				break;
+			}
+
+			default:
+				throw misc::Panic(misc::fmt(
+						"Unsupported operand "
+						"type in operand list")
+						);
+			}
+		}
+		break;
+	}
+
+	default:
+
+		throw misc::Panic("Unsupported operand type "
+				"for storeOperandValue");
+	}
+}
+
+
+
+
 void WorkItem::Backtrace(std::ostream &os = std::cout) const
 {
 	os << "***** Backtrace *****\n";
@@ -118,7 +303,6 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 		os << "\n";
 	}
 	os << "***** ********* *****\n\n";
-
 }
 
 
