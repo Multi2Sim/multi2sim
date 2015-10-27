@@ -227,7 +227,7 @@ TEST(TestAlu, reserve_functional_unit_int_add)
 			"IntAdd.OpLat = 2\n"
 			"IntAdd.IssueLat = 3";
 
-	// Parse default configuraiton
+	// Parse default configuration
 	misc::IniFile ini_file;
 	ini_file.LoadFromString(config);
 	Alu::ParseConfiguration(&ini_file);
@@ -266,11 +266,13 @@ TEST(TestAlu, reserve_functional_unit_int_add)
 			2,
 			2,
 			0};
-	int ret_value;
 	for (int i = 0; i < running_cycle; i++)
 	{
 		// Reserve
-		ret_value = object_pool->getCore()->getAlu()->Reserve(uops[i].get());
+		Alu *alu = object_pool->getCore()->getAlu();
+		int ret_value = alu->Reserve(uops[i].get());
+
+		std::cout << ref_value[i] << ' ' << ret_value << '\n';
 
 		// Check the value
 		EXPECT_EQ(ref_value[i], ret_value);
