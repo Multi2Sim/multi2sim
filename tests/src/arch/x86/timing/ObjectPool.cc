@@ -26,14 +26,23 @@ namespace x86
 // Singleton instance of object pool
 std::unique_ptr<ObjectPool> ObjectPool::instance;
 
+
+void ObjectPool::Destroy()
+{
+	// Reset ObjectPool singleton
+	instance = nullptr;
+
+	// Reset the rest of the singletons
+	Timing::Destroy();
+	Emulator::Destroy();
+	comm::ArchPool::Destroy();
+}
+
+
 ObjectPool::ObjectPool()
 {
-	// Timing simulator
-	// Gets default values for all instances
-	Timing *timing = Timing::getInstance();
-	cpu = misc::new_unique<Cpu>(timing);
-	core = misc::new_unique<Core>(cpu.get(), 0);
-	thread = misc::new_unique<Thread>(core.get(), 0);
+	// Timing simulator, getting default values for all instances.
+	timing = Timing::getInstance();
 
 	// Create a context
 	Emulator *emulator = Emulator::getInstance();
