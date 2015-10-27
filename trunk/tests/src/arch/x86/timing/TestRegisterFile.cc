@@ -43,13 +43,6 @@ const std::string default_config =
 		"RfFpSize = 40\n"
 		"RfXmmSize = 40";
 
-static void Cleanup()
-{
-	ObjectPool::Destroy();
-	Timing::Destroy();
-	Emulator::Destroy();
-	comm::ArchPool::Destroy();
-}
 
 
 //
@@ -62,7 +55,7 @@ static void Cleanup()
 TEST(TestRegisterFile, can_rename_private_register_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -127,7 +120,7 @@ TEST(TestRegisterFile, can_rename_private_register_0)
 TEST(TestRegisterFile, can_rename_private_register_1)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical floating point registers
@@ -191,7 +184,7 @@ TEST(TestRegisterFile, can_rename_private_register_1)
 TEST(TestRegisterFile, can_rename_private_register_2)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical Xmm registers
@@ -255,7 +248,7 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -320,7 +313,7 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 TEST(TestRegisterFile, can_rename_shared_register_1)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical floating point registers
@@ -385,7 +378,7 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 TEST(TestRegisterFile, can_rename_shared_register_2)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical Xmm registers
@@ -458,7 +451,7 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 TEST(TestRegisterFile, rename_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -507,7 +500,7 @@ TEST(TestRegisterFile, rename_0)
 TEST(TestRegisterFile, rename_1)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -553,7 +546,7 @@ TEST(TestRegisterFile, rename_1)
 TEST(TestRegisterFile, rename_2)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -599,7 +592,7 @@ TEST(TestRegisterFile, rename_2)
 TEST(TestRegisterFile, rename_3)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Config file
 	// Sets number of physical integer registers
@@ -658,7 +651,7 @@ TEST(TestRegisterFile, rename_3)
 TEST(TestRegisterFile, is_uop_ready_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -700,7 +693,7 @@ TEST(TestRegisterFile, is_uop_ready_0)
 TEST(TestRegisterFile, is_uop_ready_1)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -732,7 +725,7 @@ TEST(TestRegisterFile, is_uop_ready_1)
 TEST(TestRegisterFile, is_uop_ready_2)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -783,7 +776,7 @@ TEST(TestRegisterFile, is_uop_ready_2)
 TEST(TestRegisterFile, write_uop_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -843,7 +836,7 @@ TEST(TestRegisterFile, write_uop_0)
 TEST(TestRegisterFile, undo_uop_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -895,7 +888,7 @@ TEST(TestRegisterFile, undo_uop_0)
 TEST(TestRegisterFile, undo_uop_1)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -947,7 +940,7 @@ TEST(TestRegisterFile, undo_uop_1)
 TEST(TestRegisterFile, undo_uop_2)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
@@ -1009,7 +1002,7 @@ TEST(TestRegisterFile, undo_uop_2)
 TEST(TestRegisterFile, commit_uop_0)
 {
 	// Cleanup singleton instances
-	Cleanup();
+	ObjectPool::Destroy();
 
 	// Get object pool instance
 	ObjectPool *object_pool = ObjectPool::getInstance();
