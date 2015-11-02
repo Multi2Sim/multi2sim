@@ -244,7 +244,7 @@ TEST(TestRegisterFile, can_rename_private_register_2)
 }
 
 // Tests that canRename() returns false when there are no more integer
-// registers available in a shared register file
+// registers available in a shared register
 TEST(TestRegisterFile, can_rename_shared_register_0)
 {
 	// Cleanup singleton instances
@@ -255,7 +255,7 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfIntSize = 31";
+			"RfIntSize = 26";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
@@ -299,13 +299,14 @@ TEST(TestRegisterFile, can_rename_shared_register_0)
 	auto register_file = object_pool->getThread()->getRegisterFile();
 
 	// Check that canRename() returns true
-	EXPECT_TRUE(register_file->canRename(uop_1.get()));
+	EXPECT_TRUE(register_file->canRename(uop_0.get()));
 
 	// Occupy integer registers
 	register_file->Rename(uop_0.get());
+	register_file->Rename(uop_1.get());
 
 	// Check that canRename() returns false
-	EXPECT_FALSE(register_file->canRename(uop_1.get()));
+	EXPECT_FALSE(register_file->canRename(uop_0.get()));
 }
 
 // Tests that canRename() returns false when there are no more floating-point
@@ -320,7 +321,7 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfFpSize = 28";
+			"RfFpSize = 15";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
@@ -374,7 +375,7 @@ TEST(TestRegisterFile, can_rename_shared_register_1)
 }
 
 // Tests that canRename() returns false when there are no more XMM registers
-// available in a shared register
+// available in a private register
 TEST(TestRegisterFile, can_rename_shared_register_2)
 {
 	// Cleanup singleton instances
@@ -385,7 +386,7 @@ TEST(TestRegisterFile, can_rename_shared_register_2)
 	std::string config =
 			"[ Queues ]\n"
 			"RfKind = Shared\n"
-			"RfXmmSize = 25";
+			"RfXmmSize = 15";
 
 	// Create ini file with config
 	misc::IniFile ini_file;
