@@ -23,7 +23,7 @@
 #include "visual.h"
 
 
-void visual_run(char *file_name)
+void visual_run(const char *file_name)
 {
 	fatal("operation not available.\n"
 		"\tMulti2Sim was compiled without support for GTK applications. When you ran\n"
