@@ -790,6 +790,12 @@ Message *Network::Send(EndNode *source_node,
 	// Create message
 	Message *message = newMessage(source_node, destination_node, size);
 
+	// Updating trace with new message creation
+	net::System::trace << misc::fmt("net.new_msg net=\"%s\" "
+			"name=\"M-%lld\" size=%d state=\"%s:create\"\n",
+			name.c_str(), message->getId(),
+			message->getSize(), source_node->getName().c_str());
+
 	// Packetize message
 	if (packet_size == 0)
 		message->Packetize(size);

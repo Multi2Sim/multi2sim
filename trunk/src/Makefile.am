@@ -55,9 +55,9 @@ LDADD = \
 	$(top_builddir)/src/visual/x86/libx86.a \
 	$(top_builddir)/src/visual/common/libcommon.a \
 	\
-	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/esim/libesim.a \
 	$(top_builddir)/src/lib/util/libutil.a \
+	$(top_builddir)/src/lib/mhandle/libmhandle.a \
 	$(top_builddir)/src/lib/cpp/libcpp.a
 
 if ENABLE_DEBUG
