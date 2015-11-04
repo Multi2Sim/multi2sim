@@ -56,6 +56,10 @@
 #include <lib/esim/Engine.h>
 #include <lib/esim/Trace.h>
 
+extern "C"
+{
+#include <visual/common/visual.h>
+}
 //
 // Configuration options
 //
@@ -406,6 +410,11 @@ void ProcessOptions()
 		esim::TraceSystem *trace_system = esim::TraceSystem::getInstance();
 		trace_system->setPath(m2s_trace_file);
 	}
+
+	// Visualization
+	if (!m2s_visual_file.empty())
+		visual_run(m2s_visual_file.c_str());
+		
 }
 
 

@@ -290,7 +290,7 @@ void Link::TransferPacket(Packet *packet)
 
 	System::trace << misc::fmt("net.link_transfer net=\"%s\" link=\"%s\" "
             "transB=%lld last_size=%d busy=%lld\n",
-            network->getName().c_str(), name.c_str(),
+            network->getName().c_str(), getName().c_str(),
             transferred_bytes,
             packet->getSize(), busy);
 
