@@ -69,6 +69,9 @@ void VectorMemoryUnit::Issue(std::unique_ptr<Uop> uop)
 	// One more instruction of this kind
 	ComputeUnit *compute_unit = getComputeUnit();
 
+	// The wavefront will be ready next cycle
+	uop->getWavefrontPoolEntry()->ready_next_cycle = true;
+
 	// One more instruction of this kind
 	compute_unit->num_vector_memory_instructions++;
 	uop->getWavefrontPoolEntry()->lgkm_cnt++;
