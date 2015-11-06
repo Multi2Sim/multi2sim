@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/disassembler/Argument.h>
+#include <arch/southern-islands/driver/Driver.h>
 #include <arch/southern-islands/driver/Kernel.h>
 #include <src/lib/cpp/Misc.h>
 
@@ -346,6 +347,27 @@ void NDRange::RemoveWorkGroup(WorkGroup *work_group)
 	// Erase work group
 	assert(work_group->work_groups_iterator != work_groups.end());
 	work_groups.erase(work_group->work_groups_iterator);
+}
+
+void NDRange::WakeupContext()
+{
+	// Check if there is a suspended context and if the ndrange has
+	// completed all of its work groups.
+	if (suspended_context && isWaitingWorkGroupsEmpty() && 
+			isRunningWorkGroupsEmpty())                        
+	{       
+		// There are no more work groups to execute, so a suspended
+		// context can continue.
+		suspended_context->Wakeup();
+
+		// If the context has been woken up, there is no need to hold
+		// on to the pointer
+		suspended_context = nullptr;
+
+		// Debug information
+		Driver::debug << misc::fmt("\tnd-range %d has finished. "
+				"Waking up context.\n", id);
+	}                                                                            
 }
 
 

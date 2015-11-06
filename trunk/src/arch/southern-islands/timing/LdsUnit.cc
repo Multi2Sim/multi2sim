@@ -89,9 +89,6 @@ void LdsUnit::Complete()
 	// Iterate through uops in the write buffer
 	while (it != write_buffer.end())
 	{
-		// Initialize iterator for this loop
-		it = write_buffer.begin();
-
 		// Get Uop
 		Uop *uop = it->get();
 
@@ -100,7 +97,7 @@ void LdsUnit::Complete()
 			break;
 
 		// Access complete, remove the uop from the queue
-		write_buffer.erase(it);
+		it = write_buffer.erase(it);
 
 		// Statistics
 		assert(uop->getWavefrontPoolEntry()->lgkm_cnt > 0);
@@ -126,7 +123,7 @@ void LdsUnit::Write()
 	ComputeUnit *compute_unit = this->getComputeUnit();
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Sanity check write buffer
 	assert(int(mem_buffer.size()) <= max_in_flight_mem_accesses);
@@ -181,6 +178,7 @@ void LdsUnit::Write()
 					compute_unit->getIndex(),
 					uop->getWavefront()->getId(),
 					uop->getIdInWavefront());
+			break;
 		}
 
 		// Access complete, update write ready
@@ -219,7 +217,7 @@ void LdsUnit::Mem()
 	ComputeUnit *compute_unit = this->getComputeUnit();
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Sanity check write buffer
 	assert(int(read_buffer.size()) <= read_buffer_size);
@@ -352,7 +350,7 @@ void LdsUnit::Read()
 	ComputeUnit *compute_unit = this->getComputeUnit();
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Sanity check write buffer
 	assert(int(decode_buffer.size()) <= decode_buffer_size);
@@ -436,7 +434,7 @@ void LdsUnit::Decode()
 	ComputeUnit *compute_unit = this->getComputeUnit();
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Sanity check write buffer
 	assert(int(issue_buffer.size()) <= issue_buffer_size);
