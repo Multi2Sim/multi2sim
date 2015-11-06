@@ -135,6 +135,14 @@ public:
 	/// The maximum number of wavefronts in a wavefront pool
 	static int max_wavefronts_per_wavefront_pool; 
 
+	// The latency of the Lds module
+	static int lds_latency;
+
+	// The block size for the Lds memory module
+	static int lds_block_size;
+	
+	// The number of ports of the Lds module
+	static int lds_num_ports; 
 
 
 	//

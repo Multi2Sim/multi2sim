@@ -700,7 +700,6 @@ bool Context::CanWakeup()
 void Context::Wakeup()
 {
 	// Checks
-	assert(getState(StateCallback));
 	assert(getState(StateSuspended));
 
 	// Invoke wakeup function

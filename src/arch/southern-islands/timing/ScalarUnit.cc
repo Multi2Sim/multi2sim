@@ -81,6 +81,10 @@ void ScalarUnit::Issue(std::unique_ptr<Uop> uop)
 	ComputeUnit *compute_unit = getComputeUnit();
 	if (uop->getInstruction()->getFormat() == Instruction::FormatSMRD)
 	{
+		// The wavefront will be ready next cycle
+		uop->getWavefrontPoolEntry()->ready_next_cycle = true;
+		
+		// Keep track of statistics
 		compute_unit->num_scalar_memory_instructions++;
 		uop->getWavefrontPoolEntry()->lgkm_cnt++;
 	}

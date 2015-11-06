@@ -24,6 +24,7 @@
 #include <list>
 #include <memory>
 
+#include <arch/common/Context.h>
 #include <arch/southern-islands/disassembler/Binary.h>
 #include <memory/Memory.h>
 #include <memory/Mmu.h>
@@ -195,6 +196,10 @@ private:
 	// Addresses of the constant buffers
 	unsigned cb0 = 0;
 	unsigned cb1 = 0;
+	
+	// Pointer to a context that is suspended while waiting for the ndrange
+	// to complete
+	comm::Context *suspended_context = nullptr;
 
 public:
 
@@ -387,6 +392,10 @@ public:
 	/// Get Vertex buffer table address in global memory
 	unsigned getVertexBufferTableAddr() const { return vertex_buffer_table; }
 	
+	/// Returns a pointer to a suspended context. If there is no suspended
+	/// context, a nullptr is returned.
+	comm::Context *GetSuspendedContext() { return suspended_context; }
+
 	/// Remove and return a work group id from the waiting list 
 	long GetWaitingWorkGroup() 
 	{ 
@@ -452,6 +461,12 @@ public:
 
 	/// Set cb10
 	void setCB1(unsigned value) { cb1 = value; }
+	
+	/// Save a suspended context that is waiting for the ndrange.
+	void SetSuspendedContext(comm::Context *context) 
+	{ 
+		suspended_context = context; 
+	}
 	
 	/// Set new size parameters of the ND-Range before it gets launched.
 	///
@@ -546,6 +561,9 @@ public:
 	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);
+
+	/// Wake up the suspended context if the ndrange has completed.
+	void WakeupContext();
 };
 
 

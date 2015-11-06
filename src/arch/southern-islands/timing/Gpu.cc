@@ -48,7 +48,6 @@ Gpu::Gpu()
 
 	// Create compute units
 	compute_units.reserve(num_compute_units);
-	available_compute_units.resize(num_compute_units);
 	for (int i = 0; i < num_compute_units; i++)
 	{
 		// Add new compute unit to the overall list of compute units
@@ -66,7 +65,7 @@ ComputeUnit *Gpu::getAvailableComputeUnit()
 	if (available_compute_units.empty())
 		return nullptr;
 	else
-		return available_compute_units.back();
+		return available_compute_units.front();
 }
 
 
