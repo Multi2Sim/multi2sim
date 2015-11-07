@@ -90,6 +90,11 @@ class System
 	static const char *err_connect;
 	static const char *err_mem_disjoint;
 
+    // Version of memory system trace producer.
+    // See 'src/visual/memory/mem-system.c' for the trace consumer.
+    static const int MemSystemTraceVersionMajor;
+    static const int MemSystemTraceVersionMinor;
+
 	// Event handlers for NMOESI cache coherence protocol. These functions
 	// are defined in SystemCoherenceProtocol.cc.
 	static void EventLoadHandler(esim::Event *, esim::Frame *);
