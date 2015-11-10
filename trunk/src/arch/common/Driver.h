@@ -24,6 +24,7 @@
 #include <memory>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 
 
 // Forward declarations
@@ -99,6 +100,9 @@ class DriverPool
 	// Singleton
 	static std::unique_ptr<DriverPool> instance;
 
+    // Set of drivers' paths
+    std::unordered_set<std::string> paths;
+
 	// List of drivers
 	std::list<Driver *> drivers;
 
@@ -113,6 +117,9 @@ public:
 	/// Return a driver object given the path of its associated virtual
 	/// device, or \c nullptr if no driver is found with that path.
 	Driver *getDriverByPath(const std::string &path);
+
+    /// Return if driver with given path has been registered
+    bool isPathRegistered(const std::string &path);
 };
 
 }  // namespace comm
