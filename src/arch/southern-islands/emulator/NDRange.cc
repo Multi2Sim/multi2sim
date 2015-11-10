@@ -363,10 +363,6 @@ void NDRange::WakeupContext()
 		// If the context has been woken up, there is no need to hold
 		// on to the pointer
 		suspended_context = nullptr;
-
-		// Debug information
-		Driver::debug << misc::fmt("\tnd-range %d has finished. "
-				"Waking up context.\n", id);
 	}                                                                            
 }
 
