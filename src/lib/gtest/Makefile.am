@@ -38,7 +38,6 @@ GTEST_SRC = \
   include/gtest/gtest_prod.h 
 
 EXTRA_DIST += $(GTEST_SRC)
-EXTRA_DIST += lib
 
 # We define the global AM_CPPFLAGS as everything we compile includes from these
 # directories.
