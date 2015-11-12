@@ -54,3 +54,5 @@ lib_libgtest_la_SOURCES = src/gtest-all.cc
 lib_libgtest_main_la_SOURCES = src/gtest_main.cc
 lib_libgtest_main_la_LIBADD = lib/libgtest.la
 
+lib_libraries = lib/libgtest.a lib/libgtest_main.a
+
