@@ -1,6 +1,3 @@
-SUBDIRS = \
-	src
-
 AM_CPPFLAGS = -isystem \
 	      $(top_srcdir)/src/lib/gtest/include \
 	      $(GTEST_CPPFLAGS) \
