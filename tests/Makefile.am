@@ -3,8 +3,8 @@ AM_CPPFLAGS = -isystem \
 	      $(GTEST_CPPFLAGS) \
 	      @M2S_INCLUDES@
 AM_CXXFLAGS = $(GTEST_CXXFLAGS)
-AM_LDFLAGS = $(top_srcdir)/src/lib/gtest/lib/libgtest_main.la \
-	     $(top_srcdir)/src/lib/gtest/lib/libgtest.la \
+AM_LDFLAGS = $(top_builddir)/src/lib/gtest/lib/libgtest_main.la \
+	     $(top_builddir)/src/lib/gtest/lib/libgtest.la \
 	     $(GTEST_LIBS) $(GTEST_LDFLAGS) -pthread
 
 
