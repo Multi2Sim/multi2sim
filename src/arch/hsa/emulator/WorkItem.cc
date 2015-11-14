@@ -22,6 +22,7 @@
 
 #include "WorkItem.h"
 #include "SegmentManager.h"
+#include "WorkItemAbsIdInstructionWorker.h"
 
 
 namespace HSA
@@ -50,9 +51,6 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	stack.push_back(misc::new_unique<StackFrame>(
 			root_function, this, nullptr));
 	StackFrame *frame = stack.back().get();
-
-	// Initialize the instruction worker
-	this->instruction_worker.reset(new HsaInstructionWorker(this, frame));
 
 
 	// Set the status of the work item to be active
@@ -104,11 +102,6 @@ bool WorkItem::MovePcForwardByOne()
 	// Returns true to tell the caller that the function is not returned
 	return true;
 }
-
-
-
-
-
 
 
 void WorkItem::Backtrace(std::ostream &os = std::cout) const
@@ -500,6 +493,23 @@ void WorkItem::DeclareVariable()
 }
 
 
+std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
+		BrigCodeEntry *instruction) 
+{
+	BrigOpcode opcode = instruction->getOpcode();
+	switch(opcode) 
+	{
+	case BRIG_OPCODE_WORKITEMABSID:
+		return misc::new_unique<WorkItemAbsIdInstructionWorker>(
+				this, getStackTop());
+	default:
+		throw misc::Panic(misc::fmt("Opcode %s (%d) not implemented.",
+				AsmService::OpcodeToString(opcode).c_str(),
+				opcode));
+	}
+}
+
+
 bool WorkItem::Execute()
 {
 	// Only execute the active work item
@@ -534,6 +544,7 @@ bool WorkItem::Execute()
 		}
 
 		// Get the function according to the opcode and perform the inst
+		auto instruction_worker = getInstructionWorker(inst);
 		instruction_worker->Execute(inst);
 		/*
 		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];

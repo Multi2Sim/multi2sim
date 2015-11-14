@@ -39,11 +39,13 @@ protected:
 
 	// Get the value of the index-th operand, stores the result in
 	// the \a buffer
-	virtual void getOperandValue(unsigned int index, void *buffer);
+	virtual void getOperandValue(BrigCodeEntry *instruction, 
+			unsigned int index, void *buffer);
 
 	// Store the value into registers marked by the operand, from the
 	// value pointer
-	virtual void setOperandValue(unsigned int index, void *value);
+	virtual void setOperandValue(BrigCodeEntry *instruction,
+			unsigned int index, void *value);
 
 public:
 	/// Constructor
@@ -53,21 +55,7 @@ public:
 	virtual ~HsaInstructionWorker() {};
 
 	/// Execute the instruction
-	virtual void Execute(BrigCodeEntry *instruction);
-
-	// Set the stack frame for this instruction worker to work on
-	virtual void setStackFrame(StackFrame *stack_frame)
-	{
-		this->stack_frame = stack_frame;
-	}
-
-
-
-
-	///
-	/// Functions to execute each instruction
-	///
-	virtual void ExecuteWORKITEMABSID();
+	virtual void Execute(BrigCodeEntry *instruction) = 0;
 };
 
 }

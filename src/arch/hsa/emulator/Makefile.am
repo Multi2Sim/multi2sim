@@ -42,7 +42,10 @@ libemulator_a_SOURCES = \
 		\
 		WorkItem.h \
 		WorkItem.cc \
-		WorkItemIsa.cc 
+		WorkItemIsa.cc \
+		\
+		WorkItemAbsIdInstructionWorker.h \
+		WorkItemAbsIdInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 

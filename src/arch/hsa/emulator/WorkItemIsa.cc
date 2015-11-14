@@ -2568,38 +2568,6 @@ void WorkItem::ExecuteInst_WORKGROUPSIZE()
 }
 
 
-void WorkItem::ExecuteInst_WORKITEMABSID()
-{
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-		setOperandValue(0, &abs_id_x);
-		break;
-
-	case 1:
-
-		setOperandValue(0, &abs_id_y);
-		break;
-
-	case 2:
-
-		setOperandValue(0, &abs_id_z);
-		break;
-
-	default:
-		
-		throw misc::Error("Trying to getting work item absolute id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_WORKITEMFLATABSID()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));

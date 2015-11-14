@@ -33,10 +33,10 @@ HsaInstructionWorker::HsaInstructionWorker(WorkItem *work_item,
 }
 
 
-void HsaInstructionWorker::getOperandValue(unsigned int index, void *buffer)
+void HsaInstructionWorker::getOperandValue(BrigCodeEntry *inst, 
+		unsigned int index, void *buffer)
 {
 	// Get the operand entry
-	BrigCodeEntry *inst = stack_frame->getPc();
 	auto operand = inst->getOperand(index);
 
 	// Do corresponding action according to the type of operand
@@ -153,10 +153,10 @@ void HsaInstructionWorker::getOperandValue(unsigned int index, void *buffer)
 }
 
 
-void HsaInstructionWorker::setOperandValue(unsigned int index, void *value)
+void HsaInstructionWorker::setOperandValue(BrigCodeEntry *inst, 
+		unsigned int index, void *value)
 {
 	// Get the operand entry
-	BrigCodeEntry *inst = stack_frame->getPc();
 	auto operand = inst->getOperand(index);
 
 	// Do corresponding action according to the type of operand

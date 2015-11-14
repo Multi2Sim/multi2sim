@@ -98,11 +98,12 @@ private:
  	// Stack of current work item.
  	std::vector<std::unique_ptr<StackFrame>> stack;
 
- 	// Instruction worker
- 	std::unique_ptr<HsaInstructionWorker> instruction_worker;
-
  	// Process directives befor an instruction
  	void ExecuteDirective();
+
+	// Get HSA instruction worker according to the instruction
+	std::unique_ptr<HsaInstructionWorker> getInstructionWorker(
+			BrigCodeEntry *instruction);
 
 
 
@@ -170,7 +171,8 @@ public:
  	}
 
 	/// Pop the stackframe at the stack top
-	void PopStack(){
+	void PopStack()
+	{
 		stack.pop_back();
 	}
 
