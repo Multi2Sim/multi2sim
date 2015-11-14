@@ -162,6 +162,10 @@ private:
 	// Maximum number of cycles to simulate
 	static long long max_cycles;
 
+    /// Version of x86 trace producer.
+    /// See 'src/visual/x86/cpu.c' for x86 trace consumer.
+    static const int X86TraceVersionMajor;
+    static const int X86TraceVersionMinor;
 
 
 

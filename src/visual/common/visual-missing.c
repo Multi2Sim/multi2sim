@@ -17,13 +17,13 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/mhandle/mhandle.h>
+
 #include <lib/util/debug.h>
 
 #include "visual.h"
 
 
-void visual_run(char *file_name)
+void visual_run(const char *file_name)
 {
 	fatal("operation not available.\n"
 		"\tMulti2Sim was compiled without support for GTK applications. When you ran\n"

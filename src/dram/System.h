@@ -144,6 +144,9 @@ public:
 	/// Returns the size in bits of the column address component.
 	int getColumnSize() const { return column_size; }
 
+	/// Return the maximum address
+	int getCapacity();
+
 	/// Register command-line options
 	static void RegisterOptions();
 

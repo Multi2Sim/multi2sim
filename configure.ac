@@ -615,10 +615,6 @@ AC_CONFIG_FILES([
 		src/lib/util/Makefile
 
 		tests/Makefile
-		tests/src/Makefile
-		tests/src/arch/Makefile
-		tests/src/arch/x86/Makefile
-		tests/src/arch/x86/timing/Makefile
 		])
 AC_OUTPUT
 

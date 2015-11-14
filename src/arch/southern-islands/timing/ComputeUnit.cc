@@ -18,8 +18,10 @@
  */
 
 #include <arch/southern-islands/disassembler/Instruction.h>
+#include <arch/southern-islands/emulator/NDRange.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkGroup.h>
+#include <memory/Module.h>
 
 #include "ComputeUnit.h"
 #include "Timing.h"
@@ -38,6 +40,9 @@ int ComputeUnit::fetch_buffer_size = 10;
 int ComputeUnit::issue_latency = 1;
 int ComputeUnit::issue_width = 5;
 int ComputeUnit::max_instructions_issued_per_type = 1;
+int ComputeUnit::lds_latency = 2;                                                      
+int ComputeUnit::lds_block_size = 64;                                                  
+int ComputeUnit::lds_num_ports = 2; 
 	
 
 ComputeUnit::ComputeUnit(int index, Gpu *gpu) :
@@ -48,6 +53,11 @@ ComputeUnit::ComputeUnit(int index, Gpu *gpu) :
 		lds_unit(this),
 		vector_memory_unit(this)
 {
+	// Create the Lds module
+	lds_module = new mem::Module(misc::fmt("LDS[%d]", index), 
+			mem::Module::TypeLocalMemory, lds_num_ports, 
+			lds_block_size, lds_latency);
+
 	// Create wavefront pools, and SIMD units
 	wavefront_pools.resize(num_wavefront_pools);
 	fetch_buffers.resize(num_wavefront_pools);
@@ -256,8 +266,10 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 
 		// Emulate instructions
 		wavefront->Execute();
-		wavefront_pool_entry->ready = true;
+		wavefront_pool_entry->ready = false;
 
+		//printf("wf: %d | wf_pool: %d | cu: %d\n", wavefront->getId(), wavefront_pool->getId(), index);
+		
 		// Create uop
 		auto uop = misc::new_unique<Uop>(
 				wavefront,
@@ -455,6 +467,10 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	// Unmap wavefronts from instruction buffer
 	work_group->wavefront_pool->UnmapWavefronts(work_group);
 	
+	// Remove the work group from the running work groups list
+	NDRange *ndrange = work_group->getNDRange();
+	ndrange->RemoveWorkGroup(work_group);
+
 	// If compute unit is not already in the available list, place
 	// it there
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());

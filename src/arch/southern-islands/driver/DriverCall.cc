@@ -23,6 +23,7 @@
 #include <arch/southern-islands/emulator/Emulator.h>
 #include <arch/southern-islands/timing/Gpu.h>
 #include <arch/southern-islands/timing/Timing.h>
+#include <arch/x86/emulator/Context.h>
 #include <lib/cpp/String.h>
 #include <memory/Memory.h>
 
@@ -746,14 +747,19 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 	// from the driver list                                           
 	if (!(ndrange->getNumWorkgroups()) &&                         
 			!(ndrange->getNumWaitingWorkgroups()))                       
-	{                                                                        
+	{                                   
+		// The NDRange has finished 
 		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);            
 	}                                                                        
 	else                                                                     
-	{                                                                        
+	{
+		// The NDRange has not finished. Suspend the context until it
+		// completes
 		debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n", 
-				ndrange_id);                                     
-	}                                                                        
+				ndrange_id);
+		context->Suspend();
+		ndrange->SetSuspendedContext(context);
+	}                                                                 
 
 	// Return
 	return 0;

@@ -862,16 +862,14 @@ bool Timing::Run()
 		// Get pointer to NDRange
 		NDRange *ndrange = it->get();
 
-		// Break if there are no waiting work groups
-		if (ndrange->isWaitingWorkGroupsEmpty())
-			break;
-
 		// Setup WorkGroup pointer
 		WorkGroup *work_group = nullptr;
 		
+		// Save the number of waiting work groups
+		unsigned num_work_groups = ndrange->getNumWaitingWorkgroups();
+
 		// Map work groups to compute units
-		for (unsigned i = 0; i < ndrange->getNumWaitingWorkgroups(); 
-				i++)
+		for (unsigned i = 0; i < num_work_groups; i++)
 		{
 			// Remove work group from list and get its ID
 			long work_group_id = ndrange->GetWaitingWorkGroup();
@@ -890,6 +888,10 @@ bool Timing::Run()
 			// Map the work group to a compute unit
 			compute_unit->MapWorkGroup(work_group);
 		}
+
+		// If a context has been suspended while waiting for the ndrange
+		// check if it can be woken up.
+		ndrange->WakeupContext();
 	}
 
 
@@ -907,6 +909,7 @@ bool Timing::Run()
 	// Stop if there was a simulation stall
 	if (gpu->last_complete_cycle && gpu->last_complete_cycle > 1000000)
 	{
+		std::cout<<"\n\n************TOO LONG******************\n\n";
 		//warning("Southern Islands GPU simulation stalled.\n%s",
 		//	si_err_stall);
 		esim_engine->Finish("SIStall");

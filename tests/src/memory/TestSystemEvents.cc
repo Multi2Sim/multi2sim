@@ -263,6 +263,57 @@ const std::string mem_config_1 =
 		"Thread = 0\n"
 		"Module = mod-l1-3\n";
 
+static std::string mem_config_2 =
+		"[ CacheGeometry geo-l1 ]\n"
+		"Sets = 1\n"
+		"Assoc = 1\n"
+		"BlockSize = 64\n"
+		"Latency = 1\n"
+		"MSHR = 256\n"
+		"Ports = 1\n"
+		"\n"
+		"[ Module mod-l1 ]\n"
+		"Type = Cache\n"
+		"Geometry = geo-l1\n"
+		"LowNetwork = net0\n"
+		"LowNetworkNode = n0\n"
+		"LowModules = mod-l2\n"
+		"\n"
+		"[ Module mod-l2 ]\n"
+		"Type = MainMemory\n"
+		"HighNetwork = net0\n"
+		"HighNetworkNode = n1\n"
+		"BlockSize = 256\n"
+		"Latency = 10\n"
+		"\n"
+		"[ Entry core-0 ]\n"
+		"Arch = x86\n"
+		"Core = 0\n"
+		"Thread = 0\n"
+		"DataModule = mod-l1\n"
+		"InstModule = mod-l1\n"
+		"\n"
+		"[ Entry core-1 ]\n"
+		"Arch = x86\n"
+		"Core = 1\n"
+		"Thread = 0\n"
+		"DataModule = mod-l1\n"
+		"InstModule = mod-l1\n"
+		"\n"
+		"[ Entry core-2 ]\n"
+		"Arch = x86\n"
+		"Core = 2\n"
+		"Thread = 0\n"
+		"DataModule = mod-l1\n"
+		"InstModule = mod-l1\n"
+		"\n"
+		"[ Entry core-3 ]\n"
+		"Arch = x86\n"
+		"Core = 3\n"
+		"Thread = 0\n"
+		"DataModule = mod-l1\n"
+		"InstModule = mod-l1\n";
+
 const std::string x86_config =
 		"[ General ]\n"
 		"Cores = 4\n"
@@ -485,6 +536,33 @@ const std::string net_config_1 =
 		"Type = Bidirectional\n"
 		"Source = n1\n"
 		"Dest = s0\n";
+
+const std::string net_config_2 =
+		"[ Network.net0 ]\n"
+		"DefaultInputBufferSize = 72\n"
+		"DefaultOutputBufferSize = 72\n"
+		"DefaultBandwidth = 72\n"
+		"\n"
+		"[ Network.net0.Node.n0 ]\n"
+		"Type = EndNode\n"
+		"\n"
+		"[ Network.net0.Node.n1 ]\n"
+		"Type = EndNode\n"
+		"\n"
+		"[ Network.net0.Node.s0 ]\n"
+		"Type = Switch\n"
+		"\n"
+		"[ Network.net0.Link.l0 ]\n"
+		"Type = Bidirectional\n"
+		"Source = n0\n"
+		"Dest = s0\n"
+		"Bandwidth = 72\n"
+		"\n"
+		"[ Network.net0.Link.l1 ]\n"
+		"Type = Bidirectional\n"
+		"Source = s0\n"
+		"Dest = n1\n"
+		"Bandwidth = 72\n";
 
 // Cleanup instances of singletons
 static void Cleanup()
@@ -4211,6 +4289,86 @@ TEST(TestSystemEvents, config_1_evict_0)
 
 		// Check owner
 		EXPECT_EQ(module_l3->getOwner(8, 0, 0), module_l2_0);
+	}
+	catch (misc::Exception &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
+TEST(TestSystemEvents, test_flood)
+{
+
+	try
+	{
+		// Cleanup singleton instances
+		Cleanup();
+
+		// Load configuration files
+		misc::IniFile ini_file_mem;
+		misc::IniFile ini_file_x86;
+		misc::IniFile ini_file_net;
+		ini_file_mem.LoadFromString(mem_config_2);
+		ini_file_x86.LoadFromString(x86_config);
+		ini_file_net.LoadFromString(net_config_2);
+
+		// Set up x86 timing simulator
+		x86::Timing::ParseConfiguration(&ini_file_x86);
+		x86::Timing::getInstance();
+
+		// Set up network system
+		net::System *network_system = net::System::getInstance();
+		network_system->ParseConfiguration(&ini_file_net);
+
+		// Set up memory system
+		System *memory_system = System::getInstance();
+		memory_system->ReadConfiguration(&ini_file_mem);
+
+		// Get modules
+		Module *module_l1 = memory_system->getModule("mod-l1");
+		Module *module_l2 = memory_system->getModule("mod-l2");
+		ASSERT_NE(module_l1, nullptr);
+		ASSERT_NE(module_l2, nullptr);
+
+		// Set block states
+		module_l1->getCache()->getBlock(0, 0)->
+			      setStateTag(Cache::BlockModified, 0x0);
+		module_l2->getCache()->getBlock(0, 0)->
+			      setStateTag(Cache::BlockExclusive, 0x0);
+		module_l2->setOwner(0, 0, 0, module_l1);
+		module_l2->setSharer(0, 0, 0, module_l1);
+
+		// Spam the main memory with accesses
+		int witness = -20;
+		module_l1->Access(Module::AccessLoad, 0x040, &witness);
+		module_l1->Access(Module::AccessLoad, 0x050, &witness);
+		module_l1->Access(Module::AccessLoad, 0x060, &witness);
+		module_l1->Access(Module::AccessLoad, 0x070, &witness);
+		module_l1->Access(Module::AccessLoad, 0x080, &witness);
+		module_l1->Access(Module::AccessLoad, 0x090, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0A0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0B0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0C0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0D0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0E0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x0F0, &witness);
+		module_l1->Access(Module::AccessLoad, 0x100, &witness);
+		module_l1->Access(Module::AccessLoad, 0x110, &witness);
+		module_l1->Access(Module::AccessLoad, 0x120, &witness);
+		module_l1->Access(Module::AccessLoad, 0x130, &witness);
+		module_l1->Access(Module::AccessLoad, 0x140, &witness);
+		module_l1->Access(Module::AccessLoad, 0x150, &witness);
+		module_l1->Access(Module::AccessLoad, 0x160, &witness);
+		module_l1->Access(Module::AccessLoad, 0x170, &witness);
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		while (witness < 0)
+			esim_engine->ProcessEvents();
+
+		// Note: Simulation finishes at 117 cycles
+
 	}
 	catch (misc::Exception &e)
 	{

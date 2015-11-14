@@ -34,14 +34,8 @@ namespace x86
 
 class ObjectPool
 {
-	// A CPU
-	std::unique_ptr<Cpu> cpu;
-
-	// A core
-	std::unique_ptr<Core> core;
-
-	// A thread
-	std::unique_ptr<Thread> thread;
+	// Timing simulator
+	Timing *timing;
 
 	// A context
 	Context *context;
@@ -65,14 +59,23 @@ public:
 		return instance.get();
 	}
 
-	/// Destroy instance of this class if allocated.
-	static void Destroy() { instance = nullptr; }
+	/// Destroy all singletons related with x86 simulation, including:
+	///
+	/// - ObjectPool singleton
+	/// - Timing singleton
+	/// - Emulator singleton
+	/// - ArchPool singleton
+	///
+	static void Destroy();
+
+	/// Return the CPU object.
+	Cpu *getCpu() const { return timing->getCpu(); }
 
 	/// Return the core.
-	Core *getCore() const { return core.get(); }
+	Core *getCore() const { return getCpu()->getCore(0); }
 
 	/// Return the thread.
-	Thread *getThread() const { return thread.get(); }
+	Thread *getThread() const { return getCore()->getThread(0); }
 
 	/// Return the context.
 	Context *getContext() const { return context; }

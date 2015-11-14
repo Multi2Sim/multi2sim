@@ -24,7 +24,7 @@
 
 /* Function to invoke visualization tool.
  * The name of the trace file is passed as the argument. */
-void visual_run(char *file_name);
+void visual_run(const char *file_name);
 
 
 #endif
