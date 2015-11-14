@@ -28,12 +28,17 @@
 namespace HSA
 {
 
-WorkItem::WorkItem(WorkGroup *work_group,
-			unsigned private_segment_size,
-			unsigned int abs_id_x,
-			unsigned int abs_id_y,
-			unsigned int abs_id_z,
-			Function *root_function)
+WorkItem::WorkItem()
+{
+}
+
+
+void WorkItem::Initialize(WorkGroup *work_group,
+		unsigned private_segment_size,
+		unsigned int abs_id_x,
+		unsigned int abs_id_y,
+		unsigned int abs_id_z,
+		Function *root_function)
 {
 	// Set global emulator object
 	emulator = Emulator::getInstance();
@@ -61,7 +66,7 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
-	if (getAbsoluteFlattenedId() == 0) 
+	if (getAbsoluteFlattenedId() == 0)
 	{
 		if (Emulator::isa_debug)
 		{
@@ -69,7 +74,6 @@ WorkItem::WorkItem(WorkGroup *work_group,
 			Emulator::isa_debug << "\n";
 		}
 	}
-
 }
 
 

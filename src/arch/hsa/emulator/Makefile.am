@@ -22,6 +22,12 @@ libemulator_a_SOURCES = \
 		Grid.h \
 		Grid.cc \
 		\
+		OperandValueRetriever.h \
+		OperandValueRetriever.cc \
+		\
+		OperandValueWriter.h \
+		OperandValueWriter.cc \
+		\
 		SegmentManager.h \
 		SegmentManager.cc \
 		\

@@ -21,11 +21,18 @@
 #ifndef ARCH_HSA_EMULATOR_HSAINSTRUCTIONWORKER_H
 #define ARCH_HSA_EMULATOR_HSAINSTRUCTIONWORKER_H
 
+#include <memory>
+
+#include "OperandValueRetriever.h"
+#include "OperandValueWriter.h"
+
 namespace HSA
 {
 class WorkItem;
 class StackFrame;
 class BrigCodeEntry;
+class OperandValueRetriever;
+class OperandValueWriter;
 
 /// An HsaInstructionWorker is a unit that emulates an instruction
 class HsaInstructionWorker
@@ -37,15 +44,11 @@ protected:
 	// The stack fram that this instruction worker is working on
 	StackFrame *stack_frame;
 
-	// Get the value of the index-th operand, stores the result in
-	// the \a buffer
-	virtual void getOperandValue(BrigCodeEntry *instruction, 
-			unsigned int index, void *buffer);
+	// Operand value retriever
+	std::unique_ptr<OperandValueRetriever> operand_value_retriever;
 
-	// Store the value into registers marked by the operand, from the
-	// value pointer
-	virtual void setOperandValue(BrigCodeEntry *instruction,
-			unsigned int index, void *value);
+	// Operand value writer
+	std::unique_ptr<OperandValueWriter> operand_value_writer;
 
 public:
 	/// Constructor
@@ -56,6 +59,18 @@ public:
 
 	/// Execute the instruction
 	virtual void Execute(BrigCodeEntry *instruction) = 0;
+
+	/// Set the operand value retriever
+	void setOperandValueRetriever(OperandValueRetriever *retriever)
+	{
+		operand_value_retriever.reset(retriever);
+	}
+
+	/// Set the operand value writer
+	void setOperandValueWriter(OperandValueWriter *writer)
+	{
+		operand_value_writer.reset(writer);
+	}
 };
 
 }

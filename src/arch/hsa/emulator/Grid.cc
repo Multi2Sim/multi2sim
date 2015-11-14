@@ -203,7 +203,8 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 	WorkGroup *work_group = it->second.get();
 
 	// Create work item
-	auto work_item = misc::new_unique<WorkItem>(work_group,
+	auto work_item = misc::new_unique<WorkItem>();
+	work_item->Initialize(work_group,
 			private_segment_size,
 			abs_id_x, abs_id_y, abs_id_z,
 			root_function);

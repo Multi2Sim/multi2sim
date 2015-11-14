@@ -1,0 +1,91 @@
+/*
+ *  Multi2Sim
+ *  Copyright (C) 2014  Yifan Sun (yifansun@coe.neu.edu)
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include "gtest/gtest.h"
+
+#include <arch/hsa/emulator/WorkItemAbsIdInstructionWorker.h>
+#include <arch/hsa/emulator/WorkItem.h>
+
+namespace HSA
+{
+
+class MockupOperandValueRetriever : public OperandValueRetriever
+{
+public:
+	MockupOperandValueRetriever() :
+		OperandValueRetriever(nullptr, nullptr)
+	{
+	}
+
+	void Retrieve(BrigCodeEntry *instruction, unsigned int index,
+			void *buffer) override
+	{
+
+	}
+};
+
+class MockupOperandValueWriter : public OperandValueWriter
+{
+public:
+	MockupOperandValueWriter() :
+		OperandValueWriter(nullptr, nullptr)
+	{
+	}
+
+	void Write(BrigCodeEntry *instruction, unsigned int index,
+			void *buffer) override
+	{
+
+	}
+};
+
+class MockupWorkItem : public WorkItem
+{
+public:
+	MockupWorkItem()
+	{
+	};
+
+	unsigned int pc = 0;
+	unsigned int getAbsoluteIdX() const override { return 100; }
+	unsigned int getAbsoluteIdY() const override { return 200; }
+	unsigned int getAbsoluteIdZ() const override { return 300; }
+	bool MovePcForwardByOne() override
+	{
+		pc++;
+		return true;
+	}
+};
+
+TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_x)
+{
+	MockupWorkItem work_item;
+	MockupOperandValueRetriever retriever;
+	MockupOperandValueWriter writer;
+	WorkItemAbsIdInstructionWorker worker(&work_item, nullptr);
+
+}
+
+}
+
+
+
+
+
+

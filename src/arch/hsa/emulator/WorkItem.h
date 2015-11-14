@@ -68,19 +68,19 @@ public:
 private:
 
  	// Emulator that is belongs to 
- 	Emulator *emulator;
+ 	Emulator *emulator = nullptr;
 
  	// Executable
- 	HsaExecutable *executable;
+ 	HsaExecutable *executable = nullptr;
 
  	// Work group that current work item belongs to
- 	WorkGroup *work_group;
+ 	WorkGroup *work_group = nullptr;
 
  	// The private segment memory manager
  	std::unique_ptr<SegmentManager> private_segment;
 
 	// The status of the work item;
-	WorkItemStatus status;
+	WorkItemStatus status = WorkItemStatusActive;
 
  	// work item absolute ids, equivalent to global_id in OpenCL
  	unsigned int abs_id_x;
@@ -137,7 +137,10 @@ private:
 public:
 
  	/// Create a work item. HSA should let grid object to create work item
- 	WorkItem(WorkGroup *work_group,
+ 	WorkItem();
+
+ 	/// Initialize the work item
+ 	void Initialize(WorkGroup *work_group,
  			unsigned private_segment_size,
  			unsigned int abs_id_x,
  			unsigned int abs_id_y,
@@ -152,7 +155,7 @@ public:
 
  	/// Move the program counter by one. Return false if current PC is
  	/// at the end of the function
- 	bool MovePcForwardByOne();
+ 	virtual bool MovePcForwardByOne();
 
  	/// Dump backtrace information
  	void Backtrace(std::ostream &os) const;
@@ -201,9 +204,9 @@ public:
  	unsigned int getAbsoluteFlattenedId() const;
 
 	/// Return abs id
-	unsigned int getAbsoluteIdX() const { return abs_id_x; }
-	unsigned int getAbsoluteIdY() const { return abs_id_y; }
-	unsigned int getAbsoluteIdZ() const { return abs_id_z; }
+	virtual unsigned int getAbsoluteIdX() const { return abs_id_x; }
+	virtual unsigned int getAbsoluteIdY() const { return abs_id_y; }
+	virtual unsigned int getAbsoluteIdZ() const { return abs_id_z; }
 
 	/// Return the status of the work item
 	WorkItemStatus getStatue() const { return status; }

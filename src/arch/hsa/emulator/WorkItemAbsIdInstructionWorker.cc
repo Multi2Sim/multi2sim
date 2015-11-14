@@ -30,39 +30,52 @@ WorkItemAbsIdInstructionWorker::WorkItemAbsIdInstructionWorker(
 }	
 
 
-void WorkItemAbsIdInstructionWorker::Execute(BrigCodeEntry *instruction) 
+void WorkItemAbsIdInstructionWorker::RetrieveOperandValue()
 {
-	unsigned int dim;
-	getOperandValue(instruction, 1, &dim);
-	unsigned int abs_id;
-	switch(dim)
+	operand_value_retriever->Retrieve(instruction, 1, &dimension);
+}
+
+
+void WorkItemAbsIdInstructionWorker::RetrieveAbsoluteId()
+{
+	switch(dimension)
 	{
 	case 0:
 
-		abs_id = work_item->getAbsoluteIdX();
+		absolute_id = work_item->getAbsoluteIdX();
 		break;
 
 	case 1:
 
-		abs_id = work_item->getAbsoluteIdY();
+		absolute_id = work_item->getAbsoluteIdY();
 		break;
 
 	case 2:
 
-		abs_id = work_item->getAbsoluteIdZ();
+		absolute_id = work_item->getAbsoluteIdZ();
 		break;
 
 	default:
-		
+
 		throw misc::Error("Trying to getting work item absolute id "
 				"other than x, y and z axis.");
 	}
+}
 
-	// Write the result back
-	setOperandValue(instruction, 0, &abs_id);
 
-	// Move pc to next instruction
+void WorkItemAbsIdInstructionWorker::WriteResultBack()
+{
+	operand_value_writer->Write(instruction, 0, &absolute_id);
 	work_item->MovePcForwardByOne();
+}
+
+
+void WorkItemAbsIdInstructionWorker::Execute(BrigCodeEntry *instruction) 
+{
+	this->instruction = instruction;
+	RetrieveOperandValue();
+	RetrieveAbsoluteId();
+	WriteResultBack();
 }
 
 }

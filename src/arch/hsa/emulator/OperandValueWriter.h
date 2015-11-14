@@ -17,34 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_EMULATOR_WORKITEMABSIDINSTRUCTIONWORKER_H
-#define ARCH_HSA_EMULATOR_WORKITEMABSIDINSTRUCTIONWORKER_H
+#ifndef ARCH_HSA_EMULATOR_OPERANDVALUEWRITER_H
+#define ARCH_HSA_EMULATOR_OPERANDVALUEWRITER_H
 
-#include "HsaInstructionWorker.h"
-
-namespace HSA 
+namespace HSA
 {
+class WorkItem;
+class StackFrame;
+class BrigCodeEntry;
 
-class WorkItemAbsIdInstructionWorker : public HsaInstructionWorker 
+class OperandValueWriter
 {
-	unsigned int dimension = 0;
-	unsigned int absolute_id = 0;
-	BrigCodeEntry *instruction = nullptr;
-
-	void RetrieveOperandValue();
-	void RetrieveAbsoluteId();
-	void WriteResultBack();
-
+	WorkItem *work_item;
+	StackFrame *stack_frame;
 public:
-
-	/// Constructor	
-	WorkItemAbsIdInstructionWorker(WorkItem *work_item, 
-			StackFrame *stack_frame);
-
-	/// Execute
-	void Execute(BrigCodeEntry *instruction) override;
+	OperandValueWriter(WorkItem *work_item, StackFrame *stack_frame);
+	virtual ~OperandValueWriter();
+	virtual void Write(BrigCodeEntry *instruction, unsigned int index,
+			void *buffer);
 };
 
 }
 
-#endif  // ARCH_HSA_EMULATOR_WORJITEMABSIDINSTRUCTIONWORKER_H
+#endif  // ARCH_HSA_EMULATOR_OPERANDVALUEWRITER_H
