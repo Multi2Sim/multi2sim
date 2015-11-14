@@ -48,6 +48,9 @@ void DriverPool::Register(Driver *driver)
 {
 	// Add it to the pool
 	drivers.push_back(driver);
+
+    // Record driver's path
+    paths.insert(driver->getPath());
 }
 
 
@@ -62,6 +65,9 @@ Driver *DriverPool::getDriverByPath(const std::string &path)
 	return nullptr;
 }
 
+bool DriverPool::isPathRegistered(const std::string &path) {
+    return paths.count(path);
+}
 
 }  // namespace comm
 

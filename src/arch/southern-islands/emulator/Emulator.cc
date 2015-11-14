@@ -140,9 +140,9 @@ bool Emulator::Run()
 		// running work group list
 		ndrange->RemoveWorkGroup(work_group);
 		
-		// Let OpenCL driver know that all work-groups from this nd-range
-		// have been run
-		// opencl_driver->RequestWork((*ndr_i).get());
+		// If a context has been suspended while waiting for the ndrange
+		// check if it can be woken up.
+		ndrange->WakeupContext();
 	}
 
 	// Done with all the work

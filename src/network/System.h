@@ -241,6 +241,13 @@ public:
 
 	// Stand-Alone simulation
 	void StandAlone();
+
+    int getNumNetworks() const { return networks.size(); }
+
+    Network *getNetwork(int index) const {
+        assert(index >= 0 && index < (int) networks.size());
+        return networks[index].get();
+    }
 };
 
 }  // namespace net

@@ -148,6 +148,37 @@ System::System()
 }
 
 
+int System::getCapacity()
+{
+	int num_controllers = 1;
+	int num_channels = 1;
+	int num_ranks = 1;
+	int num_banks = 1;
+	int num_rows = 1;
+	int num_columns = 1;
+
+	// Retrieve number of controllers
+	num_controllers = controllers.size();
+
+	// Find the largest of each component size because one address format
+	// must be able to decode to any location in the system.
+	// Controllers can potentially each have different sizes for everything
+	for (auto const &controller : controllers)
+	{
+		num_channels = std::max(num_channels, 
+				controller->getNumChannels());
+		num_ranks = std::max(rank_size, controller->getNumRanks());
+		num_banks = std::max(bank_size, controller->getNumBanks());
+		num_rows = std::max(row_size, controller->getNumRows());
+		num_columns = std::max(column_size, 
+				controller->getNumColumns());
+	}
+
+	return num_controllers * num_channels * num_ranks * num_banks
+		* num_rows * num_columns;
+}
+
+
 void System::RegisterOptions()
 {
 	// Get command line object
@@ -342,7 +373,7 @@ void System::GenerateAddressSizes()
 
 void System::Read(long long address)
 {
-	if (address < 0)
+	if (address < 0 || address > getCapacity())
 		throw misc::Error("Invalid Address");
 
 	// Create the request object that will be inserted into the queue.
@@ -362,7 +393,7 @@ void System::Read(long long address)
 
 void System::Write(long long address)
 {
-	if (address < 0)
+	if (address < 0 || address > getCapacity())
 		throw misc::Error("Invalid Address");
 
 	// Create the request object that will be inserted into the queue.
