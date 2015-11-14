@@ -41,6 +41,7 @@ class ProgramLoader;
 class HsaExecutable;
 
 /// List of HSA opcode
+/*
 enum InstOpcode
 {
 #define DEFINST(name, opcode, opstr) \
@@ -50,6 +51,7 @@ enum InstOpcode
 	// Max
 	InstOpcodeCount
 };
+*/
 
 /// HSA work item
 class WorkItem
@@ -96,71 +98,8 @@ private:
  	// Stack of current work item.
  	std::vector<std::unique_ptr<StackFrame>> stack;
 
- 	// A list of instruction workers.
- 	// Instruction works are saved, to avoid allocating repeatly
- 	std::map<BrigOpcode, std::unique_ptr<HsaInstructionWorker>>
- 			instruction_workers;
-
- 	// Get the instruction worker according to the opcode
- 	HsaInstructionWorker *GetInstructionWorker(BrigOpcode);
-
- 	// Prototype of member function of class WorkItem devoted to the 
- 	// execution of HSA virtual ISA instructions.
- 	typedef void (WorkItem::*ExecuteInstFn)();
-
- 	// Instruction emulation functions. Each entry of Instruction.def will
-	// be expanded into a function prototype.
-#define DEFINST(name, opcode, opstr) \
- 		void ExecuteInst_##name();
-#include <arch/hsa/disassembler/Instruction.def>
-#undef DEFINST
-
- 	// Unsupported opcode
- 	void ExecuteInst_unsupported();
-
- 	// Execute inst auxiliary functions
- 	template<typename T> void Inst_ABS_Aux();
- 	template<typename T> void Inst_ADD_Aux();
- 	template<typename T> void Inst_BORROW_Aux();
- 	template<typename T> void Inst_CARRY_Aux();
- 	template<typename T> void Inst_DIV_Aux();
- 	template<typename T> void Inst_MAD_Aux();
- 	template<typename T> void Inst_MAX_Aux();
- 	template<typename T> void Inst_MIN_Aux();
- 	template<typename T> void Inst_MUL_Aux();
- 	template<typename T> void Inst_MULHI_Aux(int half_width, T masks);
- 	template<typename T> void Inst_NEG_Aux();
- 	template<typename T> void Inst_SUB_Aux();
- 	template<typename T> void Inst_REM_Aux();
- 	template<typename T> void Inst_SHL_Aux();
- 	template<typename T> void Inst_SHR_Aux();
- 	template<typename T> void Inst_AND_Aux();
- 	template<typename T> void Inst_NOT_Aux();
- 	template<typename T> void Inst_OR_Aux();
- 	template<typename T> void Inst_POPCOUNT_Aux();
- 	template<typename T> void Inst_XOR_Aux();
- 	template<typename T> void Inst_BITEXTRACT_Aux();
-	template<typename T> void Inst_LDA_Aux();
- 	template<typename T> void Inst_MOV_Aux();
- 	template<typename T> void Inst_CMOV_Aux();
- 	template<typename SrcType, typename DstType> void Inst_CMP_Aux();
- 	template<typename SrcType, typename DstType> void Inst_CVT_chop_Aux();
-	template<typename SrcType, typename DstType> void Inst_CVT_sext_Aux();
- 	template<typename SrcType, typename DstType> void Inst_CVT_zext_Aux();
- 	template<typename SrcType, typename DstType> void Inst_CVT_u2f_Aux();
- 	template<typename T> void Inst_LD_Aux();
- 	template<typename T> void Inst_ST_Aux();
-
- 	// Get the value of the index-th operand, stores the result in 
-	// the \a buffer 
-	virtual void getOperandValue(unsigned int index, void *buffer);
- 	
- 	// Store the value into registers marked by the operand, from the 
-	// value pointer
- 	virtual void setOperandValue(unsigned int index, void *value);
- 	
- 	// Table of functions that implement instructions
- 	static ExecuteInstFn execute_inst_fn[InstOpcodeCount + 1];
+ 	// Instruction worker
+ 	std::unique_ptr<HsaInstructionWorker> instruction_worker;
 
  	// Process directives befor an instruction
  	void ExecuteDirective();

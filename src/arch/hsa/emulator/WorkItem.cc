@@ -47,8 +47,13 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->abs_id_z = abs_id_z;
 
 	// Set the first stack frame
-	StackFrame *frame = new StackFrame(root_function, this, nullptr);
-	stack.push_back(std::unique_ptr<StackFrame>(frame));
+	stack.push_back(misc::new_unique<StackFrame>(
+			root_function, this, nullptr));
+	StackFrame *frame = stack.back().get();
+
+	// Initialize the instruction worker
+	this->instruction_worker.reset(new HsaInstructionWorker(this, frame));
+
 
 	// Set the status of the work item to be active
 	status = WorkItemStatusActive;
@@ -101,186 +106,7 @@ bool WorkItem::MovePcForwardByOne()
 }
 
 
-void WorkItem::getOperandValue(unsigned int index, void *buffer)
-{
-	// Get the operand entry
-	StackFrame *stack_top = getStackTop();
-	BrigCodeEntry *inst = stack_top->getPc();
-	auto operand = inst->getOperand(index);
 
-	// Do corresponding action according to the type of operand
-	switch (operand->getKind())
-	{
-	case BRIG_KIND_OPERAND_CONSTANT_BYTES:
-
-	{
-		BrigImmed immed(operand->getBytes(),
-				inst->getOperandType(index));
-
-		immed.getImmedValue(buffer);
-		return;
-	}
-
-	case BRIG_KIND_OPERAND_WAVESIZE:
-
-		*(unsigned int *)buffer = 1;
-		return;
-
-	case BRIG_KIND_OPERAND_REGISTER:
-
-	{
-		std::string register_name = operand->getRegisterName();
-		stack_top->getRegisterValue(register_name, buffer);
-		return;
-	}
-
-	case BRIG_KIND_OPERAND_ADDRESS:
-
-	{
-		unsigned address;
-		unsigned long long offset = operand->getOffset();
-		if (operand->getSymbol().get())
-		{
-			auto symbol = operand->getSymbol();
-			std::string name = symbol->getName();
-
-			// Get the variable
-			Variable *variable = 
-				stack_top->getSymbol(name);
-			
-			// If the variable is not found in stack frame
-			// try kernel argument
-			if (!variable)
-				variable = getGrid()->
-						getKernelArgument(
-								name);
-
-			// If the variable is still not found
-			if (!variable)
-				throw misc::Error(misc::fmt(
-						"Symbol %s is not"
-						" defined", 
-						name.c_str()));
-
-			// Variable not in stack frame, try kernel 
-			// argument
-			address = variable->getAddress();
-		}
-		else
-		{
-			std::string register_name = operand->getReg()
-						->getRegisterName();
-			stack_top->getRegisterValue(register_name,
-					&address);
-		}
-		address += offset;
-		*(unsigned *)buffer = address;
-		return;
-	}
-
-	case BRIG_KIND_OPERAND_OPERAND_LIST:
-
-	{
-		// Get the vector modifier
-		unsigned vector_size = inst->getVectorModifier();
-		for (unsigned int i = 0; i < vector_size; i++)
-		{
-			auto op_item = operand->getOperandElement(i);	
-			switch (op_item->getKind())
-			{
-			case BRIG_KIND_OPERAND_REGISTER:
-
-			{
-				std::string register_name = 
-						op_item->
-						getRegisterName();
-				unsigned size = AsmService::getSizeInByteByRegisterName(
-								register_name);
-				stack_top->getRegisterValue
-						(register_name,
-						(unsigned char *)buffer
-						+ i * size);
-				break;
-			}
-
-			default:
-				throw misc::Panic(misc::fmt(
-						"Unsupported operand "
-						"type in operand list")
-						);
-			}
-		}
-		break;
-	}
-
-	default:
-
-		throw misc::Panic("Unsupported operand type "
-				"for getOperandValue");
-		break;
-
-	}
-}
-
-
-void WorkItem::setOperandValue(unsigned int index, void *value)
-{
-	// Get the operand entry
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-	auto operand = inst->getOperand(index);
-
-	// Do corresponding action according to the type of operand
-	switch (operand->getKind())
-	{
-	case BRIG_KIND_OPERAND_REGISTER:
-
-	{
-		std::string register_name = operand->getRegisterName();
-		stack_top->setRegisterValue(register_name, value);
-		break;
-	}
-
-	case BRIG_KIND_OPERAND_OPERAND_LIST:
-
-	{
-		// Get the vector modifier
-		unsigned vector_size = inst->getVectorModifier();
-		for (unsigned int i = 0; i < vector_size; i++)
-		{
-			auto op_item = operand->getOperandElement(i);	
-			switch (op_item->getKind())
-			{
-			case BRIG_KIND_OPERAND_REGISTER:
-
-			{
-				std::string register_name = 
-						op_item->
-						getRegisterName();
-				unsigned size = AsmService::getSizeInByteByRegisterName(
-						register_name);
-				stack_top->setRegisterValue
-						(register_name, 
-						 (unsigned char *)value + i * size);
-				break;
-			}
-
-			default:
-				throw misc::Panic(misc::fmt(
-						"Unsupported operand "
-						"type in operand list")
-						);
-			}
-		}
-		break;
-	}
-
-	default:
-
-		throw misc::Panic("Unsupported operand type "
-				"for storeOperandValue");
-	}
-}
 
 
 
@@ -673,12 +499,6 @@ void WorkItem::DeclareVariable()
 			name.c_str(), AsmService::TypeToSize(type), dim);
 }
 
-HsaInstructionWorker *WorkItem::GetInstructionWorker(BrigOpcode opcode)
-{
-	throw misc::Panic(misc::fmt("Unsupported instruction, opcode: %u\n",
-			opcode));
-}
-
 
 bool WorkItem::Execute()
 {
@@ -714,12 +534,8 @@ bool WorkItem::Execute()
 		}
 
 		// Get the function according to the opcode and perform the inst
-		BrigOpcode opcode = inst->getOpcode();
+		instruction_worker->Execute(inst);
 		/*
-		HsaInstructionWorker *worker =
-				GetInstructionWorker(opcode);
-		worker->Execute();
-		*/
 		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
 		try
 		{
@@ -730,6 +546,7 @@ bool WorkItem::Execute()
 			std::cerr << panic.getMessage();
 			exit(1);
 		}
+		*/
 
 
 		// Return false if execution finished

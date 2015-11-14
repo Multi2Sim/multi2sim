@@ -24,22 +24,50 @@
 namespace HSA
 {
 class WorkItem;
+class StackFrame;
+class BrigCodeEntry;
 
 /// An HsaInstructionWorker is a unit that emulates an instruction
 class HsaInstructionWorker
 {
+protected:
 	// The work item that this instruction worker is working on
 	WorkItem *work_item;
 
+	// The stack fram that this instruction worker is working on
+	StackFrame *stack_frame;
+
+	// Get the value of the index-th operand, stores the result in
+	// the \a buffer
+	virtual void getOperandValue(unsigned int index, void *buffer);
+
+	// Store the value into registers marked by the operand, from the
+	// value pointer
+	virtual void setOperandValue(unsigned int index, void *value);
+
 public:
 	/// Constructor
-	HsaInstructionWorker(WorkItem *work_item);
+	HsaInstructionWorker(WorkItem *work_item, StackFrame *stack_frame);
 
 	/// Destructor
 	virtual ~HsaInstructionWorker() {};
 
 	/// Execute the instruction
-	virtual void Execute() = 0;
+	virtual void Execute(BrigCodeEntry *instruction);
+
+	// Set the stack frame for this instruction worker to work on
+	virtual void setStackFrame(StackFrame *stack_frame)
+	{
+		this->stack_frame = stack_frame;
+	}
+
+
+
+
+	///
+	/// Functions to execute each instruction
+	///
+	virtual void ExecuteWORKITEMABSID();
 };
 
 }

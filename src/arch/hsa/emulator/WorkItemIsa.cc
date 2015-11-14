@@ -29,6 +29,7 @@
 namespace HSA
 {
 
+/*
 WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 {
 #define DEFINST(name, opcode, opstr) \
@@ -2775,6 +2776,8 @@ void WorkItem::ExecuteInst_GCNMIN()
 void WorkItem::ExecuteInst_unsupported()
 {
 }
+
+*/
 
 }  // namespace HSA
 
