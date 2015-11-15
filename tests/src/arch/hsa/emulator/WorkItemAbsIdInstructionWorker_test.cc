@@ -24,6 +24,8 @@
 
 namespace HSA
 {
+namespace workitemabsid
+{
 
 class MockupOperandValueRetriever : public OperandValueRetriever
 {
@@ -76,6 +78,7 @@ public:
 		return true;
 	}
 };
+
 
 TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_x)
 {
@@ -139,7 +142,7 @@ TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_z)
 	// Assert
 	EXPECT_EQ(1, work_item.pc);
 }
-
+}
 }
 
 

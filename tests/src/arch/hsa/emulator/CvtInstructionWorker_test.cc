@@ -25,6 +25,8 @@
 
 namespace HSA
 {
+namespace cvt
+{
 
 class MockupOperandValueRetriever : public OperandValueRetriever
 {
@@ -47,7 +49,7 @@ public:
 class MockupOperandValueWriter : public OperandValueWriter
 {
 public:
-	long long expect_value = 100;
+	long long expect_value = 0;
 	unsigned int size = 0;
 
 	MockupOperandValueWriter() :
@@ -58,7 +60,9 @@ public:
 	void Write(BrigCodeEntry *instruction, unsigned int index,
 			void *buffer) override
 	{
-		EXPECT_EQ(expect_value, *(long long *)buffer);
+		long long actual_value = 0;
+		memcpy(&actual_value, buffer, size);
+		EXPECT_EQ(expect_value, actual_value);
 	}
 };
 
@@ -90,6 +94,7 @@ public:
 	BrigType getType() const override { return type; }
 	BrigType getSourceType() const override { return source_type; }
 };
+
 
 TEST(CvtInstructionWorker, should_convert_u16_to_u32)
 {
@@ -195,6 +200,8 @@ TEST(CvtInstructionWorker, should_convert_u64_to_f32)
 	// Assertion
 	EXPECT_EQ(1, work_item.pc);
 }
+
+}  // namespace cvt
 
 }
 
