@@ -17,9 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "src/arch/hsa/emulator/LdInstructionWorker.h"
+#ifndef ARCH_HSA_EMULATOR_SHRINSTRUCTIONWORKER_H
+#define ARCH_HSA_EMULATOR_SHRINSTRUCTIONWORKER_H
+
+#include "HsaInstructionWorker.h"
+
 
 namespace HSA
 {
 
+class ShrInstructionWorker : public HsaInstructionWorker
+{
+	template<typename T>
+	void Inst_SHR_Aux(BrigCodeEntry *instruction);
+
+public:
+	ShrInstructionWorker(WorkItem *work_item,
+			StackFrame *stack_frame);
+	virtual ~ShrInstructionWorker();
+	void Execute(BrigCodeEntry *instruction) override;
+};
+
 }  // namespace HSA
+
+#endif  // ARCH_HSA_EMULATOR_SHRINSTRUCTIONWORKER_H

@@ -22,6 +22,9 @@
 
 #include "WorkItem.h"
 #include "SegmentManager.h"
+
+#include "AddInstructionWorker.h"
+#include "ShlInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "LdInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
@@ -506,10 +509,17 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	StackFrame *stack_top = getStackTop();
 	switch(opcode) 
 	{
+	case BRIG_OPCODE_ADD:
+
+		return misc::new_unique<AddInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_SHL:
+
+		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_CVT:
 
-		return misc::new_unique<CvtInstructionWorker>(
-				this, stack_top);
+		return misc::new_unique<CvtInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_LD:
 

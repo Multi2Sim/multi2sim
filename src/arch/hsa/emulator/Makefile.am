@@ -50,11 +50,20 @@ libemulator_a_SOURCES = \
 		WorkItem.cc \
 		WorkItemIsa.cc \
 		\
+		AddInstructionWorker.h \
+		AddInstructionWorker.cc \
+		\
 		CvtInstructionWorker.h \
 		CvtInstructionWorker.cc \
 		\
 		LdInstructionWorker.h \
 		LdInstructionWorker.cc \
+		\
+		ShlInstructionWorker.h \
+		ShlInstructionWorker.cc \
+		\
+		ShrInstructionWorker.h \
+		ShrInstructionWorker.cc \
 		\
 		WorkItemAbsIdInstructionWorker.h \
 		WorkItemAbsIdInstructionWorker.cc
