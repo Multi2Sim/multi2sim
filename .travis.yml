@@ -23,5 +23,6 @@ install:
 
 script:
         - make
+	- make check
 
 

@@ -22,6 +22,7 @@
 
 #include "WorkItem.h"
 #include "SegmentManager.h"
+#include "CvtInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
 
 
@@ -503,9 +504,16 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	BrigOpcode opcode = instruction->getOpcode();
 	switch(opcode) 
 	{
+	case BRIG_OPCODE_CVT:
+
+		return misc::new_unique<CvtInstructionWorker>(
+				this, getStackTop());
+
 	case BRIG_OPCODE_WORKITEMABSID:
+
 		return misc::new_unique<WorkItemAbsIdInstructionWorker>(
 				this, getStackTop());
+
 	default:
 		throw misc::Panic(misc::fmt("Opcode %s (%d) not implemented.",
 				AsmService::OpcodeToString(opcode).c_str(),
