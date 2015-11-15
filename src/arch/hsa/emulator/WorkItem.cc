@@ -23,16 +23,30 @@
 #include "WorkItem.h"
 #include "SegmentManager.h"
 
+#include "AddInstructionWorker.h"
+#include "ShlInstructionWorker.h"
+#include "ShrInstructionWorker.h"
+#include "CvtInstructionWorker.h"
+#include "LdInstructionWorker.h"
+#include "StInstructionWorker.h"
+#include "RetInstructionWorker.h"
+#include "WorkItemAbsIdInstructionWorker.h"
+
 
 namespace HSA
 {
 
-WorkItem::WorkItem(WorkGroup *work_group,
-			unsigned private_segment_size,
-			unsigned int abs_id_x,
-			unsigned int abs_id_y,
-			unsigned int abs_id_z,
-			Function *root_function)
+WorkItem::WorkItem()
+{
+}
+
+
+void WorkItem::Initialize(WorkGroup *work_group,
+		unsigned private_segment_size,
+		unsigned int abs_id_x,
+		unsigned int abs_id_y,
+		unsigned int abs_id_z,
+		Function *root_function)
 {
 	// Set global emulator object
 	emulator = Emulator::getInstance();
@@ -47,8 +61,10 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	this->abs_id_z = abs_id_z;
 
 	// Set the first stack frame
-	StackFrame *frame = new StackFrame(root_function, this, nullptr);
-	stack.push_back(std::unique_ptr<StackFrame>(frame));
+	stack.push_back(misc::new_unique<StackFrame>(
+			root_function, this, nullptr));
+	StackFrame *frame = stack.back().get();
+
 
 	// Set the status of the work item to be active
 	status = WorkItemStatusActive;
@@ -58,18 +74,18 @@ WorkItem::WorkItem(WorkGroup *work_group,
 	private_segment.reset(new SegmentManager(memory, private_segment_size));
 
 	// Dump initial state of the stack frame when a work item created.
-	if (getAbsoluteFlattenedId() == 0) {
+	if (getAbsoluteFlattenedId() == 0)
+	{
 		if (Emulator::isa_debug)
 		{
 			frame->Dump(Emulator::isa_debug);
 			Emulator::isa_debug << "\n";
 		}
 	}
-
 }
 
 
-WorkItem::~WorkItem()
+WorkItem::~WorkItem() 
 {
 }
 
@@ -118,7 +134,6 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 		os << "\n";
 	}
 	os << "***** ********* *****\n\n";
-
 }
 
 
@@ -490,12 +505,62 @@ void WorkItem::DeclareVariable()
 }
 
 
+std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
+		BrigCodeEntry *instruction) 
+{
+	BrigOpcode opcode = instruction->getOpcode();
+	StackFrame *stack_top = getStackTop();
+	switch(opcode) 
+	{
+	case BRIG_OPCODE_ADD:
+
+		return misc::new_unique<AddInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_SHL:
+
+		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_SHR:
+
+		return misc::new_unique<ShrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_CVT:
+
+		return misc::new_unique<CvtInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_LD:
+
+		return misc::new_unique<LdInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_ST:
+
+		return misc::new_unique<StInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_RET:
+
+		return misc::new_unique<RetInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_WORKITEMABSID:
+
+		return misc::new_unique<WorkItemAbsIdInstructionWorker>(
+				this, stack_top);
+
+	default:
+		throw misc::Panic(misc::fmt("Opcode %s (%d) not implemented.",
+				AsmService::OpcodeToString(opcode).c_str(),
+				opcode));
+	}
+}
+
+
 bool WorkItem::Execute()
 {
 	// Only execute the active work item
 	if (status != WorkItemStatusActive)
 		return true;
 
+	// The root function has returned, then stop the execution of the
+	// work-item.
 	if (stack.size() == 0)
 	{
 		return false;
@@ -504,7 +569,7 @@ bool WorkItem::Execute()
 	// Retrieve stack top
 	StackFrame *stack_top = getStackTop();
 
-	// Record frame status before the instruction is executed
+	// Execute the instruction or directory
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
@@ -515,24 +580,16 @@ bool WorkItem::Execute()
 			Emulator::isa_debug << "Executing: ";
 			Emulator::isa_debug << *inst;
 
-			Emulator::isa_debug << "Before: ";
-			if (Emulator::isa_debug)
-				stack_top->Dump(Emulator::isa_debug);
-			Emulator::isa_debug << "\n";
+//			Emulator::isa_debug << "Before: ";
+//			if (Emulator::isa_debug)
+//				stack_top->Dump(Emulator::isa_debug);
+//			Emulator::isa_debug << "\n";
 		}
 
 		// Get the function according to the opcode and perform the inst
-		BrigOpcode opcode = inst->getOpcode();
-		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-		try
-		{
-			(this->*fn)();
-		}
-		catch(misc::Panic &panic)
-		{
-			std::cerr << panic.getMessage();
-			exit(1);
-		}
+		auto instruction_worker = getInstructionWorker(inst);
+		instruction_worker->Execute(inst);
+
 		// Return false if execution finished
 		if (stack.empty())
 			return false;
@@ -560,6 +617,7 @@ bool WorkItem::Execute()
 			return false;
 		}
 	}
+
 	// Return false if execution finished
 	if (stack.empty())
 		return false;

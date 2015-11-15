@@ -29,7 +29,7 @@ misc::StringMap AsmService::opcode_to_str_map =
 #include "Instruction.def"
 #undef DEFINST
 
-	{"invalid", 140}
+	{"invalid", 65535}
 };
 
 
@@ -504,9 +504,9 @@ bool AsmService::isFloat(BrigType type)
 
 bool AsmService::isPacked(BrigType type)
 {
-	if (type & BRIG_TYPE_PACK_32 ||
-			type & BRIG_TYPE_PACK_64 ||
-			type & BRIG_TYPE_PACK_128)
+	if ((type & BRIG_TYPE_PACK_32) ||
+			(type & BRIG_TYPE_PACK_64) ||
+			(type & BRIG_TYPE_PACK_128))
 		return true;
 	return false;
 }
@@ -514,7 +514,7 @@ bool AsmService::isPacked(BrigType type)
 
 bool AsmService::isArray(BrigType type)
 {
-	if (type & BRIG_TYPE_ARRAY);
+	if (type & BRIG_TYPE_ARRAY)
 		return true;
 	return false;
 }
@@ -741,6 +741,21 @@ std::string AsmService::SamplerQueryToString(BrigSamplerQuery query)
 unsigned AsmService::TypeToSize(BrigType type)
 {
 	return type_to_size_map.at(type);
+}
+
+unsigned AsmService::getSizeInByteByRegisterName(const std::string &name)
+{
+	if (name[1] == 'c')
+		return 1;
+	else if (name[1] == 's')
+		return 4;
+	else if (name[1] == 'd')
+		return 8;
+	else if(name[1] == 'q')
+		return 16;
+	else
+		throw misc::Panic(misc::fmt("Unknown register name %s\n",
+				name.c_str()));
 }
 
 

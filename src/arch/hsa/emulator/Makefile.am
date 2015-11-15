@@ -10,14 +10,23 @@ libemulator_a_SOURCES = \
 		Component.h \
 		Component.cc \
 		\
+		Emulator.h \
+		Emulator.cc \
+		\
 		Function.h \
 		Function.cc \
+		\
+		HsaInstructionWorker.h \
+		HsaInstructionWorker.cc \
 		\
 		Grid.h \
 		Grid.cc \
 		\
-		Emulator.h \
-		Emulator.cc \
+		OperandValueRetriever.h \
+		OperandValueRetriever.cc \
+		\
+		OperandValueWriter.h \
+		OperandValueWriter.cc \
 		\
 		SegmentManager.h \
 		SegmentManager.cc \
@@ -39,7 +48,31 @@ libemulator_a_SOURCES = \
 		\
 		WorkItem.h \
 		WorkItem.cc \
-		WorkItemIsa.cc 
+		WorkItemIsa.cc \
+		\
+		AddInstructionWorker.h \
+		AddInstructionWorker.cc \
+		\
+		CvtInstructionWorker.h \
+		CvtInstructionWorker.cc \
+		\
+		LdInstructionWorker.h \
+		LdInstructionWorker.cc \
+		\
+		StInstructionWorker.h \
+		StInstructionWorker.cc \
+		\
+		ShlInstructionWorker.h \
+		ShlInstructionWorker.cc \
+		\
+		ShrInstructionWorker.h \
+		ShrInstructionWorker.cc \
+		\
+		RetInstructionWorker.h \
+		RetInstructionWorker.cc \
+		\
+		WorkItemAbsIdInstructionWorker.h \
+		WorkItemAbsIdInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 
