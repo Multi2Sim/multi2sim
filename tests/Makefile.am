@@ -148,4 +148,5 @@ src_arch_hsa_emulator_test_LDADD = \
 	-lz
 
 src_arch_hsa_emulator_test_SOURCES = \
-	src/arch/hsa/emulator/WorkItemAbsIdInstructionWorker_test.cc
+	src/arch/hsa/emulator/WorkItemAbsIdInstructionWorker_test.cc \
+	src/arch/hsa/emulator/CvtInstructionWorker_test.cc

@@ -28,6 +28,8 @@ namespace HSA
 class MockupOperandValueRetriever : public OperandValueRetriever
 {
 public:
+	unsigned int return_value = 0;
+
 	MockupOperandValueRetriever() :
 		OperandValueRetriever(nullptr, nullptr)
 	{
@@ -36,13 +38,15 @@ public:
 	void Retrieve(BrigCodeEntry *instruction, unsigned int index,
 			void *buffer) override
 	{
-
+		*(unsigned int *)buffer = return_value;
 	}
 };
 
 class MockupOperandValueWriter : public OperandValueWriter
 {
 public:
+	unsigned int expect_value = 100;
+
 	MockupOperandValueWriter() :
 		OperandValueWriter(nullptr, nullptr)
 	{
@@ -51,7 +55,7 @@ public:
 	void Write(BrigCodeEntry *instruction, unsigned int index,
 			void *buffer) override
 	{
-
+		EXPECT_EQ(expect_value, *(unsigned int *)buffer);
 	}
 };
 
@@ -75,11 +79,65 @@ public:
 
 TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_x)
 {
+	// Setup
 	MockupWorkItem work_item;
-	MockupOperandValueRetriever retriever;
-	MockupOperandValueWriter writer;
+	MockupOperandValueRetriever *retriever =
+			new MockupOperandValueRetriever();
+	MockupOperandValueWriter *writer =
+			new MockupOperandValueWriter();
 	WorkItemAbsIdInstructionWorker worker(&work_item, nullptr);
+	worker.setOperandValueRetriever(retriever);
+	worker.setOperandValueWriter(writer);
+	retriever->return_value = 0;
+	writer->expect_value = 100;
 
+	// Execute
+	worker.Execute(nullptr);
+
+	// Assert
+	EXPECT_EQ(1, work_item.pc);
+}
+
+TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_y)
+{
+	// Setup
+	MockupWorkItem work_item;
+	MockupOperandValueRetriever *retriever =
+			new MockupOperandValueRetriever();
+	MockupOperandValueWriter *writer =
+			new MockupOperandValueWriter();
+	WorkItemAbsIdInstructionWorker worker(&work_item, nullptr);
+	worker.setOperandValueRetriever(retriever);
+	worker.setOperandValueWriter(writer);
+	retriever->return_value = 1;
+	writer->expect_value = 200;
+
+	// Execute
+	worker.Execute(nullptr);
+
+	// Assert
+	EXPECT_EQ(1, work_item.pc);
+}
+
+TEST(WorkItemAbsIdInstructionWorker, should_get_correct_result_z)
+{
+	// Setup
+	MockupWorkItem work_item;
+	MockupOperandValueRetriever *retriever =
+			new MockupOperandValueRetriever();
+	MockupOperandValueWriter *writer =
+			new MockupOperandValueWriter();
+	WorkItemAbsIdInstructionWorker worker(&work_item, nullptr);
+	worker.setOperandValueRetriever(retriever);
+	worker.setOperandValueWriter(writer);
+	retriever->return_value = 2;
+	writer->expect_value = 300;
+
+	// Execute
+	worker.Execute(nullptr);
+
+	// Assert
+	EXPECT_EQ(1, work_item.pc);
 }
 
 }
