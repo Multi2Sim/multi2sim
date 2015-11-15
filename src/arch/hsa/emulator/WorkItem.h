@@ -112,9 +112,6 @@ private:
  	// Memory related fields and function
  	//
 
-	// Translate inner address to flat address
-	unsigned getFlatAddress(BrigSegment segment, unsigned address);
-
 	// Declare variable in global segment
 	void DeclareVariableGlobal(const std::string &name, BrigType type, 
 			unsigned long long dim);
@@ -225,6 +222,9 @@ public:
 
 	/// Return the grid that this work item belongs to
 	Grid *getGrid() const;
+
+	/// Translate inner address to flat address
+	unsigned getFlatAddress(BrigSegment segment, unsigned address);
 
 };
 

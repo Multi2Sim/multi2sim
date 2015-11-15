@@ -53,6 +53,9 @@ libemulator_a_SOURCES = \
 		CvtInstructionWorker.h \
 		CvtInstructionWorker.cc \
 		\
+		LdInstructionWorker.h \
+		LdInstructionWorker.cc \
+		\
 		WorkItemAbsIdInstructionWorker.h \
 		WorkItemAbsIdInstructionWorker.cc
 		
