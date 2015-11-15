@@ -910,58 +910,6 @@ void WorkItem::ExecuteInst_MUL24HI()
 
 
 template<typename T>
-void WorkItem::Inst_SHR_Aux()
-{
-	// FIXME:  Logic right shift
-	// Perform action
-	T src0;
-	unsigned int src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 >> src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_SHR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_S32:
-
-		Inst_SHR_Aux<int>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_SHR_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_U32:
-
-		Inst_SHR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_U64:
-
-		Inst_SHR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_AND_Aux()
 {
 	// Perform action
@@ -1806,79 +1754,6 @@ void WorkItem::ExecuteInst_CMP()
 
 	}
 }
-
-template<typename T>
-void WorkItem::Inst_ST_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get address to store
-	unsigned address;
-	getOperandValue(1, &address);
-	
-	// Translate address to flat address
-	address = getFlatAddress(inst->getSegment(), address);
-
-	// Move value from register or immediate into memory
-	T src0;
-	getOperandValue(0, &src0);
-	mem::Memory *memory = Emulator::getInstance()->getMemory();
-	memory->Write(address, sizeof(T), (char *)&src0);
-}
-
-
-void WorkItem::ExecuteInst_ST()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get type
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_U8:
-	case BRIG_TYPE_S8:
-
-		Inst_ST_Aux<unsigned char>();
-		break;
-
-	case BRIG_TYPE_U16:
-	case BRIG_TYPE_S16:
-
-		Inst_ST_Aux<unsigned short>();
-		break;
-
-	case BRIG_TYPE_U32:
-	case BRIG_TYPE_S32:
-
-		Inst_ST_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_F32:
-		Inst_ST_Aux<float>();
-		break;
-
-	case BRIG_TYPE_U64:
-	case BRIG_TYPE_S64:
-
-		Inst_ST_Aux<unsigned long long>();
-		break;
-
-	case BRIG_TYPE_F64:
-		Inst_ST_Aux<double>();
-		break;
-
-	default:
-		throw misc::Panic("Type is not supported");
-		break;
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
 
 void WorkItem::ExecuteInst_ATOMIC()
 {

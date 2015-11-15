@@ -25,8 +25,11 @@
 
 #include "AddInstructionWorker.h"
 #include "ShlInstructionWorker.h"
+#include "ShrInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "LdInstructionWorker.h"
+#include "StInstructionWorker.h"
+#include "RetInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
 
 
@@ -517,6 +520,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_SHR:
+
+		return misc::new_unique<ShrInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_CVT:
 
 		return misc::new_unique<CvtInstructionWorker>(this, stack_top);
@@ -524,6 +531,14 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_LD:
 
 		return misc::new_unique<LdInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_ST:
+
+		return misc::new_unique<StInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_RET:
+
+		return misc::new_unique<RetInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_WORKITEMABSID:
 
@@ -574,19 +589,6 @@ bool WorkItem::Execute()
 		// Get the function according to the opcode and perform the inst
 		auto instruction_worker = getInstructionWorker(inst);
 		instruction_worker->Execute(inst);
-		/*
-		ExecuteInstFn fn = WorkItem::execute_inst_fn[opcode];
-		try
-		{
-			(this->*fn)();
-		}
-		catch(misc::Panic &panic)
-		{
-			std::cerr << panic.getMessage();
-			exit(1);
-		}
-		*/
-
 
 		// Return false if execution finished
 		if (stack.empty())

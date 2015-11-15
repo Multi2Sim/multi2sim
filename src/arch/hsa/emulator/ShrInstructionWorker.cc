@@ -50,7 +50,6 @@ void ShrInstructionWorker::Inst_SHR_Aux(BrigCodeEntry *instruction)
 	operand_value_retriever->Retrieve(instruction, 1, &src0);
 	operand_value_retriever->Retrieve(instruction, 2, &src1);
 	T des = src0 >> src1;
-	std::cerr << src0 << "\n" << src1 << "\n" << des;
 	operand_value_writer->Write(instruction, 0, &des);
 }
 

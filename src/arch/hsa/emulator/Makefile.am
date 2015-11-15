@@ -59,11 +59,17 @@ libemulator_a_SOURCES = \
 		LdInstructionWorker.h \
 		LdInstructionWorker.cc \
 		\
+		StInstructionWorker.h \
+		StInstructionWorker.cc \
+		\
 		ShlInstructionWorker.h \
 		ShlInstructionWorker.cc \
 		\
 		ShrInstructionWorker.h \
 		ShrInstructionWorker.cc \
+		\
+		RetInstructionWorker.h \
+		RetInstructionWorker.cc \
 		\
 		WorkItemAbsIdInstructionWorker.h \
 		WorkItemAbsIdInstructionWorker.cc

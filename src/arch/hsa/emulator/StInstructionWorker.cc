@@ -19,83 +19,80 @@
 
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
 
-#include "LdInstructionWorker.h"
+#include "StInstructionWorker.h"
 #include "WorkItem.h"
 
 namespace HSA
 {
 
-LdInstructionWorker::LdInstructionWorker(WorkItem *work_item,
+StInstructionWorker::StInstructionWorker(WorkItem *work_item,
 		StackFrame *stack_frame) :
 		HsaInstructionWorker(work_item, stack_frame)
 {
 }
 
-LdInstructionWorker::~LdInstructionWorker()
+
+StInstructionWorker::~StInstructionWorker()
 {
-	// TODO Auto-generated destructor stub
 }
 
+
 template<typename T>
-void LdInstructionWorker::Inst_LD_Aux(BrigCodeEntry *instruction)
+void StInstructionWorker::Inst_ST_Aux(BrigCodeEntry *instruction)
 {
-	// Get address according the type of the operand
+	// Get address to store
 	unsigned address;
 	operand_value_retriever->Retrieve(instruction, 1, &address);
 
 	// Translate address to flat address
 	address = work_item->getFlatAddress(instruction->getSegment(), address);
 
-	// Read data
-	unsigned vector_modifier = instruction->getVectorModifier();
-	if (vector_modifier == 0) vector_modifier = 1;
-	auto value = misc::new_unique_array<T>(vector_modifier);
-	Emulator::getInstance()->getMemory()->Read(address,
-			sizeof(T) * vector_modifier,
-			(char *)value.get());
-
 	// Move value from register or immediate into memory
-	operand_value_writer->Write(instruction, 0, value.get());
+	T src0;
+	operand_value_retriever->Retrieve(instruction, 0, &src0);
+	mem::Memory *memory = Emulator::getInstance()->getMemory();
+	memory->Write(address, sizeof(T), (char *)&src0);
 }
 
 
-void LdInstructionWorker::Execute(BrigCodeEntry *instruction)
-{
+void StInstructionWorker::Execute(BrigCodeEntry *instruction) {
+	// Get type
 	switch (instruction->getType())
 	{
-	case BRIG_TYPE_U32:
+	case BRIG_TYPE_U8:
+	case BRIG_TYPE_S8:
 
-		Inst_LD_Aux<unsigned int>(instruction);
+		Inst_ST_Aux<unsigned char>(instruction);
 		break;
 
+	case BRIG_TYPE_U16:
+	case BRIG_TYPE_S16:
+
+		Inst_ST_Aux<unsigned short>(instruction);
+		break;
+
+	case BRIG_TYPE_U32:
 	case BRIG_TYPE_S32:
 
-		Inst_LD_Aux<int>(instruction);
+		Inst_ST_Aux<unsigned int>(instruction);
 		break;
 
 	case BRIG_TYPE_F32:
-
-		Inst_LD_Aux<float>(instruction);
+		Inst_ST_Aux<float>(instruction);
 		break;
 
 	case BRIG_TYPE_U64:
-
-		Inst_LD_Aux<unsigned long long>(instruction);
-		break;
-
 	case BRIG_TYPE_S64:
 
-		Inst_LD_Aux<long long>(instruction);
+		Inst_ST_Aux<unsigned long long>(instruction);
 		break;
 
 	case BRIG_TYPE_F64:
-
-		Inst_LD_Aux<double>(instruction);
+		Inst_ST_Aux<double>(instruction);
 		break;
 
 	default:
-
-		throw misc::Panic("Unimplemented type for Inst LD.");
+		throw misc::Panic("Type is not supported");
 		break;
 	}
 
