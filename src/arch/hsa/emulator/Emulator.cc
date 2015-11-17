@@ -188,13 +188,6 @@ bool Emulator::Run()
 	return active;
 }
 
-uint64_t Emulator::CreateSignal(uint64_t init_value)
-{
-	auto signal = misc::new_unique<Signal>(init_value);
-
-	return signal_ptr;
-}
-
 
 void Emulator::LoadProgram(const std::vector<std::string> &args,
 		const std::vector<std::string> &env,

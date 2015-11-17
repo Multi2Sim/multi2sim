@@ -17,7 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <lib/cpp/String.h>
+#include <lib/cpp/Error.h>
+#include <arch/hsa/emulator/Signal.h>
+
 #include "SignalManager.h"
+
+namespace HSA
+{
 
 SignalManager::SignalManager()
 {
@@ -29,11 +36,11 @@ SignalManager::~SignalManager()
 }
 
 
-uint64_t CreateSignal(uint64_t initial_value)
+uint64_t SignalManager::CreateSignal(uint64_t initial_value)
 {
 	// Create signal with initial value
 	auto signal = misc::new_unique<Signal>();
-	signal->setValue(init_value);
+	signal->setValue(initial_value);
 
 	// Put the signal in the list
 	signals.emplace(handler_to_allocate, std::move(signal));
@@ -44,6 +51,8 @@ uint64_t CreateSignal(uint64_t initial_value)
 }
 
 
-void DestorySignal(uint64_t handler)
+void SignalManager::DestorySignal(uint64_t handler)
 {
+}
+
 }

@@ -20,6 +20,8 @@
 #ifndef ARCH_HSA_EMULATOR_SIGNAL_H
 #define ARCH_HSA_EMULATOR_SIGNAL_H
 
+#include <cstdint>
+
 namespace HSA
 {
 
@@ -27,7 +29,7 @@ class Signal
 {
 
 	// Signal value
-	uint64_t value;
+	int64_t value = 0;
 
 public:
 
@@ -35,10 +37,10 @@ public:
 	Signal();
 
 	// Get value
-	uint64_t getValue() const { return value; }
+	int64_t getValue() const { return value; }
 
 	// Set value
-	void setValue(uint64_t value) { this->value = value; }
+	void setValue(int64_t value) { this->value = value; }
 
 };
 

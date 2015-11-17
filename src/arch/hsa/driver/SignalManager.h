@@ -34,10 +34,10 @@ class SignalManager
 {
 private:
 
-	/// A hash map that maps from the signal handler to the signals
+	// A hash map that maps from the signal handler to the signals
 	std::unordered_map<uint64_t, std::unique_ptr<Signal>> signals;
 
-	/// The handler to allocate next
+	// The handler to allocate next
 	uint64_t handler_to_allocate = 0;
 
 public:
@@ -55,7 +55,7 @@ public:
 
 	/// Destory the signal with a particular handler
 	void DestorySignal(uint64_t handler);
-}
+};
 
 }
 

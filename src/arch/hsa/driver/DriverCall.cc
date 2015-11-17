@@ -922,16 +922,16 @@ int Driver::CallSignalCreate(comm::Context *context,
 	// consumers		| 16		| 8
 	// signal		| 24 		| 8
 	hsa_status_t status = HSA_STATUS_SUCCESS;
-	long long initial_value = getArgumentValue<long long>(4, memory,
+	int64_t initial_value = getArgumentValue<int64_t>(4, memory,
 			args_ptr);
-	unsigned long long signal = getArgumentValue<unsigned long long>(24,
+	uint64_t signal = getArgumentValue<uint64_t>(24,
 			memory, args_ptr);
 
 	// Create signal
-	Signal *new_signal = Emulator::getInstance()->CreateSignal(initial_value);
+	uint64_t signal_handler = signal_manager->CreateSignal(initial_value);
 
 	// Write back
-	memory->Write(signal, 8, (char *)&new_signal);
+	memory->Write(signal, 8, (char *)&signal_handler);
 	memory->Write(args_ptr, 4, (char *)&status);
 
 	return 0;

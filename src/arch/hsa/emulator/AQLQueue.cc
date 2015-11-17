@@ -49,8 +49,8 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	// Set default type and feature
 	fields->queue_type = type;
 	fields->queue_features = 1;
-	fields->doorbell_signal = (unsigned long long)Emulator::getInstance()->
-			CreateSignal(0);
+//	fields->doorbell_signal = (unsigned long long)Emulator::getInstance()->
+//			CreateSignal(0);
 	fields->service_queue = 0;
 	fields->id = process_queue_id++;
 
@@ -85,29 +85,6 @@ void AQLQueue::Associate(Component *component)
 		throw Error("Re-associated a queue to a device!");
 	associated_component = component;
 }
-
-
-/*
-void AQLQueue::Enqueue(AQLDispatchPacket *packet)
-{
-	// 1. Allocating an AQL packet slot
-	unsigned long long packet_id = fields->write_index;
-	allocatesPacketSlot();
-
-	// 2. update the AQL packet with the task particulars
-	Emu *emu = Emu::getInstance();
-	mem::Memory *memory = emu->getMemory();
-	memory->Write(packet_id, sizeof(AQLDispatchPacket), (char *)packet);
-
-	// 3. Assigning the packet to the Packet Processor
-	AQLDispatchPacket *saved_packet = getPacket(packet_id);
-	saved_packet->Assign();
-
-	// 4. Notifying the Packet Processor of the packet
-	fields->doorbell_signal = packet_id;
-
-}
-*/
 
 
 AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)

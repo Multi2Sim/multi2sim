@@ -22,8 +22,7 @@
 namespace HSA
 {
 
-Signal::Signal(unsigned long long init_value) :
-		value(init_value)
+Signal::Signal()
 {
 }
 

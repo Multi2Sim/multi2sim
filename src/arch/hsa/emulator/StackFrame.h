@@ -23,7 +23,6 @@
 #include <cstring>
 
 #include <arch/hsa/driver/Driver.h>
-#include <arch/hsa/driver/DriverCallbackInfo.h>
 #include <arch/hsa/disassembler/AsmService.h>
 
 #include "Function.h"

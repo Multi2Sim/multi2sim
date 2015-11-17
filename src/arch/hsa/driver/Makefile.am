@@ -6,8 +6,6 @@ libdriver_a_SOURCES = \
 		Driver.cc \
 		DriverCall.cc \
 		\
-		DriverCallbackInfo.h \
-		\
 		Driver.def \
 		\
 		HsaExecutable.h \
@@ -17,6 +15,9 @@ libdriver_a_SOURCES = \
 		HsaProgram.cc \
 		\
 		HsaExecutableSymbol.h \
-		HsaExecutableSymbol.cc
+		HsaExecutableSymbol.cc \
+		\
+		SignalManager.h \
+		SignalManager.cc
 
 AM_CPPFLAGS = @M2S_INCLUDES@
