@@ -17,31 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_EMULATOR_SIGNAL_H
-#define ARCH_HSA_EMULATOR_SIGNAL_H
+#include "SignalManager.h"
 
-namespace HSA
+SignalManager::SignalManager()
 {
+}
 
-class Signal
+
+SignalManager::~SignalManager()
 {
+}
 
-	// Signal value
-	uint64_t value;
 
-public:
+uint64_t CreateSignal(uint64_t initial_value)
+{
+	// Create signal with initial value
+	auto signal = misc::new_unique<Signal>();
+	signal->setValue(init_value);
 
-	// Constructor
-	Signal();
+	// Put the signal in the list
+	signals.emplace(handler_to_allocate, std::move(signal));
+	handler_to_allocate++;
 
-	// Get value
-	uint64_t getValue() const { return value; }
+	// Return the handler
+	return handler_to_allocate - 1;
+}
 
-	// Set value
-	void setValue(uint64_t value) { this->value = value; }
 
-};
-
-}  // namespace net
-
-#endif
+void DestorySignal(uint64_t handler)
+{
+}
