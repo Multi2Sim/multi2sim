@@ -17,6 +17,9 @@ libdriver_a_SOURCES = \
 		HsaExecutableSymbol.h \
 		HsaExecutableSymbol.cc \
 		\
+		Signal.h \
+		Signal.cc \
+		\
 		SignalManager.h \
 		SignalManager.cc
 

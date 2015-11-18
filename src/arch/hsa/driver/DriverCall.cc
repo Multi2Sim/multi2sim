@@ -427,9 +427,12 @@ int Driver::CallQueueCreate(comm::Context *context,
 	// Init queue
 	auto new_queue = misc::new_unique<AQLQueue>(size, type);
 
+	// Create and assign doorbell signal
+	uint64_t doorbell_signal = signal_manager->CreateSignal(0);
+	new_queue->setBellSignal(doorbell_signal);
+
 	// Set the address to the queue struct
-	unsigned long long *queue_addr =
-			(unsigned long long *)memory->getBuffer(queue, 16,
+	uint64_t *queue_addr = (uint64_t *)memory->getBuffer(queue, 16,
 					mem::Memory::AccessWrite);
 	*queue_addr = new_queue->getFieldsAddress();
 
@@ -954,11 +957,10 @@ int Driver::CallSignalLoadRelaxed(comm::Context *context,
 	// Arguments		| Offset	| Size
 	// value		| 0		| 8
 	// signal		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
+	uint64_t signal = getArgumentValue<uint64_t>(8, memory, args_ptr);
 
 	// Set signal value
-	unsigned long long value = signal->getValue();
+	int64_t value = signal_manager->GetValue(signal);
 
 	// Return
 	setArgumentValue(value, 0, memory, args_ptr);
@@ -982,13 +984,13 @@ int Driver::CallSignalStoreRelaxed(comm::Context *context,
 	// Arguments		| Offset	| Size
 	// signal		| 0		| 8
 	// value		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
+	uint64_t signal_handler = getArgumentValue<uint64_t>
 			(0, memory, args_ptr);
-	unsigned long long value = getArgumentValue<unsigned long long>
+	int64_t value = getArgumentValue<unsigned long long>
 			(8, memory, args_ptr);
 
 	// Set signal value
-	signal->setValue(value);
+	signal_manager->ChangeValue(signal_handler, value);
 
 	// Return
 	return 0;

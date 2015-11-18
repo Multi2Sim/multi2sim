@@ -33,7 +33,6 @@
 
 #include "AQLQueue.h"
 #include "Component.h"
-#include "Signal.h"
 
 namespace HSA
 {
@@ -93,9 +92,6 @@ class Emulator : public comm::Emulator
 
 	// Global memory manager
 	std::unique_ptr<mem::Manager> manager;
-
-	// A hash map from the signal handler to the signal object
-	std::unordered_map<uint64_t, std::unique_ptr<Signal>> signals;
 
 public:
 

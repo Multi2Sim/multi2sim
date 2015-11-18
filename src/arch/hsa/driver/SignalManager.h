@@ -23,7 +23,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include <arch/hsa/emulator/Signal.h>
+#include "Signal.h"
 
 namespace HSA
 {
@@ -51,10 +51,16 @@ public:
 	/// Create a signal with an initial value. Return the handler of the 
 	/// newly created signal. The signal manager keeps the ownership 
 	/// of the signals.
-	uint64_t CreateSignal(uint64_t initial_value);
+	uint64_t CreateSignal(int64_t initial_value);
 
 	/// Destory the signal with a particular handler
 	void DestorySignal(uint64_t handler);
+
+	/// Change the value of the signal
+	void ChangeValue(uint64_t handler, int64_t value);
+
+	/// Get the value of a signal
+	int64_t GetValue(uint64_t handler);
 };
 
 }

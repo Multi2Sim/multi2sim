@@ -19,7 +19,6 @@
 
 #include <lib/cpp/String.h>
 #include <lib/cpp/Error.h>
-#include <arch/hsa/emulator/Signal.h>
 
 #include "SignalManager.h"
 
@@ -36,7 +35,7 @@ SignalManager::~SignalManager()
 }
 
 
-uint64_t SignalManager::CreateSignal(uint64_t initial_value)
+uint64_t SignalManager::CreateSignal(int64_t initial_value)
 {
 	// Create signal with initial value
 	auto signal = misc::new_unique<Signal>();
@@ -53,6 +52,19 @@ uint64_t SignalManager::CreateSignal(uint64_t initial_value)
 
 void SignalManager::DestorySignal(uint64_t handler)
 {
+	signals.erase(handler);
+}
+
+
+void SignalManager::ChangeValue(uint64_t handler, int64_t value)
+{
+	signals[handler]->setValue(value);
+}
+
+
+int64_t SignalManager::GetValue(uint64_t handler)
+{
+	return signals[handler]->getValue();
 }
 
 }

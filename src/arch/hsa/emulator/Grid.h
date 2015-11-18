@@ -35,6 +35,7 @@ class Component;
 class Function;
 class SegmentManager;
 class Variable;
+class SignalManager;
 
 // A grid is an instance of a kernel execution, equivalent to NDRange in OpenCL
 class Grid
@@ -44,6 +45,9 @@ class Grid
 
 	// The packet that launches this kernel
 	AQLDispatchPacket *packet;
+
+	// The signal manager
+	SignalManager *signal_manager;
 
 	// Dimension
 	unsigned short dimension;

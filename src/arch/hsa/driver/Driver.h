@@ -47,10 +47,7 @@ class Driver: public comm::Driver
 	std::unique_ptr<SignalManager> signal_manager;
 
 	/// Constructor
-	Driver() : comm::Driver("HSA", "/dev/hsa")
-	{
-		signal_manager.reset(new SignalManager());
-	};
+	Driver();
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
@@ -142,7 +139,10 @@ public:
 			unsigned args_ptr);
 
 	/// Destructor
-	~Driver();
+	virtual ~Driver();
+
+	/// Get the signal manager
+	SignalManager *getSignalManager() const { return signal_manager.get(); }
 };
 
 } /* namespace HSA */

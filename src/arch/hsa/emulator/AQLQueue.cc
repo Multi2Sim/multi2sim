@@ -26,7 +26,7 @@
 namespace HSA
 {
 
-AQLQueue::AQLQueue(unsigned int size, unsigned int type)
+AQLQueue::AQLQueue(uint32_t size, uint32_t type)
 {
 	// Global queue id to assign
 	static unsigned int process_queue_id = 0;
@@ -87,10 +87,10 @@ void AQLQueue::Associate(Component *component)
 }
 
 
-AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)
+AQLDispatchPacket *AQLQueue::getPacket(uint64_t index)
 {
 	// Convert the linear index to real recursive index
-	unsigned long long address = IndexToAddress(index);
+	uint64_t address = IndexToAddress(index);
 
 	// Get the memory object
 	Emulator *emulator = Emulator::getInstance();
