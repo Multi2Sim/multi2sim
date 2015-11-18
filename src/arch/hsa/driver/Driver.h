@@ -28,6 +28,7 @@
 #include "SignalManager.h"
 #include "../../../../runtime/include/hsa.h"
 #include "../../../../runtime/include/hsa_ext_finalize.h"
+#include "DriverCallHandler.h"
 
 namespace HSA
 {
@@ -101,7 +102,8 @@ class Driver: public comm::Driver
 
 	// Retrieve the value at a certain memory space
 	template <typename T>
-	static T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
+	static T getArgumentValue(int offset, mem::Memory *memory,
+			unsigned args_ptr)
 	{
 		// Read from memory
 		T value;
@@ -116,6 +118,9 @@ class Driver: public comm::Driver
 	{
 		memory->Write(args_ptr+offset, sizeof(T), (char *)&value);
 	}
+
+	// Get driver call handler by call number
+	std::unique_ptr<DriverCallHandler> GetDriverCallHandler(int code);
 
 public:
 

@@ -21,6 +21,11 @@ libdriver_a_SOURCES = \
 		Signal.cc \
 		\
 		SignalManager.h \
-		SignalManager.cc
-
+		SignalManager.cc \
+		\
+		DriverCallHandler.h \
+		\
+		SignalDestroyHandler.h \
+		SignalDestroyHandler.cc 
+		
 AM_CPPFLAGS = @M2S_INCLUDES@

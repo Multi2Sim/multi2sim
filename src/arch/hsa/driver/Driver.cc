@@ -26,6 +26,7 @@
 
 #include "Driver.h"
 #include "HsaExecutable.h"
+#include "SignalDestroyHandler.h"
 
 
 namespace HSA
@@ -112,11 +113,36 @@ Driver *Driver::getInstance()
 }
 
 
+std::unique_ptr<DriverCallHandler> Driver::GetDriverCallHandler(int code)
+{
+	switch(code)
+	{
+	case CallCodeSignalDestroy:
+
+		return misc::new_unique<SignalDestroyHandler>(
+				signal_manager.get());
+		break;
+
+	default:
+
+		return std::unique_ptr<DriverCallHandler>(nullptr);
+		break;
+	}
+}
+
+
 int Driver::Call(comm::Context *context,
 		mem::Memory *memory,
 		int code,
 		unsigned args_ptr)
 {
+	auto driver_call_handler = GetDriverCallHandler(code);
+	if (driver_call_handler.get())
+	{
+		driver_call_handler->Process(memory, args_ptr);
+		return 0;
+	}
+
 	// Check valid call
 	if (code < 0 || code >= CallCodeCount || !call_fn[code])
 	{

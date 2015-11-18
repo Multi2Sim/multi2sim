@@ -941,7 +941,7 @@ int Driver::CallSignalCreate(comm::Context *context,
 }
 
 
-int Driver::CallSignalDestory(comm::Context *context,
+int Driver::CallSignalDestroy(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {

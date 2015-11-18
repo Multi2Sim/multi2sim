@@ -62,6 +62,16 @@ void SignalManager::ChangeValue(uint64_t handler, int64_t value)
 }
 
 
+bool SignalManager::isValidSignalHandler(uint64_t handler)
+{
+	if (signals.find(handler) != signals.end())
+	{
+		return true;
+	}
+	return false;
+}
+
+
 int64_t SignalManager::GetValue(uint64_t handler)
 {
 	return signals[handler]->getValue();

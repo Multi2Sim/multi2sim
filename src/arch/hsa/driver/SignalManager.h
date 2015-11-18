@@ -29,7 +29,7 @@ namespace HSA
 {
 
 /// SignalManager is the container of signals. It is responsible for 
-/// creating and destorying signals.
+/// creating and destroying signals.
 class SignalManager 
 {
 private:
@@ -58,6 +58,11 @@ public:
 
 	/// Change the value of the signal
 	void ChangeValue(uint64_t handler, int64_t value);
+
+	/// Check if the signal handler is valid
+	/// @param handler Signal handler
+	/// @return if the signal handler is valid
+	bool isValidSignalHandler(uint64_t handler);
 
 	/// Get the value of a signal
 	int64_t GetValue(uint64_t handler);
