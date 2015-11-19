@@ -32,6 +32,7 @@
 #include "GridSizeInstructionWorker.h"
 #include "LdInstructionWorker.h"
 #include "LdaInstructionWorker.h"
+#include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
 #include "StInstructionWorker.h"
 #include "RetInstructionWorker.h"
@@ -543,7 +544,7 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 	case BRIG_OPCODE_GRIDSIZE:
 
-		return misc::new_unique<GridSizeInstructionWorker>(this,
+		return misc::new_unique<MemFenceInstructionWorker>(this,
 				stack_top);
 
 	case BRIG_OPCODE_LD:
@@ -557,6 +558,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_MOV:
 
 		return misc::new_unique<MovInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MEMFENCE:
+
+		return std::unique_ptr<HsaInstructionWorker>(nullptr);
 
 	case BRIG_OPCODE_ST:
 
@@ -617,7 +622,10 @@ bool WorkItem::Execute()
 
 		// Get the function according to the opcode and perform the inst
 		auto instruction_worker = getInstructionWorker(inst);
-		instruction_worker->Execute(inst);
+		if (instruction_worker.get())
+		{
+			instruction_worker->Execute(inst);
+		}
 
 		// Return false if execution finished
 		if (stack.empty())
@@ -635,8 +643,6 @@ bool WorkItem::Execute()
 	}
 	else if (inst && !inst->isInstruction())
 	{
-	//	Emu::isa_debug << "Executing: ";
-	//	Emu::isa_debug << *inst;
 		ExecuteDirective();
 	}
 	else

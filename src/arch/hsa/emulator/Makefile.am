@@ -68,6 +68,9 @@ libemulator_a_SOURCES = \
 		LdaInstructionWorker.h \
 		LdaInstructionWorker.cc \
 		\
+		MemFenceInstructionWorker.h \
+		MemFenceInstructionWorker.cc \
+		\
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
 		\
