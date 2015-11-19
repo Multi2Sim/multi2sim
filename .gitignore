@@ -48,3 +48,6 @@ tests/*_test
 
 # Eclipse
 build-
+
+# Debug file
+*.debug
