@@ -106,6 +106,7 @@ Emulator::Emulator() : comm::Emulator("HSA")
 	//memory = null;
 	//manager.reset(new mem::Manager(memory.get()));
 	Disassembler::getInstance()->DisableIndentation();
+	StartTimer();
 	if (loader_debug)
 	{
 		DumpComponentList(loader_debug);
