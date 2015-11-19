@@ -26,6 +26,7 @@
 #include "AddInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
+#include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "LdInstructionWorker.h"
 #include "StInstructionWorker.h"
@@ -523,6 +524,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_SHR:
 
 		return misc::new_unique<ShrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_CMP:
+
+		return misc::new_unique<CmpInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_CVT:
 

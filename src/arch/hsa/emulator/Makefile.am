@@ -50,6 +50,9 @@ libemulator_a_SOURCES = \
 		AddInstructionWorker.h \
 		AddInstructionWorker.cc \
 		\
+		CmpInstructionWorker.h \
+		CmpInstructionWorker.cc \
+		\
 		CvtInstructionWorker.h \
 		CvtInstructionWorker.cc \
 		\
