@@ -71,7 +71,6 @@ hsa_status_t HSA_API
 
 hsa_status_t HSA_API hsa_queue_destroy(hsa_queue_t *queue)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
 }
 

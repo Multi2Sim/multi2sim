@@ -71,11 +71,10 @@ AQLQueue::~AQLQueue()
 	// Two things to be done in destructor
 	// 1. Free the memory allocated for the packets buffer
 	// 2. Free the memory allocated for the queue fields
-	Emulator *emulator = Emulator::getInstance();
-	mem::Manager *manager = emulator->getMemoryManager();
-	manager->Free(fields->base_address);
-	manager->Free(fields_address);
-
+//	Emulator *emulator = Emulator::getInstance();
+//	mem::Manager *manager = emulator->getMemoryManager();
+//	manager->Free(fields->base_address);
+//	manager->Free(fields_address);
 }
 
 

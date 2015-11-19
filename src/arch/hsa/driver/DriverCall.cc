@@ -394,10 +394,6 @@ int Driver::CallQueueCreate(comm::Context *context,
 			(28, memory, args_ptr);
 	unsigned long long queue = getArgumentValue<unsigned long long>
 			(44, memory, args_ptr);
-	unsigned int host_lang = getArgumentValue<unsigned int>
-			(52, memory, args_ptr);
-	unsigned long long work_item = getArgumentValue<unsigned long long>
-			(56, memory, args_ptr);
 	
 	// Dump argument for debug purpose
 	debug << misc::fmt("\tStatus: %d, \n", getArgumentValue
@@ -408,8 +404,6 @@ int Driver::CallQueueCreate(comm::Context *context,
 	debug << misc::fmt("\tCallback: 0x%016llx, \n", callback);
 	debug << misc::fmt("\tData: 0x%016llx, \n", data);
 	debug << misc::fmt("\tQueue: 0x%016llx, \n", queue);
-	debug << misc::fmt("\tHost language: %d, \n", host_lang);
-	debug << misc::fmt("\tWork item address: 0x%016llx\n", work_item);
 
 	// No support for callback and service queue yet
 	if (callback != 0)
@@ -755,7 +749,7 @@ int Driver::CallQueueAddWriteIndexRelease(comm::Context *context,
 	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
 			(8, memory, args_ptr);
 	unsigned long long value = getArgumentValue<unsigned long long>
-				(16, memory, args_ptr);
+			(16, memory, args_ptr);
 
 	// Dump debug information
 	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);

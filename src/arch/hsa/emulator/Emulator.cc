@@ -100,7 +100,7 @@ void Emulator::ProcessOptions()
 }
 
 
-Emulator::Emulator() : comm::Emulator("hsa")
+Emulator::Emulator() : comm::Emulator("HSA")
 {
 	InstallComponents("");
 	//memory = null;
