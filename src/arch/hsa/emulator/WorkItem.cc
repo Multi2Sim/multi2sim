@@ -569,6 +569,9 @@ bool WorkItem::Execute()
 	// Retrieve stack top
 	StackFrame *stack_top = getStackTop();
 
+	// Increase instruction counter
+	Emulator::getInstance()->incNumInstructions();
+
 	// Execute the instruction or directory
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())

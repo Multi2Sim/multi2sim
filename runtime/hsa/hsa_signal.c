@@ -54,7 +54,24 @@ hsa_status_t HSA_API
 
 hsa_status_t HSA_API hsa_signal_destroy(hsa_signal_t signal)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	// Set data
+	struct Data
+	{
+		uint32_t status;
+		uint64_t signal;
+	} data;
+	data.signal = signal.handle;
+
+	if (!hsa_runtime)
+	{
+		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+	}
+	else
+	{
+		ioctl(hsa_runtime->fd, SignalDestroy, &data);
+		return data.status;
+	}
+
 	return HSA_STATUS_SUCCESS;
 }
 

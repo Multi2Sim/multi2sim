@@ -51,7 +51,7 @@ hsa_status_t HSA_API hsa_executable_create(
 hsa_status_t HSA_API hsa_executable_destroy(
     hsa_executable_t executable)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	// FIXME(Yifan): destory the executable from memory
 	return HSA_STATUS_SUCCESS;
 }
 

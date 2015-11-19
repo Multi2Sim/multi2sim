@@ -17,31 +17,27 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_EMULATOR_SIGNAL_H
-#define ARCH_HSA_EMULATOR_SIGNAL_H
+#ifndef ARCH_HSA_DRIVER_DRIVERCALLHANDLER_H
+#define ARCH_HSA_DRIVER_DRIVERCALLHANDLER_H
+
+#include <cstdint>
+
+namespace mem
+{
+class Memory;
+}
 
 namespace HSA
 {
 
-class Signal
+class DriverCallHandler
 {
-
-	// Signal value
-	unsigned long long value;
-
 public:
-
-	// Constructor
-	Signal(unsigned long long init_value);
-
-	// Get value
-	unsigned long long getValue() const { return value; }
-
-	// Set value
-	void setValue(unsigned long long value) { this->value = value; }
-
+	DriverCallHandler() {};
+	virtual ~DriverCallHandler() {};
+	virtual void Process(mem::Memory *memory, uint32_t args_ptr) = 0;
 };
 
-}  // namespace net
+}  // namespace HSA
 
-#endif
+#endif  // ARCH_HSA_DRIVER_DRIVERCALLHANDLER_H

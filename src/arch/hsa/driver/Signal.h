@@ -17,14 +17,33 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Signal.h"
+#ifndef ARCH_HSA_EMULATOR_SIGNAL_H
+#define ARCH_HSA_EMULATOR_SIGNAL_H
+
+#include <cstdint>
 
 namespace HSA
 {
 
-Signal::Signal(unsigned long long init_value) :
-		value(init_value)
+class Signal
 {
-}
+
+	// Signal value
+	int64_t value = 0;
+
+public:
+
+	// Constructor
+	Signal();
+
+	// Get value
+	int64_t getValue() const { return value; }
+
+	// Set value
+	void setValue(int64_t value) { this->value = value; }
+
+};
 
 }  // namespace net
+
+#endif

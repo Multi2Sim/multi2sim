@@ -394,10 +394,6 @@ int Driver::CallQueueCreate(comm::Context *context,
 			(28, memory, args_ptr);
 	unsigned long long queue = getArgumentValue<unsigned long long>
 			(44, memory, args_ptr);
-	unsigned int host_lang = getArgumentValue<unsigned int>
-			(52, memory, args_ptr);
-	unsigned long long work_item = getArgumentValue<unsigned long long>
-			(56, memory, args_ptr);
 	
 	// Dump argument for debug purpose
 	debug << misc::fmt("\tStatus: %d, \n", getArgumentValue
@@ -408,8 +404,6 @@ int Driver::CallQueueCreate(comm::Context *context,
 	debug << misc::fmt("\tCallback: 0x%016llx, \n", callback);
 	debug << misc::fmt("\tData: 0x%016llx, \n", data);
 	debug << misc::fmt("\tQueue: 0x%016llx, \n", queue);
-	debug << misc::fmt("\tHost language: %d, \n", host_lang);
-	debug << misc::fmt("\tWork item address: 0x%016llx\n", work_item);
 
 	// No support for callback and service queue yet
 	if (callback != 0)
@@ -427,9 +421,12 @@ int Driver::CallQueueCreate(comm::Context *context,
 	// Init queue
 	auto new_queue = misc::new_unique<AQLQueue>(size, type);
 
+	// Create and assign doorbell signal
+	uint64_t doorbell_signal = signal_manager->CreateSignal(0);
+	new_queue->setBellSignal(doorbell_signal);
+
 	// Set the address to the queue struct
-	unsigned long long *queue_addr =
-			(unsigned long long *)memory->getBuffer(queue, 16,
+	uint64_t *queue_addr = (uint64_t *)memory->getBuffer(queue, 16,
 					mem::Memory::AccessWrite);
 	*queue_addr = new_queue->getFieldsAddress();
 
@@ -752,7 +749,7 @@ int Driver::CallQueueAddWriteIndexRelease(comm::Context *context,
 	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
 			(8, memory, args_ptr);
 	unsigned long long value = getArgumentValue<unsigned long long>
-				(16, memory, args_ptr);
+			(16, memory, args_ptr);
 
 	// Dump debug information
 	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
@@ -922,23 +919,23 @@ int Driver::CallSignalCreate(comm::Context *context,
 	// consumers		| 16		| 8
 	// signal		| 24 		| 8
 	hsa_status_t status = HSA_STATUS_SUCCESS;
-	long long initial_value = getArgumentValue<long long>(4, memory,
+	int64_t initial_value = getArgumentValue<int64_t>(4, memory,
 			args_ptr);
-	unsigned long long signal = getArgumentValue<unsigned long long>(24,
+	uint64_t signal = getArgumentValue<uint64_t>(24,
 			memory, args_ptr);
 
 	// Create signal
-	Signal *new_signal = Emulator::getInstance()->CreateSignal(initial_value);
+	uint64_t signal_handler = signal_manager->CreateSignal(initial_value);
 
 	// Write back
-	memory->Write(signal, 8, (char *)&new_signal);
+	memory->Write(signal, 8, (char *)&signal_handler);
 	memory->Write(args_ptr, 4, (char *)&status);
 
 	return 0;
 }
 
 
-int Driver::CallSignalDestory(comm::Context *context,
+int Driver::CallSignalDestroy(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
@@ -954,11 +951,10 @@ int Driver::CallSignalLoadRelaxed(comm::Context *context,
 	// Arguments		| Offset	| Size
 	// value		| 0		| 8
 	// signal		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
+	uint64_t signal = getArgumentValue<uint64_t>(8, memory, args_ptr);
 
 	// Set signal value
-	unsigned long long value = signal->getValue();
+	int64_t value = signal_manager->GetValue(signal);
 
 	// Return
 	setArgumentValue(value, 0, memory, args_ptr);
@@ -982,13 +978,13 @@ int Driver::CallSignalStoreRelaxed(comm::Context *context,
 	// Arguments		| Offset	| Size
 	// signal		| 0		| 8
 	// value		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
+	uint64_t signal_handler = getArgumentValue<uint64_t>
 			(0, memory, args_ptr);
-	unsigned long long value = getArgumentValue<unsigned long long>
+	int64_t value = getArgumentValue<unsigned long long>
 			(8, memory, args_ptr);
 
 	// Set signal value
-	signal->setValue(value);
+	signal_manager->ChangeValue(signal_handler, value);
 
 	// Return
 	return 0;

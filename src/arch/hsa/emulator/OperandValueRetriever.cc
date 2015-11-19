@@ -41,6 +41,7 @@ OperandValueRetriever::~OperandValueRetriever()
 
 }
 
+
 void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 		unsigned int index, void *buffer)
 {
@@ -111,7 +112,7 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 					&address);
 		}
 		address += offset;
-		*(unsigned *)buffer = address;
+		*(uint32_t *)buffer = address;
 		return;
 	}
 
