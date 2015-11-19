@@ -24,11 +24,15 @@
 #include "SegmentManager.h"
 
 #include "AddInstructionWorker.h"
+#include "CbrInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
 #include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
+#include "GridSizeInstructionWorker.h"
 #include "LdInstructionWorker.h"
+#include "LdaInstructionWorker.h"
+#include "MovInstructionWorker.h"
 #include "StInstructionWorker.h"
 #include "RetInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
@@ -517,6 +521,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<AddInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_CBR:
+
+		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_SHL:
 
 		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
@@ -533,9 +541,22 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<CvtInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_GRIDSIZE:
+
+		return misc::new_unique<GridSizeInstructionWorker>(this,
+				stack_top);
+
 	case BRIG_OPCODE_LD:
 
 		return misc::new_unique<LdInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_LDA:
+
+		return misc::new_unique<LdaInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MOV:
+
+		return misc::new_unique<MovInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_ST:
 

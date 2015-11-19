@@ -50,14 +50,26 @@ libemulator_a_SOURCES = \
 		AddInstructionWorker.h \
 		AddInstructionWorker.cc \
 		\
+		CbrInstructionWorker.h \
+		CbrInstructionWorker.cc \
+		\
 		CmpInstructionWorker.h \
 		CmpInstructionWorker.cc \
 		\
 		CvtInstructionWorker.h \
 		CvtInstructionWorker.cc \
 		\
+		GridSizeInstructionWorker.h \
+		GridSizeInstructionWorker.cc \
+		\
 		LdInstructionWorker.h \
 		LdInstructionWorker.cc \
+		\
+		LdaInstructionWorker.h \
+		LdaInstructionWorker.cc \
+		\
+		MovInstructionWorker.h \
+		MovInstructionWorker.cc \
 		\
 		StInstructionWorker.h \
 		StInstructionWorker.cc \
