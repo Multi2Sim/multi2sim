@@ -27,9 +27,12 @@
 #include "hsa.h"
 #include "hsa_ext_finalize.h"
 
+#define GLOBAL_SIZE 1024
+#define LOCAL_SIZE 512
+
 #define check(msg, status) \
 if (status != HSA_STATUS_SUCCESS) { \
-    printf("%s failed.\n", #msg); \
+    printf("%s failed(%x).\n", #msg, status); \
     exit(1); \
 } else { \
    printf("%s succeeded.\n", #msg); \
@@ -55,7 +58,7 @@ int load_module_from_file(const char* file_name, hsa_ext_module_t* module) {
     memset(buf,0,file_size);
 
     size_t read_size = fread(buf,sizeof(char),file_size,fp);
-
+    
     if(read_size != file_size) {
         free(buf);
     } else {
@@ -209,7 +212,7 @@ int main(int argc, char **argv) {
     * Extract the symbol from the executable.
     */
     hsa_executable_symbol_t symbol;
-    err = hsa_executable_get_symbol(executable, "", "&__vector_copy_kernel", agent, 0, &symbol);
+    err = hsa_executable_get_symbol(executable, NULL, "&__OpenCL_vector_copy_kernel", agent, 0, &symbol);
     check(Extract the symbol from the executable, err);
 
     /*
@@ -238,21 +241,29 @@ int main(int argc, char **argv) {
     /*
      * Allocate and initialize the kernel arguments and data.
      */
-    char* in=(char*)malloc(1024*1024*4);
-    memset(in, 1, 1024*1024*4);
-    err=hsa_memory_register(in, 1024*1024*4);
+    int* in=(int*)malloc(GLOBAL_SIZE*4);
+    memset(in, 1, GLOBAL_SIZE*4);
+    err=hsa_memory_register(in, GLOBAL_SIZE*4);
     check(Registering argument memory for input parameter, err);
 
-    char* out=(char*)malloc(1024*1024*4);
-    memset(out, 0, 1024*1024*4);
-    err=hsa_memory_register(out, 1024*1024*4);
+    int* out=(int*)malloc(GLOBAL_SIZE*4);
+    memset(out, 0, GLOBAL_SIZE*4);
+    err=hsa_memory_register(out, GLOBAL_SIZE*4);
     check(Registering argument memory for output parameter, err);
 
     struct __attribute__ ((aligned(16))) args_t {
-        void* in;
-        void* out;
+       	uint64_t global_offset_0;
+	uint64_t global_offset_1;
+	uint64_t global_offset_2;
+	uint64_t printf_buffer;
+	uint64_t vqueue_pointer;
+	uint64_t aqlwrap_pointer;
+        void *in;
+	uint32_t pad;
+        void *out;
+	uint32_t pad2;
     } args;
-
+    memset(&args, 0, sizeof(args));
     args.in=in;
     args.out=out;
 
@@ -287,10 +298,10 @@ int main(int argc, char **argv) {
     dispatch_packet->header |= HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_ACQUIRE_FENCE_SCOPE;
     dispatch_packet->header |= HSA_FENCE_SCOPE_SYSTEM << HSA_PACKET_HEADER_RELEASE_FENCE_SCOPE;
     dispatch_packet->setup  |= 1 << HSA_KERNEL_DISPATCH_PACKET_SETUP_DIMENSIONS;
-    dispatch_packet->workgroup_size_x = (uint16_t)256;
+    dispatch_packet->workgroup_size_x = (uint16_t)LOCAL_SIZE;
     dispatch_packet->workgroup_size_y = (uint16_t)1;
     dispatch_packet->workgroup_size_z = (uint16_t)1;
-    dispatch_packet->grid_size_x = (uint32_t) (1024*1024);
+    dispatch_packet->grid_size_x = (uint32_t) (GLOBAL_SIZE);
     dispatch_packet->grid_size_y = 1;
     dispatch_packet->grid_size_z = 1;
     dispatch_packet->completion_signal = signal;
@@ -317,11 +328,14 @@ int main(int argc, char **argv) {
      */
     int valid=1;
     int fail_index=0;
-    for(int i=0; i<1024*1024; i++) {
-        if(out[i]!=in[i]) {
+    for(int i=0; i<GLOBAL_SIZE; i++) {
+	
+	if (in[i] != out[i])	
+	{
             fail_index=i;
             valid=0;
-            break;
+	    printf("Index %d, expected %d, but is %d\n", i, in[i], out[i]);
+	    break;
         }
     }
 

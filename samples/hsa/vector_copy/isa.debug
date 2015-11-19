@@ -1,0 +1,370 @@
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x15c, pragma  "AMD RTI", "ARGSTART:__OpenCL_vector_copy_kernel";
+
+  ***** Registers *****
+    $d0: 0, 0, 0.000000, 0x0000000000000000
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 0, 0, 0.000000, 0x00000000
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: workitemabsid_u32	$s0, 0;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x260, cvt_u64_u32	$d0, $s0;
+
+  ***** Registers *****
+    $d0: 0, 0, 0.000000, 0x0000000000000000
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: cvt_u64_u32	$d0, $s0;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x270, ld_kernarg_align(8)_width(all)_u64	$d1, [%__global_offset_0];
+
+  ***** Registers *****
+    $d0: 1, 1, 0.000000, 0x0000000000000001
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: ld_kernarg_align(8)_width(all)_u64	$d1, [%__global_offset_0];
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x284, add_u64	$d0, $d0, $d1;
+
+  ***** Registers *****
+    $d0: 1, 1, 0.000000, 0x0000000000000001
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: add_u64	$d0, $d0, $d1;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x290, shl_u64	$d0, $d0, 32;
+
+  ***** Registers *****
+    $d0: 1, 1, 0.000000, 0x0000000000000001
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: shl_u64	$d0, $d0, 32;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x29c, shr_s64	$d0, $d0, 32;
+
+  ***** Registers *****
+    $d0: 4294967296, 4294967296, 0.000000, 0x0000000100000000
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: shr_s64	$d0, $d0, 32;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2a8, shl_u64	$d0, $d0, 2;
+
+  ***** Registers *****
+    $d0: 1, 1, 0.000000, 0x0000000000000001
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: shl_u64	$d0, $d0, 2;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2b4, ld_kernarg_align(8)_width(all)_u64	$d1, [%out];
+
+  ***** Registers *****
+    $d0: 4, 4, 0.000000, 0x0000000000000004
+    $d1: 0, 0, 0.000000, 0x0000000000000000
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: ld_kernarg_align(8)_width(all)_u64	$d1, [%out];
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2c8, add_u64	$d1, $d1, $d0;
+
+  ***** Registers *****
+    $d0: 4, 4, 0.000000, 0x0000000000000004
+    $d1: 135230152, 135230152, 0.000000, 0x00000000080f72c8
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: add_u64	$d1, $d1, $d0;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2d4, ld_kernarg_align(8)_width(all)_u64	$d2, [%in];
+
+  ***** Registers *****
+    $d0: 4, 4, 0.000000, 0x0000000000000004
+    $d1: 135230156, 135230156, 0.000000, 0x00000000080f72cc
+    $d2: 0, 0, 0.000000, 0x0000000000000000
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: ld_kernarg_align(8)_width(all)_u64	$d2, [%in];
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2e8, add_u64	$d0, $d2, $d0;
+
+  ***** Registers *****
+    $d0: 4, 4, 0.000000, 0x0000000000000004
+    $d1: 135230156, 135230156, 0.000000, 0x00000000080f72cc
+    $d2: 135226048, 135226048, 0.000000, 0x00000000080f62c0
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
+WorkItem: 1
+Executing: add_u64	$d0, $d2, $d0;
+***** Stack frame *****
+  Function: &__OpenCL_vector_copy_kernel, 
+  Program counter (offset in code section): 0x2f4, ld_global_align(4)_u32	$s0, [$d0];
+
+  ***** Registers *****
+    $d0: 135226052, 135226052, 0.000000, 0x00000000080f62c4
+    $d1: 135230156, 135230156, 0.000000, 0x00000000080f72cc
+    $d2: 135226048, 135226048, 0.000000, 0x00000000080f62c0
+    $s0: 1, 1, 0.000000, 0x00000001
+  ***** ********* *****
+
+  ***** Function arguments *****
+To be suppoted  ***** ******** ********* *****
+
+  ***** Argument scope *****
+To be supported  ***** ******** ***** *****
+
+  ***** Kernel Argument *****
+To be supported  ***** ****** ******** ****
+
+  ***** Variables *****
+To be supported  ***** ********* *****
+
+***** Backtrace *****
+#1 &__OpenCL_vector_copy_kernel (To be supported)
+***** ********* *****
+
+***** ***** ***** *****
+
