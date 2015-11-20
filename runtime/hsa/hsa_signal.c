@@ -371,7 +371,7 @@ hsa_signal_value_t HSA_API
 	{
 		// Get signal value
 		signal_value = hsa_signal_load_relaxed(signal);
-		printf("Signal value %lld\n", signal_value);
+		// printf("Signal value %lld\n", signal_value);
 
 		// Check if condition satisfies
 		if (condition == HSA_SIGNAL_CONDITION_EQ)

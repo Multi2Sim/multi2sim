@@ -166,14 +166,13 @@ hsa_status_t HSA_API
 	data.agent = agent.handle;
 	data.call_convention = call_convention;
 	data.symbol = (uint32_t)symbol;
-	printf("Here\n");
 	if (!hsa_runtime)
 	{
-		//return HSA_STATUS_ERROR_NOT_INITIALIZED;
+		// FIXME: This is a problem. Temporarily changed for Histogram
+		// return HSA_STATUS_ERROR_NOT_INITIALIZED;
 		hsa_init();
 	}
 	ioctl(hsa_runtime->fd, ExecutableGetSymbol, &data);
-	printf("Here\n");
 	return data.status;
 }
 
