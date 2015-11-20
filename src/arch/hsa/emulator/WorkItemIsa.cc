@@ -998,53 +998,6 @@ void WorkItem::ExecuteInst_NOT()
 	MovePcForwardByOne();
 }
 
-
-template<typename T>
-void WorkItem::Inst_OR_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 | src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_OR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst OR, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_OR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_OR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
 template<typename T>
 void WorkItem::Inst_POPCOUNT_Aux()
 {
@@ -1531,30 +1484,6 @@ void WorkItem::ExecuteInst_QUERYIMAGE()
 void WorkItem::ExecuteInst_QUERYSAMPLER()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_BR()
-{
-	// Retrieve
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Retrieve 1st operand
-	auto operand0 = inst->getOperand(0);
-	if (operand0->getKind() == BRIG_KIND_OPERAND_CODE_REF)
-	{
-		auto label = operand0->getRef();
-
-		// Redirect pc to a certain label
-		stack_top->setPc(std::move(label));
-		return;
-	}else{
-		throw misc::Panic("Unsupported operand type for CBR.");
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
 }
 
 

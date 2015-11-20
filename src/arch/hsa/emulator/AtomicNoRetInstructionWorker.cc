@@ -54,6 +54,7 @@ void AtomicNoRetInstructionWorker::Inst_AtomicNoRet_Aux(
 	uint32_t address;
 	T src0;
 	operand_value_retriever->Retrieve(instruction, 0, &address);
+	address = work_item->getFlatAddress(instruction->getSegment(), address);
 	operand_value_retriever->Retrieve(instruction, 1, &src0);
 
 	// Get the value to process

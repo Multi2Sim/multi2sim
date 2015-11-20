@@ -25,6 +25,7 @@
 
 #include "AddInstructionWorker.h"
 #include "AtomicNoRetInstructionWorker.h"
+#include "BrInstructionWorker.h"
 #include "CbrInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
@@ -35,8 +36,9 @@
 #include "LdaInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
-#include "StInstructionWorker.h"
+#include "OrInstructionWorker.h"
 #include "RetInstructionWorker.h"
+#include "StInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
 
 
@@ -529,6 +531,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 				stack_top,
 				Emulator::getInstance()->getMemory());
 
+	case BRIG_OPCODE_BR:
+
+		return misc::new_unique<BrInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_CBR:
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
@@ -568,7 +574,12 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 	case BRIG_OPCODE_MEMFENCE:
 
-		return misc::new_unique<MemFenceInstructionWorker>(this, stack_top);
+		return misc::new_unique<MemFenceInstructionWorker>(this,
+				stack_top);
+
+	case BRIG_OPCODE_OR:
+
+		return misc::new_unique<OrInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_ST:
 

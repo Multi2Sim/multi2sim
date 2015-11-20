@@ -53,6 +53,9 @@ libemulator_a_SOURCES = \
 		AtomicNoRetInstructionWorker.h \
 		AtomicNoRetInstructionWorker.cc \
 		\
+		BrInstructionWorker.h \
+		BrInstructionWorker.cc \
+		\
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
 		\
@@ -77,6 +80,12 @@ libemulator_a_SOURCES = \
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
 		\
+		OrInstructionWorker.h \
+		OrInstructionWorker.cc \
+		\
+		RetInstructionWorker.h \
+		RetInstructionWorker.cc \
+		\
 		StInstructionWorker.h \
 		StInstructionWorker.cc \
 		\
@@ -85,9 +94,6 @@ libemulator_a_SOURCES = \
 		\
 		ShrInstructionWorker.h \
 		ShrInstructionWorker.cc \
-		\
-		RetInstructionWorker.h \
-		RetInstructionWorker.cc \
 		\
 		WorkItemAbsIdInstructionWorker.h \
 		WorkItemAbsIdInstructionWorker.cc
