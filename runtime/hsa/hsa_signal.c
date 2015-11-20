@@ -33,29 +33,33 @@ hsa_status_t HSA_API
                       const hsa_agent_t *consumers, hsa_signal_t *signal)
 {
 	// Init arguments
-	unsigned int args[8];
-	memcpy(args + 1, &initial_value, 8);
-	memcpy(args + 3, &num_consumers, 4);
-	memcpy(args + 4, &consumers, 8);
-	memcpy(args + 6, &signal, 8);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		int64_t initial_value;
+		uint32_t num_consumers;
+		uint32_t consumers;
+		uint32_t signal;
+	} data;
+	data.initial_value = initial_value;
+	data.num_consumers = num_consumers;
+	data.consumers = (uint32_t)consumers;
+	data.signal = (uint32_t)signal;
 
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	else
-	{
-		ioctl(hsa_runtime->fd, SignalCreate, args);
-		return (hsa_status_t)args[0];
-	}
-	return HSA_STATUS_SUCCESS;
+
+	ioctl(hsa_runtime->fd, SignalCreate, &data);
+	return data.status;
 }
 
 
 hsa_status_t HSA_API hsa_signal_destroy(hsa_signal_t signal)
 {
 	// Set data
-	struct Data
+	struct __attribute__ ((packed))
 	{
 		uint32_t status;
 		uint64_t signal;
@@ -85,27 +89,35 @@ hsa_signal_value_t HSA_API hsa_signal_load_acquire(hsa_signal_t signal)
 
 hsa_signal_value_t HSA_API hsa_signal_load_relaxed(hsa_signal_t signal)
 {
-	uint64_t args[2] = {0};
-	memcpy(args + 1, &signal, 8);
+	struct __attribute__ ((packed))
+	{
+		int64_t value;
+		uint64_t signal;
+	} data;
+	data.signal = signal.handle;
 
 	// Call driver function
-	ioctl(hsa_runtime->fd, SignalLoadRelaxed, args);
+	ioctl(hsa_runtime->fd, SignalLoadRelaxed, &data);
 
 	// Return value
-	return args[0];
+	return data.value;
 }
 
 
 void HSA_API
     hsa_signal_store_relaxed(hsa_signal_t signal, hsa_signal_value_t value)
 {
-	uint32_t args[4] = {0};
-	memcpy(args, &signal, 8);
-	memcpy(args + 2, &value, 8);
-	printf("Setting signal %lld to value 0x%016x", signal.handle, value);
+
+	struct __attribute__ ((packed))
+	{
+		uint64_t signal;
+		int64_t value;
+	} data;
+	data.signal = signal.handle;
+	data.value = value;
 
 	// Call driver function
-	ioctl(hsa_runtime->fd, SignalStoreRelaxed, args);
+	ioctl(hsa_runtime->fd, SignalStoreRelaxed, &data);
 
 	return;
 }

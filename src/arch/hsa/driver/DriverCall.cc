@@ -912,24 +912,26 @@ int Driver::CallSignalCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// initial_value	| 4		| 8
-	// num_consumers	| 12		| 4
-	// consumers		| 16		| 8
-	// signal		| 24 		| 8
-	hsa_status_t status = HSA_STATUS_SUCCESS;
-	int64_t initial_value = getArgumentValue<int64_t>(4, memory,
-			args_ptr);
-	uint64_t signal = getArgumentValue<uint64_t>(24,
-			memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		int64_t initial_value;
+		uint32_t num_consumers;
+		uint32_t consumers;
+		uint32_t signal;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Create signal
-	uint64_t signal_handler = signal_manager->CreateSignal(initial_value);
+	uint64_t signal_handler = signal_manager->CreateSignal(
+			data.initial_value);
 
 	// Write back
-	memory->Write(signal, 8, (char *)&signal_handler);
-	memory->Write(args_ptr, 4, (char *)&status);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(data.signal, 8, (char *)&signal_handler);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -948,23 +950,20 @@ int Driver::CallSignalLoadRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// signal		| 8		| 8
-	struct Data
+	struct __attribute__ ((packed))
 	{
-		uint64_t value;
+		int64_t value;
 		uint64_t signal;
 	} data;
 
 	// Retrieve data
-	memory->Read(args_ptr, sizeof(Data), (char *)&data);
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Set signal value
 	data.value = signal_manager->GetValue(data.signal);
 
 	// Return
-	memory->Write(args_ptr, sizeof(Data), (char *)&data);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 	return 0;
 }
 
@@ -982,16 +981,17 @@ int Driver::CallSignalStoreRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// signal		| 0		| 8
-	// value		| 8		| 8
-	uint64_t signal_handler = getArgumentValue<uint64_t>
-			(0, memory, args_ptr);
-	int64_t value = getArgumentValue<int64_t>
-			(8, memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint64_t signal;
+		int64_t value;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Set signal value
-	signal_manager->ChangeValue(signal_handler, value);
+	signal_manager->ChangeValue(data.signal, data.value);
 
 	// Return
 	return 0;
@@ -1414,7 +1414,7 @@ int Driver::CallExecutableCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	struct Data
+	struct __attribute__ ((packed))
 	{
 		uint32_t status;
 		uint32_t profile;
@@ -1444,30 +1444,25 @@ int Driver::CallExecutableLoadCodeObject(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable		| 4		| 8
-	// agent		| 12		| 8
-	// code_object		| 20		| 8
-	// options 		| 28		| 8
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint64_t agent;
+		uint64_t code_object;
+		uint32_t options;
+	} data;
 
 	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	unsigned long long code_object = getArgumentValue<unsigned long long>
-			(20, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
-	debug << misc::fmt("code_object: 0x%016llx, \n", code_object);
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Create executable
-	((HsaExecutable *)executable)->LoadCodeObject((HsaCodeObject *)code_object);
+	((HsaExecutable *)data.executable)->LoadCodeObject(
+			(HsaCodeObject *)data.code_object);
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1477,40 +1472,29 @@ int Driver::CallExecutableGetSymbol(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable		| 4		| 8
-	// module_name		| 12		| 8
-	// symbol_name		| 20		| 8
-	// agent 		| 28		| 8
-	// call_convention	| 36		| 4
-	// symbol 		| 40		| 8
-
-	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	unsigned long long symbol_name = getArgumentValue<unsigned long long>
-			(20, memory, args_ptr);
-	unsigned long long symbol = getArgumentValue<unsigned long long>
-			(40, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
-	debug << misc::fmt("symbol_name: 0x%016llx, \n", symbol_name);
-	debug << misc::fmt("symbol: 0x%016llx, \n", symbol);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint32_t module_name;
+		uint32_t symbol_name;
+		uint64_t agent;
+		int32_t call_convention;
+		uint32_t symbol;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Get the symbol object
-	HsaExecutable *exe = (HsaExecutable *)executable;
-	std::string symbol_name_str = memory->ReadString(symbol_name);
+	HsaExecutable *exe = (HsaExecutable *)data.executable;
+	std::string symbol_name_str = memory->ReadString(data.symbol_name);
 	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str.c_str());
 
 	// Write back
-	memory->Write(symbol, 8, (char *)&exe_sym);
+	memory->Write(data.symbol, 8, (char *)&exe_sym);
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1520,42 +1504,33 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable_symbol	| 4		| 8
-	// attribute		| 12		| 4
-	// value		| 16		| 8
-
-	// Retrieve data
-	HsaExecutableSymbol *executable_symbol =
-			(HsaExecutableSymbol *)getArgumentValue
-			<unsigned long long>(4, memory, args_ptr);
-	unsigned int attribute = getArgumentValue<unsigned int>
-			(12, memory, args_ptr);
-	unsigned long long value = getArgumentValue<unsigned long long>
-			(16, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable_symbol: %p, \n", executable_symbol);
-	debug << misc::fmt("attribute: %d, \n", attribute);
-	debug << misc::fmt("value: 0x%016llx, \n", value);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable_symbol;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
+	HsaExecutableSymbol *symbol =
+			(HsaExecutableSymbol *)data.executable_symbol;
 
 	// Dispatch by attribute
-	switch (attribute)
+	switch (data.attribute)
 	{
 	case HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT:
 
 	{
-		memory->Write(value, 8, (char *)&executable_symbol);
+		memory->Write(data.value, 8, (char *)&symbol);
 		break;
 	}
 
 	case HSA_CODE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE:
 
 	{
-		unsigned int arg_size = executable_symbol
+		unsigned int arg_size = symbol
 				->getKernelArgumentSize();
-		memory->Write(value, 4, (char *)&arg_size);
+		memory->Write(data.value, 4, (char *)&arg_size);
 		break;
 	}
 
@@ -1563,7 +1538,7 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 
 	{
 		unsigned int group_size = 0;
-		memory->Write(value, 4, (char *)&group_size);
+		memory->Write(data.value, 4, (char *)&group_size);
 		break;
 	}
 
@@ -1571,14 +1546,14 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 
 	{
 		unsigned int private_size = 0;
-		memory->Write(value, 4, (char *)&private_size);
+		memory->Write(data.value, 4, (char *)&private_size);
 		break;
 	}
 
 	default:
 
 		throw misc::Panic(misc::fmt("Unsupported kernel object "
-				"attribute %d.\n", attribute));
+				"attribute %d.\n", data.attribute));
 	}
 
 	// Return success

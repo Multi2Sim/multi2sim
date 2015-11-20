@@ -44,6 +44,7 @@ hsa_status_t HSA_API hsa_init()
 		ioctl(hsa_runtime->fd, InitFromX86, getpid());
 
 		// Return success
+		printf("HSA initialized.\n");
 		return HSA_STATUS_SUCCESS;
 	}
 	else

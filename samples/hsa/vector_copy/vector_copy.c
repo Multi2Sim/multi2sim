@@ -194,24 +194,28 @@ int main(int argc, char **argv) {
      */
     hsa_executable_t executable;
     err = hsa_executable_create(HSA_PROFILE_FULL, HSA_EXECUTABLE_STATE_UNFROZEN, "", &executable);
+    printf("executable: %ld\n", executable.handle);
     check(Create the executable, err);
 
     /*
      * Load the code object.
      */
     err = hsa_executable_load_code_object(executable, agent, code_object, "");
+    printf("executable: %ld\n", executable.handle);
     check(Loading the code object, err);
 
     /*
      * Freeze the executable; it can now be queried for symbols.
      */
     err = hsa_executable_freeze(executable, "");
+    printf("executable: %ld\n", executable.handle);
     check(Freeze the executable, err);
 
    /*
     * Extract the symbol from the executable.
     */
     hsa_executable_symbol_t symbol;
+    printf("executable: %ld\n", executable.handle);
     err = hsa_executable_get_symbol(executable, NULL, "&__OpenCL_vector_copy_kernel", agent, 0, &symbol);
     check(Extract the symbol from the executable, err);
 

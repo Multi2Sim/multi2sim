@@ -50,6 +50,9 @@ libemulator_a_SOURCES = \
 		AddInstructionWorker.h \
 		AddInstructionWorker.cc \
 		\
+		AtomicNoRetInstructionWorker.h \
+		AtomicNoRetInstructionWorker.cc \
+		\
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
 		\

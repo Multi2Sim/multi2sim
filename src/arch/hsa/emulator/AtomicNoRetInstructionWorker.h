@@ -17,31 +17,34 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
-#define ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
+#ifndef ARCH_HSA_EMULATOR_ATOMICNORETINSTRUCTIONWORKER_H
+#define ARCH_HSA_EMULATOR_ATOMICNORETINSTRUCTIONWORKER_H
 
-#include "DriverCallHandler.h"
+#include "HsaInstructionWorker.h"
+
+namespace mem
+{
+class Memory;
+}
 
 namespace HSA
 {
-class SignalManager;
 
-class SignalDestroyHandler: public DriverCallHandler
+class AtomicNoRetInstructionWorker: public HsaInstructionWorker
 {
-	struct __attribute__ ((packed)) Data
-	{
-		uint32_t status;
-		uint64_t signal;
-	};
+	mem::Memory * memory;
 
-	SignalManager *signal_manager;
+	template<typename T>
+	void Inst_AtomicNoRet_Aux(BrigCodeEntry *instruction);
 
 public:
-	SignalDestroyHandler(SignalManager *signal_manager);
-	virtual ~SignalDestroyHandler();
-	void Process(mem::Memory *memory, uint32_t args_ptr);
+	AtomicNoRetInstructionWorker(WorkItem *work_item,
+			StackFrame *stack_frame,
+			mem::Memory *memory);
+	virtual ~AtomicNoRetInstructionWorker();
+	void Execute(BrigCodeEntry *instruction) override;
 };
 
 }  // namespace HSA
 
-#endif  // ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
+#endif  // ARCH_HSA_EMULATOR_ATOMICNORETINSTRUCTIONWORKER_H

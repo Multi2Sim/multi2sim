@@ -24,6 +24,7 @@
 #include "SegmentManager.h"
 
 #include "AddInstructionWorker.h"
+#include "AtomicNoRetInstructionWorker.h"
 #include "CbrInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
@@ -522,6 +523,12 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<AddInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_ATOMICNORET:
+
+		return misc::new_unique<AtomicNoRetInstructionWorker>(this,
+				stack_top,
+				Emulator::getInstance()->getMemory());
+
 	case BRIG_OPCODE_CBR:
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
@@ -544,7 +551,7 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 	case BRIG_OPCODE_GRIDSIZE:
 
-		return misc::new_unique<MemFenceInstructionWorker>(this,
+		return misc::new_unique<GridSizeInstructionWorker>(this,
 				stack_top);
 
 	case BRIG_OPCODE_LD:
@@ -561,7 +568,7 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 	case BRIG_OPCODE_MEMFENCE:
 
-		return std::unique_ptr<HsaInstructionWorker>(nullptr);
+		return misc::new_unique<MemFenceInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_ST:
 
