@@ -951,13 +951,20 @@ int Driver::CallSignalLoadRelaxed(comm::Context *context,
 	// Arguments		| Offset	| Size
 	// value		| 0		| 8
 	// signal		| 8		| 8
-	uint64_t signal = getArgumentValue<uint64_t>(8, memory, args_ptr);
+	struct Data
+	{
+		uint64_t value;
+		uint64_t signal;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(Data), (char *)&data);
 
 	// Set signal value
-	int64_t value = signal_manager->GetValue(signal);
+	data.value = signal_manager->GetValue(data.signal);
 
 	// Return
-	setArgumentValue(value, 0, memory, args_ptr);
+	memory->Write(args_ptr, sizeof(Data), (char *)&data);
 	return 0;
 }
 
@@ -980,7 +987,7 @@ int Driver::CallSignalStoreRelaxed(comm::Context *context,
 	// value		| 8		| 8
 	uint64_t signal_handler = getArgumentValue<uint64_t>
 			(0, memory, args_ptr);
-	int64_t value = getArgumentValue<unsigned long long>
+	int64_t value = getArgumentValue<int64_t>
 			(8, memory, args_ptr);
 
 	// Set signal value
@@ -1407,30 +1414,29 @@ int Driver::CallExecutableCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// profile		| 4		| 8
-	// executable_stat	| 12		| 4
-	// options		| 16		| 8
-	// executable 		| 24		| 8
+	struct Data
+	{
+		uint32_t status;
+		uint32_t profile;
+		uint32_t executable_stat;
+		uint64_t options;
+		uint64_t executable;
+	} data;
 
 	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(24, memory, args_ptr);
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
+	debug << misc::fmt("executable: 0x%016lx, \n", data.executable);
 
 	// Create executable
-	HsaExecutable *new_executable = new HsaExecutable();
+	data.executable = (uint64_t)new HsaExecutable();
 	
-	// Write back
-	memory->Write(executable, 8, (char *)&new_executable);
+	// Return status
+	data.status = HSA_STATUS_SUCCESS;
 
-	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	// Write back
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }

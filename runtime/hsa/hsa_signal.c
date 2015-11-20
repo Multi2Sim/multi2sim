@@ -85,7 +85,7 @@ hsa_signal_value_t HSA_API hsa_signal_load_acquire(hsa_signal_t signal)
 
 hsa_signal_value_t HSA_API hsa_signal_load_relaxed(hsa_signal_t signal)
 {
-	unsigned long long args[2] = {0};
+	uint64_t args[2] = {0};
 	memcpy(args + 1, &signal, 8);
 
 	// Call driver function
@@ -99,9 +99,10 @@ hsa_signal_value_t HSA_API hsa_signal_load_relaxed(hsa_signal_t signal)
 void HSA_API
     hsa_signal_store_relaxed(hsa_signal_t signal, hsa_signal_value_t value)
 {
-	unsigned int args[4] = {0};
+	uint32_t args[4] = {0};
 	memcpy(args, &signal, 8);
 	memcpy(args + 2, &value, 8);
+	printf("Setting signal %lld to value 0x%016x", signal.handle, value);
 
 	// Call driver function
 	ioctl(hsa_runtime->fd, SignalStoreRelaxed, args);
@@ -353,7 +354,7 @@ hsa_signal_value_t HSA_API
                             uint64_t timeout_hint,
                             hsa_wait_state_t wait_state_hint)
 {
-	unsigned long long signal_value;
+	uint64_t signal_value;
 	while (1)
 	{
 		// Get signal value

@@ -141,11 +141,14 @@ hsa_status_t HSA_API
 	memcpy(args + 7, &agent, 8);
 	memcpy(args + 9, &call_convention, 4);
 	memcpy(args + 10, &symbol, 8);
+	printf("Here\n");
 	if (!hsa_runtime)
 	{
+		printf("Here\n");
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
 	ioctl(hsa_runtime->fd, ExecutableGetSymbol, args);
+	printf("Here\n");
 	return args[0];
 }
 
