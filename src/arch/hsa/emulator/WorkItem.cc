@@ -24,12 +24,21 @@
 #include "SegmentManager.h"
 
 #include "AddInstructionWorker.h"
+#include "AtomicNoRetInstructionWorker.h"
+#include "BrInstructionWorker.h"
+#include "CbrInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
+#include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
+#include "GridSizeInstructionWorker.h"
 #include "LdInstructionWorker.h"
-#include "StInstructionWorker.h"
+#include "LdaInstructionWorker.h"
+#include "MemFenceInstructionWorker.h"
+#include "MovInstructionWorker.h"
+#include "OrInstructionWorker.h"
 #include "RetInstructionWorker.h"
+#include "StInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
 
 
@@ -516,6 +525,20 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<AddInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_ATOMICNORET:
+
+		return misc::new_unique<AtomicNoRetInstructionWorker>(this,
+				stack_top,
+				Emulator::getInstance()->getMemory());
+
+	case BRIG_OPCODE_BR:
+
+		return misc::new_unique<BrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_CBR:
+
+		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_SHL:
 
 		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
@@ -524,13 +547,39 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<ShrInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_CMP:
+
+		return misc::new_unique<CmpInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_CVT:
 
 		return misc::new_unique<CvtInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_GRIDSIZE:
+
+		return misc::new_unique<GridSizeInstructionWorker>(this,
+				stack_top);
+
 	case BRIG_OPCODE_LD:
 
 		return misc::new_unique<LdInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_LDA:
+
+		return misc::new_unique<LdaInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MOV:
+
+		return misc::new_unique<MovInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MEMFENCE:
+
+		return misc::new_unique<MemFenceInstructionWorker>(this,
+				stack_top);
+
+	case BRIG_OPCODE_OR:
+
+		return misc::new_unique<OrInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_ST:
 
@@ -591,7 +640,10 @@ bool WorkItem::Execute()
 
 		// Get the function according to the opcode and perform the inst
 		auto instruction_worker = getInstructionWorker(inst);
-		instruction_worker->Execute(inst);
+		if (instruction_worker.get())
+		{
+			instruction_worker->Execute(inst);
+		}
 
 		// Return false if execution finished
 		if (stack.empty())
@@ -609,8 +661,6 @@ bool WorkItem::Execute()
 	}
 	else if (inst && !inst->isInstruction())
 	{
-	//	Emu::isa_debug << "Executing: ";
-	//	Emu::isa_debug << *inst;
 		ExecuteDirective();
 	}
 	else

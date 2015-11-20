@@ -17,31 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
-#define ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
-
-#include "DriverCallHandler.h"
+#include "MovInstructionWorker.h"
 
 namespace HSA
 {
-class SignalManager;
-
-class SignalDestroyHandler: public DriverCallHandler
-{
-	struct __attribute__ ((packed)) Data
-	{
-		uint32_t status;
-		uint64_t signal;
-	};
-
-	SignalManager *signal_manager;
-
-public:
-	SignalDestroyHandler(SignalManager *signal_manager);
-	virtual ~SignalDestroyHandler();
-	void Process(mem::Memory *memory, uint32_t args_ptr);
-};
 
 }  // namespace HSA
-
-#endif  // ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H

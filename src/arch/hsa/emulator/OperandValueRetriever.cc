@@ -76,7 +76,7 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 	case BRIG_KIND_OPERAND_ADDRESS:
 
 	{
-		unsigned address;
+		unsigned address = 0;
 		unsigned long long offset = operand->getOffset();
 		if (operand->getSymbol().get())
 		{
@@ -100,16 +100,17 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 						" defined",
 						name.c_str()));
 
-			// Variable not in stack frame, try kernel
-			// argument
-			address = variable->getAddress();
+
+			address += variable->getAddress();
 		}
-		else
+		if(operand->getReg().get())
 		{
 			std::string register_name = operand->getReg()
 						->getRegisterName();
+			unsigned reg_address;
 			stack_frame->getRegisterValue(register_name,
-					&address);
+					&reg_address);
+			address += reg_address;
 		}
 		address += offset;
 		*(uint32_t *)buffer = address;
