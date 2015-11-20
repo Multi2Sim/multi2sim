@@ -60,6 +60,7 @@ void LdaInstructionWorker::Inst_LDA_Aux(BrigCodeEntry *instruction)
 	if (!variable)
 		throw misc::Error(misc::fmt("Variable %s not defined.\n",
 					name.c_str()));
+	address = variable->getAddress();
 
 	// Add offset
 	address += offset;
