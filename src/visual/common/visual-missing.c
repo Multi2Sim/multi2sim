@@ -36,3 +36,5 @@ void visual_run(const char *file_name)
 		"\t  3) Recompile the simulator: make clean && make\n");
 }
 
+
+

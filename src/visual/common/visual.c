@@ -75,7 +75,6 @@ static void visual_cycle_bar_refresh(void *user_data, long long cycle)
 		vi_net_panel_refresh(vi_mem_panel);
 }
 
-
 void visual_run(const char *file_name)
 {
 	char *m2s_images_path = "images";
