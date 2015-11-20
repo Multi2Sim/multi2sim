@@ -65,7 +65,7 @@ Emulator *Emulator::getInstance()
 	return instance.get();
 }
 
-Emulator::Emulator() : comm::Emulator("kepler")
+Emulator::Emulator() : comm::Emulator("Kepler")
 {
 	// Initialize disassembler
 	disassembler = Disassembler::getInstance();
