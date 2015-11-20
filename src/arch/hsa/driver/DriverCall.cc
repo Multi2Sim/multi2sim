@@ -1419,18 +1419,16 @@ int Driver::CallExecutableCreate(comm::Context *context,
 		uint32_t status;
 		uint32_t profile;
 		uint32_t executable_stat;
-		uint64_t options;
-		uint64_t executable;
+		uint32_t options;
+		uint32_t executable;
 	} data;
 
 	// Retrieve data
 	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016lx, \n", data.executable);
-
 	// Create executable
-	data.executable = (uint64_t)new HsaExecutable();
+	uint64_t executable_handler = (uint64_t)new HsaExecutable();
+	memory->Write(data.executable, 8, (char *)&executable_handler);
 	
 	// Return status
 	data.status = HSA_STATUS_SUCCESS;

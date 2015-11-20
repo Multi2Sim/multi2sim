@@ -34,17 +34,25 @@ hsa_status_t HSA_API hsa_executable_create(
 		const char *options,
 		hsa_executable_t *executable)
 {
-	unsigned int args[8] = {0};
-	memcpy(args + 1, &profile, 8);
-	memcpy(args + 3, &executable_stat, 4);
-	memcpy(args + 4, &options, 8);
-	memcpy(args + 6, &executable, 8);
+	struct Data
+	{
+		uint32_t status;
+		uint32_t profile;
+		uint32_t executable_stat;
+		uint32_t options;
+		uint32_t executable;
+	} data;
+	data.profile = profile;
+	data.executable_stat = executable_stat;
+	data.options = (uint32_t)options;
+	data.executable = (uint32_t)executable;
+	printf("data.executable: %d", data.executable);
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	ioctl(hsa_runtime->fd, ExecutableCreate, args);
-	return args[0];
+	ioctl(hsa_runtime->fd, ExecutableCreate, &data);
+	return data.status;
 }
 
 
