@@ -64,78 +64,51 @@ int Driver::CallSystemGetInfo(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// attribute		| 4		| 4
-	// data			| 8		| 12
-	unsigned int attribute = getArgumentValue<unsigned int>(4, memory,
-			args_ptr);
-	unsigned int data_ptr = getArgumentValue<unsigned int>(8, memory,
-			args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
 
-	switch (attribute)
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
+
+	switch (data.attribute)
 	{
 	case HSA_SYSTEM_INFO_VERSION_MAJOR:
 
 	{
-		unsigned *data = (unsigned *)memory->getBuffer(
-				data_ptr, 4, mem::Memory::AccessWrite);
-		*data = 0;
+		uint16_t major = 1;
+		memory->Write(data.value, 2, (char *)&major);
 		break;
 	}
 
 	case HSA_SYSTEM_INFO_VERSION_MINOR:
 
 	{
-		unsigned *data = (unsigned *)memory->getBuffer(
-				data_ptr, 4, mem::Memory::AccessWrite);
-		*data = 99;
+		uint16_t minor = 0;
+		memory->Write(data.value, 2, (char *)&minor);
 		break;
 	}
 
 	case HSA_SYSTEM_INFO_TIMESTAMP:
 
 	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = time(NULL);
-		break;
-	}
-
-	case HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY:
-
-	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = 1;
-		break;
-	}
-
-	case HSA_SYSTEM_INFO_SIGNAL_MAX_WAIT:
-
-	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = 100;
+		uint64_t time = time(NULL);
+		memory->Write(data.value, 8, (char *)&time);
 		break;
 	}
 
 	default:
 
-		// Return error
-		setArgumentValue<unsigned int>(
-				HSA_STATUS_ERROR_INVALID_ARGUMENT, 0,
-				memory, args_ptr);
+		throw misc::Panic(misc::fmt("Unsupported attribute in "
+				"get_system_info", data.attribute));
 		return 0;
 	}
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
