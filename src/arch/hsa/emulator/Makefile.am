@@ -56,6 +56,9 @@ libemulator_a_SOURCES = \
 		LdInstructionWorker.h \
 		LdInstructionWorker.cc \
 		\
+		MulInstructionWorker.h \
+		MulInstructionWorker.cc \
+		\
 		StInstructionWorker.h \
 		StInstructionWorker.cc \
 		\

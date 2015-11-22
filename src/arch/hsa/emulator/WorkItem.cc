@@ -28,6 +28,7 @@
 #include "ShrInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "LdInstructionWorker.h"
+#include "MulInstructionWorker.h"
 #include "StInstructionWorker.h"
 #include "RetInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
@@ -531,6 +532,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_LD:
 
 		return misc::new_unique<LdInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MUL:
+
+		return misc::new_unique<MulInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_ST:
 
