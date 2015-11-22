@@ -32,8 +32,8 @@ namespace mem
 {
 
 
-const int System::MemSystemTraceVersionMajor = 1;
-const int System::MemSystemTraceVersionMinor = 678;
+const int System::TraceVersionMajor = 1;
+const int System::TraceVersionMinor = 678;
 
 const std::string System::help_message =
 	"Option '--mem-config <file>' is used to configure the memory system. The\n"
@@ -1372,72 +1372,78 @@ void System::ConfigCalculateModuleLevels()
 
 void System::ConfigTrace()
 {
-    // Initialization
-    trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n", MemSystemTraceVersionMajor, MemSystemTraceVersionMinor));
+	// Initialization
+	trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n",
+			TraceVersionMajor, TraceVersionMinor));
 
-    // Internal Networks
-    for (auto& net : networks) {
-        trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
-            net->getName().c_str(), net->getNumNodes()));
-    }
+	// Internal Networks
+	for (auto& net : networks)
+		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
+				net->getName().c_str(), net->getNumNodes()));
 
-    // External Networks
-    net::System *net_system = net::System::getInstance();
-    for (int i = 0; i < net_system->getNumNetworks(); i++) {
-        net::Network *net = net_system->getNetwork(i);
-        trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
-            net->getName().c_str(), net->getNumNodes()));
-    }
+	// External Networks
+	net::System *net_system = net::System::getInstance();
+	for (int i = 0; i < net_system->getNumNetworks(); i++)
+	{
+		net::Network *net = net_system->getNetwork(i);
+		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
+				net->getName().c_str(), net->getNumNodes()));
+	}
 
-    // Modules
-    for (auto &mod : modules) {
-        // If module is unreachable, ignore it
-        if (!mod->getLevel())
-            continue;
+	// Modules
+	for (auto &mod : modules)
+	{
+		// If module is unreachable, ignore it
+		if (!mod->getLevel())
+			continue;
 
-        // High Network
-        std::string high_net_name = "";
-        if (net::Network *high_network = mod->getHighNetwork()) {
-            high_net_name =  high_network->getName();
-        }
+		// High Network
+		// Get high network name
+		std::string high_net_name = "";
+		if (net::Network *high_network = mod->getHighNetwork())
+			high_net_name =  high_network->getName();
 
-        int high_net_node_index = 0;
-        if (net::Node *high_net_node = mod->getHighNetworkNode()) {
-            high_net_node_index = high_net_node->getIndex();
-        }
+		// Get high network node index
+		int high_net_node_index = 0;
+		if (net::Node *high_net_node = mod->getHighNetworkNode())
+			high_net_node_index = high_net_node->getIndex();
 
-        // Low Network
-        std::string low_net_name = "";
-        if (net::Network *low_network = mod->getLowNetwork()) {
-            low_net_name =  low_network->getName();
-        }
+		// Low Network
+		// Get low network name
+		std::string low_net_name = "";
+		if (net::Network *low_network = mod->getLowNetwork())
+			low_net_name =  low_network->getName();
 
-        int low_net_node_index = 0;
-        if (net::Node *low_net_node = mod->getLowNetworkNode()) {
-            low_net_node_index = low_net_node->getIndex();
-        }
+		// Get low network node index
+		int low_net_node_index = 0;
+		if (net::Node *low_net_node = mod->getLowNetworkNode())
+			low_net_node_index = low_net_node->getIndex();
 
-        unsigned num_sets = 0, assoc = 0, block_size = 0;
-        if (Cache *cache = mod->getCache()) {
-            num_sets = cache->getNumSets();
-            assoc = cache->getNumWays();
-            block_size = cache->getBlockSize();
-        }
+		// Get cache data: number of sets, associativity, block size
+		unsigned num_sets = 0, assoc = 0, block_size = 0;
+		if (Cache *cache = mod->getCache())
+		{
+			num_sets = cache->getNumSets();
+			assoc = cache->getNumWays();
+			block_size = cache->getBlockSize();
+		}
 
-        unsigned num_sharers = 0;
-        if (Directory *directory = mod->getDirectory()) {
-            num_sharers = directory->getNumNodes();
-        }
+		// Get number of sharers of directory
+		unsigned num_sharers = 0;
+		if (Directory *directory = mod->getDirectory()) {
+		    num_sharers = directory->getNumNodes();
+		}
 
-        // Trace Header
-        trace.Header(misc::fmt("mem.new_mod name=\"%s\" num_sets=%u assoc=%u "
-            "block_size=%d sub_block_size=%d num_sharers=%d level=%d "
-            "high_net=\"%s\" high_net_node=%d low_net=\"%s\" low_net_node=%d\n",
-            mod->getName().c_str(), num_sets, assoc, block_size,
-            mod->getSubBlockSize(), num_sharers, mod->getLevel(),
-            high_net_name.c_str(), high_net_node_index, low_net_name.c_str(),
-            low_net_node_index));
-    }
+		// Trace Header
+		trace.Header(misc::fmt("mem.new_mod name=\"%s\" num_sets=%u assoc=%u "
+				"block_size=%d sub_block_size=%d num_sharers=%d level=%d "
+				"high_net=\"%s\" high_net_node=%d low_net=\"%s\" low_net_node=%d\n",
+				mod->getName().c_str(), num_sets, assoc,
+				block_size, mod->getSubBlockSize(),
+				num_sharers, mod->getLevel(),
+				high_net_name.c_str(), high_net_node_index,
+				low_net_name.c_str(), low_net_node_index));
+	}
 
 }
 
