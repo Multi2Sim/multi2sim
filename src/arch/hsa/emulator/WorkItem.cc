@@ -24,8 +24,10 @@
 #include "SegmentManager.h"
 
 #include "AddInstructionWorker.h"
+#include "AndInstructionWorker.h"
 #include "AtomicNoRetInstructionWorker.h"
 #include "BrInstructionWorker.h"
+#include "BarrierInstructionWorker.h"
 #include "CbrInstructionWorker.h"
 #include "ShlInstructionWorker.h"
 #include "ShrInstructionWorker.h"
@@ -35,6 +37,7 @@
 #include "LdInstructionWorker.h"
 #include "MulInstructionWorker.h"
 #include "StInstructionWorker.h"
+#include "SubInstructionWorker.h"
 #include "LdaInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
@@ -527,6 +530,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<AddInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_AND:
+
+		return misc::new_unique<AndInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_ATOMICNORET:
 
 		return misc::new_unique<AtomicNoRetInstructionWorker>(this,
@@ -536,6 +543,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_BR:
 
 		return misc::new_unique<BrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_BARRIER:
+
+		return misc::new_unique<BarrierInstructionWorker>(this,
+				stack_top);
 
 	case BRIG_OPCODE_CBR:
 
@@ -590,6 +602,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_ST:
 
 		return misc::new_unique<StInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_SUB:
+
+		return misc::new_unique<SubInstructionWorker>(this, stack_top);
+
 
 	case BRIG_OPCODE_RET:
 

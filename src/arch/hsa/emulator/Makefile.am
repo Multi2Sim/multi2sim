@@ -50,8 +50,14 @@ libemulator_a_SOURCES = \
 		AddInstructionWorker.h \
 		AddInstructionWorker.cc \
 		\
+		AndInstructionWorker.h \
+		AndInstructionWorker.cc \
+		\
 		AtomicNoRetInstructionWorker.h \
 		AtomicNoRetInstructionWorker.cc \
+		\
+		BarrierInstructionWorker.h \
+		BarrierInstructionWorker.cc \
 		\
 		BrInstructionWorker.h \
 		BrInstructionWorker.cc \
@@ -96,6 +102,9 @@ libemulator_a_SOURCES = \
 		\
 		ShrInstructionWorker.h \
 		ShrInstructionWorker.cc \
+		\
+		SubInstructionWorker.h \
+		SubInstructionWorker.cc \
 		\
 		WorkItemAbsIdInstructionWorker.h \
 		WorkItemAbsIdInstructionWorker.cc
