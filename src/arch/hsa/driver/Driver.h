@@ -100,6 +100,25 @@ class Driver: public comm::Driver
 	// Table of ABI call execution functions
 	static const CallFn call_fn[CallCodeCount];
 
+	// Retrieve the value at a certain memory space
+	template <typename T>
+	static T getArgumentValue(int offset, mem::Memory *memory,
+			unsigned args_ptr)
+	{
+		// Read from memory
+		T value;
+		memory->Read(args_ptr + offset, sizeof(T), (char *)&value);
+		return value;
+	}
+
+	// Set the the value at a certain memory space
+	template<typename T>
+	static void setArgumentValue(T value, int offset, mem::Memory *memory,
+			unsigned args_ptr)
+	{
+		memory->Write(args_ptr+offset, sizeof(T), (char *)&value);
+	}
+
 	// Get driver call handler by call number
 	std::unique_ptr<DriverCallHandler> GetDriverCallHandler(int code);
 
