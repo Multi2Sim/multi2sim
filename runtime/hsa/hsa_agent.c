@@ -32,23 +32,28 @@ hsa_status_t HSA_API hsa_iterate_agents(
 		hsa_status_t (*callback)(hsa_agent_t agent, void *data),
 		void *data)
 {
-	unsigned long long agent_ids[2];
-	agent_ids[0] = 1;
-	agent_ids[1] = 0;
+	struct __attribute__ ((packed))
+	{
+		uint64_t current_agent_id;
+		uint64_t next_agent_id;
+		bool has_next;
+	} agents;
+	agents.current_agent_id = 0;
+	agents.has_next = true;
 
 	// Traverse all agent
-	while(agent_ids[0] != 0)
+	while(agents.has_next)
 	{
-		ioctl(hsa_runtime->fd, NextAgent, agent_ids);
-		if (agent_ids[0] != 0)
+		ioctl(hsa_runtime->fd, NextAgent, &agents);
+		if (agents.has_next)
 		{
-			hsa_agent_t curr_agent;
-			curr_agent.handle = agent_ids[0];
+			hsa_agent_t agent;
+			agent.handle = agents.next_agent_id;
 			hsa_status_t callback_status =
-					callback(curr_agent, data);
+					callback(agent, data);
 			if (callback_status != HSA_STATUS_SUCCESS)
 				return callback_status;
-			agent_ids[1] = agent_ids[0];
+			agents.current_agent_id = agents.next_agent_id;
 		}
 	}
 	return HSA_STATUS_SUCCESS;
@@ -59,20 +64,24 @@ hsa_status_t HSA_API hsa_agent_get_info(hsa_agent_t agent,
                                         hsa_agent_info_t attribute,
                                         void *value)
 {
-	char args[4 + 8 + 4 + 4];
-	memcpy(args + 4, &agent, 8);
-	memcpy(args + 12, &attribute, 4);
-	memcpy(args + 16, &value, 4);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t agent;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	data.agent = agent.handle;
+	data.attribute = attribute;
+	data.value = (uint32_t)value;
 
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	else
-	{
-		ioctl(hsa_runtime->fd, AgentGetInfo, args);
-		return (hsa_status_t)args[0];
-	}
+
+	ioctl(hsa_runtime->fd, AgentGetInfo, &data);
+	return data.status;
 }
 
 

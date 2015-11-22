@@ -17,31 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
-#define ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
+#ifndef ARCH_HSA_EMULATOR_CMPINSTRUCTIONWORKER_H
+#define ARCH_HSA_EMULATOR_CMPINSTRUCTIONWORKER_H
 
-#include "DriverCallHandler.h"
+#include "HsaInstructionWorker.h"
 
 namespace HSA
 {
-class SignalManager;
 
-class SignalDestroyHandler: public DriverCallHandler
+class CmpInstructionWorker: public HsaInstructionWorker
 {
-	struct __attribute__ ((packed)) Data
-	{
-		uint32_t status;
-		uint64_t signal;
-	};
-
-	SignalManager *signal_manager;
+	template<typename SrcType, typename DstType>
+	void Inst_CMP_Aux(BrigCodeEntry *instruction);
 
 public:
-	SignalDestroyHandler(SignalManager *signal_manager);
-	virtual ~SignalDestroyHandler();
-	void Process(mem::Memory *memory, uint32_t args_ptr);
+	CmpInstructionWorker(WorkItem *work_item,
+			StackFrame *stack_frame);
+	virtual ~CmpInstructionWorker();
+	void Execute(BrigCodeEntry *instruction) override;
 };
 
 }  // namespace HSA
 
-#endif  // ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
+#endif  // ARCH_HSA_EMULATOR_CMPINSTRUCTIONWORKER_H

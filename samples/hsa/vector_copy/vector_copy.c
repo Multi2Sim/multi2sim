@@ -130,7 +130,6 @@ int main(int argc, char **argv) {
     char name[64] = { 0 };
     err = hsa_agent_get_info(agent, HSA_AGENT_INFO_NAME, name);
     check(Querying the agent name, err);
-    printf("The agent name is %s.\n", name);
 
     /*
      * Query the maximum size of the queue.
@@ -138,7 +137,6 @@ int main(int argc, char **argv) {
     uint32_t queue_size = 0;
     err = hsa_agent_get_info(agent, HSA_AGENT_INFO_QUEUE_MAX_SIZE, &queue_size);
     check(Querying the agent maximum queue size, err);
-    printf("The maximum queue size is %u.\n", (unsigned int) queue_size);
 
     /*
      * Create a queue using the maximum size.

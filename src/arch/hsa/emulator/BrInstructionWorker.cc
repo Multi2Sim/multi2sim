@@ -17,31 +17,44 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
-#define ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
+#include <arch/hsa/disassembler/BrigCodeEntry.h>
 
-#include "DriverCallHandler.h"
+#include "BrInstructionWorker.h"
+#include "WorkItem.h"
 
 namespace HSA
 {
-class SignalManager;
 
-class SignalDestroyHandler: public DriverCallHandler
+BrInstructionWorker::BrInstructionWorker(WorkItem *work_item,
+		StackFrame *stack_frame) :
+		HsaInstructionWorker(work_item, stack_frame)
 {
-	struct __attribute__ ((packed)) Data
+
+}
+
+
+BrInstructionWorker::~BrInstructionWorker()
+{
+}
+
+
+void BrInstructionWorker::Execute(BrigCodeEntry *instruction)
+{
+	// Retrieve 1st operand
+	auto operand0 = instruction->getOperand(0);
+	if (operand0->getKind() == BRIG_KIND_OPERAND_CODE_REF)
 	{
-		uint32_t status;
-		uint64_t signal;
-	};
+		auto label = operand0->getRef();
 
-	SignalManager *signal_manager;
+		// Redirect pc to a certain label
+		stack_frame->setPc(std::move(label));
+		return;
+	}else{
+		throw misc::Panic("Unsupported operand type for CBR.");
+	}
 
-public:
-	SignalDestroyHandler(SignalManager *signal_manager);
-	virtual ~SignalDestroyHandler();
-	void Process(mem::Memory *memory, uint32_t args_ptr);
-};
+	// Move PC forward
+	work_item->MovePcForwardByOne();
+}
 
 }  // namespace HSA
-
-#endif  // ARCH_HSA_DRIVER_SIGNALDESTROYHANDLER_H
