@@ -54,9 +54,12 @@ ComputeUnit::ComputeUnit(int index, Gpu *gpu) :
 		vector_memory_unit(this)
 {
 	// Create the Lds module
-	lds_module = new mem::Module(misc::fmt("LDS[%d]", index), 
-			mem::Module::TypeLocalMemory, lds_num_ports, 
-			lds_block_size, lds_latency);
+	lds_module = misc::new_unique<mem::Module>(
+			misc::fmt("LDS[%d]", index), 
+			mem::Module::TypeLocalMemory,
+			lds_num_ports, 
+			lds_block_size,
+			lds_latency);
 
 	// Create wavefront pools, and SIMD units
 	wavefront_pools.resize(num_wavefront_pools);
