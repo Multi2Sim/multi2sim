@@ -3651,7 +3651,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	if (event == event_local_load)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s load\n",
+		debug << misc::fmt("%lld %lld 0x%x %s local load\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3696,7 +3696,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	// Event "local_load_lock"
 	if (event == event_local_load_lock)
 	{
-		debug << misc::fmt("  %lld %lld 0x%x %s load lock\n",
+		debug << misc::fmt("  %lld %lld 0x%x %s local load lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3741,7 +3741,8 @@ void System::EventLocalLoadHandler(esim::Event *event,
 		new_frame->read = true;
 		new_frame->retry = frame->retry;
 		esim_engine->Call(event_local_find_and_lock,
-				new_frame);
+				new_frame,
+				event_local_load_finish);
 
 		return;
 	}
@@ -3750,7 +3751,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	if (event == event_local_load_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s load finish\n",
+		debug << misc::fmt("%lld %lld 0x%x %s local load finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3797,7 +3798,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s store\n",
+		debug << misc::fmt("%lld %lld 0x%x %s local store\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3825,7 +3826,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 			// Coalesce
 			module->incCoalescedWrites();
 			module->Coalesce(master_frame, frame);
-			master_frame->queue.Wait(event_store_finish);
+			master_frame->queue.Wait(event_local_store_finish);
 
 			// Increment witness
 			if (frame->witness)
@@ -3844,7 +3845,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store_lock)
 	{
 		// Debug
-		debug << misc::fmt("  %lld %lld 0x%x %s store lock\n",
+		debug << misc::fmt("  %lld %lld 0x%x %s local store lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3886,7 +3887,8 @@ void System::EventLocalStoreHandler(esim::Event *event,
 		new_frame->retry = frame->retry;
 		new_frame->witness = frame->witness;
 		esim_engine->Call(event_local_find_and_lock,
-				new_frame);
+				new_frame,
+				event_local_store_finish);
 
 		// Set witness to nullptr so that retries from the same frame
 		// do not increment it multiple times
@@ -3899,7 +3901,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store_finish)
 	{
 		// Debug
-		debug << misc::fmt("%lld %lld 0x%x %s store finish\n",
+		debug << misc::fmt("%lld %lld 0x%x %s local store finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),

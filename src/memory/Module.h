@@ -670,6 +670,10 @@ public:
 	/// flight. The access identifier is that returned by Access()
 	bool isInFlightAccess(long long id);
 
+	/// Dump information about all event-driven simulation frames associated
+	/// with in-flight accesses in the module.
+	void DumpInFlightAddresses(std::ostream &os = std::cout);
+
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,
 	/// check if it can be coalesced with any in-flight access. If it can,
