@@ -40,6 +40,8 @@ int ComputeUnit::fetch_buffer_size = 10;
 int ComputeUnit::issue_latency = 1;
 int ComputeUnit::issue_width = 5;
 int ComputeUnit::max_instructions_issued_per_type = 1;
+int ComputeUnit::lds_size = 65536;
+int ComputeUnit::lds_alloc_size = 64;
 int ComputeUnit::lds_latency = 2;                                                      
 int ComputeUnit::lds_block_size = 64;                                                  
 int ComputeUnit::lds_num_ports = 2; 
@@ -417,6 +419,9 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	// Insert wavefronts into an instruction buffer
 	work_group->wavefront_pool->MapWavefronts(work_group);
 
+	// Increment count of mapped work groups
+	num_mapped_work_groups++;
+	
 	Timing::trace << misc::fmt("si.map_wg "
 				   "cu=%d "
 				   "wg=%d "

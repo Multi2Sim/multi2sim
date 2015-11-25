@@ -29,10 +29,11 @@ namespace SI
 // Static variables
 int Gpu::num_compute_units = 32;
 unsigned Gpu::register_allocation_size = 32;
+int Gpu::num_scalar_registers = 2048;
 int Gpu::num_vector_registers = 65536;
 int Gpu::lds_allocation_size = 64; 
 int Gpu::lds_size = 65536;
-long long Gpu::max_cycles = 1000000;
+long long Gpu::max_cycles = 0;
 
 // String map of the argument's access type                                      
 const misc::StringMap Gpu::register_allocation_granularity_map =                                
