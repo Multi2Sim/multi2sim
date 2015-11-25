@@ -135,6 +135,12 @@ public:
 	/// The maximum number of wavefronts in a wavefront pool
 	static int max_wavefronts_per_wavefront_pool; 
 
+	// The total size of the Lds module
+	static int lds_size;
+	
+	// The allocation size of the Lds module
+	static int lds_alloc_size;
+	
 	// The latency of the Lds module
 	static int lds_latency;
 
@@ -235,6 +241,9 @@ public:
 	
 	// Number of vectorr registers being written to
 	long long num_vreg_writes = 0;
+
+	// Number of total mapped work groups for the compute unit
+	long long num_mapped_work_groups = 0;
 };
 
 }

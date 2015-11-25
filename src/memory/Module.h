@@ -268,6 +268,8 @@ private:
 
 	long long num_conflict_invalidations = 0;
 
+public:
+	
 	// Statistics for up-down accesses
 	long long num_reads = 0;
 	long long num_read_hits = 0;
@@ -303,8 +305,6 @@ private:
 	// Statistics that are possibly power related
 	long long num_directory_accesses = 0;
 	long long num_data_accesses = 0;
-
-public:
 
 	/// Constructor
 	Module(const std::string &name,
