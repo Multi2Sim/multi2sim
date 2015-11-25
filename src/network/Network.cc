@@ -58,14 +58,17 @@ void Network::ParseConfiguration(misc::IniFile *config,
 			!default_bandwidth)
 		throw misc::Error(misc::fmt(
 				"%s: %s:\nDefault values can not be "
-				"zero/non-existent.\n%s", config->getPath().c_str(),
+				"zero/non-existent.\n%s", 
+				config->getPath().c_str(),
 				name.c_str(), System::err_config_note));
 
 	// Packet size
 	packet_size = config->ReadInt(section, "DefaultPacketSize", 0);
 
-	if ((default_output_buffer_size < 0) || (default_input_buffer_size < 0) ||
-			(default_bandwidth < 0) || (packet_size < 0))
+	if ((default_output_buffer_size < 0) || 
+			(default_input_buffer_size < 0) ||
+			(default_bandwidth < 0) || 
+			(packet_size < 0))
 		throw misc::Error(misc::fmt(
 				"%s: %s:\nDefault values can not be "
 				"negative.\n%s", config->getPath().c_str(),
@@ -120,8 +123,9 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 
 		// Make sure node is not duplicate
 		if (getNodeByName(node_name) != nullptr)
-			throw Error(misc::fmt("%s: Node '%s' already exists in the "
-					"network\n", config->getPath().c_str(),
+			throw Error(misc::fmt("%s: Node '%s' already "
+					"exists in the network\n", 
+					config->getPath().c_str(),
 					node_name.c_str()));
 
 		// Get properties
@@ -136,8 +140,9 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		if ((input_buffer_size < 1) || (output_buffer_size < 1) ||
 				(bandwidth < 1))
 			throw Error(misc::fmt("%s: Invalid argument for Node "
-					"'%s'\n%s",	config->getPath().c_str(),
-					node_name.c_str(), System::err_config_note));
+					"'%s'\n%s", config->getPath().c_str(),
+					node_name.c_str(), 
+					System::err_config_note));
 
 		// Enforcing type
 		config->Enforce(section, "Type");
@@ -145,25 +150,26 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		// Create node
 		if (!strcasecmp(type.c_str(), "EndNode"))
 		{
-			int required_buffer_size = 0;
-
 			// End-node should be able to contain an entire msg
 			// or equivalent number of packets for that message.
+			int required_buffer_size = 0;
 
-			// If the end-node's buffer size is less than
 			if (packet_size != 0)
 				required_buffer_size =
-						((System::getMessageSize() - 1) / packet_size + 1)
-						* packet_size;
+						(((System::getMessageSize() - 1) 
+						/ packet_size + 1) *
+						packet_size);
 			else
 				required_buffer_size =
 						System::getMessageSize();
 
 			if (input_buffer_size < required_buffer_size ||
 					output_buffer_size < required_buffer_size)
-				throw Error(misc::fmt("%s: Buffer size on the end node "
-						"should be able to fit at least a whole message, "
-						"or all the packets of the message",
+				throw Error(misc::fmt("%s: Buffer size on the " 
+						"end node should be able to " 
+						"fit at least a whole message, "
+						"or all the packets of the "
+						"message",
 						config->getPath().c_str()));
 
 			addEndNode(input_buffer_size,
@@ -213,8 +219,9 @@ void Network::ParseConfigurationForBuses(misc::IniFile *ini_file)
 		int bandwidth = ini_file->ReadInt(section, "Bandwidth",
 				default_bandwidth);
 		if (bandwidth < 1)
-			throw Error(misc::fmt("%s: Bus '%s', bandwidth cannot be "
-					"zero/negative.\n", ini_file->getPath().c_str(),
+			throw Error(misc::fmt("%s: Bus '%s', bandwidth cannot "
+					"be zero/negative.\n", 
+					ini_file->getPath().c_str(),
 					name.c_str()));
 
 		// Get the number of lanes
@@ -275,20 +282,24 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		// Find the bus
 		Bus *bus = dynamic_cast<Bus *>(getConnectionByName(bus_name));
 		if (!bus)
-			throw Error(misc::fmt("%s: Bus '%s' does not exist in the "
-					"network.", ini_file->getPath().c_str(),
+			throw Error(misc::fmt("%s: Bus '%s' does not exist "
+					"in the network.", 
+					ini_file->getPath().c_str(),
 					bus_name.c_str()));
 
-		// Get the node
+		// Get the node's name
 		std::string node_name = ini_file->ReadString(section, "Node");
 		if (node_name == "")
 			throw Error(misc::fmt("%s: section [%s]: Node is "
-					"not set for the busport.", ini_file->getPath().c_str(),
+					"not set for the busport.", 
+					ini_file->getPath().c_str(),
 					section.c_str()));
+	
+		// Get the node by the name
 		Node *node = getNodeByName(node_name);
 		if (!node)
-			throw Error(misc::fmt("%s: section [%s]: Node '%s' does not "
-					"exist in the network.",
+			throw Error(misc::fmt("%s: section [%s]: Node '%s' "
+					"does not exist in the network.",
 					ini_file->getPath().c_str(),
 					section.c_str(), node_name.c_str()));
 
@@ -300,39 +311,47 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		Connection *connection = misc::cast<Connection *>(bus);
 
 		// Setting up the buffer
+		// In case the node sends through the port
 		if (!strcasecmp(type.c_str(), "Sender"))
 		{
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_output_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: section [%s]: Buffer size "
-						"cannot be less than 1",
+				throw Error(misc::fmt("%s: section [%s]: Buffer"
+						" size cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
 			buffer = node->addOutputBuffer(buffer_size, connection);
 			bus->addSourceBuffer(buffer);
 		}
+
+		// The node only receives through the port
 		else if (!strcasecmp(type.c_str(), "Receiver"))
 		{
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_input_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: section [%s]: Buffer size "
-						"cannot be less than 1",
+				throw Error(misc::fmt("%s: section [%s]: Buffer"
+						" size cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
 			buffer = node->addInputBuffer(buffer_size, connection);
 			bus->addDestinationBuffer(buffer);
 		}
+
+		// The node can both send and receive through the port
 		else if (!strcasecmp(type.c_str(), "Bidirectional"))
 		{
+			// Setting the size of the buffer
 			buffer_size = ini_file->ReadInt(section, "BufferSize");
 			if (buffer_size == 0)
 			{
-				buffer = node->addOutputBuffer(default_output_buffer_size,
+				buffer = node->addOutputBuffer(
+						default_output_buffer_size,
 						connection);
 				bus->addSourceBuffer(buffer);
-				buffer = node->addInputBuffer(default_input_buffer_size,
+				buffer = node->addInputBuffer(
+						default_input_buffer_size,
 						connection);
 				bus->addDestinationBuffer(buffer);
 			}
@@ -347,16 +366,19 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 			}
 			else if (buffer_size < 0)
 			{
-				throw Error(misc::fmt("%s: section [%s]: Buffer size "
-						"cannot be less than 1.", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: section [%s]: "
+						"Buffer size cannot be less "
+						"than 1.", 
+						ini_file->getPath().c_str(),
 						section.c_str()));
 			}
 		}
 		else
 		{
-			throw misc::Error(misc::fmt("%s: section [%s]: Type '%s' "
-					"is not recognized",
-					ini_file->getPath().c_str(), section.c_str(),
+			throw misc::Error(misc::fmt("%s: section [%s]: Type "
+					"'%s' is not recognized",
+					ini_file->getPath().c_str(), 
+					section.c_str(),
 					type.c_str()));
 		}
 	}
@@ -391,45 +413,57 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 				!strcasecmp(type.c_str(), "Unidirectional"))
 		{
 			// Get source node
-			std::string src_name = ini_file->ReadString(section, "Source");
+			std::string src_name = ini_file->ReadString(
+					section, "Source");
 			if (src_name.empty())
-				throw Error(misc::fmt("%s: Source node is not provided for "
-						"link '%s'.\n",	ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: Source node is not "
+						"provided for link '%s'.\n",	
+						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
 			Node *source = getNodeByName(src_name);
 			if (!source)
-				throw Error(misc::fmt("%s: Source node '%s' is invalid "
-						"for link '%s'.\n",	ini_file->getPath().c_str(),
-						src_name.c_str(), link_name.c_str()));
+				throw Error(misc::fmt("%s: Source node '%s' is "
+						"invalid for link '%s'.\n",
+						ini_file->getPath().c_str(),
+						src_name.c_str(), 
+						link_name.c_str()));
 
 			// Get destination node
-			std::string dst_name = ini_file->ReadString(section, "Dest");
+			std::string dst_name = ini_file->ReadString(
+						section, "Dest");
 
 			if (dst_name.empty())
-				throw Error(misc::fmt("%s: Destination node is not provided"
-						" for link '%s'.\n", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: Destination node is "
+						"not provided for link '%s'.\n", 
+						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
 			Node *destination = getNodeByName(dst_name);
 			if (!destination)
-				throw Error(misc::fmt("%s: Destination node '%s' is "
-						"invalid for link '%s'.\n",
-						ini_file->getPath().c_str(), dst_name.c_str(),
+				throw Error(misc::fmt("%s: Destination node "
+						"'%s' is invalid for link "
+						"'%s'.\n",
+						ini_file->getPath().c_str(), 
+						dst_name.c_str(),
 						link_name.c_str()));
 
 			// Make sure link has different source and destination
 			if (source == destination)
-				throw Error(misc::fmt("%s: Link '%s', source and destination"
-						" cannot be the same.\n", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: Link '%s', source "
+						"and destination cannot "
+						"be the same.\n", 
+						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
 			// Bandwidth
 			int bandwidth = ini_file->ReadInt(section, "Bandwidth",
 					default_bandwidth);
 			if (bandwidth < 1)
-				throw Error(misc::fmt("%s: Link '%s', bandwidth cannot "
-						"be zero/negative.\n", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: Link '%s', "
+						"bandwidth cannot be "
+						"zero/negative.\n", 
+						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
 			// Get number of virtual channels
@@ -437,8 +471,10 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 					"VC", 1);
 			if (num_virtual_channel < 1)
 			{
-				throw Error(misc::fmt("%s: Link '%s', virtual channel cannot "
-						"be zero/negative.\n", ini_file->getPath().c_str(),
+				throw Error(misc::fmt("%s: Link '%s', virtual "
+						"channel cannot be "
+						"zero/negative.\n", 
+						ini_file->getPath().c_str(),
 						link_name.c_str()));
 			}
 
@@ -464,8 +500,10 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 		else
 		{
 			throw Error(misc::fmt("%s: Link type '%s' is not "
-					"supported.\n%s", ini_file->getPath().c_str(),
-					type.c_str(), System::err_config_note));
+					"supported.\n%s", 
+					ini_file->getPath().c_str(),
+					type.c_str(), 
+					System::err_config_note));
 		}
 
 	}
@@ -688,7 +726,7 @@ void Network::Dump(std::ostream &os) const
 	for (auto &node : nodes)
 		node->Dump(os);
 
-	//Creating an empty line in the dump before starting the next network
+	// Creating an empty line in the dump before starting the next network
 	os << "\n";
 }
 
@@ -813,17 +851,19 @@ Message *Network::Send(EndNode *source_node,
 	{
 		Packet *packet = message->getPacket(i);
 
-		// Update the trace with the new packet and its location
+		// Update the trace with the new packet and its state
 		net::System::trace << misc::fmt("net.new_packet net=\"%s\" "
 				"name=\"P-%lld:%d\" size=%d state=\"%s:packetizer\"\n",
 				name.c_str(), message->getId(),
 				packet->getId(), packet->getSize(),
 				source_node->getName().c_str());
+
+		// Update the trace with the new packet association
 		net::System::trace << misc::fmt("net.packet_msg net=\"%s\" "
 				"name=\"P-%lld:%d\" message=\"M-%lld\"\n",
 				name.c_str(), message->getId(),
 				packet->getId(), message->getId());
-
+		
 		// Create event frame
 		auto frame = misc::new_shared<Frame>(packet);
 
@@ -831,7 +871,14 @@ Message *Network::Send(EndNode *source_node,
 		// pass any receive event
 		frame->automatic_receive = !receive_event;
 
-		// Schedule send event
+		// Schedule send event. The "Execute" function is used instead of 
+		// the "Call" function, since the "Call" function schedules the
+		// event for later, while "Execute" instantly start the event
+		// handling. With "Execute", the packet acquires the space in
+		// the buffer, and if the buffer is full, the next packet
+		// cannot traverse forward, until enough space is available.
+		// However with "Call", the buffer entry is not reserved, so
+		// a race condition would occur.
 		esim_engine->Execute(System::event_send, frame, receive_event);
 	}
 
@@ -893,17 +940,19 @@ void Network::Receive(EndNode *node, Message *message)
 		Buffer *buffer = packet->getBuffer();
 		buffer->RemovePacket(packet);
 
-		// Updating the trace with extraction of the packet and ending it
-	    System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
-	    		"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
-	    		name.c_str(),
-	    		buffer->getNode()->getName().c_str(),
-	    		buffer->getName().c_str(),
-	    		message->getId(), packet->getId(),
-	    		buffer->getOccupancyByte());
-	    System::trace << misc::fmt("net.end_packet net=\"%s\" "
-	    		"name=\"P-%lld:%d\"\n",
-	    		name.c_str(), message->getId(), packet->getId());
+		// Updating the trace with extraction of the packet from the buffer
+		System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
+				"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+				name.c_str(),
+				buffer->getNode()->getName().c_str(),
+				buffer->getName().c_str(),
+				message->getId(), packet->getId(),
+				buffer->getOccupancyInBytes());
+
+		// Updating the trace with end of packet transmission information
+		System::trace << misc::fmt("net.end_packet net=\"%s\" "
+				"name=\"P-%lld:%d\"\n",
+				name.c_str(), message->getId(), packet->getId());
 	}
 
 	// Dump debug information
