@@ -80,14 +80,14 @@ void Buffer::UpdateOccupancyInformation()
 	long long cycle = system->getCycle();
 
 	// Accumulate previous values
-	long long cycles = cycle - occupancy_measured_cycles;
-	occupancy_accumulated_packets += occupancy_packet_value * cycles;
-	occupancy_accumulated_bytes += occupancy_byte_value * cycles;
+	long long cycles = cycle - occupancy_measured_cycle;
+	accumulated_occupancy_in_packets += occupancy_in_packets * cycles;
+	accumulated_occupancy_in_bytes += occupancy_in_bytes * cycles;
 
 	// Storing the new samples for next use
-	occupancy_byte_value = count;
-	occupancy_packet_value = packets.size();
-	occupancy_measured_cycles = cycle;
+	occupancy_in_bytes = count;
+	occupancy_in_packets = packets.size();
+	occupancy_measured_cycle = cycle;
 }
 
 
@@ -127,11 +127,11 @@ void Buffer::Dump(std::ostream &os)
 	System *system = System::getInstance();
 	long long cycle = system->getCycle();
 	os << misc::fmt("%s.PacketOccupancy = %.2f\n", name.c_str(), cycle ?
-			(double) occupancy_accumulated_packets / cycle : 0.0);
+			(double) accumulated_occupancy_in_packets / cycle : 0.0);
 	os << misc::fmt("%s.ByteOccupancy = %.2f\n", name.c_str(), cycle ?
-			(double) occupancy_accumulated_bytes / cycle : 0.0);
+			(double) accumulated_occupancy_in_bytes / cycle : 0.0);
 	os << misc::fmt("%s.Utilization = %.2f\n", name.c_str(), cycle ?
-			(double) occupancy_accumulated_bytes / cycle / size : 0.0);
+			(double) accumulated_occupancy_in_bytes / cycle / size : 0.0);
 }
 
 }  // namespace net

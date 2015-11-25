@@ -75,19 +75,19 @@ class Buffer
 	//
 
 	// Current byte occupancy of the buffer
-	int occupancy_byte_value = 0;
+	int occupancy_in_bytes = 0;
 
 	// current packet occupancy of the buffer
-	int occupancy_packet_value = 0;
+	int occupancy_in_packets = 0;
 
 	// Last time buffer occupancy was measured
-	long long occupancy_measured_cycles = 0;
+	long long occupancy_measured_cycle = 0;
 
 	// Accumulated bytes that occupied the buffer
-	long long occupancy_accumulated_bytes = 0;
+	long long accumulated_occupancy_in_bytes = 0;
 
 	// Accumulated packets that occupied the buffer
-	long long occupancy_accumulated_packets = 0;
+	long long accumulated_occupancy_in_packets = 0;
 
 public:
 
@@ -127,7 +127,7 @@ public:
 	Buffer *getScheduledBuffer() const { return scheduled_buffer; }
 
 	/// Get the buffer's occupancy
-	int getOccupancyByte() const { return occupancy_byte_value; }
+	int getOccupancyInBytes() const { return occupancy_in_bytes; }
 
 	/// Set the scheduled buffer
 	void setScheduledBuffer(Buffer *scheduled_buffer)
