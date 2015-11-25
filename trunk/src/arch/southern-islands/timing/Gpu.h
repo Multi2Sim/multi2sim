@@ -49,32 +49,13 @@ public:
 	static const misc::StringMap register_allocation_granularity_map;
 
 private:
-
-	//
-	// Configuration
-	//
-
-	// Register allocation size
-	static unsigned register_allocation_size;
-
-	// Number of vector registers per compute unit
-	static int num_vector_registers;
-	
-	// Allocation size of lds memory 
-	static int lds_allocation_size; 
-
-	// Size of lds memory
-	static int lds_size;
-	
-	// MMU used by this GPU
-	std::unique_ptr<mem::Mmu> mmu;
-
-
-
-
+		
 	//
 	// Class members
 	//
+	
+	// MMU used by this GPU
+	std::unique_ptr<mem::Mmu> mmu;
 
 	// Vector of compute units
 	std::vector<std::unique_ptr<ComputeUnit>> compute_units;
@@ -104,6 +85,28 @@ public:
 
 	// Number of compute units
 	static int num_compute_units;
+	
+
+
+
+	//
+	// Configuration
+	//
+
+	// Register allocation size
+	static unsigned register_allocation_size;
+
+	// Number of scalar registers per compute unit
+	static int num_scalar_registers;
+	
+	// Number of vector registers per compute unit
+	static int num_vector_registers;
+	
+	// Allocation size of lds memory 
+	static int lds_allocation_size; 
+
+	// Size of lds memory
+	static int lds_size;
 
 
 

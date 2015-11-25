@@ -20,6 +20,8 @@
 #ifndef ARCH_SOUTHERN_ISLANDS_TIMING_TIMING_H
 #define ARCH_SOUTHERN_ISLANDS_TIMING_TIMING_H
 
+#include <fstream>
+
 #include <arch/common/Arch.h>
 #include <arch/common/Timing.h>
 #include <lib/esim/Trace.h>
@@ -146,6 +148,13 @@ public:
 	/// See comm::Timing::ParseMemoryConfigurationEntry() for details.
 	void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section) override;
+	
+	/// Dump the configuration of the GPU and compute units
+	void DumpConfiguration(std::ofstream &os);
+
+	/// Dump a report of all the statistics collected during the execution
+	/// of one or more OpenCL kernels 
+	void DumpReport();
 	
 	/// Return the number of entry modules.
 	/// See comm::Timing::getNumEntryModules() for details.
