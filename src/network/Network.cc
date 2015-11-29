@@ -412,7 +412,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 		if (!strcasecmp(type.c_str(), "Bidirectional") ||
 				!strcasecmp(type.c_str(), "Unidirectional"))
 		{
-			// Get source node
+			// Get source node name
 			std::string src_name = ini_file->ReadString(
 					section, "Source");
 			if (src_name.empty())
@@ -421,6 +421,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
+			// Get source node using name
 			Node *source = getNodeByName(src_name);
 			if (!source)
 				throw Error(misc::fmt("%s: Source node '%s' is "
@@ -429,7 +430,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						src_name.c_str(), 
 						link_name.c_str()));
 
-			// Get destination node
+			// Get destination node name
 			std::string dst_name = ini_file->ReadString(
 						section, "Dest");
 
@@ -439,6 +440,7 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						ini_file->getPath().c_str(),
 						link_name.c_str()));
 
+			// Get destination node using name
 			Node *destination = getNodeByName(dst_name);
 			if (!destination)
 				throw Error(misc::fmt("%s: Destination node "
@@ -470,14 +472,33 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 			int num_virtual_channel = ini_file->ReadInt(section,
 					"VC", 1);
 			if (num_virtual_channel < 1)
-			{
 				throw Error(misc::fmt("%s: Link '%s', virtual "
 						"channel cannot be "
 						"zero/negative.\n", 
 						ini_file->getPath().c_str(),
 						link_name.c_str()));
-			}
 
+			// Get the input buffer size for link
+			int input_buffer_size = ini_file->ReadInt(section,
+					"InputBufferSize", 
+					default_input_buffer_size);
+			if (input_buffer_size < 1)
+				throw Error(misc::fmt("%s: Link '%s', input "
+						"buffer size cannot be "
+						"zero/negative.\n",
+						ini_file->getPath().c_str(),
+						link_name.c_str()));
+
+			// Get the output buffer size for link
+			int output_buffer_size = ini_file->ReadInt(section,
+					"OutputBufferSize",
+					default_output_buffer_size);
+			if (output_buffer_size < 1)
+				throw Error(misc::fmt("%s: Link '%s', output "
+						"buffer size cannot be "
+						"zero/negative.\n",
+						ini_file->getPath().c_str(),
+						link_name.c_str()));
 
 			// Add link
 			if (!strcasecmp(type.c_str(), "Bidirectional"))
@@ -485,16 +506,16 @@ void Network::ParseConfigurationForLinks(misc::IniFile *ini_file)
 						source,
 						destination,
 						bandwidth,
-						default_input_buffer_size,
-						default_output_buffer_size,
+						input_buffer_size,
+						output_buffer_size,
 						num_virtual_channel);
 			else if (!strcasecmp(type.c_str(), "Unidirectional"))
 				addLink(link_name,
 						source,
 						destination,
 						bandwidth,
-						default_input_buffer_size,
-						default_output_buffer_size,
+						input_buffer_size,
+						output_buffer_size,
 						num_virtual_channel);
 		}
 		else
