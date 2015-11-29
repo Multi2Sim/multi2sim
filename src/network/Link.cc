@@ -55,7 +55,6 @@ Link::Link(Network *network,
 				destination_buffer_size, this);
 		addDestinationBuffer(destination_buffer);
 	}
-
 }
 
 
