@@ -1296,19 +1296,6 @@ void WorkItem::ExecuteInst_SBR()
 }
 
 
-void WorkItem::ExecuteInst_BARRIER()
-{
-	// Suspend the work item
-	status = WorkItemStatusSuspend;
-
-	// Notify the work group
-	work_group->HitBarrier(getAbsoluteFlattenedId());
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_WAVEBARRIER()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -1415,30 +1402,9 @@ void WorkItem::ExecuteInst_ICALL()
 }
 
 
-void WorkItem::ExecuteInst_RET()
-{
-	// Return the function
-	ReturnFunction();
-	//if (Emulator::isa_debug)
-	//	Backtrace(Emulator::isa_debug);
-}
-
-
-
 void WorkItem::ExecuteInst_ALLOCA()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
-{
-	// Get operand
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	unsigned int size = getWorkGroup()->getCurrentWorkGroupSize(dim);
-	setOperandValue(0, &size);
-	MovePcForwardByOne();
 }
 
 
@@ -1472,48 +1438,6 @@ void WorkItem::ExecuteInst_PACKETID()
 }
 
 
-void WorkItem::ExecuteInst_WORKGROUPID()
-{
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = work_group->getGroupIdX();
-		setOperandValue(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = work_group->getGroupIdY();
-		setOperandValue(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = work_group->getGroupIdZ();
-		setOperandValue(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item absolute id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
-}
-
-
 void WorkItem::ExecuteInst_WORKGROUPSIZE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -1529,48 +1453,6 @@ void WorkItem::ExecuteInst_WORKITEMFLATABSID()
 void WorkItem::ExecuteInst_WORKITEMFLATID()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_WORKITEMID()
-{
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = getLocalIdX();
-		setOperandValue(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = getLocalIdY();
-		setOperandValue(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = getLocalIdZ();
-		setOperandValue(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
 }
 
 

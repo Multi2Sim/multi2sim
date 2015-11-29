@@ -29,8 +29,7 @@
 #include "BrInstructionWorker.h"
 #include "BarrierInstructionWorker.h"
 #include "CbrInstructionWorker.h"
-#include "ShlInstructionWorker.h"
-#include "ShrInstructionWorker.h"
+#include "CurrentWorkGroupSizeInstructionWorker.h"
 #include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "GridSizeInstructionWorker.h"
@@ -43,8 +42,12 @@
 #include "MovInstructionWorker.h"
 #include "OrInstructionWorker.h"
 #include "RetInstructionWorker.h"
+#include "ShlInstructionWorker.h"
+#include "ShrInstructionWorker.h"
 #include "StInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
+#include "WorkItemIdInstructionWorker.h"
+#include "WorkGroupIdInstructionWorker.h"
 
 
 namespace HSA
@@ -553,6 +556,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_CURRENTWORKGROUPSIZE:
+
+		return misc::new_unique<CurrentWorkGroupSizeInstructionWorker>(
+				this, stack_top);
+
 	case BRIG_OPCODE_SHL:
 
 		return misc::new_unique<ShlInstructionWorker>(this, stack_top);
@@ -617,6 +625,16 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 		return misc::new_unique<WorkItemAbsIdInstructionWorker>(
 				this, stack_top);
 
+	case BRIG_OPCODE_WORKITEMID:
+
+		return misc::new_unique<WorkItemIdInstructionWorker>(
+				this, stack_top);
+
+	case BRIG_OPCODE_WORKGROUPID:
+
+		return misc::new_unique<WorkGroupIdInstructionWorker>(
+				this, stack_top);
+
 	default:
 		throw misc::Panic(misc::fmt("Opcode %s (%d) not implemented.",
 				AsmService::OpcodeToString(opcode).c_str(),
@@ -648,7 +666,7 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		if (getAbsoluteFlattenedId() == 1) 
+		if (getAbsoluteFlattenedId() == 0)
 		{
 			Emulator::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
@@ -674,7 +692,7 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (getAbsoluteFlattenedId() == 1) 
+		if (getAbsoluteFlattenedId() == 0)
 		{
 			if (Emulator::isa_debug)
 				stack_top->Dump(Emulator::isa_debug);

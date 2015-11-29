@@ -65,6 +65,9 @@ libemulator_a_SOURCES = \
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
 		\
+		CurrentWorkGroupSizeInstructionWorker.h \
+		CurrentWorkGroupSizeInstructionWorker.cc \
+		\
 		CmpInstructionWorker.h \
 		CmpInstructionWorker.cc \
 		\
@@ -107,7 +110,13 @@ libemulator_a_SOURCES = \
 		SubInstructionWorker.cc \
 		\
 		WorkItemAbsIdInstructionWorker.h \
-		WorkItemAbsIdInstructionWorker.cc
+		WorkItemAbsIdInstructionWorker.cc \
+		\
+		WorkItemIdInstructionWorker.h \
+		WorkItemIdInstructionWorker.cc \
+		\
+		WorkGroupIdInstructionWorker.h \
+		WorkGroupIdInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 
