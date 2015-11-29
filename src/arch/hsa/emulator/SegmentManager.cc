@@ -28,7 +28,7 @@ SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
 		Manager(memory)
 {
 	// Reserve 4 byte for null pointer
-	base_address = Allocate(4, 1);
+	Allocate(4, 1);
 }
 
 
@@ -42,43 +42,6 @@ unsigned SegmentManager::Allocate(unsigned size, unsigned alignment)
 
 SegmentManager::~SegmentManager()
 {
-	if (size == 0)
-		return;
-
-	// Clear the memory occupied by the segment
-	mem::Manager *main_manager = Emulator::getInstance()
-			->getMemoryManager();
-	main_manager->Free(base_address);
-}
-
-
-void SegmentManager::Free(unsigned address)
-{
-	// Dump information into debug file
-	debug << misc::fmt("Free pointer at 0x%x.\n", address);
-
-	// Get the chunk to be freed
-	auto it = chunks.find(address + base_address);
-	if (it == chunks.end())
-	{
-		throw Error("Trying to free a pointer not created by Allocate "
-				"or has already been freed.");
-	}
-
-	// Get the pointer size when it is allocated
-	unsigned pointer_size = it->second->getSize();
-
-	// Remove the pointer
-	RemovePointer(it->second.get());
-
-	// Add the hole
-	Chunk *hole = CreateHole(address + base_address, pointer_size);
-
-	// Merge Holes
-	MergeHoles(hole);
-
-	// Dump free result
-	if (debug) Dump(debug);
 }
 
 
