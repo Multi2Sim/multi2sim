@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
+ *  Copyright (C) 2015  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -30,18 +30,37 @@ namespace net
 
 class Vertex : public misc::Vertex
 {
+
 	friend class Graph;
 
+public:
+	// Vertex kind
+	enum Kind
+	{
+		KindInvalid = 0,
+		KindNode,
+		KindDummy
+	};
+
+
+private:
 	// Associated node with the vertex
 	Node *node;
 
+	Kind kind;
+
+
 public:
 	// Constructor
-	Vertex(Node *node, std::string name, VertexKind kind):
-			misc::Vertex(name, kind),
-			node(node)
+	Vertex(Node *node, std::string name, Kind kind):
+			misc::Vertex(name),
+			node(node),
+			kind(kind)
 	{
 	}
+
+	// Return the vertex kind
+	Kind getKind() const { return kind; }
 };
 
 class Edge : public misc::Edge

@@ -4221,6 +4221,8 @@ TEST(TestSystemEvents, config_1_evict_0)
 	}
 }
 
+/* TODO: This test will be added again when the support for the test
+is provided in the multi2sim 
 TEST(TestSystemEvents, test_flood)
 {
 	static std::string mem_config_flood =
@@ -4364,7 +4366,7 @@ TEST(TestSystemEvents, test_flood)
 	EXPECT_REGEX_MATCH(misc::fmt("Violation in number of outstanding"
 				"memory accesses").c_str(), message.c_str());
 }
-
+*/
 // TODO: Add find_and_lock, find_and_lock_port, find_and_lock_action, and
 // find_and_lock_finish tests.
 
