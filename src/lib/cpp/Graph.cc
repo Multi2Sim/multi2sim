@@ -107,7 +107,7 @@ void Graph::GreedyCycleRemoval()
 			edge->source_vertex = temp;
 
 			// Set the edge is reversed boolean
-			edge->reveresed = true;
+			edge->reversed = true;
 		}
 	}
 
@@ -155,20 +155,18 @@ int Graph::CoffmanGrahamLayering(int width)
 			if (vertex->key != 0)
 				continue;
 
-			bool isCandidate = true;
+			bool is_candidate= true;
 			for (auto &incoming_vertex : vertex->incoming_vertices)
 			{
 				if (incoming_vertex->key == 0)
 				{
-					isCandidate = false;
+					is_candidate = false;
 					break;
 				}
 			}
 
-			if (isCandidate)
-			{
+			if (is_candidate)
 				candidates.emplace_back(vertex.get());
-			}
 		}
 
 		// Choose one of the candidates for the current label

@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
+ *  Copyright (C) 2015  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ void Graph::Populate()
 
 		// Create vertex based on the node
 		vertices.emplace_back(misc::new_unique<Vertex>(node, node->getName(),
-				Vertex::VertexKindNode));
+				Vertex::KindNode));
 	}
 
 	// Create the initial edges
@@ -48,7 +48,7 @@ void Graph::Populate()
 	{
 
 		// Create edge based on the connection
-		bool reverse_edge = false;
+		bool bidirectional = false;
 		if (dynamic_cast<Link *>(network->getConnection(i)))
 		{
 			// Get the link associated with the edge
@@ -72,13 +72,14 @@ void Graph::Populate()
 				{
 					assert(edge->downstream_link);
 					edge->setUpstreamLink(link);
-					reverse_edge = true;
+					bidirectional = true;
 					break;
 				}
 			}
 
-			// If the reverse edge was not found, add the edge to the list
-			if (!reverse_edge)
+			// If the reverse edge was not found, which means the
+			// edge is not bidirectional,  add the edge to the list
+			if (!bidirectional)
 			{
 				edges.emplace_back(misc::new_unique<Edge>(link,
 						source_vertex, destination_vertex));
@@ -109,9 +110,9 @@ void Graph::AddDummyVertices()
 
 			// Creating a dummy vertices and adding it to the vertex list
 			vertices.emplace_back(misc::new_unique<Vertex>(nullptr, "dummy",
-					Vertex::VertexKindDummy));
+					Vertex::KindDummy));
 			Vertex *dummy = misc::cast<Vertex *>(vertices.back().get());
-			assert(dummy->vertex_kind == Vertex::VertexKindDummy);
+			assert(dummy->kind == Vertex::KindDummy);
 
 			// Place the dummy vertex one layer below the source vertex.
 			// Just one dummy vertex is added, while next dummy vertices
@@ -155,7 +156,7 @@ void Graph::AddDummyVertices()
 			edges.emplace_back(misc::new_unique<Edge>(edge->downstream_link,
 					dummy, destination));
 			Edge *dummy_edge = misc::cast<Edge *>(edges.back().get());
-			dummy_edge->reveresed = edge->reveresed;
+			dummy_edge->reversed = edge->reversed;
 			dummy_edge->upstream_link = edge->upstream_link;
 		}
 	}
@@ -171,7 +172,7 @@ void Graph::LayeredDrawing()
 	GreedyCycleRemoval();
 
 	// Maximum number of nodes in each layer
-	int width = vertices.size() / 2 + 1;
+	int width = getNumVertices() / 2 + 1;
 
 	// Applying the main layering algorithm
 	int num_layers = CoffmanGrahamLayering(width);
@@ -194,12 +195,12 @@ void Graph::Scale()
 {
 	// Calculating an optimal distance between every two adjacent vertex
 	// while center aligning the graph
-	int optimal_distance = max_vertices_in_layers * vertices.size() /
-			(2 * max_vertices_in_layers - 1);
-	for (unsigned i = 0; i < vertices.size(); i++)
+	int optimal_distance = getMaxVerticesInLayers() * getNumVertices() /
+			(2 * getMaxVerticesInLayers() - 1);
+	for (int i = 0; i < getNumVertices() ; i++)
 	{
-		Vertex *vertex = misc::cast<Vertex *>(vertices[i].get());
-		vertex->x_value = ((2 * vertex->x_value) + max_vertices_in_layers
+		Vertex *vertex = misc::cast<Vertex *>(getVertex(i));
+		vertex->x_value = ((2 * vertex->x_value) + getMaxVerticesInLayers()
 				- vertex->neighbors) * optimal_distance;
 	}
 }
@@ -212,36 +213,36 @@ void Graph::DumpGraph(std::ostream &os) const
 	os << misc::fmt("Title = \" Network: %s \"\n", network->getName().c_str());
 
 	// Add the information about the vertices to the graph file
-	for (auto &it : vertices)
+	for (int i = 0; i < getNumVertices(); i++)
 	{
-		Vertex *vertex = misc::cast<Vertex *>(it.get());
+		Vertex *vertex = misc::cast<Vertex *>(getVertex(i));
 
 		// Network nodes have different representation than dummy nodes
-		if (vertex->vertex_kind == misc::Vertex::VertexKindNode)
+		if (vertex->kind == Vertex::KindNode)
 		{
 			// Two separate node types (end-node, switch) have different
 			// color representations in the graph
 			if (dynamic_cast<EndNode *>(vertex->node))
 				os << misc::fmt("node = %s 0 %f %d\n", vertex->name.c_str(),
-					(double) vertex->x_value / vertices.size(),
+					(double) vertex->x_value / getNumVertices(),
 					vertex->y_value);
 			else
 				os << misc::fmt("node = %s 1 %f %d\n", vertex->name.c_str(),
-					(double) vertex->x_value / vertices.size(),
+					(double) vertex->x_value / getNumVertices(),
 					vertex->y_value);
 		}
-		else if (vertex->vertex_kind == Vertex::VertexKindDummy)
+		else if (vertex->kind == Vertex::KindDummy)
 		{
 			os << misc::fmt("node = %s 3 %f %d\n", vertex->name.c_str(),
-				(double) vertex->x_value / vertices.size(),
+				(double) vertex->x_value / getNumVertices(),
 				vertex->y_value);
 		}
 	}
 
 	// Add the information about the edges to the graph file
-	for (auto &it : edges)
+	for (int i = 0; i < getNumEdges(); i++)
 	{
-		Edge *edge = misc::cast<Edge *>(it.get());
+		Edge *edge = misc::cast<Edge *>(getEdge(i));
 
 		Vertex *source_vertex = misc::cast<Vertex *>(edge->
 				getSourceVertex());
@@ -270,9 +271,9 @@ void Graph::DumpGraph(std::ostream &os) const
 					link->getTransferredBytes() / (cycle *
 							link->getBandwidth()) : 0) * 10);
 			os << misc::fmt("link = %f %d %f %d %d %d\n",
-					(double) source_vertex->x_value / vertices.size(),
+					(double) source_vertex->x_value / getNumVertices(),
 					source_vertex->y_value,
-					(double) destination_vertex->x_value / vertices.size(),
+					(double) destination_vertex->x_value / getNumVertices(),
 					destination_vertex->y_value,
 					utilization, edge_type);
 		}
@@ -282,9 +283,9 @@ void Graph::DumpGraph(std::ostream &os) const
 				link->getTransferredBytes() / (cycle *
 						link->getBandwidth()) : 0) * 10);
 		os << misc::fmt("link = %f %d %f %d %d %d\n",
-				(double) destination_vertex->x_value / vertices.size(),
+				(double) destination_vertex->x_value / getNumVertices(),
 				destination_vertex->y_value,
-				(double) source_vertex->x_value / vertices.size(),
+				(double) source_vertex->x_value / getNumVertices(),
 				source_vertex->y_value,
 				utilization, edge_type);
 	}
