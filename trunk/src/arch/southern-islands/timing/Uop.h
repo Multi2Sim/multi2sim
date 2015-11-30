@@ -116,6 +116,9 @@ public:
 		// Active after instruction emulation
 		bool active = true;
 
+		// Mark a work item that has successfully made a cache access
+		bool accessed_cache = false;
+
 		// Number of lds_accesses
 		int lds_access_count;
 

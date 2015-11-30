@@ -296,6 +296,10 @@ void VectorMemoryUnit::Memory()
 					__FUNCTION__));
 		}
 
+		// This variable keeps track if any work items are unsuccessful
+		// in making an access to the vector cache.
+		bool all_work_items_accessed = true;
+
 		// Access global memory
 		assert(!uop->global_memory_witness);
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
@@ -315,6 +319,12 @@ void VectorMemoryUnit::Memory()
 						&uop->work_item_info_list[
 						work_item->getIdInWavefront()];
 
+				// Check if the work item info struct has
+				// already made a successful vector cache
+				// access. If so, move on to the next work item.
+				if (work_item_info->accessed_cache)	
+					continue;
+
 				// Translate virtual address to a physical 
 				// address
 				unsigned physical_address = compute_unit->
@@ -326,17 +336,39 @@ void VectorMemoryUnit::Memory()
 						address_space,
 						work_item_info->
 						global_memory_access_address);
+		
 
-				// Submit the access
-				compute_unit->vector_cache->Access(
-						module_access_type,
-						physical_address, 
-						&uop->global_memory_witness);
+				// Make sure we can access the vector cache. If 
+				// so, submit the access. If we can't access the
+				// cache, mark the accessed flag of the work 
+				// item info struct.
+				if (compute_unit->vector_cache->
+						canAccess(physical_address))
+				{
+					compute_unit->vector_cache->Access(
+							module_access_type,
+							physical_address, 
+							&uop->global_memory_witness);
+					work_item_info->accessed_cache = true;
+				}
+				else
+				{
+					all_work_items_accessed = false;
+				}
 
 				// Access global memory
 				uop->global_memory_witness--;
 			}
 		}
+
+		// Make sure that all the work items in the wavefront have 
+		// successfully accessed the vector cache. If not, the uop
+		// is not moved to the write buffer. Instead, the uop will
+		// be re-processed next cycle. Once all work items access
+		// the vector cache, the uop will be moved to the write buffer.
+		if (!all_work_items_accessed)
+			continue;
+
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "
