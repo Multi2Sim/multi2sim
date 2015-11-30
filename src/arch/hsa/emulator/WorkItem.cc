@@ -38,6 +38,7 @@
 #include "StInstructionWorker.h"
 #include "SubInstructionWorker.h"
 #include "LdaInstructionWorker.h"
+#include "MadInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
 #include "OrInstructionWorker.h"
@@ -586,13 +587,17 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<LdInstructionWorker>(this, stack_top);
 
-	case BRIG_OPCODE_MUL:
-
-		return misc::new_unique<MulInstructionWorker>(this, stack_top);
-
 	case BRIG_OPCODE_LDA:
 
 		return misc::new_unique<LdaInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MAD:
+
+		return misc::new_unique<MadInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MUL:
+
+		return misc::new_unique<MulInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_MOV:
 

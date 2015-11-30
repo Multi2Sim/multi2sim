@@ -80,16 +80,20 @@ libemulator_a_SOURCES = \
 		LdInstructionWorker.h \
 		LdInstructionWorker.cc \
 		\
-		MulInstructionWorker.h \
-		MulInstructionWorker.cc \
 		LdaInstructionWorker.h \
 		LdaInstructionWorker.cc \
+		\
+		MadInstructionWorker.h \
+		MadInstructionWorker.cc \
 		\
 		MemFenceInstructionWorker.h \
 		MemFenceInstructionWorker.cc \
 		\
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
+		\
+		MulInstructionWorker.h \
+		MulInstructionWorker.cc \
 		\
 		OrInstructionWorker.h \
 		OrInstructionWorker.cc \
