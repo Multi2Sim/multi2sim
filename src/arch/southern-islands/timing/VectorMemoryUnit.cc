@@ -328,7 +328,7 @@ void VectorMemoryUnit::Memory()
 						global_memory_access_address);
 
 				// Submit the access
-				compute_unit->scalar_cache->Access(
+				compute_unit->vector_cache->Access(
 						module_access_type,
 						physical_address, 
 						&uop->global_memory_witness);
