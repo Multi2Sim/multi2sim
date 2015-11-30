@@ -17,37 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Emulator.h"
-#include "SegmentManager.h"
+#ifndef ARCH_HSA_EMULATOR_BARRIERINSTRUCTIONWORKER_H
+#define ARCH_HSA_EMULATOR_BARRIERINSTRUCTIONWORKER_H
 
+#include "HsaInstructionWorker.h"
 
 namespace HSA
 {
 
-SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
-		Manager(memory)
+class BarrierInstructionWorker: public HsaInstructionWorker
 {
-	// Reserve 4 byte for null pointer
-	base_address = Allocate(4, 1);
-}
-
-
-unsigned SegmentManager::Allocate(unsigned size, unsigned alignment)
-{
-	unsigned flat_address = Manager::Allocate(size, alignment);
-	assert(flat_address >= base_address);
-	return flat_address - base_address;
-}
-
-
-SegmentManager::~SegmentManager()
-{
-}
-
-
-unsigned SegmentManager::getFlatAddress(unsigned address)
-{
-	return address + base_address;
-}
+public:
+	BarrierInstructionWorker(WorkItem *work_item,
+			StackFrame *stack_frame);
+	virtual ~BarrierInstructionWorker();
+	void Execute(BrigCodeEntry *instruction) override;
+};
 
 }  // namespace HSA
+
+#endif  // SRC_ARCH_HSA_EMULATOR_BARRIERINSTRUCTIONWORKER_H

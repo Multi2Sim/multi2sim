@@ -24,22 +24,31 @@
 #include "SegmentManager.h"
 
 #include "AddInstructionWorker.h"
+#include "AndInstructionWorker.h"
 #include "AtomicNoRetInstructionWorker.h"
 #include "BrInstructionWorker.h"
+#include "BarrierInstructionWorker.h"
 #include "CbrInstructionWorker.h"
-#include "ShlInstructionWorker.h"
-#include "ShrInstructionWorker.h"
+#include "CurrentWorkGroupSizeInstructionWorker.h"
 #include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
 #include "GridSizeInstructionWorker.h"
 #include "LdInstructionWorker.h"
+#include "MulInstructionWorker.h"
+#include "StInstructionWorker.h"
+#include "SubInstructionWorker.h"
 #include "LdaInstructionWorker.h"
+#include "MadInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
 #include "OrInstructionWorker.h"
 #include "RetInstructionWorker.h"
+#include "ShlInstructionWorker.h"
+#include "ShrInstructionWorker.h"
 #include "StInstructionWorker.h"
 #include "WorkItemAbsIdInstructionWorker.h"
+#include "WorkItemIdInstructionWorker.h"
+#include "WorkGroupIdInstructionWorker.h"
 
 
 namespace HSA
@@ -525,6 +534,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<AddInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_AND:
+
+		return misc::new_unique<AndInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_ATOMICNORET:
 
 		return misc::new_unique<AtomicNoRetInstructionWorker>(this,
@@ -535,9 +548,19 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<BrInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_BARRIER:
+
+		return misc::new_unique<BarrierInstructionWorker>(this,
+				stack_top);
+
 	case BRIG_OPCODE_CBR:
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_CURRENTWORKGROUPSIZE:
+
+		return misc::new_unique<CurrentWorkGroupSizeInstructionWorker>(
+				this, stack_top);
 
 	case BRIG_OPCODE_SHL:
 
@@ -568,6 +591,14 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<LdaInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_MAD:
+
+		return misc::new_unique<MadInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MUL:
+
+		return misc::new_unique<MulInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_MOV:
 
 		return misc::new_unique<MovInstructionWorker>(this, stack_top);
@@ -585,6 +616,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<StInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_SUB:
+
+		return misc::new_unique<SubInstructionWorker>(this, stack_top);
+
+
 	case BRIG_OPCODE_RET:
 
 		return misc::new_unique<RetInstructionWorker>(this, stack_top);
@@ -592,6 +628,16 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_WORKITEMABSID:
 
 		return misc::new_unique<WorkItemAbsIdInstructionWorker>(
+				this, stack_top);
+
+	case BRIG_OPCODE_WORKITEMID:
+
+		return misc::new_unique<WorkItemIdInstructionWorker>(
+				this, stack_top);
+
+	case BRIG_OPCODE_WORKGROUPID:
+
+		return misc::new_unique<WorkGroupIdInstructionWorker>(
 				this, stack_top);
 
 	default:
@@ -625,7 +671,7 @@ bool WorkItem::Execute()
 	BrigCodeEntry *inst = stack_top->getPc();
 	if (inst && inst->isInstruction())
 	{
-		if (getAbsoluteFlattenedId() == 1) 
+		if (getAbsoluteFlattenedId() == 0)
 		{
 			Emulator::isa_debug << misc::fmt("WorkItem: %d\n",
 					getAbsoluteFlattenedId());
@@ -651,7 +697,7 @@ bool WorkItem::Execute()
 		
 		// Record frame status after the instruction is executed
 		stack_top = getStackTop();
-		if (getAbsoluteFlattenedId() == 1) 
+		if (getAbsoluteFlattenedId() == 0)
 		{
 			if (Emulator::isa_debug)
 				stack_top->Dump(Emulator::isa_debug);

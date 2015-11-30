@@ -17,37 +17,32 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Emulator.h"
-#include "SegmentManager.h"
-
+#include "CurrentWorkGroupSizeInstructionWorker.h"
+#include "WorkItem.h"
 
 namespace HSA
 {
 
-SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
-		Manager(memory)
-{
-	// Reserve 4 byte for null pointer
-	base_address = Allocate(4, 1);
-}
-
-
-unsigned SegmentManager::Allocate(unsigned size, unsigned alignment)
-{
-	unsigned flat_address = Manager::Allocate(size, alignment);
-	assert(flat_address >= base_address);
-	return flat_address - base_address;
-}
-
-
-SegmentManager::~SegmentManager()
+CurrentWorkGroupSizeInstructionWorker::CurrentWorkGroupSizeInstructionWorker(
+		WorkItem *work_item,
+		StackFrame *stack_frame) :
+		HsaInstructionWorker(work_item, stack_frame)
 {
 }
 
 
-unsigned SegmentManager::getFlatAddress(unsigned address)
+CurrentWorkGroupSizeInstructionWorker::~CurrentWorkGroupSizeInstructionWorker()
 {
-	return address + base_address;
+}
+
+
+void CurrentWorkGroupSizeInstructionWorker::Execute(BrigCodeEntry *instruction)
+{
+	uint32_t dim;
+	operand_value_retriever->Retrieve(instruction, 1, &dim);
+	uint32_t size = work_item->getWorkGroup()->getCurrentWorkGroupSize(dim);
+	operand_value_writer->Write(instruction, 0, &size);
+	work_item->MovePcForwardByOne();
 }
 
 }  // namespace HSA

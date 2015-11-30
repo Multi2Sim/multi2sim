@@ -17,37 +17,9 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "Emulator.h"
-#include "SegmentManager.h"
-
+#include "MadInstructionWorker.h"
 
 namespace HSA
 {
-
-SegmentManager::SegmentManager(mem::Memory* memory, unsigned size) :
-		Manager(memory)
-{
-	// Reserve 4 byte for null pointer
-	base_address = Allocate(4, 1);
-}
-
-
-unsigned SegmentManager::Allocate(unsigned size, unsigned alignment)
-{
-	unsigned flat_address = Manager::Allocate(size, alignment);
-	assert(flat_address >= base_address);
-	return flat_address - base_address;
-}
-
-
-SegmentManager::~SegmentManager()
-{
-}
-
-
-unsigned SegmentManager::getFlatAddress(unsigned address)
-{
-	return address + base_address;
-}
 
 }  // namespace HSA

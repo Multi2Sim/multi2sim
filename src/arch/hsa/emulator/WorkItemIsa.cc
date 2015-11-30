@@ -509,81 +509,6 @@ void WorkItem::ExecuteInst_MIN()
 	MovePcForwardByOne();
 }
 
-template<typename T> void WorkItem::Inst_MUL_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 * src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_MUL()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action accoding to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_MUL_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_MUL_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_MUL_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_MUL_Aux<unsigned long long>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{	
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_F32:
-
-			Inst_MUL_Aux<float>();
-			break;
-
-		case BRIG_TYPE_F64:
-
-			Inst_MUL_Aux<double>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
 
 template<typename T>
 void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
@@ -803,82 +728,6 @@ void WorkItem::ExecuteInst_SQRT()
 }
 
 
-template<typename T> void WorkItem::Inst_SUB_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 - src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_SUB()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_SUB_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_SUB_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_SUB_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_SUB_Aux<unsigned int>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_F32:
-
-			Inst_SUB_Aux<float>();
-			break;
-
-		case BRIG_TYPE_F64:
-
-			Inst_SUB_Aux<double>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_TRUNC()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -906,52 +755,6 @@ void WorkItem::ExecuteInst_MUL24()
 void WorkItem::ExecuteInst_MUL24HI()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-template<typename T>
-void WorkItem::Inst_AND_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 & src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_AND()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst AND, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_AND_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_AND_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
 }
 
 
@@ -1493,19 +1296,6 @@ void WorkItem::ExecuteInst_SBR()
 }
 
 
-void WorkItem::ExecuteInst_BARRIER()
-{
-	// Suspend the work item
-	status = WorkItemStatusSuspend;
-
-	// Notify the work group
-	work_group->HitBarrier(getAbsoluteFlattenedId());
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_WAVEBARRIER()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -1612,30 +1402,9 @@ void WorkItem::ExecuteInst_ICALL()
 }
 
 
-void WorkItem::ExecuteInst_RET()
-{
-	// Return the function
-	ReturnFunction();
-	//if (Emulator::isa_debug)
-	//	Backtrace(Emulator::isa_debug);
-}
-
-
-
 void WorkItem::ExecuteInst_ALLOCA()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
-{
-	// Get operand
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	unsigned int size = getWorkGroup()->getCurrentWorkGroupSize(dim);
-	setOperandValue(0, &size);
-	MovePcForwardByOne();
 }
 
 
@@ -1669,48 +1438,6 @@ void WorkItem::ExecuteInst_PACKETID()
 }
 
 
-void WorkItem::ExecuteInst_WORKGROUPID()
-{
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = work_group->getGroupIdX();
-		setOperandValue(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = work_group->getGroupIdY();
-		setOperandValue(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = work_group->getGroupIdZ();
-		setOperandValue(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item absolute id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
-}
-
-
 void WorkItem::ExecuteInst_WORKGROUPSIZE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -1726,48 +1453,6 @@ void WorkItem::ExecuteInst_WORKITEMFLATABSID()
 void WorkItem::ExecuteInst_WORKITEMFLATID()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_WORKITEMID()
-{
-	unsigned int dim;
-	getOperandValue(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = getLocalIdX();
-		setOperandValue(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = getLocalIdY();
-		setOperandValue(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = getLocalIdZ();
-		setOperandValue(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
 }
 
 

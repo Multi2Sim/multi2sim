@@ -50,14 +50,23 @@ libemulator_a_SOURCES = \
 		AddInstructionWorker.h \
 		AddInstructionWorker.cc \
 		\
+		AndInstructionWorker.h \
+		AndInstructionWorker.cc \
+		\
 		AtomicNoRetInstructionWorker.h \
 		AtomicNoRetInstructionWorker.cc \
+		\
+		BarrierInstructionWorker.h \
+		BarrierInstructionWorker.cc \
 		\
 		BrInstructionWorker.h \
 		BrInstructionWorker.cc \
 		\
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
+		\
+		CurrentWorkGroupSizeInstructionWorker.h \
+		CurrentWorkGroupSizeInstructionWorker.cc \
 		\
 		CmpInstructionWorker.h \
 		CmpInstructionWorker.cc \
@@ -74,11 +83,17 @@ libemulator_a_SOURCES = \
 		LdaInstructionWorker.h \
 		LdaInstructionWorker.cc \
 		\
+		MadInstructionWorker.h \
+		MadInstructionWorker.cc \
+		\
 		MemFenceInstructionWorker.h \
 		MemFenceInstructionWorker.cc \
 		\
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
+		\
+		MulInstructionWorker.h \
+		MulInstructionWorker.cc \
 		\
 		OrInstructionWorker.h \
 		OrInstructionWorker.cc \
@@ -95,8 +110,17 @@ libemulator_a_SOURCES = \
 		ShrInstructionWorker.h \
 		ShrInstructionWorker.cc \
 		\
+		SubInstructionWorker.h \
+		SubInstructionWorker.cc \
+		\
 		WorkItemAbsIdInstructionWorker.h \
-		WorkItemAbsIdInstructionWorker.cc
+		WorkItemAbsIdInstructionWorker.cc \
+		\
+		WorkItemIdInstructionWorker.h \
+		WorkItemIdInstructionWorker.cc \
+		\
+		WorkGroupIdInstructionWorker.h \
+		WorkGroupIdInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 
