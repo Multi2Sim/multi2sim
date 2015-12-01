@@ -387,6 +387,31 @@ bool Module::isInFlightAccess(long long id)
 }
 
 
+void Module::DumpInFlightAddresses(std::ostream &os)
+{
+	esim::Engine *engine = esim::Engine::getInstance();
+	os << misc::fmt("[%s] In-flight blocks in cycle %lld:\n",
+			name.c_str(), engine->getCycle());
+	for (auto &pair : in_flight_block_addresses)
+	{
+		
+		unsigned block_address = pair.first;
+		Frame *frame = pair.second;
+		os << misc::fmt("\tkey (block_address) = 0x%x: "
+				"id = %lld, "
+				"address = 0x%x, "
+				"block_address = 0x%x\n",
+				block_address,
+				frame->getId(),
+				frame->getAddress(),
+				frame->getAddress() >> log_block_size);
+		frame->CheckMagic();
+		if (block_address != frame->getAddress() >> log_block_size)
+			throw misc::Panic("Invalid block address");
+	}
+}
+
+
 Frame *Module::canCoalesce(AccessType access_type,
 		unsigned address,
 		Frame *older_than_frame)

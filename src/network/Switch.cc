@@ -200,14 +200,15 @@ void Switch::Forward(Packet *packet)
 			input_buffer->getNode()->getName().c_str(),
 			input_buffer->getName().c_str(),
 			message->getId(), packet->getId(),
-			input_buffer->getOccupancyByte());
+			input_buffer->getOccupancyInBytes());
+
 	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
 			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			output_buffer->getNode()->getName().c_str(),
 			output_buffer->getName().c_str(),
 			message->getId(), packet->getId(),
-			output_buffer->getOccupancyByte());
+			output_buffer->getOccupancyInBytes());
 
 	// Schedule next event
 	esim_engine->Next(System::event_output_buffer, latency);

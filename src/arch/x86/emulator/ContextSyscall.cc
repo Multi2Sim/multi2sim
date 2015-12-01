@@ -698,7 +698,8 @@ int Context::ExecuteSyscall_open()
 
 	// Driver devices
 	comm::DriverPool *driver_pool = comm::DriverPool::getInstance();
-    if (driver_pool->isPathRegistered(full_path)) {
+	if (driver_pool->isPathRegistered(full_path))
+	{
 		// Attempt to open virtual file
 		comm::FileDescriptor *desc = SyscallOpenVirtualDevice(
 				full_path, flags, mode);

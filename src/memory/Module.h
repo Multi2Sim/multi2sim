@@ -268,6 +268,8 @@ private:
 
 	long long num_conflict_invalidations = 0;
 
+public:
+	
 	// Statistics for up-down accesses
 	long long num_reads = 0;
 	long long num_read_hits = 0;
@@ -303,8 +305,6 @@ private:
 	// Statistics that are possibly power related
 	long long num_directory_accesses = 0;
 	long long num_data_accesses = 0;
-
-public:
 
 	/// Constructor
 	Module(const std::string &name,
@@ -669,6 +669,10 @@ public:
 	/// Return whether an access with the given identifier is still in
 	/// flight. The access identifier is that returned by Access()
 	bool isInFlightAccess(long long id);
+
+	/// Dump information about all event-driven simulation frames associated
+	/// with in-flight accesses in the module.
+	void DumpInFlightAddresses(std::ostream &os = std::cout);
 
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,

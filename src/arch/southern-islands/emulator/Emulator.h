@@ -123,37 +123,44 @@ private:
 	// Will point to video_mem or shared_mem
 	mem::Memory *global_memory = nullptr;
 
-	// Number of OpenCL kernels executed
-	int ndrange_count = 0;              
-	
 	// Number of ndranges currently running
 	int ndranges_running = 0;
 	
+public:
+
+	//
+	// Statistics
+	//
+
+	// Number of OpenCL kernels executed
+	int num_ndranges = 0;              
+
 	// Number of OpenCL work groups executed
-	long long work_group_count = 0; 
+	long long num_work_groups = 0; 
 	
 	// Scalar ALU instructions executed
-	long long scalar_alu_inst_count = 0; 
+	long long num_scalar_alu_instructions = 0; 
 	
 	// Scalar mem instructions executed
-	long long scalar_mem_inst_count = 0; 
+	long long num_scalar_memory_instructions = 0; 
 	
 	// Branch instructions executed
-	long long branch_inst_count = 0;     
+	long long num_branch_instructions = 0;     
 	
 	// Vector ALU instructions executed
-	long long vector_alu_inst_count = 0; 
+	long long num_vector_alu_instructions = 0; 
 	
 	// LDS instructions executed
-	long long lds_inst_count = 0;        
+	long long num_lds_instructions = 0;        
 	
 	// Vector mem instructions executed
-	long long vector_mem_inst_count = 0; 
+	long long num_vector_memory_instructions = 0; 
 	
 	// Export instructions executed
-	long long export_inst_count = 0;     
+	long long num_export_instructions = 0;     
 
-public:
+
+
 
 	//
 	// Error class
@@ -255,8 +262,11 @@ public:
 		return os;
 	}
 
+	/// Get the total number of executed instructions
+	long long getNumInstructions() { return num_instructions; }
+
 	/// Get a new NDRange ID
-	unsigned getNewNDRangeID() { return ndrange_count++; }
+	unsigned getNewNDRangeID() { return num_ndranges++; }
 	
 	/// Get global memory
 	mem::Memory *getGlobalMemory() { return global_memory; }
@@ -271,7 +281,7 @@ public:
 	void setGlobalMemory(mem::Memory *memory) { global_memory = memory; }
 	
 	/// Set work_group_count
-	void setWorkGroupCount(long long count) { work_group_count = count; }
+	void setWorkGroupCount(long long count) { num_work_groups = count; }
 
 	// FIXME - List of running NDRanges already exists. This might need to
 	// go if the x86 emulator does not need the number of ndranges like in
@@ -293,28 +303,28 @@ public:
 	}
 	
 	/// Increment work_group_count
-	void incWorkGroupCount() { work_group_count++; }
+	void incWorkGroupCount() { num_work_groups++; }
 
 	/// Increment scalar_alu_inst_count
-	void incScalarAluInstCount() { scalar_alu_inst_count++; }
+	void incScalarAluInstCount() { num_scalar_alu_instructions++; }
 
 	/// Increment scalar_mem_inst_count
-	void incScalarMemInstCount() { scalar_mem_inst_count++; }
+	void incScalarMemInstCount() { num_scalar_memory_instructions++; }
 
 	/// Increment branch_inst_count
-	void incBranchInstCount() { branch_inst_count++; }
+	void incBranchInstCount() { num_branch_instructions++; }
 
 	/// Increment vector_alu_inst_count
-	void incVectorAluInstCount() { vector_alu_inst_count++; }
+	void incVectorAluInstCount() { num_vector_alu_instructions++; }
 
 	/// Increment lds_inst_count
-	void incLdsInstCount() { lds_inst_count++; }
+	void incLdsInstCount() { num_lds_instructions++; }
 
 	/// Increment vector_mem_inst_count
-	void incVectorMemInstCount() { vector_mem_inst_count++; }
+	void incVectorMemInstCount() { num_vector_memory_instructions++; }
 
 	/// Increment export_inst_count
-	void incExportInstCount() { export_inst_count++; }
+	void incExportInstCount() { num_export_instructions++; }
 
 	/// Dump the statistics summary
 	void DumpSummary(std::ostream &os);

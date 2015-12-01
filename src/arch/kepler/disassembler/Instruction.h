@@ -818,6 +818,27 @@ public:
 		unsigned long long int op2:			2; // 63:62
 	};
 
+	/// FADD
+	struct BytesFADD
+	{
+		unsigned long long int op0:			2; // 1:0
+		unsigned long long int dst:			8; // 9:2
+		unsigned long long int src1:			8; // 17:10
+		unsigned long long int pred:			4; // 21:18
+		unsigned long long int s:			1; // 22
+		unsigned long long int src2:			19; // 41:23
+		unsigned long long int round:			2; // 43:42
+		unsigned long long int unused:			3; // 46:44
+		unsigned long long int ftz:			1; // 47
+		unsigned long long int src2_negate:		1; // 48
+		unsigned long long int src1_abs:		1; // 49
+		unsigned long long int cc:			1; // 50
+		unsigned long long int src1_negate:		1; // 51
+		unsigned long long int src2_abs:		1; // 52
+		unsigned long long int sat:			1; // 53
+		unsigned long long int op1:			8; // 61:54
+		unsigned long long int op2:			2; // 63:62
+	};
 	/// Instruction bytes
 	union Bytes
 	{
@@ -860,6 +881,7 @@ public:
 		BytesISET     iset;
 		BytesFSET     fset;
 		BytesICMP     icmp;
+		BytesFADD     fadd;
 	};
 
 private:

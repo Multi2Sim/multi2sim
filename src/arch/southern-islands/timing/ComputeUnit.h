@@ -95,8 +95,8 @@ class ComputeUnit
 	// One instance of the vector memory unit
 	VectorMemoryUnit vector_memory_unit;
 
-	// Associated LDS Module
-	mem::Module *lds_module;
+	// Associated LDS module
+	std::unique_ptr<mem::Module> lds_module;
 
 	// Counter of identifiers assigned to uops in this compute unit
 	long long uop_id_counter = 0;
@@ -135,6 +135,12 @@ public:
 	/// The maximum number of wavefronts in a wavefront pool
 	static int max_wavefronts_per_wavefront_pool; 
 
+	// The total size of the Lds module
+	static int lds_size;
+	
+	// The allocation size of the Lds module
+	static int lds_alloc_size;
+	
 	// The latency of the Lds module
 	static int lds_latency;
 
@@ -181,7 +187,7 @@ public:
 	void RemoveWorkGroup(WorkGroup *work_group);
 
 	/// Return the associated LDS module
-	mem::Module *getLdsModule() const { return lds_module; }
+	mem::Module *getLdsModule() const { return lds_module.get(); }
 
 	/// Cache used for vector data
 	mem::Module *vector_cache = nullptr;
@@ -235,6 +241,9 @@ public:
 	
 	// Number of vectorr registers being written to
 	long long num_vreg_writes = 0;
+
+	// Number of total mapped work groups for the compute unit
+	long long num_mapped_work_groups = 0;
 };
 
 }

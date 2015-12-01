@@ -73,14 +73,14 @@ void Emulator::Dump(std::ostream &os) const
 	// FIXME: basic statistics, such as instructions, time...
 
 	// More statistics 
-	os << "NDRangeCount = " << ndrange_count << std::endl;
-	os << "WorkGroupCount = " << work_group_count << std::endl;
-	os << "BranchInstructions = " << branch_inst_count << std::endl;
-	os << "LDSInstructions = " << lds_inst_count << std::endl;
-	os << "ScalarALUInstructions = " << scalar_alu_inst_count << std::endl;
-	os << "ScalarMemInstructions = " << scalar_mem_inst_count << std::endl;
-	os << "VectorALUInstructions = " << vector_alu_inst_count << std::endl;
-	os << "VectorMemInstructions = " << vector_mem_inst_count << std::endl;
+	os << "NDRangeCount = " << num_ndranges << std::endl;
+	os << "WorkGroupCount = " << num_work_groups << std::endl;
+	os << "BranchInstructions = " << num_branch_instructions << std::endl;
+	os << "LDSInstructions = " << num_lds_instructions << std::endl;
+	os << "ScalarALUInstructions = " << num_scalar_alu_instructions << std::endl;
+	os << "ScalarMemInstructions = " << num_scalar_memory_instructions << std::endl;
+	os << "VectorALUInstructions = " << num_vector_alu_instructions << std::endl;
+	os << "VectorMemInstructions = " << num_vector_memory_instructions << std::endl;
 }
 
 

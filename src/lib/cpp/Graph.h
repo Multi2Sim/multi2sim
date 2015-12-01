@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
+ *  Copyright (C) 2015  Amir Kavyan Ziabari (aziabari@ece.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,16 +34,6 @@ class Vertex
 
 	friend class Graph;
 
-public:
-
-	// Vertex kind
-	enum VertexKind
-	{
-		VertexKindInvalid = 0,
-		VertexKindNode,
-		VertexKindDummy
-	};
-
 protected:
 
 	// Vertex name
@@ -63,15 +53,12 @@ protected:
 	std::vector<Vertex *> incoming_vertices;
 	std::vector<Vertex *> outgoing_vertices;
 
-	// Vertex kind
-	VertexKind vertex_kind;
 
 public:
 
 	// Constructor
-	Vertex(std::string name, VertexKind kind) :
-		name(name),
-		vertex_kind(kind)
+	Vertex(std::string name) :
+		name(name)
 	{
 	}
 
@@ -101,9 +88,6 @@ public:
 		return incoming_vertices[index];
 	}
 
-	// Return the vertex kind
-	VertexKind getVertexKind() const { return vertex_kind; }
-
 	// Sorting compare function based on the key
 	static bool Compare(const Vertex* vertex_a, const Vertex* vertex_b)
 	{
@@ -126,7 +110,7 @@ protected:
 	Vertex *destination_vertex;
 
 	// Reversed is set when the edge is reversed in cycle removal process
-	bool reveresed = false;
+	bool reversed = false;
 
 public:
 
@@ -147,10 +131,62 @@ public:
 	Vertex *getDestinationVertex() const { return destination_vertex; }
 };
 
+
 class Graph
 {
-
 protected:
+	// Number of vertices in the most crowded layer. This value can be less
+	// than the width, and is required for the cross reduction.
+	int max_vertices_in_layers = 0;
+
+	/// List of vertices in the graph
+	std::vector<std::unique_ptr<Vertex>> vertices;
+
+	/// List of edges in the graph
+	std::vector<std::unique_ptr<Edge>> edges;
+
+public:
+
+	//
+	// Vertex
+	//
+
+	// Get the number of vertices
+	int getNumVertices() const { return vertices.size(); }
+
+	// Get the vertex
+	Vertex *getVertex(int index) const
+	{ 
+		assert(index >= 0 && index < (int) vertices.size());
+		return vertices[index].get(); 
+	}
+
+
+
+	
+	//
+	// Edges
+	// 
+
+	// Get the number of edges
+	int getNumEdges() const { return edges.size(); }
+
+	// Get the edge
+	Edge *getEdge(int index) const
+	{
+		assert(index >=0 && index < (int) edges.size());
+		return edges[index].get(); 
+	}
+
+
+
+
+	//
+	// Class members
+	//
+
+	// Get maximum number of vertices in the largest layer
+	int getMaxVerticesInLayers() const { return max_vertices_in_layers; }
 
 	// Removes the cycles in the graph, by reversing on of the edges that
 	// creates the cycle. The algorithm successively removes vertices of
@@ -187,10 +223,6 @@ protected:
 	// be created for the layered graph.
 	void VertexPromoteHeuristics() {};
 
-	// This function adds dummy vertices to layers in order to clarify the path
-	// of the connections between vertices that are distant from each other.
-	virtual void AddDummyVertices() = 0;
-
 	/// This function gives an initial value to the x coordinate of each
 	/// vertices. This value later changes by another function, to
 	/// optimize the placement of the vertex in the layer.
@@ -211,30 +243,6 @@ protected:
 	/// \param num_layers
 	///	Number of layers in the graph
 	void CrossReduction(int num_layers);
-
-	// Number of vertices in the most crowded layer. This value can be less
-	// than the width, and is required for the cross reduction.
-	int max_vertices_in_layers = 0;
-
-	/// List of vertices in the graph
-	std::vector<std::unique_ptr<Vertex>> vertices;
-
-	/// List of edges in the graph
-	std::vector<std::unique_ptr<Edge>> edges;
-
-public:
-
-	/// Return the maximum number of vertices in the layer
-	int getMaxVerticesInLayers() const { return max_vertices_in_layers; }
-
-	/// Returns the layered drawing of the graph, by updating the
-	/// coordinations of each vertices, xValue and yValue
-	virtual void LayeredDrawing() = 0;
-
-	/// Virtual function for populate. Populating the graph with
-	/// edges and vertices depends on the data structure that uses
-	/// the graph.
-	virtual void Populate() = 0;
 };
 
 }
