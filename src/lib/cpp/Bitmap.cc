@@ -42,8 +42,27 @@ Bitmap::Bitmap(size_t size)
 	// Initialize
 	this->size = size;
 	size_in_blocks = (size + bits_per_block - 1) / bits_per_block;
-	mask = (1 << (size % bits_per_block)) - 1;
 	data = misc::new_unique_array<size_t>(size_in_blocks);
+
+	// Mask used for the most significant word, which contains only a subset
+	// or meaningful bits.
+	//
+	// num_bits_in_last_word (assuming bits_per_block = 32)
+	//
+	//	size		num_bits_in_last_word
+	//	----		---------------------
+	//	32	->	32
+	//	33	->	1
+	//	34	->	2
+	//	...
+	//	63	->	31
+	//	64	->	32
+	//	65	->	1
+	//	...
+	//
+	int num_bits_in_last_word = (size - 1) % bits_per_block + 1;
+	mask = num_bits_in_last_word == bits_per_block ? -1ul
+			: (1ul << num_bits_in_last_word) - 1;
 }
 
 
@@ -100,6 +119,7 @@ Bitmap &Bitmap::Set()
 {
 	for (size_t i = 0; i < size_in_blocks; i++)
 		data.get()[i] = ~0ul;
+	data.get()[size_in_blocks - 1] &= mask;
 	return *this;
 }
 

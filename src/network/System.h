@@ -55,7 +55,7 @@ public:
 class System
 {
 	//
-	//	Static members
+	// Static members
 	//
 
 	// Debugger file

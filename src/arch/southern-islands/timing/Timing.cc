@@ -842,6 +842,227 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 	// TODO Section [LDS]
 }
 
+void Timing::DumpConfiguration(std::ofstream &os)
+{
+	// Device
+	os << misc::fmt("[ Config.Device ]\n");
+	os << misc::fmt("Frequency = %d\n", frequency);
+	os << misc::fmt("NumComputeUnits = %d\n", Gpu::num_compute_units);
+	os << misc::fmt("\n");
+
+	// Compute Unit
+	os << misc::fmt("[ Config.ComputeUnit ]\n");
+	os << misc::fmt("NumWavefrontPools = %d\n", ComputeUnit::num_wavefront_pools);
+	os << misc::fmt("NumVectorRegisters = %d\n", Gpu::num_vector_registers);
+	os << misc::fmt("NumScalarRegisters = %d\n", Gpu::num_scalar_registers);
+	os << misc::fmt("MaxWorkGroupsPerWavefrontPool = %d\n",
+			ComputeUnit::max_work_groups_per_wavefront_pool);
+	os << misc::fmt("MaxWavefrontsPerWavefrontPool = %d\n",
+			ComputeUnit::max_wavefronts_per_wavefront_pool);
+	os << misc::fmt("\n");
+
+	// Front-End
+	os << misc::fmt("[ Config.FrontEnd ]\n");
+	os << misc::fmt("FetchLatency = %d\n", ComputeUnit::fetch_latency);
+	os << misc::fmt("FetchWidth = %d\n", ComputeUnit::fetch_width);
+	os << misc::fmt("FetchBufferSize = %d\n", ComputeUnit::fetch_buffer_size);
+	os << misc::fmt("IssueLatency = %d\n", ComputeUnit::issue_latency);
+	os << misc::fmt("IssueWidth = %d\n", ComputeUnit::issue_width);
+	os << misc::fmt("MaxInstIssuedPerType = %d\n",
+			ComputeUnit::max_instructions_issued_per_type);
+	os << misc::fmt("\n");
+
+	// SIMD Unit
+	os << misc::fmt("[ Config.SIMDUnit ]\n");
+	os << misc::fmt("NumSIMDLanes = %d\n", SimdUnit::num_simd_lanes);
+	os << misc::fmt("Width = %d\n", SimdUnit::width);
+	os << misc::fmt("IssueBufferSize = %d\n", SimdUnit::issue_buffer_size);
+	os << misc::fmt("DecodeLatency = %d\n", SimdUnit::decode_latency);
+	os << misc::fmt("DecodeBufferSize = %d\n", SimdUnit::decode_buffer_size);
+	os << misc::fmt("ReadExecWriteLatency = %d\n", SimdUnit::read_exec_write_latency);
+	os << misc::fmt("ReadExecWriteBufferSize = %d\n",
+			SimdUnit::exec_buffer_size);
+	os << misc::fmt("\n");
+
+	// Scalar Unit
+	os << misc::fmt("[ Config.ScalarUnit ]\n");
+	os << misc::fmt("Width = %d\n", ScalarUnit::width);
+	os << misc::fmt("IssueBufferSize = %d\n",
+			ScalarUnit::issue_buffer_size);
+	os << misc::fmt("DecodeLatency = %d\n", ScalarUnit::decode_latency);
+	os << misc::fmt("DecodeBufferSize = %d\n",
+			ScalarUnit::decode_buffer_size);
+	os << misc::fmt("ReadLatency = %d\n", ScalarUnit::read_latency);
+	os << misc::fmt("ReadBufferSize = %d\n",
+			ScalarUnit::read_buffer_size);
+	os << misc::fmt("ALULatency = %d\n", ScalarUnit::exec_latency);
+	os << misc::fmt("ExecBufferSize = %d\n",
+			ScalarUnit::exec_buffer_size);
+	os << misc::fmt("WriteLatency = %d\n", ScalarUnit::write_latency);
+	os << misc::fmt("WriteBufferSize = %d\n",
+			ScalarUnit::write_buffer_size);
+	os << misc::fmt("\n");
+
+	// Branch Unit
+	os << misc::fmt("[ Config.BranchUnit ]\n");
+	os << misc::fmt("Width = %d\n", BranchUnit::width);
+	os << misc::fmt("IssueBufferSize = %d\n",
+			BranchUnit::issue_buffer_size);
+	os << misc::fmt("DecodeLatency = %d\n", BranchUnit::decode_latency);
+	os << misc::fmt("DecodeBufferSize = %d\n",
+			BranchUnit::decode_buffer_size);
+	os << misc::fmt("ReadLatency = %d\n", BranchUnit::read_latency);
+	os << misc::fmt("ReadBufferSize = %d\n",
+			BranchUnit::read_buffer_size);
+	os << misc::fmt("ExecLatency = %d\n", BranchUnit::exec_latency);
+	os << misc::fmt("ExecBufferSize = %d\n",
+			BranchUnit::exec_buffer_size);
+	os << misc::fmt("WriteLatency = %d\n", BranchUnit::write_latency);
+	os << misc::fmt("WriteBufferSize = %d\n",
+			BranchUnit::write_buffer_size);
+	os << misc::fmt("\n");
+
+	// LDS
+	os << misc::fmt("[ Config.LDSUnit ]\n");
+	os << misc::fmt("Width = %d\n", LdsUnit::width);
+	os << misc::fmt("IssueBufferSize = %d\n", LdsUnit::issue_buffer_size);
+	os << misc::fmt("DecodeLatency = %d\n", LdsUnit::decode_latency);
+	os << misc::fmt("DecodeBufferSize = %d\n",
+			LdsUnit::decode_buffer_size);
+	os << misc::fmt("ReadLatency = %d\n", LdsUnit::read_latency);
+	os << misc::fmt("ReadBufferSize = %d\n", LdsUnit::read_buffer_size);
+	os << misc::fmt("MaxInflightMem = %d\n",
+			LdsUnit::max_in_flight_mem_accesses);
+	os << misc::fmt("WriteLatency = %d\n", LdsUnit::write_latency);
+	os << misc::fmt("WriteBufferSize = %d\n", LdsUnit::write_buffer_size);
+	os << misc::fmt("\n");
+
+	// Vector Memory
+	os << misc::fmt("[ Config.VectorMemUnit ]\n");
+	os << misc::fmt("Width = %d\n", VectorMemoryUnit::width);
+	os << misc::fmt("IssueBufferSize = %d\n",
+			VectorMemoryUnit::issue_buffer_size);
+	os << misc::fmt("DecodeLatency = %d\n", VectorMemoryUnit::decode_latency);
+	os << misc::fmt("DecodeBufferSize = %d\n",
+			VectorMemoryUnit::decode_buffer_size);
+	os << misc::fmt("ReadLatency = %d\n", VectorMemoryUnit::read_latency);
+	os << misc::fmt("ReadBufferSize = %d\n", VectorMemoryUnit::read_buffer_size);
+	os << misc::fmt("MaxInflightMem = %d\n",
+			VectorMemoryUnit::max_inflight_mem_accesses);
+	os << misc::fmt("WriteLatency = %d\n", VectorMemoryUnit::write_latency);
+	os << misc::fmt("WriteBufferSize = %d\n",
+			VectorMemoryUnit::write_buffer_size);
+	os << misc::fmt("\n");
+
+	// LDS
+	os << misc::fmt("[ Config.LDS ]\n");
+	os << misc::fmt("Size = %d\n", ComputeUnit::lds_size);
+	os << misc::fmt("AllocSize = %d\n", ComputeUnit::lds_alloc_size);
+	os << misc::fmt("BlockSize = %d\n", ComputeUnit::lds_block_size);
+	os << misc::fmt("Latency = %d\n", ComputeUnit::lds_latency);
+	os << misc::fmt("Ports = %d\n", ComputeUnit::lds_num_ports);
+	os << misc::fmt("\n");
+
+	// End of configuration
+	os << misc::fmt("\n");
+	
+}
+
+void Timing::DumpReport()
+{
+	// Check if the report file has been set
+	if (report_file.empty())
+		return;
+
+	// Open file for writing
+	std::ofstream report;
+	report.open(report_file);
+
+	// Dump GPU configuration
+	report << misc::fmt(";\n; GPU Configuration\n;\n\n");                             
+	DumpConfiguration(report);                                                       
+
+	// Report for device
+	report << misc::fmt(";\n; Simulation Statistics\n;\n\n");  
+	Emulator *emulator = Emulator::getInstance();
+	double instructions_per_cycle = getCycle() ?                               
+		(double)(emulator->getNumInstructions()/getCycle()) : 0.0;
+	report << misc::fmt("[ Device ]\n\n");                                            
+	report << misc::fmt("NDRangeCount = %d\n", emulator->num_ndranges);                
+	report << misc::fmt("WorkGroupCount = %lld\n", emulator->num_work_groups);         
+	report << misc::fmt("Instructions = %lld\n", emulator->getNumInstructions());        
+	report << misc::fmt("ScalarALUInstructions = %lld\n",                             
+			emulator->num_scalar_alu_instructions);                                  
+	report << misc::fmt("ScalarMemInstructions = %lld\n",                             
+			emulator->num_scalar_memory_instructions);                                  
+	report << misc::fmt("BranchInstructions = %lld\n", emulator->num_branch_instructions);    
+	report << misc::fmt("VectorALUInstructions = %lld\n",                             
+			emulator->num_vector_alu_instructions);                                  
+	report << misc::fmt("LDSInstructions = %lld\n", emulator->num_lds_instructions);          
+	report << misc::fmt("VectorMemInstructions = %lld\n",                             
+			emulator->num_vector_memory_instructions);                                  
+	report << misc::fmt("Cycles = %lld\n", getCycle());                  
+	report << misc::fmt("InstructionsPerCycle = %.4g\n", instructions_per_cycle);             
+	report << misc::fmt("\n\n");                                                      
+
+	// Report for compute units  
+	for (auto it = gpu->getComputeUnitsBegin(), 
+			e = gpu->getComputeUnitsEnd(); 
+			it != e; ++it)
+	{ 
+		// Calculate relevant values for each compute unit
+		ComputeUnit *compute_unit = it->get();        
+		long long coalesced_reads = compute_unit->getLdsModule()->num_coalesced_reads;
+		long long coalesced_writes = compute_unit->getLdsModule()->num_coalesced_writes;
+		instructions_per_cycle = getCycle() ?                           
+			(double)(compute_unit->num_total_instructions/getCycle()) : 
+			0.0;                                                     
+
+		// Report statistics for each compute unit
+		report << misc::fmt("[ ComputeUnit %d ]\n\n", compute_unit->getIndex());           
+
+		report << misc::fmt("WorkGroupCount = %lld\n",                            
+				compute_unit->num_mapped_work_groups);                       
+		report << misc::fmt("Instructions = %lld\n", compute_unit->num_total_instructions);   
+		report << misc::fmt("ScalarALUInstructions = %lld\n",                     
+				compute_unit->num_scalar_alu_instructions);                    
+		report << misc::fmt("ScalarMemInstructions = %lld\n",                     
+				compute_unit->num_scalar_memory_instructions);                    
+		report << misc::fmt("BranchInstructions = %lld\n",                        
+				compute_unit->num_branch_instructions);                        
+		report << misc::fmt("SIMDInstructions = %lld\n",                          
+				compute_unit->num_simd_instructions);                          
+		report << misc::fmt("VectorMemInstructions = %lld\n",                     
+				compute_unit->num_vector_memory_instructions);                    
+		report << misc::fmt("LDSInstructions = %lld\n",                           
+				compute_unit->num_lds_instructions);                           
+		report << misc::fmt("Cycles = %lld\n", getCycle());              
+		report << misc::fmt("InstructionsPerCycle = %.4g\n", instructions_per_cycle);     
+		report << misc::fmt("\n");                                                
+		report << misc::fmt("ScalarRegReads= %lld\n",                             
+				compute_unit->num_sreg_reads);                          
+		report << misc::fmt("ScalarRegWrites= %lld\n",                            
+				compute_unit->num_sreg_writes);                         
+		report << misc::fmt("VectorRegReads= %lld\n",                             
+				compute_unit->num_vreg_reads);                          
+		report << misc::fmt("VectorRegWrites= %lld\n",                            
+				compute_unit->num_vreg_writes);                         
+		report << misc::fmt("\n");                                                
+		report << misc::fmt("LDS.Accesses = %lld\n",                              
+				compute_unit->getLdsModule()->num_reads 
+				+ compute_unit->getLdsModule()->num_writes);                       
+		report << misc::fmt("LDS.Reads = %lld\n", compute_unit->getLdsModule()->num_reads);                
+		report << misc::fmt("LDS.CoalescedReads = %lld\n",                        
+				coalesced_reads);                                        
+		report << misc::fmt("LDS.Writes = %lld\n", compute_unit->getLdsModule()->num_writes);              
+		report << misc::fmt("LDS.CoalescedWrites = %lld\n",                       
+				coalesced_writes); 
+		report << misc::fmt("\n\n");                                              
+	}         
+
+	// Close the report file
+	report.close();
+}
 
 bool Timing::Run()
 {

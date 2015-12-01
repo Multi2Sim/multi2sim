@@ -24,8 +24,7 @@ L2N = L2 cache ; There is 6 L2 Cache in default SI Configuration
 ########################################################################################
 To Run simulation, modify the following for your binary:
 
-$> m2s --si-sim detailed --mem-config mem-si --net-config net-si-mesh --si-config si-config \
---ctx-config <context_file_descriptor> --net-report net_report.txt
+$> m2s --si-sim detailed --mem-config mem-si --net-config net-mesh-si --si-config si-config --ctx-config ctx-config
 
 ---------------------------------------------------------------------------------------
 %% Format of a context file descriptor 

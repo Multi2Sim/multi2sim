@@ -55,7 +55,9 @@ const misc::StringMap signal_map =
 	{ "SIGWINCH",        28 },
 	{ "SIGIO",           29 },
 	{ "SIGPWR",          30 },
-	{ "SIGSYS",          31 }
+	{ "SIGSYS",          31 },
+	{ "SIGWAITING",      32 },
+	{ "SIGLWP",          33 }
 };
 
 

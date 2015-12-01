@@ -99,7 +99,7 @@ void System::EventTypeSendHandler(esim::Event *event,
 			output_buffer->getNode()->getName().c_str(),
 			output_buffer->getName().c_str(),
 			message->getId(), packet->getId(),
-			output_buffer->getOccupancyByte());
+			output_buffer->getOccupancyInBytes());
 
 	// Schedule next event
 	esim_engine->Next(event_output_buffer, 1);

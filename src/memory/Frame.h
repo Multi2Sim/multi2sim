@@ -50,6 +50,13 @@ class Frame : public esim::Frame
 	// Counter for identifiers
 	static long long id_counter;
 
+	// Reference magic number that all live frames should have. When a
+	// frame is freed, its magic number is reset.
+	static const unsigned Magic = 0x36fc9da7;
+
+	// Frame's magic number
+	unsigned magic = Magic;
+
 	// Unique identifier, initialized in constructor.
 	long long id;
 
@@ -226,6 +233,13 @@ public:
 	/// Constructor
 	Frame(long long id, Module *module, unsigned address);
 
+	/// Destructor
+	~Frame()
+	{
+		// Reset magic number, useful to detect memory corruption.
+		magic = 0;
+	}
+
 	/// Return a unique identifier for this event frame, assigned
 	/// internally when created.
 	long long getId() const { return id; }
@@ -243,6 +257,14 @@ public:
 	{
 		if (reply > this->reply)
 			this->reply = reply;
+	}
+
+	/// Check for valid magic number. This function can be used for debug
+	/// purposes to detect memory corruption in frame handling.
+	void CheckMagic()
+	{
+		if (magic != Magic)
+			throw misc::Panic("Corrupt memory frame");
 	}
 };
 

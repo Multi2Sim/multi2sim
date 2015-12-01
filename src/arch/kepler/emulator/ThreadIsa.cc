@@ -4066,7 +4066,7 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 }
 
 
-void Thread::ExecuteInst_FADD(Instruction *inst)
+/* void Thread::ExecuteInst_FADD(Instruction *inst)
 {
 	// Get emulator
 	Emulator* emulator = Emulator::getInstance();
@@ -4152,7 +4152,136 @@ void Thread::ExecuteInst_FADD(Instruction *inst)
 		// Execute
 		dst = src1 + src2;
 
-		/* Write */
+		// Write
+		dst_id = format.dst;
+		WriteFloatGPR(dst_id, dst);
+	}
+
+	if (id_in_warp == warp->getThreadCount() - 1)
+            warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
+}
+*/
+void Thread::ExecuteInst_FADD_A(Instruction *inst)
+{
+	this->ISAUnimplemented(inst);
+}
+
+void Thread::ExecuteInst_FADD_B(Instruction *inst)
+{
+	// Get emulator
+	Emulator* emulator = Emulator::getInstance();
+
+	// Get Warp
+	SyncStack* stack = warp->getSyncStack()->get();
+
+	// Determine whether the warp reaches reconvergence pc.
+	// If it is, pop the synchronization stack top and restore the active mask
+	// Only effect on thread 0 in warp
+	if ((id_in_warp == 0) && warp->getPC())
+	{
+		unsigned temp_am;
+		if (stack->pop(warp->getPC(), temp_am))
+				stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Instruction bytes format
+	Instruction::Bytes inst_bytes = inst->getInstBytes();
+	Instruction::BytesFADD format = inst_bytes.fadd;
+
+	// Predicate register
+	unsigned pred;
+
+	// Predicate register ID
+	unsigned pred_id;
+
+	// get predicate register value
+	pred_id = format.pred;
+	if (pred_id <= 7)
+		pred = ReadPredicate(pred_id);
+	else
+		pred = !ReadPredicate(pred_id - 8);
+
+	// Operand
+	unsigned src1_id;
+	float src1, src2, dst;
+
+	// Execute
+	if (active == 1 && pred == 1)
+	{
+		// Read Src1
+		src1_id = format.src1;
+		src1 = ReadFloatGPR(src1_id);
+
+		// Read Src2
+		if (format.op2 == 1)
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+		else if (format.op2 == 3)
+		{
+			unsigned src2_id;
+			src2_id = format.src2;
+			src2 = ReadFloatGPR(src2_id);
+		}
+
+		// Src1 abs
+		if (format.src1_abs == 1)
+			src1 = fabsf(src1);
+
+		// Src1 negate
+		if (format.src1_negate == 1)
+			src1 = -src1;
+
+		// Src2 abs
+		if (format.src2_abs == 1)
+			src2 = fabsf(src2);
+
+		// Src2 negate
+		if (format.src2_negate == 1)
+			src2 = -src2;
+
+		if (format.ftz == 1)
+		{
+			if (std::fpclassify(src1) == FP_SUBNORMAL)
+				src1 = 0.0f;
+			if (std::fpclassify(src1) == FP_SUBNORMAL)
+				src2 = 0.0f;
+		}
+
+
+		// Execute
+		dst = src1 + src2;
+
+		// Ftz for dst
+		if (format.ftz == 1)
+		{
+			if (std::fpclassify(dst) == FP_SUBNORMAL)
+				dst = 0.0f;
+		}
+
+		// Round mode
+		/*
+		if (format.round == 0)
+			dst = roundf(dst);
+		else if (format.round == 1)
+			dst = floorf(dst);
+		else if (format.round == 2)
+			dst = ceilf(dst);
+		else if (format.round == 3)
+			dst = truncf(dst);
+		*/
+
+		// Saturate mode
+		if(format.sat == 1)
+			this->ISAUnsupportedFeature(inst);
+
+		// Conditional code
+		if(format.cc == 1)
+			this->ISAUnsupportedFeature(inst);
+
+		// Write result
+		unsigned dst_id;
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
 	}
@@ -4326,8 +4455,10 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 
 		// Add src3
 		temp += src3;
+		dst = temp;
 
 		// Round mode
+		/*
 		if (format.round == 0)
 			dst = roundf(temp);
 		else if (format.round == 1)
@@ -4336,7 +4467,7 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 			dst = ceilf(temp);
 		else if (format.round == 3)
 			dst = truncf(temp);
-
+*/
 		// Saturate
 		if (format.sat == 1)
 			ISAUnsupportedFeature(inst);
@@ -5398,9 +5529,8 @@ void Thread::ExecuteInst_LOP32I(Instruction *inst)
 		src1_id = format.src1;
 		src1 = ReadGPR(src1_id);
 
-		// Read Src2
-		if (format.op0 == 1) // src2 is IMM32
-			src2 = format.src2;
+		// Read Src2 IMM32
+		src2 = format.src2;
 
 		// Execute
 		if (format.src1_negate == 1)
