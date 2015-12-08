@@ -26,7 +26,7 @@ DEFINST(IMUL_A,
 		0x07)
 
 DEFINST(IMUL_B,
-                "%pred IMUL%U32%U32%hi%s %dst %cc_dst, %srcA, %srcB !!! Check !!!;",
+                "%pred IMUL%U32%U32%hi%s %dst %cc_dst, %srcA, %srcB;",
                 0x02,
                 0x01,
                 0x0c,
@@ -40,7 +40,7 @@ DEFINST(ISCADD_A,
 		0x03)
 
 DEFINST(ISCADD_B,
-                "%pred ISCADD%s %dst%cc, %srcA, %srcB, %const !!! Check !!!;",
+                "%pred ISCADD%s %dst%cc, %srcA, %srcB, %const;",
                 0x02,
 		0x01,
 		0x0c,
@@ -119,14 +119,14 @@ DEFINST(IMADSP_B,
 		0x01)
 		
 DEFINST(IADD_A,
-                "%pred IADD%sat%x%s %dst %cc, %srcA, %srcB !!! Check !!!;",
+                "%pred IADD%sat%x%s %dst %cc, %srcA, %srcB;",
                 0x01,
                 0x03,
                 0x00,
                 0x02)	
                 	
 DEFINST(IADD_B,
-		"%pred IADD%sat%x%s %dst %cc_dst, %srcA, %srcB;",
+		"%pred IADD%sat%x%s %dst%cc, %srcA, %srcB;",
 		0x02,
 		0x01,
 		0x0c,
