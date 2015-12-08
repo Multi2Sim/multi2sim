@@ -263,6 +263,8 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	/* Free */
 	elf_file_free(dev_func_bin);
 
+	remove(cubin_path);
+
 	cuda_debug("\t(runtime) '%s' out: return", __func__);
 }
 
