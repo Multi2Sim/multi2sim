@@ -88,9 +88,6 @@ private:
 	// Entries
 	std::vector<std::unique_ptr<Entry>> entries;
 
-	// Flag set when a cycle was detected
-	bool has_cycle = false;
-
 public:
 
 	/// Constructor
@@ -110,14 +107,11 @@ public:
 	/// Look up the entry from a certain node to a certain node
 	Entry *Lookup(Node *source, Node *destination) const;
 
-	/// Cycle detection mechanism in the routing table.
-	void DetectCycle();
-
 	/// Dump Routing table information.
 	void Dump(std::ostream &os = std::cout) const;
 
 	/// Check if the routing table has cycle
-	bool hasCycle() const { return has_cycle; }
+	bool hasCycle();
 
 	/// Update a route manually. This function is used for adding route-steps.
 	/// Route-step is an element in the list of connections that provide the

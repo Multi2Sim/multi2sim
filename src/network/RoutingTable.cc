@@ -173,14 +173,13 @@ void RoutingTable::FloydWarshall()
 			}
 		}
 	}
-
-	// Look for cycle
-	DetectCycle();
 }
 
 
-void RoutingTable::DetectCycle()
+bool RoutingTable::hasCycle()
 {
+	// No cycle was detected
+	return false;	
 }
 
 
@@ -261,7 +260,8 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 		if (route_updated == true)
 			break;
 
-		// Find a buffer that is connected to next node through a connection
+		// Find a buffer that is connected to next node through a 
+		// connection
 		buffer = source->getOutputBuffer(i);
 		Connection *connection = buffer->getConnection();
 
@@ -275,14 +275,17 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 			{
 				// Check the value of the virtual channel
 				if (virtual_channel > link->getNumVirtualChannels() - 1)
-					throw Error(misc::fmt("Network %s: route %s.to.%s: "
-							"wrong virtual channel\n",
+					throw Error(misc::fmt("Network %s: route "
+							"%s.to.%s: wrong virtual "
+							"channel\n",
 							network->getName().c_str(),
 							source->getName().c_str(),
 							destination->getName().c_str()));
 
-				// The virtual channel acts as an offset in link's source list
-				Buffer *entry_buffer = link->getSourceBuffer(virtual_channel);
+				// The virtual channel acts as an offset in 
+				// link's source list
+				Buffer *entry_buffer = link->getSourceBuffer(
+						virtual_channel);
 				assert(entry_buffer->getNode() == source);
 
 				// Update the entry with calculated buffer

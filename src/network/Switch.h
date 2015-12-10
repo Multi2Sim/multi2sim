@@ -62,10 +62,10 @@ public:
 	/// rescheduled when the output buffer is free. If the output buffer
 	/// is full, the output_buffer event will be suspended in the buffer
 	/// event queue. Moreover, if the switch's scheduler is not scheduled
-	/// for the target output buffer, the event will be recheduled next 
+	/// for the target output buffer, the event will be rescheduled next 
 	/// cycle. Finally, if the switch can forward the packet, an 
 	/// output_buffer event will be scheduled after a certain amount of 
-	/// latencey, which is specified in the node class.
+	/// latency, which is specified in the node class.
 	///
 	/// This function is designed to be called from the input buffer
 	/// event handler and the input buffer event handler has to check 
@@ -73,7 +73,7 @@ public:
 	/// this function.
 	///
 	/// \param packet
-	///	The packet to be forwared to next hop. The packet has to 
+	///	The packet to be forward to next hop. The packet has to 
 	/// 	be in an input buffer of current switch.
 	///
 	void Forward(Packet *packet);
@@ -86,7 +86,7 @@ public:
 	/// returned. Otherwise, a new decision will be made. New decision is
 	/// made in a round-robin fashion. From the input buffer that is 
 	/// linked in previous cycle, the arbiter finds the next input buffer 
-	/// whose first packet need to be forwared to this particular 
+	/// whose first packet need to be forward to this particular 
 	/// output buffer. The found input buffer is returned. The decision
 	/// will also be written into the output buffer's corresponding 
 	/// fields. If there is no input buffer that can send a packet, 

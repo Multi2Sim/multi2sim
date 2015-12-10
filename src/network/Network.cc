@@ -36,6 +36,11 @@ namespace net
 {
 
 
+static const char *err_cycle_detected =
+	"\tA cycle is detected in the graph representing the routing table\n"
+	"for the network. Routing cycles can cause deadlocks in simulations,\n"
+	"that can in turn make the simulation stall with no output.\n";
+
 Network::Network(const std::string &name) :
 				name(name),
 				routing_table(this)
@@ -92,9 +97,12 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	// Parse the routing elements, for manual routing.
 	if (!ParseConfigurationForRoutes(config))
 		routing_table.FloydWarshall();
-	else
-		routing_table.DetectCycle();
 
+	// If the network with current routing contains a cycle, warn
+	if (routing_table.hasCycle())
+		misc::Warning("Network %s: Cycle found in the "
+				"routing table.\n%s", name.c_str(),
+				err_cycle_detected);
 }
 
 
