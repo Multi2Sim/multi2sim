@@ -208,6 +208,12 @@ void ArchPool::DumpSummary(std::ostream &os) const
 }
 	
 
+void ArchPool::DumpReports()
+{
+	// Dump reports for each Timing simulator in ArchPool
+	for (auto it = getTimingBegin(), end = getTimingEnd(); it != end; it++)
+		(*it)->getTiming()->DumpReport();
+}
 
 
 //
