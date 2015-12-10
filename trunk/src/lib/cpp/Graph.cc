@@ -38,7 +38,7 @@ void Graph::GreedyCycleRemoval()
 	// to avoid adding new variable that will never be used again.
 	for (auto &vertex : vertices)
 	{
-		if (vertex->getNumOutgoingVertecies() == 0)
+		if (vertex->getNumOutgoingVertices() == 0)
 		{
 			vertex->x_value = end;
 			end--;
@@ -49,7 +49,7 @@ void Graph::GreedyCycleRemoval()
 			start++;
 		}
 
-		vertex->key = vertex->getNumOutgoingVertecies() -
+		vertex->key = vertex->getNumOutgoingVertices() -
 				vertex->getNumIncomingVertices();
 
 		sort_list.emplace_back(vertex.get());
@@ -420,29 +420,44 @@ void Graph::CrossReduction(int num_layers)
 			// For every vertex we create a cross reduction key value
 			for (auto &vertex : vertices)
 			{
-				// If the vertex is in the current layer under examination
+				// If the vertex is in the current layer under 
+				// examination
 				if (vertex->y_value == layer)
 				{
-					// The vertex's key is used to store the optimal position
-					// for cross reduction value of vertices in the current
-					// list. Since this value might be float, we will have
-					// vertices with overlapping keys
+					// The vertex's key is used to store the 
+					// optimal position for cross reduction 
+					// value of vertices in the current
+					// list. Since this value might be float, 
+					// we will have vertices with overlapping 
+					// keys
 					vertex->key = 0;
 
-					// If the number of incoming vertices is zero, keep the
-					// previous position, which it is likely that it was
-					// calculated in iteration of the reduction in previous
+					// If the number of incoming vertices is 
+					// zero, keep the previous position, 
+					// which it is likely that it was calculated 
+					// in iteration of the reduction in previous
 					// layer.
 					if (vertex->incoming_vertices.size() == 0)
 						vertex->key = vertex->x_value;
+					
+					// Calculate vertex's optimal cross 
+					// value by adding the x value of 
+					// the source vertices of its edges
+					// and dividing it by the number of 
+					// source vertices
 					else
 					{
-						// Calculate vertex's optimal cross value by adding
-						// the x value of the source vertices of its edges
-						// and dividing it by the number of source vertices
+						// Adding the x value of the source
+						// vertices of the vertex outgoing
+						// edges
 						for (Vertex *incoming_vertex :
 								vertex->incoming_vertices)
-							vertex->key += incoming_vertex->x_value;
+							vertex->key += incoming_vertex->
+									x_value;
+
+						// Dividing the total with the 
+						// number of source vertices to
+						// calculate the optimal cross value
 						vertex->key /= vertex->incoming_vertices.size();
 					}
 				}
@@ -476,6 +491,96 @@ void Graph::CrossReduction(int num_layers)
 			first_vertex->x_value = 0;
 		}
 	}
+}
+
+bool Graph::CycleDetectionDepthFirstTraverse(int vertex_id,
+		bool* visited,
+		bool* stacked)
+{
+	// If the vertex is not already visited, start the depth-first traversal
+	if (visited[vertex_id] == false)
+	{
+		// Mark the current vertex as visited, and place it in the stack
+		visited[vertex_id] = true;
+		stacked[vertex_id] = true;
+
+		// Do the depth-first for all the adjacent (outgoing) vertices 
+		// of the vertex
+		Vertex *vertex = getVertex(vertex_id);
+		for (int i = 0 ; i < vertex->getNumOutgoingVertices(); i++)
+		{
+			// Get the adjacent vertex
+			Vertex* adjacent_vertex = vertex->
+					outgoing_vertices[i];
+
+			// Find the identifier of the adjacent vertex in
+			// vertices list. The vertices list is unique pointes
+			// and the vertex is pointer.
+			auto it = std::find_if(vertices.begin(), vertices.end(),
+					[&](std::unique_ptr<Vertex> const& 
+					unique_vertex)
+					{ 
+						return unique_vertex.get() == 
+								adjacent_vertex;
+					});
+
+			// If the vertex is not found there is a problem
+			assert(it != vertices.end());
+
+			// get the vertex id based on the distance from the
+			// beginning of the vector
+			int adjacent_vertex_id = std::distance(vertices.begin(), 
+					it);
+
+			// If the adjacent vertex is not visited, do the depth 
+			// first for the adjacent vertex. If found cycle in the
+			// next depth-first from adjacent vertex, return cycle
+			// exists (true), otherwise check to see the adjacent
+			// vertex is stacked for later traverse
+			if ((visited[adjacent_vertex_id] == false) && 
+					(CycleDetectionDepthFirstTraverse(
+					adjacent_vertex_id, visited, stacked)))
+				return true;
+			else if (!stacked[adjacent_vertex_id] == true)
+				return true;
+		}
+	}
+
+	// The whole adjacent list is traversed, and cycle is not found
+	// so remove the vertex from stacked list
+	stacked[vertex_id] = false;
+
+	// No cycle is found
+	return false;
+}
+
+
+bool Graph::hasCycle()
+{
+	// Creating visited and stacked lists for vertices that are visited,
+	// and stacked for finishing the depth-first traversal later, 
+	// respectively
+	auto visited = misc::new_unique_array<bool>(getNumVertices());
+	auto stacked = misc::new_unique_array<bool>(getNumVertices());
+
+	// Initialing the lists to false
+	for (int i = 0; i < getNumVertices(); i++)
+	{
+		visited[i] = false;
+		stacked[i] = false;
+	}
+
+	// Call to the depth-first traversal for each vertex in the graph
+	for (int vertex_id = 0; vertex_id < getNumVertices(); vertex_id++)
+	{
+		// Performing the depth-first traversal on the vertex
+		if (CycleDetectionDepthFirstTraverse(vertex_id, visited.get(), 
+				stacked.get()))
+			return true;
+	}
+	
+	// If cycle was not detected
+	return false;
 }
 
 }

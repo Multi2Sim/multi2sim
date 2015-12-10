@@ -517,7 +517,7 @@ HighNetworkNode = l2n1
 LowNetwork = si-net-l2-1-gm-1 
 LowModules = si-gm-1 
 AddressRange = ADDR DIV 64 MOD 6 EQ 1 
-	
+
 [Module l2n2]
 Type = Cache 
 Geometry = si-geo-l2 

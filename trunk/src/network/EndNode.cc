@@ -39,7 +39,7 @@ EndNode::EndNode(Network *network,
 
 void EndNode::Dump(std::ostream &os) const
 {
-	// Dumping the swtich name
+	// Dumping the end-node name
 	os << misc::fmt("[ Network.%s.Node.%s ]\n", network->getName().c_str(),
 			getName().c_str());
 
