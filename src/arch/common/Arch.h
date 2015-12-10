@@ -225,6 +225,9 @@ public:
 	/// Dump a summary for all architectures in the pool.
 	void DumpSummary(std::ostream &os = std::cerr) const;
 
+	/// Dump a report for all architectures in the pool.
+	void DumpReports();
+
 	/// Return an iterator to the first architecture in the architecture
 	/// list.
 	std::list<std::unique_ptr<Arch>>::iterator begin()

@@ -663,4 +663,10 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 	Alu::ParseConfiguration(ini_file);
 }
 
+
+void Timing::DumpReport()
+{
+	// TODO: implement x86 report
+}
+
 } // namespace x86

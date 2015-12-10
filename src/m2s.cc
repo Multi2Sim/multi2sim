@@ -546,6 +546,25 @@ void DumpStatisticsSummary(std::ostream &os = std::cerr)
 	misc::Terminal::Reset(os);
 }
 
+void DumpReports()
+{
+	// Reports for all architectures
+	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+	arch_pool->DumpReports();
+
+	// Dumping network report
+	if (net::System::hasInstance())
+	{
+		net::System *net_system = net::System::getInstance();
+
+		// Dump the network report
+		net_system->DumpReport();
+
+		// Dump the network data for static visualization
+		net_system->StaticGraph();
+	}
+}
+
 
 int MainProgram(int argc, char **argv)
 {
@@ -652,17 +671,8 @@ int MainProgram(int argc, char **argv)
 	// Statistics summary
 	DumpStatisticsSummary();
 
-	// Dumping network report
-	if (net::System::hasInstance())
-	{
-		net::System *net_system = net::System::getInstance();
-
-		// Dump the network report
-		net_system->DumpReport();
-
-		// Dump the network data for static visualization
-		net_system->StaticGraph();
-	}
+	// Reports
+	DumpReports();
 
 	// Success
 	return 0;
