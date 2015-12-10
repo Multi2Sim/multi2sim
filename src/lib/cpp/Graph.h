@@ -72,7 +72,7 @@ public:
 	}
 
 	// Return the size of the outgoing list, also known as out-degree
-	int getNumOutgoingVertecies() const { return outgoing_vertices.size(); }
+	int getNumOutgoingVertices() const { return outgoing_vertices.size(); }
 
 	// Adding a vertex to the incoming list of the current vertex
 	void addIncomingVertex(Vertex *vertex)
@@ -145,6 +145,24 @@ protected:
 	/// List of edges in the graph
 	std::vector<std::unique_ptr<Edge>> edges;
 
+	/// Static function utilized by cycle detection algorithm. This function
+	/// is recursively called, and with every call it checks to see if it 
+	/// has already visited the next vertex in the graph or not
+	///
+	/// \param vertex_id
+	///	the id of the vertex in vertices that the depth-first visit 
+	///	starts from
+	///
+	/// \param visited
+	///	the list of vertices that are already visited
+	///
+	/// \param stacked
+	///	the list of vertices that are stacked. After the graph is
+	///	visited in depth-first manner starting from the vertex,
+	///	the vertex is removed from the stack
+	bool CycleDetectionDepthFirstTraverse(int vertex_id,
+			bool* visited,
+			bool* stacked);
 public:
 
 	//
@@ -243,6 +261,15 @@ public:
 	/// \param num_layers
 	///	Number of layers in the graph
 	void CrossReduction(int num_layers);
+
+	/// The cycle detection algorithm. Starting from the first vertex 
+	/// in the graph, it traverses the graph looking for a back-edge.
+	/// A back-edge is identified as a recurring vertex if the graph
+	/// is traversed in depth
+	/// 
+	/// \return
+	///	True if the graph has a cycle
+	bool hasCycle();
 };
 
 }
