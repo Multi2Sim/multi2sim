@@ -104,6 +104,9 @@ public:
 	/// Dump the statistics summary for the timing simulator.
 	virtual void DumpSummary(std::ostream &os) const { }
 
+	/// Dump report for the timing simulator.
+	virtual void DumpReport() { }
+
 	/// Return the cycle when a timing simulation last happened for this
 	/// architecture, as set by setLastSimulationCycle().
 	long long getLastSimulationCycle() const { return last_simulation_cycle; }

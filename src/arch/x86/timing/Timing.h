@@ -161,6 +161,9 @@ public:
 	/// architecture into the memory hierarchy.
 	void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section) override;
+
+	/// Dump a report of statistics collected during x86 simulation
+	void DumpReport();
 	
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
