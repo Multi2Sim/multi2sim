@@ -187,7 +187,7 @@ public:
 
 
 
-	
+
 	//
 	// Edges
 	// 
@@ -205,14 +205,17 @@ public:
 	// Adding an edge to the graph
 	void addEdge(std::unique_ptr<Edge> &&edge,
 			Vertex *source_vertex,
-			Vertex *destination_vertex)
-	{
-		edges.emplace_back(std::move(edge));
-		source_vertex->outgoing_vertices.emplace_back(
-				destination_vertex);
-		destination_vertex->incoming_vertices.emplace_back(
-				source_vertex);
-	}
+			Vertex *destination_vertex);
+
+	// Remove an edge from the graph
+	//
+	// \return
+	//	true if the edge was found and removed
+	//	false if the edge was not found
+	bool removeEdge(Edge *edge);
+
+	// Find edge based on source and destination vertices
+	Edge *findEdge(Vertex *source_vertex, Vertex *destination_vertex);
 
 
 
