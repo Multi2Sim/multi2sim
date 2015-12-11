@@ -38,9 +38,11 @@ void Graph::Populate()
 		// Get the node associated with the vertex
 		Node *node = network->getNode(i);
 
-		// Create vertex based on the node
-		vertices.emplace_back(misc::new_unique<Vertex>(node, node->getName(),
-				Vertex::KindNode));
+		// Adding the vertex to the graph's vertices list
+		addVertex(misc::new_unique<Vertex>(node, 
+				node->getName(), Vertex::KindNode));
+
+//misc::cast<std::unique_ptr<misc::Vertex>>(vertex));
 	}
 
 	// Create the initial edges
@@ -81,10 +83,12 @@ void Graph::Populate()
 			// edge is not bidirectional,  add the edge to the list
 			if (!bidirectional)
 			{
-				edges.emplace_back(misc::new_unique<Edge>(link,
-						source_vertex, destination_vertex));
-				source_vertex->addOutgoingVertex(destination_vertex);
-				destination_vertex->addIncomingVertex(source_vertex);
+				addEdge(misc::new_unique<Edge>(link, 
+						source_vertex, 
+						destination_vertex),
+						source_vertex,
+						destination_vertex);
+						
 			}
 		}
 		else
