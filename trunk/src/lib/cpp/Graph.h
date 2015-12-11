@@ -179,6 +179,12 @@ public:
 		return vertices[index].get(); 
 	}
 
+	// Add a vertex to the graph
+	void addVertex(std::unique_ptr<Vertex> &&vertex)
+	{
+		vertices.emplace_back(std::move(vertex));
+	}
+
 
 
 	
@@ -194,6 +200,18 @@ public:
 	{
 		assert(index >=0 && index < (int) edges.size());
 		return edges[index].get(); 
+	}
+
+	// Adding an edge to the graph
+	void addEdge(std::unique_ptr<Edge> &&edge,
+			Vertex *source_vertex,
+			Vertex *destination_vertex)
+	{
+		edges.emplace_back(std::move(edge));
+		source_vertex->outgoing_vertices.emplace_back(
+				destination_vertex);
+		destination_vertex->incoming_vertices.emplace_back(
+				source_vertex);
 	}
 
 
