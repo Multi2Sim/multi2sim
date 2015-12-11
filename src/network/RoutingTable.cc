@@ -178,6 +178,158 @@ void RoutingTable::FloydWarshall()
 
 bool RoutingTable::hasCycle()
 {
+	// First create an empty graph
+	std::unique_ptr<misc::Graph> graph = misc::new_unique<misc::Graph>();
+
+	// Create an unordered_map for mapping each buffer to vertices of
+	// the graph
+	std::unordered_map<Buffer *, misc::Vertex *> buffer_to_vertex;
+
+	// For every output buffer that plays a role in routing table
+	for (int node_id = 0; node_id < dimension; node_id++)
+	{
+		// Get the node
+		Node *node = network->getNode(node_id);
+
+		// For each output buffer from the output buffer list,
+		// figure out if the output buffer is in the routing table
+		for (int buffer_id = 0; buffer_id < node->getNumOutputBuffers();
+				buffer_id++)
+		{
+			// Get the output buffer from the list in the node 
+			Buffer *output_buffer = node->getOutputBuffer(
+					buffer_id);
+
+			// Find the buffer in the routing table
+			for (int destination_node_id = 0; 
+					destination_node_id < dimension;
+					destination_node_id++)
+			{
+				// Get the destination node
+				Node *destination_node = network->getNode(
+					destination_node_id);
+
+				// Look up the routing table
+				Entry *entry = Lookup(node, destination_node);
+
+				// Check if the current output buffer is the 
+				// path between the two nodes
+				if (output_buffer == entry->getBuffer())
+				{
+					// This means the buffer is involved 
+					// in the graph and might be part of 
+					// a deadlock scenario. So we create
+					// a vertex for it
+					graph->addVertex(misc::new_unique<
+							misc::Vertex>
+							(output_buffer->getName().
+							c_str()));
+
+					// Get the vertex which is the last
+					// vertex in the vertices list
+					misc::Vertex *vertex = graph->getVertex(
+							graph->getNumVertices() - 1);
+
+					// Map the vertex with the buffer for
+					// future easy reference
+					buffer_to_vertex.insert(std::make_pair(
+							output_buffer,
+							vertex));
+					
+					// We break from the for look and move
+					// on to the next buffer since we
+					// already find the buffer in the table
+					break;
+				}
+			}
+		} 
+	}
+
+	// For every source node
+	for (int source_id = 0; source_id < dimension; source_id++)
+	{
+		// Get the source node
+		Node *source_node = network->getNode(source_id);
+
+		//For every destination node
+		for (int destination_id = 0; destination_id< dimension; 
+				destination_id++)
+		{
+			// Get the destination node
+			Node *destination_node = network->getNode(
+					destination_id);
+
+			// If the source and destination are the same, continue
+			if (source_node == destination_node)
+				continue;
+
+			// Find the entry in the routing table
+			Entry *entry = Lookup(source_node, destination_node);
+
+			// Get the associated output buffer for the entry
+			Buffer *source_vertex_buffer = entry->getBuffer();
+			if (source_vertex_buffer)
+			{
+				// Get the next node of the entry
+				Node *next_node = entry->getNextNode();
+
+				// Based on the next node perform another 
+				// lookup in the routing table to retrieve the 
+				// next output buffer (next_node, destination)
+				Entry *next_entry = Lookup(next_node, 
+						destination_node);
+
+				// Get the associated output buffer for the
+				// next entry if any
+				Buffer *destination_vertex_buffer = next_entry->
+						getBuffer();
+				if (destination_vertex_buffer)
+				{
+
+					// Find the source vertex based on the 
+					// source output buffer in the unordered 
+					// map
+					auto source_vertex_it = 
+							buffer_to_vertex.find(
+							source_vertex_buffer);
+					assert(source_vertex_it != 
+							buffer_to_vertex.end());
+
+					// Find the destination vertex based on 
+					// the destination output buffer
+					auto destination_vertex_it = 
+							buffer_to_vertex.find(
+							destination_vertex_buffer);
+					assert(destination_vertex_it != 
+							buffer_to_vertex.end());
+
+					// First see if the edge exists
+					if (!graph->findEdge(source_vertex_it->second,
+						destination_vertex_it->second))
+					{
+						// Add an edge to the graph based 
+						// on the source and the destination 
+						//vertex
+						graph->addEdge(misc::new_unique<
+								misc::Edge>
+								(source_vertex_it->
+								second,
+								destination_vertex_it->
+								second),
+								source_vertex_it->
+								second,
+								destination_vertex_it->
+								second);
+					}
+				}
+			}
+		}
+	}
+
+	// Run the cycle-detection algorithm on the graph to find cycle
+	if (graph->hasCycle())
+		return true;
+
 	// No cycle was detected
 	return false;	
 }

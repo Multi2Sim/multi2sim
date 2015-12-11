@@ -37,9 +37,9 @@ namespace net
 
 
 static const char *err_cycle_detected =
-	"\tA cycle is detected in the graph representing the routing table\n"
-	"for the network. Routing cycles can cause deadlocks in simulations,\n"
-	"that can in turn make the simulation stall with no output.\n";
+	"\tA cycle is detected in the graph representing the routing table"
+	"for the network. Routing cycles can cause deadlocks in simulations,"
+	"that can in turn make the simulation stall with no output.";
 
 Network::Network(const std::string &name) :
 				name(name),
