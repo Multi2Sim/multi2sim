@@ -22,6 +22,91 @@
 namespace misc
 {
 
+void Graph::addEdge(std::unique_ptr<Edge> &&edge,
+		Vertex *source_vertex,
+		Vertex *destination_vertex)
+{
+	edges.emplace_back(std::move(edge));
+	source_vertex->outgoing_vertices.emplace_back(
+			destination_vertex);
+	destination_vertex->incoming_vertices.emplace_back(
+			source_vertex);
+}
+
+
+bool Graph::removeEdge(Edge *edge)
+{
+	// Look for the edge in the list of edges
+	auto it = std::find_if(edges.begin(), edges.end(), 
+			[&](std::unique_ptr<Edge> const& 
+			unique_edge)
+		{ 
+			return unique_edge.get() == edge;
+		});
+
+	// If the edge is not found return false 
+	if (it == edges.end())
+	{
+		return false;
+	}
+	// If found 
+	else 
+	{
+		// Remove the edge from the graph's edges list
+		edges.erase(it);
+
+		// Get the source and destination vertex
+		Vertex *source_vertex = edge->source_vertex;
+		Vertex *destination_vertex = edge->destination_vertex;
+
+		// Remove the destination vertex from outgoing vertex list of
+		// the source vertex
+		auto destination_vertex_it = std::find(
+				source_vertex->outgoing_vertices.begin(),
+				source_vertex->outgoing_vertices.end(),
+				destination_vertex);
+		assert(destination_vertex_it != source_vertex->
+				outgoing_vertices.end());
+		source_vertex->outgoing_vertices.erase(destination_vertex_it);
+
+		// Remove the source vertex from incoming vertex list of
+		// the destination vertex
+		auto source_vertex_it = std::find(
+				destination_vertex->incoming_vertices.begin(),
+				destination_vertex->incoming_vertices.end(),
+				source_vertex);
+		assert(source_vertex_it != destination_vertex->
+				incoming_vertices.end());
+		destination_vertex->incoming_vertices.erase(source_vertex_it);
+	}
+
+	// return success
+	return true;
+}
+
+
+Edge *Graph::findEdge(Vertex *source_vertex, Vertex *destination_vertex)
+{
+	// Search through the edges in the graph
+	auto it = std::find_if(edges.begin(), edges.end(), 
+			[&](std::unique_ptr<Edge> const& 
+			unique_edge)
+		{ 
+			return ((unique_edge.get()->source_vertex == 
+					source_vertex) && 
+					(unique_edge.get()->destination_vertex ==
+					destination_vertex));
+		});
+
+	// If the edge is not found return nullptr
+	if (it == edges.end())
+		return nullptr; 
+	
+	// Return the edge
+	return (*it).get();
+}
+
+
 void Graph::GreedyCycleRemoval()
 {
 	// Identify the last position of the left side of the list which
@@ -514,7 +599,7 @@ bool Graph::CycleDetectionDepthFirstTraverse(int vertex_id,
 					outgoing_vertices[i];
 
 			// Find the identifier of the adjacent vertex in
-			// vertices list. The vertices list is unique pointes
+			// vertices list. The vertices list is unique pointers
 			// and the vertex is pointer.
 			auto it = std::find_if(vertices.begin(), vertices.end(),
 					[&](std::unique_ptr<Vertex> const& 
@@ -531,7 +616,7 @@ bool Graph::CycleDetectionDepthFirstTraverse(int vertex_id,
 			// beginning of the vector
 			int adjacent_vertex_id = std::distance(vertices.begin(), 
 					it);
-
+			
 			// If the adjacent vertex is not visited, do the depth 
 			// first for the adjacent vertex. If found cycle in the
 			// next depth-first from adjacent vertex, return cycle
@@ -541,7 +626,7 @@ bool Graph::CycleDetectionDepthFirstTraverse(int vertex_id,
 					(CycleDetectionDepthFirstTraverse(
 					adjacent_vertex_id, visited, stacked)))
 				return true;
-			else if (!stacked[adjacent_vertex_id] == true)
+			else if (stacked[adjacent_vertex_id] == true)
 				return true;
 		}
 	}
