@@ -97,7 +97,7 @@ unsigned Manager::Allocate(unsigned size, unsigned alignment)
 	}
 	
 	// No available space, need a new page
-	Chunk *hole = RequestOnePage();
+	Chunk *hole = RequestOnePage(MapBaseAddress);
 	unsigned addr = hole->getAddress();
 	AllocateIn(hole, size, alignment);
 
@@ -373,12 +373,12 @@ void Manager::DeallocatePage(unsigned addr)
 }
 
 
-Manager::Chunk *Manager::RequestOnePage()
+Manager::Chunk *Manager::RequestOnePage(unsigned base_address)
 {
-	unsigned int addr = Manager::MapBaseAddress;
+	unsigned int addr = base_address;
 
 	// Find a good place to allocate a new page
-	addr = memory->MapSpaceDown(addr, Memory::PageSize);
+	addr = memory->MapSpace(addr, Memory::PageSize);
 	if (addr == (unsigned)-1)
 		throw misc::Error("Guest program out of memory.");
 

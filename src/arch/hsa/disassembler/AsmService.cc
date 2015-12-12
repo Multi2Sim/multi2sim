@@ -29,7 +29,7 @@ misc::StringMap AsmService::opcode_to_str_map =
 #include "Instruction.def"
 #undef DEFINST
 
-	{"invalid", 140}
+	{"invalid", 65535}
 };
 
 
@@ -160,30 +160,78 @@ std::map<int, unsigned> AsmService::type_to_size_map =
 	{BRIG_TYPE_RWIMG, 0},
 	{BRIG_TYPE_SIG32, 4},
 	{BRIG_TYPE_SIG64, 8},
-	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_32, 4},
-	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_U8 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_32, 4},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_U16 | BRIG_TYPE_PACK_128,16},
-	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_U32 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_U64 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_32, 4},
-	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_S8 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_32, 4},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_S16 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_S32 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_S64 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_32, 4},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_F16 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_64, 8},
-	{BRIG_TYPE_F32 | BRIG_TYPE_PACK_128, 16},
-	{BRIG_TYPE_F64 | BRIG_TYPE_PACK_128, 16}
+
+	{BRIG_TYPE_U8X4, 4},
+	{BRIG_TYPE_U8X8, 8},
+	{BRIG_TYPE_U8X16, 16},
+	{BRIG_TYPE_U16X2, 4},
+	{BRIG_TYPE_U16X4, 8},
+	{BRIG_TYPE_U16X8, 16},
+	{BRIG_TYPE_U32X2, 8},
+	{BRIG_TYPE_U32X4, 16},
+	{BRIG_TYPE_U64X2, 16},
+	{BRIG_TYPE_S8X4, 4},
+	{BRIG_TYPE_S8X8, 8},
+	{BRIG_TYPE_S8X16, 16},
+	{BRIG_TYPE_S16X2, 4},
+	{BRIG_TYPE_S16X4, 8},
+	{BRIG_TYPE_S16X8, 16},
+	{BRIG_TYPE_S32X2, 8},
+	{BRIG_TYPE_S32X4, 16},
+	{BRIG_TYPE_S64X2, 16},
+	{BRIG_TYPE_F16X2, 4},
+	{BRIG_TYPE_F16X4, 8},
+	{BRIG_TYPE_F16X8, 16},
+	{BRIG_TYPE_F32X2, 8},
+	{BRIG_TYPE_F32X4, 16},
+	{BRIG_TYPE_F64X2, 16},
+
+	{BRIG_TYPE_U8_ARRAY, 1},
+	{BRIG_TYPE_U16_ARRAY, 2},
+	{BRIG_TYPE_U32_ARRAY, 4},
+	{BRIG_TYPE_U64_ARRAY, 8},
+	{BRIG_TYPE_S8_ARRAY, 1},
+	{BRIG_TYPE_S16_ARRAY, 2},
+	{BRIG_TYPE_S32_ARRAY, 4},
+	{BRIG_TYPE_S64_ARRAY, 8},
+	{BRIG_TYPE_F16_ARRAY, 2},
+	{BRIG_TYPE_F32_ARRAY, 4},
+	{BRIG_TYPE_F64_ARRAY, 8},
+	{BRIG_TYPE_B8_ARRAY, 1},
+	{BRIG_TYPE_B16_ARRAY, 2},
+	{BRIG_TYPE_B32_ARRAY, 4},
+	{BRIG_TYPE_B64_ARRAY, 8},
+	{BRIG_TYPE_B128_ARRAY, 16},
+	{BRIG_TYPE_SAMP_ARRAY, 0},
+	{BRIG_TYPE_ROIMG_ARRAY, 0},
+	{BRIG_TYPE_WOIMG_ARRAY, 0},
+	{BRIG_TYPE_RWIMG_ARRAY, 0},
+	{BRIG_TYPE_SIG32_ARRAY, 4},
+	{BRIG_TYPE_SIG64_ARRAY, 8},
+	{BRIG_TYPE_U8X4_ARRAY, 4},
+	{BRIG_TYPE_U8X8_ARRAY, 8},
+	{BRIG_TYPE_U8X16_ARRAY, 16},
+	{BRIG_TYPE_U16X2_ARRAY, 4},
+	{BRIG_TYPE_U16X4_ARRAY, 8},
+	{BRIG_TYPE_U16X8_ARRAY, 16},
+	{BRIG_TYPE_U32X2_ARRAY, 8},
+	{BRIG_TYPE_U32X4_ARRAY, 16},
+	{BRIG_TYPE_U64X2_ARRAY, 16},
+	{BRIG_TYPE_S8X4_ARRAY, 4},
+	{BRIG_TYPE_S8X8_ARRAY, 8},
+	{BRIG_TYPE_S8X16_ARRAY, 16},
+	{BRIG_TYPE_S16X2_ARRAY, 4},
+	{BRIG_TYPE_S16X4_ARRAY, 8},
+	{BRIG_TYPE_S16X8_ARRAY, 16},
+	{BRIG_TYPE_S32X2_ARRAY, 8},
+	{BRIG_TYPE_S32X4_ARRAY, 16},
+	{BRIG_TYPE_S64X2_ARRAY, 16},
+	{BRIG_TYPE_F16X2_ARRAY, 4},
+	{BRIG_TYPE_F16X4_ARRAY, 8},
+	{BRIG_TYPE_F16X8_ARRAY, 16},
+	{BRIG_TYPE_F32X2_ARRAY, 8},
+	{BRIG_TYPE_F32X4_ARRAY, 16},
+	{BRIG_TYPE_F64X2_ARRAY, 16}
 };
 
 
@@ -504,9 +552,9 @@ bool AsmService::isFloat(BrigType type)
 
 bool AsmService::isPacked(BrigType type)
 {
-	if (type & BRIG_TYPE_PACK_32 ||
-			type & BRIG_TYPE_PACK_64 ||
-			type & BRIG_TYPE_PACK_128)
+	if ((type & BRIG_TYPE_PACK_32) ||
+			(type & BRIG_TYPE_PACK_64) ||
+			(type & BRIG_TYPE_PACK_128))
 		return true;
 	return false;
 }
@@ -514,7 +562,7 @@ bool AsmService::isPacked(BrigType type)
 
 bool AsmService::isArray(BrigType type)
 {
-	if (type & BRIG_TYPE_ARRAY);
+	if (type & BRIG_TYPE_ARRAY)
 		return true;
 	return false;
 }
@@ -741,6 +789,21 @@ std::string AsmService::SamplerQueryToString(BrigSamplerQuery query)
 unsigned AsmService::TypeToSize(BrigType type)
 {
 	return type_to_size_map.at(type);
+}
+
+unsigned AsmService::getSizeInByteByRegisterName(const std::string &name)
+{
+	if (name[1] == 'c')
+		return 1;
+	else if (name[1] == 's')
+		return 4;
+	else if (name[1] == 'd')
+		return 8;
+	else if(name[1] == 'q')
+		return 16;
+	else
+		throw misc::Panic(misc::fmt("Unknown register name %s\n",
+				name.c_str()));
 }
 
 

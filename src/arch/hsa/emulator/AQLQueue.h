@@ -35,19 +35,19 @@ class AQLQueue
 {
 	// A struct that represents information of a aql queue
 	struct AqlQueueFields {
-		unsigned int queue_type;
-		unsigned int queue_features;
-		unsigned long long base_address;
-		unsigned long long doorbell_signal;
-		unsigned int size;
-		unsigned int id;
-		unsigned long long service_queue;
+		uint32_t queue_type;
+		uint32_t queue_features;
+		uint64_t base_address;
+		uint64_t doorbell_signal;
+		uint32_t size;
+		uint32_t id;
+		uint64_t service_queue;
 
 		// Position where to write next
-		unsigned long long write_index;
+		uint64_t write_index;
 
 		// Position to read next
-		unsigned long long read_index;
+		uint64_t read_index;
 	};
 
 	// The queue information is stored in a struct, this data structure is
@@ -55,32 +55,29 @@ class AQLQueue
 	struct AqlQueueFields *fields;
 
 	// The address of the fields in guest memory
-	unsigned fields_address;
+	uint32_t fields_address;
 
 	// Device it associated with
 	Component *associated_component = nullptr;
 
 	// Convert the linear write/ read index to real position
-	unsigned long long IndexToAddress(unsigned long long index)
+	uint64_t IndexToAddress(unsigned long long index)
 	{
-		unsigned long long address = fields->base_address +
+		uint64_t address = fields->base_address +
 				(index % fields->size) * sizeof(AQLPacket);
 		return address;
 	}
 
 	/// Return the packet starts at a certain linear index
-	AQLDispatchPacket *getPacket(unsigned long long linear_index);
+	AQLDispatchPacket *getPacket(uint64_t linear_index);
 
 public:
 
 	/// Constructor
-	AQLQueue(unsigned int size, unsigned int type);
+	AQLQueue(uint32_t size, uint32_t type);
 
 	/// Destructor
 	~AQLQueue();
-
-	/// Enqueue a packet
-	// void Enqueue(AQLDispatchPacket *packet);
 
 	/// Associate the queue with HSA component. Raise error if the queue
 	/// has already been associated with another device
@@ -105,85 +102,82 @@ public:
 	//
 
 	/// Set queue type
-	void setQueueType(unsigned int queue_type)
+	void setQueueType(uint32_t queue_type)
 	{ 
 		fields->queue_type = queue_type;
 	}
 
 	/// Get queue type
-	unsigned int getQueueType() const
+	uint32_t getQueueType() const
 	{
 		return fields->queue_type;
 	}
 
 	/// Set queue feature
-	void setQueueFeature(unsigned int queue_feature)
+	void setQueueFeature(uint32_t queue_feature)
 	{ 
 		fields->queue_features = queue_feature;
 	}
 
 	/// Get queue feature
-	unsigned int getQueueFeature() 
+	uint32_t getQueueFeature()
 	{
 		return fields->queue_features;
 	}
 
 	/// Get base address
-	unsigned long long getBaseAddress() const
+	uint64_t getBaseAddress() const
 	{
 		return fields->base_address;
 	}
 
 	/// Set base address
-	void setBaseAddress(unsigned long long base_address)
+	void setBaseAddress(uint64_t base_address)
 	{
 		fields->base_address = base_address;
 	}
 
 	/// Get bell signal
-	unsigned long long getBellSignal() const
+	uint64_t getBellSignal() const
 	{
 		return fields->doorbell_signal;
 	}
 
 	/// Set bell signal
-	void setBellSignal(unsigned long long bell_signal)
+	void setBellSignal(uint64_t bell_signal)
 	{
 		fields->doorbell_signal = bell_signal;
 	}
 
 	/// Get queue id
-	unsigned int getQueueId() const{ return fields->id; }
+	uint32_t getQueueId() const{ return fields->id; }
 
 	/// Set queue id
-	void setQueueId(unsigned int queue_id) { fields->id = queue_id; }
+	void setQueueId(uint32_t queue_id) { fields->id = queue_id; }
 
 	/// Get read index
-	unsigned long long getReadIndex() const { return fields->read_index; }
-
-	/// Set read index
-	// void setReadIndex(unsigned long long read_index) { this->read_index = read_index; }
+	uint64_t getReadIndex() const { return fields->read_index; }
 
 	/// Get service queue
-	unsigned long long getServiceQueue() const
+	uint64_t getServiceQueue() const
 	{
 		return fields->service_queue;
 	}
 
 	/// Set service queue
-	void setServiceQueue(unsigned long long service_queue)
+	void setServiceQueue(uint64_t service_queue)
 	{
 		fields->service_queue = service_queue;
 	}
 
 	/// Get size
-	unsigned int getSize() const { return fields->size; }
+	uint32_t getSize() const { return fields->size; }
 
 	/// Get write index
-	unsigned long long getWriteIndex() const { return fields->write_index; }
+	uint64_t getWriteIndex() const { return fields->write_index; }
 
 	/// Get the address of the queue struct in the guest memory
-	unsigned getFieldsAddress() const { return fields_address; }
+	uint32_t getFieldsAddress() const { return fields_address; }
 
 };
 

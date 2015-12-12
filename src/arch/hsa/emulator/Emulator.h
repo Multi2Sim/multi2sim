@@ -33,7 +33,6 @@
 
 #include "AQLQueue.h"
 #include "Component.h"
-#include "Signal.h"
 
 namespace HSA
 {
@@ -78,7 +77,7 @@ class Emulator : public comm::Emulator
 	// Maps from a 64-bit identifier to component
 	std::map<unsigned long long, std::unique_ptr<Component>> components;
 
-	// Host CPU device, the execution has to be kicked start by the host CPU
+	// Host CPU device
 	Component *host_cpu;
 
 	// Host CPU component, the unique_ptr is kept in the list components.
@@ -93,9 +92,6 @@ class Emulator : public comm::Emulator
 
 	// Global memory manager
 	std::unique_ptr<mem::Manager> manager;
-
-	// The emulator keeps the ownership of all signals
-	std::list<std::unique_ptr<Signal>> signals;
 
 public:
 
@@ -179,8 +175,8 @@ public:
 		manager.reset(new mem::Manager(memory));
 	}
 
-	/// Create a singal
-	Signal *CreateSignal(unsigned long long init_value);
+	/// Create a singal with the initial value and returns the handler
+	uint64_t CreateSignal(uint64_t init_value);
 
 };
 

@@ -26,7 +26,7 @@
 namespace HSA
 {
 
-AQLQueue::AQLQueue(unsigned int size, unsigned int type)
+AQLQueue::AQLQueue(uint32_t size, uint32_t type)
 {
 	// Global queue id to assign
 	static unsigned int process_queue_id = 0;
@@ -49,8 +49,8 @@ AQLQueue::AQLQueue(unsigned int size, unsigned int type)
 	// Set default type and feature
 	fields->queue_type = type;
 	fields->queue_features = 1;
-	fields->doorbell_signal = (unsigned long long)Emulator::getInstance()->
-			CreateSignal(0);
+//	fields->doorbell_signal = (unsigned long long)Emulator::getInstance()->
+//			CreateSignal(0);
 	fields->service_queue = 0;
 	fields->id = process_queue_id++;
 
@@ -71,11 +71,10 @@ AQLQueue::~AQLQueue()
 	// Two things to be done in destructor
 	// 1. Free the memory allocated for the packets buffer
 	// 2. Free the memory allocated for the queue fields
-	Emulator *emulator = Emulator::getInstance();
-	mem::Manager *manager = emulator->getMemoryManager();
-	manager->Free(fields->base_address);
-	manager->Free(fields_address);
-
+//	Emulator *emulator = Emulator::getInstance();
+//	mem::Manager *manager = emulator->getMemoryManager();
+//	manager->Free(fields->base_address);
+//	manager->Free(fields_address);
 }
 
 
@@ -87,33 +86,10 @@ void AQLQueue::Associate(Component *component)
 }
 
 
-/*
-void AQLQueue::Enqueue(AQLDispatchPacket *packet)
-{
-	// 1. Allocating an AQL packet slot
-	unsigned long long packet_id = fields->write_index;
-	allocatesPacketSlot();
-
-	// 2. update the AQL packet with the task particulars
-	Emu *emu = Emu::getInstance();
-	mem::Memory *memory = emu->getMemory();
-	memory->Write(packet_id, sizeof(AQLDispatchPacket), (char *)packet);
-
-	// 3. Assigning the packet to the Packet Processor
-	AQLDispatchPacket *saved_packet = getPacket(packet_id);
-	saved_packet->Assign();
-
-	// 4. Notifying the Packet Processor of the packet
-	fields->doorbell_signal = packet_id;
-
-}
-*/
-
-
-AQLDispatchPacket *AQLQueue::getPacket(unsigned long long index)
+AQLDispatchPacket *AQLQueue::getPacket(uint64_t index)
 {
 	// Convert the linear index to real recursive index
-	unsigned long long address = IndexToAddress(index);
+	uint64_t address = IndexToAddress(index);
 
 	// Get the memory object
 	Emulator *emulator = Emulator::getInstance();

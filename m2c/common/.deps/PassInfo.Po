@@ -1,0 +1,5 @@
+PassInfo.o: PassInfo.cc /usr/include/stdc-predef.h PassInfo.h
+
+/usr/include/stdc-predef.h:
+
+PassInfo.h:

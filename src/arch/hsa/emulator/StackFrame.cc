@@ -156,30 +156,42 @@ void StackFrame::DumpRegister(const std::string &name,
 	{
 	case 'c':
 
-		if (getRegisterValue<unsigned char>(name))
+	{
+		unsigned char buf = 0;
+		getRegisterValue(name, &buf);
+		if (buf)
 			os << "true";
 		else
 			os << "false";
 		break;
+	}
 
 	case 's':
 
+	{
+		unsigned int buf = 0;
+		getRegisterValue(name, &buf);
 		os << misc::fmt("%u, %d, %f, 0x%08x",
-				getRegisterValue<unsigned int>(name),
-				getRegisterValue<int>(name),
-				getRegisterValue<float>(name),
-				getRegisterValue<unsigned int>(name));
+				*(unsigned int *)&buf,
+				*(int *)&buf,
+				*(float *)&buf,
+				*(unsigned int *)&buf);
 
 		break;
+	}
 
 	case 'd':
 
+	{
+		unsigned long long buf = 0;
+		getRegisterValue(name, &buf);
 		os << misc::fmt("%llu, %lld, %f, 0x%016llx",
-				getRegisterValue<unsigned long long>(name),
-				getRegisterValue<long long>(name),
-				getRegisterValue<double>(name),
-				getRegisterValue<unsigned long long>(name));
+				*(unsigned long long *)&buf,
+				*(long long *)&buf,
+				*(double *)&buf,
+				*(unsigned long long *)&buf);
 		break;
+	}
 
 	case 'q':
 

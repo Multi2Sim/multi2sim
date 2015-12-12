@@ -29,6 +29,7 @@
 namespace HSA
 {
 
+/*
 WorkItem::ExecuteInstFn WorkItem::execute_inst_fn[InstOpcodeCount + 1] =
 {
 #define DEFINST(name, opcode, opstr) \
@@ -50,9 +51,9 @@ void WorkItem::Inst_ABS_Aux()
 {
 	// Perform action
 	T src0;
-	getOperandValue<T>(1, &src0);
+	getOperandValue(1, &src0);
 	T des = abs(src0);
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -97,91 +98,13 @@ void WorkItem::ExecuteInst_ABS()
 
 
 template<typename T>
-void WorkItem::Inst_ADD_Aux()
-{
-	//Perform action
-	T src0;
-	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	T des = src0 + src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_ADD()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action accoding to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_ADD_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_ADD_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_ADD_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_ADD_Aux<unsigned long long>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_F32:
-
-			Inst_ADD_Aux<float>();
-			break;
-
-		case BRIG_TYPE_F64:
-
-			Inst_ADD_Aux<double>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_BORROW_Aux()
 {
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 
 	// If overflows, set des to 1;
 	T des = 0;
@@ -189,7 +112,7 @@ void WorkItem::Inst_BORROW_Aux()
 		des = 1;
 
 	// Store result
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -242,8 +165,8 @@ void WorkItem::Inst_CARRY_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 
 	// If overflows, set des to 1;
 	T des = 0;
@@ -252,7 +175,7 @@ void WorkItem::Inst_CARRY_Aux()
 		des = 1;
 
 	// Store result
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -317,10 +240,10 @@ void WorkItem::Inst_DIV_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 	T des = src0 / src1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -414,11 +337,11 @@ void WorkItem::Inst_MAD_Aux()
 	T src0;
 	T src1;
 	T src2;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	getOperandValue<T>(3, &src2);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
+	getOperandValue(3, &src2);
 	T des = (src0 * src1) + src2;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -467,10 +390,10 @@ void WorkItem::Inst_MAX_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 	T des = (src0 > src1) ? src0 : src1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -530,10 +453,10 @@ void WorkItem::Inst_MIN_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 	T des = (src0 < src1) ? src0 : src1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -586,81 +509,6 @@ void WorkItem::ExecuteInst_MIN()
 	MovePcForwardByOne();
 }
 
-template<typename T> void WorkItem::Inst_MUL_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	T des = src0 * src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_MUL()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action accoding to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_MUL_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_MUL_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_MUL_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_MUL_Aux<unsigned long long>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{	
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_F32:
-
-			Inst_MUL_Aux<float>();
-			break;
-
-		case BRIG_TYPE_F64:
-
-			Inst_MUL_Aux<double>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
 
 template<typename T>
 void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
@@ -668,8 +516,8 @@ void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 	// Get source value
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 
 	// Split source value to upper and higher bits
 	T src0_lo = src0 | lo_mask;
@@ -687,7 +535,7 @@ void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 	// Detemine if part2 + part3 contribute to part 4
 	if (part2 != (part2 + part3) - part3)
 		des += 1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -745,9 +593,9 @@ template<typename T> void WorkItem::Inst_NEG_Aux()
 {
 	// Perform action
 	T src0;
-	getOperandValue<T>(1, &src0);
+	getOperandValue(1, &src0);
 	T des = -src0;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -811,10 +659,10 @@ void WorkItem::Inst_REM_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 	T des = src0 % src1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -880,82 +728,6 @@ void WorkItem::ExecuteInst_SQRT()
 }
 
 
-template<typename T> void WorkItem::Inst_SUB_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	T des = src0 - src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_SUB()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_SUB_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_SUB_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_SUB_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_SUB_Aux<unsigned int>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_F32:
-
-			Inst_SUB_Aux<float>();
-			break;
-
-		case BRIG_TYPE_F64:
-
-			Inst_SUB_Aux<double>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_TRUNC()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -987,162 +759,13 @@ void WorkItem::ExecuteInst_MUL24HI()
 
 
 template<typename T>
-void WorkItem::Inst_SHL_Aux()
-{
-	// Perform action
-	T src0;
-	getOperandValue<T>(1, &src0);
-	unsigned int src1;
-	getOperandValue<unsigned int>(2, &src1);
-	T des = src0 << src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_SHL()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_S32:
-
-		Inst_SHL_Aux<int>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_SHL_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_U32:
-
-		Inst_SHL_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_U64:
-
-		Inst_SHL_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
-void WorkItem::Inst_SHR_Aux()
-{
-	// FIXME:  Logic right shift
-	// Perform action
-	T src0;
-	unsigned int src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<unsigned int>(2, &src1);
-	T des = src0 >> src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_SHR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_S32:
-
-		Inst_SHR_Aux<int>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_SHR_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_U32:
-
-		Inst_SHR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_U64:
-
-		Inst_SHR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
-void WorkItem::Inst_AND_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	T des = src0 & src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_AND()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst AND, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_AND_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_AND_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_NOT_Aux()
 {
 	// Perform action
 	T src0;
-	getOperandValue<T>(1, &src0);
+	getOperandValue(1, &src0);
 	T des = ~src0;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -1178,59 +801,12 @@ void WorkItem::ExecuteInst_NOT()
 	MovePcForwardByOne();
 }
 
-
-template<typename T>
-void WorkItem::Inst_OR_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
-	T des = src0 | src1;
-	setOperandValue<T>(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_OR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst OR, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_OR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_OR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
 template<typename T>
 void WorkItem::Inst_POPCOUNT_Aux()
 {
 	// Get operand value
 	T src0;
-	getOperandValue<T>(1, &src0);
+	getOperandValue(1, &src0);
 
 	// Calculate
 	unsigned int des = 0;
@@ -1239,7 +815,7 @@ void WorkItem::Inst_POPCOUNT_Aux()
 		if (src0 & 1) des++;
 		src0 >>= 1;
 	}
-	setOperandValue<unsigned int>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -1277,10 +853,10 @@ void WorkItem::Inst_XOR_Aux()
 	// Perform action
 	T src0;
 	T src1;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<T>(2, &src1);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
 	T des = src0 ^ src1;
-	setOperandValue<T>(0, &des);
+	setOperandValue(0, &des);
 }
 
 
@@ -1324,9 +900,9 @@ void WorkItem::Inst_BITEXTRACT_Aux()
 	T src0;
 	unsigned int src1;
 	unsigned int src2;
-	getOperandValue<T>(1, &src0);
-	getOperandValue<unsigned int>(2, &src1);
-	getOperandValue<unsigned int>(3, &src2);
+	getOperandValue(1, &src0);
+	getOperandValue(2, &src1);
+	getOperandValue(3, &src2);
 
 	// Performance action
 	unsigned int length = sizeof(T) * 8;
@@ -1338,7 +914,7 @@ void WorkItem::Inst_BITEXTRACT_Aux()
 		dest = (src0 << (length - width - offset)) >> (length - width);
 		// signed or unsigned >>, depending on operation.type
 	}
-	setOperandValue<T>(0, &dest);
+	setOperandValue(0, &dest);
 }
 
 
@@ -1428,136 +1004,6 @@ void WorkItem::ExecuteInst_EXPAND()
 }
 
 
-template<typename T>
-void WorkItem::Inst_LDA_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Retrieve operand
-	auto address_operand = inst->getOperand(1);
-	auto symbol = address_operand->getSymbol();
-	std::string name = symbol->getName();
-
-	// Get offset
-	unsigned long long offset = address_operand->getOffset();
-
-	// Declare addres
-	unsigned address;
-
-	// Get the symbol from stack top
-	Variable *variable = stack_top->getSymbol(name);
-	if (!variable)
-		throw misc::Error(misc::fmt("Variable %s not defined.\n", 
-					name.c_str()));
-		
-	// Add offset
-	address += offset;
-
-	// Save result
-	setOperandValue<T>(0, (T*)&address);
-
-	// Return
-	return;
-}
-
-
-void WorkItem::ExecuteInst_LDA()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-	
-	switch(inst->getType())
-	{
-	case BRIG_TYPE_U32:
-		Inst_LDA_Aux<unsigned int>();
-		break;
-	case BRIG_TYPE_U64:
-		Inst_LDA_Aux<unsigned long long>();
-		break;
-	default:
-		throw misc::Error("Unsupported type for instruction LDA.");
-		break;
-	}
-
-	// Move PC forward.
-	MovePcForwardByOne();
-
-}
-
-
-template<typename T>
-void WorkItem::Inst_MOV_Aux()
-{
-	// Retrieve src value
-	T src0;
-	getOperandValue<T>(1, &src0);
-
-	// Move to dst value
-	T dst = src0;
-	setOperandValue<T>(0, &dst);
-}
-
-
-void WorkItem::ExecuteInst_MOV()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Call auxiliary function on different type
-	switch (inst->getType()){
-	case BRIG_TYPE_B1:
-
-		Inst_MOV_Aux<unsigned char>();
-		break;
-
-	case BRIG_TYPE_B32:
-	case BRIG_TYPE_U32:
-
-		Inst_MOV_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-	case BRIG_TYPE_U64:
-
-		Inst_MOV_Aux<unsigned long long>();
-		break;
-
-	case BRIG_TYPE_S32:
-
-		Inst_MOV_Aux<int>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_MOV_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_F32:
-
-		Inst_MOV_Aux<float>();
-		break;
-
-	case BRIG_TYPE_F64:
-
-		Inst_MOV_Aux<double>();
-		break;
-
-	default:
-
-		throw misc::Panic("Unsupported type for opcode MOV.");
-		break;
-
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_SHUFFLE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -1587,10 +1033,80 @@ void WorkItem::ExecuteInst_UNPACK()
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
+template<typename T> void WorkItem::Inst_CMOV_Aux() {
+	// Retrieve src0 value
+	unsigned char src0;
+	getOperandValue(1, &src0);
+
+	// Retrieve src1, src2
+	T src1, src2;
+	getOperandValue(2, &src1);
+	getOperandValue(3, &src2);
+
+	// Move to dst value
+	T dst;
+	if (src0) 
+		dst = src1;
+	else 
+		dst = src2;
+	setOperandValue(0, &dst);
+}
+
 
 void WorkItem::ExecuteInst_CMOV()
 {
-	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
+	// Retrieve inst
+	StackFrame *stack_top = stack.back().get();
+	BrigCodeEntry *inst = stack_top->getPc();
+
+	// Call auxiliary function on different type
+	switch (inst->getType()){
+	case BRIG_TYPE_B1:
+
+		Inst_CMOV_Aux<unsigned char>();
+		break;
+
+	case BRIG_TYPE_B32:
+	case BRIG_TYPE_U32:
+
+		Inst_CMOV_Aux<unsigned int>();
+		break;
+
+	case BRIG_TYPE_B64:
+	case BRIG_TYPE_U64:
+
+		Inst_CMOV_Aux<unsigned long long>();
+		break;
+
+	case BRIG_TYPE_S32:
+
+		Inst_CMOV_Aux<int>();
+		break;
+
+	case BRIG_TYPE_S64:
+
+		Inst_CMOV_Aux<long long>();
+		break;
+
+	case BRIG_TYPE_F32:
+
+		Inst_CMOV_Aux<float>();
+		break;
+
+	case BRIG_TYPE_F64:
+
+		Inst_CMOV_Aux<double>();
+		break;
+
+	default:
+
+		throw misc::Panic("Unsupported type for opcode CMOV.");
+		break;
+
+	}
+
+	// Move PC forward
+	MovePcForwardByOne();
 }
 
 
@@ -1708,401 +1224,6 @@ void WorkItem::ExecuteInst_STOF()
 }
 
 
-template<typename SrcType, typename DstType>
-void WorkItem::Inst_CMP_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	//Get source value
-	SrcType src1;
-	SrcType src2;
-	getOperandValue<SrcType>(1, &src1);
-	getOperandValue<SrcType>(2, &src2);
-	DstType dst = 0;
-
-	switch (inst->getCompareOperation()){
-	case BRIG_COMPARE_EQ:
-
-		if (src1 == src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_NE:
-
-		if (src1 != src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_LT:
-
-		if (src1 < src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_LE:
-
-		if (src1 <= src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_GT:
-
-		if (src1 > src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_GE:
-
-		if (src1 >= src2)
-			dst = 1;
-		else
-			dst = 0;
-		break;
-
-	case BRIG_COMPARE_EQU:
-	case BRIG_COMPARE_NEU:
-	case BRIG_COMPARE_LTU:
-	case BRIG_COMPARE_LEU:
-	case BRIG_COMPARE_GTU:
-	case BRIG_COMPARE_GEU:
-	case BRIG_COMPARE_NUM:
-	case BRIG_COMPARE_NAN:
-	case BRIG_COMPARE_SEQ:
-	case BRIG_COMPARE_SNE:
-	case BRIG_COMPARE_SLT:
-	case BRIG_COMPARE_SLE:
-	case BRIG_COMPARE_SGT:
-	case BRIG_COMPARE_SGE:
-	case BRIG_COMPARE_SGEU:
-	case BRIG_COMPARE_SEQU:
-	case BRIG_COMPARE_SNEU:
-	case BRIG_COMPARE_SLTU:
-	case BRIG_COMPARE_SLEU:
-	case BRIG_COMPARE_SNUM:
-	case BRIG_COMPARE_SNAN:
-	case BRIG_COMPARE_SGTU:
-	default:
-		throw misc::Panic("Unimplemented compare operation.");
-
-	}
-
-	// Store result value
-	setOperandValue<DstType>(0, &dst);
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
-void WorkItem::ExecuteInst_CMP()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	switch (inst->getSourceType()){
-	case BRIG_TYPE_B1:
-	case BRIG_TYPE_B8:
-
-		Inst_CMP_Aux<unsigned char, unsigned char>();
-		break;
-
-	case BRIG_TYPE_B16:
-	case BRIG_TYPE_U16:
-
-		Inst_CMP_Aux<unsigned short, unsigned char>();
-		break;
-
-	case BRIG_TYPE_B32:
-	case BRIG_TYPE_U32:
-
-		Inst_CMP_Aux<unsigned int, unsigned char>();
-		break;
-
-	case BRIG_TYPE_B64:
-	case BRIG_TYPE_U64:
-
-		Inst_CMP_Aux<unsigned long long, unsigned char>();
-		break;
-
-	case BRIG_TYPE_S32:
-
-		Inst_CMP_Aux<int, unsigned char>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_CMP_Aux<long long, unsigned char>();
-		break;
-
-	default:
-
-		throw misc::Panic("Unsupported source type for CMP.");
-		break;
-
-	}
-}
-
-
-template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_chop_Aux()
-{
-	SrcType src;
-	getOperandValue<SrcType>(1, &src);
-	DstType dst = 0;
-
-	// Use memcpy to chop
-	memcpy(&dst, &src, sizeof(DstType));
-	setOperandValue<DstType>(0, &dst);
-}
-
-
-template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_zext_Aux()
-{
-	SrcType src;
-	getOperandValue<SrcType>(1, &src);
-	
-	// Force cast
-	DstType dst = (DstType)src;
-	setOperandValue<DstType>(0, &dst);
-}
-
-
-template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_sext_Aux()
-{
-	SrcType src;
-	getOperandValue<SrcType>(1, &src);
-
-	// Force cast
-	DstType dst = (DstType)src;
-	setOperandValue<DstType>(0, &dst);
-}
-
-
-template<typename SrcType, typename DstType> void WorkItem::Inst_CVT_u2f_Aux()
-{
-	SrcType src;
-	getOperandValue<SrcType>(1, &src);
-
-	// Force cast
-	DstType dst = (DstType)src;
-	setOperandValue<DstType>(0, &dst);
-}
-
-
-void WorkItem::ExecuteInst_CVT()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get src type and dst type
-	BrigType src_type = inst->getSourceType();
-	BrigType dst_type = inst->getType();
-
-	if (src_type == BRIG_TYPE_U16 && dst_type == BRIG_TYPE_U32)
-	{
-		Inst_CVT_zext_Aux<unsigned short, unsigned int>();
-	}
-	else if (src_type == BRIG_TYPE_U32 && dst_type == BRIG_TYPE_U64)
-	{
-		Inst_CVT_zext_Aux<unsigned int, unsigned long long>();
-	}
-	else if (src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_U32)
-	{
-		Inst_CVT_chop_Aux<unsigned long long, unsigned int>();
-	}
-	else if (src_type == BRIG_TYPE_U32 && dst_type == BRIG_TYPE_U8)
-	{
-		Inst_CVT_chop_Aux<unsigned int, unsigned char>();
-	}
-	else if (src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_U8)
-	{
-		Inst_CVT_chop_Aux<unsigned long long, unsigned char>();
-	}
-	else if(src_type == BRIG_TYPE_U64 && dst_type == BRIG_TYPE_F32)
-	{
-		Inst_CVT_u2f_Aux<unsigned long long, float>();
-	}
-	else if (src_type == BRIG_TYPE_S32 && dst_type == BRIG_TYPE_S64)
-	{
-		Inst_CVT_sext_Aux<int, long long>();
-	}
-	else
-	{
-		throw misc::Panic(misc::fmt("Conversion between %s and %s "
-				"is not supported\n",
-				AsmService::TypeToString(src_type).c_str(),
-				AsmService::TypeToString(dst_type).c_str()));
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
-void WorkItem::Inst_LD_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get address according the type of the operand
-	unsigned address;
-	getOperandValue(1, &address);
-	
-	// Translate address to flat address
-	address = getFlatAddress(inst->getSegment(), 
-			address);
-
-	// Read data
-	unsigned vector_modifier = inst->getVectorModifier();
-	if (vector_modifier == 0) vector_modifier = 1;
-	auto value = misc::new_unique_array<T>(
-			vector_modifier);
-	Emulator::getInstance()->getMemory()->Read(address, 
-			sizeof(T) * vector_modifier, 
-			(char *)value.get());
-
-	// Move value from register or immediate into memory
-	setOperandValue<T>(0, value.get());
-
-}
-
-
-void WorkItem::ExecuteInst_LD()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_U32:
-
-		Inst_LD_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_S32:
-
-		Inst_LD_Aux<int>();
-		break;
-
-	case BRIG_TYPE_F32:
-
-		Inst_LD_Aux<float>();
-		break;
-
-	case BRIG_TYPE_U64:
-
-		Inst_LD_Aux<unsigned long long>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_LD_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_F64:
-
-		Inst_LD_Aux<double>();
-		break;
-
-	default:
-
-		throw misc::Panic("Unimplemented type for Inst LD.");
-		break;
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
-void WorkItem::Inst_ST_Aux()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get address to store
-	unsigned address;
-	getOperandValue(1, &address);
-	
-	// Translate address to flat address
-	address = getFlatAddress(inst->getSegment(), address);
-
-	// Move value from register or immediate into memory
-	T src0;
-	getOperandValue<T>(0, &src0);
-	mem::Memory *memory = Emulator::getInstance()->getMemory();
-	memory->Write(address, sizeof(T), (char *)&src0);
-}
-
-
-void WorkItem::ExecuteInst_ST()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get type
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_U8:
-	case BRIG_TYPE_S8:
-
-		Inst_ST_Aux<unsigned char>();
-		break;
-
-	case BRIG_TYPE_U16:
-	case BRIG_TYPE_S16:
-
-		Inst_ST_Aux<unsigned short>();
-		break;
-
-	case BRIG_TYPE_U32:
-	case BRIG_TYPE_S32:
-
-		Inst_ST_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_F32:
-		Inst_ST_Aux<float>();
-		break;
-
-	case BRIG_TYPE_U64:
-	case BRIG_TYPE_S64:
-
-		Inst_ST_Aux<unsigned long long>();
-		break;
-
-	case BRIG_TYPE_F64:
-		Inst_ST_Aux<double>();
-		break;
-
-	default:
-		throw misc::Panic("Type is not supported");
-		break;
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_ATOMIC()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -2169,77 +1290,9 @@ void WorkItem::ExecuteInst_QUERYSAMPLER()
 }
 
 
-void WorkItem::ExecuteInst_CBR()
-{
-	// Retrieve
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Retrieve condition
-	unsigned char condition;
-	getOperandValue<unsigned char>(0, &condition);
-
-	// Jump if condition is true
-	if (condition){
-		// Retrieve 1st operand
-		auto operand1 = inst->getOperand(1);
-		if (operand1->getKind() == BRIG_KIND_OPERAND_CODE_REF)
-		{
-			auto label = operand1->getRef();
-
-			// Redirect pc to a certain label
-			stack_top->setPc(std::move(label));
-			return;
-		}else{
-			throw misc::Panic("Unsupported operand type for CBR.");
-		}
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
-void WorkItem::ExecuteInst_BR()
-{
-	// Retrieve
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Retrieve 1st operand
-	auto operand0 = inst->getOperand(0);
-	if (operand0->getKind() == BRIG_KIND_OPERAND_CODE_REF)
-	{
-		auto label = operand0->getRef();
-
-		// Redirect pc to a certain label
-		stack_top->setPc(std::move(label));
-		return;
-	}else{
-		throw misc::Panic("Unsupported operand type for CBR.");
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_SBR()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_BARRIER()
-{
-	// Suspend the work item
-	status = WorkItemStatusSuspend;
-
-	// Notify the work group
-	work_group->HitBarrier(getAbsoluteFlattenedId());
-
-	// Move PC forward
-	MovePcForwardByOne();
 }
 
 
@@ -2349,47 +1402,9 @@ void WorkItem::ExecuteInst_ICALL()
 }
 
 
-template<typename T> void WorkItem::Inst_LDI_Aux()
-{
-	// Retrieve instruction
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Get function operand
-	auto operand1 = inst->getOperand(1);
-
-	// Store the offset of the function
-	setOperandValue<T>(0, operand1->getRef()->getOffset());
-
-	// Move PC forward
-	MovePcForwardByOne();
-}
-
-
-void WorkItem::ExecuteInst_RET()
-{
-	// Return the function
-	ReturnFunction();
-	//if (Emulator::isa_debug)
-	//	Backtrace(Emulator::isa_debug);
-}
-
-
-
 void WorkItem::ExecuteInst_ALLOCA()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_CURRENTWORKGROUPSIZE()
-{
-	// Get operand
-	unsigned int dim;
-	getOperandValue<unsigned int>(1, &dim);
-	unsigned int size = getWorkGroup()->getCurrentWorkGroupSize(dim);
-	setOperandValue<unsigned int>(0, &size);
-	MovePcForwardByOne();
 }
 
 
@@ -2411,39 +1426,6 @@ void WorkItem::ExecuteInst_GRIDGROUPS()
 }
 
 
-void WorkItem::ExecuteInst_GRIDSIZE()
-{
-	unsigned int dim_number;
-	getOperandValue<unsigned int>(1, &dim_number);
-	unsigned int size;
-	
-	switch(dim_number)
-	{
-	case 0:
-
-		size = work_group->getGrid()->getGridSizeX();
-		break;
-
-	case 1:
-
-		size = work_group->getGrid()->getGridSizeY();
-		break;
-
-	case 2:
-
-		size = work_group->getGrid()->getGridSizeZ();
-		break;
-		
-	default:
-		
-		throw Error(misc::fmt("Invaid dim_number %d.\n", dim_number));
-	}
-
-	setOperandValue<unsigned int>(0, &size);
-	MovePcForwardByOne();
-}
-
-
 void WorkItem::ExecuteInst_PACKETCOMPLETIONSIG()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
@@ -2456,83 +1438,9 @@ void WorkItem::ExecuteInst_PACKETID()
 }
 
 
-void WorkItem::ExecuteInst_WORKGROUPID()
-{
-	unsigned int dim;
-	getOperandValue<unsigned int>(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = work_group->getGroupIdX();
-		setOperandValue<unsigned int>(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = work_group->getGroupIdY();
-		setOperandValue<unsigned int>(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = work_group->getGroupIdZ();
-		setOperandValue<unsigned int>(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item absolute id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
-}
-
-
 void WorkItem::ExecuteInst_WORKGROUPSIZE()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_WORKITEMABSID()
-{
-	unsigned int dim;
-	getOperandValue<unsigned int>(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-		setOperandValue<unsigned int>(0, &abs_id_x);
-		break;
-
-	case 1:
-
-		setOperandValue<unsigned int>(0, &abs_id_y);
-		break;
-
-	case 2:
-
-		setOperandValue<unsigned int>(0, &abs_id_z);
-		break;
-
-	default:
-		
-		throw misc::Error("Trying to getting work item absolute id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
 }
 
 
@@ -2545,48 +1453,6 @@ void WorkItem::ExecuteInst_WORKITEMFLATABSID()
 void WorkItem::ExecuteInst_WORKITEMFLATID()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-
-void WorkItem::ExecuteInst_WORKITEMID()
-{
-	unsigned int dim;
-	getOperandValue<unsigned int>(1, &dim);
-	switch(dim)
-	{
-	case 0:
-
-	{
-		unsigned int idx = getLocalIdX();
-		setOperandValue<unsigned int>(0, &idx);
-		break;
-	}
-	
-	case 1:
-
-	{
-		unsigned int idy = getLocalIdY();
-		setOperandValue<unsigned int>(0, &idy);
-		break;
-	}
-
-	case 2:
-
-	{
-		unsigned int idz = getLocalIdZ();
-		setOperandValue<unsigned int>(0, &idz);
-		break;
-	}
-
-	default:
-
-		throw misc::Error("Trying to getting work item id "
-				"other than x, y and z axis.");
-	}
-
-	// Move pc to next instruction
-	MovePcForwardByOne();
-
 }
 
 
@@ -2703,11 +1569,17 @@ void WorkItem::ExecuteInst_WAVEID()
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
 }
 
+void WorkItem::ExecuteInst_GCNMIN() 
+{
+	ExecuteInst_MIN();
+}
 
 
 void WorkItem::ExecuteInst_unsupported()
 {
 }
+
+*/
 
 }  // namespace HSA
 

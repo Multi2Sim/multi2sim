@@ -25,9 +25,10 @@
 #include <lib/cpp/Debug.h>
 #include <memory/Memory.h>
 
-#include "DriverCallbackInfo.h"
+#include "SignalManager.h"
 #include "../../../../runtime/include/hsa.h"
 #include "../../../../runtime/include/hsa_ext_finalize.h"
+#include "DriverCallHandler.h"
 
 namespace HSA
 {
@@ -43,10 +44,11 @@ class Driver: public comm::Driver
 	// Maps from the function name in HSAIL to call number
 	static misc::StringMap function_name_to_call_map;
 
+	// The container of all signals
+	std::unique_ptr<SignalManager> signal_manager;
+
 	/// Constructor
-	Driver() : comm::Driver("HSA", "/dev/hsa")
-	{
-	};
+	Driver();
 
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
@@ -100,7 +102,8 @@ class Driver: public comm::Driver
 
 	// Retrieve the value at a certain memory space
 	template <typename T>
-	static T getArgumentValue(int offset, mem::Memory *memory, unsigned args_ptr)
+	static T getArgumentValue(int offset, mem::Memory *memory,
+			unsigned args_ptr)
 	{
 		// Read from memory
 		T value;
@@ -115,6 +118,9 @@ class Driver: public comm::Driver
 	{
 		memory->Write(args_ptr+offset, sizeof(T), (char *)&value);
 	}
+
+	// Get driver call handler by call number
+	std::unique_ptr<DriverCallHandler> GetDriverCallHandler(int code);
 
 public:
 
@@ -138,76 +144,10 @@ public:
 			unsigned args_ptr);
 
 	/// Destructor
-	~Driver();
+	virtual ~Driver();
 
-/*
-
-	// Stores the argument received when agent_iterate is called, when
-	// next_agent function is called, reuse the arguments
-	mem::Memory *agent_iterator_memory;
-	unsigned agent_iterator_args_ptr;
-
-	/// Used as callback function to iterate next device
-	static int IterateAgentNext(DriverCallbackInfo *args);
-
-	/// Redirect the execution to the callback function
-	void StartAgentIterateCallback(WorkItem *workitem,
-			unsigned callback_address,
-			unsigned long long component_handler,
-			unsigned long long data_address,
-			unsigned args_ptr);
-
-
-
-
-	//
-	// Interceptor related functions
-	//
-
-private:
-
-	// Copy the arguments into a certain place in memory
-	void SerializeArguments(char *arg_buffer, StackFrame *stack_top);
-
-	// The iterator pointing to the components
-	std::map<unsigned long long, std::unique_ptr<Component>>::iterator
-			component_iterator;
-
-	// Allocate memory to hold serialized arguments, returns the address
-	// pointing to the beginning of the argument memory space.,
-	unsigned PassArgumentsInByValue(const std::string &function_name,
-			StackFrame *stack_top);
-
-	// Copy the argument value back from the callee's buffer to caller's
-	// buffer
-	void PassBackByValue(unsigned arg_address,
-			StackFrame *stack_top);
-
-public:
-	
-	/// Prototype for callback functions;
-	typedef int (Driver::*CallbackFn)(mem::Memory *memory, 
-			unsigned args_ptr);
-
-	/// Try to intercept the execution of a HSAIL function
-	///
-	/// \param function_name 
-	///	The name of the function to be intercepted
-	///
-	/// \param stack_top
-	///	The stack frame where the interception take place
-	///
-	/// \return 
-	///	Determine if the function is intercepted
-	bool Intercept(const std::string &function_name, 
-			StackFrame *stack_top);
-
-	/// Exit the intercepted context by passing the returning value back to 
-	/// the stack frame, freeing the memory allocated for the serialized 
-	/// argument and move the host pc forward.
-	void ExitInterceptedEnvironment(unsigned arg_address, 
-			StackFrame *stack_top);
-*/
+	/// Get the signal manager
+	SignalManager *getSignalManager() const { return signal_manager.get(); }
 };
 
 } /* namespace HSA */

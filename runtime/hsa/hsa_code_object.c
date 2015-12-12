@@ -55,7 +55,6 @@ hsa_status_t HSA_API hsa_code_object_deserialize(
 hsa_status_t HSA_API hsa_code_object_destroy(
     hsa_code_object_t code_object)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
 }
 

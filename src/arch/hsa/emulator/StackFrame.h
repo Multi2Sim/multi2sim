@@ -20,8 +20,10 @@
 #ifndef ARCH_HSA_EMULATOR_STACKFRAME_H
 #define ARCH_HSA_EMULATOR_STACKFRAME_H
 
+#include <cstring>
+
 #include <arch/hsa/driver/Driver.h>
-#include <arch/hsa/driver/DriverCallbackInfo.h>
+#include <arch/hsa/disassembler/AsmService.h>
 
 #include "Function.h"
 
@@ -112,46 +114,51 @@ public:
 	void DumpRegister(const std::string &name, std::ostream &os) const;
 
 	/// Return register value
-	template <typename Type>
-	Type getRegisterValue(const std::string &name) const
+	void getRegisterValue(const std::string &name, void *buffer) const
 	{
 		// Do special action for c registers
 		if (name[1] == 'c')
 		{
 			unsigned int index = name[2] - '0';
-			return c_registers[index];
-		}
-
-		// Get the offset of the register
-		unsigned int offset = function->getRegisterOffset(name);
-
-		// Cast corresponding pointer to certain type
-		Type *pointer = (Type *)(this->register_storage.get() + offset);
-
-		// Return the value of the register
-		return *pointer;
-	}
-
-	/// Set a registers value
-	template <typename Type>
-	void setRegisterValue(const std::string &name, Type value)
-	{
-		// Do special action for c registers
-		if (name[1] == 'c')
-		{
-			unsigned int index = name[2] - '0';
-			c_registers[index] = value;
+			*(unsigned char *)buffer = c_registers[index];
 			return;
 		}
 
 		// Get the offset of the register
 		unsigned int offset = function->getRegisterOffset(name);
 
-		// Cast corresponding pointer to certain type
-		Type *pointer = (Type *)(this->register_storage.get() + offset);
+		// Get the size of the register
+		unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+		// Copy the value of the register
+		memcpy(buffer, register_storage.get() + offset, size);
+
+		// Return the value of the register
+		return;
+	}
+
+	/// Set a registers value
+	void setRegisterValue(const std::string &name, void *value)
+	{
+		// Do special action for c registers
+		if (name[1] == 'c')
+		{
+			unsigned int index = name[2] - '0';
+			c_registers[index] = *(unsigned char *)value;
+			return;
+		}
+
+		// Get the offset of the register
+		unsigned int offset = function->getRegisterOffset(name);
+
+		// Get the size of the register
+		unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+		// Copy the value to the register
+		memcpy(register_storage.get() + offset, value, size);
 
 		// Set the value of the register
-		*pointer = value;
+		return;
 	}
 
 	/// Start an argument scope, when a '{' appears. Requires the size to
