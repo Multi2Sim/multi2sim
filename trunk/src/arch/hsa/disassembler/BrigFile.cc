@@ -51,8 +51,6 @@ void BrigFile::LoadFileByPath(const std::string &path)
 	f.read(buffer.get(), size);
 	f.close();
 
-	std::cout << "File size " << size << std::endl;
-
 	// Verify the file is valid
 	if (!isBrigFile(buffer.get()))
 	{
@@ -174,46 +172,5 @@ std::unique_ptr<BrigOperandEntry> BrigFile::getOperandByOffset(
 			getEntryByOffset<BrigOperandEntry>(offset);
 	return entry;
 }
-
-/*
-char *BrigFile::findMainFunction()
-{
-	// get pointers to code and dir section
-	BrigSection *dirSection = this->getBrigSection(BrigSectionDirective);
-	BrigSection *codeSection = this->getBrigSection(BrigSectionCode);
-	char *codeBuf = (char *)codeSection->getBuffer();
-	const char *dirBuf = dirSection->getBuffer();
-
-	// skip the header, the size field, of the section
-	char *bufPtr = (char *)dirBuf;
-	bufPtr += 4;
-
-	// Traverse all the directives to find function declarations
-	while(bufPtr && bufPtr < dirBuf + dirSection->getSize())
-	{
-		BrigDirEntry dir(bufPtr, this);
-		if(dir.getKind() == BRIG_DIRECTIVE_FUNCTION)
-		{
-			// function declarations
-			struct BrigDirectiveFunction *dirStruct = 
-					(struct BrigDirectiveFunction *)
-					dir.getBuffer();
-			std::string funcName = 
-					BrigStrEntry::GetStringByOffset(this, 
-						dirStruct->name);
-
-			// Defines the program entry point as the function name
-			// as \c &main
-			if(funcName == "&main")
-			{	
-				char *firstInst = codeBuf + dirStruct->code;
-				return firstInst;	
-			}
-		}
-		bufPtr = dir.nextTop();
-	}
-	return nullptr;
-}
-*/
 
 }  // namespace HSA
