@@ -107,7 +107,7 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 		{
 			std::string register_name = operand->getReg()
 						->getRegisterName();
-			unsigned long long reg_address = ;
+			unsigned long long reg_address = 0;
 			stack_frame->getRegisterValue(register_name,
 					&reg_address);
 			address += reg_address;
