@@ -76,7 +76,7 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 	case BRIG_KIND_OPERAND_ADDRESS:
 
 	{
-		unsigned address = 0;
+		unsigned long long address = 0;
 		unsigned long long offset = operand->getOffset();
 		if (operand->getSymbol().get())
 		{
@@ -107,7 +107,7 @@ void OperandValueRetriever::Retrieve(BrigCodeEntry *instruction,
 		{
 			std::string register_name = operand->getReg()
 						->getRegisterName();
-			unsigned reg_address;
+			unsigned long long reg_address = ;
 			stack_frame->getRegisterValue(register_name,
 					&reg_address);
 			address += reg_address;
