@@ -194,6 +194,9 @@ public:
 	/// Convert type to its size
 	static unsigned TypeToSize(BrigType type);
 
+	/// Get register size in bytes by its name
+	static unsigned getSizeInByteByRegisterName(const std::string &name);
+
 
 
 

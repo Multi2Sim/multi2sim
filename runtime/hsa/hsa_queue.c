@@ -36,27 +36,34 @@ hsa_status_t HSA_API hsa_queue_create(
 		uint32_t group_segment_size, hsa_queue_t **queue)
 {
 	// Set arguments
-	char args[64] = {0};
-	memcpy(args + 4, &agent, 8);
-	memcpy(args + 12, &size, 4);
-	memcpy(args + 16, &type, 4);
-	memcpy(args + 20, &callback, 4);
-	memcpy(args + 28, &data, 4);
-	memcpy(args + 36, &private_segment_size, 4);
-	memcpy(args + 40, &group_segment_size, 4);
-	memcpy(args + 44, &queue, 4);
-	unsigned int host_lang = 1;
-	memcpy(args + 52, &host_lang, 4);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t agent;
+		uint32_t size;
+		uint32_t type;
+		uint32_t callback;
+		uint32_t data;
+		uint32_t private_segment_size;
+		uint32_t group_segment_size;
+		uint32_t queue;
+	} info;
+	info.agent = agent.handle;
+	info.size = size;
+	info.type = type;
+	info.callback = (uint32_t)callback;
+	info.data = (uint32_t)data;
+	info.private_segment_size = private_segment_size;
+	info.group_segment_size = group_segment_size;
+	info.queue = (uint32_t)queue;
 
  	if (!hsa_runtime)
  	{
  		return HSA_STATUS_ERROR_NOT_INITIALIZED;
  	}
- 	else
- 	{
- 		ioctl(hsa_runtime->fd, QueueCreate, args);
- 		return (hsa_status_t)args[0];
- 	}
+
+	ioctl(hsa_runtime->fd, QueueCreate, &info);
+	return info.status;
 }
 
 
@@ -71,7 +78,6 @@ hsa_status_t HSA_API
 
 hsa_status_t HSA_API hsa_queue_destroy(hsa_queue_t *queue)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
 	return HSA_STATUS_SUCCESS;
 }
 
@@ -92,10 +98,18 @@ uint64_t HSA_API hsa_queue_load_read_index_acquire(const hsa_queue_t *queue)
 
 uint64_t HSA_API hsa_queue_load_read_index_relaxed(const hsa_queue_t *queue)
 {
-	unsigned long long args[2] = {0};
-	memcpy(args + 1, &queue, 4);
-	ioctl(hsa_runtime->fd, QueueLoadReadIndexRelaxed, args);
-	return args[0];
+	struct __attribute__((packed))
+	{
+		uint64_t value;
+		uint32_t queue;
+	} data;
+	data.queue = (uint32_t)queue;
+	if (!hsa_runtime)
+	{
+		fprintf(stderr, "HSA runtime not initialized");
+	}
+	ioctl(hsa_runtime->fd, QueueLoadReadIndexRelaxed, &data);
+	return data.value;
 }
 
 
@@ -108,10 +122,18 @@ uint64_t HSA_API hsa_queue_load_write_index_acquire(const hsa_queue_t *queue)
 
 uint64_t HSA_API hsa_queue_load_write_index_relaxed(const hsa_queue_t *queue)
 {
-	unsigned long long args[2] = {0};
-	memcpy(args + 1, &queue, 4);
-	ioctl(hsa_runtime->fd, QueueLoadWriteIndexRelaxed, args);
-	return args[0];
+	struct __attribute__((packed))
+	{
+		uint64_t value;
+		uint32_t queue;
+	} data;
+	data.queue = (uint32_t)queue;
+	if (!hsa_runtime)
+	{
+		fprintf(stderr, "HSA runtime not initialized");
+	}
+	ioctl(hsa_runtime->fd, QueueLoadWriteIndexRelaxed, &data);
+	return data.value;
 }
 
 

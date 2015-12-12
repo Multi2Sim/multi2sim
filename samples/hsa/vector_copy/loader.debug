@@ -1,0 +1,40 @@
+Components installed.
+	***** CPU device *****
+	 Name: Multi2Sim Virtual HSA CPU, 
+	 Vendor name: Northeastern University, 
+	 Wavesize: 1, 
+
+	***** GPU device *****
+	 Name: Multi2Sim Virtual HSA GPU, 
+	 Vendor name: Northeastern University, 
+	 Wavesize: 64, 
+
+Preprocessing brig file: 
+
+*******************************************************************************
+	Function name: &__OpenCL_vector_copy_kernel.
+
+	***** Arguments *****
+	Input u64 %__aqlwrap_pointer
+	Input u64 %__global_offset_0
+	Input u64 %__global_offset_1
+	Input u64 %__global_offset_2
+	Input u64 %__printf_buffer
+	Input u64 %__vqueue_pointer
+	Input u64 %in
+	Input u64 %out
+	Argument size allocated 64 bytes
+	*********************
+
+
+	***** Registers *****
+	register $d0, offset 4
+	register $d1, offset 12
+	register $d2, offset 20
+	register $s0, offset 0
+	Register size allocated 28 bytes
+	*********************
+
+	First entry: pragma  "AMD RTI", "ARGSTART:__OpenCL_vector_copy_kernel";
+	Last entry: ret;
+*******************************************************************************

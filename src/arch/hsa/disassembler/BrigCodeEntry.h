@@ -53,6 +53,11 @@ public:
 	{
 	}
 
+	/// Destructor
+	virtual ~BrigCodeEntry()
+	{
+	}
+
 	/// Return the kind field of the entry
 	BrigKind getKind() const;
 
@@ -230,7 +235,7 @@ public:
 	BrigOpcode getOpcode() const;
 
 	/// Return the type field of an instruction
-	BrigType getType() const;
+	virtual BrigType getType() const;
 
 	/// Return the align field of an entry
 	BrigAlignment getAlign() const;
@@ -255,7 +260,7 @@ public:
 	BrigAluModifier getAluModifier() const;
 
 	/// Return source type field
-	BrigType getSourceType() const;
+	virtual BrigType getSourceType() const;
 
 	/// Return the round field
 	BrigRound getRound() const;

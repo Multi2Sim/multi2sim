@@ -173,7 +173,7 @@ protected:
 	//
 	// \return
 	//	The hole created 
-	Chunk *RequestOnePage();
+	Chunk *RequestOnePage(unsigned base_address);
 
 	// Deallocate a memory page
 	void DeallocatePage(unsigned size);

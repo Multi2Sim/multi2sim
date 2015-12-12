@@ -229,10 +229,7 @@ public:
 	void setKernargAddress(unsigned long long address){ setByOffset<unsigned long long>(40, address); }
 
 	/// Return the completion signal
-	unsigned long long getCompletionSignal() const { return getByOffset<unsigned long long>(56); }
-
-	/// Set the address to kernel argument
-	void setCompletionSignal(unsigned long long signal_value);
+	uint64_t getCompletionSignal() const { return getByOffset<uint64_t>(56); }
 
 	/// Dump the AQL dispatch packet
 	void Dump(std::ostream &os) const;

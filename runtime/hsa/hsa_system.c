@@ -31,19 +31,22 @@
 hsa_status_t HSA_API hsa_system_get_info(
 		hsa_system_info_t attribute, void *value)
 {
-	unsigned int args[3];
-	args[1] = (unsigned int)attribute;
-	args[2] = (unsigned int)value;
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	data.attribute = attribute;
+	data.value = (uint32_t)value;
 
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	else
-	{
-		ioctl(hsa_runtime->fd, SystemGetInfo, args);
-		return (hsa_status_t)args[0];
-	}
+
+	ioctl(hsa_runtime->fd, SystemGetInfo, &data);
+	return data.status;
 }
 
 

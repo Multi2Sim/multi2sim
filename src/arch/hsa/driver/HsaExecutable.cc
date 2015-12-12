@@ -205,7 +205,7 @@ void HsaExecutable::parseFunction(BrigFile *file,
 	if (Emulator::loader_debug)
 		function->Dump(Emulator::loader_debug);
 
-	function_table.insert(std::make_pair(name, std::move(function)));
+	function_table.emplace(name, std::move(function));
 }
 
 
