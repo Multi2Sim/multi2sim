@@ -1,0 +1,19 @@
+language: c++
+
+before_install:
+        - sudo apt-get update -qq
+        - sudo apt-get install -qq zlib1g-dev lib32gcc1 gcc-multilib
+        - libtoolize
+        - aclocal
+        - autoconf
+        - automake --add-missing
+
+install:
+        - ./configure --enable-debug
+        - make
+
+compiler: 
+        - g++
+
+script: make check
+
