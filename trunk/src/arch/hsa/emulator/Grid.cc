@@ -22,6 +22,7 @@
 #include <arch/hsa/disassembler/AsmService.h>
 #include <arch/hsa/driver/HsaExecutable.h>
 #include <arch/hsa/driver/HsaExecutableSymbol.h>
+#include <arch/hsa/driver/SignalManager.h>
 
 #include "WorkGroup.h"
 #include "WorkItem.h"
@@ -114,6 +115,9 @@ Grid::Grid(Component *component, AQLDispatchPacket *packet)
 		deployWorkItem(x, y, z, packet->getPrivateSegmentSizeBytes(),
 				packet->getGroupSegmentSizeBytes());
 	}
+
+	// Retrieve signal manager
+	signal_manager = Driver::getInstance()->getSignalManager();
 }
 
 
@@ -143,14 +147,14 @@ bool Grid::Execute()
 	// Send completion signal when finished execution
 	if (!active)
 	{
-		Signal *completion_signal = 
-				(Signal *)packet->getCompletionSignal();
-		unsigned long long signal_value = completion_signal->getValue();
+		uint64_t completion_signal = packet->getCompletionSignal();
+		int64_t signal_value = signal_manager->GetValue(
+				completion_signal);
 		Emulator::isa_debug << misc::fmt("Kernel execution finished, "
-				"reducing completion signal from %lld to %lld",
+				"reducing completion signal from %ld to %ld",
 				signal_value, signal_value - 1);
 		signal_value--;
-		completion_signal->setValue(signal_value);
+		signal_manager->ChangeValue(completion_signal, signal_value);
 	}
 
 	return active;
@@ -203,7 +207,8 @@ void Grid::deployWorkItem(unsigned int abs_id_x,
 	WorkGroup *work_group = it->second.get();
 
 	// Create work item
-	auto work_item = misc::new_unique<WorkItem>(work_group,
+	auto work_item = misc::new_unique<WorkItem>();
+	work_item->Initialize(work_group,
 			private_segment_size,
 			abs_id_x, abs_id_y, abs_id_z,
 			root_function);

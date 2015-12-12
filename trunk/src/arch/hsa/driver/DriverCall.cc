@@ -64,78 +64,51 @@ int Driver::CallSystemGetInfo(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// attribute		| 4		| 4
-	// data			| 8		| 12
-	unsigned int attribute = getArgumentValue<unsigned int>(4, memory,
-			args_ptr);
-	unsigned int data_ptr = getArgumentValue<unsigned int>(8, memory,
-			args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
 
-	switch (attribute)
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
+
+	switch (data.attribute)
 	{
 	case HSA_SYSTEM_INFO_VERSION_MAJOR:
 
 	{
-		unsigned *data = (unsigned *)memory->getBuffer(
-				data_ptr, 4, mem::Memory::AccessWrite);
-		*data = 0;
+		uint16_t major = 1;
+		memory->Write(data.value, 2, (char *)&major);
 		break;
 	}
 
 	case HSA_SYSTEM_INFO_VERSION_MINOR:
 
 	{
-		unsigned *data = (unsigned *)memory->getBuffer(
-				data_ptr, 4, mem::Memory::AccessWrite);
-		*data = 99;
+		uint16_t minor = 0;
+		memory->Write(data.value, 2, (char *)&minor);
 		break;
 	}
 
 	case HSA_SYSTEM_INFO_TIMESTAMP:
 
 	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = time(NULL);
-		break;
-	}
-
-	case HSA_SYSTEM_INFO_TIMESTAMP_FREQUENCY:
-
-	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = 1;
-		break;
-	}
-
-	case HSA_SYSTEM_INFO_SIGNAL_MAX_WAIT:
-
-	{
-		unsigned long long *data = (unsigned long long *)
-				memory->getBuffer(data_ptr, 4,
-						mem::Memory::AccessWrite);
-		*data = 100;
+		uint64_t timestamp = time(NULL);
+		memory->Write(data.value, 8, (char *)&timestamp);
 		break;
 	}
 
 	default:
 
-		// Return error
-		setArgumentValue<unsigned int>(
-				HSA_STATUS_ERROR_INVALID_ARGUMENT, 0,
-				memory, args_ptr);
+		throw misc::Panic(misc::fmt("Unsupported attribute %d in "
+				"get_system_info", data.attribute));
 		return 0;
 	}
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -144,35 +117,8 @@ int Driver::CallSystemGetInfo(comm::Context *context,
 int Driver::CallIterateAgents(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
-{	
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// callback		| 4		| 8
-	// data			| 12		| 8
-
-	// Dump the argument information
-	debug << misc::fmt("In function %s", __FUNCTION__);
-	debug << "\n\thsa_status_t: "<< 
-		getArgumentValue<unsigned int>(0, memory, args_ptr);
-	debug << ", \n\tcallback: " << 
-		getArgumentValue<unsigned long long>(4, memory, args_ptr);
-	debug << misc::fmt(", \n\tdata: 0x%llx", getArgumentValue
-			<unsigned long long>(12, memory, args_ptr));
-
-	// Get virtual machine setup
-	Emulator *emulator = Emulator::getInstance();
-	Component *component = emulator->getNextComponent(0);
-
-	// No component to iterate anymore
-	if (!component){
-		// Set return argument to HSA_STATUS_SUCCESS
-		setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0, 
-				memory, args_ptr);
-
-		// Return 0 to tell the function finished its execution
-		return 0;
-	}
-
+{
+	__UNIMPLEMENTED__
 	return 1;
 }
 
@@ -181,50 +127,38 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// agent		| 4		| 8
-	// attribute		| 12		| 4
-	// value		| 16		| 8
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t agent;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
-	// Retrieve agent handler
-	unsigned long long agent_handler = 
-			getArgumentValue<unsigned long long>(4, memory, 
-					args_ptr);
 	// Try to find the agent
-	Component *component = Emulator::getInstance()->getComponent(agent_handler);
+	Component *component = Emulator::getInstance()->
+			getComponent(data.agent);
 	if (component == nullptr)
 	{
-		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
-				0, memory, args_ptr);
+		data.status = HSA_STATUS_ERROR_INVALID_AGENT;
+		memory->Write(args_ptr, sizeof(data), (char *)&data);
 		return 0;
 	}
 
-	// If the device is found, get the attribute queried
-	unsigned int attribute = getArgumentValue<unsigned int>(12, memory, 
-			args_ptr);
-
-	// Retrieve the pointer to the value
-	unsigned long long value_address = getArgumentValue<unsigned long long>
-			(16, memory, args_ptr);
-	char *value_ptr = memory->getBuffer(value_address, 8, 
-			mem::Memory::AccessWrite);
-
-	switch(attribute)
+	switch(data.attribute)
 	{
 	case HSA_AGENT_INFO_NAME:
 
 	{
-		std::string name =component->getName();
-		strcpy(value_ptr, name.c_str());
+		memory->WriteString(data.value, component->getName());
 		break;
 	}
 
 	case HSA_AGENT_INFO_VENDOR_NAME:
 
 	{
-		std::string vendor_name =component->getVendorName();
-		strcpy(value_ptr, vendor_name.c_str());
+		memory->WriteString(data.value, component->getVendorName());
 		break;
 	}
 
@@ -300,8 +234,11 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 
 	case HSA_AGENT_INFO_QUEUE_MAX_SIZE:
 
-		*(unsigned int *)value_ptr = 16384;
+	{
+		uint32_t queue_max_size = 16384;
+		memory->Write(data.value, 4, (char *)&queue_max_size);
 		break;
+	}
 
 	case HSA_AGENT_INFO_QUEUE_TYPE:
 
@@ -316,8 +253,8 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 	case HSA_AGENT_INFO_DEVICE:
 
 	{
-		unsigned int type = component->getDeivceType();
-		memcpy(value_ptr, &type, 4);
+		uint32_t type = component->getDeivceType();
+		memory->Write(data.value, 4, (char *)&type);
 		break;
 	}
 
@@ -329,8 +266,8 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 	case HSA_AGENT_INFO_ISA:
 
 	{
-		void *isa = nullptr;
-		memcpy(value_ptr, &isa, 8);
+		uint64_t isa = 0;
+		memory->Write(data.value, 8, (char *)&isa);
 		break;
 	}
 
@@ -350,15 +287,13 @@ int Driver::CallAgentGetInfo(comm::Context *context,
 		break;
 
 	default:
-		setArgumentValue<unsigned int>(
-				HSA_STATUS_ERROR_INVALID_ARGUMENT, 
-				0, memory, args_ptr);
-		return 0;
+
+		data.status = HSA_STATUS_ERROR_INVALID_ARGUMENT;
 		break;
 	}
-	setArgumentValue<unsigned int>(
-			HSA_STATUS_SUCCESS, 
-			0, memory, args_ptr);
+
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 	return 0;
 }
 
@@ -367,74 +302,50 @@ int Driver::CallQueueCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Name			| Offset		| Size
-	// ---------------------------------------------------
-	// status		| 0			| 4
-	// agent		| 4			| 8
-	// size			| 12			| 4
-	// type			| 16			| 4
-	// callback		| 20			| 8
-	// data			| 28			| 8
-	// private_segment_size | 36			| 4
-	// group_segment_size   | 40			| 4
-	// queue		| 44			| 8
-	// host_lang		| 52			| 4
-	// work_item_ptr	| 56			| 8
-
-	// Declare arguments as variables
-	unsigned long long agent = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	unsigned int size = getArgumentValue<unsigned int>
-			(12, memory, args_ptr);
-	unsigned int type = getArgumentValue<unsigned int>
-			(16, memory, args_ptr);
-	unsigned long long callback = getArgumentValue<unsigned long long>
-			(20, memory, args_ptr);
-	unsigned long long data = getArgumentValue<unsigned long long>
-			(28, memory, args_ptr);
-	unsigned long long queue = getArgumentValue<unsigned long long>
-			(44, memory, args_ptr);
-	unsigned int host_lang = getArgumentValue<unsigned int>
-			(52, memory, args_ptr);
-	unsigned long long work_item = getArgumentValue<unsigned long long>
-			(56, memory, args_ptr);
-	
-	// Dump argument for debug purpose
-	debug << misc::fmt("\tStatus: %d, \n", getArgumentValue
-			<unsigned int>(0, memory, args_ptr));
-	debug << misc::fmt("\tAgent: %lld, \n", agent);
-	debug << misc::fmt("\tSize: %d, \n", size);
-	debug << misc::fmt("\tType: %d, \n", type);
-	debug << misc::fmt("\tCallback: 0x%016llx, \n", callback);
-	debug << misc::fmt("\tData: 0x%016llx, \n", data);
-	debug << misc::fmt("\tQueue: 0x%016llx, \n", queue);
-	debug << misc::fmt("\tHost language: %d, \n", host_lang);
-	debug << misc::fmt("\tWork item address: 0x%016llx\n", work_item);
-
-	// No support for callback and service queue yet
-	if (callback != 0)
-		throw misc::Panic("Call back in runtime function create \
-				queue is not supported");
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t agent;
+		uint32_t size;
+		uint32_t type;
+		uint32_t callback;
+		uint32_t data;
+		uint32_t private_segment_size;
+		uint32_t group_segment_size;
+		uint32_t queue;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Retrieve component
-	Component *component = Emulator::getInstance()->getComponent(agent);
+	Emulator *emulator = Emulator::getInstance();
+	Component *component = emulator->getComponent(data.agent);
 	if (component == nullptr)
 	{
-		setArgumentValue<unsigned int>(HSA_STATUS_ERROR_INVALID_AGENT,
-				0, memory, args_ptr);
+		data.agent = HSA_STATUS_ERROR_INVALID_AGENT;
+		memory->Write(args_ptr, sizeof(data), (char *)&data);
+		return 0;
 	}
 
 	// Init queue
+	uint32_t size = data.size;
+	uint32_t type = data.type;
 	auto new_queue = misc::new_unique<AQLQueue>(size, type);
 
+	// Create and assign doorbell signal
+	uint64_t doorbell_signal = signal_manager->CreateSignal(0);
+	new_queue->setBellSignal(doorbell_signal);
+
 	// Set the address to the queue struct
-	unsigned long long *queue_addr =
-			(unsigned long long *)memory->getBuffer(queue, 16,
-					mem::Memory::AccessWrite);
-	*queue_addr = new_queue->getFieldsAddress();
+	uint32_t queue_addr = new_queue->getFieldsAddress();
+	memory->Write(data.queue, 4, (char *)&queue_addr);
 
 	// Move queue to the component
 	component->addQueue(std::move(new_queue));
+
+	// Write the result
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
+
 
 	return 0;
 }
@@ -462,26 +373,7 @@ int Driver::CallQueueLoadReadIndexAcquire(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// queue		| 8		| 8
-
-	// Get arguments
-	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
-
-	// Dump debug information
-	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
-
-	// Retrieve the read index
-	unsigned long long *read_index = (unsigned long long *)memory->
-			getBuffer(queue_ptr + 48, 8, mem::Memory::AccessRead);
-
-	// Write read index back to argument
-	this->setArgumentValue<unsigned long long>(*read_index, 0, memory,
-			args_ptr);
-
-	return 0;
+	return CallQueueLoadReadIndexRelaxed(context, memory, args_ptr);
 }
 
 
@@ -489,24 +381,20 @@ int Driver::CallQueueLoadReadIndexRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// queue		| 8		| 8
-
-	// Get arguments
-	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
-
-	// Dump debug information
-	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
+	struct __attribute__((packed))
+	{
+		uint64_t value;
+		uint32_t queue;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Retrieve the read index
-	unsigned long long *read_index = (unsigned long long *)memory->
-			getBuffer(queue_ptr + 48, 8, mem::Memory::AccessRead);
+	uint64_t read_index;
+	memory->Read(data.queue + 48, 8, (char *)&read_index);
+	data.value = read_index;
 
 	// Write read index back to argument
-	this->setArgumentValue<unsigned long long>(*read_index, 0, memory,
-			args_ptr);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -516,26 +404,7 @@ int Driver::CallQueueLoadWriteIndexAcquire(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// queue		| 8		| 8
-
-	// Get arguments
-	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
-
-	// Dump debug information
-	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
-
-	// Retrieve the read index
-	unsigned long long *write_index = (unsigned long long *)memory->
-			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessRead);
-
-	// Write read index back to argument
-	this->setArgumentValue<unsigned long long>(*write_index, 0, memory,
-			args_ptr);
-
-	return 0;
+	return CallQueueLoadWriteIndexRelaxed(context, memory, args_ptr);
 }
 
 
@@ -543,24 +412,20 @@ int Driver::CallQueueLoadWriteIndexRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// queue		| 8		| 8
+	struct __attribute__((packed))
+	{
+		uint64_t value;
+		uint32_t queue;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
-	// Get arguments
-	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
-
-	// Dump debug information
-	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
-
-	// Retrieve the write index
-	unsigned long long write_index;
-	memory->Read(queue_ptr + 40, 8, (char *)&write_index);
+	// Retrieve the read index
+	uint64_t read_index;
+	memory->Read(data.queue + 40, 8, (char *)&read_index);
+	data.value = read_index;
 
 	// Write read index back to argument
-	this->setArgumentValue<unsigned long long>(write_index, 0, memory,
-			args_ptr);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -752,7 +617,7 @@ int Driver::CallQueueAddWriteIndexRelease(comm::Context *context,
 	unsigned long long queue_ptr = getArgumentValue<unsigned long long>
 			(8, memory, args_ptr);
 	unsigned long long value = getArgumentValue<unsigned long long>
-				(16, memory, args_ptr);
+			(16, memory, args_ptr);
 
 	// Dump debug information
 	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
@@ -915,30 +780,32 @@ int Driver::CallSignalCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// hsa_status_t		| 0		| 4
-	// initial_value	| 4		| 8
-	// num_consumers	| 12		| 4
-	// consumers		| 16		| 8
-	// signal		| 24 		| 8
-	hsa_status_t status = HSA_STATUS_SUCCESS;
-	long long initial_value = getArgumentValue<long long>(4, memory,
-			args_ptr);
-	unsigned long long signal = getArgumentValue<unsigned long long>(24,
-			memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		int64_t initial_value;
+		uint32_t num_consumers;
+		uint32_t consumers;
+		uint32_t signal;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Create signal
-	Signal *new_signal = Emulator::getInstance()->CreateSignal(initial_value);
+	uint64_t signal_handler = signal_manager->CreateSignal(
+			data.initial_value);
 
 	// Write back
-	memory->Write(signal, 8, (char *)&new_signal);
-	memory->Write(args_ptr, 4, (char *)&status);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(data.signal, 8, (char *)&signal_handler);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
 
 
-int Driver::CallSignalDestory(comm::Context *context,
+int Driver::CallSignalDestroy(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
@@ -951,17 +818,20 @@ int Driver::CallSignalLoadRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// value		| 0		| 8
-	// signal		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		int64_t value;
+		uint64_t signal;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Set signal value
-	unsigned long long value = signal->getValue();
+	data.value = signal_manager->GetValue(data.signal);
 
 	// Return
-	setArgumentValue(value, 0, memory, args_ptr);
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 	return 0;
 }
 
@@ -979,16 +849,17 @@ int Driver::CallSignalStoreRelaxed(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments		| Offset	| Size
-	// signal		| 0		| 8
-	// value		| 8		| 8
-	Signal *signal = (Signal *)getArgumentValue<unsigned long long>
-			(0, memory, args_ptr);
-	unsigned long long value = getArgumentValue<unsigned long long>
-			(8, memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint64_t signal;
+		int64_t value;
+	} data;
+
+	// Retrieve data
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Set signal value
-	signal->setValue(value);
+	signal_manager->ChangeValue(data.signal, data.value);
 
 	// Return
 	return 0;
@@ -1411,30 +1282,27 @@ int Driver::CallExecutableCreate(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// profile		| 4		| 8
-	// executable_stat	| 12		| 4
-	// options		| 16		| 8
-	// executable 		| 24		| 8
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint32_t profile;
+		uint32_t executable_stat;
+		uint32_t options;
+		uint32_t executable;
+	} data;
 
 	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(24, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Create executable
-	HsaExecutable *new_executable = new HsaExecutable();
+	uint64_t executable_handler = (uint64_t)new HsaExecutable();
+	memory->Write(data.executable, 8, (char *)&executable_handler);
 	
-	// Write back
-	memory->Write(executable, 8, (char *)&new_executable);
+	// Return status
+	data.status = HSA_STATUS_SUCCESS;
 
-	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	// Write back
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1444,30 +1312,25 @@ int Driver::CallExecutableLoadCodeObject(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable		| 4		| 8
-	// agent		| 12		| 8
-	// code_object		| 20		| 8
-	// options 		| 28		| 8
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint64_t agent;
+		uint64_t code_object;
+		uint32_t options;
+	} data;
 
 	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	unsigned long long code_object = getArgumentValue<unsigned long long>
-			(20, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
-	debug << misc::fmt("code_object: 0x%016llx, \n", code_object);
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Create executable
-	((HsaExecutable *)executable)->LoadCodeObject((HsaCodeObject *)code_object);
+	((HsaExecutable *)data.executable)->LoadCodeObject(
+			(HsaCodeObject *)data.code_object);
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1477,40 +1340,29 @@ int Driver::CallExecutableGetSymbol(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable		| 4		| 8
-	// module_name		| 12		| 8
-	// symbol_name		| 20		| 8
-	// agent 		| 28		| 8
-	// call_convention	| 36		| 4
-	// symbol 		| 40		| 8
-
-	// Retrieve data
-	unsigned long long executable = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	unsigned long long symbol_name = getArgumentValue<unsigned long long>
-			(20, memory, args_ptr);
-	unsigned long long symbol = getArgumentValue<unsigned long long>
-			(40, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable: 0x%016llx, \n", executable);
-	debug << misc::fmt("symbol_name: 0x%016llx, \n", symbol_name);
-	debug << misc::fmt("symbol: 0x%016llx, \n", symbol);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint32_t module_name;
+		uint32_t symbol_name;
+		uint64_t agent;
+		int32_t call_convention;
+		uint32_t symbol;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
 
 	// Get the symbol object
-	HsaExecutable *exe = (HsaExecutable *)executable;
-	std::string symbol_name_str = memory->ReadString(symbol_name);
+	HsaExecutable *exe = (HsaExecutable *)data.executable;
+	std::string symbol_name_str = memory->ReadString(data.symbol_name);
 	HsaExecutableSymbol *exe_sym = exe->getSymbol(symbol_name_str.c_str());
 
 	// Write back
-	memory->Write(symbol, 8, (char *)&exe_sym);
+	memory->Write(data.symbol, 8, (char *)&exe_sym);
 
 	// Return success
-	setArgumentValue<unsigned int>(
-				HSA_STATUS_SUCCESS, 0,
-				memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1520,42 +1372,33 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// Arguments 		| Offset	| Size
-	// hsa_status_t		| 0 		| 4
-	// executable_symbol	| 4		| 8
-	// attribute		| 12		| 4
-	// value		| 16		| 8
-
-	// Retrieve data
-	HsaExecutableSymbol *executable_symbol =
-			(HsaExecutableSymbol *)getArgumentValue
-			<unsigned long long>(4, memory, args_ptr);
-	unsigned int attribute = getArgumentValue<unsigned int>
-			(12, memory, args_ptr);
-	unsigned long long value = getArgumentValue<unsigned long long>
-			(16, memory, args_ptr);
-
-	// Print debug information
-	debug << misc::fmt("executable_symbol: %p, \n", executable_symbol);
-	debug << misc::fmt("attribute: %d, \n", attribute);
-	debug << misc::fmt("value: 0x%016llx, \n", value);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable_symbol;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	memory->Read(args_ptr, sizeof(data), (char *)&data);
+	HsaExecutableSymbol *symbol =
+			(HsaExecutableSymbol *)data.executable_symbol;
 
 	// Dispatch by attribute
-	switch (attribute)
+	switch (data.attribute)
 	{
 	case HSA_EXECUTABLE_SYMBOL_INFO_KERNEL_OBJECT:
 
 	{
-		memory->Write(value, 8, (char *)&executable_symbol);
+		memory->Write(data.value, 8, (char *)&symbol);
 		break;
 	}
 
 	case HSA_CODE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE:
 
 	{
-		unsigned int arg_size = executable_symbol
+		unsigned int arg_size = symbol
 				->getKernelArgumentSize();
-		memory->Write(value, 4, (char *)&arg_size);
+		memory->Write(data.value, 4, (char *)&arg_size);
 		break;
 	}
 
@@ -1563,7 +1406,7 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 
 	{
 		unsigned int group_size = 0;
-		memory->Write(value, 4, (char *)&group_size);
+		memory->Write(data.value, 4, (char *)&group_size);
 		break;
 	}
 
@@ -1571,18 +1414,19 @@ int Driver::CallExecutableSymbolGetInfo(comm::Context *context,
 
 	{
 		unsigned int private_size = 0;
-		memory->Write(value, 4, (char *)&private_size);
+		memory->Write(data.value, 4, (char *)&private_size);
 		break;
 	}
 
 	default:
 
 		throw misc::Panic(misc::fmt("Unsupported kernel object "
-				"attribute %d.\n", attribute));
+				"attribute %d.\n", data.attribute));
 	}
 
 	// Return success
-	setArgumentValue<unsigned int>(HSA_STATUS_SUCCESS, 0, memory, args_ptr);
+	data.status = HSA_STATUS_SUCCESS;
+	memory->Write(args_ptr, sizeof(data), (char *)&data);
 
 	return 0;
 }
@@ -1607,33 +1451,33 @@ int Driver::CallNextAgent(comm::Context *context,
 		mem::Memory *memory,
 		unsigned args_ptr)
 {
-	// This function is designed only to be called from the host.
-	// Returns the next agent that has a greater agent_id
-	// Returns 0 if there is no more agent
-
-	// Arguments		| Offset	| Size
-	// next_agent_id	| 0		| 8
-	// present_agnet_id	| 8		| 16
-
-	// Set the first next agent id to 0
-	int next_agent_id = getArgumentValue<unsigned long long>
-		(8, memory, args_ptr);
+	struct __attribute__ ((packed))
+	{
+		uint64_t current_agent_id;
+		uint64_t next_agent_id;
+		bool has_next;
+	} agents;
+	memory->Read(args_ptr, sizeof(agents), (char *)&agents);
 
 	// Get next component
 	Emulator *emulator = Emulator::getInstance();
-	Component *component = emulator->getNextComponent(next_agent_id);
+	Component *component = emulator->getNextComponent(
+			agents.current_agent_id);
 
 	// If no more component,
 	if (!component)
 	{
-		setArgumentValue<unsigned long long>(0, 0, memory, args_ptr);
+		agents.has_next = false;
+		agents.next_agent_id = 0;
 	}
 	else
 	{
-		// If component exist return the handler
-		setArgumentValue<unsigned long long>(component->getHandler(), 0,
-				memory, args_ptr);
+		agents.has_next = true;
+		agents.next_agent_id = component->getHandler();
 	}
+
+	// Write result back
+	memory->Write(args_ptr, sizeof(agents), (char *)&agents);
 
 	return 0;
 }
@@ -1662,96 +1506,6 @@ int Driver::CallNextRegion(comm::Context *context,
 	else
 		setArgumentValue<unsigned long long>(0, 0, memory, args_ptr);
 
-	return 0;
-}
-
-
-int Driver::CallPrintU32(comm::Context *context,
-		mem::Memory *memory,
-		unsigned args_ptr)
-{
-	// Arguments		| Offset	| Size
-	// integer		| 0		| 4);
-
-	unsigned int integer = getArgumentValue<unsigned int>
-			(0, memory, args_ptr);
-	std::cout << integer;
-
-	return 0;
-}
-
-
-int Driver::CallPrintU64(comm::Context *context,
-		mem::Memory *memory,
-		unsigned args_ptr)
-{
-	// Arguments		| Offset	| Size
-	// integer		| 0		| 8
-
-	unsigned long long integer = getArgumentValue<unsigned long long>
-			(0, memory, args_ptr);
-	std::cout << integer;
-
-	return 0;
-}
-
-
-int Driver::CallPrintF32(comm::Context *context,
-		mem::Memory *memory,
-		unsigned args_ptr)
-{
-	// Arguments		| Offset	| Size
-	// number		| 0		| 8
-
-	float number = getArgumentValue<float>
-			(0, memory, args_ptr);
-	std::cout << number << "\n";
-
-	return 0;
-}
-
-
-int Driver::CallPrintString(comm::Context *context,
-		mem::Memory *memory,
-		unsigned args_ptr)
-{
-	// Arguments		| Offset	| Size
-	// str_ptr		| 0		| 8
-
-	unsigned long long addr = getArgumentValue<unsigned long long>
-			(0, memory, args_ptr);
-	char *string = Emulator::getInstance()->getMemory()->getBuffer(addr, 
-			2, mem::Memory::AccessWrite);
-					
-	std::cout << misc::fmt("%s", string);
-
-	return 0;
-}
-
-int Driver::CallStringToU32(comm::Context *context,
-		mem::Memory *memory,
-		unsigned args_ptr)
-{
-	// Arguments		| Offset	| Size
-	// integer		| 0		| 4
-	// str_ptr		| 4		| 8
-
-	unsigned long long addr = getArgumentValue<unsigned long long>
-			(4, memory, args_ptr);
-	char *buf = Emulator::getInstance()->getMemory()->getBuffer(addr, 
-			2, mem::Memory::AccessWrite);
-	std::string str(buf);
-	
-	unsigned int integer;
-	try
-	{
-		integer = stoi(str);
-	}
-	catch (int e)
-	{
-		throw Error("Failed to convert string to integer");
-	}
-	setArgumentValue<unsigned int>(integer, 0, memory, args_ptr);
 	return 0;
 }
 

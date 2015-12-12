@@ -31,7 +31,8 @@ class SegmentManager : public mem::Manager
 protected:
 
 	// The flat address that is mapped to the beginning of the segment
-	unsigned base_address;
+	// Set to 0, so that all the segment address is actually flat address
+	unsigned base_address = 0;
 
 	// The size of the segment requires
 	unsigned size;
@@ -46,9 +47,6 @@ public:
 
 	/// Allocate memory from the segment, returns the in-segment address
 	unsigned Allocate(unsigned size, unsigned alignment = 1);
-
-	/// Free memory from the segment
-	void Free(unsigned address);
 
 	/// Convert inner-segment address to flat address
 	unsigned getFlatAddress(unsigned address);

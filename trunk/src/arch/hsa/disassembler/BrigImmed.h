@@ -21,6 +21,7 @@
 #define ARCH_HSA_DISASSEMBLER_BRIGIMMED_H
 
 #include <map>
+#include <cstring>
 
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
@@ -49,24 +50,23 @@ public:
 			type(type)
 	{}
 
-	/// Definition of functions to dump immedite items
+	/// Definition of functions to dump immediate items
 	typedef 
 		const unsigned char* (BrigImmed::*DumpImmedFn)(
 			const unsigned char *ptr, std::ostream &os
 		) const;
 
-	/// Map from type to size ot the item
+	/// Map from type to size of the item
 	static std::map<int, int> type_to_size_map;
 
 	/// Returns the size of the element according to the type field
 	int getSize();
 
 	/// Returns the value of the immediate type
-	template <typename Type>
-	Type getImmedValue()
+	void getImmedValue(void *buffer)
 	{
-		// TODO: support for packed data
-		return *((Type *)this->ptr);
+		int size = getSize();
+		memcpy(buffer, ptr, size);
 	};
 
 	/// Map of the functions for dumping immed

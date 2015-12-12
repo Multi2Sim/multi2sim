@@ -100,12 +100,13 @@ void Emulator::ProcessOptions()
 }
 
 
-Emulator::Emulator() : comm::Emulator("hsa")
+Emulator::Emulator() : comm::Emulator("HSA")
 {
 	InstallComponents("");
 	//memory = null;
 	//manager.reset(new mem::Manager(memory.get()));
 	Disassembler::getInstance()->DisableIndentation();
+	StartTimer();
 	if (loader_debug)
 	{
 		DumpComponentList(loader_debug);
@@ -167,8 +168,6 @@ bool Emulator::Run()
 	// if(max_instructions && instructions >= max_instructions)
 		// esim->Finish("hsaMaxInst");
 
-	// std::cout << "HSA emu running \n";
-
 	// Stop if any previous reason met
 	if (esim->hasFinished())
 		return false;
@@ -188,15 +187,6 @@ bool Emulator::Run()
 		
 	// Still running;
 	return active;
-}
-
-
-Signal *Emulator::CreateSignal(unsigned long long init_value)
-{
-	auto signal = misc::new_unique<Signal>(init_value);
-	Signal *signal_ptr = signal.get();
-	signals.push_back(std::move(signal));
-	return signal_ptr;
 }
 
 

@@ -34,24 +34,31 @@ hsa_status_t HSA_API hsa_executable_create(
 		const char *options,
 		hsa_executable_t *executable)
 {
-	unsigned int args[8] = {0};
-	memcpy(args + 1, &profile, 8);
-	memcpy(args + 3, &executable_stat, 4);
-	memcpy(args + 4, &options, 8);
-	memcpy(args + 6, &executable, 8);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint32_t profile;
+		uint32_t executable_stat;
+		uint32_t options;
+		uint32_t executable;
+	} data;
+	data.profile = profile;
+	data.executable_stat = executable_stat;
+	data.options = (uint32_t)options;
+	data.executable = (uint32_t)executable;
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	ioctl(hsa_runtime->fd, ExecutableCreate, args);
-	return args[0];
+	ioctl(hsa_runtime->fd, ExecutableCreate, &data);
+	return data.status;
 }
 
 
 hsa_status_t HSA_API hsa_executable_destroy(
     hsa_executable_t executable)
 {
-	__HSA_RUNTIME_NOT_IMPLEMENTED__
+	// FIXME(Yifan): destory the executable from memory
 	return HSA_STATUS_SUCCESS;
 }
 
@@ -62,17 +69,25 @@ hsa_status_t hsa_executable_load_code_object(
 	hsa_code_object_t code_object,
 	const char *options)
 {
-	unsigned int args[9] = {0};
-	memcpy(args + 1, &executable, 8);
-	memcpy(args + 3, &agent, 8);
-	memcpy(args + 5, &code_object, 8);
-	memcpy(args + 7, &options, 8);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint64_t agent;
+		uint64_t code_object;
+		uint32_t options;
+	} data;
+	data.executable = executable.handle;
+	data.agent = agent.handle;
+	data.code_object = code_object.handle;
+	data.options = (uint32_t)options;
+
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	ioctl(hsa_runtime->fd, ExecutableLoadCodeObject, args);
-	return args[0];
+	ioctl(hsa_runtime->fd, ExecutableLoadCodeObject, &data);
+	return data.status;
 }
 
 
@@ -134,19 +149,31 @@ hsa_status_t HSA_API
                               int32_t call_convention,
                               hsa_executable_symbol_t *symbol)
 {
-	unsigned int args[12] = {0};
-	memcpy(args + 1, &executable, 8);
-	memcpy(args + 3, &module_name, 4);
-	memcpy(args + 5, &symbol_name, 4);
-	memcpy(args + 7, &agent, 8);
-	memcpy(args + 9, &call_convention, 4);
-	memcpy(args + 10, &symbol, 8);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable;
+		uint32_t module_name;
+		uint32_t symbol_name;
+		uint64_t agent;
+		int32_t call_convention;
+		uint32_t symbol;
+	} data;
+
+	data.executable = executable.handle;
+	data.module_name = (uint32_t)module_name;
+	data.symbol_name = (uint32_t)symbol_name;
+	data.agent = agent.handle;
+	data.call_convention = call_convention;
+	data.symbol = (uint32_t)symbol;
 	if (!hsa_runtime)
 	{
-		return HSA_STATUS_ERROR_NOT_INITIALIZED;
+		// FIXME: This is a problem. Temporarily changed for Histogram
+		// return HSA_STATUS_ERROR_NOT_INITIALIZED;
+		hsa_init();
 	}
-	ioctl(hsa_runtime->fd, ExecutableGetSymbol, args);
-	return args[0];
+	ioctl(hsa_runtime->fd, ExecutableGetSymbol, &data);
+	return data.status;
 }
 
 
@@ -155,16 +182,22 @@ hsa_status_t hsa_executable_symbol_get_info(
 	hsa_executable_symbol_info_t attribute,
 	void *value)
 {
-	unsigned int args[6] = {0};
-	memcpy(args + 1, &executable_symbol, 8);
-	memcpy(args + 3, &attribute, 4);
-	memcpy(args + 4, &value, 8);
+	struct __attribute__ ((packed))
+	{
+		uint32_t status;
+		uint64_t executable_symbol;
+		uint32_t attribute;
+		uint32_t value;
+	} data;
+	data.executable_symbol = executable_symbol.handle;
+	data.attribute = attribute;
+	data.value = (uint32_t)value;
 	if (!hsa_runtime)
 	{
 		return HSA_STATUS_ERROR_NOT_INITIALIZED;
 	}
-	ioctl(hsa_runtime->fd, ExecutableSymbolGetInfo, args);
-	return HSA_STATUS_SUCCESS;
+	ioctl(hsa_runtime->fd, ExecutableSymbolGetInfo, &data);
+	return data.status;
 }
 
 
