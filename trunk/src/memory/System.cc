@@ -369,18 +369,14 @@ void System::Dump(std::ostream &os) const
 {
 	// Dump introduction to the memory report file
 	os << "; Report for caches, TLBs, and main memory\n";
-	os << ";    Accesses - Total number of accesses\n";
+	os << ";    Accesses - Total number of accesses - "
+			"Reads, Writes, and NCWrites (non-coherent) \n";
 	os << ";    Hits, Misses - Accesses resulting in hits/misses\n";
 	os << ";    HitRatio - Hits divided by accesses\n";
 	os << ";    Evictions - Invalidated or replaced cache blocks\n";
 	os << ";    Retries - For L1 caches, accesses that were retried\n";
 	os << ";    ReadRetries, WriteRetries, NCWriteRetries - Read/Write"
 			" retried accesses\n";
-	os <<";    NoRetryAccesses - Number of accesses that were not retried\n";
-	os << ";    NoRetryHits, NoRetryMisses - Hits and misses "
-			"for not retried accesses\n";
-	os << ";    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n";
-	os << ";    NoRetryReads, NoRetryWrites - Not retried reads and writes\n";
 	os << ";    Reads, Writes, NCWrites - Total read/write accesses\n";
 	os << ";    BlockingReads, BlockingWrites, BlockingNCWrites - "
 			"Reads/writes coming from lower-level cache\n";
