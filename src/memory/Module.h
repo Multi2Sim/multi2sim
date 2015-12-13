@@ -299,6 +299,14 @@ public:
 	long long num_retry_read_probes = 0;
 	long long num_retry_write_probes = 0;
 
+	// Statistics for blocking/non-blocking accesses
+	long long num_blocking_reads = 0;
+	long long num_blocking_writes = 0;
+	long long num_blocking_nc_writes = 0;
+	long long num_non_blocking_reads = 0;
+	long long num_non_blocking_writes = 0;
+	long long num_non_blocking_nc_writes = 0;
+
 	// Statistics for other coherence traffic
 	long long num_hlc_evictions = 0;
 
