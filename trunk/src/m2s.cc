@@ -552,6 +552,15 @@ void DumpReports()
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
 	arch_pool->DumpReports();
 
+	// Dumping memory report
+	if (mem::System::hasInstance())
+	{
+		mem::System *mem_system = mem::System::getInstance();
+
+		// Dump the memory report
+		mem_system->DumpReport();
+	}
+
 	// Dumping network report
 	if (net::System::hasInstance())
 	{

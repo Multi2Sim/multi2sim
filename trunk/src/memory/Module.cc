@@ -387,6 +387,23 @@ bool Module::isInFlightAccess(long long id)
 }
 
 
+void Module::Dump(std::ostream &os) const
+{
+	// Dumping module's name
+	os << misc::fmt("[ %s ]\n", name.c_str());
+
+	// Dump the cache related information
+	if (type == TypeCache)
+	{
+		os << misc::fmt("Sets = %d\n", cache->getNumSets());
+		os << misc::fmt("Ways = %d\n", cache->getNumWays());
+	}
+	
+	// Separating line
+	os << "\n";
+}
+
+ 
 void Module::DumpInFlightAddresses(std::ostream &os)
 {
 	esim::Engine *engine = esim::Engine::getInstance();
