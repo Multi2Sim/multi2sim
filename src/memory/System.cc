@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <fstream>
+
 #include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Misc.h>
 #include <lib/esim/Engine.h>
@@ -33,6 +35,7 @@ namespace mem
 // Configuration options
 std::string System::config_file;
 std::string System::debug_file;
+std::string System::report_file;
 bool System::help = false;
 int System::frequency = 1000;
 
@@ -322,6 +325,12 @@ void System::RegisterOptions()
 			" file, passed in option '--mem-config <file>'.");
 	command_line->setIncompatible("--mem-help");
 
+	// Option for producing the report
+	command_line->RegisterString("--mem-report <file>", report_file,
+			"File for a report on the memory hierarchy, including "
+			"cache hits, misses evictions, etc. This option must "
+			"be used together with detailed simulation of any "
+			"CPU/GPU architecture.");
 }
 
 
@@ -339,6 +348,50 @@ void System::ProcessOptions()
 }
 
 
+void System::DumpReport()
+{
+	// Dump report files
+	if (!report_file.empty())
+	{
+		// Try to open the file
+		std::ofstream f(report_file);
+		if (!f)
+			throw Error(misc::fmt("%s: cannot open file for write",
+					report_file.c_str()));
+		
+		// Dump the memory report
+		Dump(f);
+	}
+}
+
+
+void System::Dump(std::ostream &os) const
+{
+	// Dump introduction to the memory report file
+	os << "; Report for caches, TLBs, and main memory\n";
+	os << ";    Accesses - Total number of accesses\n";
+	os << ";    Hits, Misses - Accesses resulting in hits/misses\n";
+	os << ";    HitRatio - Hits divided by accesses\n";
+	os << ";    Evictions - Invalidated or replaced cache blocks\n";
+	os << ";    Retries - For L1 caches, accesses that were retried\n";
+	os << ";    ReadRetries, WriteRetries, NCWriteRetries - Read/Write"
+			" retried accesses\n";
+	os <<";    NoRetryAccesses - Number of accesses that were not retried\n";
+	os << ";    NoRetryHits, NoRetryMisses - Hits and misses "
+			"for not retried accesses\n";
+	os << ";    NoRetryHitRatio - NoRetryHits divided by NoRetryAccesses\n";
+	os << ";    NoRetryReads, NoRetryWrites - Not retried reads and writes\n";
+	os << ";    Reads, Writes, NCWrites - Total read/write accesses\n";
+	os << ";    BlockingReads, BlockingWrites, BlockingNCWrites - "
+			"Reads/writes coming from lower-level cache\n";
+	os << ";    NonBlockingReads, NonBlockingWrites, NonBlockingNCWrites -"
+			" Coming from upper-level cache\n";
+	os << "\n\n";
+	
+	// Dump report for each module
+	for (auto &module : modules)
+		module->Dump(os);
+}
 
 }  // namespace mem
 
