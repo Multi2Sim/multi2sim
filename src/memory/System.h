@@ -70,6 +70,9 @@ class System
 	// Configuration file name
 	static std::string config_file;
 
+	// Report file name
+	static std::string report_file;
+
 	// Debug file name
 	static std::string debug_file;
 
@@ -275,6 +278,9 @@ public:
 	/// Obtain singleton instance.
 	static System *getInstance();
 
+	/// Returns true if the instance exists
+	static bool hasInstance() { return instance.get(); }
+
 	/// Destroy the singleton if allocated.
 	static void Destroy() { instance = nullptr; }
 	
@@ -385,6 +391,20 @@ public:
 	// INI file. This function is internally invoked by ReadConfiguration()
 	// or externally invoked for unit testing purposes.
 	void ReadConfiguration(misc::IniFile *ini_file);
+
+
+
+
+	// 
+	// Memory report
+	//
+
+	/// Dump the memory report in the report file
+	void DumpReport();
+
+	/// Dump function for report
+	void Dump(std::ostream &os = std::cout) const;
+
 };
 
 }  // namespace mem

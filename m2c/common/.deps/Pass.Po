@@ -1,5 +1,0 @@
-Pass.o: Pass.cc /usr/include/stdc-predef.h Pass.h
-
-/usr/include/stdc-predef.h:
-
-Pass.h:
