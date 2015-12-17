@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cinttypes>
 #include "AQLPacket.h"
 
 namespace HSA
@@ -65,7 +66,7 @@ void AQLDispatchPacket::Dump(std::ostream &os = std::cout) const
 			getKernalObjectAddress());
 	os << misc::fmt("\tkernel argument address: 0x%llx, \n",
 			getKernargAddress());
-	os << misc::fmt("\tcompletion signal: 0x%0lx\n",
+	os << misc::fmt("\tcompletion signal: 0x%" PRIx64 "\n",
 			getCompletionSignal());
 	os << "\t***** ****** *****\n";
 }
