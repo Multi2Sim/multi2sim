@@ -667,6 +667,108 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 void Timing::DumpReport() const
 {
 	// TODO: implement x86 report
+	// Check if the report file has been set
+	if (report_file.empty())
+		return;
+
+	// Open file for writing
+	std::ofstream report;
+	report.open(report_file);
+
+	// Dump CPU configuration
+	report << misc::fmt(";\n; CPU Configuration\n;\n\n");
+	DumpConfiguration(report);
+
+	// Report for the complete processor
+	// Dispatch stage
+	// Issue stage
+	// Commit stage
+	// Committed branches
+	// Report for each core
+
+	// Close the report file
+	report.close();
+}
+
+
+void Timing::DumpConfiguration(std::ofstream &os) const
+{
+	// TODO: This function is incomplete. Most of these lines are copied
+	// from the m2s 4.2 source, and I've left the m2s 4.2 variable names
+	// in the comment to assist in porting
+	
+	// General configuration
+	Cpu *cpu = getCpu();
+	os << "[ Config.General ]\n";
+	os << misc::fmt("Frequency = %d\n", frequency);
+	os << misc::fmt("Cores = %d\n", cpu->getNumCores());
+	os << misc::fmt("Threads = %d\n", cpu->getNumThreads());
+	os << misc::fmt("FastForward = %lld\n", cpu->getNumFastForwardInstructions());
+	os << misc::fmt("ContextQuantum = %d\n", cpu->getContextQuantum());
+	os << misc::fmt("ThreadQuantum = %d\n", cpu->getThreadQuantum());
+	os << misc::fmt("ThreadSwitchPenalty = %d\n", cpu->getThreadSwitchPenalty());
+	os << misc::fmt("RecoverKind = %s\n", cpu->recover_kind_map[cpu->getRecoverKind()]);
+	os << misc::fmt("RecoverPenalty = %d\n", cpu->getRecoverPenalty());
+	os << misc::fmt("ProcessPrefetchHints = TODO\n");//, x86_emu_process_prefetch_hints); TODO
+	os << misc::fmt("PrefetchHistorySize = TODO\n");//, prefetch_history_size); TODO
+	os << std::endl;
+
+	// Pipeline
+	os << misc::fmt("[ Config.Pipeline ]\n");
+	os << misc::fmt("FetchKind = %s\n", cpu->fetch_kind_map[cpu->getFetchKind()]);
+	os << misc::fmt("DecodeWidth = %d\n", cpu->getDecodeWidth());
+	os << misc::fmt("DispatchKind = %s\n", cpu->dispatch_kind_map[cpu->getDispatchKind()]);
+	os << misc::fmt("DispatchWidth = %d\n", cpu->getDispatchWidth());
+	os << misc::fmt("IssueKind = %s\n", cpu->issue_kind_map[cpu->getIssueKind()]);
+	os << misc::fmt("IssueWidth = %d\n", cpu->getIssueWidth());
+	os << misc::fmt("CommitKind = %s\n", cpu->commit_kind_map[cpu->getCommitKind()]);
+	os << misc::fmt("CommitWidth = %d\n", cpu->getCommitWidth());
+	os << misc::fmt("OccupancyStats = %s\n", cpu->getOccupancyStats() ? "True" : "False");
+	os << std::endl;
+
+	// Queues
+	os << misc::fmt("[ Config.Queues ]\n");
+	os << misc::fmt("FetchQueueSize = %d\n", cpu->getFetchQueueSize());
+	os << misc::fmt("UopQueueSize = %d\n", cpu->getUopQueueSize());
+	os << misc::fmt("RobKind = %s\n", cpu->reorder_buffer_kind_map[cpu->getReorderBufferKind()]);
+	os << misc::fmt("RobSize = %d\n", cpu->getReorderBufferSize());
+	os << misc::fmt("IqKind = %s\n", cpu->instruction_queue_kind_map[cpu->getInstructionQueueKind()]);
+	os << misc::fmt("IqSize = %d\n", cpu->getInstructionQueueSize());
+	os << misc::fmt("LsqKind = %s\n", cpu->load_store_queue_kind_map[cpu->getLoadStoreQueueKind()]);
+	os << misc::fmt("LsqSize = %d\n", cpu->getLoadStoreQueueKind());
+	os << misc::fmt("RfKind = TODO\n");//, x86_reg_file_kind_map[x86_reg_file_kind]);
+	os << misc::fmt("RfIntSize = TODO\n");//, x86_reg_file_int_size);
+	os << misc::fmt("RfFpSize = TODO\n");//, x86_reg_file_fp_size);
+	os << std::endl;
+
+	// Trace Cache
+	os << misc::fmt("[ Config.TraceCache ]\n");
+	os << misc::fmt("Present = TODO\n");//%s\n", trace_cache->isPresent() ? "True" : "False");
+	os << misc::fmt("Sets = TODO\n");//%d\n", x86_trace_cache_num_sets);
+	os << misc::fmt("Assoc = TODO\n");//%d\n", x86_trace_cache_assoc);
+	os << misc::fmt("TraceSize = TODO\n");//%d\n", x86_trace_cache_trace_size);
+	os << misc::fmt("BranchMax = TODO\n");//%d\n", x86_trace_cache_branch_max);
+	os << misc::fmt("QueueSize = TODO\n");//%d\n", x86_trace_cache_queue_size);
+	os << misc::fmt("\n");
+
+	// Functional units
+	// TODO
+
+	// Branch Predictor
+	os << misc::fmt("[ Config.BranchPredictor ]\n");
+	os << misc::fmt("Kind = TODO\n");//%s\n", x86_bpred_kind_map[x86_bpred_kind]);
+	os << misc::fmt("BTB.Sets = TODO\n");//%d\n", x86_bpred_btb_sets);
+	os << misc::fmt("BTB.Assoc = TODO\n");//%d\n", x86_bpred_btb_assoc);
+	os << misc::fmt("Bimod.Size = TODO\n");//%d\n", x86_bpred_bimod_size);
+	os << misc::fmt("Choice.Size = TODO\n");//%d\n", x86_bpred_choice_size);
+	os << misc::fmt("RAS.Size = TODO\n");//%d\n", x86_bpred_ras_size);
+	os << misc::fmt("TwoLevel.L1Size = TODO\n");//%d\n", x86_bpred_twolevel_l1size);
+	os << misc::fmt("TwoLevel.L2Size = TODO\n");//%d\n", x86_bpred_twolevel_l2size);
+	os << misc::fmt("TwoLevel.HistorySize = TODO\n");//%d\n", x86_bpred_twolevel_hist_size);
+	os << misc::fmt("\n");
+
+	// End of configuration
+	os << misc::fmt("\n");
 }
 
 } // namespace x86

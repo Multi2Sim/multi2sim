@@ -421,6 +421,9 @@ public:
 	/// Return the kind of recovery upon mispeculation
 	static RecoverKind getRecoverKind() { return recover_kind; }
 
+	/// Return the penalty of recovery upon mispeculation
+	static int getRecoverPenalty() { return recover_penalty; }
+
 	/// Return the type of instruction commit, as configured by the user
 	static CommitKind getCommitKind() { return commit_kind; }
 
@@ -487,6 +490,9 @@ public:
 
 	/// Update structure occupancy statistics
 	void UpdateOccupancyStats();
+
+	/// Get occupancy statistics flag
+	static bool getOccupancyStats() { return occupancy_stats; }
 
 	/// Perform a memory access on the given module for the given address.
 	/// When the access completes, the \a uop is inserted in the event

@@ -164,7 +164,10 @@ public:
 
 	/// Dump a report of statistics collected during x86 simulation
 	void DumpReport() const override;
-	
+
+	/// Dump the configuration of the CPU
+	void DumpConfiguration(std::ofstream &os) const;
+
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
 	int getNumEntryModules() override
