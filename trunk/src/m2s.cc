@@ -564,9 +564,8 @@ void DumpReports()
 	// Dumping network report
 	if (net::System::hasInstance())
 	{
-		net::System *net_system = net::System::getInstance();
-
 		// Dump the network report
+		net::System *net_system = net::System::getInstance();
 		net_system->DumpReport();
 
 		// Dump the network data for static visualization

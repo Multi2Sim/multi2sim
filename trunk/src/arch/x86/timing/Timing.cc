@@ -664,7 +664,7 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
-void Timing::DumpReport()
+void Timing::DumpReport() const
 {
 	// TODO: implement x86 report
 }
