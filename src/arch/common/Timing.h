@@ -20,6 +20,8 @@
 #ifndef ARCH_COMMON_TIMING_H
 #define ARCH_COMMON_TIMING_H
 
+#include <fstream>
+
 #include <lib/cpp/IniFile.h>
 #include <lib/esim/FrequencyDomain.h>
 #include <lib/esim/Engine.h>
