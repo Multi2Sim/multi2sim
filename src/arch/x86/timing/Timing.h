@@ -163,7 +163,7 @@ public:
 			const std::string &section) override;
 
 	/// Dump a report of statistics collected during x86 simulation
-	void DumpReport();
+	void DumpReport() const override;
 	
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
