@@ -122,7 +122,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	// Event "load"
 	if (event == event_load)
 	{
-		debug << misc::fmt("%lld %lld 0x%x %s load\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s load\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -160,7 +160,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	// Event "load_lock"
 	if (event == event_load_lock)
 	{
-		debug << misc::fmt("  %lld %lld 0x%x %s load lock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s load lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -175,7 +175,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 		Frame *older_frame = module->getInFlightWrite(frame);
 		if (older_frame)
 		{
-			debug << misc::fmt("    %lld wait for write %lld\n",
+			debug << misc::fmt("    A-%lld wait for store A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 			older_frame->queue.Wait(event_load_lock);
@@ -189,7 +189,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 				frame);
 		if (older_frame)
 		{
-			debug << misc::fmt("    %lld wait for access %lld\n",
+			debug << misc::fmt("    A-%lld wait for access A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 			older_frame->queue.Wait(event_load_lock);
@@ -216,7 +216,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	if (event == event_load_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s load action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s load_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -271,7 +271,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	if (event == event_load_miss)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s load miss\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s load_miss\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -320,7 +320,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	if (event == event_load_unlock)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
 				"load unlock\n",
 				esim_engine->getTime(),
 				frame->getId(),
@@ -351,7 +351,7 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	if (event == event_load_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("%lld %lld 0x%x %s load finish\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s load_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -394,7 +394,7 @@ void System::EventStoreHandler(esim::Event *event,
 	if (event == event_store)
 	{
 		// Debug and trace
-		debug << misc::fmt("%lld %lld 0x%x %s store\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s store\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -439,7 +439,7 @@ void System::EventStoreHandler(esim::Event *event,
 	if (event == event_store_lock)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s store lock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s store_lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -460,7 +460,7 @@ void System::EventStoreHandler(esim::Event *event,
 			Frame *older_frame = *it;
 
 			// Debug
-			debug << misc::fmt("    %lld wait for access %lld\n",
+			debug << misc::fmt("    A-%lld wait for access A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 
@@ -489,7 +489,7 @@ void System::EventStoreHandler(esim::Event *event,
 	if (event == event_store_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s store action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s store_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -545,7 +545,7 @@ void System::EventStoreHandler(esim::Event *event,
 	if (event == event_store_unlock)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s store unlock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s store_unlock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -597,7 +597,7 @@ void System::EventStoreHandler(esim::Event *event,
 	if (event == event_store_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("%lld %lld 0x%x %s store finish\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s store_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -638,7 +638,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store)
 	{
 		// Debug and trace
-		debug << misc::fmt("%lld %lld 0x%x %s nc store\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s nc_store\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -677,7 +677,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_lock)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s nc store lock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s nc_store_lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -693,7 +693,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 		if (older_frame)
 		{
 			// Debug
-			debug << misc::fmt("    %lld wait for write %lld\n",
+			debug << misc::fmt("    A-%lld wait for store A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 
@@ -709,7 +709,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 		if (older_frame)
 		{
 			// Debug
-			debug << misc::fmt("    %lld wait for write %lld\n",
+			debug << misc::fmt("    A-%lld wait for access A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 
@@ -737,7 +737,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_writeback)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s nc store writeback\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s nc_store_writeback\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -794,7 +794,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s nc store action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s nc_store_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -895,7 +895,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_miss)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s nc store miss\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s nc_store_miss\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -937,7 +937,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_unlock)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s nc store unlock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s nc_store_unlock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -971,7 +971,7 @@ void System::EventNCStoreHandler(esim::Event *event,
 	if (event == event_nc_store_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("%lld %lld 0x%x %s nc store finish\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s nc_store_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -1015,8 +1015,8 @@ void System::EventFindAndLockHandler(esim::Event *event,
 	// Event "find_and_lock"
 	if (event == event_find_and_lock)
 	{
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"find and lock (blocking=%d)\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"find_and_lock (blocking=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -1047,7 +1047,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Debug
-		debug << misc::fmt("  %lld %lld 0x%x %s find and lock port\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s find_and_lock_port\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -1076,7 +1076,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 				frame->state);
 		if (frame->hit)
 		{
-			debug << misc::fmt("    %lld 0x%x %s "
+			debug << misc::fmt("    A-%lld 0x%x %s "
 					"hit: set=%d, way=%d, "
 					"state=%s\n",
 					frame->getId(),
@@ -1105,7 +1105,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 			// for it.
 			if (frame->request_direction == Frame::RequestDirectionDownUp)
 			{
-				debug << misc::fmt("        %lld "
+				debug << misc::fmt("        A-%lld "
 						"block not found",
 						frame->getId());
 				parent_frame->block_not_found = true;
@@ -1127,7 +1127,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 				!frame->blocking)
 		{
 			// Debug
-			debug << misc::fmt("    %lld 0x%x %s block locked at "
+			debug << misc::fmt("    A-%lld 0x%x %s block locked at "
 					"set=%d, "
 					"way=%d "
 					"by A-%lld - aborting\n",
@@ -1164,7 +1164,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 				frame->getId()))
 		{
 			// Debug
-			debug << misc::fmt("    %lld 0x%x %s block locked at "
+			debug << misc::fmt("    A-%lld 0x%x %s block locked at "
 					"set=%d, "
 					"way=%d by "
 					"A-%lld - waiting\n",
@@ -1202,7 +1202,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 					frame->set, frame->way));
 			
 			// Debug
-			debug << misc::fmt("    %lld 0x%x %s miss -> lru: "
+			debug << misc::fmt("    A-%lld 0x%x %s miss -> lru: "
 					"set=%d, "
 					"way=%d, "
 					"state=%s\n",
@@ -1240,7 +1240,7 @@ void System::EventFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s find and lock action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s find_and_lock_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1288,8 +1288,8 @@ void System::EventFindAndLockHandler(esim::Event *event,
 		Directory *directory = module->getDirectory();
 
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"find and lock finish (err=%d)\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"find_and_lock_finish (err=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1391,7 +1391,7 @@ void System::EventEvictHandler(esim::Event *event,
 				frame->set, frame->way));
 
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict "
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict "
 				"(set=%d, way=%d, state=%s)\n",
 				esim_engine->getTime(),
 				frame->getId(),
@@ -1429,7 +1429,7 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_invalid)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict invalid\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict_invalid\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1485,7 +1485,7 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1549,7 +1549,7 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_receive)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict receive\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict_receive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1589,7 +1589,7 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_process)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict process\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict_process\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1683,8 +1683,8 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_process_noncoherent)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"evict process noncoherent\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"evict_process_noncoherent\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1791,8 +1791,8 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_reply)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"evict reply\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"evict_reply\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1827,8 +1827,8 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_reply_receive)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"evict reply receive\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"evict_reply_receive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1863,7 +1863,7 @@ void System::EventEvictHandler(esim::Event *event,
 	if (event == event_evict_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s evict finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s evict_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -1900,7 +1900,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s write request\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s write_request\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -1967,8 +1967,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_receive)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request receive\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_receive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -2014,7 +2014,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s write request action\n", 
+		debug << misc::fmt("  %lld A-%lld 0x%x %s write_request_action\n", 
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2080,8 +2080,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_exclusive)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request exclusive\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_exclusive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2105,7 +2105,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_updown)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s write request updown\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s write_request_updown\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2159,8 +2159,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_updown_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request updown finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_updown_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2261,7 +2261,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_downup)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s write request downup\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s write_request_downup\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2313,8 +2313,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_downup_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request downup complete\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_downup_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2368,8 +2368,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_reply)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request reply\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_reply\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2423,8 +2423,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	if (event == event_write_request_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"write request finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"write_request_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2484,7 +2484,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s read request\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s read_request\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -2548,7 +2548,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_receive)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s read request receive\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s read_request_receive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -2598,7 +2598,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_action)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s read request action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s read_request_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2652,7 +2652,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_updown)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s read request updown\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s read_request_updown\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2754,8 +2754,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_updown_miss)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"read request updown miss\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"read_request_updown_miss\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2812,8 +2812,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 			return;
 
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"read request updown finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"read_request_updown_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -2934,7 +2934,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_downup)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s read request downup\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s read_request_downup\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3008,8 +3008,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 			return;
 		
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"read request downup finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"read_request_downup_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3130,8 +3130,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_reply)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"read request reply\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"read_request_reply\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3189,8 +3189,8 @@ void System::EventReadRequestHandler(esim::Event *event,
 	if (event == event_read_request_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"read request finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"read_request_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3245,7 +3245,7 @@ void System::EventInvalidateHandler(esim::Event *event,
 		frame->tag = tag;
 
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s invalidate "
+		debug << misc::fmt("  %lld A-%lld 0x%x %s invalidate "
 				"(set=%d, way=%d, state=%s)\n",
 				esim_engine->getTime(),
 				frame->getId(),
@@ -3327,7 +3327,7 @@ void System::EventInvalidateHandler(esim::Event *event,
 	if (event == event_invalidate_finish)
 	{
 		// Debug and trace
-		debug << misc::fmt("  %lld %lld 0x%x %s invalidate finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s invalidate_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3376,7 +3376,7 @@ void System::EventMessageHandler(esim::Event *event,
 	if (event == event_message)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
 				"message\n",
 				esim_engine->getTime(),
 				frame->getId(),
@@ -3423,8 +3423,8 @@ void System::EventMessageHandler(esim::Event *event,
 	if (event == event_message_receive)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"message\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"message_receive\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3456,8 +3456,8 @@ void System::EventMessageHandler(esim::Event *event,
 	if (event == event_message_action)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"message\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"message_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3513,8 +3513,8 @@ void System::EventMessageHandler(esim::Event *event,
 	if (event == event_message_reply)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"message\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"message_reply\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3549,8 +3549,8 @@ void System::EventMessageHandler(esim::Event *event,
 	if (event == event_message_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"message\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"message_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -3583,7 +3583,7 @@ void System::EventFlushHandler(esim::Event *event,
 	if (event == event_flush)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s "
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
 				"flush\n",
 				esim_engine->getTime(),
 				frame->getId(),
@@ -3651,7 +3651,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	if (event == event_local_load)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s local load\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s local_load\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3696,7 +3696,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	// Event "local_load_lock"
 	if (event == event_local_load_lock)
 	{
-		debug << misc::fmt("  %lld %lld 0x%x %s local load lock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s local_load_lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3711,7 +3711,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 		Frame *older_frame = module->getInFlightWrite(frame);
 		if (older_frame)
 		{
-			debug << misc::fmt("    %lld wait for write %lld\n",
+			debug << misc::fmt("    A-%lld wait for write A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 			older_frame->queue.Wait(event_local_load_lock);
@@ -3725,7 +3725,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 				frame);
 		if (older_frame)
 		{
-			debug << misc::fmt("    %lld wait for access %lld\n",
+			debug << misc::fmt("    A-%lld wait for access A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 			older_frame->queue.Wait(event_local_load_lock);
@@ -3751,7 +3751,7 @@ void System::EventLocalLoadHandler(esim::Event *event,
 	if (event == event_local_load_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s local load finish\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s local_load_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3798,7 +3798,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store)
 	{
 		// Memory debug
-		debug << misc::fmt("%lld %lld 0x%x %s local store\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s local_store\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3845,7 +3845,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store_lock)
 	{
 		// Debug
-		debug << misc::fmt("  %lld %lld 0x%x %s local store lock\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s local_store_lock\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3868,7 +3868,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 			Frame *older_frame = *it;
 
 			// Debug
-			debug << misc::fmt("    %lld wait for access %lld\n",
+			debug << misc::fmt("    A-%lld wait for access A-%lld\n",
 					frame->getId(),
 					older_frame->getId());
 
@@ -3901,7 +3901,7 @@ void System::EventLocalStoreHandler(esim::Event *event,
 	if (event == event_local_store_finish)
 	{
 		// Debug
-		debug << misc::fmt("%lld %lld 0x%x %s local store finish\n",
+		debug << misc::fmt("%lld A-%lld 0x%x %s local_store_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3944,8 +3944,8 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	// Event "local_find_and_lock"
 	if (event == event_local_find_and_lock)
 	{
-		debug << misc::fmt("  %lld %lld 0x%x %s "
-				"local find and lock (blocking=%d)\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"local_find_and_lock (blocking=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -3977,7 +3977,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock port\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_port\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->getAddress(),
@@ -4033,7 +4033,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
@@ -4059,7 +4059,7 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	if (event == event_local_find_and_lock_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld %lld 0x%x %s local find and lock finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,

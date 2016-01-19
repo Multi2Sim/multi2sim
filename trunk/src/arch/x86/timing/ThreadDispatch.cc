@@ -83,6 +83,10 @@ int Thread::Dispatch(int quantum)
 		InsertInReorderBuffer(uop);
 		core->incReorderBufferWrites();
 		reorder_buffer_writes++;
+
+		// Mark instruction as dispatched
+		uop->dispatched = true;
+		uop->dispatch_when = cpu->getCycle();
 		
 		// Insert non-memory instruction into instruction queue
 		if (!(uop->getFlags() & Uinst::FlagMem))

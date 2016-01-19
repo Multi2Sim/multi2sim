@@ -49,9 +49,8 @@ bool Thread::canCommit()
 				name.c_str(),
 				commit_stall_error);
 
-		//////////
-		std::cout << *core;
-		//////////
+		// Print state of the core
+		std::cerr << *core;
 
 		// Finish simulation
 		esim::Engine *esim_engine = esim::Engine::getInstance();
