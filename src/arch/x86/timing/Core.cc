@@ -40,6 +40,14 @@ Core::Core(Cpu *cpu,
 }
 
 
+void Core::Dump(std::ostream &os) const
+{
+	// Dump all threads
+	for (auto &thread : threads)
+		os << *thread;
+}
+
+
 void Core::InsertInEventQueue(std::shared_ptr<Uop> uop, int latency)
 {
 	// Sanity
