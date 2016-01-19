@@ -208,6 +208,17 @@ public:
 	/// Return the core's arithmetic-logic unit
 	Alu *getAlu() { return &alu; }
 
+	/// Dump a plain-text representation of the object into the given output
+	/// stream, or into the standard output if argument \a os is committed.
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const Core &core)
+	{
+		core.Dump(os);
+		return os;
+	}
 
 
 

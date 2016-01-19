@@ -79,6 +79,30 @@ Thread::Thread(Core *core,
 }
 
 
+void Thread::Dump(std::ostream &os) const
+{
+	// Title
+	std::string title = misc::fmt("Core %d - Thread %d",
+			id_in_core, core->getId());
+	os << title << '\n';
+	os << std::string(title.length(), '=') << "\n\n";
+
+	// Register file
+	if (register_file)
+		os << *register_file;
+
+	// Queues
+	DumpFetchQueue(os);
+	DumpUopQueue(os);
+	DumpReorderBuffer(os);
+	DumpInstructionQueue(os);
+	DumpLoadStoreQueue(os);
+
+	// Done
+	os << "\n\n";
+}
+
+
 void Thread::InsertInFetchQueue(std::shared_ptr<Uop> uop)
 {
 	// Sanity
@@ -148,12 +172,12 @@ void Thread::ExtractFromFetchQueue(Uop *uop)
 }
 
 
-void Thread::DumpFetchQueue(std::ostream &os)
+void Thread::DumpFetchQueue(std::ostream &os) const
 {
 	// Title
 	std::string title = "Fetch queue";
 	os << title << '\n';
-	os << std::string(title.size(), '=') << "\n\n";
+	os << std::string(title.size(), '-') << "\n\n";
 
 	// Dump content
 	int index = 0;
@@ -163,6 +187,10 @@ void Thread::DumpFetchQueue(std::ostream &os)
 		os << *uop << '\n';
 		index++;
 	}
+
+	// Empty list
+	if (fetch_queue.empty())
+		os << "-Empty-\n";
 
 	// End
 	os << '\n';
@@ -197,12 +225,12 @@ void Thread::ExtractFromUopQueue(Uop *uop)
 }
 
 
-void Thread::DumpUopQueue(std::ostream &os)
+void Thread::DumpUopQueue(std::ostream &os) const
 {
 	// Title
 	std::string title = "Uop queue";
 	os << title << '\n';
-	os << std::string(title.size(), '=') << "\n\n";
+	os << std::string(title.size(), '-') << "\n\n";
 
 	// Dump content
 	int index = 0;
@@ -212,6 +240,10 @@ void Thread::DumpUopQueue(std::ostream &os)
 		os << *uop << '\n';
 		index++;
 	}
+
+	// Empty list
+	if (uop_queue.empty())
+		os << "-Empty-\n";
 
 	// End
 	os << '\n';
@@ -283,6 +315,31 @@ void Thread::ExtractFromReorderBuffer(Uop *uop)
 }
 
 
+void Thread::DumpReorderBuffer(std::ostream &os) const
+{
+	// Title
+	std::string title = "Reorder buffer";
+	os << title << '\n';
+	os << std::string(title.size(), '-') << "\n\n";
+
+	// Dump content
+	int index = 0;
+	for (auto &uop : reorder_buffer)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// Empty list
+	if (reorder_buffer.empty())
+		os << "-Empty-\n";
+
+	// End
+	os << '\n';
+}
+
+
 bool Thread::canInsertInInstructionQueue()
 {
 	switch (Cpu::getInstructionQueueKind())
@@ -347,6 +404,31 @@ void Thread::ExtractFromInstructionQueue(Uop *uop)
 
 	// Decrease per-core counter
 	core->decInstructionQueueOccupancy();
+}
+
+
+void Thread::DumpInstructionQueue(std::ostream &os) const
+{
+	// Title
+	std::string title = "Instruction queue";
+	os << title << '\n';
+	os << std::string(title.size(), '-') << "\n\n";
+
+	// Dump content
+	int index = 0;
+	for (auto &uop : instruction_queue)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// Empty list
+	if (instruction_queue.empty())
+		os << "-Empty-\n";
+
+	// End
+	os << '\n';
 }
 
 
@@ -452,6 +534,53 @@ void Thread::ExtractFromStoreQueue(Uop *uop)
 	// Decrease per-core counter
 	core->decLoadStoreQueueOccupancy();
 }
+
+
+void Thread::DumpLoadStoreQueue(std::ostream &os) const
+{
+	// Load queue
+	std::string title = "Load queue";
+	os << title << '\n';
+	os << std::string(title.size(), '-') << "\n\n";
+
+	// Dump content
+	int index = 0;
+	for (auto &uop : load_queue)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// Empty list
+	if (load_queue.empty())
+		os << "-Empty-\n";
+
+	// End
+	os << '\n';
+
+	// Store queue
+	title = "Store queue";
+	os << title << '\n';
+	os << std::string(title.size(), '-') << "\n\n";
+
+	// Dump content
+	index = 0;
+	for (auto &uop : store_queue)
+	{
+		os << misc::fmt("%3d. ", index);
+		os << *uop << '\n';
+		index++;
+	}
+
+	// Empty list
+	if (store_queue.empty())
+		os << "-Empty-\n";
+
+	// End
+	os << '\n';
+}
+
 
 }
 

@@ -129,6 +129,88 @@ RegisterFile::RegisterFile(Thread *thread) :
 }
 
 
+void RegisterFile::Dump(std::ostream &os) const
+{
+	// Title
+	os << "Register file\n";
+	os << "-------------\n\n";
+
+	// Integer registers
+	os << "Integer registers:\n";
+	os << misc::fmt("\t%d occupied, %d free, %d total\n",
+			integer_local_size - num_free_integer_registers,
+			num_free_integer_registers,
+			integer_local_size);
+	
+	// Integer mappings
+	os << "\tMappings:\n";
+	for (int i = 0; i < Uinst::DepIntCount; i++)
+	{
+		Uinst::Dep dep = (Uinst::Dep) (Uinst::DepIntFirst + i);
+		os << misc::fmt("\t\t%-10s -> %d\n",
+				Uinst::getDependencyName(dep),
+				integer_rat[i]);
+	}
+	
+	// Integer free registers
+	os << "\tFree registers: { ";
+	for (int i = 0; i < num_free_integer_registers; i++)
+		os << misc::fmt("%d ", free_integer_registers[i]);
+	os << "}\n";
+	os << '\n';
+
+	// Floating-point registers
+	os << "Floating-point registers:\n";
+	os << misc::fmt("\t%d occupied, %d free, %d total\n",
+			floating_point_local_size -
+			num_free_floating_point_registers,
+			num_free_floating_point_registers,
+			floating_point_local_size);
+	
+	// Floating-point mappings
+	os << "\tMappings:\n";
+	for (int i = 0; i < Uinst::DepFpCount; i++)
+	{
+		Uinst::Dep dep = (Uinst::Dep) (Uinst::DepFpFirst + i);
+		os << misc::fmt("\t\t%-10s -> %d\n",
+				Uinst::getDependencyName(dep),
+				floating_point_rat[i]);
+	}
+	
+	// Floating-point free registers
+	os << "\tFree registers: { ";
+	for (int i = 0; i < num_free_floating_point_registers; i++)
+		os << misc::fmt("%d ", free_floating_point_registers[i]);
+	os << "}\n";
+	os << '\n';
+	
+	// XMM registers
+	os << "XMM registers:\n";
+	os << misc::fmt("\t%d occupied, %d free, %d total\n",
+			xmm_local_size - num_free_xmm_registers,
+			num_free_xmm_registers,
+			xmm_local_size);
+	
+	// XMM mappings
+	os << "\tMappings:\n";
+	for (int i = 0; i < Uinst::DepXmmCount; i++)
+	{
+		Uinst::Dep dep = (Uinst::Dep) (Uinst::DepXmmFirst + i);
+		os << misc::fmt("\t\t%-10s -> %d\n",
+				Uinst::getDependencyName(dep),
+				xmm_rat[i]);
+	}
+	
+	// XMM free registers
+	os << "\tFree registers: { ";
+	for (int i = 0; i < num_free_xmm_registers; i++)
+		os << misc::fmt("%d ", free_xmm_registers[i]);
+	os << "}\n";
+	os << '\n';
+
+}
+
+
 void RegisterFile::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Section [Queues]
