@@ -627,16 +627,14 @@ Frame *Module::canCoalesce(AccessType access_type,
 
 void Module::Coalesce(Frame *master_frame, Frame *frame)
 {
-	// Get event-driven engine
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-
 	// Debug
-	System::debug << misc::fmt("  %lld %lld 0x%x %s coalesce with %lld\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld is coalesced with A-%lld "
+			"on %s for 0x%x\n",
 			frame->getId(),
-			frame->getAddress(),
+			master_frame->getId(),
 			name.c_str(),
-			master_frame->getId());
+			frame->getAddress());
 
 	// Master frame must not have a parent. We only want one level of
 	// coalesced accesses.
@@ -690,11 +688,11 @@ void Module::LockPort(Frame *frame, esim::Event *event)
 
 	// Debug
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	System::debug << misc::fmt("  %lld frame %lld %s port %d locked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld locks port %d on %s\n",
 			frame->getId(),
-			name.c_str(),
-			port_index);
+			port_index,
+			name.c_str());
 
 	// Schedule event
 	esim_engine->Next(event);
@@ -715,9 +713,8 @@ void Module::UnlockPort(Port *port, Frame *frame)
 	num_locked_ports--;
 
 	// Debug
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-	System::debug << misc::fmt("  %lld %lld %s port unlocked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld unlocks port on %s\n",
 			frame->getId(),
 			name.c_str());
 
@@ -735,8 +732,8 @@ void Module::UnlockPort(Port *port, Frame *frame)
 	port_queue.WakeupOne();
 	
 	// Debug
-	System::debug << misc::fmt("  %lld frame %lld %s port locked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld locks port on %s\n",
 			frame->getId(),
 			name.c_str());
 }

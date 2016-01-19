@@ -104,6 +104,10 @@ void Uop::Dump(std::ostream &os) const
 	os << misc::fmt("spec = %c, ", speculative_mode ? 't' : 'f');
 	os << misc::fmt("trace_cache = %c, ", from_trace_cache ? 't' : 'f');
 
+	// Memory access
+	if (memory_access)
+		os << misc::fmt("memory_access = %lld, ", memory_access);
+
 	// Micro-instruction
 	os << "uinst = '" << *uinst << "'";
 }

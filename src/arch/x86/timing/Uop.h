@@ -360,8 +360,11 @@ public:
 	/// Physical address that this uop was fetched from
 	unsigned fetch_address = 0;
 
-	// Physical address for memory uops
+	// For memory uops, Physical address of memory access
 	unsigned physical_address = 0;
+
+	// For memory uops, unique identifier of memory access
+	long long memory_access = 0;
 
 	/// Access identifier for instruction fetch
 	long long fetch_access = 0;
@@ -413,6 +416,12 @@ public:
 	//
 	// State
 	//
+
+	/// True if uop has been dipatched
+	bool dispatched = false;
+
+	/// Cycle when uop was dispatched, or 0 if not dispatched yet.
+	long long dispatch_when = 0;
 
 	/// True if uop is ready to be issued
 	bool ready = false;
