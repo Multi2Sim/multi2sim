@@ -250,8 +250,17 @@ public:
 	/// Constructor
 	RegisterFile(Thread *thread);
 
-	/// Dump register file
-	void DumpRegisterFile();
+	/// Dump a plain-text representation of the object into the given output
+	/// stream, or into the standard output if argument \a os is committed.
+	void Dump(std::ostream &os = std::cout) const;
+	
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const RegisterFile &register_file)
+	{
+		register_file.Dump(os);
+		return os;
+	}
 
 	/// Return true if there are enough available physical registers to
 	/// rename the given uop.

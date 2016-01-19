@@ -92,7 +92,7 @@ private:
 	void ExtractFromFetchQueue(Uop *uop);
 
 	// Dump content of fetch queue
-	void DumpFetchQueue(std::ostream &os = std::cout);
+	void DumpFetchQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -112,7 +112,7 @@ private:
 	void ExtractFromUopQueue(Uop *uop);
 
 	// Dump content of uop queue
-	void DumpUopQueue(std::ostream &os = std::cout);
+	void DumpUopQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -135,6 +135,10 @@ private:
 	// Extract a uop from the reorder buffer. The uop must be located either
 	// at the head or at the tail of the reorder buffer.
 	void ExtractFromReorderBuffer(Uop *uop);
+	
+	// Dump content of reorder buffer
+	void DumpReorderBuffer(std::ostream &os = std::cout) const;
+
 
 
 
@@ -149,10 +153,17 @@ private:
 	// Insert a uop into the tail of the instruction queue
 	void InsertInInstructionQueue(std::shared_ptr<Uop> uop);
 
+	// Remove a uop from the instruction queue. The uop must be currently
+	// present in said queue.
+	void ExtractFromInstructionQueue(Uop *uop);
+	
 	// Determine whether a new uop can be inserted into this thread's
 	// instruction queue, based on whether the queue was configured as
 	// private per thread, or shared among threads.
 	bool canInsertInInstructionQueue();
+	
+	// Dump content of instruction queue
+	void DumpInstructionQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -185,9 +196,8 @@ private:
 	// in said queue.
 	void ExtractFromStoreQueue(Uop *uop);
 
-	// Remove a uop from the instruction queue. The uop must be currently
-	// present in said queue.
-	void ExtractFromInstructionQueue(Uop *uop);
+	// Dump content of load_store queue
+	void DumpLoadStoreQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -333,6 +343,19 @@ public:
 				&& uop_queue.empty()
 				&& reorder_buffer.empty();
 	}
+	
+	/// Dump a plain-text representation of the object into the given output
+	/// stream, or into the standard output if argument \a os is committed.
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const Thread &thread)
+	{
+		thread.Dump(os);
+		return os;
+	}
+
 
 
 
