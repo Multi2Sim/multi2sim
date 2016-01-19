@@ -317,6 +317,9 @@ void Thread::ExtractFromReorderBuffer(Uop *uop)
 
 void Thread::DumpReorderBuffer(std::ostream &os) const
 {
+	// Current cycle
+	long long cycle = cpu->getCycle();
+
 	// Title
 	std::string title = "Reorder buffer";
 	os << title << '\n';
@@ -326,9 +329,34 @@ void Thread::DumpReorderBuffer(std::ostream &os) const
 	int index = 0;
 	for (auto &uop : reorder_buffer)
 	{
+		// Instruction
 		os << misc::fmt("%3d. ", index);
 		os << *uop << '\n';
 		index++;
+
+		// Dispatched
+		if (uop->dispatched)
+			os << misc::fmt("\t\tDispatched in cycle %lld (%lld ago)\n",
+					uop->dispatch_when,
+					cycle - uop->dispatch_when);
+		else
+			os << "\t\tNot dispatched\n";
+
+		// Issued
+		if (uop->issued)
+			os << misc::fmt("\t\tIssued in cycle %lld (%lld ago)\n",
+					uop->issue_when,
+					cycle - uop->issue_when);
+		else
+			os << "\t\tNot issued\n";
+
+		// Issued
+		if (uop->completed)
+			os << misc::fmt("\t\tCompleted in cycle %lld (%lld ago)\n",
+					uop->complete_when,
+					cycle - uop->complete_when);
+		else
+			os << "\t\tNot completed\n";
 	}
 
 	// Empty list

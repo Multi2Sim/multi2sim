@@ -641,6 +641,10 @@ public:
 	///	current frame will be available within the event handler of
 	///	\a return_event. Use \c nullptr (default) for no return event.
 	///
+	/// \return frame_id
+	///	The function returns a unique identifier of the new memory
+	///	access.
+	///
 	long long Access(AccessType access_type,
 			unsigned address,
 			int *witness = nullptr,

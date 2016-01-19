@@ -101,6 +101,10 @@ public:
 
 	/// Return whether the frame is currently suspended in an event queue.
 	bool isInQueue() const { return in_queue; }
+	
+	/// Return a pointer to next frames in a waiting queue, or null if the
+	/// event frame is not suspended in a queue.
+	Frame *getNext() const { return next.get(); }
 };
 
 
