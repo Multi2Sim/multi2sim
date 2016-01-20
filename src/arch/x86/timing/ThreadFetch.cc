@@ -257,7 +257,7 @@ void Thread::Fetch()
 				physical_address);
 		
 		// Stats
-		btb_reads++;
+		num_btb_reads++;
 	}
 
 	// Fetch all instructions within the block up to the first predict-taken

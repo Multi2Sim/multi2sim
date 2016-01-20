@@ -103,15 +103,19 @@ private:
 	//
 
 	// Number of accesses to this functional unit
-	long long accesses = 0;
+	long long num_accesses = 0;
 
 	// Number of times that this functional unit was denied
-	long long denied = 0;
+	long long num_denied_accesses = 0;
 
 	// Waiting time of functional unit
 	long long waiting_time = 0;
 
 public:
+	
+	//
+	// Class members
+	//
 
 	/// Constructor
 	FunctionalUnit(Type type,
@@ -127,6 +131,9 @@ public:
 	{
 	}
 
+	/// Return the functional unit name.
+	const std::string &getName() const { return name; }
+
 	/// Reserve an instance of this functional unit for the given uop. The
 	/// uop must belong to this functional unit. The function returns the
 	/// functional unit latency, or 0 if no free instance was found.
@@ -134,6 +141,21 @@ public:
 
 	/// Release all instances of this functional unit
 	void Release();
+
+
+
+	//
+	// Statistics
+	//
+
+	/// Return the total number of a ccesses
+	long long getNumAccesses() const { return num_accesses; }
+
+	/// Return the total number of denied accesses
+	long long getNumDeniedAccesses() const { return num_denied_accesses; }
+
+	/// Return the total waiting time
+	long long getWaitingTime() const { return waiting_time; }
 };
 
 }

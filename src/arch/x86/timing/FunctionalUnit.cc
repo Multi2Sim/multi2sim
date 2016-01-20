@@ -73,7 +73,7 @@ int FunctionalUnit::Reserve(Uop *uop)
 		cycle_free[i] = cycle + issue_latency;
 
 		// Stats
-		accesses++;
+		num_accesses++;
 		waiting_time += cycle - uop->first_alu_cycle;
 
 		// Return the total operation latency
@@ -81,7 +81,7 @@ int FunctionalUnit::Reserve(Uop *uop)
 	}
 
 	// No free instance found
-	denied++;
+	num_denied_accesses++;
 	return 0;
 }
 

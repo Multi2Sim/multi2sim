@@ -140,10 +140,10 @@ private:
 	//
 
 	// Total number of accesses to the trace cache
-	long long accesses = 0;
+	long long num_accesses = 0;
 
 	// Total number of hits
-	long long hits = 0;
+	long long num_hits = 0;
 
 	// Number of fetched micro-instructions
 	long long num_fetched_uinsts = 0;
@@ -185,11 +185,14 @@ public:
 
 
 	//
-	// Static fields
+	// Static members
 	//
 
 	/// Read trace cache configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
+
+	/// Dump configuration
+	static void DumpConfiguration(std::ostream &os = std::cout);
 
 	/// Return whether the trace cache was configured as present
 	static bool isPresent() { return present; }
@@ -227,10 +230,6 @@ public:
 	/// Constructor
 	TraceCache(const std::string &name = "");
 
-	/// Dump configuration
-	void DumpConfiguration(std::ostream &os = std::cout);
-
-	/// Dump functions
 	/// Dump the trace cache report
 	void DumpReport(std::ostream &os = std::cout);
 

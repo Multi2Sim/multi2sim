@@ -182,7 +182,7 @@ void IniFile::Load(const std::string &path)
 	this->path = path;
 	std::ifstream f(path);
 	if (!f)
-		throw Error(fmt("%s: cannot read from file",
+		throw Error(fmt("%s: Cannot read from file",
 				path.c_str()));
 	
 	// Parse 
@@ -234,14 +234,14 @@ void IniFile::Parse(std::istream *f)
 			// Insert section
 			ok = InsertSection(section);
 			if (!ok)
-				throw misc::Error(misc::fmt("%s: line %d: "
-						"duplicated section '%s'.\n%s",
+				throw misc::Error(misc::fmt("%s: Line %d: "
+						"Duplicated section '%s'.\n%s",
 						path.c_str(), line_num,
 						section.c_str(),
 						ini_file_err_format));
 
 			// Debug
-			debug << fmt("%s: found section [%s]\n",
+			debug << fmt("%s: Found section [%s]\n",
 					path.c_str(), section.c_str());
 
 			// Done for this line
@@ -250,29 +250,29 @@ void IniFile::Parse(std::istream *f)
 
 		// Check that there is an active section
 		if (section == "")
-			throw Error(fmt("%s: line %d: "
-					"section name expected.\n%s",
+			throw Error(fmt("%s: Line %d: "
+					"Section name expected.\n%s",
 					path.c_str(), line_num,
 					ini_file_err_format));
 		
 		// New "<var> = <value>" entry.
 		ok = getVarValue(line, var, value);
 		if (!ok)
-			throw Error(fmt("%s: line %d: "
-					"invalid format.\n%s",
+			throw Error(fmt("%s: Line %d: "
+					"Invalid format.\n%s",
 					path.c_str(), line_num,
 					ini_file_err_format));
 
 		// New variable
 		ok = InsertVariable(section, var, value);
 		if (!ok)
-			throw Error(fmt("%s: line %d: "
-					"duplicated variable '%s'.\n%s",
+			throw Error(fmt("%s: Line %d: "
+					"Duplicated variable '%s'.\n%s",
 					path.c_str(), line_num, var.c_str(),
 					ini_file_err_format));
 
 		// Debug
-		debug << fmt("%s: parsed section [%s], variable '%s', value '%s'\n",
+		debug << fmt("%s: Parsed section [%s], variable '%s', value '%s'\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str());
 	}
@@ -284,7 +284,7 @@ void IniFile::Save(const std::string &path) const
 	// Open file
 	std::ofstream f(path);
 	if (!f)
-		throw Error(fmt("%s: cannot write to file", path.c_str()));
+		throw Error(fmt("%s: Cannot write to file", path.c_str()));
 	
 	// Dump
 	Dump(f);
@@ -418,7 +418,7 @@ void IniFile::WriteEnum(const std::string &section, const std::string &var,
 	// Translate value
 	s = map.MapValue(value, error);
 	if (error)
-		throw Error(fmt("%s: invalid value for enumeration (%d)",
+		throw Error(fmt("%s: Invalid value for enumeration (%d)",
 				__FUNCTION__, value));
 	
 	// Write
@@ -444,7 +444,7 @@ std::string IniFile::ReadString(const std::string &section,
 	auto it = items.find(item);
 	if (it == items.end())
 	{
-		debug << fmt("%s: read section [%s], variable '%s', "
+		debug << fmt("%s: Read section [%s], variable '%s', "
 				"not found, default is '%s'\n",
 				path.c_str(),
 				section.c_str(),
@@ -454,7 +454,7 @@ std::string IniFile::ReadString(const std::string &section,
 	}
 	else
 	{
-		debug << fmt("%s: read section [%s], variable '%s', "
+		debug << fmt("%s: Read section [%s], variable '%s', "
 				"value '%s'\n",
 				path.c_str(),
 				section.c_str(),
@@ -476,7 +476,7 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 	value = ReadString(section, var);
 	if (value.empty())
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"not found, default is %d\n",
 				path.c_str(),
@@ -489,12 +489,12 @@ int IniFile::ReadInt(const std::string &section, const std::string &var,
 	// Interpret
 	result = StringToInt(value, error);
 	if (error)
-		throw Error(fmt("%s: section [%s], variable '%s', value '%s': %s\n",
+		throw Error(fmt("%s: Section [%s], variable '%s', value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str(), StringErrorToString(error)));
 
 	// Return
-	debug << fmt("%s: read section [%s], "
+	debug << fmt("%s: Read section [%s], "
 			"variable '%s', "
 			"value %d\n",
 			path.c_str(),
@@ -516,7 +516,7 @@ long long IniFile::ReadInt64(const std::string &section,
 	value = ReadString(section, var);
 	if (value.empty())
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"not found, default is %lld\n",
 				path.c_str(),
@@ -529,13 +529,13 @@ long long IniFile::ReadInt64(const std::string &section,
 	// Interpret
 	result = StringToInt64(value, error);
 	if (error)
-		throw Error(fmt("%s: section [%s], variable '%s', "
+		throw Error(fmt("%s: Section [%s], variable '%s', "
 				"value '%s': %s\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				value.c_str(), StringErrorToString(error)));
 
 	// Return
-	debug << fmt("%s: read section [%s], "
+	debug << fmt("%s: Read section [%s], "
 			"variable '%s', "
 			"value %lld\n",
 			path.c_str(),
@@ -553,7 +553,7 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 	std::string s = ReadString(section, var);
 	if (s.empty())
 	{
-		debug << fmt("%s: read section [%s], variable '%s', "
+		debug << fmt("%s: Read section [%s], variable '%s', "
 				"not found, default is %s\n",
 				path.c_str(),
 				section.c_str(),
@@ -567,7 +567,7 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 			|| !strcasecmp(s.c_str(), "True")
 			|| !strcasecmp(s.c_str(), "On"))
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"value 'True'\n",
 				path.c_str(),
@@ -581,7 +581,7 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 			|| !strcasecmp(s.c_str(), "False")
 			|| !strcasecmp(s.c_str(), "Off"))
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"value 'False'\n",
 				path.c_str(),
@@ -591,7 +591,7 @@ bool IniFile::ReadBool(const std::string &section, const std::string &var,
 	}
 
 	// Invalid value
-	throw Error(fmt("%s: section [%s], variable '%s', invalid value '%s'\n"
+	throw Error(fmt("%s: Section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are {t|True|On|f|False|Off}\n",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str()));
 	return false;
@@ -605,7 +605,7 @@ double IniFile::ReadDouble(const std::string &section,
 	std::string s = ReadString(section, var);
 	if (s.empty())
 	{
-		debug << fmt("%s: read section [%s], variable '%s', "
+		debug << fmt("%s: Read section [%s], variable '%s', "
 				"not found, default is %f\n",
 				path.c_str(),
 				section.c_str(),
@@ -620,13 +620,13 @@ double IniFile::ReadDouble(const std::string &section,
 	ss.str(s);
 	ss >> value;
 	if (!ss || !ss.eof())
-		throw Error(fmt("%s: section [%s], variable '%s', "
+		throw Error(fmt("%s: Section [%s], variable '%s', "
 				"invalid double value '%s'\n",
 				path.c_str(), section.c_str(), var.c_str(),
 				s.c_str()));
 	
 	// Convert
-	debug << fmt("%s: read section [%s], "
+	debug << fmt("%s: Read section [%s], "
 			"variable '%s', "
 			"value %f\n",
 			path.c_str(),
@@ -644,7 +644,7 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 	std::string s = ReadString(section, var);
 	if (s.empty())
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"not found, default is '%s'\n",
 				path.c_str(),
@@ -659,7 +659,7 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 	int value = map.MapStringCase(s, error);
 	if (!error)
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"value '%s'\n",
 				path.c_str(),
@@ -670,7 +670,7 @@ int IniFile::ReadEnum(const std::string &section, const std::string &var,
 	}
 
 	// Error, show options
-	throw Error(fmt("%s: section [%s], variable '%s', invalid value '%s'\n"
+	throw Error(fmt("%s: Section [%s], variable '%s', invalid value '%s'\n"
 			"\tPossible values are %s",
 			path.c_str(), section.c_str(), var.c_str(), s.c_str(),
 			map.toString().c_str()));
@@ -685,7 +685,7 @@ void *IniFile::ReadPointer(const std::string &section, const std::string &var,
 	std::string s = ReadString(section, var);
 	if (s.empty())
 	{
-		debug << fmt("%s: read section [%s], "
+		debug << fmt("%s: Read section [%s], "
 				"variable '%s', "
 				"not found, default is %p\n",
 				path.c_str(),
@@ -700,7 +700,7 @@ void *IniFile::ReadPointer(const std::string &section, const std::string &var,
 	sscanf(s.c_str(), "%p", &value);
 
 	// Return
-	debug << fmt("%s: read section [%s], "
+	debug << fmt("%s: Read section [%s], "
 			"variable '%s', "
 			"value %p\n",
 			path.c_str(),
@@ -762,10 +762,10 @@ void IniFile::Check() const
 		// Item not present
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			throw Error(fmt("%s: section [%s] missing",
+			throw Error(fmt("%s: Section [%s] missing",
 				path.c_str(), section.c_str()));
 		else
-			throw Error(fmt("%s: section [%s], variable '%s' missing",
+			throw Error(fmt("%s: Section [%s], variable '%s' missing",
 				path.c_str(), section.c_str(), var.c_str()));
 	}
 
@@ -780,10 +780,10 @@ void IniFile::Check() const
 		// Item not allowed
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			throw Error(fmt("%s: invalid section [%s]",
+			throw Error(fmt("%s: Invalid section [%s]",
 				path.c_str(), section.c_str()));
 		else
-			throw Error(fmt("%s: section [%s], invalid variable '%s'",
+			throw Error(fmt("%s: Section [%s], invalid variable '%s'",
 				path.c_str(), section.c_str(), var.c_str()));
 	}
 }
@@ -808,10 +808,10 @@ void IniFile::Check(const std::string &ref_section) const
 		std::string var;
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			throw Error(fmt("%s: section [%s] missing",
+			throw Error(fmt("%s: Section [%s] missing",
 				path.c_str(), section.c_str()));
 		else
-			throw Error(fmt("%s: section [%s], variable '%s' missing",
+			throw Error(fmt("%s: Section [%s], variable '%s' missing",
 				path.c_str(), section.c_str(), var.c_str()));
 	}
 
@@ -832,10 +832,10 @@ void IniFile::Check(const std::string &ref_section) const
 		std::string var;
 		ItemToSectionVar(item, section, var);
 		if (var == "")
-			throw Error(fmt("%s: invalid section [%s]",
+			throw Error(fmt("%s: Invalid section [%s]",
 				path.c_str(), section.c_str()));
 		else
-			throw Error(fmt("%s: section [%s], invalid variable '%s'",
+			throw Error(fmt("%s: Section [%s], invalid variable '%s'",
 				path.c_str(), section.c_str(), var.c_str()));
 	}
 }

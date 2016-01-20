@@ -67,18 +67,18 @@ int Thread::IssueLoadQueue(int quantum)
 		cpu->incNumIssuedUinsts(uop->getOpcode());
 
 		// Increment number of reads from load-store-queue
-		load_store_queue_reads++;
-		core->incLoadStoreQueueReads();
+		num_load_store_queue_reads++;
+		core->incNumLoadStoreQueueReads();
 
 		// Increment per-thread number of reads from registers
-		integer_register_reads += uop->getNumIntegerInputs();
-		floating_point_register_reads += uop->getNumFloatingPointInputs();
-		xmm_register_reads += uop->getNumXmmInputs();
+		num_integer_register_reads += uop->getNumIntegerInputs();
+		num_floating_point_register_reads += uop->getNumFloatingPointInputs();
+		num_xmm_register_reads += uop->getNumXmmInputs();
 
 		// Increment per-core number of reads from registers
-		core->incIntegerRegisterReads(uop->getNumIntegerInputs());
-		core->incFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
-		core->incXmmRegisterReads(uop->getNumXmmInputs());
+		core->incNumIntegerRegisterReads(uop->getNumIntegerInputs());
+		core->incNumFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
+		core->incNumXmmRegisterReads(uop->getNumXmmInputs());
 
 		// Increment number of issued micro-instructions coming from
 		// the trace cache
@@ -145,18 +145,18 @@ int Thread::IssueStoreQueue(int quantum)
 		cpu->incNumIssuedUinsts(uop->getOpcode());
 
 		// Increment number of reads from load-store-queue
-		load_store_queue_reads++;
-		core->incLoadStoreQueueReads();
+		num_load_store_queue_reads++;
+		core->incNumLoadStoreQueueReads();
 
 		// Increment per-thread number of reads from registers
-		integer_register_reads += uop->getNumIntegerInputs();
-		floating_point_register_reads += uop->getNumFloatingPointInputs();
-		xmm_register_reads += uop->getNumXmmInputs();
+		num_integer_register_reads += uop->getNumIntegerInputs();
+		num_floating_point_register_reads += uop->getNumFloatingPointInputs();
+		num_xmm_register_reads += uop->getNumXmmInputs();
 
 		// Increment per-core number of reads from registers
-		core->incIntegerRegisterReads(uop->getNumIntegerInputs());
-		core->incFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
-		core->incXmmRegisterReads(uop->getNumXmmInputs());
+		core->incNumIntegerRegisterReads(uop->getNumIntegerInputs());
+		core->incNumFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
+		core->incNumXmmRegisterReads(uop->getNumXmmInputs());
 
 		// Increment number of issued micro-instructions coming from
 		// the trace cache
@@ -230,18 +230,18 @@ int Thread::IssueInstructionQueue(int quantum)
 		cpu->incNumIssuedUinsts(uop->getOpcode());
 
 		// Increment number of reads from instruction queue
-		instruction_queue_reads++;
-		core->incInstructionQueueReads();
+		num_instruction_queue_reads++;
+		core->incNumInstructionQueueReads();
 
 		// Increment per-thread number of reads from registers
-		integer_register_reads += uop->getNumIntegerInputs();
-		floating_point_register_reads += uop->getNumFloatingPointInputs();
-		xmm_register_reads += uop->getNumXmmInputs();
+		num_integer_register_reads += uop->getNumIntegerInputs();
+		num_floating_point_register_reads += uop->getNumFloatingPointInputs();
+		num_xmm_register_reads += uop->getNumXmmInputs();
 
 		// Increment per-core number of reads from registers
-		core->incIntegerRegisterReads(uop->getNumIntegerInputs());
-		core->incFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
-		core->incXmmRegisterReads(uop->getNumXmmInputs());
+		core->incNumIntegerRegisterReads(uop->getNumIntegerInputs());
+		core->incNumFloatingPointRegisterReads(uop->getNumFloatingPointInputs());
+		core->incNumXmmRegisterReads(uop->getNumXmmInputs());
 
 		// Increment number of issued micro-instructions coming from
 		// the trace cache

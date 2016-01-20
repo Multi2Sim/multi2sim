@@ -298,26 +298,26 @@ private:
 	// Statistics for structures
 	//
 
-	long long reorder_buffer_reads = 0;
-	long long reorder_buffer_writes = 0;
+	long long num_reorder_buffer_reads = 0;
+	long long num_reorder_buffer_writes = 0;
 
-	long long instruction_queue_reads = 0;
-	long long instruction_queue_writes = 0;
+	long long num_instruction_queue_reads = 0;
+	long long num_instruction_queue_writes = 0;
 
-	long long load_store_queue_reads = 0;
-	long long load_store_queue_writes = 0;
+	long long num_load_store_queue_reads = 0;
+	long long num_load_store_queue_writes = 0;
 
-	long long integer_register_reads = 0;
-	long long integer_register_writes = 0;
+	long long num_integer_register_reads = 0;
+	long long num_integer_register_writes = 0;
 
-	long long floating_point_register_reads = 0;
-	long long floating_point_register_writes = 0;
+	long long num_floating_point_register_reads = 0;
+	long long num_floating_point_register_writes = 0;
 	
-	long long xmm_register_reads = 0;
-	long long xmm_register_writes = 0;
+	long long num_xmm_register_reads = 0;
+	long long num_xmm_register_writes = 0;
 
-	long long btb_reads = 0;
-	long long btb_writes = 0;
+	long long num_btb_reads = 0;
+	long long num_btb_writes = 0;
 
 public:
 
@@ -364,25 +364,28 @@ public:
 	// Register file
 	//
 
+	/// Return the thread's trace cache
+	TraceCache *getTraceCache() const { return trace_cache.get(); }
+
 	/// Return the thread's register file
 	RegisterFile *getRegisterFile() const { return register_file.get(); }
 
 	/// Increment the number of writes to integer registers
-	void incIntegerRegisterWrites(int count = 1)
+	void incNumIntegerRegisterWrites(int count = 1)
 	{
-		integer_register_writes += count;
+		num_integer_register_writes += count;
 	}
 
 	/// Increment the number of writes to floating-point registers
-	void incFloatingPointRegisterWrites(int count = 1)
+	void incNumFloatingPointRegisterWrites(int count = 1)
 	{
-		floating_point_register_writes += count;
+		num_floating_point_register_writes += count;
 	}
 
 	/// Increment the number of writes to XMM registers
-	void incXmmRegisterWrites(int count = 1)
+	void incNumXmmRegisterWrites(int count = 1)
 	{
-		xmm_register_writes += count;
+		num_xmm_register_writes += count;
 	}
 
 
@@ -607,12 +610,82 @@ public:
 		num_dispatched_uinsts[opcode]++;
 	}
 
+	/// Return the array of dispatched micro-instructions.
+	const long long *getNumDispatchedUinsts() const
+	{
+		return num_dispatched_uinsts;
+	}
+
 	/// Increment the number of issued micro-instructions of a kind
 	void incNumIssuedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
 		num_issued_uinsts[opcode]++;
 	}
+
+	/// Return the array of issued micro-instructions
+	const long long *getNumIssuedUinsts() const
+	{
+		return num_issued_uinsts;
+	}
+
+	/// Return the array of committed micro-instructions
+	const long long *getNumCommittedUinsts() const
+	{
+		return num_committed_uinsts;
+	}
+
+	/// Return the number of squashed micro-instructions
+	long long getNumSquashedUinsts() const { return num_squashed_uinsts; }
+
+	/// Return the number of committed branches
+	long long getNumBranches() const { return num_branches; }
+
+	/// Return the number of mispredicted branches
+	long long getNumMispredictedBranches() const { return num_mispredicted_branches; }
+
+	/// Return the number of reads in the reorder buffers
+	long long getNumReorderBufferReads() const { return num_reorder_buffer_reads; }
+
+	/// Return the number of writes in the reorder buffers
+	long long getNumReorderBufferWrites() const { return num_reorder_buffer_writes; }
+
+	/// Return the number of reads from instruction queues
+	long long getNumInstructionQueueReads() const { return num_instruction_queue_reads; }
+
+	/// Return the number of writes to instruction queues
+	long long getNumInstructionQueueWrites() const { return num_instruction_queue_writes; }
+
+	/// Return the number of reads from load-store queues
+	long long getNumLoadStoreQueueReads() const { return num_load_store_queue_reads; }
+
+	/// Return the number of writes to load_store queues
+	long long getNumLoadStoreQueueWrites() const { return num_load_store_queue_writes; }
+
+	/// Return the number of reads on integer registers
+	long long getNumIntegerRegisterReads() const { return num_integer_register_reads; }
+
+	/// Return the number of writes on integer registers
+	long long getNumIntegerRegisterWrites() const { return num_integer_register_writes; }
+
+	/// Return the number of reads on floating-point registers
+	long long getNumFloatingPointRegisterReads() const { return num_floating_point_register_reads; }
+
+	/// Return the number of writes on floating-point registers
+	long long getNumFloatingPointRegisterWrites() const { return num_floating_point_register_writes; }
+
+	/// Return the number of XMM register reads
+	long long getNumXmmRegisterReads() const { return num_xmm_register_reads; }
+
+	/// Return the number of XMM register writes
+	long long getNumXmmRegisterWrites() const { return num_xmm_register_writes; }
+
+	/// Return the number of reads to the BTB
+	long long getNumBtbReads() const { return num_btb_reads; }
+
+	/// Return the number of writes to the BTB
+	long long getNumBtbWrites() const { return num_btb_writes; }
+
 
 
 
