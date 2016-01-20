@@ -77,7 +77,7 @@ class Timing : public comm::Timing
 	
 	
 	//
-	// Member fields
+	// Class members
 	//
 
 	// CPU object
@@ -85,6 +85,10 @@ class Timing : public comm::Timing
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
+
+	// Dump a specific part of a statistics report related with uops.
+	void DumpUopReport(std::ostream &os, long long *uop_stats,
+			const std::string &prefix, int peak_ipc) const;
 
 public:
 
