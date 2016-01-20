@@ -26,15 +26,15 @@ namespace x86
 {
 
 BranchPredictor::Kind BranchPredictor::kind;
-int BranchPredictor::btb_sets;
-int BranchPredictor::btb_assoc;
+int BranchPredictor::btb_num_sets;
+int BranchPredictor::btb_num_ways;
 int BranchPredictor::ras_size;
 int BranchPredictor::bimod_size;
 int BranchPredictor::choice_size;
-int BranchPredictor::twolevel_l1size;
-int BranchPredictor::twolevel_l2size;
-int BranchPredictor::twolevel_history_size;
-int BranchPredictor::twolevel_l2height;
+int BranchPredictor::two_level_l1_size;
+int BranchPredictor::two_level_l2_size;
+int BranchPredictor::two_level_history_size;
+int BranchPredictor::two_level_l2_height;
 
 misc::StringMap BranchPredictor::KindMap =
 {
@@ -42,7 +42,7 @@ misc::StringMap BranchPredictor::KindMap =
 	{ "Taken", KindTaken },
 	{"NotTaken", KindNottaken},
 	{"Bimodal", KindBimod},
-	{"TwoLevel", KindTwolevel},
+	{"TwoLevel", KindTwoLevel},
 	{"Combined", KindCombined}
 };
 
@@ -62,12 +62,12 @@ BranchPredictor::BranchPredictor(const std::string &name)
 	}
 
 	// Two-level adaptive branch predictor
-	if (kind == KindTwolevel || kind == KindCombined)
+	if (kind == KindTwoLevel || kind == KindCombined)
 	{
-		twolevel_bht = misc::new_unique_array<unsigned int>(twolevel_l1size);
-		twolevel_pht = misc::new_unique_array<char>(twolevel_l2size * twolevel_l2height);
-		for (int i = 0; i < twolevel_l2size * twolevel_l2height; i++)
-			twolevel_pht[i] = (char)2;
+		two_level_bht = misc::new_unique_array<unsigned int>(two_level_l1_size);
+		two_level_pht = misc::new_unique_array<char>(two_level_l2_size * two_level_l2_height);
+		for (int i = 0; i < two_level_l2_size * two_level_l2_height; i++)
+			two_level_pht[i] = (char)2;
 	}
 
 	// Choice predictor
@@ -79,10 +79,10 @@ BranchPredictor::BranchPredictor(const std::string &name)
 	}
 
 	// Allocate BTB and assign LRU counters
-	btb = misc::new_unique_array<BTBEntry>(btb_sets * btb_assoc);
-	for (int i = 0; i < btb_sets; i++)
-		for (int j = 0; j < btb_assoc; j++)
-			btb[i * btb_assoc + j].counter = j;
+	btb = misc::new_unique_array<BtbEntry>(btb_num_sets * btb_num_ways);
+	for (int i = 0; i < btb_num_sets; i++)
+		for (int j = 0; j < btb_num_ways; j++)
+			btb[i * btb_num_ways + j].counter = j;
 }
 
 
@@ -93,35 +93,35 @@ void BranchPredictor::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Load branch predictor type
 	kind = (Kind) ini_file->ReadEnum(section, "Kind",
-			KindMap, KindTwolevel);
+			KindMap, KindTwoLevel);
 
 	// Load branch predictor parameter
-	btb_sets = ini_file->ReadInt(section, "BTB.Sets", 256);
-	btb_assoc = ini_file->ReadInt(section, "BTB.Assoc", 4);
+	btb_num_sets = ini_file->ReadInt(section, "BTB.Sets", 256);
+	btb_num_ways = ini_file->ReadInt(section, "BTB.Assoc", 4);
 	bimod_size = ini_file->ReadInt(section, "Bimod.Size", 1024);
 	choice_size = ini_file->ReadInt(section, "Choice.Size", 1024);
 	ras_size = ini_file->ReadInt(section, "RAS.Size", 32);
-	twolevel_l1size = ini_file->ReadInt(section, "TwoLevel.L1Size", 1);
-	twolevel_l2size = ini_file->ReadInt(section, "TwoLevel.L2Size", 1024);
-	twolevel_history_size = ini_file->ReadInt(section, "TwoLevel.HistorySize", 8);
+	two_level_l1_size = ini_file->ReadInt(section, "TwoLevel.L1Size", 1);
+	two_level_l2_size = ini_file->ReadInt(section, "TwoLevel.L2Size", 1024);
+	two_level_history_size = ini_file->ReadInt(section, "TwoLevel.HistorySize", 8);
 
 	// Two-level branch predictor parameter
-	twolevel_l2height = 1 << twolevel_history_size;
+	two_level_l2_height = 1 << two_level_history_size;
 
 	// Integrity
 	if (bimod_size & (bimod_size - 1))
 		throw Error("number of entries in bimodal precitor must be a power of 2");
 	if (choice_size & (choice_size - 1))
 		throw Error("number of entries in choice predictor must be power of 2");
-	if (btb_sets & (btb_sets - 1))
+	if (btb_num_sets & (btb_num_sets - 1))
 		throw Error("number of BTB sets must be a power of 2");
-	if (btb_assoc & (btb_assoc - 1))
+	if (btb_num_ways & (btb_num_ways - 1))
 		throw Error("BTB associativity must be a power of 2");
-	if (twolevel_history_size < 1 || twolevel_history_size > 30)
+	if (two_level_history_size < 1 || two_level_history_size > 30)
 		throw Error("predictor history size must be >=1 and <=30");
-	if (twolevel_l1size & (twolevel_l1size - 1))
+	if (two_level_l1_size & (two_level_l1_size - 1))
 		throw Error("two-level predictor sizes must be power of 2");
-	if (twolevel_l2size & (twolevel_l2size - 1))
+	if (two_level_l2_size & (two_level_l2_size - 1))
 		throw Error("two-level predictor sizes must be power of 2");
 }
 
@@ -130,14 +130,14 @@ void BranchPredictor::DumpConfiguration(std::ostream &os)
 {
 	// Dump branch predictor information
 	os << misc::fmt("\n***** BranchPredictor *****\n");
-	os << misc::fmt("\tBTB.Sets: %d\n", btb_sets);
-	os << misc::fmt("\tBTB.Assoc: %d\n", btb_assoc);
+	os << misc::fmt("\tBTB.Sets: %d\n", btb_num_sets);
+	os << misc::fmt("\tBTB.Assoc: %d\n", btb_num_ways);
 	os << misc::fmt("\tBimod.Size: %d\n", bimod_size);
 	os << misc::fmt("\tChoice.Size: %d\n", choice_size);
 	os << misc::fmt("\tRAS.Size: %d\n", ras_size);
-	os << misc::fmt("\tTwoLevel.L1Size: %d\n", twolevel_l1size);
-	os << misc::fmt("\tTwoLevel.L2Size: %d\n", twolevel_l2size);
-	os << misc::fmt("\tTwoLevel.HistorySize: %d\n", twolevel_history_size);
+	os << misc::fmt("\tTwoLevel.L1Size: %d\n", two_level_l1_size);
+	os << misc::fmt("\tTwoLevel.L2Size: %d\n", two_level_l2_size);
+	os << misc::fmt("\tTwoLevel.HistorySize: %d\n", two_level_history_size);
 }
 
 
@@ -195,19 +195,19 @@ BranchPredictor::Prediction BranchPredictor::Lookup(Uop *uop)
 	}
 
 	// Two-level adaptive
-	if (kind == KindTwolevel || kind == KindCombined)
+	if (kind == KindTwoLevel || kind == KindCombined)
 	{
-		int twolevel_bht_index = uop->eip & (twolevel_l1size - 1);
-		int twolevel_pht_row = twolevel_bht[twolevel_bht_index];
-		assert(twolevel_pht_row < twolevel_l2height);
-		int twolevel_pht_col = uop->eip & (twolevel_l2size - 1);
-		Prediction twolevel_prediction = twolevel_pht[twolevel_pht_row * twolevel_l2size + twolevel_pht_col] > 1 ?
+		int two_level_bht_index = uop->eip & (two_level_l1_size - 1);
+		int two_level_pht_row = two_level_bht[two_level_bht_index];
+		assert(two_level_pht_row < two_level_l2_height);
+		int two_level_pht_col = uop->eip & (two_level_l2_size - 1);
+		Prediction two_level_prediction = two_level_pht[two_level_pht_row * two_level_l2_size + two_level_pht_col] > 1 ?
 				PredictionTaken : PredictionNotTaken;
-		uop->twolevel_bht_index = twolevel_bht_index;
-		uop->twolevel_pht_row = twolevel_pht_row;
-		uop->twolevel_pht_col = twolevel_pht_col;
-		uop->twolevel_prediction = twolevel_prediction;
-		uop->prediction = twolevel_prediction;
+		uop->two_level_bht_index = two_level_bht_index;
+		uop->two_level_pht_row = two_level_pht_row;
+		uop->two_level_pht_col = two_level_pht_col;
+		uop->two_level_prediction = two_level_prediction;
+		uop->prediction = two_level_prediction;
 	}
 
 	// Combined
@@ -215,7 +215,7 @@ BranchPredictor::Prediction BranchPredictor::Lookup(Uop *uop)
 	{
 		int choice_index = uop->eip & (choice_size - 1);
 		Prediction choice_prediction = choice[choice_index] > 1 ?
-				uop->twolevel_prediction :
+				uop->two_level_prediction :
 				uop->bimod_prediction;
 		uop->choice_index = choice_index;
 		uop->choice_prediction = choice_prediction;
@@ -235,20 +235,20 @@ int BranchPredictor::LookupMultiple(unsigned int eip, int count)
 	// the uop for a later call to UpdateBranchPredictor(), and makes the
 	// first prediction considering known characteristics of the primary
 	// branch.
-	assert(kind == KindTwolevel);
-	int bht_index = eip & (twolevel_l1size - 1);
-	int pht_row = twolevel_bht[bht_index];
-	assert(pht_row < twolevel_l2height);
-	int pht_col = eip & (twolevel_l2size - 1);
-	int prediction = twolevel_pht[pht_row * twolevel_l2size + pht_col] > 1 ?
+	assert(kind == KindTwoLevel);
+	int bht_index = eip & (two_level_l1_size - 1);
+	int pht_row = two_level_bht[bht_index];
+	assert(pht_row < two_level_l2_height);
+	int pht_col = eip & (two_level_l2_size - 1);
+	int prediction = two_level_pht[pht_row * two_level_l2_size + pht_col] > 1 ?
 			PredictionTaken : PredictionNotTaken;
 
 	// Make the rest of predictions
 	int temp_prediction = prediction;
 	for (int i = 1; i < count; i++)
 	{
-		pht_row = ((pht_row << 1) | temp_prediction) & (twolevel_l2height - 1);
-		temp_prediction = twolevel_pht[pht_row * twolevel_l2size + pht_col] > 1;
+		pht_row = ((pht_row << 1) | temp_prediction) & (two_level_l2_height - 1);
+		temp_prediction = two_level_pht[pht_row * two_level_l2_size + pht_col] > 1;
 		assert(!temp_prediction || temp_prediction == 1);
 		prediction |= temp_prediction << i;
 	}
@@ -304,16 +304,16 @@ void BranchPredictor::Update(Uop *uop)
 	}
 
 	// Two-level adaptive predictor was used
-	if (kind == KindTwolevel || (kind == KindCombined &&
+	if (kind == KindTwoLevel || (kind == KindCombined &&
 			uop->choice_prediction == PredictionTaken))
 	{
 		// Shift entry in BHT (level 1), and append direction
-		bht_ptr = &twolevel_bht[uop->twolevel_bht_index];
-		*bht_ptr = ((*bht_ptr << 1) | taken) & (twolevel_l2height - 1);
+		bht_ptr = &two_level_bht[uop->two_level_bht_index];
+		*bht_ptr = ((*bht_ptr << 1) | taken) & (two_level_l2_height - 1);
 
 		// Update counter in PHT (level 2) as per direction
-		pht_ptr = &twolevel_pht[uop->twolevel_pht_row *
-		                            twolevel_l2size + uop->twolevel_pht_col];
+		pht_ptr = &two_level_pht[uop->two_level_pht_row *
+		                            two_level_l2_size + uop->two_level_pht_col];
 		if (taken)
 			*pht_ptr = *pht_ptr + 1 > 3 ? 3 : *pht_ptr + 1;
 		else
@@ -322,7 +322,7 @@ void BranchPredictor::Update(Uop *uop)
 
 	// Choice predictor - update only if bimodal and two-level
 	// predictions differ.
-	if (kind == KindCombined && uop->bimod_prediction != uop->twolevel_prediction)
+	if (kind == KindCombined && uop->bimod_prediction != uop->two_level_prediction)
 	{
 		choice_ptr = &choice[uop->choice_index];
 		if (uop->bimod_prediction == PredictionTaken)
@@ -333,10 +333,10 @@ void BranchPredictor::Update(Uop *uop)
 }
 
 
-unsigned int BranchPredictor::LookupBTB(Uop *uop)
+unsigned int BranchPredictor::LookupBtb(Uop *uop)
 {
 	// Local variable
-	BTBEntry *entry;
+	BtbEntry *entry;
 	unsigned int target = 0;
 	bool hit = false;
 
@@ -352,10 +352,10 @@ unsigned int BranchPredictor::LookupBTB(Uop *uop)
 		return uop->eip;
 
 	// Search address in BTB
-	int set = uop->eip & (btb_sets - 1);
-	for (int way = 0; way < btb_assoc; way++)
+	int set = uop->eip & (btb_num_sets - 1);
+	for (int way = 0; way < btb_num_ways; way++)
 	{
-		entry = &btb[set * btb_assoc + way];
+		entry = &btb[set * btb_num_ways + way];
 		if (entry->source != uop->eip)
 			continue;
 		target = entry->target;
@@ -387,11 +387,11 @@ unsigned int BranchPredictor::LookupBTB(Uop *uop)
 }
 
 
-void BranchPredictor::UpdateBTB(Uop *uop)
+void BranchPredictor::UpdateBtb(Uop *uop)
 {
 	// Local variable
-	BTBEntry *entry;
-	BTBEntry *found_entry;
+	BtbEntry *entry;
+	BtbEntry *found_entry;
 	bool found = false;
 
 	// No update for perfect branch predictor
@@ -399,10 +399,10 @@ void BranchPredictor::UpdateBTB(Uop *uop)
 		return;
 
 	// Search address in BTB
-	int set = uop->eip & (btb_sets - 1);
-	for (int way = 0; way < btb_assoc; way++)
+	int set = uop->eip & (btb_num_sets - 1);
+	for (int way = 0; way < btb_num_ways; way++)
 	{
-		entry = &btb[set * btb_assoc + way];
+		entry = &btb[set * btb_num_ways + way];
 		if (entry->source == uop->eip)
 		{
 			found = true;
@@ -414,12 +414,12 @@ void BranchPredictor::UpdateBTB(Uop *uop)
 	// If address was not found, evict LRU entry
 	if (!found)
 	{
-		for (int way = 0; way < btb_assoc; way++)
+		for (int way = 0; way < btb_num_ways; way++)
 		{
-			entry = &btb[set * btb_assoc + way];
+			entry = &btb[set * btb_num_ways + way];
 			entry->counter--;
 			if (entry->counter < 0) {
-				entry->counter = btb_assoc - 1;
+				entry->counter = btb_num_ways - 1;
 				entry->source = uop->eip;
 				entry->target = uop->neip;
 			}
@@ -429,13 +429,13 @@ void BranchPredictor::UpdateBTB(Uop *uop)
 	// If address was found, update LRU counters and target
 	if (found)
 	{
-		for (int way = 0; way < btb_assoc; way++)
+		for (int way = 0; way < btb_num_ways; way++)
 		{
-			entry = &btb[set * btb_assoc + way];
+			entry = &btb[set * btb_num_ways + way];
 			if (entry->counter > found_entry->counter)
 				entry->counter--;
 		}
-		found_entry->counter = btb_assoc - 1;
+		found_entry->counter = btb_num_ways - 1;
 		found_entry->target = uop->neip;
 	}
 }
@@ -452,10 +452,10 @@ unsigned int BranchPredictor::getNextBranch(unsigned int eip,
 	unsigned int limit = (eip + block_size) & ~(block_size - 1);
 	while (eip < limit)
 	{
-		int set = eip & (btb_sets - 1);
-		for (int way = 0; way < btb_assoc; way++)
+		int set = eip & (btb_num_sets - 1);
+		for (int way = 0; way < btb_num_ways; way++)
 		{
-			BTBEntry *entry = &btb[set * btb_assoc + way];
+			BtbEntry *entry = &btb[set * btb_num_ways + way];
 			if (entry->source == eip)
 			{
 				ret_addr = eip;

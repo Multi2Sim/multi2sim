@@ -53,7 +53,7 @@ public:
 		KindTaken,
 		KindNottaken,
 		KindBimod,
-		KindTwolevel,
+		KindTwoLevel,
 		KindCombined
 	};
 
@@ -70,10 +70,10 @@ private:
 	static Kind kind;
 
 	// Number of sets in the BTB
-	static int btb_sets;
+	static int btb_num_sets;
 
 	// Associativity of the BTB
-	static int btb_assoc;
+	static int btb_num_ways;
 
 	// Size of the return address stack
 	static int ras_size;
@@ -85,16 +85,16 @@ private:
 	static int choice_size;
 
 	// Size of the level 1 table of the two-level predictor
-	static int twolevel_l1size;
+	static int two_level_l1_size;
 
 	// Size of the level 2 table of the two-level predictor
-	static int twolevel_l2size;
+	static int two_level_l2_size;
 
 	// Prediction history size
-	static int twolevel_history_size;
+	static int two_level_history_size;
 
 	// Height of the level 2 table of the two-level predictor
-	static int twolevel_l2height;
+	static int two_level_l2_height;
 
 
 
@@ -113,15 +113,15 @@ private:
 	int ras_index = 0;
 
 	// Branch Target Buffer entry
-	struct BTBEntry
+	struct BtbEntry
 	{
 		unsigned int source;  // eip
 		unsigned int target;  // neip
 		int counter;  // LRU counter
 	};
 
-	// BTB - array of btb_sets * btb_assoc entries of type BTBEntry.
-	std::unique_ptr<BTBEntry[]> btb;
+	// BTB - array of btb_sets * btb_assoc entries of type BtbEntry.
+	std::unique_ptr<BtbEntry[]> btb;
 
 	// bimod - array of bimodal counters indexed by PC
 	//   0,1 - Branch not taken.
@@ -130,8 +130,8 @@ private:
 
 	// Two-level adaptive branch predictor. It contains a
 	// BHT (branch history table) and PHT (pattern history table).
-	std::unique_ptr<unsigned int[]> twolevel_bht;  // array of level1_size branch history registers
-	std::unique_ptr<char[]> twolevel_pht;  // array of level2_size*2^hist_size 2-bit counters
+	std::unique_ptr<unsigned int[]> two_level_bht;  // array of level1_size branch history registers
+	std::unique_ptr<char[]> two_level_pht;  // array of level2_size*2^hist_size 2-bit counters
 
 	// choice - array of bimodal counters indexed by PC
 	//   0,1 - Use bimodal predictor.
@@ -167,9 +167,9 @@ public:
 
 	static Kind getKind() { return kind; }
 
-	static int getBTBSets() { return btb_sets; }
+	static int getBtbNumSets() { return btb_num_sets; }
 
-	static int getBTBAssociativity() { return btb_assoc; }
+	static int getBtbNumWays() { return btb_num_ways; }
 
 	static int getRasSize() { return ras_size; }
 
@@ -177,13 +177,13 @@ public:
 
 	static int getChoiceSize() { return choice_size; }
 
-	static int getTwolevelL1size() { return twolevel_l1size; }
+	static int getTwoLevelL1Size() { return two_level_l1_size; }
 
-	static int getTwolevelL2size() { return twolevel_l2size; }
+	static int getTwoLevelL2Size() { return two_level_l2_size; }
 
-	static int getTwolevelHistorySize() { return twolevel_history_size; }
+	static int getTwoLevelHistorySize() { return two_level_history_size; }
 
-	static int getTwolevelL2hight() { return twolevel_l2height; }
+	static int getTwoLevelL2Height() { return two_level_l2_height; }
 
 
 
@@ -203,11 +203,11 @@ public:
 
 	char getBimodStatus(int index) const { return bimod[index]; }
 
-	int getTwolevelBHTStatus(int index) const { return twolevel_bht[index]; }
+	int getTwoLevelBhtStatus(int index) const { return two_level_bht[index]; }
 
-	char getTwolevelPHTStatus(int row, int col) const
+	char getTwoLevelPhtStatus(int row, int col) const
 	{
-		return twolevel_pht[row * twolevel_l2size + col];
+		return two_level_pht[row * two_level_l2_size + col];
 	}
 
 	int getChoiceStatus(int index) const { return choice[index]; }
@@ -259,7 +259,7 @@ public:
 	/// \return
 	/// 	Target address
 	///
-	unsigned int LookupBTB(Uop *uop);
+	unsigned int LookupBtb(Uop *uop);
 
 	/// Update the BTB
 	///
@@ -267,11 +267,11 @@ public:
 	/// 	Micro-instruction including all the information related with
 	///	its branch prediction.
 	///
-	void UpdateBTB(Uop *uop);
+	void UpdateBtb(Uop *uop);
 
 	/// Find address of next branch after eip within current block.
 	/// This is useful for accessing the trace cache. At that point, the
-	/// uop is not ready to call \c LookupBTB(), since functional simulation
+	/// uop is not ready to call \c LookupBtb(), since functional simulation
 	/// has not happened yet.
 	///
 	/// \param eip

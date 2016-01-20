@@ -104,7 +104,7 @@ void Thread::Commit(int quantum)
 		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			branch_predictor->Update(uop.get());
-			branch_predictor->UpdateBTB(uop.get());
+			branch_predictor->UpdateBtb(uop.get());
 			btb_writes++;
 		}
 

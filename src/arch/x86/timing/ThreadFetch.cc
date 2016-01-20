@@ -295,7 +295,7 @@ void Thread::Fetch()
 		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			// Look up BTB
-			unsigned target = branch_predictor->LookupBTB(uop);
+			unsigned target = branch_predictor->LookupBtb(uop);
 
 			// Look up branch predictor
 			BranchPredictor::Prediction prediction =
