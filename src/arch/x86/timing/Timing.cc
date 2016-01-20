@@ -673,7 +673,7 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
-void Timing::DumpUopReport(std::ostream &os, long long *uop_stats,
+void Timing::DumpUopReport(std::ostream &os, const long long *uop_stats,
 		const std::string &prefix, int peak_ipc) const
 {
 	// Counters
@@ -790,149 +790,222 @@ void Timing::DumpReport() const
 			/ cpu->getNumBranches() : 0.0);
 	os << '\n';
 
-#if 0
-	/* Report for each core */
-	for (i = 0; i < x86_cpu_num_cores; i++)
+	// Report for each core
+	for (int i = 0; i < Cpu::getNumCores(); i++)
 	{
-		/* Core */
-		core = self->cores[i];
-		fprintf(f, "\n; Statistics for core %d\n", core->id);
-		fprintf(f, "[ c%d ]\n\n", core->id);
+		// Cores
+		Core *core = cpu->getCore(i);
+		os << misc::fmt("\n; Statistics for core %d\n", core->getId());
+		os << misc::fmt("[ %s ]\n\n", core->getName().c_str());
 
-		/* Functional units */
-		X86CoreDumpFunctionalUnitsReport(core, f);
+		// Functional units
+		Alu *alu = core->getAlu();
+		alu->DumpReport(os);
 
-		/* Dispatch slots */
-		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)
+		// Dispatch slots
+		if (Cpu::getDispatchKind() == Cpu::DispatchKindTimeslice)
 		{
-			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
-			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
-			fprintf(f, ";    spec - used by a mispeculated uop\n");
-			fprintf(f, ";    ctx - no context allocated to thread\n");
-			fprintf(f, ";    uopq,rob,iq,lsq,rename - no space in structure\n");
-			DUMP_DISPATCH_STAT(used);
-			DUMP_DISPATCH_STAT(spec);
-			DUMP_DISPATCH_STAT(uop_queue);
-			DUMP_DISPATCH_STAT(rob);
-			DUMP_DISPATCH_STAT(iq);
-			DUMP_DISPATCH_STAT(lsq);
-			DUMP_DISPATCH_STAT(rename);
-			DUMP_DISPATCH_STAT(ctx);
-			fprintf(f, "\n");
+			// Header
+			os << "; Dispatch slots usage (sum = cycles * dispatch width)\n";
+			os << ";    used - dispatch slot was used by a non-spec uop\n";
+			os << ";    spec - used by a mispeculated uop\n";
+			os << ";    ctx - no context allocated to thread\n";
+			os << ";    uopq,rob,iq,lsq,rename - no space in structure\n";
+
+			// Stats
+			os << misc::fmt("Dispatch.Stall.used = %lld\n", core->getDispatchStall(Thread::DispatchStallUsed));
+			os << misc::fmt("Dispatch.Stall.spec = %lld\n", core->getDispatchStall(Thread::DispatchStallSpeculative));
+			os << misc::fmt("Dispatch.Stall.uop_queue = %lld\n", core->getDispatchStall(Thread::DispatchStallUopQueue));
+			os << misc::fmt("Dispatch.Stall.rob = %lld\n", core->getDispatchStall(Thread::DispatchStallReorderBuffer));
+			os << misc::fmt("Dispatch.Stall.iq = %lld\n", core->getDispatchStall(Thread::DispatchStallInstructionQueue));
+			os << misc::fmt("Dispatch.Stall.lsq = %lld\n", core->getDispatchStall(Thread::DispatchStallLoadStoreQueue));
+			os << misc::fmt("Dispatch.Stall.rename = %lld\n", core->getDispatchStall(Thread::DispatchStallRename));
+			os << misc::fmt("Dispatch.Stall.ctx = %lld\n", core->getDispatchStall(Thread::DispatchStallContext));
+			os << '\n';
 		}
 
-		/* Dispatch stage */
-		fprintf(f, "; Dispatch stage\n");
-		X86CpuDumpUopReport(self, f, core->num_dispatched_uinst_array,
-				"Dispatch", x86_cpu_dispatch_width);
+		// Dispatch stage
+		os << "; Dispatch stage\n";
+		DumpUopReport(os, core->getNumDispatchedUinsts(),
+				"Dispatch", Cpu::getDispatchWidth());
 
-		/* Issue stage */
-		fprintf(f, "; Issue stage\n");
-		X86CpuDumpUopReport(self, f, core->num_issued_uinst_array,
-				"Issue", x86_cpu_issue_width);
+		// Issue stage
+		os << "; Issue stage\n";
+		DumpUopReport(os, core->getNumIssuedUinsts(),
+				"Issue", Cpu::getIssueWidth());
 
-		/* Commit stage */
-		fprintf(f, "; Commit stage\n");
-		X86CpuDumpUopReport(self, f, core->num_committed_uinst_array,
-				"Commit", x86_cpu_commit_width);
+		// Commit stage
+		os << "; Commit stage\n";
+		DumpUopReport(os, core->getNumCommittedUinsts(),
+				"Commit", Cpu::getCommitWidth());
 
-		/* Committed branches */
-		fprintf(f, "; Committed branches\n");
-		fprintf(f, "Commit.Branches = %lld\n", core->num_branch_uinst);
-		fprintf(f, "Commit.Squashed = %lld\n", core->num_squashed_uinst);
-		fprintf(f, "Commit.Mispred = %lld\n", core->num_mispred_branch_uinst);
-		fprintf(f, "Commit.PredAcc = %.4g\n", core->num_branch_uinst ?
-				(double) (core->num_branch_uinst -
-				core->num_mispred_branch_uinst)
-				/ core->num_branch_uinst : 0.0);
-		fprintf(f, "\n");
+		// Committed branches
+		os << "; Committed branches\n";
+		os << misc::fmt("Commit.Branches = %lld\n", core->getNumBranches());
+		os << misc::fmt("Commit.Squashed = %lld\n", core->getNumSquashedUinsts());
+		os << misc::fmt("Commit.Mispred = %lld\n", core->getNumMispredictedBranches());
+		os << misc::fmt("Commit.PredAcc = %.4g\n", core->getNumBranches() ?
+				(double) (core->getNumBranches()
+				- core->getNumMispredictedBranches())
+				/ core->getNumBranches() : 0.0);
+		os << '\n';
 
-		/* Occupancy stats */
-		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
-		fprintf(f, "; load-store queue, and integer/floating-point register file)\n");
-		fprintf(f, ";    Size - Available size\n");
-		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
-		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
-		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
-		if (x86_rob_kind == x86_rob_kind_shared)
-			DUMP_CORE_STRUCT_STATS(ROB, rob);
-		if (x86_iq_kind == x86_iq_kind_shared)
+		// Occupancy statistics
+		os << "; Structure statistics (reorder buffer, instruction queue,\n";
+		os << "; load-store queue, and integer/floating-point/XMM register file)\n";
+		os << ";    Size - Available size\n";
+		os << ";    Reads, Writes - Accesses to the structure\n";
+
+		// Shared reorder buffer statistics
+		if (Cpu::getReorderBufferKind() == Cpu::ReorderBufferKindShared)
 		{
-			DUMP_CORE_STRUCT_STATS(IQ, iq);
-			fprintf(f, "IQ.WakeupAccesses = %lld\n", core->iq_wakeup_accesses);
+			os << misc::fmt("ROB.Size = %d\n", Cpu::getReorderBufferSize() * Cpu::getNumThreads());
+			os << misc::fmt("ROB.Reads = %lld\n", core->getNumReorderBufferReads());
+			os << misc::fmt("ROB.Writes = %lld\n", core->getNumReorderBufferWrites());
 		}
-		if (x86_lsq_kind == x86_lsq_kind_shared)
-			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
-		if (x86_reg_file_kind == x86_reg_file_kind_shared)
+
+		// Shared instruction queue statistics
+		if (Cpu::getInstructionQueueKind() == Cpu::InstructionQueueKindShared)
 		{
-			DUMP_CORE_STRUCT_STATS(RF_Int, reg_file_int);
-			DUMP_CORE_STRUCT_STATS(RF_Fp, reg_file_fp);
+			os << misc::fmt("IQ.Size = %d\n", Cpu::getInstructionQueueSize() * Cpu::getNumThreads());
+			os << misc::fmt("IQ.Reads = %lld\n", core->getNumInstructionQueueReads());
+			os << misc::fmt("IQ.Writes = %lld\n", core->getNumInstructionQueueWrites());
 		}
-		fprintf(f, "\n");
 
-		/* Report for each thread */
-		for (j = 0; j < x86_cpu_num_threads; j++)
+		// Shared load-store queue statistics
+		if (Cpu::getLoadStoreQueueKind() == Cpu::LoadStoreQueueKindShared)
 		{
-			thread = core->threads[j];
-			fprintf(f, "\n; Statistics for core %d - thread %d\n",
-					core->id, thread->id_in_core);
-			fprintf(f, "[ %s ]\n\n", thread->name);
+			os << misc::fmt("LSQ.Size = %d\n", Cpu::getLoadStoreQueueSize() * Cpu::getNumThreads());
+			os << misc::fmt("LSQ.Reads = %lld\n", core->getNumLoadStoreQueueReads());
+			os << misc::fmt("LSQ.Writes = %lld\n", core->getNumLoadStoreQueueWrites());
+		}
 
-			/* Dispatch stage */
-			fprintf(f, "; Dispatch stage\n");
-			X86CpuDumpUopReport(self, f, thread->num_dispatched_uinst_array,
-					"Dispatch", x86_cpu_dispatch_width);
+		// Shared register file statistics
+		if (RegisterFile::getKind() == RegisterFile::KindShared)
+		{
+			// Integer register file
+			os << misc::fmt("RF_Int.Size = %d\n", RegisterFile::getIntegerSize());
+			os << misc::fmt("RF_Int.Reads = %lld\n", core->getNumIntegerRegisterReads());
+			os << misc::fmt("RF_Int.Writes = %lld\n", core->getNumIntegerRegisterWrites());
 
-			/* Issue stage */
-			fprintf(f, "; Issue stage\n");
-			X86CpuDumpUopReport(self, f, thread->num_issued_uinst_array,
-					"Issue", x86_cpu_issue_width);
+			// Floating-point register file
+			os << misc::fmt("RF_Fp.Size = %d\n", RegisterFile::getFloatingPointSize());
+			os << misc::fmt("RF_Fp.Reads = %lld\n", core->getNumFloatingPointRegisterReads());
+			os << misc::fmt("RF_Fp.Writes = %lld\n", core->getNumFloatingPointRegisterWrites());
 
-			/* Commit stage */
-			fprintf(f, "; Commit stage\n");
-			X86CpuDumpUopReport(self, f, thread->num_committed_uinst_array,
-					"Commit", x86_cpu_commit_width);
+			// XMM register file
+			os << misc::fmt("RF_Xmm.Size = %d\n", RegisterFile::getXmmSize());
+			os << misc::fmt("RF_Xmm.Reads = %lld\n", core->getNumXmmRegisterReads());
+			os << misc::fmt("RF_Xmm.Writes = %lld\n", core->getNumXmmRegisterWrites());
+		}
 
-			/* Committed branches */
-			fprintf(f, "; Committed branches\n");
-			fprintf(f, "Commit.Branches = %lld\n", thread->num_branch_uinst);
-			fprintf(f, "Commit.Squashed = %lld\n", thread->num_squashed_uinst);
-			fprintf(f, "Commit.Mispred = %lld\n", thread->num_mispred_branch_uinst);
-			fprintf(f, "Commit.PredAcc = %.4g\n", thread->num_branch_uinst ?
-				(double) (thread->num_branch_uinst - thread->num_mispred_branch_uinst) / thread->num_branch_uinst : 0.0);
-			fprintf(f, "\n");
+		// Done
+		os << '\n';
 
-			/* Occupancy stats */
-			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
-			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
-			if (x86_rob_kind == x86_rob_kind_private)
-				DUMP_THREAD_STRUCT_STATS(ROB, rob);
-			if (x86_iq_kind == x86_iq_kind_private)
+		// Per-thread report
+		for (int j = 0; j < Cpu::getNumThreads(); j++)
+		{
+			// Title
+			Thread *thread = core->getThread(j);
+			os << misc::fmt("\n; Statistics for core %d - thread %d\n", i, j);
+			os << misc::fmt("[ %s ]\n\n", thread->getName().c_str());
+
+			// Dispatch stage
+			os << "; Dispatch stage\n";
+			DumpUopReport(os, thread->getNumDispatchedUinsts(),
+					"Dispatch", Cpu::getDispatchWidth());
+
+			// Issue stage
+			os << "; Issue stage\n";
+			DumpUopReport(os, thread->getNumIssuedUinsts(),
+					"Issue", Cpu::getIssueWidth());
+
+			// Commit stage
+			os << "; Commit stage\n";
+			DumpUopReport(os, thread->getNumCommittedUinsts(),
+					"Commit", Cpu::getCommitWidth());
+
+			// Committed branches
+			os << "; Committed branches\n";
+			os << misc::fmt("Commit.Branches = %lld\n", thread->getNumBranches());
+			os << misc::fmt("Commit.Squashed = %lld\n", thread->getNumSquashedUinsts());
+			os << misc::fmt("Commit.Mispred = %lld\n", thread->getNumMispredictedBranches());
+			os << misc::fmt("Commit.PredAcc = %.4g\n", thread->getNumBranches() ?
+					(double) (thread->getNumBranches()
+					- thread->getNumMispredictedBranches())
+					/ thread->getNumBranches() : 0.0);
+			os << '\n';
+
+			// Occupancy statistics
+			os << "; Structure statistics (reorder buffer, instruction queue,\n";
+			os << "; load-store queue, integer/floating-point/XMM register file,\n";
+			os << "; and renaming table)\n";
+
+			// Shared reorder buffer statistics
+			if (Cpu::getReorderBufferKind() == Cpu::ReorderBufferKindPrivate)
 			{
-				DUMP_THREAD_STRUCT_STATS(IQ, iq);
-				fprintf(f, "IQ.WakeupAccesses = %lld\n", thread->iq_wakeup_accesses);
+				os << misc::fmt("ROB.Size = %d\n", Cpu::getReorderBufferSize());
+				os << misc::fmt("ROB.Reads = %lld\n", thread->getNumReorderBufferReads());
+				os << misc::fmt("ROB.Writes = %lld\n", thread->getNumReorderBufferWrites());
 			}
-			if (x86_lsq_kind == x86_lsq_kind_private)
-				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
-			if (x86_reg_file_kind == x86_reg_file_kind_private)
-			{
-				DUMP_THREAD_STRUCT_STATS(RF_Int, reg_file_int);
-				DUMP_THREAD_STRUCT_STATS(RF_Fp, reg_file_fp);
-			}
-			fprintf(f, "RAT.IntReads = %lld\n", thread->rat_int_reads);
-			fprintf(f, "RAT.IntWrites = %lld\n", thread->rat_int_writes);
-			fprintf(f, "RAT.FpReads = %lld\n", thread->rat_fp_reads);
-			fprintf(f, "RAT.FpWrites = %lld\n", thread->rat_fp_writes);
-			fprintf(f, "BTB.Reads = %lld\n", thread->btb_reads);
-			fprintf(f, "BTB.Writes = %lld\n", thread->btb_writes);
-			fprintf(f, "\n");
 
-			/* Trace cache stats */
-			if (thread->trace_cache)
-				X86ThreadDumpTraceCacheReport(thread, f);
+			// Shared instruction queue statistics
+			if (Cpu::getInstructionQueueKind() == Cpu::InstructionQueueKindPrivate)
+			{
+				os << misc::fmt("IQ.Size = %d\n", Cpu::getInstructionQueueSize());
+				os << misc::fmt("IQ.Reads = %lld\n", thread->getNumInstructionQueueReads());
+				os << misc::fmt("IQ.Writes = %lld\n", thread->getNumInstructionQueueWrites());
+			}
+
+			// Shared load-store queue statistics
+			if (Cpu::getLoadStoreQueueKind() == Cpu::LoadStoreQueueKindPrivate)
+			{
+				os << misc::fmt("LSQ.Size = %d\n", Cpu::getLoadStoreQueueSize());
+				os << misc::fmt("LSQ.Reads = %lld\n", thread->getNumLoadStoreQueueReads());
+				os << misc::fmt("LSQ.Writes = %lld\n", thread->getNumLoadStoreQueueWrites());
+			}
+
+			// Shared register file statistics
+			if (RegisterFile::getKind() == RegisterFile::KindPrivate)
+			{
+				// Integer register file
+				os << misc::fmt("RF_Int.Size = %d\n", RegisterFile::getIntegerSize());
+				os << misc::fmt("RF_Int.Reads = %lld\n", thread->getNumIntegerRegisterReads());
+				os << misc::fmt("RF_Int.Writes = %lld\n", thread->getNumIntegerRegisterWrites());
+
+				// Floating-point register file
+				os << misc::fmt("RF_Fp.Size = %d\n", RegisterFile::getFloatingPointSize());
+				os << misc::fmt("RF_Fp.Reads = %lld\n", thread->getNumFloatingPointRegisterReads());
+				os << misc::fmt("RF_Fp.Writes = %lld\n", thread->getNumFloatingPointRegisterWrites());
+
+				// XMM register file
+				os << misc::fmt("RF_Xmm.Size = %d\n", RegisterFile::getXmmSize());
+				os << misc::fmt("RF_Xmm.Reads = %lld\n", thread->getNumXmmRegisterReads());
+				os << misc::fmt("RF_Xmm.Writes = %lld\n", thread->getNumXmmRegisterWrites());
+			}
+
+			// Register aliasing table statistics
+			RegisterFile *register_file = thread->getRegisterFile();
+			os << misc::fmt("RAT.IntReads = %lld\n", register_file->getNumIntegerRatReads());
+			os << misc::fmt("RAT.IntWrites = %lld\n", register_file->getNumIntegerRatWrites());
+			os << misc::fmt("RAT.FpReads = %lld\n", register_file->getNumFloatingPointRatReads());
+			os << misc::fmt("RAT.FpWrites = %lld\n", register_file->getNumFloatingPointRatWrites());
+			os << misc::fmt("RAT.XmmReads = %lld\n", register_file->getNumXmmRatReads());
+			os << misc::fmt("RAT.XmmWrites = %lld\n", register_file->getNumXmmRatWrites());
+
+			// Branch target buffer statistics
+			os << misc::fmt("BTB.Reads = %lld\n", thread->getNumBtbReads());
+			os << misc::fmt("BTB.Writes = %lld\n", thread->getNumBtbWrites());
+
+			// Done
+			os << '\n';
+
+			// Trace cache statistics
+			TraceCache *trace_cache = thread->getTraceCache();
+			if (TraceCache::isPresent() && trace_cache)
+				trace_cache->DumpReport(os);
 		}
 	}
-#endif
 }
 
 

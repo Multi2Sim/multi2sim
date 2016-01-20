@@ -87,7 +87,7 @@ class Timing : public comm::Timing
 	std::vector<mem::Module *> entry_modules;
 
 	// Dump a specific part of a statistics report related with uops.
-	void DumpUopReport(std::ostream &os, long long *uop_stats,
+	void DumpUopReport(std::ostream &os, const long long *uop_stats,
 			const std::string &prefix, int peak_ipc) const;
 
 public:

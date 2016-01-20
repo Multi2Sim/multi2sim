@@ -105,7 +105,7 @@ void Thread::Commit(int quantum)
 		{
 			branch_predictor->Update(uop.get());
 			branch_predictor->UpdateBtb(uop.get());
-			btb_writes++;
+			num_btb_writes++;
 		}
 
 		// Trace cache
@@ -165,8 +165,8 @@ void Thread::Commit(int quantum)
 		quantum--;
 
 		// Statistics
-		reorder_buffer_reads++;
-		core->incReorderBufferReads();
+		num_reorder_buffer_reads++;
+		core->incNumReorderBufferReads();
 
 		// Recover from mispeculation. Functional units are cleared when
 		// the processor recovers at commit.
