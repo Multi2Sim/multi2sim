@@ -673,41 +673,272 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
+void Timing::DumpUopReport(std::ostream &os, long long *uop_stats,
+		const std::string &prefix, int peak_ipc) const
+{
+	// Counters
+	long long uinst_int_count = 0;
+	long long uinst_logic_count = 0;
+	long long uinst_fp_count = 0;
+	long long uinst_mem_count = 0;
+	long long uinst_ctrl_count = 0;
+	long long uinst_total = 0;
+
+	// Traverse uops
+	for (int i = 0; i < Uinst::OpcodeCount; i++)
+	{
+		// Get micro-instruction name and flags
+		std::string name = Uinst::getInfo((Uinst::Opcode) i)->name;
+		unsigned flags = Uinst::getInfo((Uinst::Opcode) i)->flags;
+
+		// Count instructions
+		os << misc::fmt("%s.Uop.%s = %lld\n", prefix.c_str(),
+				name.c_str(), uop_stats[i]);
+
+		// Count instruction types
+		if (flags & Uinst::FlagInt)
+			uinst_int_count += uop_stats[i];
+		if (flags & Uinst::FlagLogic)
+			uinst_logic_count += uop_stats[i];
+		if (flags & Uinst::FlagFp)
+			uinst_fp_count += uop_stats[i];
+		if (flags & Uinst::FlagMem)
+			uinst_mem_count += uop_stats[i];
+		if (flags & Uinst::FlagCtrl)
+			uinst_ctrl_count += uop_stats[i];
+		uinst_total += uop_stats[i];
+	}
+
+	// Dump stats
+	os << misc::fmt("%s.Integer = %lld\n", prefix.c_str(), uinst_int_count);
+	os << misc::fmt("%s.Logic = %lld\n", prefix.c_str(), uinst_logic_count);
+	os << misc::fmt("%s.FloatingPoint = %lld\n", prefix.c_str(), uinst_fp_count);
+	os << misc::fmt("%s.Memory = %lld\n", prefix.c_str(), uinst_mem_count);
+	os << misc::fmt("%s.Ctrl = %lld\n", prefix.c_str(), uinst_ctrl_count);
+	os << misc::fmt("%s.WndSwitch = %lld\n", prefix.c_str(),
+			uop_stats[Uinst::OpcodeCall] + uop_stats[Uinst::OpcodeRet]);
+	os << misc::fmt("%s.Total = %lld\n", prefix.c_str(), uinst_total);
+	os << misc::fmt("%s.IPC = %.4g\n", prefix.c_str(), getCycle() ?
+			(double) uinst_total / getCycle() : 0.0);
+	os << misc::fmt("%s.DutyCycle = %.4g\n", prefix.c_str(),
+			getCycle() && peak_ipc ?
+			(double) uinst_total / getCycle() / peak_ipc : 0.0);
+	os << '\n';
+}
+
+
 void Timing::DumpReport() const
 {
-	// TODO: implement x86 report
-	// Check if the report file has been set
+	// Ignore if no report file was specified
 	if (report_file.empty())
 		return;
 
 	// Open file for writing
-	std::ofstream report;
-	report.open(report_file);
+	std::ofstream os(report_file);
+	if (!os.good())
+		throw Error(misc::fmt("%s: Cannot open x86 report",
+				report_file.c_str()));
 
 	// Dump CPU configuration
-	report << misc::fmt(";\n; CPU Configuration\n;\n\n");
-	DumpConfiguration(report);
+	os << misc::fmt(";\n; CPU Configuration\n;\n\n");
+	DumpConfiguration(os);
 
-	// Report for the complete processor
+	// CPU statistics
+	os << misc::fmt(";\n; Simulation Statistics\n;\n\n");
+
+	// Time in microseconds that the emulator for this architecture has been
+	// running so far.
+	Emulator *emulator = Emulator::getInstance();
+	long long now = emulator->getTimerValue();
+
+	// Global statistics
+	os << "; Global statistics\n";
+	os << "[ Global ]\n";
+	os << misc::fmt("Cycles = %lld\n", getCycle());
+	os << misc::fmt("Time = %.2f\n", (double) now / 1e6);
+	os << misc::fmt("CyclesPerSecond = %.0f\n", now ?
+			(double) getCycle() / now * 1e6 : 0.0);
+	os << '\n';
+	
 	// Dispatch stage
-	// Issue stage
-	// Commit stage
-	// Committed branches
-	// Report for each core
+	os << "; Dispatch stage\n";
+	DumpUopReport(os, cpu->getNumDispatchedUinsts(),
+			"Dispatch", Cpu::getDispatchWidth());
 
-	// Close the report file
-	report.close();
+	// Issue stage
+	os << "; Issue stage\n";
+	DumpUopReport(os, cpu->getNumIssuedUinsts(),
+			"Issue", Cpu::getIssueWidth());
+
+	// Commit stage
+	os << "; Commit stage\n";
+	DumpUopReport(os, cpu->getNumCommittedUinsts(),
+			"Commit", Cpu::getCommitWidth());
+
+	// Committed branches
+	os << "; Committed branches\n";
+	os << ";    Branches - Number of committed control uops\n";
+	os << ";    Squashed - Number of mispredicted uops squashed from the ROB\n";
+	os << ";    Mispred - Number of mispredicted branches in the correct path\n";
+	os << ";    PredAcc - Prediction accuracy\n";
+	os << misc::fmt("Commit.Branches = %lld\n", cpu->getNumBranches());
+	os << misc::fmt("Commit.Squashed = %lld\n", cpu->getNumSquashedUinsts());
+	os << misc::fmt("Commit.Mispred = %lld\n", cpu->getNumMispredictedBranches());
+	os << misc::fmt("Commit.PredAcc = %.4g\n", cpu->getNumBranches() ?
+			(double) (cpu->getNumBranches()
+			- cpu->getNumMispredictedBranches())
+			/ cpu->getNumBranches() : 0.0);
+	os << '\n';
+
+#if 0
+	/* Report for each core */
+	for (i = 0; i < x86_cpu_num_cores; i++)
+	{
+		/* Core */
+		core = self->cores[i];
+		fprintf(f, "\n; Statistics for core %d\n", core->id);
+		fprintf(f, "[ c%d ]\n\n", core->id);
+
+		/* Functional units */
+		X86CoreDumpFunctionalUnitsReport(core, f);
+
+		/* Dispatch slots */
+		if (x86_cpu_dispatch_kind == x86_cpu_dispatch_kind_timeslice)
+		{
+			fprintf(f, "; Dispatch slots usage (sum = cycles * dispatch width)\n");
+			fprintf(f, ";    used - dispatch slot was used by a non-spec uop\n");
+			fprintf(f, ";    spec - used by a mispeculated uop\n");
+			fprintf(f, ";    ctx - no context allocated to thread\n");
+			fprintf(f, ";    uopq,rob,iq,lsq,rename - no space in structure\n");
+			DUMP_DISPATCH_STAT(used);
+			DUMP_DISPATCH_STAT(spec);
+			DUMP_DISPATCH_STAT(uop_queue);
+			DUMP_DISPATCH_STAT(rob);
+			DUMP_DISPATCH_STAT(iq);
+			DUMP_DISPATCH_STAT(lsq);
+			DUMP_DISPATCH_STAT(rename);
+			DUMP_DISPATCH_STAT(ctx);
+			fprintf(f, "\n");
+		}
+
+		/* Dispatch stage */
+		fprintf(f, "; Dispatch stage\n");
+		X86CpuDumpUopReport(self, f, core->num_dispatched_uinst_array,
+				"Dispatch", x86_cpu_dispatch_width);
+
+		/* Issue stage */
+		fprintf(f, "; Issue stage\n");
+		X86CpuDumpUopReport(self, f, core->num_issued_uinst_array,
+				"Issue", x86_cpu_issue_width);
+
+		/* Commit stage */
+		fprintf(f, "; Commit stage\n");
+		X86CpuDumpUopReport(self, f, core->num_committed_uinst_array,
+				"Commit", x86_cpu_commit_width);
+
+		/* Committed branches */
+		fprintf(f, "; Committed branches\n");
+		fprintf(f, "Commit.Branches = %lld\n", core->num_branch_uinst);
+		fprintf(f, "Commit.Squashed = %lld\n", core->num_squashed_uinst);
+		fprintf(f, "Commit.Mispred = %lld\n", core->num_mispred_branch_uinst);
+		fprintf(f, "Commit.PredAcc = %.4g\n", core->num_branch_uinst ?
+				(double) (core->num_branch_uinst -
+				core->num_mispred_branch_uinst)
+				/ core->num_branch_uinst : 0.0);
+		fprintf(f, "\n");
+
+		/* Occupancy stats */
+		fprintf(f, "; Structure statistics (reorder buffer, instruction queue,\n");
+		fprintf(f, "; load-store queue, and integer/floating-point register file)\n");
+		fprintf(f, ";    Size - Available size\n");
+		fprintf(f, ";    Occupancy - Average number of occupied entries\n");
+		fprintf(f, ";    Full - Number of cycles when the structure was full\n");
+		fprintf(f, ";    Reads, Writes - Accesses to the structure\n");
+		if (x86_rob_kind == x86_rob_kind_shared)
+			DUMP_CORE_STRUCT_STATS(ROB, rob);
+		if (x86_iq_kind == x86_iq_kind_shared)
+		{
+			DUMP_CORE_STRUCT_STATS(IQ, iq);
+			fprintf(f, "IQ.WakeupAccesses = %lld\n", core->iq_wakeup_accesses);
+		}
+		if (x86_lsq_kind == x86_lsq_kind_shared)
+			DUMP_CORE_STRUCT_STATS(LSQ, lsq);
+		if (x86_reg_file_kind == x86_reg_file_kind_shared)
+		{
+			DUMP_CORE_STRUCT_STATS(RF_Int, reg_file_int);
+			DUMP_CORE_STRUCT_STATS(RF_Fp, reg_file_fp);
+		}
+		fprintf(f, "\n");
+
+		/* Report for each thread */
+		for (j = 0; j < x86_cpu_num_threads; j++)
+		{
+			thread = core->threads[j];
+			fprintf(f, "\n; Statistics for core %d - thread %d\n",
+					core->id, thread->id_in_core);
+			fprintf(f, "[ %s ]\n\n", thread->name);
+
+			/* Dispatch stage */
+			fprintf(f, "; Dispatch stage\n");
+			X86CpuDumpUopReport(self, f, thread->num_dispatched_uinst_array,
+					"Dispatch", x86_cpu_dispatch_width);
+
+			/* Issue stage */
+			fprintf(f, "; Issue stage\n");
+			X86CpuDumpUopReport(self, f, thread->num_issued_uinst_array,
+					"Issue", x86_cpu_issue_width);
+
+			/* Commit stage */
+			fprintf(f, "; Commit stage\n");
+			X86CpuDumpUopReport(self, f, thread->num_committed_uinst_array,
+					"Commit", x86_cpu_commit_width);
+
+			/* Committed branches */
+			fprintf(f, "; Committed branches\n");
+			fprintf(f, "Commit.Branches = %lld\n", thread->num_branch_uinst);
+			fprintf(f, "Commit.Squashed = %lld\n", thread->num_squashed_uinst);
+			fprintf(f, "Commit.Mispred = %lld\n", thread->num_mispred_branch_uinst);
+			fprintf(f, "Commit.PredAcc = %.4g\n", thread->num_branch_uinst ?
+				(double) (thread->num_branch_uinst - thread->num_mispred_branch_uinst) / thread->num_branch_uinst : 0.0);
+			fprintf(f, "\n");
+
+			/* Occupancy stats */
+			fprintf(f, "; Structure statistics (reorder buffer, instruction queue, load-store queue,\n");
+			fprintf(f, "; integer/floating-point register file, and renaming table)\n");
+			if (x86_rob_kind == x86_rob_kind_private)
+				DUMP_THREAD_STRUCT_STATS(ROB, rob);
+			if (x86_iq_kind == x86_iq_kind_private)
+			{
+				DUMP_THREAD_STRUCT_STATS(IQ, iq);
+				fprintf(f, "IQ.WakeupAccesses = %lld\n", thread->iq_wakeup_accesses);
+			}
+			if (x86_lsq_kind == x86_lsq_kind_private)
+				DUMP_THREAD_STRUCT_STATS(LSQ, lsq);
+			if (x86_reg_file_kind == x86_reg_file_kind_private)
+			{
+				DUMP_THREAD_STRUCT_STATS(RF_Int, reg_file_int);
+				DUMP_THREAD_STRUCT_STATS(RF_Fp, reg_file_fp);
+			}
+			fprintf(f, "RAT.IntReads = %lld\n", thread->rat_int_reads);
+			fprintf(f, "RAT.IntWrites = %lld\n", thread->rat_int_writes);
+			fprintf(f, "RAT.FpReads = %lld\n", thread->rat_fp_reads);
+			fprintf(f, "RAT.FpWrites = %lld\n", thread->rat_fp_writes);
+			fprintf(f, "BTB.Reads = %lld\n", thread->btb_reads);
+			fprintf(f, "BTB.Writes = %lld\n", thread->btb_writes);
+			fprintf(f, "\n");
+
+			/* Trace cache stats */
+			if (thread->trace_cache)
+				X86ThreadDumpTraceCacheReport(thread, f);
+		}
+	}
+#endif
 }
 
 
 void Timing::DumpConfiguration(std::ofstream &os) const
 {
-	// TODO: This function is incomplete. Most of these lines are copied
-	// from the m2s 4.2 source, and I've left the m2s 4.2 variable names
-	// in the comment to assist in porting
-	
 	// General configuration
-	Cpu *cpu = getCpu();
 	os << "[ Config.General ]\n";
 	os << misc::fmt("Frequency = %d\n", frequency);
 	os << misc::fmt("Cores = %d\n", cpu->getNumCores());
