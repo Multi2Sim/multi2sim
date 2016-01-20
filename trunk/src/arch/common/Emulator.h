@@ -66,6 +66,10 @@ public:
 	/// Pause the emulator timer
 	void StopTimer() { timer.Stop(); }
 
+	/// Return the time in microseconds that this emulator has been running
+	/// so far.
+	long long getTimerValue() const { return timer.getValue(); }
+
 	/// Create a CPU context and load a program from the specified command
 	/// line. The context state is left in a state ready to start running
 	/// the first x86 ISA instruction at the program entry. This function
