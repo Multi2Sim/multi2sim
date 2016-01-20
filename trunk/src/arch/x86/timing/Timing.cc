@@ -623,6 +623,15 @@ void Timing::ProcessOptions()
 		getInstance();
 	}
 
+	// Check valid file in '--x86-report'
+	if (!report_file.empty())
+	{
+		std::ofstream os(report_file);
+		if (!os.good())
+			throw Error(misc::fmt("%s: Cannot open report file",
+					report_file.c_str()));
+	}
+
 	// Print x86 configuration INI format
 	if (help)
 	{
@@ -709,8 +718,6 @@ void Timing::DumpConfiguration(std::ofstream &os) const
 	os << misc::fmt("ThreadSwitchPenalty = %d\n", cpu->getThreadSwitchPenalty());
 	os << misc::fmt("RecoverKind = %s\n", cpu->recover_kind_map[cpu->getRecoverKind()]);
 	os << misc::fmt("RecoverPenalty = %d\n", cpu->getRecoverPenalty());
-	os << misc::fmt("ProcessPrefetchHints = TODO\n");//, x86_emu_process_prefetch_hints); TODO
-	os << misc::fmt("PrefetchHistorySize = TODO\n");//, prefetch_history_size); TODO
 	os << std::endl;
 
 	// Pipeline
@@ -736,39 +743,41 @@ void Timing::DumpConfiguration(std::ofstream &os) const
 	os << misc::fmt("IqSize = %d\n", cpu->getInstructionQueueSize());
 	os << misc::fmt("LsqKind = %s\n", cpu->load_store_queue_kind_map[cpu->getLoadStoreQueueKind()]);
 	os << misc::fmt("LsqSize = %d\n", cpu->getLoadStoreQueueKind());
-	os << misc::fmt("RfKind = TODO\n");//, x86_reg_file_kind_map[x86_reg_file_kind]);
-	os << misc::fmt("RfIntSize = TODO\n");//, x86_reg_file_int_size);
-	os << misc::fmt("RfFpSize = TODO\n");//, x86_reg_file_fp_size);
+	os << misc::fmt("RfKind = %s\n", RegisterFile::KindMap[RegisterFile::getKind()]);
+	os << misc::fmt("RfIntSize = %d\n", RegisterFile::getIntegerSize());
+	os << misc::fmt("RfFpSize = %d\n", RegisterFile::getFloatingPointSize());
+	os << misc::fmt("RfXmmSize = %d\n", RegisterFile::getXmmSize());
 	os << std::endl;
 
 	// Trace Cache
 	os << misc::fmt("[ Config.TraceCache ]\n");
-	os << misc::fmt("Present = TODO\n");//%s\n", trace_cache->isPresent() ? "True" : "False");
-	os << misc::fmt("Sets = TODO\n");//%d\n", x86_trace_cache_num_sets);
-	os << misc::fmt("Assoc = TODO\n");//%d\n", x86_trace_cache_assoc);
-	os << misc::fmt("TraceSize = TODO\n");//%d\n", x86_trace_cache_trace_size);
-	os << misc::fmt("BranchMax = TODO\n");//%d\n", x86_trace_cache_branch_max);
-	os << misc::fmt("QueueSize = TODO\n");//%d\n", x86_trace_cache_queue_size);
+	os << misc::fmt("Present = %s\n", TraceCache::isPresent() ? "True" : "False");
+	os << misc::fmt("Sets = %d\n", TraceCache::getNumSets());
+	os << misc::fmt("Assoc = %d\n", TraceCache::getNumWays());
+	os << misc::fmt("TraceSize = %d\n", TraceCache::getTraceSize());
+	os << misc::fmt("BranchMax = %d\n", TraceCache::getMaxBranches());
+	os << misc::fmt("QueueSize = %d\n", TraceCache::getQueueSize());
 	os << misc::fmt("\n");
 
-	// Functional units
-	// TODO
+	// ALU
+	Alu::DumpConfiguration(os);
 
 	// Branch Predictor
 	os << misc::fmt("[ Config.BranchPredictor ]\n");
-	os << misc::fmt("Kind = TODO\n");//%s\n", x86_bpred_kind_map[x86_bpred_kind]);
-	os << misc::fmt("BTB.Sets = TODO\n");//%d\n", x86_bpred_btb_sets);
-	os << misc::fmt("BTB.Assoc = TODO\n");//%d\n", x86_bpred_btb_assoc);
-	os << misc::fmt("Bimod.Size = TODO\n");//%d\n", x86_bpred_bimod_size);
-	os << misc::fmt("Choice.Size = TODO\n");//%d\n", x86_bpred_choice_size);
-	os << misc::fmt("RAS.Size = TODO\n");//%d\n", x86_bpred_ras_size);
-	os << misc::fmt("TwoLevel.L1Size = TODO\n");//%d\n", x86_bpred_twolevel_l1size);
-	os << misc::fmt("TwoLevel.L2Size = TODO\n");//%d\n", x86_bpred_twolevel_l2size);
-	os << misc::fmt("TwoLevel.HistorySize = TODO\n");//%d\n", x86_bpred_twolevel_hist_size);
+	os << misc::fmt("Kind = %s\n", BranchPredictor::KindMap[BranchPredictor::getKind()]);
+	os << misc::fmt("BTB.Sets = %d\n", BranchPredictor::getBtbNumSets());
+	os << misc::fmt("BTB.Assoc = %d\n", BranchPredictor::getBtbNumWays());
+	os << misc::fmt("Bimod.Size = %d\n", BranchPredictor::getBimodSize());
+	os << misc::fmt("Choice.Size = %d\n", BranchPredictor::getChoiceSize());
+	os << misc::fmt("RAS.Size = %d\n", BranchPredictor::getRasSize());
+	os << misc::fmt("TwoLevel.L1Size = %d\n", BranchPredictor::getTwoLevelL1Size());
+	os << misc::fmt("TwoLevel.L2Size = %d\n", BranchPredictor::getTwoLevelL2Size());
+	os << misc::fmt("TwoLevel.L2Height = %d\n", BranchPredictor::getTwoLevelL2Height());
+	os << misc::fmt("TwoLevel.HistorySize = %d\n", BranchPredictor::getTwoLevelHistorySize());
 	os << misc::fmt("\n");
 
 	// End of configuration
-	os << misc::fmt("\n");
+	os << '\n';
 }
 
 } // namespace x86

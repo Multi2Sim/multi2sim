@@ -240,6 +240,18 @@ public:
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Return the register file kind, as configured by the user
+	static Kind getKind() { return kind; }
+
+	/// Return the integer register file size, as configured by the user.
+	static int getIntegerSize() { return integer_size; }
+
+	/// Return the floating-point register file size, as configured.
+	static int getFloatingPointSize() { return floating_point_size; }
+
+	/// Return the XMM register file size, as configured by the user.
+	static int getXmmSize() { return xmm_size; }
+
 
 
 
