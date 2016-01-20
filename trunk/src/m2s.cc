@@ -264,6 +264,13 @@ void RegisterOptions()
 	// Set category for following options
 	command_line->setCategory("default", "General Multi2Sim Options");
 
+	// Debugger for call stack
+	command_line->RegisterString("--call-debug <file>",
+			m2s_debug_callstack,
+			"Dump debug information related with the CPU context "
+			"call stacks, including function invocations and "
+			"returns.");
+
 	// Context configuration
 	command_line->RegisterString("--ctx-config <file>",
 			m2s_context_config,
@@ -273,21 +280,14 @@ void RegisterOptions()
 			"--ctx-config-help for a description of the context "
 			"configuration file format.");
 	
-	// Debugger for call stack
-	command_line->RegisterString("--debug-callstack <file>",
-			m2s_debug_callstack,
-			"Dump debug information related with the CPU context "
-			"call stacks, including function invocations and "
-			"returns.");
-	
 	// Debugger for event-driven simulator
-	command_line->RegisterString("--debug-esim <file>",
+	command_line->RegisterString("--esim-debug <file>",
 			m2s_debug_esim,
 			"Dump debug information related with the event-driven "
 			"simulation engine.");
 	
 	// Debugger for Inifile parser
-	command_line->RegisterString("--debug-inifile <file>",
+	command_line->RegisterString("--inifile-debug <file>",
 			m2s_debug_inifile,
 			"Dump debug information about all processed INI files "
 			"into the specified path.");

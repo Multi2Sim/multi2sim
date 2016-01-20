@@ -163,23 +163,23 @@ private:
 	// Statistics for shared structures 
 	//
 
-	long long reorder_buffer_reads = 0;
-	long long reorder_buffer_writes = 0;
+	long long num_reorder_buffer_reads = 0;
+	long long num_reorder_buffer_writes = 0;
 
-	long long instruction_queue_reads = 0;
-	long long instruction_queue_writes = 0;
+	long long num_instruction_queue_reads = 0;
+	long long num_instruction_queue_writes = 0;
 
-	long long load_store_queue_reads = 0;
-	long long load_store_queue_writes = 0;
+	long long num_load_store_queue_reads = 0;
+	long long num_load_store_queue_writes = 0;
 
-	long long integer_register_reads = 0;
-	long long integer_register_writes = 0;
+	long long num_integer_register_reads = 0;
+	long long num_integer_register_writes = 0;
 
-	long long floating_point_register_reads = 0;
-	long long floating_point_register_writes = 0;
+	long long num_floating_point_register_reads = 0;
+	long long num_floating_point_register_writes = 0;
 	
-	long long xmm_register_reads = 0;
-	long long xmm_register_writes = 0;
+	long long num_xmm_register_reads = 0;
+	long long num_xmm_register_writes = 0;
 
 public:
 
@@ -201,6 +201,9 @@ public:
 
 	/// Get core index within the CPU
 	int getId() const { return id; }
+
+	/// Return the core's name
+	const std::string &getName() const { return name; }
 
 	/// Return a new unique identifier for a uop in this core
 	long long getUopId() { return ++uop_id_counter; }
@@ -399,28 +402,52 @@ public:
 	/// quantum.
 	void incDispatchStall(Thread::DispatchStall stall, int quantum)
 	{
-		assert(stall > Thread::DispatchStallInvalid &&
-				stall < Thread::DispatchStallMax);
+		assert(stall > Thread::DispatchStallInvalid && stall < Thread::DispatchStallMax);
 		dispatch_stall[stall] += quantum;
 	}
 
-	/// Increment the number of reads to a thread's reorder buffer
-	void incReorderBufferReads() { reorder_buffer_reads++; }
+	/// Return the counter for dispatch stalls of a particular reason.
+	long long getDispatchStall(Thread::DispatchStall stall) const
+	{
+		assert(stall > Thread::DispatchStallInvalid && stall < Thread::DispatchStallMax);
+		return dispatch_stall[stall];
+	}
+
+	/// Increment the number of reads on reorder buffers
+	void incNumReorderBufferReads() { num_reorder_buffer_reads++; }
+
+	/// Return the number of reads in the reorder buffers
+	long long getNumReorderBufferReads() const { return num_reorder_buffer_reads; }
 
 	/// Increment the number of writes to a thread's reorder buffer
-	void incReorderBufferWrites() { reorder_buffer_writes++; }
+	void incNumReorderBufferWrites() { num_reorder_buffer_writes++; }
+
+	/// Return the number of writes in the reorder buffers
+	long long getNumReorderBufferWrites() const { return num_reorder_buffer_writes; }
 
 	/// Increment the number of reads to a thread's instruction queue
-	void incInstructionQueueReads() { instruction_queue_reads++; }
+	void incNumInstructionQueueReads() { num_instruction_queue_reads++; }
+
+	/// Return the number of reads from instruction queues
+	long long getNumInstructionQueueReads() const { return num_instruction_queue_reads; }
 
 	/// Increment the number of writes to a thread's instruction queue
-	void incInstructionQueueWrites() { instruction_queue_writes++; }
+	void incNumInstructionQueueWrites() { num_instruction_queue_writes++; }
+
+	/// Return the number of writes to instruction queues
+	long long getNumInstructionQueueWrites() const { return num_instruction_queue_writes; }
 
 	/// Increment the number of reads from the load-store queue
-	void incLoadStoreQueueReads() { load_store_queue_reads++; }
+	void incNumLoadStoreQueueReads() { num_load_store_queue_reads++; }
+
+	/// Return the number of reads from load-store queues
+	long long getNumLoadStoreQueueReads() const { return num_load_store_queue_reads; }
 
 	/// Increment the number of writes to a thread's load-store queue
-	void incLoadStoreQueueWrites() { load_store_queue_writes++; }
+	void incNumLoadStoreQueueWrites() { num_load_store_queue_writes++; }
+
+	/// Return the number of writes to load_store queues
+	long long getNumLoadStoreQueueWrites() const { return num_load_store_queue_writes; }
 	
 	/// Increment the number of dispatched micro-instructions of a given
 	/// kind.
@@ -428,6 +455,12 @@ public:
 	{
 		assert(opcode < Uinst::OpcodeCount);
 		num_dispatched_uinsts[opcode]++;
+	}
+
+	/// Return the array of dispatched micro-instructions.
+	const long long *getNumDispatchedUinsts() const
+	{
+		return num_dispatched_uinsts;
 	}
 	
 	/// Increment the number of issued micro-instructions of a type
@@ -437,6 +470,12 @@ public:
 		num_issued_uinsts[opcode]++;
 	}
 
+	/// Return the array of issued micro-instructions
+	const long long *getNumIssuedUinsts() const
+	{
+		return num_issued_uinsts;
+	}
+
 	/// Increment the number of committed micro-instructions of a type
 	void incNumCommittedUinsts(Uinst::Opcode opcode)
 	{
@@ -444,50 +483,101 @@ public:
 		num_committed_uinsts[opcode]++;
 	}
 
-	/// Increment the number of reads to integer registers
-	void incIntegerRegisterReads(int count = 1)
+	/// Return the array of committed micro-instructions
+	const long long *getNumCommittedUinsts() const
 	{
-		integer_register_reads += count;
+		return num_committed_uinsts;
+	}
+
+	/// Increment the number of reads to integer registers
+	void incNumIntegerRegisterReads(int count = 1)
+	{
+		num_integer_register_reads += count;
+	}
+
+	/// Return the number of reads on integer registers
+	long long getNumIntegerRegisterReads() const
+	{
+		return num_integer_register_reads;
 	}
 
 	/// Increment the number of writes to integer registers
-	void incIntegerRegisterWrites(int count = 1)
+	void incNumIntegerRegisterWrites(int count = 1)
 	{
-		integer_register_writes += count;
+		num_integer_register_writes += count;
+	}
+
+	/// Return the number of writes on integer registers
+	long long getNumIntegerRegisterWrites() const
+	{
+		return num_integer_register_writes;
 	}
 
 	/// Increment the number of reads to floating-point registers
-	void incFloatingPointRegisterReads(int count = 1)
+	void incNumFloatingPointRegisterReads(int count = 1)
 	{
-		floating_point_register_reads += count;
+		num_floating_point_register_reads += count;
+	}
+
+	/// Return the number of reads on floating-point registers
+	long long getNumFloatingPointRegisterReads() const
+	{
+		return num_floating_point_register_reads;
 	}
 
 	/// Increment the number of writes to floating-point registers
-	void incFloatingPointRegisterWrites(int count = 1)
+	void incNumFloatingPointRegisterWrites(int count = 1)
 	{
-		floating_point_register_writes += count;
+		num_floating_point_register_writes += count;
+	}
+
+	/// Return the number of writes on floating-point registers
+	long long getNumFloatingPointRegisterWrites() const
+	{
+		return num_floating_point_register_writes;
 	}
 
 	/// Increment the number of reads to XMM registers
-	void incXmmRegisterReads(int count = 1)
+	void incNumXmmRegisterReads(int count = 1)
 	{
-		xmm_register_reads += count;
+		num_xmm_register_reads += count;
+	}
+
+	/// Return the number of XMM register reads
+	long long getNumXmmRegisterReads() const
+	{
+		return num_xmm_register_reads;
 	}
 
 	/// Increment the number of writes to XMM registers
-	void incXmmRegisterWrites(int count = 1)
+	void incNumXmmRegisterWrites(int count = 1)
 	{
-		xmm_register_writes += count;
+		num_xmm_register_writes += count;
+	}
+
+	/// Return the number of XMM register writes
+	long long getNumXmmRegisterWrites() const
+	{
+		return num_xmm_register_writes;
 	}
 
 	/// Increment the number of squashed micro-instructions
 	void incNumSquashedUinsts() { num_squashed_uinsts++; }
 
+	/// Return the number of squashed micro-instructions
+	long long getNumSquashedUinsts() const { return num_squashed_uinsts; }
+
 	/// Increment the number of branches
 	void incNumBranches() { num_branches++; }
 
+	/// Return the number of committed branches
+	long long getNumBranches() const { return num_branches; }
+
 	/// Increment the number of mispredicted branches
 	void incNumMispredictedBranches() { num_mispredicted_branches++; }
+	
+	/// Return the number of mispredicted branches
+	long long getNumMispredictedBranches() const { return num_mispredicted_branches; }
 };
 
 }

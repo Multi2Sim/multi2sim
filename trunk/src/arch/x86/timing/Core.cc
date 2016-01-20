@@ -355,14 +355,14 @@ void Core::Writeback()
 		register_file->WriteUop(uop.get());
 
 		// Increment number of writes to core's register counters
-		integer_register_writes += uop->getNumIntegerOutputs();
-		floating_point_register_writes += uop->getNumFloatingPointOutputs();
-		xmm_register_writes += uop->getNumXmmOutputs();
+		num_integer_register_writes += uop->getNumIntegerOutputs();
+		num_floating_point_register_writes += uop->getNumFloatingPointOutputs();
+		num_xmm_register_writes += uop->getNumXmmOutputs();
 
 		// Increment number of writes to thread's register counters
-		thread->incIntegerRegisterWrites(uop->getNumIntegerOutputs());
-		thread->incFloatingPointRegisterWrites(uop->getNumFloatingPointOutputs());
-		thread->incXmmRegisterWrites(uop->getNumXmmOutputs());
+		thread->incNumIntegerRegisterWrites(uop->getNumIntegerOutputs());
+		thread->incNumFloatingPointRegisterWrites(uop->getNumFloatingPointOutputs());
+		thread->incNumXmmRegisterWrites(uop->getNumXmmOutputs());
 		
 		// Recover from mispeculation
 		if (recover)

@@ -89,6 +89,9 @@ public:
 
 	/// Release all functional units
 	void ReleaseAll();
+
+	/// Dump report for functional units.
+	void DumpReport(std::ostream &os = std::cout) const;
 	
 
 

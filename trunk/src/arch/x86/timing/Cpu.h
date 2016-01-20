@@ -548,7 +548,7 @@ public:
 	}
 
 	/// Return the array of dispatched micro-instructions
-	long long *getNumDispatchedUinsts()
+	const long long *getNumDispatchedUinsts() const
 	{
 		return num_dispatched_uinsts;
 	}
@@ -561,7 +561,7 @@ public:
 	}
 
 	/// Return the array of issued micro-instructions
-	long long *getNumIssuedUinsts()
+	const long long *getNumIssuedUinsts() const
 	{
 		return num_issued_uinsts;
 	}
@@ -574,7 +574,7 @@ public:
 	}
 
 	/// Return the array of committed micro-instructions
-	long long *getNumCommittedUinsts()
+	const long long *getNumCommittedUinsts() const
 	{
 		return num_committed_uinsts;
 	}

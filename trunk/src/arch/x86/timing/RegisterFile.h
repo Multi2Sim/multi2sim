@@ -327,6 +327,30 @@ public:
 		return true;
 	}
 
+
+
+
+	//
+	// Statistics
+	//
+
+	/// Return the number of reads to the integer RAT
+	long long getNumIntegerRatReads() const { return num_integer_rat_reads; }
+
+	/// Return the number of writes to the integer RAT
+	long long getNumIntegerRatWrites() const { return num_integer_rat_writes; }
+
+	/// Return the number of reads to the floating-point RAT
+	long long getNumFloatingPointRatReads() const { return num_floating_point_rat_reads; }
+
+	/// Return the number of writes to the floating-point RAT
+	long long getNumFloatingPointRatWrites() const { return num_floating_point_rat_writes; }
+
+	/// Return the number of reads to the XMM RAT
+	long long getNumXmmRatReads() const { return num_xmm_rat_reads; }
+
+	/// Return the number of writes to the XMM RAT
+	long long getNumXmmRatWrites() const { return num_xmm_rat_writes; }
 };
 
 }
