@@ -124,6 +124,29 @@ void Alu::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
+void Alu::DumpConfiguration(std::ostream &os)
+{
+	// Title
+	os << "[ Config.FunctionalUnits ]\n";
+
+	// Traverse functional units
+	for (int i = 1; i < FunctionalUnit::TypeCount; i++)
+	{
+		// Functional unit name
+		std::string name = FunctionalUnit::type_map[i];
+		assert(!name.empty());
+
+		// Print configuration
+		os << misc::fmt("%s.Count = %d\n", name.c_str(), configuration[i][0]);
+		os << misc::fmt("%s.OpLat = %d\n", name.c_str(), configuration[i][1]);
+		os << misc::fmt("%s.IssueLat = %d\n", name.c_str(), configuration[i][2]);
+	}
+
+	// Done
+	os << '\n';
+}
+
+
 Alu::Alu()
 {
 	// Reserve functional unit vector entries
@@ -173,6 +196,7 @@ void Alu::ReleaseAll()
 	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
 		functional_units[type]->Release();
 }
+
 
 }
 

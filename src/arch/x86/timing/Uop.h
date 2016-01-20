@@ -393,16 +393,16 @@ public:
 	BranchPredictor::Prediction bimod_prediction = BranchPredictor::PredictionNotTaken;
 
 	/// Two-level branch predictor BHT index
-	int twolevel_bht_index = 0;
+	int two_level_bht_index = 0;
 
 	/// Two-level branch predictor PHT row
-	int twolevel_pht_row = 0;
+	int two_level_pht_row = 0;
 
 	/// Two-level branch predictor PHT column
-	int twolevel_pht_col = 0;
+	int two_level_pht_col = 0;
 
 	/// Two-level branch prediction
-	BranchPredictor::Prediction twolevel_prediction = BranchPredictor::PredictionNotTaken;
+	BranchPredictor::Prediction two_level_prediction = BranchPredictor::PredictionNotTaken;
 
 	/// Choice index in the combined branch predictor
 	int choice_index = 0;

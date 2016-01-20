@@ -70,6 +70,9 @@ public:
 	/// Read functional unit configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Dump configuration
+	static void DumpConfiguration(std::ostream &os = std::cout);
+
 
 
 	
@@ -87,9 +90,6 @@ public:
 	/// Release all functional units
 	void ReleaseAll();
 	
-	/// Dump configuration
-	void DumpConfiguration(std::ostream &os = std::cout);
-
 
 
 
