@@ -84,6 +84,11 @@ Context::Context() :
 			Cpu::getNumThreads());
 	thread_affinity->Set();
 
+	// By default, the context uses the MMU associated with the emulator.
+	// NOTE: In future implementations of fused memory, MMUs will be
+	// handled differently.
+	mmu = emulator->getMmu();
+
 	// Debug
 	Emulator::context_debug << "Context " << getId() << " created\n";
 }
@@ -351,8 +356,8 @@ void Context::Initialize()
 	assert(!memory.get());
 	memory = misc::new_shared<mem::Memory>();
 
-	// Memory management unit
-	mmu = misc::new_shared<mem::Mmu>();
+	// Creating a new independent context forces the creation of a new
+	// virtual memory space within the context's associated MMU.
 	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
@@ -386,8 +391,9 @@ void Context::Load(const std::vector<std::string> &args,
 	assert(!memory.get());
 	memory = misc::new_shared<mem::Memory>();
 
-	// Memory management unit
-	mmu = misc::new_shared<mem::Mmu>();
+	// Loading a context from an executable file creates a new virtual
+	// address space within the context's associated MMU.
+	assert(!mmu_space);
 	mmu_space = mmu->newSpace();
 
 	// Create signal handler table
@@ -432,6 +438,11 @@ void Context::Clone(Context *parent)
 	// structure must be only freed by the parent when all its children have
 	// been killed. The set of signal handlers is the same, too.
 	memory = parent->memory;
+
+	// Cloning a context makes the new context share the same virtual memory
+	// address space as the parent in the parent's associated MMU.
+	assert(!mmu_space);
+	mmu_space = parent->mmu_space;
 	
 	// Create speculative memory, linked with the real memory
 	spec_mem = misc::new_unique<mem::SpecMem>(memory.get());
@@ -461,8 +472,9 @@ void Context::Fork(Context *parent)
 	memory = misc::new_shared<mem::Memory>();
 	memory->Clone(*parent->memory);
 	
-	// Memory management unit
-	mmu = misc::new_shared<mem::Mmu>();
+	// Forking a context creates a new virtual memory space in the parent
+	// context's associated MMU.
+	assert(!mmu_space);
 	mmu_space = mmu->newSpace();
 	
 	// Create speculative memory, linked with the real memory
