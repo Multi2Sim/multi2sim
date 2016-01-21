@@ -116,7 +116,7 @@ void Thread::Commit(int quantum)
 		last_commit_cycle = cpu->getCycle();
 
 		// Record committed uops of each kind
-		num_committed_uinsts[uop->getOpcode()]++;
+		incNumCommittedUinsts(uop->getOpcode());
 		core->incNumCommittedUinsts(uop->getOpcode());
 		cpu->incNumCommittedUinsts(uop->getOpcode());
 		if (!uop->mop_index)
