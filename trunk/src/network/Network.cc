@@ -298,7 +298,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		// Get the node's name
 		std::string node_name = ini_file->ReadString(section, "Node");
 		if (node_name == "")
-			throw Error(misc::fmt("%s: section [%s]: Node is "
+			throw Error(misc::fmt("%s: Section [%s]: Node is "
 					"not set for the busport.", 
 					ini_file->getPath().c_str(),
 					section.c_str()));
@@ -306,7 +306,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		// Get the node by the name
 		Node *node = getNodeByName(node_name);
 		if (!node)
-			throw Error(misc::fmt("%s: section [%s]: Node '%s' "
+			throw Error(misc::fmt("%s: Section [%s]: Node '%s' "
 					"does not exist in the network.",
 					ini_file->getPath().c_str(),
 					section.c_str(), node_name.c_str()));
@@ -325,7 +325,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_output_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: section [%s]: Buffer"
+				throw Error(misc::fmt("%s: Section [%s]: Buffer"
 						" size cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
@@ -339,7 +339,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 			buffer_size = ini_file->ReadInt(section, "BufferSize",
 					default_input_buffer_size);
 			if (buffer_size < 1)
-				throw Error(misc::fmt("%s: section [%s]: Buffer"
+				throw Error(misc::fmt("%s: Section [%s]: Buffer"
 						" size cannot be less than 1",
 						ini_file->getPath().c_str(),
 						section.c_str()));
@@ -374,7 +374,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 			}
 			else if (buffer_size < 0)
 			{
-				throw Error(misc::fmt("%s: section [%s]: "
+				throw Error(misc::fmt("%s: Section [%s]: "
 						"Buffer size cannot be less "
 						"than 1.", 
 						ini_file->getPath().c_str(),
@@ -383,7 +383,7 @@ void Network::ParseConfigurationForBusPorts(misc::IniFile *ini_file)
 		}
 		else
 		{
-			throw misc::Error(misc::fmt("%s: section [%s]: Type "
+			throw misc::Error(misc::fmt("%s: Section [%s]: Type "
 					"'%s' is not recognized",
 					ini_file->getPath().c_str(), 
 					section.c_str(),

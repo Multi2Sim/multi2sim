@@ -332,7 +332,7 @@ TEST(TestSystemConfiguration, section_section_unknown)
 	}
 	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
 	EXPECT_REGEX_MATCH(misc::fmt(
-			"%s: invalid section (.Network\\.test\\.anything.)",
+			"%s: Invalid section (.Network\\.test\\.anything.)",
 			ini_file.getPath().c_str()).c_str(), message.c_str());
 
 }
@@ -371,7 +371,7 @@ TEST(TestSystemConfiguration, section_node_no_preset_net)
 	// no matter they are valid or not.
 	EXPECT_TRUE(system->getNetworkByName("test") == nullptr);
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Node\\.N1.), "
+			misc::fmt("%s: Section (.Network\\.test\\.Node\\.N1.), "
 					"invalid variable 'Type'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -565,7 +565,7 @@ TEST(TestSystemConfiguration, section_link_wrong_variable)
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Link\\.S1-S2.), invalid"
+			misc::fmt("%s: Section (.Network\\.test\\.Link\\.S1-S2.), invalid"
 					" variable 'anything'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1070,7 +1070,7 @@ TEST(TestSystemConfiguration, section_bus_unknown_varialbe)
 	EXPECT_TRUE(network->getNodeByName("S2") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Bus\\.B0.), "
+			misc::fmt("%s: Section (.Network\\.test\\.Bus\\.B0.), "
 					"invalid variable 'anything'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1326,7 +1326,7 @@ TEST(TestSystemConfiguration, section_busport_no_node)
 	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+			misc::fmt("%s: Section (.Network\\.test\\.Busport\\.port0.): "
 					"Node is not set for the busport.",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1379,7 +1379,7 @@ TEST(TestSystemConfiguration, section_busport_wrong_node)
 	EXPECT_TRUE(network->getNodeByName("N2") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+			misc::fmt("%s: Section (.Network\\.test\\.Busport\\.port0.): "
 					"Node 'anything' does not exist in the network.",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1434,7 +1434,7 @@ TEST(TestSystemConfiguration, section_busport_wrong_size)
 	EXPECT_TRUE(network->getConnectionByName("B0") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+			misc::fmt("%s: Section (.Network\\.test\\.Busport\\.port0.): "
 					"Buffer size cannot be less than 1.",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1490,7 +1490,7 @@ TEST(TestSystemConfiguration, section_busport_wrong_type)
 	EXPECT_TRUE(network->getConnectionByName("B0") != nullptr);
 
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Busport\\.port0.): "
+			misc::fmt("%s: Section (.Network\\.test\\.Busport\\.port0.): "
 					"Type 'anything' is not recognized",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1617,7 +1617,7 @@ TEST(TestSystemConfiguration, routes_wrong_source_node)
 		message = error.getMessage();
 	}
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+			misc::fmt("%s: Section (.Network\\.test\\.Routes.), "
 					"invalid variable 'anything.to.N1'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1687,7 +1687,7 @@ TEST(TestSystemConfiguration, routes_wrong_destination_node)
 		message = error.getMessage();
 	}
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+			misc::fmt("%s: Section (.Network\\.test\\.Routes.), "
 					"invalid variable 'N1.to.anything'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
@@ -1757,7 +1757,7 @@ TEST(TestSystemConfiguration, routes_to_switch)
 		message = error.getMessage();
 	}
 	EXPECT_REGEX_MATCH(
-			misc::fmt("%s: section (.Network\\.test\\.Routes.), "
+			misc::fmt("%s: Section (.Network\\.test\\.Routes.), "
 					"invalid variable 'S1.to.S2'",
 					ini_file.getPath().c_str()).c_str(),
 					message.c_str());
