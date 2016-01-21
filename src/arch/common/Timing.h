@@ -67,7 +67,7 @@ public:
 
 	/// Return the frequency domain associated with this timing simulator.
 	/// A previous call to ConfigureFrequencyDomain() must have been made.
-	esim::FrequencyDomain *getFrequencyDomain()
+	esim::FrequencyDomain *getFrequencyDomain() const
 	{
 		assert(frequency_domain);
 		return frequency_domain;
@@ -75,7 +75,11 @@ public:
 
 	/// Return the current cycle in the frequency domain of this timing
 	/// simulator.
-	long long getCycle() const { return frequency_domain->getCycle(); }
+	long long getCycle() const
+	{
+		assert(frequency_domain);
+		return frequency_domain->getCycle();
+	}
 
 	/// Dump a default memory configuration for the architecture. This
 	/// function is invoked by the memory system configuration parser when
