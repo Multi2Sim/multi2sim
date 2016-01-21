@@ -105,10 +105,6 @@ TEST(TestX86TimingFetchStage, pipeline_flush)
 	// Create a context]
 	Context *context = emulator->newContext();
 	context->Initialize();
-	auto mmu = misc::new_shared<mem::Mmu>("mmu");
-	context->mmu = mmu;
-	mem::Mmu::Space space("space", mmu.get());
-	context->mmu_space = &space;
 	mem::Memory *memory = context->getMemory();
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
 				mem::Memory::PageSize));
@@ -279,10 +275,6 @@ TEST(TestX86TimingFetchStage, simple_fetch)
 	// Create a context]
 	Context *context = emulator->newContext();
 	context->Initialize();
-	auto mmu = misc::new_shared<mem::Mmu>("mmu");
-	context->mmu = mmu;
-	mem::Mmu::Space space("space", mmu.get());
-	context->mmu_space = &space;
 	mem::Memory *memory = context->getMemory();
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
 				mem::Memory::PageSize));
@@ -450,10 +442,6 @@ TEST(TestX86TimingFetchStage, fetch_same_block)
 	// Create a context]
 	Context *context = emulator->newContext();
 	context->Initialize();
-	auto mmu = misc::new_shared<mem::Mmu>("mmu");
-	context->mmu = mmu;
-	mem::Mmu::Space space("space", mmu.get());
-	context->mmu_space = &space;
 	mem::Memory *memory = context->getMemory();
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
 				mem::Memory::PageSize));
@@ -612,10 +600,6 @@ TEST(TestX86TimingFetchStage, fetch_another_block)
 	// Create a context]
 	Context *context = emulator->newContext();
 	context->Initialize();
-	auto mmu = misc::new_shared<mem::Mmu>("mmu");
-	context->mmu = mmu;
-	mem::Mmu::Space space("space", mmu.get());
-	context->mmu_space = &space;
 	mem::Memory *memory = context->getMemory();
 	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
 				mem::Memory::PageSize));
