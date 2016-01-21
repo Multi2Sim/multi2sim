@@ -166,6 +166,9 @@ public:
 	void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section) override;
 
+	/// Dump the statistics summary for the timing simulator.
+	void DumpSummary(std::ostream &os) const override;
+
 	/// Dump a report of statistics collected during x86 simulation
 	void DumpReport() const override;
 

@@ -673,6 +673,57 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
+void Timing::DumpSummary(std::ostream &os) const
+{
+	// Simulated time in nanoseconds
+	esim::FrequencyDomain *frequency_domain = getFrequencyDomain();
+	double cycle_time = (double) frequency_domain->getCycleTime() / 1e3;
+	os << misc::fmt("SimTime = %.2f [ns]\n", getCycle() * cycle_time);
+	
+	// Frequency
+	os << misc::fmt("Frequency = %d [MHz]\n", frequency_domain->getFrequency());
+
+	// Cycles
+	os << misc::fmt("Cycles = %lld\n", getCycle());
+
+	// Cycles per second
+	Emulator *emulator = Emulator::getInstance();
+	double time_in_seconds = (double) emulator->getTimerValue() / 1e6;
+	double cycles_per_second = time_in_seconds > 0.0 ?
+			(double) getCycle() / time_in_seconds : 0.0;
+	os << misc::fmt("CyclesPerSecond = %.0f\n", cycles_per_second);
+	
+	// Fast-forward instructions
+	os << misc::fmt("FastForwardInstructions = %lld\n", Cpu::getNumFastForwardInstructions());
+
+	// Number of committed instructions
+	os << misc::fmt("CommittedInstructions = %lld\n", cpu->getNumCommittedInstructions());
+
+	// Number of committed instructions per cycle
+	double instructions_per_cycle = cpu->getCycle() ?
+			(double) cpu->getNumCommittedInstructions()
+			/ cpu->getCycle() : 0.0;
+	os << misc::fmt("CommittedInstructionsPerCycle = %.4g\n", instructions_per_cycle);
+	
+	// Number of committed micro-instruction
+	os << misc::fmt("CommittedMicroInstructions = %lld\n", cpu->getNumCommittedUinsts());
+
+	// Number of committed micro-instructions per cycle
+	double uinsts_per_cycle = cpu->getCycle() ?
+			(double) cpu->getNumCommittedUinsts()
+			/ cpu->getCycle() : 0.0;
+	os << misc::fmt("CommittedMicroInstructionsPerCycle = %.4g\n", uinsts_per_cycle);
+
+	// Branch prediction accuracy
+	double branch_accuracy = cpu->getNumBranches() ?
+			(double) (cpu->getNumBranches()
+			- cpu->getNumMispredictedBranches())
+			/ cpu->getNumBranches()
+			: 0.0;
+	os << misc::fmt("BranchPredictionAccuracy = %.4g\n", branch_accuracy);
+}
+
+
 void Timing::DumpUopReport(std::ostream &os, const long long *uop_stats,
 		const std::string &prefix, int peak_ipc) const
 {
@@ -762,17 +813,17 @@ void Timing::DumpReport() const
 	
 	// Dispatch stage
 	os << "; Dispatch stage\n";
-	DumpUopReport(os, cpu->getNumDispatchedUinsts(),
+	DumpUopReport(os, cpu->getNumDispatchedUinstArray(),
 			"Dispatch", Cpu::getDispatchWidth());
 
 	// Issue stage
 	os << "; Issue stage\n";
-	DumpUopReport(os, cpu->getNumIssuedUinsts(),
+	DumpUopReport(os, cpu->getNumIssuedUinstArray(),
 			"Issue", Cpu::getIssueWidth());
 
 	// Commit stage
 	os << "; Commit stage\n";
-	DumpUopReport(os, cpu->getNumCommittedUinsts(),
+	DumpUopReport(os, cpu->getNumCommittedUinstArray(),
 			"Commit", Cpu::getCommitWidth());
 
 	// Committed branches
@@ -826,17 +877,17 @@ void Timing::DumpReport() const
 
 		// Dispatch stage
 		os << "; Dispatch stage\n";
-		DumpUopReport(os, core->getNumDispatchedUinsts(),
+		DumpUopReport(os, core->getNumDispatchedUinstArray(),
 				"Dispatch", Cpu::getDispatchWidth());
 
 		// Issue stage
 		os << "; Issue stage\n";
-		DumpUopReport(os, core->getNumIssuedUinsts(),
+		DumpUopReport(os, core->getNumIssuedUinstArray(),
 				"Issue", Cpu::getIssueWidth());
 
 		// Commit stage
 		os << "; Commit stage\n";
-		DumpUopReport(os, core->getNumCommittedUinsts(),
+		DumpUopReport(os, core->getNumCommittedUinstArray(),
 				"Commit", Cpu::getCommitWidth());
 
 		// Committed branches
@@ -912,17 +963,17 @@ void Timing::DumpReport() const
 
 			// Dispatch stage
 			os << "; Dispatch stage\n";
-			DumpUopReport(os, thread->getNumDispatchedUinsts(),
+			DumpUopReport(os, thread->getNumDispatchedUinstArray(),
 					"Dispatch", Cpu::getDispatchWidth());
 
 			// Issue stage
 			os << "; Issue stage\n";
-			DumpUopReport(os, thread->getNumIssuedUinsts(),
+			DumpUopReport(os, thread->getNumIssuedUinstArray(),
 					"Issue", Cpu::getIssueWidth());
 
 			// Commit stage
 			os << "; Commit stage\n";
-			DumpUopReport(os, thread->getNumCommittedUinsts(),
+			DumpUopReport(os, thread->getNumCommittedUinstArray(),
 					"Commit", Cpu::getCommitWidth());
 
 			// Committed branches

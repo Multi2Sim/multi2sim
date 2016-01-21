@@ -139,13 +139,22 @@ private:
 	long long dispatch_stall[Thread::DispatchStallMax] = {};
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinsts[Uinst::OpcodeCount] = {};
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = {};
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinsts[Uinst::OpcodeCount] = {};
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = {};
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinsts[Uinst::OpcodeCount] = {};
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = {};
+
+	// Number of dispatched micro-instructions
+	long long num_dispatched_uinsts = 0;
+
+	// Number of issued micro-instructions
+	long long num_issued_uinsts = 0;
+
+	// Number of committed micro-instructions
+	long long num_committed_uinsts = 0;
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinsts = 0;
@@ -454,24 +463,38 @@ public:
 	void incNumDispatchedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_dispatched_uinsts[opcode]++;
+		num_dispatched_uinst_array[opcode]++;
+		num_dispatched_uinsts++;
 	}
 
 	/// Return the array of dispatched micro-instructions.
-	const long long *getNumDispatchedUinsts() const
+	const long long *getNumDispatchedUinstArray() const
+	{
+		return num_dispatched_uinst_array;
+	}
+	
+	/// Return the number of dispatched micro-instructions
+	long long getNumDispatchedUinsts() const
 	{
 		return num_dispatched_uinsts;
 	}
-	
+
 	/// Increment the number of issued micro-instructions of a type
 	void incNumIssuedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_issued_uinsts[opcode]++;
+		num_issued_uinst_array[opcode]++;
+		num_issued_uinsts++;
 	}
 
 	/// Return the array of issued micro-instructions
-	const long long *getNumIssuedUinsts() const
+	const long long *getNumIssuedUinstArray() const
+	{
+		return num_issued_uinst_array;
+	}
+
+	/// Return the number of issued micro-instructions
+	long long getNumIssuedUinsts() const
 	{
 		return num_issued_uinsts;
 	}
@@ -480,11 +503,18 @@ public:
 	void incNumCommittedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_committed_uinsts[opcode]++;
+		num_committed_uinst_array[opcode]++;
+		num_committed_uinsts++;
 	}
 
 	/// Return the array of committed micro-instructions
-	const long long *getNumCommittedUinsts() const
+	const long long *getNumCommittedUinstArray() const
+	{
+		return num_committed_uinst_array;
+	}
+
+	/// Return the number of committed micro-instructions
+	long long getNumCommittedUinsts() const
 	{
 		return num_committed_uinsts;
 	}
