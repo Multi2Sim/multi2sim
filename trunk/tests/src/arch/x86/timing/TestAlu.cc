@@ -99,9 +99,9 @@ TEST(TestAlu, read_ini_configuration_file_fp)
 			"FloatAdd.Count = 4\n"
 			"FloatAdd.OpLat = 11\n"
 			"FloatAdd.IssueLat = 14\n"
-			"FloatComp.Count = 5\n"
-			"FloatComp.OpLat = 12\n"
-			"FloatComp.IssueLat = 15\n"
+			"FloatCompare.Count = 5\n"
+			"FloatCompare.OpLat = 12\n"
+			"FloatCompare.IssueLat = 15\n"
 			"FloatMult.Count = 6\n"
 			"FloatMult.OpLat = 13\n"
 			"FloatMult.IssueLat = 16\n"
@@ -128,7 +128,7 @@ TEST(TestAlu, read_ini_configuration_file_fp)
 	{
 			{ 3, 10, 13 },  // FloatSimple
 			{ 4, 11, 14 },  // FloatAdd
-			{ 5, 12, 15 },  // FloatComp
+			{ 5, 12, 15 },  // FloatCompare
 			{ 6, 13, 16 },  // FloatMult
 			{ 7, 14, 17 },  // FloatDiv
 			{ 8, 15, 18 },  // FloatComplex
@@ -199,7 +199,7 @@ TEST(TestAlu, read_ini_configuration_file_xmm)
 			{ 9, 7, 14 },  // XmmIntDiv
 			{ 10, 8, 15 },  // XmmLogic
 			{ 11, 9, 16 },  // XmmFloatAdd
-			{ 12, 10, 17 },  // XmmFloatComp
+			{ 12, 10, 17 },  // XmmFloatCompare
 			{ 13, 11, 18 },  // XmmFloatMult
 			{ 14, 12, 19 },  // XmmFloatDiv
 			{ 15, 13, 20 },  // XmmFloatConv
