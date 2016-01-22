@@ -105,14 +105,12 @@ void SimdUnit::Complete()
 			                    compute_unit->getIndex());
 
 		// Statistics
-		this->inst_count++;
+		num_instructions++;
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 
 		// Remove uop from the exec buffer and get the iterator to the
 		// next element
 		it = exec_buffer.erase(it);
-
-		// si_uop_free(uop);
 	}
 
 }
@@ -127,7 +125,7 @@ void SimdUnit::Execute()
 	assert(int(decode_buffer.size()) <= decode_buffer_size);
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Initialize iterator
 	auto it = decode_buffer.begin();
@@ -220,7 +218,7 @@ void SimdUnit::Decode()
 	assert(int(issue_buffer.size()) <= issue_buffer_size);
 
 	// Internal counter
-	int instructions_processed;
+	int instructions_processed = 0;
 
 	// Initialize iterator
 	auto it = issue_buffer.begin();
