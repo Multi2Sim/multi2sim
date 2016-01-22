@@ -75,7 +75,7 @@ public:
 	static int read_exec_write_buffer_size;
 
 	// Statistics
-	long long inst_count;
+	long long num_instructions;
 
 
 

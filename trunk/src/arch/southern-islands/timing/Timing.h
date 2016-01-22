@@ -150,11 +150,11 @@ public:
 			const std::string &section) override;
 	
 	/// Dump the configuration of the GPU and compute units
-	void DumpConfiguration(std::ofstream &os);
+	void DumpConfiguration(std::ofstream &os) const;
 
 	/// Dump a report of all the statistics collected during the execution
 	/// of one or more OpenCL kernels 
-	void DumpReport();
+	void DumpReport() const override;
 	
 	/// Return the number of entry modules.
 	/// See comm::Timing::getNumEntryModules() for details.
