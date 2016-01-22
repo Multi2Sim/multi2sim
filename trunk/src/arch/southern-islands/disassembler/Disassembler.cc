@@ -32,10 +32,11 @@
 namespace SI
 {
 
-// Singleton                                                                     
+
 std::unique_ptr<Disassembler> Disassembler::instance;
 
-Disassembler::Disassembler()
+
+Disassembler::Disassembler() : comm::Disassembler("Southern Islands")
 {
 	Instruction::Info *info;
 	int i;

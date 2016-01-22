@@ -1097,7 +1097,7 @@ void Timing::DumpConfiguration(std::ofstream &os) const
 	os << misc::fmt("IqKind = %s\n", cpu->instruction_queue_kind_map[cpu->getInstructionQueueKind()]);
 	os << misc::fmt("IqSize = %d\n", cpu->getInstructionQueueSize());
 	os << misc::fmt("LsqKind = %s\n", cpu->load_store_queue_kind_map[cpu->getLoadStoreQueueKind()]);
-	os << misc::fmt("LsqSize = %d\n", cpu->getLoadStoreQueueKind());
+	os << misc::fmt("LsqSize = %d\n", cpu->getLoadStoreQueueSize());
 	os << misc::fmt("RfKind = %s\n", RegisterFile::KindMap[RegisterFile::getKind()]);
 	os << misc::fmt("RfIntSize = %d\n", RegisterFile::getIntegerSize());
 	os << misc::fmt("RfFpSize = %d\n", RegisterFile::getFloatingPointSize());
