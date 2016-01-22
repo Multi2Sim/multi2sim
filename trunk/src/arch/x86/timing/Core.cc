@@ -409,17 +409,29 @@ void Core::Commit()
 
 	case Cpu::CommitKindTimeslice:
 	{
-		// Look for a reorder buffer with at least one uop
-		int next_thread = (current_commit_thread + 1)
-				% Cpu::getNumThreads();
-		while (next_thread != current_commit_thread
-				&& !threads[next_thread]->canCommit())
+		// Find thread to commit instructions from
+		int next_thread = current_commit_thread;
+		while (true)
+		{
+			// Go to next thread
 			next_thread = (next_thread + 1) % Cpu::getNumThreads();
+
+			// Already cycled through
+			if (next_thread == current_commit_thread)
+				break;
+
+			// Found a thread to commit instructions from
+			if (threads[next_thread]->canCommit())
+				break;
+		}
 		
 		// Commit new thread
 		current_commit_thread = next_thread;
 		Thread *thread = threads[current_commit_thread].get();
-		thread->Commit(Cpu::getCommitWidth());
+
+		// Commit if we can
+		if (thread->canCommit())
+			thread->Commit(Cpu::getCommitWidth());
 
 		// Done
 		break;
