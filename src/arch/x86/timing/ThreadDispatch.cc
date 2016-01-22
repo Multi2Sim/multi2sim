@@ -81,23 +81,27 @@ int Thread::Dispatch(int quantum)
 		
 		// Insert in reorder buffer
 		InsertInReorderBuffer(uop);
-		core->incReorderBufferWrites();
-		reorder_buffer_writes++;
+		core->incNumReorderBufferWrites();
+		num_reorder_buffer_writes++;
+
+		// Mark instruction as dispatched
+		uop->dispatched = true;
+		uop->dispatch_when = cpu->getCycle();
 		
 		// Insert non-memory instruction into instruction queue
 		if (!(uop->getFlags() & Uinst::FlagMem))
 		{
 			InsertInInstructionQueue(uop);
-			core->incInstructionQueueWrites();
-			instruction_queue_writes++;
+			core->incNumInstructionQueueWrites();
+			num_instruction_queue_writes++;
 		}
 		
 		// Memory instructions into the load-store queue
 		if ((uop->getFlags() & Uinst::FlagMem))
 		{
 			InsertInLoadStoreQueue(uop);
-			core->incLoadStoreQueueWrites();
-			load_store_queue_writes++;
+			core->incNumLoadStoreQueueWrites();
+			num_load_store_queue_writes++;
 		}
 
 		// Increment dispatch slot

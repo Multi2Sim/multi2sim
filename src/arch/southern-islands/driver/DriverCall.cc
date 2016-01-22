@@ -130,14 +130,6 @@ int Driver::CallMemRead(comm::Context *context,
 	video_memory->Read(device_ptr, size, buffer.get());
 	memory->Write(host_ptr, size, buffer.get());
 	
-	// If the '--si-report' flag was used, dump the report into the
-	// specified file
-	if (Timing::getSimKind() == comm::Arch::SimDetailed)
-	{
-		Timing *timing  = Timing::getInstance();
-		timing->DumpReport();
-	}
-
 	// Return                                                         
 	return 0; 
 }

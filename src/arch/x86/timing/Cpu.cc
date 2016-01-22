@@ -225,7 +225,8 @@ void Cpu::MemoryAccessHandler(esim::Event *event, esim::Frame *esim_frame)
 	{
 		// Start access
 		mem::Module *module = frame->module;
-		module->Access(frame->access_type,
+		frame->uop->memory_access = module->Access(
+				frame->access_type,
 				frame->address,
 				nullptr,
 				event_memory_access_end);

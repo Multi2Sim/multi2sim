@@ -92,7 +92,7 @@ private:
 	void ExtractFromFetchQueue(Uop *uop);
 
 	// Dump content of fetch queue
-	void DumpFetchQueue(std::ostream &os = std::cout);
+	void DumpFetchQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -112,7 +112,7 @@ private:
 	void ExtractFromUopQueue(Uop *uop);
 
 	// Dump content of uop queue
-	void DumpUopQueue(std::ostream &os = std::cout);
+	void DumpUopQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -135,6 +135,10 @@ private:
 	// Extract a uop from the reorder buffer. The uop must be located either
 	// at the head or at the tail of the reorder buffer.
 	void ExtractFromReorderBuffer(Uop *uop);
+	
+	// Dump content of reorder buffer
+	void DumpReorderBuffer(std::ostream &os = std::cout) const;
+
 
 
 
@@ -149,10 +153,17 @@ private:
 	// Insert a uop into the tail of the instruction queue
 	void InsertInInstructionQueue(std::shared_ptr<Uop> uop);
 
+	// Remove a uop from the instruction queue. The uop must be currently
+	// present in said queue.
+	void ExtractFromInstructionQueue(Uop *uop);
+	
 	// Determine whether a new uop can be inserted into this thread's
 	// instruction queue, based on whether the queue was configured as
 	// private per thread, or shared among threads.
 	bool canInsertInInstructionQueue();
+	
+	// Dump content of instruction queue
+	void DumpInstructionQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -185,9 +196,8 @@ private:
 	// in said queue.
 	void ExtractFromStoreQueue(Uop *uop);
 
-	// Remove a uop from the instruction queue. The uop must be currently
-	// present in said queue.
-	void ExtractFromInstructionQueue(Uop *uop);
+	// Dump content of load_store queue
+	void DumpLoadStoreQueue(std::ostream &os = std::cout) const;
 
 
 
@@ -263,14 +273,23 @@ private:
 	// Number of fetched micro-instructions
 	long long num_fetched_uinsts = 0;
 
+	// Number of dispatched micro-instructions
+	long long num_dispatched_uinsts = 0;
+
+	// Number of issued micro-instructions
+	long long num_issued_uinsts = 0;
+
+	// Number of committed micro-instructions
+	long long num_committed_uinsts = 0;
+
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinsts[Uinst::OpcodeCount] = { };
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinsts[Uinst::OpcodeCount] = { };
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinsts[Uinst::OpcodeCount] = { };
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of squashed micro-instructions
 	long long num_squashed_uinsts = 0;
@@ -288,26 +307,26 @@ private:
 	// Statistics for structures
 	//
 
-	long long reorder_buffer_reads = 0;
-	long long reorder_buffer_writes = 0;
+	long long num_reorder_buffer_reads = 0;
+	long long num_reorder_buffer_writes = 0;
 
-	long long instruction_queue_reads = 0;
-	long long instruction_queue_writes = 0;
+	long long num_instruction_queue_reads = 0;
+	long long num_instruction_queue_writes = 0;
 
-	long long load_store_queue_reads = 0;
-	long long load_store_queue_writes = 0;
+	long long num_load_store_queue_reads = 0;
+	long long num_load_store_queue_writes = 0;
 
-	long long integer_register_reads = 0;
-	long long integer_register_writes = 0;
+	long long num_integer_register_reads = 0;
+	long long num_integer_register_writes = 0;
 
-	long long floating_point_register_reads = 0;
-	long long floating_point_register_writes = 0;
+	long long num_floating_point_register_reads = 0;
+	long long num_floating_point_register_writes = 0;
 	
-	long long xmm_register_reads = 0;
-	long long xmm_register_writes = 0;
+	long long num_xmm_register_reads = 0;
+	long long num_xmm_register_writes = 0;
 
-	long long btb_reads = 0;
-	long long btb_writes = 0;
+	long long num_btb_reads = 0;
+	long long num_btb_writes = 0;
 
 public:
 
@@ -333,6 +352,19 @@ public:
 				&& uop_queue.empty()
 				&& reorder_buffer.empty();
 	}
+	
+	/// Dump a plain-text representation of the object into the given output
+	/// stream, or into the standard output if argument \a os is committed.
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const Thread &thread)
+	{
+		thread.Dump(os);
+		return os;
+	}
+
 
 
 
@@ -341,25 +373,28 @@ public:
 	// Register file
 	//
 
+	/// Return the thread's trace cache
+	TraceCache *getTraceCache() const { return trace_cache.get(); }
+
 	/// Return the thread's register file
 	RegisterFile *getRegisterFile() const { return register_file.get(); }
 
 	/// Increment the number of writes to integer registers
-	void incIntegerRegisterWrites(int count = 1)
+	void incNumIntegerRegisterWrites(int count = 1)
 	{
-		integer_register_writes += count;
+		num_integer_register_writes += count;
 	}
 
 	/// Increment the number of writes to floating-point registers
-	void incFloatingPointRegisterWrites(int count = 1)
+	void incNumFloatingPointRegisterWrites(int count = 1)
 	{
-		floating_point_register_writes += count;
+		num_floating_point_register_writes += count;
 	}
 
 	/// Increment the number of writes to XMM registers
-	void incXmmRegisterWrites(int count = 1)
+	void incNumXmmRegisterWrites(int count = 1)
 	{
-		xmm_register_writes += count;
+		num_xmm_register_writes += count;
 	}
 
 
@@ -581,15 +616,113 @@ public:
 	void incNumDispatchedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_dispatched_uinsts[opcode]++;
+		num_dispatched_uinst_array[opcode]++;
+		num_dispatched_uinsts++;
+	}
+
+	/// Return the array of dispatched micro-instructions.
+	const long long *getNumDispatchedUinstArray() const
+	{
+		return num_dispatched_uinst_array;
+	}
+
+	/// Return the number of dispatched micro-instructions
+	long long getNumDispatchedUinsts() const
+	{
+		return num_dispatched_uinsts;
 	}
 
 	/// Increment the number of issued micro-instructions of a kind
 	void incNumIssuedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_issued_uinsts[opcode]++;
+		num_issued_uinst_array[opcode]++;
+		num_issued_uinsts++;
 	}
+
+	/// Return the array of issued micro-instructions
+	const long long *getNumIssuedUinstArray() const
+	{
+		return num_issued_uinst_array;
+	}
+
+	/// Return the number of issued micro-instructions
+	long long getNumIssuedUinsts() const
+	{
+		return num_issued_uinsts;
+	}
+
+	/// Increment the number of committed micro-instructions of a kind
+	void incNumCommittedUinsts(Uinst::Opcode opcode)
+	{
+		assert(opcode < Uinst::OpcodeCount);
+		num_committed_uinst_array[opcode]++;
+		num_committed_uinsts++;
+	}
+
+	/// Return the array of committed micro-instructions
+	const long long *getNumCommittedUinstArray() const
+	{
+		return num_committed_uinst_array;
+	}
+
+	/// Return the number of committed micro-instructions
+	long long getNumCommittedUinsts() const
+	{
+		return num_committed_uinsts;
+	}
+
+	/// Return the number of squashed micro-instructions
+	long long getNumSquashedUinsts() const { return num_squashed_uinsts; }
+
+	/// Return the number of committed branches
+	long long getNumBranches() const { return num_branches; }
+
+	/// Return the number of mispredicted branches
+	long long getNumMispredictedBranches() const { return num_mispredicted_branches; }
+
+	/// Return the number of reads in the reorder buffers
+	long long getNumReorderBufferReads() const { return num_reorder_buffer_reads; }
+
+	/// Return the number of writes in the reorder buffers
+	long long getNumReorderBufferWrites() const { return num_reorder_buffer_writes; }
+
+	/// Return the number of reads from instruction queues
+	long long getNumInstructionQueueReads() const { return num_instruction_queue_reads; }
+
+	/// Return the number of writes to instruction queues
+	long long getNumInstructionQueueWrites() const { return num_instruction_queue_writes; }
+
+	/// Return the number of reads from load-store queues
+	long long getNumLoadStoreQueueReads() const { return num_load_store_queue_reads; }
+
+	/// Return the number of writes to load_store queues
+	long long getNumLoadStoreQueueWrites() const { return num_load_store_queue_writes; }
+
+	/// Return the number of reads on integer registers
+	long long getNumIntegerRegisterReads() const { return num_integer_register_reads; }
+
+	/// Return the number of writes on integer registers
+	long long getNumIntegerRegisterWrites() const { return num_integer_register_writes; }
+
+	/// Return the number of reads on floating-point registers
+	long long getNumFloatingPointRegisterReads() const { return num_floating_point_register_reads; }
+
+	/// Return the number of writes on floating-point registers
+	long long getNumFloatingPointRegisterWrites() const { return num_floating_point_register_writes; }
+
+	/// Return the number of XMM register reads
+	long long getNumXmmRegisterReads() const { return num_xmm_register_reads; }
+
+	/// Return the number of XMM register writes
+	long long getNumXmmRegisterWrites() const { return num_xmm_register_writes; }
+
+	/// Return the number of reads to the BTB
+	long long getNumBtbReads() const { return num_btb_reads; }
+
+	/// Return the number of writes to the BTB
+	long long getNumBtbWrites() const { return num_btb_writes; }
+
 
 
 

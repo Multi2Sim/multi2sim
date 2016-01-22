@@ -60,14 +60,14 @@ TEST(TestBranchPredictor, read_ini_configuration_file)
 
 	// Assertions
 	EXPECT_EQ(BranchPredictor::KindPerfect, BranchPredictor::getKind());
-	EXPECT_EQ(128, BranchPredictor::getBTBSets());
-	EXPECT_EQ(16, BranchPredictor::getBTBAssociativity());
+	EXPECT_EQ(128, BranchPredictor::getBtbNumSets());
+	EXPECT_EQ(16, BranchPredictor::getBtbNumWays());
 	EXPECT_EQ(512, BranchPredictor::getBimodSize());
 	EXPECT_EQ(2048, BranchPredictor::getChoiceSize());
 	EXPECT_EQ(64, BranchPredictor::getRasSize());
-	EXPECT_EQ(2, BranchPredictor::getTwolevelL1size());
-	EXPECT_EQ(2048, BranchPredictor::getTwolevelL2size());
-	EXPECT_EQ(16, BranchPredictor::getTwolevelHistorySize());
+	EXPECT_EQ(2, BranchPredictor::getTwoLevelL1Size());
+	EXPECT_EQ(2048, BranchPredictor::getTwoLevelL2Size());
+	EXPECT_EQ(16, BranchPredictor::getTwoLevelHistorySize());
 }
 
 
@@ -177,7 +177,7 @@ TEST(TestBranchPredictor, test_bimodal_branch_predictor_1)
 }
 
 
-TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
+TEST(TestBranchPredictor, test_two_level_branch_predictor_1)
 {
 	// Local variable declaration
 	const int num_branch_uop = 3;
@@ -336,15 +336,15 @@ TEST(TestBranchPredictor, test_twolevel_branch_predictor_1)
 		EXPECT_EQ(pred_result[i], pred);
 
 		// Verify the BHT index and PHT row colomn
-		EXPECT_EQ(bht_index, uops[i]->twolevel_bht_index);
-		EXPECT_EQ(pht_row[i], uops[i]->twolevel_pht_row);
-		EXPECT_EQ(pht_col[i], uops[i]->twolevel_pht_col);
+		EXPECT_EQ(bht_index, uops[i]->two_level_bht_index);
+		EXPECT_EQ(pht_row[i], uops[i]->two_level_pht_row);
+		EXPECT_EQ(pht_col[i], uops[i]->two_level_pht_col);
 
 		// Update predictor and verify the two-level branch predictor status
 		branch_predictor.Update(uops[i].get());
-		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->twolevel_bht_index);
-		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->twolevel_pht_row,
-				uops[i]->twolevel_pht_col);
+		bht_status = branch_predictor.getTwoLevelBhtStatus(uops[i]->two_level_bht_index);
+		pht_status = branch_predictor.getTwoLevelPhtStatus(uops[i]->two_level_pht_row,
+				uops[i]->two_level_pht_col);
 		EXPECT_EQ(bht_status_trace[i], bht_status);
 		EXPECT_EQ(pht_status_trace[i], (int)pht_status);
 	}
@@ -357,7 +357,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	const int num_branch_uop = 3;
 	const int N = 3;
 	BranchPredictor::Prediction bimodal_pred;
-	BranchPredictor::Prediction twolevel_pred;
+	BranchPredictor::Prediction two_level_pred;
 	BranchPredictor::Prediction pred;
 	int bht_status;
 	char pht_status;
@@ -455,7 +455,7 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	// [000000]: Strongly Taken; [000001]: Weakly NotTaken; [000010]: Weakly NotTaken
 	// [000100]: Strongly Taken; [001001]: Weakly NotTaken; [010010]: Weakly NotTaken
 	// [100100]: Strongly Taken; [001001]: Weakly NotTaken; [001001]: Weakly NotTaken
-	BranchPredictor::Prediction twolevel_pred_result[num_branch_uop * N] =
+	BranchPredictor::Prediction two_level_pred_result[num_branch_uop * N] =
 	{
 			BranchPredictor::PredictionTaken,
 			BranchPredictor::PredictionTaken,
@@ -571,18 +571,18 @@ TEST(TestBranchPredictor, test_combined_branch_predictor_1)
 	{
 		// Look up predictor and verify prediction
 		branch_predictor.Lookup(uops[i].get());
-		twolevel_pred = uops[i]->twolevel_prediction;
+		two_level_pred = uops[i]->two_level_prediction;
 		bimodal_pred = uops[i]->bimod_prediction;
 		pred = uops[i]->prediction;
-		EXPECT_EQ(twolevel_pred_result[i], twolevel_pred);
+		EXPECT_EQ(two_level_pred_result[i], two_level_pred);
 		EXPECT_EQ(bimodal_pred_result[i], bimodal_pred);
 		EXPECT_EQ(choice_pred_result[i], pred);
 
 		// Update predictor and verify the two-level branch predictor status
 		branch_predictor.Update(uops[i].get());
-		bht_status = branch_predictor.getTwolevelBHTStatus(uops[i]->twolevel_bht_index);
-		pht_status = branch_predictor.getTwolevelPHTStatus(uops[i]->twolevel_pht_row,
-				uops[i]->twolevel_pht_col);
+		bht_status = branch_predictor.getTwoLevelBhtStatus(uops[i]->two_level_bht_index);
+		pht_status = branch_predictor.getTwoLevelPhtStatus(uops[i]->two_level_pht_row,
+				uops[i]->two_level_pht_col);
 		bimodal_status = branch_predictor.getBimodStatus(uops[i]->bimod_index);
 		choice_status = branch_predictor.getChoiceStatus(uops[i]->choice_index);
 		EXPECT_EQ(bht_status_trace[i], bht_status);

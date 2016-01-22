@@ -299,6 +299,14 @@ public:
 	long long num_retry_read_probes = 0;
 	long long num_retry_write_probes = 0;
 
+	// Statistics for blocking/non-blocking accesses
+	long long num_blocking_reads = 0;
+	long long num_blocking_writes = 0;
+	long long num_blocking_nc_writes = 0;
+	long long num_non_blocking_reads = 0;
+	long long num_non_blocking_writes = 0;
+	long long num_non_blocking_nc_writes = 0;
+
 	// Statistics for other coherence traffic
 	long long num_hlc_evictions = 0;
 
@@ -633,6 +641,10 @@ public:
 	///	current frame will be available within the event handler of
 	///	\a return_event. Use \c nullptr (default) for no return event.
 	///
+	/// \return frame_id
+	///	The function returns a unique identifier of the new memory
+	///	access.
+	///
 	long long Access(AccessType access_type,
 			unsigned address,
 			int *witness = nullptr,
@@ -673,6 +685,9 @@ public:
 	/// Dump information about all event-driven simulation frames associated
 	/// with in-flight accesses in the module.
 	void DumpInFlightAddresses(std::ostream &os = std::cout);
+
+	/// Dump the module information.
+	void Dump(std::ostream &os = std::cout) const;
 
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,

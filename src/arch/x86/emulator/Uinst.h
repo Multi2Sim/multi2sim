@@ -354,7 +354,11 @@ public:
 	}
 	
 	/// Get micro-instruction information
-	static Info *getInfo() { return info; }
+	static Info *getInfo(Opcode opcode)
+	{
+		assert(opcode >= OpcodeNop && opcode < OpcodeCount);
+		return &info[opcode];
+	}
 
 
 

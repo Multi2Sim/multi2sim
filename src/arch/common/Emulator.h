@@ -26,6 +26,7 @@
 #include <lib/cpp/Error.h>
 #include <lib/cpp/Timer.h>
 #include <lib/esim/Engine.h>
+#include <memory/Mmu.h>
 
 
 namespace comm
@@ -38,6 +39,16 @@ class Emulator
 	
 	// Timer keeping track of emulator activity
 	misc::Timer timer;
+
+	// Each emulator has its own MMU. An MMU provides a separate physical
+	// address space that the timing simulator uses to access a subset of
+	// the memory hierarchy. The reason why the MMU is introduced at the
+	// emulation level is because the creation of contexts deal with whether
+	// virtual memory spaces are reused or re-created across contexts.
+	//
+	// NOTE: This approach has to be changed or extended when implementing
+	// fused memory systems across architectures.
+	mem::Mmu mmu;
 
 protected:
 
@@ -54,17 +65,26 @@ public:
 	/// Return the emulator name
 	const std::string &getName() const { return name; }
 
+	/// Return the MMU associated with this emulator. NOTE: When introducing
+	/// fused memory systems in future versions, an MMU will not be
+	/// necessarily associated to each emulator.
+	mem::Mmu *getMmu() { return &mmu; }
+
 	/// Increment the number of emulated instructions
 	void incNumInstructions() { ++num_instructions; }
 
 	/// Return the number of emulated instructions
-	long long getNumInstructions() { return num_instructions; }
+	long long getNumInstructions() const { return num_instructions; }
 
 	/// Start or resume the emulator timer
 	void StartTimer() { timer.Start(); }
 
 	/// Pause the emulator timer
 	void StopTimer() { timer.Stop(); }
+
+	/// Return the time in microseconds that this emulator has been running
+	/// so far.
+	long long getTimerValue() const { return timer.getValue(); }
 
 	/// Create a CPU context and load a program from the specified command
 	/// line. The context state is left in a state ready to start running

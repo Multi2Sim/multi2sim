@@ -154,6 +154,16 @@ private:
 	// this memory object will be the one automatically freeing it.
 	std::shared_ptr<mem::Memory> memory;
 
+	// Memory management unit, which can be shared by multiple contexts.
+	// NOTE: For now, the MMU of each context is taken directly from the
+	// associated emulator's MMU. This will change with fused memory.
+	mem::Mmu *mmu = nullptr;
+
+	// Address space within the MMU. Depending on whether a context is
+	// cloned/forked or newly created, it will inherit or create a virtual
+	// memory space, respectively.
+	mem::Mmu::Space *mmu_space = nullptr;
+	
 	// Speculative memory. Its initialization is deferred to be able to link
 	// it with the actual memory, known only at context creation.
 	std::unique_ptr<mem::SpecMem> spec_mem;
@@ -750,6 +760,12 @@ public:
 	/// Initialize the context by forking a parent context.
 	void Fork(Context *parent);
 
+	/// Return the MMU used by the context.
+	mem::Mmu *getMmu() const { return mmu; }
+
+	/// Return the virtual address space within the MMU used by the context.
+	mem::Mmu::Space *getMmuSpace() const { return mmu_space; }
+
 	/// Given a file name, return its full path based on the current working
 	/// directory for the context.
 	std::string getFullPath(const std::string &path)
@@ -961,20 +977,6 @@ public:
 
 
 	
-	//
-	// Public fields
-	//
-
-	// Memory management unit, which can be shared by multiple contexts.
-	// The MMU is used for timing simulation purposes.
-	std::shared_ptr<mem::Mmu> mmu;
-
-	// Address space within the mmu;
-	mem::Mmu::Space *mmu_space = nullptr;
-	
-
-
-
 	//
 	// Scheduler fields (for timing simulator)
 	//

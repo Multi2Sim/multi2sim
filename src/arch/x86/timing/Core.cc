@@ -40,6 +40,14 @@ Core::Core(Cpu *cpu,
 }
 
 
+void Core::Dump(std::ostream &os) const
+{
+	// Dump all threads
+	for (auto &thread : threads)
+		os << *thread;
+}
+
+
 void Core::InsertInEventQueue(std::shared_ptr<Uop> uop, int latency)
 {
 	// Sanity
@@ -347,14 +355,14 @@ void Core::Writeback()
 		register_file->WriteUop(uop.get());
 
 		// Increment number of writes to core's register counters
-		integer_register_writes += uop->getNumIntegerOutputs();
-		floating_point_register_writes += uop->getNumFloatingPointOutputs();
-		xmm_register_writes += uop->getNumXmmOutputs();
+		num_integer_register_writes += uop->getNumIntegerOutputs();
+		num_floating_point_register_writes += uop->getNumFloatingPointOutputs();
+		num_xmm_register_writes += uop->getNumXmmOutputs();
 
 		// Increment number of writes to thread's register counters
-		thread->incIntegerRegisterWrites(uop->getNumIntegerOutputs());
-		thread->incFloatingPointRegisterWrites(uop->getNumFloatingPointOutputs());
-		thread->incXmmRegisterWrites(uop->getNumXmmOutputs());
+		thread->incNumIntegerRegisterWrites(uop->getNumIntegerOutputs());
+		thread->incNumFloatingPointRegisterWrites(uop->getNumFloatingPointOutputs());
+		thread->incNumXmmRegisterWrites(uop->getNumXmmOutputs());
 		
 		// Recover from mispeculation
 		if (recover)
@@ -401,17 +409,29 @@ void Core::Commit()
 
 	case Cpu::CommitKindTimeslice:
 	{
-		// Look for a reorder buffer with at least one uop
-		int next_thread = (current_commit_thread + 1)
-				% Cpu::getNumThreads();
-		while (next_thread != current_commit_thread
-				&& !threads[next_thread]->canCommit())
+		// Find thread to commit instructions from
+		int next_thread = current_commit_thread;
+		while (true)
+		{
+			// Go to next thread
 			next_thread = (next_thread + 1) % Cpu::getNumThreads();
+
+			// Already cycled through
+			if (next_thread == current_commit_thread)
+				break;
+
+			// Found a thread to commit instructions from
+			if (threads[next_thread]->canCommit())
+				break;
+		}
 		
 		// Commit new thread
 		current_commit_thread = next_thread;
 		Thread *thread = threads[current_commit_thread].get();
-		thread->Commit(Cpu::getCommitWidth());
+
+		// Commit if we can
+		if (thread->canCommit())
+			thread->Commit(Cpu::getCommitWidth());
 
 		// Done
 		break;

@@ -240,6 +240,18 @@ public:
 	/// Read register file configuration from configuration file
 	static void ParseConfiguration(misc::IniFile *ini_file);
 
+	/// Return the register file kind, as configured by the user
+	static Kind getKind() { return kind; }
+
+	/// Return the integer register file size, as configured by the user.
+	static int getIntegerSize() { return integer_size; }
+
+	/// Return the floating-point register file size, as configured.
+	static int getFloatingPointSize() { return floating_point_size; }
+
+	/// Return the XMM register file size, as configured by the user.
+	static int getXmmSize() { return xmm_size; }
+
 
 
 
@@ -250,8 +262,17 @@ public:
 	/// Constructor
 	RegisterFile(Thread *thread);
 
-	/// Dump register file
-	void DumpRegisterFile();
+	/// Dump a plain-text representation of the object into the given output
+	/// stream, or into the standard output if argument \a os is committed.
+	void Dump(std::ostream &os = std::cout) const;
+	
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const RegisterFile &register_file)
+	{
+		register_file.Dump(os);
+		return os;
+	}
 
 	/// Return true if there are enough available physical registers to
 	/// rename the given uop.
@@ -306,6 +327,30 @@ public:
 		return true;
 	}
 
+
+
+
+	//
+	// Statistics
+	//
+
+	/// Return the number of reads to the integer RAT
+	long long getNumIntegerRatReads() const { return num_integer_rat_reads; }
+
+	/// Return the number of writes to the integer RAT
+	long long getNumIntegerRatWrites() const { return num_integer_rat_writes; }
+
+	/// Return the number of reads to the floating-point RAT
+	long long getNumFloatingPointRatReads() const { return num_floating_point_rat_reads; }
+
+	/// Return the number of writes to the floating-point RAT
+	long long getNumFloatingPointRatWrites() const { return num_floating_point_rat_writes; }
+
+	/// Return the number of reads to the XMM RAT
+	long long getNumXmmRatReads() const { return num_xmm_rat_reads; }
+
+	/// Return the number of writes to the XMM RAT
+	long long getNumXmmRatWrites() const { return num_xmm_rat_writes; }
 };
 
 }

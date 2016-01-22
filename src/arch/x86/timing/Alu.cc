@@ -124,6 +124,29 @@ void Alu::ParseConfiguration(misc::IniFile *ini_file)
 }
 
 
+void Alu::DumpConfiguration(std::ostream &os)
+{
+	// Title
+	os << "[ Config.FunctionalUnits ]\n";
+
+	// Traverse functional units
+	for (int i = 1; i < FunctionalUnit::TypeCount; i++)
+	{
+		// Functional unit name
+		std::string name = FunctionalUnit::type_map[i];
+		assert(!name.empty());
+
+		// Print configuration
+		os << misc::fmt("%s.Count = %d\n", name.c_str(), configuration[i][0]);
+		os << misc::fmt("%s.OpLat = %d\n", name.c_str(), configuration[i][1]);
+		os << misc::fmt("%s.IssueLat = %d\n", name.c_str(), configuration[i][2]);
+	}
+
+	// Done
+	os << '\n';
+}
+
+
 Alu::Alu()
 {
 	// Reserve functional unit vector entries
@@ -173,6 +196,39 @@ void Alu::ReleaseAll()
 	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
 		functional_units[type]->Release();
 }
+
+
+void Alu::DumpReport(std::ostream &os) const
+{
+	// Header
+	os << "; Functional unit pool\n";
+	os << ";    Accesses - Number of uops issued to a f.u.\n";
+	os << ";    Denied - Number of requests denied due to busy f.u.\n";
+	os << ";    WaitingTime - Average number of waiting cycles to reserve f.u.\n";
+
+	// Traverse functional units
+	for (int type = 1; type < FunctionalUnit::TypeCount; type++)
+	{
+		FunctionalUnit *functional_unit = functional_units[type].get();
+		os << misc::fmt("fu.%s.Accesses = %lld\n",
+				functional_unit->getName().c_str(),
+				functional_unit->getNumAccesses());
+		os << misc::fmt("fu.%s.Denied = %lld\n",
+				functional_unit->getName().c_str(),
+				functional_unit->getNumDeniedAccesses());
+		os << misc::fmt("fu.%s.WaitingTime = %.4g\n",
+				functional_unit->getName().c_str(),
+				functional_unit->getNumAccesses() ?
+				(double) functional_unit->getWaitingTime()
+				/ functional_unit->getNumAccesses()
+				: 0.0);
+
+	}
+
+	// Done
+	os << '\n';
+}
+
 
 }
 

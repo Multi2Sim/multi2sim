@@ -77,7 +77,7 @@ class Timing : public comm::Timing
 	
 	
 	//
-	// Member fields
+	// Class members
 	//
 
 	// CPU object
@@ -85,6 +85,10 @@ class Timing : public comm::Timing
 
 	// List of entry modules to the memory hierarchy
 	std::vector<mem::Module *> entry_modules;
+
+	// Dump a specific part of a statistics report related with uops.
+	void DumpUopReport(std::ostream &os, const long long *uop_stats,
+			const std::string &prefix, int peak_ipc) const;
 
 public:
 
@@ -162,9 +166,15 @@ public:
 	void ParseMemoryConfigurationEntry(misc::IniFile *ini_file,
 			const std::string &section) override;
 
+	/// Dump the statistics summary for the timing simulator.
+	void DumpSummary(std::ostream &os) const override;
+
 	/// Dump a report of statistics collected during x86 simulation
-	void DumpReport();
-	
+	void DumpReport() const override;
+
+	/// Dump the configuration of the CPU
+	void DumpConfiguration(std::ofstream &os) const;
+
 	/// Return the number of entry modules from this architecture into the
 	/// memory hierarchy.
 	int getNumEntryModules() override

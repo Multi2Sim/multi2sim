@@ -76,5 +76,6 @@ mem::Module *Timing::getEntryModule(int index)
 	throw misc::Panic("Not implemented");
 }
 
+
 }
 

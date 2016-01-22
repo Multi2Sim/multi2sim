@@ -842,7 +842,7 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 	// TODO Section [LDS]
 }
 
-void Timing::DumpConfiguration(std::ofstream &os)
+void Timing::DumpConfiguration(std::ofstream &os) const
 {
 	// Device
 	os << misc::fmt("[ Config.Device ]\n");
@@ -968,7 +968,7 @@ void Timing::DumpConfiguration(std::ofstream &os)
 	
 }
 
-void Timing::DumpReport()
+void Timing::DumpReport() const
 {
 	// Check if the report file has been set
 	if (report_file.empty())

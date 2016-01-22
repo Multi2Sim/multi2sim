@@ -40,20 +40,6 @@ std::string TraceCache::debug_file;
 misc::Debug TraceCache::debug;
 
 
-TraceCache::TraceCache(const std::string &name) :
-		name(name)
-{
-	// Initialize 
-	entries = misc::new_unique_array<Entry>(num_sets * num_ways);
-	temp = misc::new_unique<Entry>();
-
-	// Initialize LRU counter 
-	for (int set = 0; set < num_sets; set++)
-		for (int way = 0; way < num_ways; way++)
-			entries[set * num_ways + way].counter = way;
-}
-
-
 void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 {
 	// Section
@@ -85,14 +71,51 @@ void TraceCache::ParseConfiguration(misc::IniFile *ini_file)
 
 void TraceCache::DumpConfiguration(std::ostream &os)
 {
-	// Dump network information
-	os << misc::fmt("\n***** TraceCache *****\n");
-	os << misc::fmt("\tPresent: %d\n", present);
-	os << misc::fmt("\tSets: %d\n", num_sets);
-	os << misc::fmt("\tAssoc: %d\n", num_ways);
-	os << misc::fmt("\tTraceSize: %d\n", trace_size);
-	os << misc::fmt("\tBranchMax: %d\n", max_branches);
-	os << misc::fmt("\tQueueSize: %d\n", queue_size);
+	os << "; Trace cache - parameters\n";
+	os << misc::fmt("TraceCache.Sets = %d\n", num_sets);
+	os << misc::fmt("TraceCache.Assoc = %d\n", num_ways);
+	os << misc::fmt("TraceCache.TraceSize = %d\n", trace_size);
+	os << misc::fmt("TraceCache.BranchMax = %d\n", max_branches);
+	os << misc::fmt("TraceCache.QueueSize = %d\n", queue_size);
+	os << '\n';
+}
+
+
+TraceCache::TraceCache(const std::string &name) :
+		name(name)
+{
+	// Initialize
+	entries = misc::new_unique_array<Entry>(num_sets * num_ways);
+	temp = misc::new_unique<Entry>();
+
+	// Initialize LRU counter
+	for (int set = 0; set < num_sets; set++)
+		for (int way = 0; way < num_ways; way++)
+			entries[set * num_ways + way].counter = way;
+}
+
+
+void TraceCache::DumpReport(std::ostream &os)
+{
+	// Dump the configuration
+	DumpConfiguration(os);
+
+	// Statistics
+	os << "; Trace cache - statistics\n";
+	os << misc::fmt("TraceCache.Accesses = %lld\n", num_accesses);
+	os << misc::fmt("TraceCache.Hits = %lld\n", num_hits);
+	os << misc::fmt("TraceCache.HitRatio = %.4g\n", num_accesses ?
+			(double) num_hits / num_accesses : 0.0);
+	os << misc::fmt("TraceCache.Fetched = %lld\n", num_fetched_uinsts);
+	os << misc::fmt("TraceCache.Dispatched = %lld\n", num_dispatched_uinsts);
+	os << misc::fmt("TraceCache.Issued = %lld\n", num_issued_uinsts);
+	os << misc::fmt("TraceCache.Committed = %lld\n", num_committed_uinsts);
+	os << misc::fmt("TraceCache.Squashed = %lld\n", num_squashed_uinsts);
+	os << misc::fmt("TraceCache.TraceLength = %.2f\n", trace_length_count ?
+			(double) trace_length_acc / trace_length_count : 0);
+
+	// Done
+	os << '\n';
 }
 
 
@@ -168,9 +191,9 @@ bool TraceCache::Lookup(unsigned int eip,
 	}
 
 	// Statistics
-	accesses++;
+	num_accesses++;
 	if (found_entry)
-		hits++;
+		num_hits++;
 
 	// Miss
 	if (!found_entry)

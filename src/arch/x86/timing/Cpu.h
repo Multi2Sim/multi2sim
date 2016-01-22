@@ -202,16 +202,23 @@ private:
 	long long num_fetched_uinsts = 0;
 
 	// Number of dispatched micro-instructions for every opcode
-	long long num_dispatched_uinsts[Uinst::OpcodeCount] = { };
+	long long num_dispatched_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of issued micro-instructions for every opcode
-	long long num_issued_uinsts[Uinst::OpcodeCount] = { };
+	long long num_issued_uinst_array[Uinst::OpcodeCount] = { };
 
 	// Number of committed micro-instructions for every opcode
-	long long num_committed_uinsts[Uinst::OpcodeCount] = { };
+	long long num_committed_uinst_array[Uinst::OpcodeCount] = { };
 
-	// Committed micro-instructions
-	long long num_committed_uinst = 0;
+	// Number of dispatched micro-instructions
+	long long num_dispatched_uinsts = 0;
+
+	// Number of issued micro-instructions
+	long long num_issued_uinsts = 0;
+
+	// Number of committed micro-instructions
+	long long num_committed_uinsts = 0;
+
 
 	// Committed macro-instructions
 	long long num_committed_instructions = 0;
@@ -421,6 +428,9 @@ public:
 	/// Return the kind of recovery upon mispeculation
 	static RecoverKind getRecoverKind() { return recover_kind; }
 
+	/// Return the penalty of recovery upon mispeculation
+	static int getRecoverPenalty() { return recover_penalty; }
+
 	/// Return the type of instruction commit, as configured by the user
 	static CommitKind getCommitKind() { return commit_kind; }
 
@@ -488,6 +498,9 @@ public:
 	/// Update structure occupancy statistics
 	void UpdateOccupancyStats();
 
+	/// Get occupancy statistics flag
+	static bool getOccupancyStats() { return occupancy_stats; }
+
 	/// Perform a memory access on the given module for the given address.
 	/// When the access completes, the \a uop is inserted in the event
 	/// queue of the corresponding core.
@@ -538,37 +551,85 @@ public:
 	void incNumDispatchedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_dispatched_uinsts[opcode]++;
+		num_dispatched_uinst_array[opcode]++;
+		num_dispatched_uinsts++;
+	}
+
+	/// Return the array of dispatched micro-instructions
+	const long long *getNumDispatchedUinstArray() const
+	{
+		return num_dispatched_uinst_array;
+	}
+
+	/// Return the number of dispatched micro-instructions
+	long long getNumDispatchedUinsts() const
+	{
+		return num_dispatched_uinsts;
 	}
 
 	/// Increment the number of issued micro-instructions of a kind
 	void incNumIssuedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_issued_uinsts[opcode]++;
+		num_issued_uinst_array[opcode]++;
+		num_issued_uinsts++;
+	}
+
+	/// Return the array of issued micro-instructions
+	const long long *getNumIssuedUinstArray() const
+	{
+		return num_issued_uinst_array;
+	}
+
+	/// Return the number of issued micro-instructions
+	long long getNumIssuedUinsts() const
+	{
+		return num_issued_uinsts;
 	}
 
 	/// Increment the number of committed micro-instructions of a type
 	void incNumCommittedUinsts(Uinst::Opcode opcode)
 	{
 		assert(opcode < Uinst::OpcodeCount);
-		num_committed_uinsts[opcode]++;
+		num_committed_uinst_array[opcode]++;
+		num_committed_uinsts++;
+	}
+
+	/// Return the array of committed micro-instructions
+	const long long *getNumCommittedUinstArray() const
+	{
+		return num_committed_uinst_array;
+	}
+
+	/// Return the number of committed micro-instructions
+	long long getNumCommittedUinsts() const
+	{
+		return num_committed_uinsts;
 	}
 
 	/// Increment the number of squashed micro-instructions
 	void incNumSquashedUinsts() { num_squashed_uinsts++; }
 
+	/// Return the number of squashed micro-instructions
+	long long getNumSquashedUinsts() const { return num_squashed_uinsts; }
+
 	/// Increment the number of committed instructions
 	void incNumCommittedInstructions() { num_committed_instructions++; }
 	
 	/// Return the number of committed macro-instructions
-	long long getNumCommittedInstructions() { return num_committed_instructions; }
+	long long getNumCommittedInstructions() const { return num_committed_instructions; }
 
 	/// Increment the number of branches
 	void incNumBranches() { num_branches++; }
 
+	/// Return the number of committed branches
+	long long getNumBranches() const { return num_branches; }
+
 	/// Increment the number of mispredicted branches
 	void incNumMispredictedBranches() { num_mispredicted_branches++; }
+
+	/// Return the number of mispredicted branches
+	long long getNumMispredictedBranches() const { return num_mispredicted_branches; }
 };
 
 }

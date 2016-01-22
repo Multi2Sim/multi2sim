@@ -49,6 +49,9 @@ bool Thread::canCommit()
 				name.c_str(),
 				commit_stall_error);
 
+		// Print state of the core
+		std::cerr << *core;
+
 		// Finish simulation
 		esim::Engine *esim_engine = esim::Engine::getInstance();
 		esim_engine->Finish("Stall");
@@ -101,8 +104,8 @@ void Thread::Commit(int quantum)
 		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			branch_predictor->Update(uop.get());
-			branch_predictor->UpdateBTB(uop.get());
-			btb_writes++;
+			branch_predictor->UpdateBtb(uop.get());
+			num_btb_writes++;
 		}
 
 		// Trace cache
@@ -113,7 +116,7 @@ void Thread::Commit(int quantum)
 		last_commit_cycle = cpu->getCycle();
 
 		// Record committed uops of each kind
-		num_committed_uinsts[uop->getOpcode()]++;
+		incNumCommittedUinsts(uop->getOpcode());
 		core->incNumCommittedUinsts(uop->getOpcode());
 		cpu->incNumCommittedUinsts(uop->getOpcode());
 		if (!uop->mop_index)
@@ -162,8 +165,8 @@ void Thread::Commit(int quantum)
 		quantum--;
 
 		// Statistics
-		reorder_buffer_reads++;
-		core->incReorderBufferReads();
+		num_reorder_buffer_reads++;
+		core->incNumReorderBufferReads();
 
 		// Recover from mispeculation. Functional units are cleared when
 		// the processor recovers at commit.

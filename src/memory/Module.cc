@@ -387,6 +387,98 @@ bool Module::isInFlightAccess(long long id)
 }
 
 
+void Module::Dump(std::ostream &os) const
+{
+	// Dumping module's name
+	os << misc::fmt("[ %s ]\n\n", name.c_str());
+
+	// Dump the cache related information
+	if (type == TypeCache)
+	{
+		os << misc::fmt("Sets = %d\n", cache->getNumSets());
+		os << misc::fmt("Ways = %d\n", cache->getNumWays());
+		os << "ReplacementPolicy = " <<
+				cache->ReplacementPolicyMap.MapValue(
+				cache->getReplacementPolicy()) << "\n";
+		os << "WritePolicy = " << cache->WritePolicyMap.MapValue(
+				cache->getWritePolicy()) << "\n";
+	}
+
+	// Dump the module information
+	os << misc::fmt("BlockSize = %d\n", block_size);
+	os << misc::fmt("DataLatency = %d\n", data_latency);
+	os << misc::fmt("Ports = %d\n", num_ports);
+	os << "\n";
+
+	// Statistics - Accesses
+	os << misc::fmt("Accesses = %lld\n", num_accesses);
+	os << misc::fmt("CoalescedAccesses = %lld\n", num_coalesced_reads +
+			num_coalesced_writes + num_coalesced_nc_writes);
+	os << misc::fmt("RetriedAccesses = %lld\n", num_retry_accesses);
+	os << misc::fmt("Evictions = %lld\n", num_evictions);
+
+	// Statistics - Hits and misses
+	long long int num_hits = num_read_hits + num_write_hits 
+			+ num_nc_write_hits;
+	os << misc::fmt("Hits = %lld\n", num_hits);
+	os << misc::fmt("Misses = %lld\n", num_accesses - num_hits);
+	os << misc::fmt("HitRatio = %.4g\n", num_accesses ? 
+			(double) num_hits / num_accesses : 0.0);
+	os << "\n";
+
+	// Statistics breakdown - Reads
+	os << misc::fmt("Reads = %lld\n", num_reads);
+	os << misc::fmt("CoalescedReads = %lld\n", num_coalesced_reads);
+	os << misc::fmt("ReadHits = %lld\n", num_read_hits);
+	os << misc::fmt("ReadMisses = %lld\n", num_reads - num_read_hits);
+	os << misc::fmt("ReadRetries = %lld\n", num_retry_reads);
+	os << misc::fmt("ReadRetryHits = %lld\n", num_retry_read_hits);
+	os << misc::fmt("ReadRetryMisses = %lld\n", num_retry_read_misses);
+	os << misc::fmt("BlockingReads = %lld\n", num_blocking_reads);
+	os << misc::fmt("NonBlockingReads = %lld\n", num_non_blocking_reads);
+	os << "\n";
+
+	// Statistics breakdown - Writes
+	os << misc::fmt("Writes = %lld\n", num_writes);
+	os << misc::fmt("CoalescedWrites = %lld\n", num_coalesced_writes);
+	os << misc::fmt("WriteHits = %lld\n", num_write_hits);
+	os << misc::fmt("WriteMisses = %lld\n", num_writes - num_write_hits);
+	os << misc::fmt("WriteRetries = %lld\n", num_retry_writes);
+	os << misc::fmt("WriteRetryHits = %lld\n", num_retry_write_hits);
+	os << misc::fmt("WriteRetryMisses = %lld\n", num_retry_write_misses);
+	os << misc::fmt("BlockingWrites = %lld\n", num_blocking_writes);
+	os << misc::fmt("NonBlockingWrites = %lld\n", num_non_blocking_writes);
+	os << "\n";
+
+	// Statistics breakdown - Non-coherent Writes
+	os << misc::fmt("NCWrites = %lld\n", num_nc_writes);
+	os << misc::fmt("CoalescedNCWrites = %lld\n", num_coalesced_nc_writes);
+	os << misc::fmt("NCWriteHits = %lld\n", num_nc_write_hits);
+	os << misc::fmt("NCWriteMisses = %lld\n", 
+			num_nc_writes - num_nc_write_hits);
+	os << misc::fmt("NCWriteRetries = %lld\n", num_retry_nc_writes);
+	os << misc::fmt("NCWriteRetryHits = %lld\n", num_retry_nc_write_hits);
+	os << misc::fmt("NCWriteRetryMisses = %lld\n", 
+			num_retry_nc_write_misses);
+	os << misc::fmt("BlockingNCWrites = %lld\n", num_blocking_nc_writes);
+	os << misc::fmt("NonBlockingNCWrites = %lld\n", 
+			num_non_blocking_nc_writes);
+	os << "\n";
+
+	// Statistics - Conflicts
+	os << misc::fmt("DirectoryEntryConflicts = %lld\n", 
+			num_directory_entry_conflicts);
+	os << misc::fmt("RetryDirectoryEntryConflicts = %lld\n",
+			num_retry_directory_entry_conflicts);
+	if (type == TypeCache)
+		os << misc::fmt("ConflictInvalidation = %lld\n",
+				num_conflict_invalidations);
+	
+	// Separating line between modules
+	os << "\n\n";
+}
+
+ 
 void Module::DumpInFlightAddresses(std::ostream &os)
 {
 	esim::Engine *engine = esim::Engine::getInstance();
@@ -535,16 +627,14 @@ Frame *Module::canCoalesce(AccessType access_type,
 
 void Module::Coalesce(Frame *master_frame, Frame *frame)
 {
-	// Get event-driven engine
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-
 	// Debug
-	System::debug << misc::fmt("  %lld %lld 0x%x %s coalesce with %lld\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld is coalesced with A-%lld "
+			"on %s for 0x%x\n",
 			frame->getId(),
-			frame->getAddress(),
+			master_frame->getId(),
 			name.c_str(),
-			master_frame->getId());
+			frame->getAddress());
 
 	// Master frame must not have a parent. We only want one level of
 	// coalesced accesses.
@@ -598,11 +688,11 @@ void Module::LockPort(Frame *frame, esim::Event *event)
 
 	// Debug
 	esim::Engine *esim_engine = esim::Engine::getInstance();
-	System::debug << misc::fmt("  %lld frame %lld %s port %d locked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld locks port %d on %s\n",
 			frame->getId(),
-			name.c_str(),
-			port_index);
+			port_index,
+			name.c_str());
 
 	// Schedule event
 	esim_engine->Next(event);
@@ -623,9 +713,8 @@ void Module::UnlockPort(Port *port, Frame *frame)
 	num_locked_ports--;
 
 	// Debug
-	esim::Engine *esim_engine = esim::Engine::getInstance();
-	System::debug << misc::fmt("  %lld %lld %s port unlocked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld unlocks port on %s\n",
 			frame->getId(),
 			name.c_str());
 
@@ -643,8 +732,8 @@ void Module::UnlockPort(Port *port, Frame *frame)
 	port_queue.WakeupOne();
 	
 	// Debug
-	System::debug << misc::fmt("  %lld frame %lld %s port locked\n",
-			esim_engine->getTime(),
+	System::debug << misc::fmt("    "
+			"A-%lld locks port on %s\n",
 			frame->getId(),
 			name.c_str());
 }
@@ -791,6 +880,10 @@ void Module::UpdateStats(Frame *frame)
 			num_reads++;
 			if (frame->retry)
 				num_retry_reads++;
+			if (frame->blocking)
+				num_blocking_reads++;
+			else
+				num_non_blocking_reads++;
 			if (frame->hit)
 			{
 				num_read_hits++;
@@ -810,6 +903,10 @@ void Module::UpdateStats(Frame *frame)
 			num_nc_writes++;
 			if (frame->retry)
 				num_retry_nc_writes++;
+			if (frame->blocking)
+				num_blocking_nc_writes++;
+			else
+				num_non_blocking_nc_writes++;
 			if (frame->hit)
 			{
 				num_nc_write_hits++;
@@ -828,6 +925,10 @@ void Module::UpdateStats(Frame *frame)
 			num_writes++;
 			if (frame->retry)
 				num_retry_writes++;
+			if (frame->blocking)
+				num_blocking_writes++;
+			else
+				num_non_blocking_writes++;
 			if (frame->hit)
 			{
 				num_write_hits++;

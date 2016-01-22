@@ -46,8 +46,10 @@ Thread::FetchStall Thread::canFetch()
 	unsigned block_address = fetch_neip & ~(instruction_module->getBlockSize() - 1);
 	if (block_address != fetch_block_address)
 	{
-		unsigned physical_address = context->mmu->TranslateVirtualAddress(
-				context->mmu_space,
+		mem::Mmu *mmu = context->getMmu();
+		mem::Mmu::Space *mmu_space = context->getMmuSpace();
+		unsigned physical_address = mmu->TranslateVirtualAddress(
+				mmu_space,
 				fetch_neip);
 		if (!instruction_module->canAccess(physical_address))
 			return FetchStallInstructionMemory;
@@ -113,10 +115,13 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 
 		// Calculate physical address of a memory access
 		if (uop->getFlags() & Uinst::FlagMem)
-			uop->physical_address =
-					context->mmu->TranslateVirtualAddress(
-					context->mmu_space,
+		{
+			mem::Mmu *mmu = context->getMmu();
+			mem::Mmu::Space *mmu_space = context->getMmuSpace();
+			uop->physical_address = mmu->TranslateVirtualAddress(
+					mmu_space,
 					uinst->getAddress());
+		}
 
 		// Trace
 		if (Timing::trace)
@@ -241,9 +246,10 @@ void Thread::Fetch()
 	if (block_address != fetch_block_address)
 	{
 		// Translate address
-		unsigned physical_address =
-				context->mmu->TranslateVirtualAddress(
-						context->mmu_space,
+		mem::Mmu *mmu = context->getMmu();
+		mem::Mmu::Space *mmu_space = context->getMmuSpace();
+		unsigned physical_address = mmu->TranslateVirtualAddress(
+						mmu_space,
 						fetch_neip);
 
 		// Save last fetched block
@@ -257,7 +263,7 @@ void Thread::Fetch()
 				physical_address);
 		
 		// Stats
-		btb_reads++;
+		num_btb_reads++;
 	}
 
 	// Fetch all instructions within the block up to the first predict-taken
@@ -295,7 +301,7 @@ void Thread::Fetch()
 		if (uop->getFlags() & Uinst::FlagCtrl)
 		{
 			// Look up BTB
-			unsigned target = branch_predictor->LookupBTB(uop);
+			unsigned target = branch_predictor->LookupBtb(uop);
 
 			// Look up branch predictor
 			BranchPredictor::Prediction prediction =

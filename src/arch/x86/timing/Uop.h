@@ -360,8 +360,11 @@ public:
 	/// Physical address that this uop was fetched from
 	unsigned fetch_address = 0;
 
-	// Physical address for memory uops
+	// For memory uops, Physical address of memory access
 	unsigned physical_address = 0;
+
+	// For memory uops, unique identifier of memory access
+	long long memory_access = 0;
 
 	/// Access identifier for instruction fetch
 	long long fetch_access = 0;
@@ -390,16 +393,16 @@ public:
 	BranchPredictor::Prediction bimod_prediction = BranchPredictor::PredictionNotTaken;
 
 	/// Two-level branch predictor BHT index
-	int twolevel_bht_index = 0;
+	int two_level_bht_index = 0;
 
 	/// Two-level branch predictor PHT row
-	int twolevel_pht_row = 0;
+	int two_level_pht_row = 0;
 
 	/// Two-level branch predictor PHT column
-	int twolevel_pht_col = 0;
+	int two_level_pht_col = 0;
 
 	/// Two-level branch prediction
-	BranchPredictor::Prediction twolevel_prediction = BranchPredictor::PredictionNotTaken;
+	BranchPredictor::Prediction two_level_prediction = BranchPredictor::PredictionNotTaken;
 
 	/// Choice index in the combined branch predictor
 	int choice_index = 0;
@@ -413,6 +416,12 @@ public:
 	//
 	// State
 	//
+
+	/// True if uop has been dipatched
+	bool dispatched = false;
+
+	/// Cycle when uop was dispatched, or 0 if not dispatched yet.
+	long long dispatch_when = 0;
 
 	/// True if uop is ready to be issued
 	bool ready = false;

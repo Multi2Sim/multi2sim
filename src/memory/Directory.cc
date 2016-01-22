@@ -281,17 +281,34 @@ void Directory::UnlockEntry(int set_id, int way_id, long long access_id)
 			set_id,
 			way_id);
 
-	// Wake up first waiter
+	// Wake up all frames waiting in the queue.
+	//
+	// NOTE: A previous bug causing deadlock consisted in only waking up the
+	// first waiter. If the first waiter, for some reason, doesn't get to
+	// lock the directory entry again, it will not reach the point where
+	// other waiters are eventually woken up.
+	//
 	if (lock->queue.getHead())
 	{
 		// Debug
 		Frame *frame = misc::cast<Frame *>(lock->queue.getHead());
-		System::debug << misc::fmt("      "
-				"A-%lld resumed to retry lock\n",
-				frame->getId());
+		while (true)
+		{
+			// Print debug info
+			System::debug << misc::fmt("      "
+					"A-%lld resumed to retry lock\n",
+					frame->getId());
+
+			// Done if no more frames
+			if (!frame->getNext())
+				break;
+
+			// Next frame
+			frame = misc::cast<Frame *>(frame->getNext());
+		}
 
 		// Wake up access
-		lock->queue.WakeupOne();
+		lock->queue.WakeupAll();
 	}
 
 	// Trace

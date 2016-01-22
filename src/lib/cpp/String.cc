@@ -62,7 +62,9 @@ std::string fmt(const char *fmt_str, ...)
 void StringTrimLeft(std::string &s, const std::string &set)
 {
 	size_t startpos = s.find_first_not_of(set);
-	if (std::string::npos != startpos)
+	if (std::string::npos == startpos)
+		s.clear();
+	else
 		s = s.substr(startpos);
 }
 
@@ -70,7 +72,9 @@ void StringTrimLeft(std::string &s, const std::string &set)
 void StringTrimRight(std::string& s, const std::string &set)
 {
 	size_t endpos = s.find_last_not_of(set);
-	if (std::string::npos != endpos)
+	if (std::string::npos == endpos)
+		s.clear();
+	else
 		s = s.substr(0, endpos + 1);
 }
 
