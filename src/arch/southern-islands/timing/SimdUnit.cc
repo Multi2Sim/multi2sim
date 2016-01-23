@@ -75,7 +75,7 @@ void SimdUnit::Issue(std::unique_ptr<Uop> uop)
 void SimdUnit::Complete()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
 	// Sanity check exec buffer
@@ -119,7 +119,7 @@ void SimdUnit::Complete()
 void SimdUnit::Execute()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Sanity check decode buffer
 	assert(int(decode_buffer.size()) <= decode_buffer_size);
@@ -212,7 +212,7 @@ void SimdUnit::Execute()
 void SimdUnit::Decode()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Sanity check issue buffer
 	assert(int(issue_buffer.size()) <= issue_buffer_size);
