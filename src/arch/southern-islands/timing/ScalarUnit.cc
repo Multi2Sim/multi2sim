@@ -102,7 +102,7 @@ void ScalarUnit::Issue(std::unique_ptr<Uop> uop)
 void ScalarUnit::Complete()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 	Gpu *gpu = compute_unit->getGpu();
 
 	// Initialize iterator
@@ -238,7 +238,7 @@ void ScalarUnit::Complete()
 		it = write_buffer.erase(it);
 
 		// Statistics
-		this->num_instructions++;
+		num_instructions++;
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
@@ -247,7 +247,7 @@ void ScalarUnit::Complete()
 void ScalarUnit::Write()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal counter
 	int instructions_processed = 0;
@@ -427,7 +427,7 @@ void ScalarUnit::Write()
 void ScalarUnit::Execute()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal variables
 	int instructions_processed = 0;
@@ -558,7 +558,7 @@ void ScalarUnit::Execute()
 void ScalarUnit::Read()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal variables
 	int instructions_processed = 0;
@@ -651,7 +651,7 @@ void ScalarUnit::Read()
 void ScalarUnit::Decode()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal variables
 	int instructions_processed = 0;
