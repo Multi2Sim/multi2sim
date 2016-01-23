@@ -36,7 +36,7 @@ namespace SI
 std::unique_ptr<Disassembler> Disassembler::instance;
 
 
-Disassembler::Disassembler() : comm::Disassembler("Southern Islands")
+Disassembler::Disassembler() : comm::Disassembler("SouthernIslands")
 {
 	Instruction::Info *info;
 	int i;
