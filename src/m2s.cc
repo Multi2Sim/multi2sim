@@ -592,6 +592,7 @@ int MainProgram(int argc, char **argv)
 	MIPS::Disassembler::RegisterOptions();
 	MIPS::Emulator::RegisterOptions();
 	SI::Driver::RegisterOptions();
+	SI::Disassembler::RegisterOptions();
 	SI::Emulator::RegisterOptions();
 	SI::Timing::RegisterOptions();
 	x86::Disassembler::RegisterOptions();
@@ -621,6 +622,7 @@ int MainProgram(int argc, char **argv)
 	MIPS::Disassembler::ProcessOptions();
 	MIPS::Emulator::ProcessOptions();
 	SI::Driver::ProcessOptions();
+	SI::Disassembler::ProcessOptions();
 	SI::Emulator::ProcessOptions();
 	SI::Timing::ProcessOptions();
 	x86::Disassembler::ProcessOptions();

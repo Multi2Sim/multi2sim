@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include <arch/common/Disassembler.h>
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Error.h>
 
 #include "Instruction.h"
@@ -37,6 +38,9 @@ class Disassembler : public comm::Disassembler
 {
 	// Unique instance of Southern Islands Disassembler                          
 	static std::unique_ptr<Disassembler> instance;  
+
+	// Binary file provided by the user for disassembly                                                    
+	static std::string binary_file;
 
 	// Number of instructions in each category
 	static const int dec_table_sopp_count = 24;
@@ -96,6 +100,12 @@ public:
 			AppendPrefix("Southern Islands Disassembler");
 		}
 	};
+
+	/// Register options in the command line                                 
+	static void RegisterOptions();                                           
+
+	/// Process command-line options                                         
+	static void ProcessOptions();  
 
 	/// Get the only instance of the Southern Islands disassembler. If the       
 	/// instance does not exist yet, it will be created, and will remain     

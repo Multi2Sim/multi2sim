@@ -34,6 +34,42 @@ namespace SI
 
 
 std::unique_ptr<Disassembler> Disassembler::instance;
+std::string Disassembler::binary_file;                                                  
+
+
+void Disassembler::RegisterOptions()                                             
+{                                                                                
+	// Get command line object                                               
+	misc::CommandLine *command_line = misc::CommandLine::getInstance();      
+
+	// Category                                                              
+	command_line->setCategory("Southern Islands");                                        
+
+	// Option --si-disasm <file>                                            
+	command_line->RegisterString("--si-disasm <file>", binary_file,                
+			"Disassemble the Southern Islands ELF file provided in "
+			"<arg>, using the internal Southern Islands "
+			"disassembler. This option is incompatible with any "
+			"other option.");                  
+
+	// Incompatible options                                                  
+	command_line->setIncompatible("--si-disasm");                           
+}                                                                                
+
+
+void Disassembler::ProcessOptions()                                              
+{                                                                                
+	// Run SI disassembler                                                   
+	if (!binary_file.empty())                                                       
+	{                                                                        
+		// Get disassembler singleton                                    
+		Disassembler *disassembler = Disassembler::getInstance();        
+
+		// Disassemble binary                                            
+		disassembler->DisassembleBinary(binary_file);                                     
+		exit(0);                                                         
+	}  
+}     
 
 
 Disassembler::Disassembler() : comm::Disassembler("SouthernIslands")
