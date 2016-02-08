@@ -735,7 +735,7 @@ void Network::Dump(std::ostream &os) const
 	os << misc::fmt("Transfers = %lld\n", transfers);
 	os << misc::fmt("AverageMessageSize = %0.2f\n", transfers ?
 			(double) accumulated_bytes / transfers : 0.0);
-	os << misc::fmt("TranssferredBytes = %lld\n", accumulated_bytes);
+	os << misc::fmt("TransferredBytes = %lld\n", accumulated_bytes);
 	os << misc::fmt("AverageLatency = %.4f\n", transfers ?
 			(double) accumulated_latency / transfers : 0.0);
 
