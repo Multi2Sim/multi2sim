@@ -570,6 +570,9 @@ void DumpReports()
 
 		// Dump the network data for static visualization
 		net_system->StaticGraph();
+
+		// Dump the network routing table
+		net_system->DumpRoutes();
 	}
 }
 

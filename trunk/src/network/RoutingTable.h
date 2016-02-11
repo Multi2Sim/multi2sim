@@ -36,9 +36,12 @@ public:
 
 	class Entry
 	{
+	public:
 
 		// Cost in hops
 		int cost;
+
+	private:
 
 		// Next node to destination
 		Node *next_node = nullptr;
@@ -54,12 +57,6 @@ public:
 			next_node(next_node),
 			buffer(buffer)
 		{};
-
-		/// Get the routing cost.
-		int getCost() const { return cost; }
-
-		/// Set the routing cost
-		void setCost(int cost) { this->cost = cost; }
 
 		/// Get entry's next node.
 		Node *getNextNode() const { return next_node; }
@@ -107,6 +104,9 @@ public:
 	/// Look up the entry from a certain node to a certain node
 	Entry *Lookup(Node *source, Node *destination) const;
 
+	/// Generating the route file
+	void DumpRoutes(const std::string &path);
+
 	/// Dump Routing table information.
 	void Dump(std::ostream &os = std::cout) const;
 
@@ -136,6 +136,10 @@ public:
 			Node *destination,
 			Node *next,
 			int virtual_channel);
+
+	/// Update the cost of the paths in the routing table based on 
+	/// all the routes that are created
+	void UpdateManualRoutingCost();
 
 };
 

@@ -18,6 +18,9 @@
  */
 
 #include <climits>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
 
 #include <lib/cpp/Error.h>
 
@@ -77,7 +80,7 @@ void RoutingTable::Initialize()
 				if (node != dst_node)
 				{
 					Entry* entry = Lookup(node, dst_node);
-					entry->setCost(1);
+					entry->cost = 1;
 					entry->setNextNode(dst_node);
 					entry->setBuffer(source_buffer);
 				}
@@ -105,11 +108,11 @@ void RoutingTable::FloydWarshall()
 				Entry *entry_k_j = Lookup(node_k,node_j);
 				Entry *entry_i_j = Lookup(node_i,node_j);
 
-				int temp_cost = entry_i_k->getCost() +
-						entry_k_j->getCost();
-				if (entry_i_j->getCost() > temp_cost)
+				int temp_cost = entry_i_k->cost +
+						entry_k_j->cost;
+				if (entry_i_j->cost > temp_cost)
 				{
-					entry_i_j->setCost(temp_cost);
+					entry_i_j->cost = temp_cost;
 					entry_i_j->setNextNode(node_k);
 				}
 			}
@@ -140,7 +143,7 @@ void RoutingTable::FloydWarshall()
 			for (;;)
 			{
 				entry = Lookup(node_i, next_node);
-				if (entry->getCost() <= 1)
+				if (entry->cost <= 1)
 					break;
 				next_node = entry->getNextNode();
 			}
@@ -349,38 +352,152 @@ RoutingTable::Entry *RoutingTable::Lookup(Node *source,
 
 void RoutingTable::Dump(std::ostream &os) const
 {
-	os << "\t";
+	// First we have to calculate the largest string that will be presented
+	// in the table, and create the size of elements of the table according
+	// to this string. Element size is set to 15 which is the length of 
+	// the string " Routing Table "
+	unsigned int element_size = 15;
 	for (int i = 0; i < dimension; i++)
 	{
-		Node *node = network->getNode(i);
-		os << "\t" << node->getName().c_str() << " \t\t";
+		// Start the element size with the name of the nodes
+		Node *node_i = network->getNode(i);
+		if (element_size < node_i->getName().length())
+			element_size = node_i->getName().length();
+		
+		for (int j = 0; j < dimension; j++)
+		{
+			// Declare the entry size
+			unsigned int entry_text_size = 0;
+
+			// Get the entry of the table
+			Entry *entry = Lookup(node_i, network->getNode(j));
+
+			// Get the string size of the members that
+			// will be printed, and add them up
+			// Starting with the cost
+			entry_text_size += std::to_string(entry->cost).length();
+
+			// Then add 2 for the separator, followed by the
+			// name of the next_node
+			Node *next = entry->getNextNode();
+			if (next)
+				entry_text_size += next->getName().length();
+			entry_text_size += 2;
+
+			// Another separator (+2) followed by the name of
+			// the buffer
+			Buffer *buffer = entry->getBuffer();
+			if (buffer)
+				entry_text_size += buffer->getName().length();
+			entry_text_size += 2;
+
+			// Check if this string is bigger than the previous
+			// maximum value
+			if (element_size < entry_text_size)
+				element_size = entry_text_size;
+		}
 	}
-	os << "\n";
+	
+	// No matter what, we would add extra space to the element size
+	element_size += 4;
+
+	// We start drawing the table based on the element size
+	// ******************************************
+	// * Routing Table                          *
+	// ******************************************
+	os << "(The Routing Table is best viewed when text "
+			"wrapping is disabled)\n" ;
+	os << std::string((dimension + 1)* element_size, '=') << 
+			"\n";
+	os << "| Routing Table" <<
+			std::string((dimension + 1) * element_size - 16, ' ') <<
+			"|" << "\n";
+	os << std::string((dimension + 1)* element_size, '=') << 
+			"\n";
+
+	// Here we start printing
+	// The first line is the name of the nodes
+	for (int i = 0; i <= dimension; i++)
+	{
+		// The first element in this row is empty.
+		if (i == 0)
+		{
+			os <<  std::string(element_size, '|');
+		}
+		else
+		{
+			// Then we get the name of all the nodes and print 
+			// it in the row
+			Node *node = network->getNode(i - 1);
+			os << "| " <<
+					std::left <<
+					std::setw(element_size - 3) <<
+					std::setfill(' ') <<
+					node->getName().c_str() <<
+					"|";
+		}
+	}
+	// Separating the first row
+	os <<"\n";
+	os << std::string((dimension + 1)* element_size, '=') << 
+			"\n";
 
 	for (int i = 0; i < dimension; i++)
 	{
+		// The first column indicates the source node
 		Node *node_i = network->getNode(i);
-		os << node_i->getName().c_str() << "\t\t";
+		os << "| " <<
+				std::left <<
+				std::setw(element_size - 3) <<
+				std::setfill(' ') <<
+				node_i->getName().c_str() <<
+				"|";
+
+		// The other columns are the information of each entry
 		for (int j = 0; j < dimension; j++)
 		{
 			Node *node_j = network->getNode(j);
 			Entry *entry = Lookup(node_i,node_j);
 
-			os << entry->getCost() << ":";
-			if (entry->getNextNode())
-				os << entry->getNextNode()->getName().c_str();
+			// First we have to create the string that will be
+			// printed for each element:
+			// Node:Buffer (Cost), or
+			// Empty
+			if (entry->getNextNode())	
+			{
+				// In case there is a next node
+				Node *next = entry->getNextNode();
+				std::string element = next->getName() + ':'; 
+
+				// Make sure the buffer exists, and add it to
+				// the string
+				if (entry->getBuffer())
+					element = element + entry->getBuffer()->
+							getName();
+				element = element + ' ' + '(' + std::to_string(entry->cost)
+							+ ')';
+
+				// Printing the entry out
+				os << "| " <<
+						std::left <<
+						std::setw(element_size - 3) <<
+						std::setfill(' ') <<
+						element <<
+						"|";
+			}
 			else
-				os << "-" ;
-			os << ":\t";
-			if (entry->getBuffer())
-				os << entry->getBuffer()->getName().c_str();
-			else
-				os << "-\t";
-			os << "\t";
+			{
+				// In case it is empty
+				os <<  "|" <<
+						std::string(element_size - 2,
+						 ' ') << "|" ;
+			}
 		}
 		os << "\n";
 	}
-	os << "\n";
+	// Drawing the bottom line of the table
+	os << std::string((dimension + 1)* element_size, '_') << 
+			"\n";
 }
 
 
@@ -482,6 +599,74 @@ void RoutingTable::UpdateRoute(Node *source, Node *destination,
 				network->getName().c_str(),
 				source->getName().c_str(),
 				destination->getName().c_str()));
+}
+
+
+void RoutingTable::DumpRoutes(const std::string &path)
+{
+	// Open file for routes
+	std::ofstream f(path);
+	if (!f)
+		throw Error(misc::fmt("%s: cannot open file for write",
+				path.c_str()));
+
+	// Dump the routes into file
+	Dump(f);
+}
+
+void RoutingTable::UpdateManualRoutingCost()
+{
+	// For every entry in the 2D routing table
+	for (int i = 0; i < dimension; i++)
+	{
+		for(int j = 0; j < dimension; j++)
+		{
+			// Get the dimensions of the entry
+			Node *source = network->getNode(i);
+			Node *destination = network->getNode(j);
+
+			// Lookup the entry
+			Entry *entry = Lookup(source, destination);
+
+			// Get the next node
+			Node *next = entry->getNextNode();
+
+			// If the entry has a next node we have to update
+			// the cost
+			if (next)
+			{
+				// The cost of the first step in the route
+				entry->cost = Lookup(source, next)->cost;
+
+				// Traverse through the path
+				for(;;)
+				{
+					// We reached end of the path
+					if (next == destination)
+						break;
+
+					// Get the next element in the path
+					Node *path_entry = Lookup(next, 
+							destination)->getNextNode();
+
+					// If there is a missing link just break
+					// No error is reported since the
+					// route steps can overlap
+					if (!path_entry)
+						break;
+
+					// Update the cost one step at a time
+					// The entry cost here should already
+					// been 1.
+					entry->cost += Lookup(next, path_entry)->cost;
+
+					// We set the update the next, to 
+					// become next in path
+					next = path_entry;
+				}
+			}
+		}
+	}
 }
 
 }
