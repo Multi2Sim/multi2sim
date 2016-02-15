@@ -301,13 +301,7 @@ void VectorMemoryUnit::Memory()
 		bool all_work_items_accessed = true;
 
 		// Access global memory
-		//assert(!uop->global_memory_witness);
-		if (uop->global_memory_witness)
-		{
-			std::cout<<"\nGMW: "<<uop->global_memory_witness<<"\n";
-			abort();
-		}
-
+		assert(!uop->global_memory_witness);
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;
