@@ -301,7 +301,13 @@ void VectorMemoryUnit::Memory()
 		bool all_work_items_accessed = true;
 
 		// Access global memory
-		assert(!uop->global_memory_witness);
+		//assert(!uop->global_memory_witness);
+		if (uop->global_memory_witness)
+		{
+			std::cout<<"\nGMW: "<<uop->global_memory_witness<<"\n";
+			abort();
+		}
+
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;
@@ -339,7 +345,7 @@ void VectorMemoryUnit::Memory()
 		
 
 				// Make sure we can access the vector cache. If 
-				// so, submit the access. If we can't access the
+				// so, submit the access. If we can access the
 				// cache, mark the accessed flag of the work 
 				// item info struct.
 				if (compute_unit->vector_cache->
@@ -350,14 +356,14 @@ void VectorMemoryUnit::Memory()
 							physical_address, 
 							&uop->global_memory_witness);
 					work_item_info->accessed_cache = true;
+
+					// Access global memory
+					uop->global_memory_witness--;
 				}
 				else
 				{
 					all_work_items_accessed = false;
 				}
-
-				// Access global memory
-				uop->global_memory_witness--;
 			}
 		}
 
