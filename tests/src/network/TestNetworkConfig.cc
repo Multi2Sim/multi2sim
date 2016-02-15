@@ -22,6 +22,8 @@
 #include <string>
 #include <regex>
 #include <exception>
+#include <network/EndNode.h>
+#include <network/RoutingTable.h>
 #include <network/System.h>
 #include <lib/cpp/Misc.h>
 #include <lib/cpp/Error.h>
@@ -2172,6 +2174,252 @@ TEST(TestSystemConfiguration, routes_wrong_next_node)
 	EXPECT_REGEX_MATCH("Network test: route S1.to.N1: "
 					"invalid node name 'S3'\n",
 					message.c_str());
+}
+
+
+///
+/// Test topology
+///
+///  ----     ----     ----     ----     ---- 
+///  |S0| ==> |S1| ==> |S2| --> |S3| --> |S4|
+///  |  | <-- |  | <-- |  | <== |  | <== |  |
+///  ----     ----     ----     ----     ----
+///   ^        ^  ^     ^      ^  ^        ^
+///   |        |   \    |     /   |        |
+///   |        |    \   |    /    |        |
+///   v        v      v v   v     v        v
+///  ----     ----     ----     ----     ----
+///  |N0|     |N1|     |N2|     |N3|     |N4|
+///  ----     ----     ----     ----     ----
+///
+/// Distributing traffic to different partitions of the network, 
+/// using manual routing and virtual channel 
+TEST(TestSystemConfiguration, thorough_manual_routing)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 0\n"
+			"[Network.net0.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N2]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N3]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N4]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.s0]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.s1]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.s2]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.s3]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.s4]\n"
+			"Type = Switch\n"
+			"[Network.net0.Link.N0-s0]\n"
+			"Type = Bidirectional\n"
+			"Source = N0\n"
+			"Dest = s0\n"
+			"[Network.net0.Link.N1-s1]\n"
+			"Type = Bidirectional\n"
+			"Source = N1\n"
+			"Dest = s1\n"
+			"[Network.net0.Link.N2-s2]\n"
+			"Type = Bidirectional\n"
+			"Source = N2\n"
+			"Dest = s2\n"
+			"[Network.net0.Link.N3-s3]\n"
+			"Type = Bidirectional\n"
+			"Source = N3\n"
+			"Dest = s3\n"
+			"[Network.net0.Link.N4-s4]\n"
+			"Type = Bidirectional\n"
+			"Source = N4\n"
+			"Dest = s4\n"
+			"[Network.net0.Link.s0-s1]\n"
+			"Type = Unidirectional\n"
+			"Source = s0\n"
+			"Dest = s1\n"
+			"VC = 2\n"
+			"[Network.net0.Link.s1-s0]\n"
+			"Type = Unidirectional\n"
+			"Source = s1\n"
+			"Dest = s0\n"
+			"VC = 1\n"
+			"[Network.net0.Link.s1-s2]\n"
+			"Type = Unidirectional\n"
+			"Source = s1\n"
+			"Dest = s2\n"
+			"VC = 2\n"
+			"[Network.net0.Link.s2-s1]\n"
+			"Type = Unidirectional\n"
+			"Source = s2\n"
+			"Dest = s1\n"
+			"VC = 1\n"
+			"[Network.net0.Link.s2-s3]\n"
+			"Type = Unidirectional\n"
+			"Source = s2\n"
+			"Dest = s3\n"
+			"VC = 1\n"
+			"[Network.net0.Link.s3-s2]\n"
+			"Type = Unidirectional\n"
+			"Source = s3\n"
+			"Dest = s2\n"
+			"VC = 2\n"
+			"[Network.net0.Link.s3-s4]\n"
+			"Type = Unidirectional\n"
+			"Source = s3\n"
+			"Dest = s4\n"
+			"VC = 1\n"
+			"[Network.net0.Link.s4-s3]\n"
+			"Type = Unidirectional\n"
+			"Source = s4\n"
+			"Dest = s3\n"
+			"VC = 2\n"
+			"[Network.net0.Link.s2-N1]\n"
+			"Type = Bidirectional\n"
+			"Source = s2\n"
+			"Dest = N1\n"
+			"VC = 1\n"
+			"[Network.net0.Link.s2-N3]\n"
+			"Type = Bidirectional\n"
+			"Source = s2\n"
+			"Dest = N3\n"
+			"VC = 1\n"
+			"[Network.net0.Routes]\n"
+			"N0.to.N1 = s0\n"
+			"s0.to.N1 = s1:0\n"
+			"N0.to.N2 = s0\n"
+			"s0.to.N2 = s1:0\n"
+			"s1.to.N2 = s2:0\n"
+			"N0.to.N3 = s0\n"
+			"s0.to.N3 = s1:1\n"
+			"s1.to.N3 = s2:1\n"
+			"s2.to.N3 = s3\n"
+			"N0.to.N4 = s0\n"
+			"s0.to.N4 = s1:1\n"
+			"s1.to.N4 = s2:1\n"
+			"s2.to.N4 = s3\n"
+			"s3.to.N4 = s4\n"
+			"N1.to.N0 = s1\n"
+			"s1.to.N0 = s0\n"
+			"N1.to.N2 = s1\n"
+			"N1.to.N3 = s1\n"
+			"N1.to.N4 = s1\n"
+			"N2.to.N0 = s2\n"
+			"s2.to.N0 = s1\n"
+			"N2.to.N1 = s2\n"
+			"s2.to.N1 = s1\n"
+			"N2.to.N3 = s2\n"
+			"N2.to.N4 = s2\n"
+			"N3.to.N0 = s3\n"
+			"s3.to.N0 = s2:1\n"
+			"N3.to.N1 = s3\n"
+			"s3.to.N1 = s2:1\n"
+			"N3.to.N2 = s3\n"
+			"s3.to.N2 = s2:0\n"
+			"N3.to.N4 = s3\n"
+			"N4.to.N0 = s4\n"
+			"s4.to.N0 = s3:1\n"
+			"N4.to.N1 = s4\n"
+			"s4.to.N1 = s3:1\n"
+			"N4.to.N2 = s4\n"
+			"s4.to.N2 = s3:0\n"
+			"N4.to.N3 = s4\n"
+			"s4.to.N3 = s3:0\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the routing table
+		RoutingTable *table = network->getRoutingTable();
+	
+		// Getting all the nodes
+		Node *N0 = network->getNodeByName("N0");
+		Node *N1 = network->getNodeByName("N1");
+		Node *N2 = network->getNodeByName("N2");
+		Node *N3 = network->getNodeByName("N3");
+		Node *N4 = network->getNodeByName("N4");
+		Node *S0 = network->getNodeByName("s0");
+		Node *S1 = network->getNodeByName("s1");
+		Node *S2 = network->getNodeByName("s2");
+		Node *S3 = network->getNodeByName("s3");
+		Node *S4 = network->getNodeByName("s4");
+
+		// Checking the table one entry at a time -- N0 to N1
+		RoutingTable::Entry *entry = table->RoutingTable::Lookup(N0, N1);
+		EXPECT_EQ(entry->cost, 3);
+		EXPECT_EQ(entry->getNextNode(), S0);
+		entry = table->RoutingTable::Lookup(S0, N1);
+		EXPECT_EQ(entry->cost, 2);
+		EXPECT_EQ(entry->getNextNode(), S1);
+		Connection *connection = entry->getBuffer()->getConnection();
+		EXPECT_EQ(entry->getBuffer(), connection->getSourceBuffer(0));
+		entry = table->RoutingTable::Lookup(S1, N1);
+		EXPECT_EQ(entry->cost, 1);
+		EXPECT_EQ(entry->getNextNode(), N1);
+
+		// Checking the table one entry at a time -- N1 to N4
+		entry = table->RoutingTable::Lookup(N1, N4);
+		EXPECT_EQ(entry->cost, 5);
+		EXPECT_EQ(entry->getNextNode(), S1);
+		entry = table->RoutingTable::Lookup(S1, N4);
+		EXPECT_EQ(entry->cost, 4);
+		EXPECT_EQ(entry->getNextNode(), S2);
+		connection = entry->getBuffer()->getConnection();
+		EXPECT_EQ(entry->getBuffer(), connection->getSourceBuffer(1));
+		entry = table->RoutingTable::Lookup(S2, N4);
+		EXPECT_EQ(entry->cost, 3);
+		EXPECT_EQ(entry->getNextNode(), S3);
+		entry = table->RoutingTable::Lookup(S3, N4);
+		EXPECT_EQ(entry->cost, 2);
+		EXPECT_EQ(entry->getNextNode(), S4);
+		entry = table->RoutingTable::Lookup(S4, N4);
+		EXPECT_EQ(entry->cost, 1);
+		EXPECT_EQ(entry->getNextNode(), N4);
+
+		// Checking the table on entry at a time -- N3 to N2
+		entry = table->RoutingTable::Lookup(N3, N2);	
+		EXPECT_EQ(entry->cost, 3);
+		EXPECT_EQ(entry->getNextNode(), S3);
+		entry = table->RoutingTable::Lookup(S3, N2);
+		EXPECT_EQ(entry->cost, 2);
+		EXPECT_EQ(entry->getNextNode(), S2);
+		connection = entry->getBuffer()->getConnection();
+		EXPECT_EQ(entry->getBuffer(), connection->getSourceBuffer(0));
+		entry = table->RoutingTable::Lookup(S2, N2);
+		EXPECT_EQ(entry->cost, 1);
+		EXPECT_EQ(entry->getNextNode(), N2);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
 }
 
 }
