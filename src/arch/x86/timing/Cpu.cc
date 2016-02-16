@@ -81,7 +81,7 @@ int Cpu::context_quantum;
 int Cpu::thread_quantum;
 int Cpu::thread_switch_penalty;
 long long Cpu::num_fast_forward_instructions;
-long long Cpu::max_cycles;
+long long Cpu::max_cycles = 0;
 int Cpu::recover_penalty;
 Cpu::RecoverKind Cpu::recover_kind;
 Cpu::FetchKind Cpu::fetch_kind;
