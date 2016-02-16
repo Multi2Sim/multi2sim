@@ -1,100 +1,100 @@
 ;--------------------------------------------Network
-[Network.si-net-l1-l2]
+[Network.mynet]
 DefaultInputBufferSize = 528
 DefaultOutputBufferSize = 528
 DefaultBandwidth = 8
 DefaultPacketSize = 8 
 
 ;--------------------------------------------------Nodes
-[Network.si-net-l1-l2.Node.N0]
+[Network.mynet.Node.N0]
 Type = EndNode
 
-[Network.si-net-l1-l2.Node.N1]
+[Network.mynet.Node.N1]
 Type = EndNode
 
-[Network.si-net-l1-l2.Node.N2]
+[Network.mynet.Node.N2]
 Type = EndNode
 
-[Network.si-net-l1-l2.Node.N3]
+[Network.mynet.Node.N3]
 Type = EndNode
 
-[Network.si-net-l1-l2.Node.N4]
+[Network.mynet.Node.N4]
 Type = EndNode
 
 
 ;---------------------------------------------------Switches
-[Network.si-net-l1-l2.Node.s0]
+[Network.mynet.Node.s0]
 Type = Switch
 
-[Network.si-net-l1-l2.Node.s1]
+[Network.mynet.Node.s1]
 Type = Switch
 
-[Network.si-net-l1-l2.Node.s2]
+[Network.mynet.Node.s2]
 Type = Switch
 
-[Network.si-net-l1-l2.Node.s3]
+[Network.mynet.Node.s3]
 Type = Switch
 
-[Network.si-net-l1-l2.Node.s4]
+[Network.mynet.Node.s4]
 Type = Switch
 
 ;-----------------------------------------------------Links
-[Network.si-net-l1-l2.Link.N0-s0]
+[Network.mynet.Link.N0-s0]
 Type = Bidirectional
 Source = N0
 Dest = s0
 VC = 1
 
-[Network.si-net-l1-l2.Link.N1-s1]
+[Network.mynet.Link.N1-s1]
 Type = Bidirectional
 Source = N1
 Dest = s1
 VC = 1
 
-[Network.si-net-l1-l2.Link.N2-s2]
+[Network.mynet.Link.N2-s2]
 Type = Bidirectional
 Source = N2
 Dest = s2
 VC = 1
 
-[Network.si-net-l1-l2.Link.N3-s3]
+[Network.mynet.Link.N3-s3]
 Type = Bidirectional
 Source = N3
 Dest = s3
 VC = 1
 
-[Network.si-net-l1-l2.Link.N4-s4]
+[Network.mynet.Link.N4-s4]
 Type = Bidirectional
 Source = N4
 Dest = s4
 VC = 1
 
-[Network.si-net-l1-l2.Link.s0-s1]
+[Network.mynet.Link.s0-s1]
 Type = Bidirectional
 Source = s0
 Dest = s1
 VC = 1
 
-[Network.si-net-l1-l2.Link.s1-s2]
+[Network.mynet.Link.s1-s2]
 Type = Bidirectional
 Source = s1
 Dest = s2
 VC = 1
 
-[Network.si-net-l1-l2.Link.s2-s3]
+[Network.mynet.Link.s2-s3]
 Type = Bidirectional
 Source = s2
 Dest = s3
 VC = 1
 
-[Network.si-net-l1-l2.Link.s3-s4]
+[Network.mynet.Link.s3-s4]
 Type = Bidirectional
 Source = s3
 Dest = s4
 VC = 1
 
 ;----------------------------------------------Routes
-[Network.si-net-l1-l2.Routes]
+[Network.mynet.Routes]
 N0.to.N1 = s0
 s0.to.N1 = s1
 N0.to.N2 = s0

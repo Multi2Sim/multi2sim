@@ -1,0 +1,4 @@
+# Another manual routing test that mimics exactly what would happen if
+# the automatic routing would be used (which is the shortest path algorithm)
+
+$M2SROOT/bin/m2s --net-sim mynet --net-config net-config 
