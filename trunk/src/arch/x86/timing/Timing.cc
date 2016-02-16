@@ -290,7 +290,7 @@ bool Timing::Run()
 		esim_engine->Finish("X86MaxInstructions");
 
 	// Stop if maximum number of cycles exceeded
-	if (Cpu::getMaxCycles() && getCycle() >= Cpu::getMaxCycles())
+	if (Cpu::max_cycles && getCycle() >= Cpu::max_cycles)
 		esim_engine->Finish("X86MaxCycles");
 
 	// Stop if any previous reason met
@@ -603,6 +603,13 @@ void Timing::RegisterOptions()
 	command_line->RegisterString("--x86-debug-register-file <file>",
 			RegisterFile::debug_file,
 			"Debug information for the register file.");
+
+	// Option --x86-max-cycles <int>
+	command_line->RegisterInt64("--x86-max-cycles <cycles>", Cpu::max_cycles,
+			"Maximum number of cycles for the timing simulator "
+			"to run.  If this maximum is reached, the simulation "
+			"will finish with the X86MaxCycles string.");
+
 }
 
 
