@@ -23,6 +23,7 @@
 #include <poll.h>
 #include <syscall.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/uio.h>
@@ -1481,7 +1482,47 @@ int Context::ExecuteSyscall_ni_syscall_53()
 
 int Context::ExecuteSyscall_ioctl()
 {
-	__UNIMPLEMENTED__
+	// Read arguments
+	int guest_fd = regs.getRegister(0);
+	unsigned cmd = regs.getRegister(1);
+	unsigned arg = regs.getRegister(2);
+	
+	// Debug arguments
+	Emulator::syscall_debug << misc::fmt(
+			"  guest_fd=%d, "
+			"cmd=0x%x, "
+			"arg=0x%x\n",
+			guest_fd,
+			cmd,
+			arg);
+	
+	// File descriptor 
+	comm::FileDescriptor *desc = file_table->getFileDescriptor(guest_fd);
+	if (!desc)
+		return -EBADF;
+	
+	// Request on command
+	if (cmd >= 0x5401 || cmd <= 0x5408)
+	{
+		// 'ioctl' commands using 'struct termios' as the argument.
+		// This structure is 60 bytes long both for x86 and x86_64
+		// architectures, so it doesn't vary between guest/host.
+		// No translation needed, so just use a 60-byte I/O buffer. 
+		char buf[60];
+
+		// Read buffer 
+		memory->Read(arg, sizeof buf, buf);
+		int err = ioctl(desc->getHostIndex(), cmd, &buf);
+		if (err == -1)
+			return -errno;
+
+		// Return in memory 
+		memory->Write(arg, sizeof buf, buf);
+		return err;
+	}
+
+	// Not supported
+	throw misc::Panic(misc::fmt("Not implement for cmd = 0x%x", cmd));
 }
 
 
