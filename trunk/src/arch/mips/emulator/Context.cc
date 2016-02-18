@@ -137,6 +137,9 @@ Context::Context()
 	// Presence in context lists
 	for (int i = 0; i < ContextListCount; i++)
 		context_list_present[i] = false;
+
+	// Debug
+	Emulator::context_debug << "Context " << pid << " created\n";
 }
 
 
