@@ -109,7 +109,7 @@ void cuda_debug(char *fmt, ...)
 	 * calls to 'printf', that can have race conditions among threads. */
 	va_start(va, fmt);
 	vsnprintf(str, sizeof str, fmt, va);
-	fprintf(stderr, "[CUDA Runtime] %s\n", str);
+	fprintf(cuda_debug_file, "[CUDA Runtime] %s\n", str);
 }
 
 
