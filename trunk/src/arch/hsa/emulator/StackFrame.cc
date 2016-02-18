@@ -102,7 +102,7 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 	os << "***** Stack frame *****\n";
 
 	// Dump function name
-	os << misc::fmt("  Function: %s, \n", function->getName().c_str());
+	os << misc::fmt("  Function: %s,\n", function->getName().c_str());
 
 	// Dump program counter and current instruction
 	os << misc::fmt("  Program counter (offset in code section): 0x%x, ",
@@ -122,7 +122,7 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump function arguments
 	os << "  ***** Function arguments *****\n";
-	os << "To be suppoted";
+	os << "To be supported";
 	os << "  ***** ******** ********* *****\n\n";
 
 	// If in argument scope, dump argument scope

@@ -152,7 +152,7 @@ bool Grid::Execute()
 		int64_t signal_value = signal_manager->GetValue(
 				completion_signal);
 		Emulator::isa_debug << misc::fmt("Kernel execution finished, "
-				"reducing completion signal from %" PRId64 " to %" PRId64 "",
+				"reducing completion signal from %" PRId64 " to %" PRId64 "\n",
 				signal_value, signal_value - 1);
 		signal_value--;
 		signal_manager->ChangeValue(completion_signal, signal_value);
