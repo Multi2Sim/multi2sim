@@ -29,6 +29,10 @@ namespace misc
 /// Class with static functions to manipulate the terminal.
 class Terminal
 {
+	// Returns whether an output stream is associated with a terminal. This
+	// function is used to detect whether color information should be dumped.
+	static bool isTerminal(std::ostream &os);
+
 public:
 
 	/// Begin blue text.

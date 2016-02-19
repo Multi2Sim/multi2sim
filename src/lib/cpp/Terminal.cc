@@ -17,36 +17,45 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <unistd.h>
+
 #include "Terminal.h"
 
 
 namespace misc
 {
 
+bool Terminal::isTerminal(std::ostream &os)
+{
+	return (&os == &std::cout && isatty(fileno(stdout))) ||
+			(&os == &std::cerr && isatty(fileno(stderr)));
+}
+
+
 void Terminal::Blue(std::ostream &os)
 {
-	if (os.tellp() == -1)
+	if (isTerminal(os))
 		os << "\033[34m";
 }
 
 
 void Terminal::Black(std::ostream &os)
 {
-	if (os.tellp() == -1)
+	if (isTerminal(os))
 		os << "\033[30m";
 }
 
 
 void Terminal::Red(std::ostream &os)
 {
-	if (os.tellp() == -1)
+	if (isTerminal(os))
 		os << "\033[31m";
 }
 
 
 void Terminal::Reset(std::ostream &os)
 {
-	if (os.tellp() == -1)
+	if (isTerminal(os))
 		os << "\e[m";
 }
 

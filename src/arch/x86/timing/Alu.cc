@@ -31,12 +31,12 @@ int Alu::configuration[FunctionalUnit::TypeCount][3] =
 	{ 1, 3, 1 },  // IntMult
 	{ 1, 14, 11 },  // IntDiv
 
-	{ 3, 2, 2 },  // Effaddr
+	{ 3, 2, 2 },  // EffAddr
 	{ 3, 1, 1 },  // Logic
 
 	{ 1, 2, 1 },  // FloatSimple
 	{ 1, 3, 1 },  // FloatAdd
-	{ 1, 3, 1 },  // FloatComp
+	{ 1, 3, 1 },  // FloatCompare
 	{ 1, 5, 1 },  // FloatMult
 	{ 1, 12, 5 },  // FloatDiv
 	{ 1, 22, 14 },  // FloatComplex
@@ -48,7 +48,7 @@ int Alu::configuration[FunctionalUnit::TypeCount][3] =
 	{ 1, 1, 1 },  // XmmLogic
 
 	{ 1, 3, 1 },  // XmmFloatAdd
-	{ 1, 3, 1 },  // XmmFloatComp
+	{ 1, 3, 1 },  // XmmFloatCompare
 	{ 1, 5, 1 },  // XmmFloatMult
 	{ 1, 12, 6 },  // XmmFloatDiv
 	{ 1, 3, 1 },  // XmmFloatConv
@@ -64,7 +64,7 @@ const FunctionalUnit::Type Alu::type_table[Uinst::OpcodeCount] =
 	FunctionalUnit::TypeIntAdd,  // UInstSub
 	FunctionalUnit::TypeIntMult,  // UInstMult
 	FunctionalUnit::TypeIntDiv,  // UInstDiv
-	FunctionalUnit::TypeEffaddr,  // UInstEffaddr
+	FunctionalUnit::TypeEffAddr,  // UInstEffAddr
 
 	FunctionalUnit::TypeLogic,  // UInstAnd
 	FunctionalUnit::TypeLogic,  // UInstOr
@@ -79,7 +79,7 @@ const FunctionalUnit::Type Alu::type_table[Uinst::OpcodeCount] =
 
 	FunctionalUnit::TypeFloatAdd,  // UInstFpAdd
 	FunctionalUnit::TypeFloatAdd,  // UInstFpSub
-	FunctionalUnit::TypeFloatComp,  // UInstFpComp
+	FunctionalUnit::TypeFloatCompare,  // UInstFpComp
 	FunctionalUnit::TypeFloatMult,  // UInstFpMult
 	FunctionalUnit::TypeFloatDiv,  // UInstFpDiv
 

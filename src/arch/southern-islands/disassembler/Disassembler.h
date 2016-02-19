@@ -23,6 +23,8 @@
 #include <cassert>
 #include <iostream>
 
+#include <arch/common/Disassembler.h>
+#include <lib/cpp/CommandLine.h>
 #include <lib/cpp/Error.h>
 
 #include "Instruction.h"
@@ -32,11 +34,15 @@ namespace SI
 {
 
 
-class Disassembler
+class Disassembler : public comm::Disassembler
 {
 	// Unique instance of Southern Islands Disassembler                          
 	static std::unique_ptr<Disassembler> instance;  
 
+	// Binary file provided by the user for disassembly                                                    
+	static std::string binary_file;
+
+	// Number of instructions in each category
 	static const int dec_table_sopp_count = 24;
 	static const int dec_table_sopc_count = 17;
 	static const int dec_table_sop1_count = 54;
@@ -75,7 +81,11 @@ class Disassembler
 	Instruction::Info *dec_table_mimg[dec_table_mimg_count];
 	Instruction::Info *dec_table_exp[dec_table_exp_count];
 
-	void DisassembleBuffer(std::ostream& os, const char *buffer, int size);
+	// Private constructor for singleton
+	Disassembler();
+
+	// Disassembler the content of the given buffer.
+	void DisassembleBuffer(std::ostream &os, const char *buffer, int size);
 
 public:
 
@@ -91,8 +101,11 @@ public:
 		}
 	};
 
-	// Constructor
-	Disassembler();
+	/// Register options in the command line                                 
+	static void RegisterOptions();                                           
+
+	/// Process command-line options                                         
+	static void ProcessOptions();  
 
 	/// Get the only instance of the Southern Islands disassembler. If the       
 	/// instance does not exist yet, it will be created, and will remain     
@@ -100,7 +113,7 @@ public:
 	static Disassembler *getInstance(); 
 
 	/// Destroy the disassembler singleton if allocated
-	static void Destroy () { instance = nullptr; }
+	static void Destroy() { instance = nullptr; }
 	
 	/// Disassemble the binary file given in \a path
 	void DisassembleBinary(const std::string &path);

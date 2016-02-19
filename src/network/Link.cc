@@ -60,9 +60,12 @@ Link::Link(Network *network,
 
 void Link::Dump(std::ostream &os) const
 {
-	// Dumping user assigned name
+	// Dumping the simulator assigned name
 	os << misc::fmt("[ Network.%s.Link.%s ]\n", network->getName().c_str(),
-			name.c_str());
+			getName().c_str());
+
+	// Dumping the user assigned name
+	os << misc::fmt("Name = %s\n", name.c_str());
 
 	// Dump source buffers
 	os << misc::fmt("SourceBuffers = ");

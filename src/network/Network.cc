@@ -564,46 +564,62 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 
 		// Find and update routes
 		for (auto &source : nodes)
+		{
 			for (auto &destination : nodes)
 			{
 				if (dynamic_cast<EndNode *>(destination.get()))
 				{
-					// Create a string in the format of src.to.dst
-					std::string route = source->getName() + ".to." +
+					// Create a string in the 
+					// format of src.to.dst
+					std::string route = source->getName() + 
+							".to." +
 							destination->getName();
 
-					// Look for the new string as a variable in the section
-					std::string destination_string = ini_file->ReadString(
+					// Look for the new string as a variable 
+					// in the section
+					std::string destination_string = 
+							ini_file->ReadString(
 							section, route);
 
-					// If the string in the format exists in the section
+					// If the string in the format exists 
+					// in the section
 					if (destination_string != "")
 					{
-						// Tokenize result to destination:virtual_channel
-						std::vector<std::string> string_tokens;
-						misc::StringTokenize(destination_string,
+						// Tokenize result to 
+						// destination:virtual_channel
+						std::vector<std::string>
+								 string_tokens;
+						misc::StringTokenize(
+								destination_string,
 								string_tokens, ":");
 						if (string_tokens.size() > 2)
-							throw Error(misc::fmt("Network %s: route "
-									"%s.to.%s: wrong format for next node\n",
+							throw Error(misc::fmt(
+									"Network %s: route "
+									"%s.to.%s: wrong format "
+									"for next node\n",
 									name.c_str(),
 									source->getName().c_str(),
-									destination->getName().c_str()));
+									destination->
+									getName().c_str()));
 
 						// Get destination node
-						Node *next = getNodeByName(string_tokens[0]);
+						Node *next = getNodeByName(
+								string_tokens[0]);
 						if (!next)
-							throw Error(misc::fmt("Network %s: route %s.to.%s: "
+							throw Error(misc::fmt(
+									"Network %s: route %s.to.%s: "
 									"invalid node name '%s'\n",
 									name.c_str(),
 									source->getName().c_str(),
-									destination->getName().c_str(),
+									destination->
+									getName().c_str(),
 									string_tokens[0].c_str()));
 
 						// Get the VC, if any
 						int virtual_channel = 0;
 						if (string_tokens.size() == 2)
-							virtual_channel = atoi(string_tokens[1].c_str());
+							virtual_channel = atoi(
+									string_tokens[1].c_str());
 						if (virtual_channel < 0)
 							throw Error(misc::fmt("Network %s: route "
 									"%s.to.%s: virtual channel cannot "
@@ -618,6 +634,8 @@ bool Network::ParseConfigurationForRoutes(misc::IniFile *ini_file)
 					}
 				}
 			}
+		}
+		routing_table.UpdateManualRoutingCost();
 	}
 	return routing;
 }
@@ -735,7 +753,7 @@ void Network::Dump(std::ostream &os) const
 	os << misc::fmt("Transfers = %lld\n", transfers);
 	os << misc::fmt("AverageMessageSize = %0.2f\n", transfers ?
 			(double) accumulated_bytes / transfers : 0.0);
-	os << misc::fmt("TranssferredBytes = %lld\n", accumulated_bytes);
+	os << misc::fmt("TransferredBytes = %lld\n", accumulated_bytes);
 	os << misc::fmt("AverageLatency = %.4f\n", transfers ?
 			(double) accumulated_latency / transfers : 0.0);
 

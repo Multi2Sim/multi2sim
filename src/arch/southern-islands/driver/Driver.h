@@ -42,9 +42,6 @@ class Driver : public comm::Driver
 	// Debug file name, as set by user
 	static std::string debug_file;
 	
-	// Binary file name, as set by user
-	static std::string binary_file;
-
 	// Unique instance of singleton
 	static std::unique_ptr<Driver> instance;
 

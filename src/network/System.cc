@@ -37,6 +37,8 @@ std::string System::report_file;
 
 std::string System::graph_file;
 
+std::string System::route_file;
+
 misc::Debug System::debug;
 
 esim::Trace System::trace;
@@ -172,6 +174,12 @@ void System::RegisterOptions()
 			"This file is an input for a supplementary tool called "
 			"'graphplot' which is located in samples/network folder "
 			"in multi2sim trunk.");
+
+	// Dumping the route file
+	command_line->RegisterString("--net-dump-routes <file>", route_file,
+			"Files for representing the routing table of each individual "
+			"network. The input is a string that consequently creates "
+			"an individual file for each network.");
 }
 
 
@@ -335,10 +343,26 @@ void System::DumpReport()
 
 void System::StaticGraph()
 {
+	// Dumping the graph file for each network
 	if (!graph_file.empty())
 	{
 		for (auto &network : networks)
 			network->StaticGraph(graph_file);
+	}
+}
+
+
+void System::DumpRoutes()
+{
+	// Dump the route file for each network
+	if (!route_file.empty())
+	{
+		for (auto &network: networks)
+		{
+			std::string net_path = network->getName() +
+					"_" + route_file;
+			network->getRoutingTable()->DumpRoutes(net_path);
+		}
 	}
 }
 

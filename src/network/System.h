@@ -70,6 +70,9 @@ class System
 	// Static graph file
 	static std::string graph_file;
 
+	// Static router file
+	static std::string route_file;
+
 	// Show help for network configuration file
 	static bool help;
 
@@ -225,6 +228,9 @@ public:
 
 	/// Output the report file
 	void DumpReport();
+
+	/// Output the route file
+	void DumpRoutes();
 
 	/// Output the static graph file
 	void StaticGraph();

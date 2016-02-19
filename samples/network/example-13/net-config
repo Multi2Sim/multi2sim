@@ -1,0 +1,137 @@
+;--------------------------------------------Network
+[Network.mynet]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 8
+DefaultPacketSize = 8 
+
+;--------------------------------------------------Nodes
+[Network.mynet.Node.N0]
+Type = EndNode
+
+[Network.mynet.Node.N1]
+Type = EndNode
+
+[Network.mynet.Node.N2]
+Type = EndNode
+
+[Network.mynet.Node.N3]
+Type = EndNode
+
+[Network.mynet.Node.N4]
+Type = EndNode
+
+
+;---------------------------------------------------Switches
+[Network.mynet.Node.s0]
+Type = Switch
+
+[Network.mynet.Node.s1]
+Type = Switch
+
+[Network.mynet.Node.s2]
+Type = Switch
+
+[Network.mynet.Node.s3]
+Type = Switch
+
+[Network.mynet.Node.s4]
+Type = Switch
+
+;-----------------------------------------------------Links
+[Network.mynet.Link.N0-s0]
+Type = Bidirectional
+Source = N0
+Dest = s0
+VC = 1
+
+[Network.mynet.Link.N1-s1]
+Type = Bidirectional
+Source = N1
+Dest = s1
+VC = 1
+
+[Network.mynet.Link.N2-s2]
+Type = Bidirectional
+Source = N2
+Dest = s2
+VC = 1
+
+[Network.mynet.Link.N3-s3]
+Type = Bidirectional
+Source = N3
+Dest = s3
+VC = 1
+
+[Network.mynet.Link.N4-s4]
+Type = Bidirectional
+Source = N4
+Dest = s4
+VC = 1
+
+[Network.mynet.Link.s0-s1]
+Type = Bidirectional
+Source = s0
+Dest = s1
+VC = 1
+
+[Network.mynet.Link.s1-s2]
+Type = Bidirectional
+Source = s1
+Dest = s2
+VC = 1
+
+[Network.mynet.Link.s2-s3]
+Type = Bidirectional
+Source = s2
+Dest = s3
+VC = 1
+
+[Network.mynet.Link.s3-s4]
+Type = Bidirectional
+Source = s3
+Dest = s4
+VC = 1
+
+;----------------------------------------------Routes
+[Network.mynet.Routes]
+N0.to.N1 = s0
+s0.to.N1 = s1
+N0.to.N2 = s0
+s0.to.N2 = s1
+s1.to.N2 = s2
+N0.to.N3 = s0
+s0.to.N3 = s1
+s1.to.N3= s2
+s2.to.N3 = s3
+N0.to.N4 = s0
+s0.to.N4 = s1
+s1.to.N4 = s2
+s2.to.N4 = s3
+s3.to.N4 = s4
+N1.to.N0 = s1
+s1.to.N0 = s0
+N1.to.N2 = s1
+N1.to.N3 = s1
+N1.to.N4 = s1
+N2.to.N0 = s2
+s2.to.N0 = s1
+N2.to.N1 = s2
+s2.to.N1 = s1
+N2.to.N3 = s2
+N2.to.N4 = s2
+N3.to.N0 = s3
+s3.to.N0 = s2
+N3.to.N1 = s3
+s3.to.N1 = s2
+N3.to.N2 = s3
+s3.to.N2 = s2
+N3.to.N4 = s3
+N4.to.N0 = s4
+s4.to.N0 = s3
+N4.to.N1 = s4
+s4.to.N1 = s3
+N4.to.N2 = s4
+s4.to.N2 = s3
+N4.to.N3 = s4
+s4.to.N3 = s3

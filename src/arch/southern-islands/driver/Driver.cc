@@ -51,8 +51,6 @@ const Driver::CallFn Driver::call_fn[CallCodeCount] =
 
 std::string Driver::debug_file;
 
-std::string Driver::binary_file;
-
 std::unique_ptr<Driver> Driver::instance;
 
 misc::Debug Driver::debug;
@@ -102,12 +100,7 @@ void Driver::RegisterOptions()
 	// Option '--si-debug-driver <file>'
 	command_line->RegisterString("--si-debug-driver <file>", debug_file,
 			"Dump debug information for the Southern Islands driver, "
-			"including all ABI calls coming from the runtime.");
-	
-	// Option '--si-disasm <file>'
-	command_line->RegisterString("--si-disasm <file>", binary_file,
-			"Dump Southern Islands ISA file for the provided binary "
-			"file.");
+			"including all ABI calls coming from the runtime.");	
 }
 
 
@@ -115,17 +108,6 @@ void Driver::ProcessOptions()
 {
 	debug.setPath(debug_file);
 	debug.setPrefix("[Southern Islands driver]");
-
-	// Run SI disassembler                                                  
-	if (!binary_file.empty())                                                       
-	{        
-		// Get disassembler singleton
-		Disassembler *disassembler = Disassembler::getInstance();
-
-		// Disassemble binary
-		disassembler->DisassembleBinary(binary_file);                                     
-		exit(0);                                                         
-	} 
 }
 
 

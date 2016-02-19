@@ -1,53 +1,19 @@
-# http://www.gnu.org/software/automake
-
-Makefile.in
-Makefile
-*.o
-*.a
-*.lo
-.deps
-*.dirstamp
-
 INSTALL
-bin
+Makefile
+Makefile.in
+aclocal.m4
+autom4te.cache
+compile
 config.guess
 config.log
 config.status
 config.sub
-lib/
+configure
+depcomp
+install-sh
+lib
 libtool
 ltmain.sh
-m4/
+m4
+missing
 test-driver
-
-.autotools
-.cproject
-.project
-.settings/
-
-
-
-# http://www.gnu.org/software/autoconf
-
-/autom4te.cache
-/aclocal.m4
-/compile
-/configure
-/depcomp
-/install-sh
-/missing
-/stamp-h1
-
-# GTest
-*.trs
-*.log
-tests/*_test
-
-# Vim
-*.swp
-
-# Eclipse
-build-
-
-# Debug file
-*.debug

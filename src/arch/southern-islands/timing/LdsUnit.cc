@@ -78,7 +78,7 @@ void LdsUnit::Issue(std::unique_ptr<Uop> uop)
 void LdsUnit::Complete()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Sanity check write buffer
 	assert(int(write_buffer.size()) <= write_buffer_size);
@@ -120,7 +120,7 @@ void LdsUnit::Complete()
 void LdsUnit::Write()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal counter
 	int instructions_processed = 0;
@@ -214,7 +214,7 @@ void LdsUnit::Write()
 void LdsUnit::Mem()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal counter
 	int instructions_processed = 0;
@@ -347,7 +347,7 @@ void LdsUnit::Mem()
 void LdsUnit::Read()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal counter
 	int instructions_processed = 0;
@@ -431,7 +431,7 @@ void LdsUnit::Read()
 void LdsUnit::Decode()
 {
 	// Get useful objects
-	ComputeUnit *compute_unit = this->getComputeUnit();
+	ComputeUnit *compute_unit = getComputeUnit();
 
 	// Internal counter
 	int instructions_processed = 0;

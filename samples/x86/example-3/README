@@ -1,0 +1,16 @@
+% Example to test the x86 detailed simulation with two concurrent
+% contexts in Multi2sim. 
+% 
+% This example contains two applications, a test for sorting an array, and
+% also a test which separates the arguments of the input binary.
+% 
+% For this test first we should build the binaries from the source code
+% and then use these binaries for Multi2sim
+
+% Building the binary
+gcc test-args.c -o test-args -m32 || exit
+gcc test-sort.c -o test-sort -m32 || exit 
+
+% Using the binary in multi2sim
+$M2SROOT/bin/m2s --x86-sim detailed --x86-config x86-config.ini \
+		--ctx-config ctx-config.ini
