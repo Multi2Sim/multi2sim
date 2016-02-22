@@ -340,7 +340,7 @@ void System::ProcessOptions()
 	if (help)
 	{
 		std::cerr << help_message;
-		exit(1);
+		exit(0);
 	}
 
 	// Debug file

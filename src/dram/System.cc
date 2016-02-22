@@ -181,6 +181,20 @@ int System::getCapacity()
 
 void System::RegisterOptions()
 {
+/*
+	//
+	// FIXME: These options are removed, in order to be excluded from
+	// the m2s --help. However, later when we hook up the DRAM model to
+	// the memory system, it will come back.
+	// 
+	// FIXME 2: A whole --dram-trace option should be added as an 
+	// input to the stand-alone DRAM. Otherwise, the stand-alone
+	// does not make any sense. It cannot be actions, as part of the
+	// configuration file.
+	//
+	// FIXME 3: The debug and debug_activity files should be combined
+	// into one. It does not make sense to have both of them as two
+	// separate file.  
 	// Get command line object
 	misc::CommandLine *command_line = misc::CommandLine::getInstance();
 
@@ -217,11 +231,13 @@ void System::RegisterOptions()
 			"Runs a DRAM simulation using the actions provided "
 			"in the DRAM configuration file (option "
 			"'--dram-config').");
+*/
 }
 
 
 void System::ProcessOptions()
 {
+/*
 	// DRAM help
 	if (help)
 	{
@@ -241,6 +257,7 @@ void System::ProcessOptions()
 	if (stand_alone && config_file.empty())
 		throw Error(misc::fmt("Option --dram-sim requires "
 				" --dram-config option "));
+*/
 }
 
 

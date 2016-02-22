@@ -207,6 +207,12 @@ void Emulator::RegisterOptions()
 
 void Emulator::ProcessOptions()
 {
+	// Throw an error for now if the si-sim detailed is invoked
+	if (sim_kind == comm::Arch::SimDetailed)
+		throw misc::Error("The detailed Kepler simulation is not currently "
+				"supported in Multi2Sim.");
+
+	// Set the path for the debug files
 	isa_debug.setPath(isa_debug_file);
 	isa_debug.setPrefix("[Kepler emulator]");
 }
