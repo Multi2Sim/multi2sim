@@ -75,7 +75,6 @@ void Network::ParseConfiguration(misc::IniFile *config,
 	else if (ideal && (!fix_latency || fix_latency == 1))
 	{
 		fix_latency = 1;
-
 	}
 
 	// Throw an error if fix latency is not correct
@@ -88,7 +87,9 @@ void Network::ParseConfiguration(misc::IniFile *config,
 				config->getPath().c_str(),
 				name.c_str()));
 	}
-	else
+
+	// Print a warning in case constant network is used
+	if (fix_latency > 0)
 	{
 		misc::Warning("Network %s: Simulator is using "
 				"a network with a constant latency. Many of "
