@@ -44,12 +44,37 @@ void System::EventTypeSendHandler(esim::Event *event,
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
-	// Lookup route from routing table
+	// Get the network related field from the event
 	Packet *packet = network_frame->getPacket();
 	Message *message = packet->getMessage();
 	Network *network = message->getNetwork();
 	Node *source_node = message->getSourceNode();
 	Node *destination_node = message->getDestinationNode();
+
+	// For fix delay go around the network
+	if (network->hasConstantLatency())
+	{
+		// Debug Information
+		debug << misc::fmt("[Network %s] [ Send - Constant Latency ]"
+				"message->packet: %lld-->%d, "
+				"[Source node %s] to [Destination node=\"%s\"]\n",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getId(),
+				source_node->getName().c_str(),
+				destination_node->getName().c_str());
+
+		// Update the network related statistics
+		source_node->incSentBytes(packet->getSize());
+		source_node->incSentPackets();
+		destination_node->incReceivedBytes(packet->getSize());
+		destination_node->incReceivedPackets();
+		packet->setNode(destination_node);
+		esim_engine->Next(event_receive, network->getFixLatency());
+		return;
+	}
+
+	// Lookup route from routing table
 	RoutingTable *routing_table = network->getRoutingTable();
 	RoutingTable::Entry *entry = routing_table->Lookup(source_node, 
 			destination_node);
@@ -63,7 +88,7 @@ void System::EventTypeSendHandler(esim::Event *event,
 	// Dump debug information
 	debug << misc::fmt("[Network %s] [Send Handler]"
 			"message-->packet: %lld-->%d, "
-			"[Source node %s] to [Destination node=\"%s\", "
+			"[Source node %s] to [Destination node=\"%s\"], "
 			"output_buffer=\"%s\"\n",
 			network->getName().c_str(), 
 			message->getId(), 

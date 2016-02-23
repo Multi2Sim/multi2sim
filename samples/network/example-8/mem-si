@@ -601,7 +601,7 @@ AddressRange = ADDR DIV 64 MOD 6 EQ 5
 [Network si-net-l2-0-gm-0] 
 DefaultInputBufferSize = 528
 DefaultOutputBufferSize = 528
-DefaultBandwidth = 2641
+DefaultBandwidth = 264
 
 [Network si-net-l2-1-gm-1]
 DefaultInputBufferSize = 528

@@ -58,7 +58,46 @@ void Network::ParseConfiguration(misc::IniFile *config,
 			"DefaultInputBufferSize",0);
 	default_bandwidth = config->ReadInt(section,
 			"DefaultBandwidth",0);
+	bool ideal = config->ReadBool(section, "Ideal", false);
+	fix_latency = config->ReadInt(section, "FixLatency", 0);
 
+	// In case both ideal and fix latency variables are set
+	if (ideal && fix_latency)
+	{
+		throw Error(misc::fmt("%s: An ideal network is a network"
+				"with a fix latency of 1. Both "
+				"variables cannot be set at the same "
+				"time for the network %s\n%s",
+				config->getPath().c_str(),
+				name.c_str(),
+				System::err_config_note));
+	}
+	else if (ideal && (!fix_latency || fix_latency == 1))
+	{
+		fix_latency = 1;
+
+	}
+
+	// Throw an error if fix latency is not correct
+	// otherwise throw a warning saying a lot of components are
+	// ineffective
+	if (fix_latency < 0)
+	{
+		throw Error(misc::fmt("%s: Network %s cannot have a "
+				"negative fix latency",
+				config->getPath().c_str(),
+				name.c_str()));
+	}
+	else
+	{
+		misc::Warning("Network %s: Simulator is using "
+				"a network with a constant latency. Many of "
+				"the network components (such as links and buses) "
+				"and the topology they form, are now "
+				"ineffective.", name.c_str());
+	}
+
+	// Throw an error if default values are not set
 	if (!default_output_buffer_size || !default_input_buffer_size ||
 			!default_bandwidth)
 		throw misc::Error(misc::fmt(
@@ -145,6 +184,7 @@ void Network::ParseConfigurationForNodes(misc::IniFile *config)
 		int bandwidth = config->ReadInt(section, "BandWidth",
 				default_bandwidth);
 
+		// Error if the buffer sizes are wrong
 		if ((input_buffer_size < 1) || (output_buffer_size < 1) ||
 				(bandwidth < 1))
 			throw Error(misc::fmt("%s: Invalid argument for Node "
@@ -985,21 +1025,33 @@ void Network::Receive(EndNode *node, Message *message)
 	{
 		Packet *packet = message->getPacket(i);
 		Buffer *buffer = packet->getBuffer();
-		buffer->RemovePacket(packet);
 
-		// Updating the trace with extraction of the packet from the buffer
-		System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
-				"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
-				name.c_str(),
-				buffer->getNode()->getName().c_str(),
-				buffer->getName().c_str(),
-				message->getId(), packet->getId(),
-				buffer->getOccupancyInBytes());
+		// In the case the network is fixed, there are no
+		// buffer insertion and extraction. Otherwise, extract
+		// from buffer and report in trace
+		if (!hasConstantLatency())
+		{
+			// Remove the packet from buffer
+			buffer->RemovePacket(packet);
 
-		// Updating the trace with end of packet transmission information
+			// Updating the trace with extraction of the packet
+			// from the buffer
+			System::trace << misc::fmt("net.packet_extract "
+					"net=\"%s\" node=\"%s\" buffer=\"%s\" "
+					"name=\"P-%lld:%d\" occpncy=%d\n",
+					name.c_str(),
+					buffer->getNode()->getName().c_str(),
+					buffer->getName().c_str(),
+					message->getId(), packet->getId(),
+					buffer->getOccupancyInBytes());
+		}
+
+		// Updating the trace with end of packet
+		// transmission information
 		System::trace << misc::fmt("net.end_packet net=\"%s\" "
 				"name=\"P-%lld:%d\"\n",
-				name.c_str(), message->getId(), packet->getId());
+				name.c_str(), message->getId(),
+				packet->getId());
 	}
 
 	// Dump debug information
