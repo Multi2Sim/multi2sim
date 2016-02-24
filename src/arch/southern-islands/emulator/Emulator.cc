@@ -68,9 +68,10 @@ Emulator::Emulator() : comm::Emulator("SouthernIslands")
 }
 
 
-void Emulator::Dump(std::ostream &os) const
+void Emulator::DumpSummary(std::ostream &os) const
 {
 	// FIXME: basic statistics, such as instructions, time...
+	comm::Emulator::DumpSummary(os);
 
 	// More statistics 
 	os << "NDRangeCount = " << num_ndranges << std::endl;
@@ -89,7 +90,14 @@ bool Emulator::Run()
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (!getNumNDRanges())
+	{
+		StopTimer();
 		return false;
+	}
+	else
+	{
+		StartTimer();
+	}
 
 	// NDRange list is shared by CL/GL driver
 	for (auto it = getNDRangesBegin(), e = getNDRangesEnd(); it !=e; ++it)

@@ -967,6 +967,29 @@ void Timing::DumpConfiguration(std::ofstream &os) const
 	
 }
 
+
+void Timing::DumpSummary(std::ostream &os) const
+{
+	// Simulated time in nanoseconds
+	esim::FrequencyDomain *frequency_domain = getFrequencyDomain();
+	double cycle_time = (double) frequency_domain->getCycleTime() / 1e3;
+	os << misc::fmt("SimTime = %.2f [ns]\n", getCycle() * cycle_time);
+
+	// Frequency
+	os << misc::fmt("Frequency = %d [MHz]\n", frequency_domain->getFrequency());
+
+	// Cycles
+	os << misc::fmt("Cycles = %lld\n", getCycle());
+
+	// Cycles per second
+	Emulator *emulator = Emulator::getInstance();
+	double time_in_seconds = (double) emulator->getTimerValue() / 1e6;
+	double cycles_per_second = time_in_seconds > 0.0 ?
+			(double) getCycle() / time_in_seconds : 0.0;
+	os << misc::fmt("CyclesPerSecond = %.0f\n", cycles_per_second);
+}
+
+
 void Timing::DumpReport() const
 {
 	// Check if the report file has been set
@@ -1072,7 +1095,14 @@ bool Timing::Run()
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (!emulator->getNumNDRanges())
+	{
+		emulator->StopTimer();
 		return false;
+	}
+	else
+	{
+		emulator->StartTimer();
+	}
 
 	// Add any available work groups to the waiting list
 	for (auto it = emulator->getNDRangesBegin();

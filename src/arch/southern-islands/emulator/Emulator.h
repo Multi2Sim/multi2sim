@@ -262,9 +262,6 @@ public:
 		return os;
 	}
 
-	/// Get the total number of executed instructions
-	long long getNumInstructions() { return num_instructions; }
-
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return num_ndranges++; }
 	
@@ -327,7 +324,7 @@ public:
 	void incExportInstCount() { num_export_instructions++; }
 
 	/// Dump the statistics summary
-	void DumpSummary(std::ostream &os);
+	void DumpSummary(std::ostream &os) const;
 
 	/// Increase video memory top
 	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }

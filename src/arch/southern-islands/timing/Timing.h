@@ -152,6 +152,9 @@ public:
 	/// Dump the configuration of the GPU and compute units
 	void DumpConfiguration(std::ofstream &os) const;
 
+	/// Dump the statistics summary for the timing simulator.
+	void DumpSummary(std::ostream &os) const override;
+
 	/// Dump a report of all the statistics collected during the execution
 	/// of one or more OpenCL kernels 
 	void DumpReport() const override;

@@ -139,12 +139,6 @@ class Wavefront
 	// Number of emulated instructions
 	long long emu_instruction_count = 0;
 	
-	// Start time of emulation
-	long long emu_time_start = 0;
-
-	// End time of emulation
-	long long emu_time_end = 0;
-
 public:
 
 	/// Constructor
