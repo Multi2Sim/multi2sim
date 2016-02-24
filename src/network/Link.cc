@@ -125,13 +125,15 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the packet is at the head of the buffer
 	if (source_buffer->getBufferHead() != packet)
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - queue] "
-				"message-->packet: %lld-->%d, at "
-				"[node %s], [buffer %s]\n",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_not_buf_head: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
-				node->getName().c_str(),
+				node->getName().c_str(), 
 				source_buffer->getName().c_str());
+
+		// Wait for the head to change
 		source_buffer->Wait(current_event);
 		return;
 	}
@@ -139,15 +141,16 @@ void Link::TransferPacket(Packet *packet)
 	// Check if the link is busy
 	if (busy >= cycle)
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - link busy] "
-				"message-->packet: %lld-->%d, at "
-				"[node %s], [buffer %s], [link %s]\n",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl at %s:%s busy_link: %s\n",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
-				node->getName().c_str(),
+				node->getName().c_str(), 
 				source_buffer->getName().c_str(),
 				getName().c_str());
 
+		// Trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" name=\"P-%lld:%d\" "
 				"state=\"%s:%s:link_busy\" "
@@ -166,15 +169,16 @@ void Link::TransferPacket(Packet *packet)
 	Buffer *next_buffer = VirtualChannelArbitration();
 	if (next_buffer != source_buffer)
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - virtual channel "
-						"arbitration] message-->packet: %lld-->%d, at "
-						"[node %s], [buffer %s], [link %s]\n",
-						network->getName().c_str(),
-						message->getId(), packet->getId(),
-						node->getName().c_str(),
-						source_buffer->getName().c_str(),
-						name.c_str());
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl at %s:%s vc_arb: %s\n",
+				network->getName().c_str(),
+				message->getId(), packet->getId(),
+				node->getName().c_str(), 
+				source_buffer->getName().c_str(),
+				name.c_str());
 
+		// Trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -185,6 +189,7 @@ void Link::TransferPacket(Packet *packet)
 				node->getName().c_str(),
 				source_buffer->getName().c_str());
 
+		// Next cycle to check again
 		esim_engine->Next(current_event, 1);
 		return;
 	}
@@ -198,18 +203,15 @@ void Link::TransferPacket(Packet *packet)
 	long long write_busy = destination_buffer->write_busy;
 	if (write_busy >= cycle)
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - buffer write busy] "
-				"message-->packet: %lld-->%d, at "
-				"[node %s], [buffer %s], [link %s],"
-				"destination: [node %s], [buffer %s]\n",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_dst_buffer: %s:%s",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
-				node->getName().c_str(),
-				source_buffer->getName().c_str(),
-				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
 
+		// Trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -229,25 +231,26 @@ void Link::TransferPacket(Packet *packet)
 	if (destination_buffer->getCount() + packet_size >
 			destination_buffer->getSize())
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - link dst buffer full] "
-				"message-->packet: %lld-->%d, at "
-				"[link %s], destination: [node %s], [buffer %s]\n",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_full_dst_buffer: %s:%s",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
-				name.c_str(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
 
+		// Trace information
 		System::trace << misc::fmt("net.packet "
-                "net=\"%s\" "
-                "name=\"P-%lld:%d\" "
-                "state=\"%s:%s:Dest_buffer_full\" "
-                "stg=\"DBF\"\n",
-                network->getName().c_str(), message->getId(),
-                packet->getId(),
-                node->getName().c_str(),
-                source_buffer->getName().c_str());
+                		"net=\"%s\" "
+		                "name=\"P-%lld:%d\" "
+		                "state=\"%s:%s:Dest_buffer_full\" "
+		                "stg=\"DBF\"\n",
+		                network->getName().c_str(), message->getId(),
+		                packet->getId(),
+		                node->getName().c_str(),
+		                source_buffer->getName().c_str());
 
+		// Wait for a change in the buffer
 		destination_buffer->Wait(current_event);
 		return;
 	}

@@ -79,14 +79,16 @@ void Switch::Forward(Packet *packet)
 	Network *network = message->getNetwork();
 	if (input_buffer->read_busy >= cycle)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - busy source] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_sw_src_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
 				node->getName().c_str(),
 				input_buffer->getName().c_str());
+
+		// Coming back to this event when buffer is not busy
 		esim_engine->Next(current_event, 
 				input_buffer->read_busy - cycle + 1);
 		return;
@@ -107,15 +109,16 @@ void Switch::Forward(Packet *packet)
 	// Check if the output buffer is busy
 	if (output_buffer->write_busy >= cycle)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - busy destination] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_sw_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
 
+		// Update trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -143,15 +146,16 @@ void Switch::Forward(Packet *packet)
 	if (output_buffer->getCount() + packet->getSize() > 
 			output_buffer->getSize())
 	{
-		System::debug << misc::fmt("[Network %s] [stall - full destination] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_full_sw_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
 				output_buffer->getNode()->getName().c_str(),
 				output_buffer->getName().c_str());
 
+		// Update trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -163,6 +167,7 @@ void Switch::Forward(Packet *packet)
 				node->getName().c_str(),
 				input_buffer->getName().c_str());
 
+		// Come back when buffer is not busy
 		output_buffer->Wait(current_event);
 		return;
 	}
@@ -170,9 +175,9 @@ void Switch::Forward(Packet *packet)
 	// If scheduler says that it is not our turn, try later
 	if (Schedule(output_buffer) != input_buffer)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - switch scheduling] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_sw_arb: %s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),

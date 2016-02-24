@@ -902,14 +902,6 @@ Message *Network::Send(EndNode *source_node,
 		int size,
 		esim::Event *receive_event)
 {
-	// Debug information
-	System::debug << misc::fmt("[Network %s] Send %d bytes from "
-			"'%s' to '%s'\n",
-			name.c_str(),
-			size,
-			source_node->getName().c_str(),
-			destination_node->getName().c_str());
-
 	// Get esim engine
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 
@@ -933,6 +925,14 @@ Message *Network::Send(EndNode *source_node,
 			"state=\"%s:packetize\"\n",
 			name.c_str(), message->getId(),
 			source_node->getName().c_str());
+
+	// Debug information
+	System::debug << misc::fmt("net: %s - send M-%lld "
+			"'%s'-->'%s'\n",
+			name.c_str(),
+			message->getId(),
+			source_node->getName().c_str(),
+			destination_node->getName().c_str());
 
 	// Send the message out
 	for (int i = 0; i < message->getNumPackets(); i++)
@@ -1056,8 +1056,9 @@ void Network::Receive(EndNode *node, Message *message)
 	}
 
 	// Dump debug information
-	System::debug << misc::fmt("[Network %s] message %lld received at "
-			"[node %s] \n", name.c_str(), message->getId(),
+	System::debug << misc::fmt("net: %s - M-%lld rcv'd at %s\n",
+			name.c_str(),
+			message->getId(),
 			node->getName().c_str());
 
 	// Updating the trace with the end of the message

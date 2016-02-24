@@ -19,6 +19,7 @@
 
 #include <algorithm>
 
+#include "Message.h"
 #include "Network.h"
 #include "Buffer.h"
 
@@ -51,6 +52,16 @@ void Buffer::InsertPacket(Packet *packet)
 
 	// Insert the packet into buffer
 	packets.push_back(packet);
+
+	// Debug
+	Message *message = packet->getMessage();
+	System::debug << misc::fmt("net: %s - M-%lld:%d - "
+			"insert_buf: %s:%s\n",
+			message->getNetwork()->getName().c_str(),
+			message->getId(),
+			packet->getId(),
+			node->getName().c_str(),
+			name.c_str());
 }
 
 
@@ -112,6 +123,16 @@ void Buffer::ExtractPacket()
 	// Wake up the buffer event queue
 	if (!event_queue.isEmpty())
 		event_queue.WakeupOne();
+
+	// Debug
+	Message *message = packet->getMessage();
+	System::debug << misc::fmt("net: %s - M-%lld:%d - "
+			"extract_buf: %s:%s\n",
+			message->getNetwork()->getName().c_str(),
+			message->getId(),
+			packet->getId(),
+			node->getName().c_str(),
+			name.c_str());
 }
 
 

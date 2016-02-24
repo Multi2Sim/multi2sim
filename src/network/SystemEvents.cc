@@ -55,14 +55,12 @@ void System::EventTypeSendHandler(esim::Event *event,
 	if (network->hasConstantLatency())
 	{
 		// Debug Information
-		debug << misc::fmt("[Network %s] [ Send - Constant Latency ]"
-				"message->packet: %lld-->%d, "
-				"[Source node %s] to [Destination node=\"%s\"]\n",
+		debug << misc::fmt("net: %s - M-%lld:%d -"
+				"fix_lat=%d\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
-				source_node->getName().c_str(),
-				destination_node->getName().c_str());
+				network->getFixLatency());
 
 		// Update the network related statistics
 		source_node->incSentBytes(packet->getSize());
@@ -84,18 +82,6 @@ void System::EventTypeSendHandler(esim::Event *event,
 				network->getName().c_str(),
 				source_node->getName().c_str(),
 				destination_node->getName().c_str()));
-
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Send Handler]"
-			"message-->packet: %lld-->%d, "
-			"[Source node %s] to [Destination node=\"%s\"], "
-			"output_buffer=\"%s\"\n",
-			network->getName().c_str(), 
-			message->getId(), 
-			packet->getId(),
-			source_node->getName().c_str(), 
-			destination_node->getName().c_str(), 
-			output_buffer->getName().c_str());
 
 	// Check if buffer fits the message
 	if (message->getSize() > output_buffer->getSize())
@@ -139,19 +125,8 @@ void System::EventTypeOutputBufferHandler(esim::Event *event,
 
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
-	Message *message = packet->getMessage();
 	Buffer *buffer = packet->getBuffer();
-	Node *node = packet->getNode();
-	Network *network = message->getNetwork();
 
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Output Buffer Event Handler], "
-			"message-->packet: %lld-->%d, "
-			"[Node %s] [Buffer %s]\n",
-			network->getName().c_str(), message->getId(), 
-			packet->getId(), node->getName().c_str(),
-			buffer->getName().c_str());
-	
 	// Let the connection to pass the packet to input buffer
 	Connection *connection = buffer->getConnection();
 	connection->TransferPacket(packet);
@@ -171,16 +146,6 @@ void System::EventTypeInputBufferHandler(esim::Event *event,
 	Packet *packet = network_frame->getPacket();
 	Buffer *buffer = packet->getBuffer();
 	Node *node = packet->getNode();
-	Message *message = packet->getMessage();
-	Network *network = message->getNetwork();
-
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Input Buffer Event Handler], "
-			"message-->packet: %lld-->%d, at "
-			"[Node %s] [Buffer %s]\n",
-			network->getName().c_str(), message->getId(),
-			packet->getId(), node->getName().c_str(),
-			buffer->getName().c_str());
 
 	// If this is the destination node, schedule receive event
 	if (node == packet->getMessage()->getDestinationNode())
@@ -220,12 +185,6 @@ void System::EventTypeReceiveHandler(esim::Event *event,
 	Message *message = packet->getMessage();
 	EndNode *node = dynamic_cast<EndNode *>(packet->getNode());
 	Network *network = message->getNetwork();
-
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Receive Event Handler], "
-			"message-->packet: %lld-->%d, [node %s]\n",
-			network->getName().c_str(), message->getId(),
-			packet->getId(), node->getName().c_str());
 
 	// Check if the message arrived at an end node
 	if (!node)
