@@ -416,6 +416,11 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 			num_wavefront_pools;
 	work_group->wavefront_pool = wavefront_pools[wavefront_pool_id].get();
 
+	// Check if the wavefronts in the work group can fit into the wavefront
+	// pool
+	assert((int) work_group->getWavefrontsInWorkgroup() <= 
+			max_wavefronts_per_wavefront_pool);
+
 	// Insert wavefronts into an instruction buffer
 	work_group->wavefront_pool->MapWavefronts(work_group);
 
