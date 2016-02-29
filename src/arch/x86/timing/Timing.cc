@@ -642,8 +642,7 @@ void Timing::ProcessOptions()
 	// Print x86 configuration INI format
 	if (help)
 	{
-		misc::StringFormatter formatter(help_message);
-		std::cerr << formatter;
+		std::cerr << help_message;
 		exit(0);
 	}
 
