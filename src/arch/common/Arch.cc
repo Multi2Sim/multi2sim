@@ -180,14 +180,14 @@ void ArchPool::DumpSummary(std::ostream &os) const
 	// Dump summary for each architecture
 	for (auto &arch : arch_list)
 	{
-		// Print whether instructions were run for this architecture
-		// or not
+		// Get the emulator
 		Emulator *emulator = arch->getEmulator();
 
 		// Header
 		os << "[ " << arch->getName() << " ]\n";
 
-		// Print statistics summary for emulator
+		// Print statistics summary for emulator even if the number
+		// of executing instructions are zero
 		emulator->DumpSummary(os);
 
 		// Statistics summary for timing simulator

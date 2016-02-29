@@ -42,7 +42,7 @@ void Switch::Dump(std::ostream &os) const
 			(double) sent_bytes / cycle : 0.0 );
 	os << misc::fmt("ReceivedBytes = %lld\n", received_bytes);
 	os << misc::fmt("ReceivedPackets = %lld\n", received_packets);
-	os << misc::fmt("RecieveRate = %0.4f\n", cycle ?
+	os << misc::fmt("ReceiveRate = %0.4f\n", cycle ?
 			(double) received_bytes / cycle : 0.0 );
 
 	// Dumping input buffers' information

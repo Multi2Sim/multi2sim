@@ -102,9 +102,6 @@ class Wavefront
 	// Statistics
 	//
 
-	// Number of instructions executed
-	long long inst_count = 0;
-
 	// Number of scalar memory instructions executed
 	long long scalar_memory_instruction_count = 0;
 	
@@ -129,16 +126,6 @@ class Wavefront
 	// Number of export instructions executed
 	long long export_instruction_count = 0;
 
-
-
-
-	//
-	// Statistics to measure simulation performance
-	//
-	
-	// Number of emulated instructions
-	long long emu_instruction_count = 0;
-	
 public:
 
 	/// Constructor

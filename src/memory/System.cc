@@ -361,6 +361,10 @@ void System::DumpReport()
 		
 		// Dump the memory report
 		Dump(f);
+
+		// For every internal network report in the same file
+		for (auto &network : networks)
+			network->Dump(f);
 	}
 }
 
