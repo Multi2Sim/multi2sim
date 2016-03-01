@@ -1095,14 +1095,7 @@ bool Timing::Run()
 	// For efficiency when no Southern Islands emulation is selected, 
 	// exit here if the list of existing ND-Ranges is empty. 
 	if (!emulator->getNumNDRanges())
-	{
-		emulator->StopTimer();
 		return false;
-	}
-	else
-	{
-		emulator->StartTimer();
-	}
 
 	// Add any available work groups to the waiting list
 	for (auto it = emulator->getNDRangesBegin();

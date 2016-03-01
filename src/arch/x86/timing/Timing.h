@@ -61,9 +61,6 @@ class Timing : public comm::Timing
 	// Report file name
 	static std::string report_file;
 
-	// MMU report file name
-	static std::string mmu_report_file;
-
 	// If true, show a message describing the format for the x86
 	// configuration file. Passed with option --x86-help.
 	static bool help;

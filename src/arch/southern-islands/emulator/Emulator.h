@@ -288,7 +288,9 @@ public:
 	{ 
 		// Check number of ndranges running before incrementing
 		assert(ndranges_running >= 0); 
-		ndranges_running++; 
+		ndranges_running++;
+		if (ndranges_running > 0)
+			StartTimer();
 	}
 	
 	/// Decrement ndranges_running
@@ -297,6 +299,8 @@ public:
 		// Check number number of ndranges running after decrementing
 		ndranges_running--; 
 		assert(ndranges_running  >= 0); 
+		if (ndranges_running == 0)
+			StopTimer();
 	}
 	
 	/// Increment work_group_count

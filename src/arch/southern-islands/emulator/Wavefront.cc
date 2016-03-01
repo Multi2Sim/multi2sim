@@ -192,8 +192,6 @@ void Wavefront::Execute()
 
 	// Update the statistics
 	emulator->incNumInstructions();
-	inst_count++;
-	emu_instruction_count++;
 
 	// Extract the properties of the newest instruction
 	this->inst_size = instruction->getSize();
