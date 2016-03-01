@@ -1512,9 +1512,40 @@ int Context::ExecuteSyscall_pipe()
 // System call 'times'
 //
 
+struct SimTms
+{
+	unsigned utime;
+	unsigned stime;
+	unsigned cutime;
+	unsigned cstime;
+};
+
 int Context::ExecuteSyscall_times()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned tms_ptr = regs.getEbx();
+	emulator->syscall_debug << misc::fmt("  tms_ptr=0x%x\n", tms_ptr);
+
+	// Host call
+	struct tms tms;
+	int err = times(&tms);
+
+	// Write result to guest memory
+	if (tms_ptr)
+	{
+		// Translate to guest structure
+		SimTms sim_tms;
+		sim_tms.utime = tms.tms_utime;
+		sim_tms.stime = tms.tms_stime;
+		sim_tms.cutime = tms.tms_cutime;
+		sim_tms.cstime = tms.tms_cstime;
+
+		// Write to memory
+		memory->Write(tms_ptr, sizeof(SimTms), (char *) &sim_tms);
+	}
+
+	// Return
+	return err;
 }
 
 
