@@ -1081,7 +1081,36 @@ int Context::ExecuteSyscall_stat()
 
 int Context::ExecuteSyscall_lseek()
 {
-	__UNIMPLEMENTED__
+	// Read arguments
+	int guest_fd = regs.getEbx();
+	unsigned offset = regs.getEcx();
+	int origin = regs.getEdx();
+
+	// Debug arguments
+	Emulator::syscall_debug << misc::fmt(
+			"  guest_fd=%d, "
+			"offset=0x%x, "
+			"origin=%d\n",
+			guest_fd,
+			offset,
+			origin);
+	
+	// File descriptor 
+	comm::FileDescriptor *file_descriptor = file_table->getFileDescriptor(guest_fd);
+	if (!file_descriptor)
+		return -EBADF;
+
+	// Translate file descriptor
+	int host_fd = file_descriptor->getHostIndex();
+	Emulator::syscall_debug << misc::fmt("  host_fd = %d\n", host_fd);
+	
+	// Host call
+	int err = lseek(host_fd, offset, origin);
+	if (err == -1)
+		return -errno;
+
+	// Success
+	return err;
 }
 
 
