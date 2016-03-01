@@ -1,9 +1,9 @@
 ;--------------------------------------------Network
 [Network.si-net-l1-l2]
-DefaultInputBufferSize = 4
-DefaultOutputBufferSize = 4
-DefaultBandwidth = 4
-DefaultPacketSize = 4
+DefaultInputBufferSize = 7200
+DefaultOutputBufferSize = 7200
+DefaultBandwidth = 8
+DefaultPacketSize = 8
 ;--------------------------------------------------Nodes
 [Network.si-net-l1-l2.Node.l1s0]
 Type = EndNode
