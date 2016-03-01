@@ -326,13 +326,19 @@ void Core::Writeback()
 		// Extract element from event queue
 		ExtractFromEventQueue(uop.get());
 
-		// If a mispredicted branch is resolved and recovery is
-		// configured at the writeback stage, schedule recovery for the
-		// end of this iteration.
+		// If this instruction is the first in speculative mode
+		// (typically a mispredicted branch), and recovery is configured
+		// to happen at writeback, schedule recovery.
+		//
+		// NOTE - This used to check whether the current instruction
+		// is a mispredicted branch, instead of flag 'first_spec_mode'.
+		// This code was modified because the previous approach didn't
+		// consider the case where a wrong hit in the trace cache was
+		// fetching the wrong instruction.
+		//
 		bool recover = Cpu::getRecoverKind() == Cpu::RecoverKindWriteback
-				&& (uop->getFlags() & Uinst::FlagCtrl)
-				&& !uop->speculative_mode
-				&& uop->neip != uop->predicted_neip;
+				&& uop->first_speculative_mode;
+
 
 		// Trace output. Prevent instructions that are not in the
 		// reorder buffer from writing to the trace. These can be either

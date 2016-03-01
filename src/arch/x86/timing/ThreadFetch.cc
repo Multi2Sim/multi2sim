@@ -62,12 +62,20 @@ Thread::FetchStall Thread::canFetch()
 
 Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 {
+	// A context must be mapped
+	assert(context);
+
 	// Advance current fetch instruction pointer
 	fetch_eip = fetch_neip;
 
+	// Record previous speculative mode
+	bool previous_speculative_mode = context->getState(Context::StateSpecMode);
+
 	// Force it in the emulator, entering speculative mode if necessary
-	assert(context);
 	context->setEip(fetch_eip);
+
+	// Record new speculative mode
+	bool speculative_mode = context->getState(Context::StateSpecMode);
 
 	// Run emulation
 	context->Execute();
@@ -106,12 +114,17 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 		// Other fields
 		uop->eip = fetch_eip;
 		uop->from_trace_cache = fetch_from_trace_cache;
-		uop->speculative_mode = context->getState(Context::StateSpecMode);
+		uop->speculative_mode = speculative_mode;
 		uop->fetch_address = fetch_address;
 		uop->fetch_access = fetch_access;
 		uop->neip = context->getRegs().getEip();
 		uop->predicted_neip = fetch_neip;
 		uop->target_neip = context->getTargetEip();
+
+		// Record whether this uop is the first in spec mode
+		uop->first_speculative_mode = uinst_index == 0 &&
+				!previous_speculative_mode &&
+				speculative_mode;
 
 		// Calculate physical address of a memory access
 		if (uop->getFlags() & Uinst::FlagMem)
@@ -136,6 +149,10 @@ Uop *Thread::FetchInstruction(bool fetch_from_trace_cache)
 			// Speculative mode
 			if (uop->speculative_mode)
 				Timing::trace << " spec=\"t\"";
+
+			// First instruction in speculative mode
+			if (uop->first_speculative_mode)
+				Timing::trace << " first_spec=\"t\"";
 
 			// Macro-instruction disassembly
 			if (!uinst_index)

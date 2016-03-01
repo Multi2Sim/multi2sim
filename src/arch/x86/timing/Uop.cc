@@ -102,6 +102,7 @@ void Uop::Dump(std::ostream &os) const
 	os << "id = " << id << ", ";
 	os << misc::fmt("eip = 0x%x, ", eip);
 	os << misc::fmt("spec = %c, ", speculative_mode ? 't' : 'f');
+	os << misc::fmt("first_spec = %c, ", first_speculative_mode ? 't' : 'f');
 	os << misc::fmt("trace_cache = %c, ", from_trace_cache ? 't' : 'f');
 
 	// Memory access
