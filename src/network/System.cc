@@ -225,7 +225,7 @@ void System::ReadConfiguration()
 		// trace, since we have a configuration file, but the trace
 		// will be updated only if the traceSystem is active as well.
 		trace.On();
-		if (trace)
+		if ((trace) && (stand_alone))
 			TraceHeader();
 	}
 }

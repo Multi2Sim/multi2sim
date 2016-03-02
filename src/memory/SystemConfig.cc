@@ -1376,16 +1376,28 @@ void System::ConfigTrace()
 	trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n",
 			trace_version_major, trace_version_minor));
 
-	// Internal Networks
-	for (auto& net : networks)
-		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
-				net->getName().c_str(), net->getNumNodes()));
-
-	// External Networks
+	// External Networks trace commands from network section
 	net::System *net_system = net::System::getInstance();
+	net_system->TraceHeader();
+
 	for (int i = 0; i < net_system->getNumNetworks(); i++)
 	{
 		net::Network *net = net_system->getNetwork(i);
+
+		// Trace command from the memory section
+		trace.Header(misc::fmt("mem.new_net name=\"%s\" "
+				"num_nodes=%d\n",
+				net->getName().c_str(), 
+				net->getNumNodes()));
+	}
+
+	// Internal Networks
+	for (auto& net : networks)
+	{
+		// Trace commands from Network section
+		net->TraceHeader();
+
+		// Trace commands from Memory section
 		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
 				net->getName().c_str(), net->getNumNodes()));
 	}
