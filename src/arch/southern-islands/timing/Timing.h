@@ -112,6 +112,10 @@ public:
 	/// '--si-sim-kind'.
 	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 
+	/// Southern Island GPU trace version identifier
+	static const int trace_version_major;
+	static const int trace_version_minor;
+
 	/// Trace for visualization
 	static esim::Trace trace;
 

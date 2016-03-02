@@ -31,6 +31,8 @@ std::unique_ptr<Timing> Timing::instance;
 
 esim::Trace Timing::trace;
 
+const int Timing::trace_version_major = 1;
+const int Timing::trace_version_minor = 671;
 
 
 //
@@ -249,6 +251,12 @@ Timing::Timing() : comm::Timing("x86")
 
 	// Create CPU
 	cpu = misc::new_unique<Cpu>(this);
+
+	// Create the trace header related to CPU
+	trace.Header(misc::fmt("x86.init version=\"%d.%d\" "
+			"num_cores=%d num_threads=%d\n",
+			trace_version_major, trace_version_minor,
+			cpu->getNumCores(), cpu->getNumThreads()));
 }
 
 

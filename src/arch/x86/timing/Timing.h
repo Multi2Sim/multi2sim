@@ -120,6 +120,9 @@ public:
 	/// Timing simulator trace
 	static esim::Trace trace;
 
+	/// Major and Minor versions of the trace
+	static const int trace_version_major;
+	static const int trace_version_minor;
 
 
 

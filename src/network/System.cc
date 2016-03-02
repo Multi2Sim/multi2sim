@@ -57,6 +57,9 @@ bool System::help = false;
 
 int System::frequency = 1000;
 
+const int System::trace_version_major = 1;
+const int System::trace_version_minor = 10;
+
 std::unique_ptr<System> System::instance;
 
 

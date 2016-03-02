@@ -32,8 +32,8 @@ namespace mem
 {
 
 
-const int System::TraceVersionMajor = 1;
-const int System::TraceVersionMinor = 678;
+const int System::trace_version_major = 1;
+const int System::trace_version_minor = 678;
 
 const std::string System::help_message =
 	"Option '--mem-config <file>' is used to configure the memory system. The\n"
@@ -1374,7 +1374,7 @@ void System::ConfigTrace()
 {
 	// Initialization
 	trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n",
-			TraceVersionMajor, TraceVersionMinor));
+			trace_version_major, trace_version_minor));
 
 	// Internal Networks
 	for (auto& net : networks)

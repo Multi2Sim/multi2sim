@@ -126,7 +126,7 @@ void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
 		fetch_buffer->Remove(oldest_uop_iterator);
 
 		// Trace
-		Timing::trace << misc::fmt("si.instruction "
+		Timing::trace << misc::fmt("si.inst "
 				"id=%lld "
 				"cu=%d "
 				"wf=%d "

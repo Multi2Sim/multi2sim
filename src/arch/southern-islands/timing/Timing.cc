@@ -32,6 +32,9 @@ namespace SI
 // Singleton instance
 std::unique_ptr<Timing> Timing::instance;
 
+// Trace versions
+const int Timing::trace_version_major = 1;
+const int Timing::trace_version_minor = 1;
 
 
 //
@@ -242,6 +245,12 @@ Timing::Timing() : comm::Timing("SouthernIslands")
 
 	// Create GPU
 	gpu = misc::new_unique<Gpu>();
+
+	/// Adding the SI related header to the trace
+	trace.Header(misc::fmt("si.init version=\"%d.%d\" "
+			"num_compute_units=%d\n",
+			trace_version_major, trace_version_minor,
+			gpu->num_compute_units));
 }
 
 

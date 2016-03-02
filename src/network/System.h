@@ -101,8 +101,8 @@ class System
 	static int message_size;
 
 	// Network trace version identifiers
-	static const int trace_version_major = 1;
-	static const int trace_version_minor = 10;
+	static const int trace_version_major;
+	static const int trace_version_minor;
 
 	// Get a exponential random valueclass Network;
 	static double RandomExponential(double lambda);
