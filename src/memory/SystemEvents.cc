@@ -1535,7 +1535,7 @@ void System::EventEvictHandler(esim::Event *event,
 				event_evict_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -1813,7 +1813,7 @@ void System::EventEvictHandler(esim::Event *event,
 				event_evict_reply_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -1953,7 +1953,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 				event_write_request_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -2409,7 +2409,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 				event_write_request_finish,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3175,7 +3175,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 				event_read_request_finish,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3408,7 +3408,7 @@ void System::EventMessageHandler(esim::Event *event,
 
 		// Trace
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3535,7 +3535,7 @@ void System::EventMessageHandler(esim::Event *event,
 
 		// Trace
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
