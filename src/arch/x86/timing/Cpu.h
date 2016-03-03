@@ -61,8 +61,7 @@ public:
 	{
 		FetchKindInvalid = 0,
 		FetchKindShared,
-		FetchKindTimeslice,
-		FetchKindSwitchonevent
+		FetchKindTimeslice
 	};
 
 	/// Fetch kind string map

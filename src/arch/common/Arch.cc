@@ -93,11 +93,11 @@ std::string ArchPool::getArchNames()
 }
 
 
-void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
+void ArchPool::Run(int &num_active_emulators, int &num_active_timing_simulators)
 {
 	// Reset active counters
-	num_emulator_active = 0;
-	num_timing_active = 0;
+	num_active_emulators = 0;
+	num_active_timing_simulators = 0;
 
 	// Run one iteration for each architecture
 	for (auto &arch : arch_list)
@@ -120,7 +120,7 @@ void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
 			// Increase number of active emulatorlations if the architecture
 			// actually performed a useful emulatorlation iteration.
 			if (active)
-				num_emulator_active++;
+				num_active_emulators++;
 
 			// Done
 			break;
@@ -142,7 +142,17 @@ void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
 			// the main simulation loop, we must skip this call.
 			long long cycle = frequency_domain->getCycle();
 			if (cycle == timing->getLastSimulationCycle())
+			{
+				// We skip it, but the timing simulation is still
+				// considered to be active.
+				//
+				// NOTE: This statement was added after finding
+				// the problem that the simulation ends right
+				// away when the frequency of all architectures
+				// is lower than the memory.
+				num_active_timing_simulators++;
 				continue;
+			}
 
 			// Run
 			bool active = timing->Run();
@@ -157,7 +167,7 @@ void ArchPool::Run(int &num_emulator_active, int &num_timing_active)
 			if (active)
 			{
 				timing->SaveLastSimulationCycle();
-				num_timing_active++;
+				num_active_timing_simulators++;
 			}
 
 			// Done
