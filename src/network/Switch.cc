@@ -70,8 +70,9 @@ void Switch::Forward(Packet *packet)
 	// Assert the input buffer is an input buffer of current node
 	Node *node  = input_buffer->getNode();
 	if (node != this) 
-		throw misc::Panic(misc::fmt("Trying to forward a packet "
-				"that is not in current switch").c_str());
+		throw misc::Panic(misc::fmt("Trying to forward "
+				"a packet that is not in current "
+				"switch").c_str());
 
 	// Check if the input buffer is in read busy
 	long long cycle = System::getInstance()->getCycle();
@@ -100,7 +101,8 @@ void Switch::Forward(Packet *packet)
 	RoutingTable::Entry *entry = 
 			routing_table->Lookup(node, destination_node);
 	if (!entry) 
-		throw misc::Panic(misc::fmt("%s: no route from %s to %s.",
+		throw misc::Panic(misc::fmt("%s: no route from %s "
+				"to %s.",
 				network->getName().c_str(), 
 				node->getName().c_str(), 
 				destination_node->getName().c_str()));
@@ -115,7 +117,8 @@ void Switch::Forward(Packet *packet)
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
-				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getNode()->
+				getName().c_str(),
 				output_buffer->getName().c_str());
 
 		// Update trace information
@@ -136,10 +139,11 @@ void Switch::Forward(Packet *packet)
 		return;
 	}
 
-	// Check if the destination buffer target enough to fit the packet
+	// Check if the destination buffer has enough storage
+	// to fit the packet
 	if (packet->getSize() > output_buffer->getSize())
-		throw misc::Panic(misc::fmt("%s: packet does not fit in "
-				"buffer.\n", 
+		throw misc::Panic(misc::fmt("%s: packet does not "
+				"fit in buffer.\n",
 				network->getName().c_str()));
 
 	// If destination output buffer is full, wait
@@ -152,7 +156,8 @@ void Switch::Forward(Packet *packet)
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
-				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getNode()->
+				getName().c_str(),
 				output_buffer->getName().c_str());
 
 		// Update trace information
@@ -199,16 +204,18 @@ void Switch::Forward(Packet *packet)
 	packet->setBusy(cycle + latency - 1);
 
 	// Buffer's trace information
-	System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
-			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	System::trace << misc::fmt("net.packet_extract "
+			"net=\"%s\" node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			input_buffer->getNode()->getName().c_str(),
 			input_buffer->getName().c_str(),
 			message->getId(), packet->getId(),
 			input_buffer->getOccupancyInBytes());
 
-	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
-			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" "
+			"node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			output_buffer->getNode()->getName().c_str(),
 			output_buffer->getName().c_str(),
@@ -222,7 +229,8 @@ void Switch::Forward(Packet *packet)
 
 Buffer *Switch::Schedule(Buffer *output_buffer) 
 {
-	// Checks if the scheduler is an output buffer of current switch	
+	// Checks if the scheduler is an output buffer
+	// of current switch
 	bool is_output_buffer = false;
 	for (auto &buffer : output_buffers) 
 		if (output_buffer == buffer.get())
@@ -231,8 +239,8 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 			break;
 		}
 	if (!is_output_buffer) 
-		throw misc::Panic(misc::fmt("Buffer %s is not and output "
-				"buffer of switch %s.", 
+		throw misc::Panic(misc::fmt("Buffer %s is not and "
+				"output buffer of switch %s.",
 				output_buffer->getName().c_str(),
 				this->getName().c_str()));
 
@@ -247,7 +255,7 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 	output_buffer->setScheduledCycle(cycle);
 
 	// Get the index of the buffer of the previous devision. If no 
-	// previous decision is make, use 0
+	// previous decision is made, use 0
 	int previous_input_buffer_index = output_buffer->getScheduledBuffer() ?
 		output_buffer->getScheduledBuffer()->getIndex() : 0;
 	

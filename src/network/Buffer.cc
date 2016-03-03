@@ -122,7 +122,7 @@ void Buffer::ExtractPacket()
 
 	// Wake up the buffer event queue
 	if (!event_queue.isEmpty())
-		event_queue.WakeupOne();
+		event_queue.WakeupAll();
 
 	// Debug
 	Message *message = packet->getMessage();

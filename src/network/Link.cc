@@ -205,7 +205,7 @@ void Link::TransferPacket(Packet *packet)
 	{
 		// Update debug information
 		System::debug << misc::fmt("net: %s - M-%lld:%d - "
-				"stl_busy_dst_buffer: %s:%s",
+				"stl_busy_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
 				destination_buffer->getNode()->getName().c_str(),
@@ -233,7 +233,7 @@ void Link::TransferPacket(Packet *packet)
 	{
 		// Update debug information
 		System::debug << misc::fmt("net: %s - M-%lld:%d - "
-				"stl_full_dst_buffer: %s:%s",
+				"stl_full_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
 				destination_buffer->getNode()->getName().c_str(),
