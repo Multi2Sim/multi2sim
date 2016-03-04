@@ -162,6 +162,7 @@ AC_ARG_ENABLE(profile,
 	case "${enableval}" in
 	yes)
 		CFLAGS+=" -pg"
+		CXXFLAGS+=" -pg"
 		profile=true
 		;;
 	no)
