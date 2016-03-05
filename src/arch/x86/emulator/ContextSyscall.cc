@@ -38,6 +38,7 @@
 #include <lib/cpp/Misc.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
+#include <arch/x86/timing/Cpu.h>
 
 #include "Context.h"
 #include "Emulator.h"
@@ -5915,7 +5916,54 @@ int Context::ExecuteSyscall_sched_setaffinity()
 
 int Context::ExecuteSyscall_sched_getaffinity()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int size = regs.getEcx();
+	unsigned mask_ptr = regs.getEdx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  pid=%d, "
+			"size=%d, "
+			"mask_ptr=0x%x\n",
+			pid,
+			size,
+			mask_ptr);
+	
+	// Check valid size (assume reasonable maximum of 1KB
+	if (!misc::inRange(size, 0, 1024))
+		throw Error(misc::fmt("Invalid range for size (%d)", size));
+
+	// Find context associated with 'pid'. If the value given in 'pid' is
+	// zero, the current context is used.
+	Context *target_context = pid ? emulator->getContext(pid) : this;
+	if (!target_context)
+		return -ESRCH;
+
+	// Allocate mask
+	auto mask = misc::new_unique_array<char>(size);
+
+	// Read mask from context affinity bitmap
+	int node = 0;
+	int num_nodes = Cpu::getNumCores() * Cpu::getNumThreads();
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			// Get affinity
+			char bit = target_context->thread_affinity->Test(node);
+			mask[i] |= bit << j;
+			
+			// Next node
+			node++;
+		}
+	}
+	
+	// Return mask
+	memory->Write(mask_ptr, size, mask.get());
+
+	// Return sizeof(cpu_set_t) = 32
+	return 32;
 }
 
 
