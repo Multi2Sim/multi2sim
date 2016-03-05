@@ -392,6 +392,10 @@ NDRange *Emulator::addNDRange()
 	// Save iterator to the position in the ND-range list
 	ndrange->ndranges_iterator = it;
 
+	// Debug info
+	scheduler_debug << misc::fmt("NDRange %d added\n",
+			ndrange->getId());
+
 	// Return created ND-range
 	return ndrange;
 }
@@ -399,6 +403,10 @@ NDRange *Emulator::addNDRange()
 
 void Emulator::RemoveNDRange(NDRange *ndrange)
 {
+	//Debug info
+	scheduler_debug << misc::fmt("NDRange %d removed\n",
+			ndrange->getId());
+
 	assert(ndrange->ndranges_iterator != ndranges.end());
 	ndranges.erase(ndrange->ndranges_iterator);
 }

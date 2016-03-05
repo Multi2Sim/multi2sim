@@ -106,10 +106,11 @@ void Thread::MapContext(Context *context)
 
 	// Debug
 	Emulator::context_debug << misc::fmt("@%lld Context %d mapped "
-			"to thread %s\n",
+			"to Core %d Thread %d\n",
 			cpu->getCycle(),
 			context->getId(),
-			name.c_str());
+			core->getId(),
+			getIdInCore());
 }
 
 
