@@ -273,8 +273,6 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		wavefront->Execute();
 		wavefront_pool_entry->ready = false;
 
-		//printf("wf: %d | wf_pool: %d | cu: %d\n", wavefront->getId(), wavefront_pool->getId(), index);
-		
 		// Create uop
 		auto uop = misc::new_unique<Uop>(
 				wavefront,
@@ -372,6 +370,7 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 	// Checks
 	assert(work_group);
 	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+	assert(!work_group->id_in_compute_unit);
 
 	// Find an available slot
 	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()

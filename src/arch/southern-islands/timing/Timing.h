@@ -121,7 +121,6 @@ public:
 
 
 
-
 	//
 	// Class members
 	//

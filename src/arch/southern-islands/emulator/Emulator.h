@@ -92,6 +92,9 @@ private:
 	// Debug file for ISA
 	static std::string isa_debug_file;
 	
+	// Debug file for scheduler
+	static std::string scheduler_debug_file;
+
 	// Singleton
 	static std::unique_ptr<Emulator> instance;
 
@@ -186,6 +189,9 @@ public:
 
 	/// Debugger for ISA traces
 	static misc::Debug isa_debug;
+
+	/// Scheduler debug
+	static misc::Debug scheduler_debug;
 
 	/// Initialize a buffer description of type EmuBufferDesc
 	static void createBufferDesc(unsigned base_addr, unsigned size,

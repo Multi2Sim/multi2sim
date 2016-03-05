@@ -40,6 +40,9 @@ std::string Emulator::isa_debug_file;
 
 long long Emulator::max_instructions;
 
+std::string Emulator::scheduler_debug_file;
+ 
+misc::Debug Emulator::scheduler_debug;
 
 Emulator *Emulator::getInstance()
 {
@@ -364,12 +367,19 @@ void Emulator::RegisterOptions()
 			"Maximum number of ISA instructions. An instruction "
 			"executed by an entire wavefront counts as 1 toward "
 			"this limit. Use 0 (default) for no limit.");
+
+	// Option --si-debug-scheduler
+	command_line->RegisterString("--si-debug-scheduler <file>",
+			scheduler_debug_file,
+			"File to dump how the work groups, and wavefronts are "
+			"scheduled on the Gpu's compute units.");
 }
 
 
 void Emulator::ProcessOptions()
 {
 	isa_debug.setPath(isa_debug_file);
+	scheduler_debug.setPath(scheduler_debug_file);
 }
 	
 	
