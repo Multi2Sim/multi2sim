@@ -46,11 +46,12 @@ void Cpu::AllocateContext(Context *context)
 	thread->setFetchNeip(context->getRegs().getEip());
 
 	// Debug
-	Emulator::context_debug << misc::fmt("@%lld Context %d in thread "
-			"%s allocated\n",
+	Emulator::context_debug << misc::fmt("@%lld Context %d "
+			"allocated in Core %d Thread %d\n",
 			getCycle(),
 			context->getId(),
-			thread->getName().c_str());
+			core->getId(),
+			thread->getIdInCore());
 
 	// Trace
 	Timing::trace << misc::fmt("x86.map_ctx "

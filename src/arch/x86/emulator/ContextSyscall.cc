@@ -5904,7 +5904,83 @@ int Context::ExecuteSyscall_futex()
 
 int Context::ExecuteSyscall_sched_setaffinity()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int size = regs.getEcx();
+	unsigned mask_ptr = regs.getEdx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  pid=%d, "
+			"size=%d, "
+			"mask_ptr=0x%x\n",
+			pid,
+			size,
+			mask_ptr);
+
+	// Check valid size (assume reasonable maximum of 1KB)
+	if (!misc::inRange(size, 0, 1024))
+		throw Error(misc::fmt("Invalid range for 'size' (%d)", size));
+
+	// Read mask
+	auto mask = misc::new_unique_array<char>(size);
+	memory->Read(mask_ptr, size, mask.get());
+
+	// Dump it
+	if (emulator->syscall_debug)
+	{
+		emulator->syscall_debug << "  CPUs = {";
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < 8; j++)
+				if (mask[i] & (1 << j))
+					emulator->syscall_debug << ' '
+							<< (i * 8 + j);
+		emulator->syscall_debug << " }\n";
+	}
+
+	// Find context associated with 'pid'. If the value given in 'pid' is
+	// zero, the current context is used.
+	Context *target_context = pid ? emulator->getContext(pid) : this;
+	if (!target_context)
+		return -ESRCH;
+
+	// Count number of effective valid bits in the mask.
+	int num_bits = 0;
+	int node = 0;
+	int num_nodes = Cpu::getNumCores() * Cpu::getNumThreads();
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			num_bits += mask[i] & (1 << j) ? 1 : 0;
+			node++;
+		}
+	}
+
+	// We need at least one bit to be set for the program to make forward
+	// progress hereafter.
+	if (!num_bits)
+		return -EINVAL;
+
+	// Set context affinity
+	node = 0;
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			bool value = (mask[i] & (1 << j)) > 0;
+			target_context->thread_affinity->Set(node, value);
+			node++;
+		}
+	}
+
+	// Changing the context affinity might force it to be evicted and unmapped
+	// from the current node where it is running (timing simulation only). We
+	// need to force a call to the scheduler.
+	emulator->schedule_signal = 1;
+
+	// Success
+	return 0;
 }
 
 
