@@ -35,6 +35,10 @@ Thread::FetchStall Thread::canFetch()
 	// The context must be running
 	if (!context->getState(Context::StateRunning))
 		return FetchStallSuspended;
+	
+	// The current context must not have been sent an eviction signal
+	if (context->evict_signal)
+		return FetchStallContext;
 
 	// Fetch queue must have not exceeded the limit of stored bytes to be
 	// able to store new macro-instructions.

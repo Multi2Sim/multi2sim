@@ -196,10 +196,11 @@ void Thread::EvictContext()
 
 	// Debug
 	Emulator::context_debug << misc::fmt("@%lld Context %d evicted "
-			"from thread %s\n",
+			"from Core %d Thread %d\n",
 			cpu->getCycle(),
 			context->getId(),
-			name.c_str());
+			core->getId(),
+			getIdInCore());
 
 	// Trace
 	Timing::trace << misc::fmt("x86.unmap_ctx "
@@ -227,11 +228,37 @@ void Thread::Schedule()
 
 		// Context not in 'running' state
 		if (!context->evict_signal && !context->getState(Context::StateRunning))
+		{
+			// Debug
+			Emulator::context_debug << misc::fmt(
+					"@%lld Context %d "
+					"in Core %d Thread %d not "
+					"in Running state anymore\n",
+					cpu->getCycle(),
+					context->getId(),
+					core->getId(),
+					getIdInCore());
+
+			// Evict context
 			EvictContextSignal();
+		}
 
 		// Context lost affinity with the thread
 		if (!context->evict_signal && !context->thread_affinity->Test(id_in_cpu))
+		{
+			// Debug
+			Emulator::context_debug << misc::fmt(
+					"@%lld Context %d "
+					"lost affinity with Core %d "
+					"Thread %d - rescheduling\n",
+					cpu->getCycle(),
+					context->getId(),
+					core->getId(),
+					getIdInCore());
+			
+			// Evict context
 			EvictContextSignal();
+		}
 
 		// Context quantum expired
 		if (!context->evict_signal && cpu->getCycle()
