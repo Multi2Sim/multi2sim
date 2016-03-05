@@ -375,11 +375,13 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 	// Find an available slot
 	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()
-			&& work_group->id_in_compute_unit < (int) work_groups.size())
+			&& work_group->id_in_compute_unit < 
+			(int) work_groups.size())
 		work_group->id_in_compute_unit++;
 
 	// Checks
-	assert(work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit());
+	assert(work_group->id_in_compute_unit <
+			gpu->getWorkGroupsPerComputeUnit());
 
 	// Insert work group into the list
 	AddWorkGroup(work_group);
@@ -405,7 +407,8 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 		// Set wavefront Id
 		wavefront->id_in_compute_unit = work_group->id_in_compute_unit *
-				work_group->getWavefrontsInWorkgroup() + wavefront_id;
+				work_group->getWavefrontsInWorkgroup() +
+				wavefront_id;
 
 		// Update internal counter
 		wavefront_id++;
@@ -418,7 +421,7 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 	// Check if the wavefronts in the work group can fit into the wavefront
 	// pool
-	assert((int) work_group->getWavefrontsInWorkgroup() <= 
+	assert((int) work_group->getWavefrontsInWorkgroup() <=
 			max_wavefronts_per_wavefront_pool);
 
 	// Insert wavefronts into an instruction buffer

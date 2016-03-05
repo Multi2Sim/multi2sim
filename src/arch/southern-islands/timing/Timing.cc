@@ -1118,27 +1118,32 @@ bool Timing::Run()
 		WorkGroup *work_group = nullptr;
 		
 		// Save the number of waiting work groups
-		unsigned num_work_groups = ndrange->getNumWaitingWorkgroups();
+		unsigned num_waiting_work_groups = ndrange->
+				getNumWaitingWorkgroups();
 
 		// Map work groups to compute units
-		for (unsigned i = 0; i < num_work_groups; i++)
+		for (unsigned i = 0; i < num_waiting_work_groups; i++)
 		{
+			// Get an available compute unit
+			ComputeUnit *available_compute_unit =
+					gpu->getAvailableComputeUnit();
+
+			// Exit if no compute unit available
+			if (!available_compute_unit)
+				break;
+
 			// Remove work group from list and get its ID
 			long work_group_id = ndrange->GetWaitingWorkGroup();
 			work_group = ndrange->ScheduleWorkGroup(work_group_id);
 
-			// Get an available compute unit
-			ComputeUnit *compute_unit = 
-					gpu->getAvailableComputeUnit();
-			assert(compute_unit);
-
 			// Remove it from the available compute units list.
 			// It will be re-added later if it still has room for
 			// more work groups.
-			gpu->RemoveFromAvailableComputeUnits(compute_unit);
+			gpu->RemoveFromAvailableComputeUnits(
+					available_compute_unit);
 
 			// Map the work group to a compute unit
-			compute_unit->MapWorkGroup(work_group);
+			available_compute_unit->MapWorkGroup(work_group);
 		}
 
 		// If a context has been suspended while waiting for the ndrange
