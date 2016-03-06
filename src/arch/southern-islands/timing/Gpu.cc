@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emulator/Emulator.h>
 #include <arch/southern-islands/emulator/NDRange.h>
 
 #include "Gpu.h"
@@ -122,6 +123,14 @@ void Gpu::MapNDRange(NDRange *ndrange)
 			ComputeUnit::num_wavefront_pools;
 	assert(work_groups_per_wavefront_pool <=
 			ComputeUnit::max_work_groups_per_wavefront_pool);
+	// Debug info
+	Emulator::scheduler_debug << misc::fmt("NDRange %d calculations:\n"
+			"\t%d work group per wavefront pool\n"
+			"\t%d work group slot per compute unit\n",
+			ndrange->getId(),
+			work_groups_per_wavefront_pool,
+			work_groups_per_compute_unit);
+	
 }
 
 

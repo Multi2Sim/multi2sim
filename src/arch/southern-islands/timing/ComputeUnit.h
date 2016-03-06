@@ -72,7 +72,7 @@ class ComputeUnit
 	int index;
 
 	// List of work-groups currently mapped to the compute unit
-	std::list<WorkGroup *> work_groups;
+	std::vector<WorkGroup *> work_groups;
 
 	// Variable number of wavefront pools
 	std::vector<std::unique_ptr<WavefrontPool>> wavefront_pools;

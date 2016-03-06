@@ -251,6 +251,10 @@ Timing::Timing() : comm::Timing("SouthernIslands")
 			"num_compute_units=%d\n",
 			trace_version_major, trace_version_minor,
 			gpu->num_compute_units));
+
+	// Debug info
+	Emulator::scheduler_debug << "SI Gpu with " << gpu->num_compute_units 
+			<< " compute unit is created\n";
 }
 
 

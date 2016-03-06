@@ -557,7 +557,7 @@ public:
 	/// Move a workgroup the in waiting list to the running list. This 
 	/// function will move all the work groups in the waiting list to the 
 	/// running list
-	WorkGroup *ScheduleWorkGroup(long id);
+	WorkGroup *ScheduleWorkGroup(unsigned id);
 	
 	/// Add ID of workgroups to waitinglist
 	void AddWorkgroupIdToWaitingList(long work_group_id);

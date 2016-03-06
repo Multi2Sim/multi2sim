@@ -327,7 +327,7 @@ void NDRange::AddWorkgroupIdToWaitingList(long work_group_id)
 }
 			
 
-WorkGroup *NDRange::ScheduleWorkGroup(long id)
+WorkGroup *NDRange::ScheduleWorkGroup(unsigned id)
 {
 	// Create work-group
 	auto it = work_groups.emplace(work_groups.end(),
@@ -337,6 +337,12 @@ WorkGroup *NDRange::ScheduleWorkGroup(long id)
 	WorkGroup *work_group = work_groups.back().get();
 	work_group->work_groups_iterator = it;
 
+	// Debug info
+	Emulator::scheduler_debug <<
+			misc::fmt("[NDRange %d] "
+			"work group %d scheduled\n",
+			this->id, work_group->getId());
+ 
 	// Return new work-group
 	return work_group;
 }
@@ -344,6 +350,12 @@ WorkGroup *NDRange::ScheduleWorkGroup(long id)
 
 void NDRange::RemoveWorkGroup(WorkGroup *work_group)
 {
+	// Debug info
+	Emulator::scheduler_debug << 
+			misc::fmt("[NDRange %d] "
+			"work group %d removed\n",
+			id, work_group->getId());
+
 	// Erase work group
 	assert(work_group->work_groups_iterator != work_groups.end());
 	work_groups.erase(work_group->work_groups_iterator);

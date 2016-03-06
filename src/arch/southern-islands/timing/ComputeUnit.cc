@@ -18,6 +18,7 @@
  */
 
 #include <arch/southern-islands/disassembler/Instruction.h>
+#include <arch/southern-islands/emulator/Emulator.h>
 #include <arch/southern-islands/emulator/NDRange.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkGroup.h>
@@ -369,18 +370,29 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 {
 	// Checks
 	assert(work_group);
-	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+	assert((int) work_groups.size() <= gpu->getWorkGroupsPerComputeUnit());
 	assert(!work_group->id_in_compute_unit);
 
 	// Find an available slot
 	while (work_group->id_in_compute_unit < gpu->getWorkGroupsPerComputeUnit()
-			&& work_group->id_in_compute_unit < 
-			(int) work_groups.size())
+			&& (work_group->id_in_compute_unit < 
+			(int) work_groups.size()) && 
+			(work_groups[work_group->id_in_compute_unit] != nullptr))
 		work_group->id_in_compute_unit++;
 
 	// Checks
 	assert(work_group->id_in_compute_unit <
 			gpu->getWorkGroupsPerComputeUnit());
+
+	// Save timing simulator
+	timing = Timing::getInstance();
+
+	// Debug
+	Emulator::scheduler_debug << misc::fmt("@%lld available slot %d "
+			"found in compute unit %d\n",
+			timing->getCycle(),
+			work_group->id_in_compute_unit,
+			index);
 
 	// Insert work group into the list
 	AddWorkGroup(work_group);
@@ -428,7 +440,17 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 	// Increment count of mapped work groups
 	num_mapped_work_groups++;
-	
+
+	// Debug info
+	Emulator::scheduler_debug << misc::fmt("\t\tfirst wavefront=%d, "
+			"count=%d\n"
+			"\t\tfirst work-item=%d, count=%d\n",
+			work_group->getWavefront(0)->getId(),
+			work_group->getNumWavefronts(),
+			work_group->getWorkItem(0)->getId(),
+			work_group->getNumWorkItems());
+
+	// Trace info
 	Timing::trace << misc::fmt("si.map_wg "
 				   "cu=%d "
 				   "wg=%d "
@@ -445,22 +467,50 @@ void ComputeUnit::MapWorkGroup(WorkGroup *work_group)
 
 void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
 {
-	// Add work-group                                                     
-	work_groups.push_back(work_group);                  
+	// Add a work group only if the id in compute unit is the id for a new 
+	// work group in the compute unit's list
+	int index = work_group->id_in_compute_unit;
+	if (index == (int) work_groups.size() &&
+			(int) work_groups.size() < 
+			gpu->getWorkGroupsPerComputeUnit())
+	{
+		work_groups.push_back(work_group);
+	}
+	else
+	{
+		// Make sure an entry is emptied up
+		assert(work_groups[index] == nullptr);
+
+		// Set the new work group to the empty entry
+		work_groups[index] = work_group;
+	}
 
 	// Save iterator 
 	auto it = work_groups.begin();
-	std::advance(it, work_group->getIdInComputeUnit());                                   
+	std::advance(it, work_group->getIdInComputeUnit()); 
 	work_group->compute_unit_work_groups_iterator = it;
+
+	// Debug info
+	Emulator::scheduler_debug << misc::fmt("\twork group %d "
+			"added\n",
+			work_group->getId());
 }
 
 
 void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
 {
+	// Debug info
+	Emulator::scheduler_debug << misc::fmt("@%lld work group %d "
+			"removed from compute unit %d slot %d\n",
+			timing->getCycle(),
+			work_group->getId(),
+			index,
+			work_group->id_in_compute_unit);
+
 	// Erase work group                                                      
 	assert(work_group->compute_unit_work_groups_iterator != 
-			work_groups.end());           
-	work_groups.erase(work_group->compute_unit_work_groups_iterator);  
+			work_groups.end());
+	work_groups[work_group->id_in_compute_unit] = nullptr;
 }
 
 
@@ -487,8 +537,9 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	ndrange->RemoveWorkGroup(work_group);
 
 	// If compute unit is not already in the available list, place
-	// it there
-	assert((int) work_groups.size() < gpu->getWorkGroupsPerComputeUnit());
+	// it there. The vector list of work groups does not shrink,
+	// when we unmap a workgroup.
+	assert((int) work_groups.size() <= gpu->getWorkGroupsPerComputeUnit());
 	if (!in_available_compute_units)
 		gpu->InsertInAvailableComputeUnits(this);
 
