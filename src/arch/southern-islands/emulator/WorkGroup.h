@@ -113,14 +113,6 @@ public:
 	/// \param id 
 	///	Work-group global 1D identifier
 	WorkGroup(NDRange *ndrange, unsigned id);
-	~WorkGroup() {
-		printf("Work-group %d destroyed: \n", this->getId());
-		for(unsigned i = 0; i < wavefronts.size(); i++)
-		{
-			Wavefront *wf = wavefronts[i].get();
-			printf("\tWavefront %d to be destroyed.\n", wf->getId());
-		}
-	};
 
 	/// Dump work-group in human readable format into output stream
 	void Dump(std::ostream &os = std::cout) const;

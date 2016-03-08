@@ -307,7 +307,6 @@ void VectorMemoryUnit::Memory()
 
 		// Access global memory
 		assert(!uop->global_memory_witness);
-		int wi = 0;
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;
@@ -315,19 +314,6 @@ void VectorMemoryUnit::Memory()
 		{
 			// Get work item
 			WorkItem *work_item = wi_it->get();
-			printf("Cycle %lld, "
-				"id=%lld "
-				"cu=%d "
-				"wf=%d "
-				"wi=%d "
-				"uop_id=%lld "
-				"stg=\"mem-m\"\n",
-				Timing::getInstance()->getFrequencyDomain()->getCycle(),
-				uop->getId(),
-				compute_unit->getIndex(),
-				uop->getWavefront()->getId(),
-				++wi,
-				uop->getIdInWavefront());
 			assert(work_item);
 
 			// Access memory for each active work-item

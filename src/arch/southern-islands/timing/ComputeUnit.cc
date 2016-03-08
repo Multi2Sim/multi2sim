@@ -89,9 +89,6 @@ void ComputeUnit::IssueToExecutionUnit(std::unique_ptr<Uop> uop,
 	long long id_in_wavefront = uop->getIdInWavefront();
 
 	// Erase from fetch buffer, issue to execution unit
-	printf("Cycle %lld, Issue uop %lld.\n",
-	       Timing::getInstance()->getFrequencyDomain()->getCycle(),
-	       uop->getId());
 	execution_unit->Issue(std::move(uop));
 
 	// Increase the uop counter for current cycle
@@ -342,9 +339,6 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		uop->setInstruction(wavefront->getInstruction());
 		uop->vector_memory_global_coherency =
 				wavefront->vector_memory_global_coherency;
-		printf("Cycle %lld, uop %lld created with wavefront %d, is wave_front_last_instruction %d\n",
-		       Timing::getInstance()->getFrequencyDomain()->getCycle(),
-		       uop->getId(), uop->getWavefront()->getId(), uop->wavefront_last_instruction);
 
 		// Checks
 		assert(wavefront->getWorkGroup() && uop->getWorkGroup());
