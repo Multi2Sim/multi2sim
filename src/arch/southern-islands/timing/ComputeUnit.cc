@@ -77,87 +77,136 @@ ComputeUnit::ComputeUnit(int index, Gpu *gpu) :
 }
 
 
-void ComputeUnit::IssueToExecutionUnit(FetchBuffer *fetch_buffer,
+void ComputeUnit::IssueToExecutionUnit(std::unique_ptr<Uop> uop,
 		ExecutionUnit *execution_unit)
 {
-	// Issue at most 'max_instructions_per_type'
-	for (int num_issued_instructions = 0;
-			num_issued_instructions < max_instructions_issued_per_type;
-			num_issued_instructions++)
-	{
-		// Nothing if execution unit cannot absorb more instructions
-		if (!execution_unit->canIssue())
-			break;
+	// Check
+	assert(uop.get());
 
-		// Find oldest uop
-		auto oldest_uop_iterator = fetch_buffer->end();
-		for (auto it = fetch_buffer->begin(),
-				e = fetch_buffer->end();
-				it != e;
-				++it)
-		{
-			// Discard uop if it is not suitable for this execution
-			// unit
-			Uop *uop = it->get();
-			if (!execution_unit->isValidUop(uop))
-				continue;
+	// Get ids
+	long long compute_unit_id = uop->getIdInComputeUnit();
+	int wavefront_id = uop->getWavefront()->getId();
+	long long id_in_wavefront = uop->getIdInWavefront();
 
-			// Skip uops that have not completed fetch
-			if (timing->getCycle() < uop->fetch_ready)
-				continue;
+	// Erase from fetch buffer, issue to execution unit
+	printf("Cycle %lld, Issue uop %lld.\n",
+	       Timing::getInstance()->getFrequencyDomain()->getCycle(),
+	       uop->getId());
+	execution_unit->Issue(std::move(uop));
 
-			// Save oldest uop
-			if (oldest_uop_iterator == fetch_buffer->end() ||
-					uop->getWavefront()->getId() <
-					(*oldest_uop_iterator)->getWavefront()->getId())
-				oldest_uop_iterator = it;
-		}
+	// Increase the uop counter for current cycle
+	auto it = num_uop_issued_this_cycle.find(execution_unit);
+	it->second++;
 
-		// Stop if no instruction found
-		if (oldest_uop_iterator == fetch_buffer->end())
-			break;
+	// Trace
+	Timing::trace << misc::fmt("si.inst "
+			"id=%lld "
+			"cu=%d "
+			"wf=%d "
+			"uop_id=%lld "
+			"stg=\"i\"\n",
+			compute_unit_id,
+			index,
+			wavefront_id,
+			id_in_wavefront);
+}
 
-		Uop *uop = oldest_uop_iterator->get();
-		long long compute_unit_id = uop->getIdInComputeUnit();
-		int wavefront_id = uop->getWavefront()->getId();
-		long long id_in_wavefront = uop->getIdInWavefront();
 
-		// Erase from fetch buffer, issue to execution unit
-		execution_unit->Issue(std::move(*oldest_uop_iterator));
-		fetch_buffer->Remove(oldest_uop_iterator);
+bool ComputeUnit::CanExecutionUnitIssue(Uop *uop, ExecutionUnit *execution_unit)
+{
+	assert(uop);
 
-		// Trace
-		Timing::trace << misc::fmt("si.inst "
-				"id=%lld "
-				"cu=%d "
-				"wf=%d "
-				"uop_id=%lld "
-				"stg=\"i\"\n", 
-				compute_unit_id,
-				index,
-				wavefront_id,
-				id_in_wavefront);
+	// Create an entry in the uop counter on demand
+	auto it = num_uop_issued_this_cycle.find(execution_unit);
+	if (it == num_uop_issued_this_cycle.end()) {
+		auto ret = num_uop_issued_this_cycle.emplace(execution_unit, 0);
+		it = ret.first;
 	}
+
+	// Checks if the maximum value reached
+	if (it->second >= max_instructions_issued_per_type)
+		return false;
+
+	// Check if the exeuction unit can issue
+	if (!execution_unit->canIssue())
+		return false;
+
+	// Check if the uop type matches the execution unit
+	if (!execution_unit->isValidUop(uop))
+		return false;
+
+	return true;
 }
 
 
 void ComputeUnit::Issue(FetchBuffer *fetch_buffer)
 {
-	// Issue instructions to branch unit
-	IssueToExecutionUnit(fetch_buffer, &branch_unit);
+	// Clear uop counter
+	num_uop_issued_this_cycle.clear();
 
-	// Issue instructions to scalar unit
-	IssueToExecutionUnit(fetch_buffer, &scalar_unit);
+	// Iterate uops to launch
+	auto it = fetch_buffer->begin();
+	while(it != fetch_buffer->end())
+	{
+		// Get Uop
+		Uop *uop = it->get();
+		assert(uop);
 
-	// Issue instructions to SIMD units
-	for (auto &simd_unit : simd_units)
-		IssueToExecutionUnit(fetch_buffer, simd_unit.get());
+		// Skip uops that have not completed fetch
+		if (timing->getCycle() < uop->fetch_ready)
+			break;
 
-	// Issue instructions to vector memory unit
-	IssueToExecutionUnit(fetch_buffer, &vector_memory_unit);
+		// Issue to branch unit
+		if (CanExecutionUnitIssue(uop, &branch_unit))
+		{
+			IssueToExecutionUnit(std::move(*it), &branch_unit);
+			it = fetch_buffer->Remove(it);
+			continue;
+		}
 
-	// Issue instructions to LDS unit
-	IssueToExecutionUnit(fetch_buffer, &lds_unit);
+		// Issue to scalar unit
+		if (CanExecutionUnitIssue(uop, &scalar_unit))
+		{
+			IssueToExecutionUnit(std::move(*it), &scalar_unit);
+			it = fetch_buffer->Remove(it);
+			continue;
+		}
+
+		// Issue instructions to SIMD units
+		bool issued_to_simd_unit = false;
+		for (auto &simd_unit : simd_units)
+		{
+			if (CanExecutionUnitIssue(uop, simd_unit.get()))
+			{
+				IssueToExecutionUnit(std::move(*it),
+						simd_unit.get());
+				it = fetch_buffer->Remove(it);
+				issued_to_simd_unit = true;
+				break;
+			}
+		}
+		if (issued_to_simd_unit)
+			continue;
+
+		// Issue to vector memory unit
+		if (CanExecutionUnitIssue(uop, &vector_memory_unit))
+		{
+			IssueToExecutionUnit(std::move(*it), &vector_memory_unit);
+			it = fetch_buffer->Remove(it);
+			continue;
+		}
+
+		// Issue to vector lds unit
+		if (CanExecutionUnitIssue(uop, &lds_unit))
+		{
+			IssueToExecutionUnit(std::move(*it), &lds_unit);
+			it = fetch_buffer->Remove(it);
+			continue;
+		}
+
+		// Not issued anywhere, stop issuing
+		break;
+	}
 
 	// Update visualization states for all instructions not issued
 	for (auto it = fetch_buffer->begin(),
@@ -242,7 +291,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		}
 
 		// Wavefront is finished but other wavefronts from the
-		// workgroup remain.  There may still be outstanding
+		// workgroup remain. There may still be outstanding
 		// memory operations, but no more instructions should
 		// be fetched.
 		if (wavefront->getFinished())
@@ -293,6 +342,9 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		uop->setInstruction(wavefront->getInstruction());
 		uop->vector_memory_global_coherency =
 				wavefront->vector_memory_global_coherency;
+		printf("Cycle %lld, uop %lld created with wavefront %d, is wave_front_last_instruction %d\n",
+		       Timing::getInstance()->getFrequencyDomain()->getCycle(),
+		       uop->getId(), uop->getWavefront()->getId(), uop->wavefront_last_instruction);
 
 		// Checks
 		assert(wavefront->getWorkGroup() && uop->getWorkGroup());

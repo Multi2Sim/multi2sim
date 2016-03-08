@@ -137,6 +137,10 @@ public:
 	///	Global 1D identifier of the wavefront
 	///
 	Wavefront(WorkGroup *work_group, int id);
+	~Wavefront()
+	{
+		printf("Wavefront %d destroyed.\n", this->id);
+	}
 
 	// Counter for per-wavefront identifiers assigned to uops in the timing
 	// simulator.

@@ -53,9 +53,11 @@ class ComputeUnit
 	// appropriate execution unit.
 	void Issue(FetchBuffer *fetch_buffer);
 
-	// Issue a set of instructions from the given fetch buffer into the
-	// given execution unit.
-	void IssueToExecutionUnit(FetchBuffer *fetch_buffer,
+	// Checks if an branch unit can issue an uop
+	bool CanExecutionUnitIssue(Uop *uop, ExecutionUnit *execution_unit);
+
+	// Issue an uop to an execution unit
+	void IssueToExecutionUnit(std::unique_ptr<Uop> uop,
 			ExecutionUnit *execution_unit);
 
 	// Update the visualization states for non-issued instructions
@@ -82,6 +84,9 @@ class ComputeUnit
 
 	// Variable number of SIMD units
 	std::vector<std::unique_ptr<SimdUnit>> simd_units;
+
+	// A counter for uops issued in current cycle;
+	std::unordered_map<ExecutionUnit *, int> num_uop_issued_this_cycle;
 
 	// One instance of the scalar unit
 	ScalarUnit scalar_unit;

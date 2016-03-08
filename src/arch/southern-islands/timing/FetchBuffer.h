@@ -80,7 +80,8 @@ public:
 	}
 
 	/// Remove the uop pointed to by the given iterator.
-	void Remove(std::list<std::unique_ptr<Uop>>::iterator it);
+	std::list<std::unique_ptr<Uop>>::iterator Remove(
+			std::list<std::unique_ptr<Uop>>::iterator it);
 };
 
 }

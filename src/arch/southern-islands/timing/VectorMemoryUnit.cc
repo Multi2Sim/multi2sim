@@ -51,6 +51,7 @@ void VectorMemoryUnit::Run()
 	Decode();
 }
 
+
 bool VectorMemoryUnit::isValidUop(Uop *uop) const
 {
 	// Get instruction
@@ -63,6 +64,7 @@ bool VectorMemoryUnit::isValidUop(Uop *uop) const
 
 	return true;
 }
+
 
 void VectorMemoryUnit::Issue(std::unique_ptr<Uop> uop)
 {
@@ -79,6 +81,7 @@ void VectorMemoryUnit::Issue(std::unique_ptr<Uop> uop)
 	// Issue it
 	ExecutionUnit::Issue(std::move(uop));
 }
+
 
 void VectorMemoryUnit::Complete()
 {
@@ -120,6 +123,7 @@ void VectorMemoryUnit::Complete()
 		gpu->last_complete_cycle = compute_unit->getTiming()->getCycle();
 	}
 }
+
 
 void VectorMemoryUnit::Write()
 {
@@ -206,6 +210,7 @@ void VectorMemoryUnit::Write()
 		it = mem_buffer.erase(it);
 	}
 }
+
 
 void VectorMemoryUnit::Memory()
 {
@@ -302,6 +307,7 @@ void VectorMemoryUnit::Memory()
 
 		// Access global memory
 		assert(!uop->global_memory_witness);
+		int wi = 0;
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;
@@ -309,6 +315,20 @@ void VectorMemoryUnit::Memory()
 		{
 			// Get work item
 			WorkItem *work_item = wi_it->get();
+			printf("Cycle %lld, "
+				"id=%lld "
+				"cu=%d "
+				"wf=%d "
+				"wi=%d "
+				"uop_id=%lld "
+				"stg=\"mem-m\"\n",
+				Timing::getInstance()->getFrequencyDomain()->getCycle(),
+				uop->getId(),
+				compute_unit->getIndex(),
+				uop->getWavefront()->getId(),
+				++wi,
+				uop->getIdInWavefront());
+			assert(work_item);
 
 			// Access memory for each active work-item
 			if (uop->getWavefront()->isWorkItemActive(
@@ -388,6 +408,7 @@ void VectorMemoryUnit::Memory()
 		it = read_buffer.erase(it);
 	}
 }
+
 
 void VectorMemoryUnit::Read()
 {
@@ -475,6 +496,7 @@ void VectorMemoryUnit::Read()
 	}
 }
 
+
 void VectorMemoryUnit::Decode()
 {
 	// Get compute unit object
@@ -560,7 +582,6 @@ void VectorMemoryUnit::Decode()
 		it = issue_buffer.erase(it);
 	}
 }
-
 
 }
 

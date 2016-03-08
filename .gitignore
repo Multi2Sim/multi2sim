@@ -17,3 +17,10 @@ ltmain.sh
 m4
 missing
 test-driver
+
+.autotools
+.cproject
+.project
+.settings
+
+.*.swp

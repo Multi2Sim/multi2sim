@@ -211,6 +211,11 @@ void ScalarUnit::Complete()
 			uop->getWavefrontPoolEntry()->wavefront_finished = true;
 			work_group->incWavefrontsCompletedTiming();
 
+			printf("Cycle %lld, work-group %d, Wavefront %d finished, last uop %lld\n",
+			       Timing::getInstance()->getFrequencyDomain()->getCycle(),
+			       work_group->getId(), uop->getWavefront()->getId(),
+			       uop->getId());
+
 			// Set the work group as finished with timing simulation
 			// if all the wavefonts in the work group are complete
 			if (work_group->getWavefrontsCompletedTiming() ==
