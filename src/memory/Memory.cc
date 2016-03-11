@@ -403,13 +403,19 @@ std::string Memory::ReadString(unsigned address, int max_length)
 		// Read character
 		char c;
 		Read(address + i, 1, &c);
+
+		// Done if null terminator found
 		if (!c)
-			break;
+			return s;
 
 		// Add character
 		s += c;
 	}
-	return s;
+
+	// If the maximum length was reached and the null character was not
+	// found, throw exception.
+	throw Error(misc::fmt("String at 0x%x exceeds %d characters",
+			address, max_length));
 }
 
 

@@ -366,6 +366,11 @@ public:
 	/// \throw
 	///	This function throws a Memory::Error in safe mode if the
 	///	source page does not have read permissions.
+	///
+	/// \throw
+	///	A Memory::Error exception occurs if a null terminator is not
+	///	found within the first \a max_length characters.
+	///
 	std::string ReadString(unsigned address, int max_length = 1024);
 
 	/// Write a string into memory.

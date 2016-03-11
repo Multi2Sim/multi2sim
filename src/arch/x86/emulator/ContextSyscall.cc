@@ -4982,9 +4982,6 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 
 int Context::ExecuteSyscall_stat64()
 {
-	struct stat statbuf;
-	struct sim_stat64_t sim_statbuf;
-
 	// Arguments 
 	unsigned file_name_ptr = regs.getEbx();
 	unsigned statbuf_ptr = regs.getEcx();
@@ -4998,14 +4995,22 @@ int Context::ExecuteSyscall_stat64()
 	std::string full_path = getFullPath(file_name);
 	emulator->syscall_debug << misc::fmt("  file_name='%s', full_path='%s'\n", file_name.c_str(), full_path.c_str());
 
-	/* Host call */
+	// Host call
+	struct stat statbuf;
 	int err = stat(full_path.c_str(), &statbuf);
 	if (err == -1)
 		return -errno;
 	
-	/* Copy guest structure */
+	// Copy guest structure
+	struct sim_stat64_t sim_statbuf;
 	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
-	memory->Write(statbuf_ptr, sizeof(sim_statbuf), (const char*)&sim_statbuf);
+
+	// Write result to guest memory
+	memory->Write(statbuf_ptr,
+			sizeof(sim_statbuf),
+			(char *) &sim_statbuf);
+	
+	// Success
 	return 0;
 }
 
@@ -5018,7 +5023,45 @@ int Context::ExecuteSyscall_stat64()
 
 int Context::ExecuteSyscall_lstat64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	unsigned statbuf_ptr = regs.getEcx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  file_name_ptr = 0x%x, "
+			"statbuf_ptr = 0x%x\n",
+			file_name_ptr,
+			statbuf_ptr);
+
+	// Read file name
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  file_name = '%s'\n"
+			"  full_path = '%s'\n",
+			file_name.c_str(),
+			full_path.c_str());
+
+	// Host call
+	struct stat statbuf;
+	int err = lstat(full_path.c_str(), &statbuf);
+	if (err == -1)
+		return -errno;
+	
+	// Convert to simulated domain
+	struct sim_stat64_t sim_statbuf;
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	
+	// Write result to guest memory
+	memory->Write(statbuf_ptr,
+			sizeof(sim_statbuf),
+			(char *) &sim_statbuf);
+	
+	// Success
+	return 0;
 }
 
 
