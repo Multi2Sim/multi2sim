@@ -924,8 +924,114 @@ int Context::ExecuteSyscall_unlink()
 // System call 'execve'
 //
 
+// A note
+const char *execve_note = "A system call 'execve' is trying to run a command "
+		"prefixed with '/bin/sh -c'. This is usually the result of the "
+		"execution of the 'system()' function from the guest "
+		"application to run a shell command. Multi2Sim will execute "
+		"this command natively, and will then terminate the calling "
+		"context.";
+
 int Context::ExecuteSyscall_execve()
 {
+	// Arguments
+	unsigned name_ptr = regs.getEbx();
+	unsigned argv = regs.getEcx();
+	unsigned envp = regs.getEdx();
+	unsigned regs_ptr = regs.getEsi();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  name_ptr=0x%x, "
+			"argv=0x%x, "
+			"envp=0x%x, "
+			"regs=0x%x\n",
+			name_ptr,
+			argv,
+			envp,
+			regs_ptr);
+
+	// Get command name
+	std::string name = memory->ReadString(name_ptr);
+	std::string full_path = getFullPath(name);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  name='%s', "
+			"full_path='%s'\n",
+			name.c_str(),
+			full_path.c_str());
+	
+	// Read arguments
+	std::vector<std::string> arguments;
+	emulator->syscall_debug << "  argv:\n";
+	for (;;)
+	{
+		// Argument pointer
+		unsigned arg_ptr;
+		memory->Read(argv + arguments.size() * 4, 4, (char *) &arg_ptr);
+
+		// Null-terminated array, done if null found
+		if (!arg_ptr)
+			break;
+
+		// Read argument from memory and store it
+		std::string argument = memory->ReadString(arg_ptr);
+		arguments.push_back(argument);
+
+		// Debug
+		emulator->syscall_debug << misc::fmt(
+				"    argv[%d] = '%s'\n",
+				(int) arguments.size() - 1,
+				argument.c_str());
+	}
+
+	// Environment variables
+	emulator->syscall_debug << "  envp:\n";
+	for (int i = 0; ; i++)
+	{
+		// Read pointer to environment variable
+		unsigned env_ptr;
+		memory->Read(envp + i * 4, 4, (char *) &env_ptr);
+
+		// Null-terminated array, done if null found
+		if (!env_ptr)
+			break;
+
+		// Read variable, with a large max of 10K characters
+		std::string variable = memory->ReadString(env_ptr, 10000);
+
+		// Debug
+		emulator->syscall_debug << misc::fmt(
+				"    envp[%d]='%s'\n",
+				i, variable.c_str());
+	}
+
+	// In the special case that the command line is 'sh -c <...>', this
+	// system call is the result of a program running the 'system' libc
+	// function. The host and guest architecture might be different and
+	// incompatible, so the safest option here is running the system command
+	// natively.
+	if (full_path == "/bin/sh" &&
+			arguments.size() == 3 &&
+			arguments[0] == "sh" &&
+			arguments[1] == "-c")
+	{
+		// Print note
+		misc::Warning("execve(): Child context executed natively.\n"
+				"\t%s", execve_note);
+		
+		// Execute program natively
+		int exit_code = system(arguments[2].c_str());
+
+		// Finish the context
+		Finish(exit_code);
+
+		// Done
+		return 0;
+	}
+
+	// Not supported
 	__UNIMPLEMENTED__
 }
 

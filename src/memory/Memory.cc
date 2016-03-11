@@ -414,7 +414,7 @@ std::string Memory::ReadString(unsigned address, int max_length)
 
 	// If the maximum length was reached and the null character was not
 	// found, throw exception.
-	throw Error(misc::fmt("String at 0x%x exceeds %d characters",
+	throw misc::Panic(misc::fmt("String at 0x%x exceeds %d characters",
 			address, max_length));
 }
 

@@ -368,7 +368,7 @@ public:
 	///	source page does not have read permissions.
 	///
 	/// \throw
-	///	A Memory::Error exception occurs if a null terminator is not
+	///	A misc::Panic exception occurs if a null terminator is not
 	///	found within the first \a max_length characters.
 	///
 	std::string ReadString(unsigned address, int max_length = 1024);
