@@ -180,7 +180,15 @@ void ScalarUnit::Complete()
 				assert(wavefront->getWavefrontPoolEntry());
 				if (!wavefront->getWavefrontPoolEntry()->
 						wait_for_barrier)
-							barrier_complete = false;
+				{
+					Timing::pipeline_debug << misc::fmt(
+							"\tInstID=%lld "
+							"at Barrier:wait for wf=%d\n",
+							uop->getIdInComputeUnit(),
+							wavefront->
+							getId());
+					barrier_complete = false;
+				}
 			}
 
 			// If all wavefronts have reached the barrier,
@@ -194,9 +202,17 @@ void ScalarUnit::Complete()
 				{
 					Wavefront *wavefront = it->get();
 					assert(wavefront->getWavefrontPoolEntry()->
-						wait_for_barrier);
-					wavefront->getWavefrontPoolEntry()->wait_for_barrier = false;;
+							wait_for_barrier);
+					wavefront->getWavefrontPoolEntry()->
+							wait_for_barrier = false;;
 				}
+
+				Timing::pipeline_debug << misc::fmt(
+						"wg=%d cu=%d"
+						"Barrier:Finished\n",
+						work_group->getId(),
+						getComputeUnit()->
+						getIndex());
 			}
 
 			// Update wavefront pool entry
@@ -229,10 +245,10 @@ void ScalarUnit::Complete()
 
 		// Trace
 		Timing::trace << misc::fmt("si.end_inst "
-				           "id=%lld "
-				           "cu=%d\n",
-					    uop->getIdInComputeUnit(),
-			                    compute_unit->getIndex());
+				"id=%lld "
+				"cu=%d\n",
+				uop->getIdInComputeUnit(),
+				compute_unit->getIndex());
 
 		// Access complete, remove the uop from the queue
 		it = write_buffer.erase(it);

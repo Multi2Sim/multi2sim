@@ -210,9 +210,14 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		// Get wavefront
 		Wavefront *wavefront = wavefront_pool_entry->getWavefront();
 
-		// Checks
+		// No waverfront
 		if (!wavefront)
 			continue;
+
+		// Check wavefront
+		assert(wavefront->getWavefrontPoolEntry());
+		assert(wavefront->getWavefrontPoolEntry() ==
+				wavefront_pool_entry);
 
 		// This should always be checked, regardless of how many
 		// instructions have been fetched
@@ -246,7 +251,17 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		// memory operations, but no more instructions should
 		// be fetched.
 		if (wavefront->getFinished())
+		{
+			Timing::pipeline_debug << misc::fmt(
+					"wg=%d/wf=%d cu=%d wfPool=%d "
+					"Fetch:Finished\n",
+					wavefront->getWorkGroup()->getId(),
+					wavefront->getId(),
+					index,
+					wavefront_pool_entry->
+					getIdInWavefrontPool());
 			continue;
+		}
 
 		// Wavefront is ready but waiting on outstanding
 		// memory instructions
@@ -256,9 +271,35 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 			if (!wavefront_pool_entry->lgkm_cnt &&
 				!wavefront_pool_entry->exp_cnt &&
 				!wavefront_pool_entry->vm_cnt)
+			{
 					wavefront->setMemoryWait(false);
+					Timing::pipeline_debug << misc::fmt(
+							"wg=%d/wf=%d cu=%d "
+							"wfPool=%d "
+							"Mem-wait:Done\n",
+							wavefront->
+							getWorkGroup()->
+							getId(),
+							wavefront->getId(),
+							index,
+							wavefront_pool_entry->
+							getIdInWavefrontPool());
+			}
 			else
+			{
+				// TODO show a waiting state in Visualization
+				// tool for the wait.
+				Timing::pipeline_debug << misc::fmt(
+						"wg=%d/wf=%d cu=%d wfPool=%d "
+						"Waiting-Mem\n",
+						wavefront->getWorkGroup()->
+						getId(),
+						wavefront->getId(),
+						index,
+						wavefront_pool_entry->
+						getIdInWavefrontPool());
 				continue;
+			}
 		}
 
 		// Wavefront is ready but waiting at barrier
@@ -298,25 +339,43 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		assert(wavefront->getWorkGroup() && uop->getWorkGroup());
 
 		// Convert instruction name to string
-		std::string instruction_name = wavefront->getInstruction()->getName();
-		misc::StringSingleSpaces(instruction_name);
+		if (Timing::trace || Timing::pipeline_debug)
+		{
+			std::string instruction_name = wavefront->
+					getInstruction()->getName();
+			misc::StringSingleSpaces(instruction_name);
 
-		// Trace
-		Timing::trace << misc::fmt("si.new_inst "
-				"id=%lld "
-				"cu=%d "
-				"ib=%d "
-				"wf=%d "
-				"uop_id=%lld "
-				"stg=\"i\" "
-				"asm=\"%s\"\n",
-				uop->getIdInComputeUnit(),
-				index,
-				uop->getWavefrontPoolId(),
-				uop->getWavefront()->getId(),
-				uop->getIdInWavefront(),
-				instruction_name.c_str());
+			// Trace
+			Timing::trace << misc::fmt("si.new_inst "
+					"id=%lld "
+					"cu=%d "
+					"ib=%d "
+					"wf=%d "
+					"uop_id=%lld "
+					"stg=\"f\" "
+					"asm=\"%s\"\n",
+					uop->getIdInComputeUnit(),
+					index,
+					uop->getWavefrontPoolId(),
+					uop->getWavefront()->getId(),
+					uop->getIdInWavefront(),
+					instruction_name.c_str());
 
+			// Debug
+			Timing::pipeline_debug << misc::fmt(
+					"wg=%d/wf=%d cu=%d wfPool=%d "
+					"InstID=%lld asm=%s id_in_wf=%lld\n"
+					"\tInstID=%lld (Fetch)\n",
+					uop->getWavefront()->getWorkGroup()->
+					getId(),
+					uop->getWavefront()->getId(),
+					index,
+					uop->getWavefrontPoolId(),
+					uop->getIdInComputeUnit(),
+					instruction_name.c_str(),
+					uop->getIdInWavefront(),
+					uop->getIdInComputeUnit());
+		}
 
 		// Update last memory accesses
 		for (auto it = wavefront->getWorkItemsBegin(),

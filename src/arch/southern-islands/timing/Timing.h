@@ -51,6 +51,9 @@ class Timing : public comm::Timing
 	// Report file name
 	static std::string report_file;
 
+	// Pipeline debug file name
+	static std::string pipeline_debug_file;
+
 	// If true
 	// how a message describing the format for the x86 configuration file
 	// Passed with option --x86-help
@@ -118,6 +121,9 @@ public:
 
 	/// Trace for visualization
 	static esim::Trace trace;
+
+	// Pipeline debug
+	static misc::Debug pipeline_debug;
 
 
 

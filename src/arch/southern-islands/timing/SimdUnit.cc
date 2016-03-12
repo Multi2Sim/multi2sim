@@ -99,10 +99,10 @@ void SimdUnit::Complete()
 
 		// Trace
 		Timing::trace << misc::fmt("si.end_inst "
-				           "id=%lld "
-				           "cu=%d\n",
-					    uop->getIdInComputeUnit(),
-			                    compute_unit->getIndex());
+				"id=%lld "
+				"cu=%d\n",
+				uop->getIdInComputeUnit(),
+				compute_unit->getIndex());
 
 		// Statistics
 		num_instructions++;

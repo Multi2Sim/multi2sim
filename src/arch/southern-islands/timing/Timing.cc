@@ -49,6 +49,10 @@ std::string Timing::report_file;
 
 esim::Trace Timing::trace;
 
+std::string Timing::pipeline_debug_file;
+
+misc::Debug Timing::pipeline_debug;
+
 const std::string Timing::help_message =
 	"The Southern Islands GPU configuration file is a plain text INI file\n"
 	"defining the parameters of the Southern Islands model for a detailed\n"
@@ -663,6 +667,11 @@ void Timing::RegisterOptions()
 	command_line->RegisterBool("--si-help", help,
 			"Display a help message describing the format of the "
 			"Southern Islands GPU configuration file.");
+
+	// Option --si-debug
+	command_line->RegisterString("--si-debug <file>", pipeline_debug_file,
+			"Reports the details of the SI pipeline units in every "
+			"cycle.");
 }
 
 
@@ -676,6 +685,9 @@ void Timing::ProcessOptions()
 	// Instantiate timing simulator if '--si-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
 	{
+		// Set the debug file only if this is a detailed simulation
+		pipeline_debug.setPath(pipeline_debug_file);
+
 		// First: parse configuration. This initializes all configuration
 		// static variables in class Timing, Gpu, ComputeUnit, ...
 		ParseConfiguration(&ini_file);

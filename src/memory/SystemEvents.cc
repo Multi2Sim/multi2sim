@@ -3680,10 +3680,6 @@ void System::EventLocalLoadHandler(esim::Event *event,
 			module->Coalesce(master_frame, frame);
 			master_frame->queue.Wait(event_local_load_finish);
 
-			// Increment witness
-			if (frame->witness)
-				(*frame->witness)++;
-
 			// Done
 			return;
 		}
@@ -4033,10 +4029,11 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"local_find_and_lock_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
-				frame->tag,
+				frame->getAddress(),
 				module->getName().c_str());
 
 		// Trace
@@ -4059,10 +4056,11 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	if (event == event_local_find_and_lock_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"local_find_and_lock_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
-				frame->tag,
+				frame->getAddress(),
 				module->getName().c_str());
 
 		// Trace
@@ -4082,5 +4080,3 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 }
 
 }
-
-

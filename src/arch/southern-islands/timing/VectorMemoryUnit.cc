@@ -107,7 +107,7 @@ void VectorMemoryUnit::Complete()
 		// Record trace
 		Timing::trace << misc::fmt("si.end_inst "
 				"id=%lld "
-				"cu=%d\n ",
+				"cu=%d\n",
 				uop->getIdInComputeUnit(),
 				compute_unit->getIndex());
 
