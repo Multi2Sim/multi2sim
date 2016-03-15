@@ -108,7 +108,7 @@ void ScalarUnit::Complete()
 	// Initialize iterator
 	auto it = write_buffer.begin();
 
-	// Process completed instructionss
+	// Process completed instructions
 	while (it != write_buffer.end())
 	{
 		// Get Uop
@@ -170,7 +170,6 @@ void ScalarUnit::Complete()
 
 			// Check if all wavefronts have reached the barrier
 			bool barrier_complete = true;
-			work_group->getWavefrontsBegin();
 			for (auto it = work_group->getWavefrontsBegin(),
 					e = work_group->getWavefrontsEnd();
 					it != e;
@@ -182,9 +181,10 @@ void ScalarUnit::Complete()
 						wait_for_barrier)
 				{
 					Timing::pipeline_debug << misc::fmt(
-							"\tInstID=%lld "
+							"\tInstID=%lld id_in_wf=%lld "
 							"at Barrier:wait for wf=%d\n",
 							uop->getIdInComputeUnit(),
+							uop->getIdInWavefront(),
 							wavefront->
 							getId());
 					barrier_complete = false;
@@ -204,15 +204,15 @@ void ScalarUnit::Complete()
 					assert(wavefront->getWavefrontPoolEntry()->
 							wait_for_barrier);
 					wavefront->getWavefrontPoolEntry()->
-							wait_for_barrier = false;;
+							wait_for_barrier = false;
 				}
 
 				Timing::pipeline_debug << misc::fmt(
-						"wg=%d cu=%d"
-						"Barrier:Finished\n",
+						"wg=%d id_in_wf=%lld "
+						"Barrier:Finished (last wf=%d)\n",
 						work_group->getId(),
-						getComputeUnit()->
-						getIndex());
+						uop->getIdInWavefront(),
+						uop->getWavefront()->getId());
 			}
 
 			// Update wavefront pool entry

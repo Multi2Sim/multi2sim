@@ -253,13 +253,10 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		if (wavefront->getFinished())
 		{
 			Timing::pipeline_debug << misc::fmt(
-					"wg=%d/wf=%d cu=%d wfPool=%d "
+					"wg=%d/wf=%d "
 					"Fetch:Finished\n",
 					wavefront->getWorkGroup()->getId(),
-					wavefront->getId(),
-					index,
-					wavefront_pool_entry->
-					getIdInWavefrontPool());
+					wavefront->getId());
 			continue;
 		}
 
@@ -274,30 +271,23 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 			{
 					wavefront->setMemoryWait(false);
 					Timing::pipeline_debug << misc::fmt(
-							"wg=%d/wf=%d cu=%d "
-							"wfPool=%d "
+							"wg=%d/wf=%d "
 							"Mem-wait:Done\n",
 							wavefront->
 							getWorkGroup()->
 							getId(),
-							wavefront->getId(),
-							index,
-							wavefront_pool_entry->
-							getIdInWavefrontPool());
+							wavefront->getId());
 			}
 			else
 			{
 				// TODO show a waiting state in Visualization
 				// tool for the wait.
 				Timing::pipeline_debug << misc::fmt(
-						"wg=%d/wf=%d cu=%d wfPool=%d "
+						"wg=%d/wf=%d "
 						"Waiting-Mem\n",
 						wavefront->getWorkGroup()->
 						getId(),
-						wavefront->getId(),
-						index,
-						wavefront_pool_entry->
-						getIdInWavefrontPool());
+						wavefront->getId());
 				continue;
 			}
 		}
@@ -330,7 +320,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		uop->lds_write = wavefront->lds_write;
 		uop->wavefront_last_instruction = wavefront->finished;
 		uop->memory_wait = wavefront->memory_wait;
-		uop->at_barrier = wavefront->at_barrier;
+		uop->at_barrier = wavefront->isBarrierInstruction();
 		uop->setInstruction(wavefront->getInstruction());
 		uop->vector_memory_global_coherency =
 				wavefront->vector_memory_global_coherency;
