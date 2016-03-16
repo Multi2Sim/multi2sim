@@ -730,9 +730,14 @@ int Context::ExecuteSyscall_open()
 	comm::FileDescriptor *desc = file_table->newFileDescriptor(
 			comm::FileDescriptor::TypeRegular,
 			host_fd, full_path, flags);
-	emulator->syscall_debug << misc::fmt("    file descriptor opened: "
-			"guest_fd=%d, host_fd=%d\n",
-			desc->getGuestIndex(), desc->getHostIndex());
+	
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  File opened:\n"
+			"    guest_fd=%d\n"
+			"    host_fd=%d\n",
+			desc->getGuestIndex(),
+			desc->getHostIndex());
 
 	// Return guest descriptor index
 	return desc->getGuestIndex();
@@ -7017,7 +7022,82 @@ int Context::ExecuteSyscall_migrate_pages()
 
 int Context::ExecuteSyscall_openat()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int dirfd = regs.getEbx();
+	unsigned path_ptr = regs.getEcx();
+	int flags = regs.getEdx();
+	int mode = regs.getEsi();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  dirfd = %d, "
+			"path_ptr = 0x%x, "
+			"flags = 0x%x %s, "
+			"mode = 0x%x\n",
+			dirfd,
+			path_ptr,
+			flags,
+			open_flags_map.MapFlags(flags).c_str(),
+			mode);
+
+	// Read path
+	std::string path = memory->ReadString(path_ptr);
+	std::string full_path = getFullPath(path);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  path = '%s'\n"
+			"  full_path = '%s'\n",
+			path.c_str(),
+			full_path.c_str());
+
+	// Implemented cases:
+	//
+	// dirfd = AT_FDCWD (-100), path is relative -> path is relative to
+	// current directory.
+	//
+	// path is absolute -> dirfd ignored
+	//
+	// dirfd != AT_FDCWD, path is relative -> path is relative to 'difd'
+	// (not implemented)
+	//
+	if (dirfd != -100 && path[0] != '/')
+		throw misc::Panic("Unsupported for difd != AT_FDCWD with relative path");
+
+	// The dynamic linker uses the 'open' system call to open shared libraries.
+	// We need to intercept here attempts to access runtime libraries and
+	// redirect them to our own Multi2Sim runtimes.
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	std::string runtime_redirect_path;
+	if (runtime_pool->Redirect(full_path, runtime_redirect_path))
+		full_path = runtime_redirect_path;
+
+	// Virtual files
+	if (misc::StringPrefix(full_path, "/proc/"))
+		throw misc::Panic("Virtual files are not supported");
+
+	// Regular file.
+	int host_fd = open(full_path.c_str(), flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	// File opened, create a new file descriptor.
+	comm::FileDescriptor *descriptor = file_table->newFileDescriptor(
+			comm::FileDescriptor::TypeRegular,
+			host_fd,
+			full_path,
+			flags);
+	
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  File opened:\n"
+			"    guest_fd=%d\n"
+			"    host_fd=%d\n",
+			descriptor->getGuestIndex(),
+			descriptor->getHostIndex());
+
+	// Return guest descriptor index
+	return descriptor->getGuestIndex();
 }
 
 
