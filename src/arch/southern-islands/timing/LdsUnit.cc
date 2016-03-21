@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <arch/southern-islands/emulator/WorkGroup.h>
 #include <arch/southern-islands/emulator/Wavefront.h>
 #include <arch/southern-islands/emulator/WorkItem.h>
 
@@ -109,6 +110,10 @@ void LdsUnit::Complete()
 
 		// Access complete, remove the uop from the queue
 		it = write_buffer.erase(it);
+		assert(uop->getWorkGroup()
+				->inflight_instructions > 0);
+		uop->getWorkGroup()->
+				inflight_instructions--;
 
 		// Statistics
 		num_instructions++;

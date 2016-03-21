@@ -114,6 +114,10 @@ void VectorMemoryUnit::Complete()
 		// Access complete, remove the uop from the queue and get the 
 		// iterator for the next element
 		it = write_buffer.erase(it);
+		assert(uop->getWorkGroup()
+				->inflight_instructions > 0);
+		uop->getWorkGroup()->
+				inflight_instructions--;
 
 		// Statistics
 		num_instructions++;
@@ -302,6 +306,14 @@ void VectorMemoryUnit::Memory()
 
 		// Access global memory
 		assert(!uop->global_memory_witness);
+		Timing::pipeline_debug << misc::fmt(
+				"\t\t@%lld inst=%lld "
+				"id_in_wf=%lld wg=%d/wf=%d (VecMem)\n",
+				compute_unit->getTiming()->getCycle(),
+				uop->getId(),
+				uop->getIdInWavefront(),
+				uop->getWorkGroup()->getId(),
+				uop->getWavefront()->getId());
 		for (auto wi_it = uop->getWavefront()->getWorkItemsBegin(),
 				wi_e = uop->getWavefront()->getWorkItemsEnd();
 				wi_it != wi_e;

@@ -178,7 +178,7 @@ void ComputeUnit::Issue(FetchBuffer *fetch_buffer)
 				"cu=%d "
 				"wf=%d "
 				"uop_id=%lld "
-				"stg=\"i\"\n",
+				"stg=\"s\"\n",
 				uop->getIdInComputeUnit(),
 				index,
 				uop->getWavefront()->getId(),
@@ -252,24 +252,19 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		// be fetched.
 		if (wavefront->getFinished())
 		{
-			Timing::pipeline_debug << misc::fmt(
-					"wg=%d/wf=%d "
-					"Fetch:Finished\n",
-					wavefront->getWorkGroup()->getId(),
-					wavefront->getId());
 			continue;
 		}
 
 		// Wavefront is ready but waiting on outstanding
 		// memory instructions
-		if (wavefront->isMemoryWait())
+		if (wavefront_pool_entry->mem_wait)
 		{
 			// No outstanding accesses
 			if (!wavefront_pool_entry->lgkm_cnt &&
 				!wavefront_pool_entry->exp_cnt &&
 				!wavefront_pool_entry->vm_cnt)
 			{
-					wavefront->setMemoryWait(false);
+					wavefront_pool_entry->mem_wait = false;
 					Timing::pipeline_debug << misc::fmt(
 							"wg=%d/wf=%d "
 							"Mem-wait:Done\n",
@@ -354,17 +349,17 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 			// Debug
 			Timing::pipeline_debug << misc::fmt(
 					"wg=%d/wf=%d cu=%d wfPool=%d "
-					"InstID=%lld asm=%s id_in_wf=%lld\n"
-					"\tInstID=%lld (Fetch)\n",
+					"inst=%lld asm=%s id_in_wf=%lld\n"
+					"\tinst=%lld (Fetch)\n",
 					uop->getWavefront()->getWorkGroup()->
 					getId(),
 					uop->getWavefront()->getId(),
 					index,
 					uop->getWavefrontPoolId(),
-					uop->getIdInComputeUnit(),
+					uop->getId(),
 					instruction_name.c_str(),
 					uop->getIdInWavefront(),
-					uop->getIdInComputeUnit());
+					uop->getId());
 		}
 
 		// Update last memory accesses
@@ -407,6 +402,7 @@ void ComputeUnit::Fetch(FetchBuffer *fetch_buffer,
 		uop->fetch_ready = timing->getCycle() + fetch_latency;
 
 		// Insert uop into fetch buffer
+		uop->getWorkGroup()->inflight_instructions++;
 		fetch_buffer->addUop(std::move(uop));
 
 		instructions_processed++;
@@ -529,6 +525,8 @@ void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
 	{
 		// Make sure an entry is emptied up
 		assert(work_groups[index] == nullptr);
+		assert(work_groups.size() <=
+				(unsigned) gpu->getWorkGroupsPerComputeUnit());
 
 		// Set the new work group to the empty entry
 		work_groups[index] = work_group;
@@ -581,10 +579,6 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	// Unmap wavefronts from instruction buffer
 	work_group->wavefront_pool->UnmapWavefronts(work_group);
 	
-	// Remove the work group from the running work groups list
-	NDRange *ndrange = work_group->getNDRange();
-	ndrange->RemoveWorkGroup(work_group);
-
 	// If compute unit is not already in the available list, place
 	// it there. The vector list of work groups does not shrink,
 	// when we unmap a workgroup.
@@ -595,6 +589,10 @@ void ComputeUnit::UnmapWorkGroup(WorkGroup *work_group)
 	// Trace
 	Timing::trace << misc::fmt("si.unmap_wg cu=%d wg=%d\n", index,
 			work_group->getId());
+
+	// Remove the work group from the running work groups list
+	NDRange *ndrange = work_group->getNDRange();
+	ndrange->RemoveWorkGroup(work_group);
 }
 
 

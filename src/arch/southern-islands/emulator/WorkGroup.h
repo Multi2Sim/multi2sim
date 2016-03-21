@@ -132,6 +132,9 @@ public:
 	/// simulator
 	bool finished_timing = false;
 
+	/// Number of instructions issued for this workgroup
+	long long inflight_instructions = 0;
+
 	/// Wavefront pool that the work group is associated with.
 	WavefrontPool *wavefront_pool = nullptr;
 
