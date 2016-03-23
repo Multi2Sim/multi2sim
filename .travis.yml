@@ -28,5 +28,5 @@ script:
         - git clone https://github.com/Multi2Sim/m2s-client-kit.git
         - cd m2s-client-kit/local-tests
         - pwd
-        - ./test-auto.sh all --local ../../
+        - ./test-auto.sh all /home/travis/build/sunyifan112358/multi2sim
 
