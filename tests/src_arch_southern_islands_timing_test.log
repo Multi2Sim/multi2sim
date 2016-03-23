@@ -1,0 +1,13 @@
+Running main() from gtest_main.cc
+[==========] Running 2 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 2 tests from TestTiming
+[ RUN      ] TestTiming.config_section_device_frequency_0
+[       OK ] TestTiming.config_section_device_frequency_0 (1 ms)
+[ RUN      ] TestTiming.config_section_device_frequency_1
+[       OK ] TestTiming.config_section_device_frequency_1 (0 ms)
+[----------] 2 tests from TestTiming (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test case ran. (1 ms total)
+[  PASSED  ] 2 tests.

@@ -1,0 +1,38 @@
+Running main() from gtest_main.cc
+[==========] Running 10 tests from 4 test cases.
+[----------] Global test environment set-up.
+[----------] 4 tests from CvtInstructionWorker
+[ RUN      ] CvtInstructionWorker.should_convert_u16_to_u32
+[       OK ] CvtInstructionWorker.should_convert_u16_to_u32 (0 ms)
+[ RUN      ] CvtInstructionWorker.should_convert_u32_to_u64
+[       OK ] CvtInstructionWorker.should_convert_u32_to_u64 (0 ms)
+[ RUN      ] CvtInstructionWorker.should_convert_u64_to_u32
+[       OK ] CvtInstructionWorker.should_convert_u64_to_u32 (0 ms)
+[ RUN      ] CvtInstructionWorker.should_convert_u64_to_f32
+[       OK ] CvtInstructionWorker.should_convert_u64_to_f32 (0 ms)
+[----------] 4 tests from CvtInstructionWorker (1 ms total)
+
+[----------] 1 test from ShlInstructionWorker
+[ RUN      ] ShlInstructionWorker.should_add_zero_at_least_significant_bits
+[       OK ] ShlInstructionWorker.should_add_zero_at_least_significant_bits (0 ms)
+[----------] 1 test from ShlInstructionWorker (0 ms total)
+
+[----------] 3 tests from WorkItemAbsIdInstructionWorker
+[ RUN      ] WorkItemAbsIdInstructionWorker.should_get_correct_result_x
+[       OK ] WorkItemAbsIdInstructionWorker.should_get_correct_result_x (0 ms)
+[ RUN      ] WorkItemAbsIdInstructionWorker.should_get_correct_result_y
+[       OK ] WorkItemAbsIdInstructionWorker.should_get_correct_result_y (0 ms)
+[ RUN      ] WorkItemAbsIdInstructionWorker.should_get_correct_result_z
+[       OK ] WorkItemAbsIdInstructionWorker.should_get_correct_result_z (0 ms)
+[----------] 3 tests from WorkItemAbsIdInstructionWorker (0 ms total)
+
+[----------] 2 tests from ShrInstructionWorker
+[ RUN      ] ShrInstructionWorker.singed_result
+[       OK ] ShrInstructionWorker.singed_result (0 ms)
+[ RUN      ] ShrInstructionWorker.unsinged_result
+[       OK ] ShrInstructionWorker.unsinged_result (0 ms)
+[----------] 2 tests from ShrInstructionWorker (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 10 tests from 4 test cases ran. (1 ms total)
+[  PASSED  ] 10 tests.

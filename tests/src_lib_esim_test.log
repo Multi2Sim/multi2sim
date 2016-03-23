@@ -1,0 +1,19 @@
+Running main() from gtest_main.cc
+[==========] Running 5 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 5 tests from TestEngine
+[ RUN      ] TestEngine.test_schedule_event
+[       OK ] TestEngine.test_schedule_event (0 ms)
+[ RUN      ] TestEngine.test_event_frame
+[       OK ] TestEngine.test_event_frame (0 ms)
+[ RUN      ] TestEngine.test_frequency_domains
+[       OK ] TestEngine.test_frequency_domains (0 ms)
+[ RUN      ] TestEngine.test_event_queue
+[       OK ] TestEngine.test_event_queue (0 ms)
+[ RUN      ] TestEngine.test_event_queue_priority
+[       OK ] TestEngine.test_event_queue_priority (0 ms)
+[----------] 5 tests from TestEngine (0 ms total)
+
+[----------] Global test environment tear-down
+[==========] 5 tests from 1 test case ran. (0 ms total)
+[  PASSED  ] 5 tests.

@@ -1,0 +1,107 @@
+Running main() from gtest_main.cc
+[==========] Running 46 tests from 3 test cases.
+[----------] Global test environment set-up.
+[----------] 14 tests from TestSystemConfiguration
+[ RUN      ] TestSystemConfiguration.section_general_frequency
+[       OK ] TestSystemConfiguration.section_general_frequency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_type
+[       OK ] TestSystemConfiguration.section_module_type (1 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_replacement_policy
+[       OK ] TestSystemConfiguration.section_module_cache_replacement_policy (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_write_policy
+[       OK ] TestSystemConfiguration.section_module_cache_write_policy (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_num_sets_1
+[       OK ] TestSystemConfiguration.section_module_cache_num_sets_1 (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_num_sets_2
+[       OK ] TestSystemConfiguration.section_module_cache_num_sets_2 (1 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_num_ways_1
+[       OK ] TestSystemConfiguration.section_module_cache_num_ways_1 (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_num_ways_2
+[       OK ] TestSystemConfiguration.section_module_cache_num_ways_2 (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_block_size_1
+[       OK ] TestSystemConfiguration.section_module_cache_block_size_1 (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_block_size_2
+[       OK ] TestSystemConfiguration.section_module_cache_block_size_2 (1 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_directory_latency
+[       OK ] TestSystemConfiguration.section_module_cache_directory_latency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_cache_latency
+[       OK ] TestSystemConfiguration.section_module_cache_latency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_mshr_size
+[       OK ] TestSystemConfiguration.section_module_mshr_size (0 ms)
+[ RUN      ] TestSystemConfiguration.section_module_num_ports
+[       OK ] TestSystemConfiguration.section_module_num_ports (0 ms)
+[----------] 14 tests from TestSystemConfiguration (3 ms total)
+
+[----------] 27 tests from TestSystemEvents
+[ RUN      ] TestSystemEvents.config_0_evict_0
+[       OK ] TestSystemEvents.config_0_evict_0 (10 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_1
+[       OK ] TestSystemEvents.config_0_evict_1 (11 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_2
+[       OK ] TestSystemEvents.config_0_evict_2 (11 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_3
+[       OK ] TestSystemEvents.config_0_evict_3 (9 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_4
+[       OK ] TestSystemEvents.config_0_evict_4 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_5
+[       OK ] TestSystemEvents.config_0_evict_5 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_6
+[       OK ] TestSystemEvents.config_0_evict_6 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_evict_7
+[       OK ] TestSystemEvents.config_0_evict_7 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_load_0
+[       OK ] TestSystemEvents.config_0_load_0 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_load_1
+[       OK ] TestSystemEvents.config_0_load_1 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_load_2
+[       OK ] TestSystemEvents.config_0_load_2 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_load_3
+[       OK ] TestSystemEvents.config_0_load_3 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_load_4
+[       OK ] TestSystemEvents.config_0_load_4 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_load_5
+[       OK ] TestSystemEvents.config_0_load_5 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_load_6
+[       OK ] TestSystemEvents.config_0_load_6 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_load_7
+[       OK ] TestSystemEvents.config_0_load_7 (11 ms)
+[ RUN      ] TestSystemEvents.config_0_load_8
+[       OK ] TestSystemEvents.config_0_load_8 (10 ms)
+[ RUN      ] TestSystemEvents.config_0_load_9
+[       OK ] TestSystemEvents.config_0_load_9 (10 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_0
+[       OK ] TestSystemEvents.config_0_ncstore_0 (10 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_1
+[       OK ] TestSystemEvents.config_0_ncstore_1 (10 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_2
+[       OK ] TestSystemEvents.config_0_ncstore_2 (8 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_3
+[       OK ] TestSystemEvents.config_0_ncstore_3 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_4
+[       OK ] TestSystemEvents.config_0_ncstore_4 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_ncstore_5
+[       OK ] TestSystemEvents.config_0_ncstore_5 (6 ms)
+[ RUN      ] TestSystemEvents.config_0_store_0
+[       OK ] TestSystemEvents.config_0_store_0 (7 ms)
+[ RUN      ] TestSystemEvents.config_0_store_1
+[       OK ] TestSystemEvents.config_0_store_1 (7 ms)
+[ RUN      ] TestSystemEvents.config_1_evict_0
+[       OK ] TestSystemEvents.config_1_evict_0 (4 ms)
+[----------] 27 tests from TestSystemEvents (210 ms total)
+
+[----------] 5 tests from TestModule
+[ RUN      ] TestModule.is_in_flight_address
+[       OK ] TestModule.is_in_flight_address (3 ms)
+[ RUN      ] TestModule.is_in_flight_access
+[       OK ] TestModule.is_in_flight_access (5 ms)
+[ RUN      ] TestModule.can_access_0
+[       OK ] TestModule.can_access_0 (5 ms)
+[ RUN      ] TestModule.can_access_1
+[       OK ] TestModule.can_access_1 (5 ms)
+[ RUN      ] TestModule.can_access_2
+[       OK ] TestModule.can_access_2 (5 ms)
+[----------] 5 tests from TestModule (23 ms total)
+
+[----------] Global test environment tear-down
+[==========] 46 tests from 3 test cases ran. (236 ms total)
+[  PASSED  ] 46 tests.

@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "GridSizeInstructionWorker.h"
+#include <src/arch/hsa/emulator/GridSizeInstructionWorker.h>
 
 namespace HSA
 {

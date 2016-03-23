@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "OrInstructionWorker.h"
+#include <src/arch/hsa/emulator/OrInstructionWorker.h>
 
 namespace HSA
 {

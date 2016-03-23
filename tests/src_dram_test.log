@@ -1,0 +1,62 @@
+Running main() from gtest_main.cc
+[==========] Running 25 tests from 2 test cases.
+[----------] Global test environment set-up.
+[----------] 11 tests from TestSystemConfiguration
+[ RUN      ] TestSystemConfiguration.section_general_frequency
+[       OK ] TestSystemConfiguration.section_general_frequency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_no_controller_name
+[       OK ] TestSystemConfiguration.section_no_controller_name (0 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_channels
+[       OK ] TestSystemConfiguration.section_negative_channels (0 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_ranks
+[       OK ] TestSystemConfiguration.section_negative_ranks (0 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_banks
+[       OK ] TestSystemConfiguration.section_negative_banks (1 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_Rows
+[       OK ] TestSystemConfiguration.section_negative_Rows (0 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_Columns
+[       OK ] TestSystemConfiguration.section_negative_Columns (0 ms)
+[ RUN      ] TestSystemConfiguration.section_negative_bits
+[       OK ] TestSystemConfiguration.section_negative_bits (0 ms)
+[ RUN      ] TestSystemConfiguration.section_invalid_format
+[       OK ] TestSystemConfiguration.section_invalid_format (1 ms)
+[ RUN      ] TestSystemConfiguration.section_invalid_vaiable
+[       OK ] TestSystemConfiguration.section_invalid_vaiable (0 ms)
+[ RUN      ] TestSystemConfiguration.section_correct_timings_DDR3_1600
+[       OK ] TestSystemConfiguration.section_correct_timings_DDR3_1600 (0 ms)
+[----------] 11 tests from TestSystemConfiguration (3 ms total)
+
+[----------] 14 tests from TestSystemEvents
+[ RUN      ] TestSystemEvents.section_one_read
+[       OK ] TestSystemEvents.section_one_read (0 ms)
+[ RUN      ] TestSystemEvents.section_one_write
+[       OK ] TestSystemEvents.section_one_write (0 ms)
+[ RUN      ] TestSystemEvents.section_two_reads_same_address
+[       OK ] TestSystemEvents.section_two_reads_same_address (1 ms)
+[ RUN      ] TestSystemEvents.section_two_writes_same_address
+[       OK ] TestSystemEvents.section_two_writes_same_address (0 ms)
+[ RUN      ] TestSystemEvents.section_two_reads_different_row
+[       OK ] TestSystemEvents.section_two_reads_different_row (0 ms)
+[ RUN      ] TestSystemEvents.section_two_writes_different_row
+[       OK ] TestSystemEvents.section_two_writes_different_row (0 ms)
+[ RUN      ] TestSystemEvents.section_two_reads_same_row_closed_page_policy
+[       OK ] TestSystemEvents.section_two_reads_same_row_closed_page_policy (1 ms)
+[ RUN      ] TestSystemEvents.section_two_writes_same_row_closed_page_policy
+[       OK ] TestSystemEvents.section_two_writes_same_row_closed_page_policy (0 ms)
+[ RUN      ] TestSystemEvents.section_test_precharge_timing
+[       OK ] TestSystemEvents.section_test_precharge_timing (0 ms)
+[ RUN      ] TestSystemEvents.section_test_activate_timing_same_bank
+[       OK ] TestSystemEvents.section_test_activate_timing_same_bank (0 ms)
+[ RUN      ] TestSystemEvents.section_test_single_read_timing
+[       OK ] TestSystemEvents.section_test_single_read_timing (0 ms)
+[ RUN      ] TestSystemEvents.section_test_single_write_timing
+[       OK ] TestSystemEvents.section_test_single_write_timing (1 ms)
+[ RUN      ] TestSystemEvents.section_test_negtive_address
+[       OK ] TestSystemEvents.section_test_negtive_address (0 ms)
+[ RUN      ] TestSystemEvents.section_test_address_out_of_bounds
+[       OK ] TestSystemEvents.section_test_address_out_of_bounds (0 ms)
+[----------] 14 tests from TestSystemEvents (3 ms total)
+
+[----------] Global test environment tear-down
+[==========] 25 tests from 2 test cases ran. (6 ms total)
+[  PASSED  ] 25 tests.

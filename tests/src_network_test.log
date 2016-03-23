@@ -1,0 +1,143 @@
+Running main() from gtest_main.cc
+[==========] Running 62 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 62 tests from TestSystemConfiguration
+[ RUN      ] TestSystemConfiguration.section_general_frequency
+[       OK ] TestSystemConfiguration.section_general_frequency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_network_two_defaults_missing
+[       OK ] TestSystemConfiguration.section_network_two_defaults_missing (0 ms)
+[ RUN      ] TestSystemConfiguration.section_network_missing_over_negative
+[       OK ] TestSystemConfiguration.section_network_missing_over_negative (1 ms)
+[ RUN      ] TestSystemConfiguration.section_network_non_existant_default
+[       OK ] TestSystemConfiguration.section_network_non_existant_default (0 ms)
+[ RUN      ] TestSystemConfiguration.section_network_default_negative
+[       OK ] TestSystemConfiguration.section_network_default_negative (0 ms)
+[ RUN      ] TestSystemConfiguration.section_network_negative_packet_size
+[       OK ] TestSystemConfiguration.section_network_negative_packet_size (0 ms)
+[ RUN      ] TestSystemConfiguration.section_node_unknown_fixlatency
+[       OK ] TestSystemConfiguration.section_node_unknown_fixlatency (0 ms)
+[ RUN      ] TestSystemConfiguration.section_node_unknown_type
+[       OK ] TestSystemConfiguration.section_node_unknown_type (1 ms)
+[ RUN      ] TestSystemConfiguration.section_section_unknown
+[       OK ] TestSystemConfiguration.section_section_unknown (0 ms)
+[ RUN      ] TestSystemConfiguration.section_node_no_preset_net
+[       OK ] TestSystemConfiguration.section_node_no_preset_net (0 ms)
+[ RUN      ] TestSystemConfiguration.section_node_buffer_size_vs_msg_size
+[       OK ] TestSystemConfiguration.section_node_buffer_size_vs_msg_size (0 ms)
+[ RUN      ] TestSystemConfiguration.section_node_switch_bandwidth
+[       OK ] TestSystemConfiguration.section_node_switch_bandwidth (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_type
+[       OK ] TestSystemConfiguration.section_link_type (1 ms)
+[ RUN      ] TestSystemConfiguration.section_link_wrong_variable
+[       OK ] TestSystemConfiguration.section_link_wrong_variable (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_wrong_source
+[       OK ] TestSystemConfiguration.section_link_wrong_source (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_no_source
+[       OK ] TestSystemConfiguration.section_link_no_source (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_wrong_destination
+[       OK ] TestSystemConfiguration.section_link_wrong_destination (1 ms)
+[ RUN      ] TestSystemConfiguration.section_link_no_destination
+[       OK ] TestSystemConfiguration.section_link_no_destination (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_same_src_dst
+[       OK ] TestSystemConfiguration.section_link_same_src_dst (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_bandwidth
+[       OK ] TestSystemConfiguration.section_link_bandwidth (0 ms)
+[ RUN      ] TestSystemConfiguration.section_link_between_end_nodes
+[       OK ] TestSystemConfiguration.section_link_between_end_nodes (1 ms)
+[ RUN      ] TestSystemConfiguration.config_1_net_4_node_1_switch
+[       OK ] TestSystemConfiguration.config_1_net_4_node_1_switch (0 ms)
+[ RUN      ] TestSystemConfiguration.section_bus_unknown_varialbe
+[       OK ] TestSystemConfiguration.section_bus_unknown_varialbe (0 ms)
+[ RUN      ] TestSystemConfiguration.section_bus_negative_bandwdith
+[       OK ] TestSystemConfiguration.section_bus_negative_bandwdith (1 ms)
+[ RUN      ] TestSystemConfiguration.section_bus_negative_lanes
+[       OK ] TestSystemConfiguration.section_bus_negative_lanes (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_no_bus
+[       OK ] TestSystemConfiguration.section_busport_no_bus (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_wrong_bus
+[       OK ] TestSystemConfiguration.section_busport_wrong_bus (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_no_node
+[       OK ] TestSystemConfiguration.section_busport_no_node (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_wrong_node
+[       OK ] TestSystemConfiguration.section_busport_wrong_node (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_wrong_size
+[       OK ] TestSystemConfiguration.section_busport_wrong_size (0 ms)
+[ RUN      ] TestSystemConfiguration.section_busport_wrong_type
+[       OK ] TestSystemConfiguration.section_busport_wrong_type (1 ms)
+[ RUN      ] TestSystemConfiguration.section_bus_config
+[       OK ] TestSystemConfiguration.section_bus_config (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_wrong_source_node
+[       OK ] TestSystemConfiguration.routes_wrong_source_node (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_wrong_destination_node
+[       OK ] TestSystemConfiguration.routes_wrong_destination_node (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_to_switch
+[       OK ] TestSystemConfiguration.routes_to_switch (1 ms)
+[ RUN      ] TestSystemConfiguration.routes_same_src_dst
+[       OK ] TestSystemConfiguration.routes_same_src_dst (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_no_possible_route
+[       OK ] TestSystemConfiguration.routes_no_possible_route (1 ms)
+[ RUN      ] TestSystemConfiguration.routes_wrong_virtual_channel
+[       OK ] TestSystemConfiguration.routes_wrong_virtual_channel (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_negative_virtual_channel
+[       OK ] TestSystemConfiguration.routes_negative_virtual_channel (0 ms)
+[ RUN      ] TestSystemConfiguration.routes_wrong_format_for_next_node
+[       OK ] TestSystemConfiguration.routes_wrong_format_for_next_node (1 ms)
+[ RUN      ] TestSystemConfiguration.routes_wrong_next_node
+[       OK ] TestSystemConfiguration.routes_wrong_next_node (0 ms)
+[ RUN      ] TestSystemConfiguration.thorough_manual_routing
+[       OK ] TestSystemConfiguration.thorough_manual_routing (1 ms)
+[ RUN      ] TestSystemConfiguration.event_config_0_same_src_dest_not_allowed
+[       OK ] TestSystemConfiguration.event_config_0_same_src_dest_not_allowed (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_1_no_route
+[       OK ] TestSystemConfiguration.event_config_1_no_route (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_2_message_too_big
+[       OK ] TestSystemConfiguration.event_config_2_message_too_big (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_3_packetized_message_too_big
+[       OK ] TestSystemConfiguration.event_config_3_packetized_message_too_big (1 ms)
+[ RUN      ] TestSystemConfiguration.event_config_4_message_sent_cycle_1
+[       OK ] TestSystemConfiguration.event_config_4_message_sent_cycle_1 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_4_message_sent_cycle_2
+[       OK ] TestSystemConfiguration.event_config_4_message_sent_cycle_2 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_4_message_sent_cycle_3
+[       OK ] TestSystemConfiguration.event_config_4_message_sent_cycle_3 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_4_message_sent_cycle_4
+[       OK ] TestSystemConfiguration.event_config_4_message_sent_cycle_4 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_5_same_src_does_not_allowed
+[       OK ] TestSystemConfiguration.event_config_5_same_src_does_not_allowed (1 ms)
+[ RUN      ] TestSystemConfiguration.event_config_6_no_route
+[       OK ] TestSystemConfiguration.event_config_6_no_route (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_7_message_sent_cycle_0
+[       OK ] TestSystemConfiguration.event_config_7_message_sent_cycle_0 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_0
+[       OK ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_0 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_1
+[       OK ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_1 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_3
+[       OK ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_3 (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_5
+[       OK ] TestSystemConfiguration.event_config_8_two_packets_sent_cycle_5 (1 ms)
+[ RUN      ] TestSystemConfiguration.event_config_9_message_four_nodes_2_lanes
+[       OK ] TestSystemConfiguration.event_config_9_message_four_nodes_2_lanes (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_10_message_four_nodes_1_lane
+[       OK ] TestSystemConfiguration.event_config_10_message_four_nodes_1_lane (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_11_packet_four_nodes_1_lane
+[       OK ] TestSystemConfiguration.event_config_11_packet_four_nodes_1_lane (0 ms)
+[ RUN      ] TestSystemConfiguration.event_config_12_manual_vs_fw_routing
+[       OK ] TestSystemConfiguration.event_config_12_manual_vs_fw_routing (1 ms)
+[ RUN      ] TestSystemConfiguration.event_config_13_ideal_fix_latency
+
+Warning: Network net0: Simulator is using a network with a constant latency.
+Many of the network components (such as links and buses) and the topology they
+form, are now ineffective.
+
+
+Warning: Network net0: Simulator is using a network with a constant latency.
+Many of the network components (such as links and buses) and the topology they
+form, are now ineffective.
+
+[       OK ] TestSystemConfiguration.event_config_13_ideal_fix_latency (1 ms)
+[----------] 62 tests from TestSystemConfiguration (16 ms total)
+
+[----------] Global test environment tear-down
+[==========] 62 tests from 1 test case ran. (16 ms total)
+[  PASSED  ] 62 tests.

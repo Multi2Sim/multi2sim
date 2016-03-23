@@ -1,0 +1,87 @@
+Running main() from gtest_main.cc
+[==========] Running 30 tests from 5 test cases.
+[----------] Global test environment set-up.
+[----------] 4 tests from TestBranchPredictor
+[ RUN      ] TestBranchPredictor.read_ini_configuration_file
+[       OK ] TestBranchPredictor.read_ini_configuration_file (0 ms)
+[ RUN      ] TestBranchPredictor.test_bimodal_branch_predictor_1
+[       OK ] TestBranchPredictor.test_bimodal_branch_predictor_1 (0 ms)
+[ RUN      ] TestBranchPredictor.test_two_level_branch_predictor_1
+[       OK ] TestBranchPredictor.test_two_level_branch_predictor_1 (0 ms)
+[ RUN      ] TestBranchPredictor.test_combined_branch_predictor_1
+[       OK ] TestBranchPredictor.test_combined_branch_predictor_1 (0 ms)
+[----------] 4 tests from TestBranchPredictor (0 ms total)
+
+[----------] 2 tests from TestTraceCache
+[ RUN      ] TestTraceCache.read_ini_configuration_file
+[       OK ] TestTraceCache.read_ini_configuration_file (0 ms)
+[ RUN      ] TestTraceCache.test_multiple_branch_predictor
+[       OK ] TestTraceCache.test_multiple_branch_predictor (0 ms)
+[----------] 2 tests from TestTraceCache (0 ms total)
+
+[----------] 4 tests from TestAlu
+[ RUN      ] TestAlu.read_ini_configuration_file_int
+[       OK ] TestAlu.read_ini_configuration_file_int (1 ms)
+[ RUN      ] TestAlu.read_ini_configuration_file_fp
+[       OK ] TestAlu.read_ini_configuration_file_fp (0 ms)
+[ RUN      ] TestAlu.read_ini_configuration_file_xmm
+[       OK ] TestAlu.read_ini_configuration_file_xmm (0 ms)
+[ RUN      ] TestAlu.reserve_functional_unit_int_add
+2 2
+2 2
+0 0
+2 2
+2 2
+0 0
+[       OK ] TestAlu.reserve_functional_unit_int_add (0 ms)
+[----------] 4 tests from TestAlu (1 ms total)
+
+[----------] 18 tests from TestRegisterFile
+[ RUN      ] TestRegisterFile.can_rename_private_register_0
+[       OK ] TestRegisterFile.can_rename_private_register_0 (1 ms)
+[ RUN      ] TestRegisterFile.can_rename_private_register_1
+[       OK ] TestRegisterFile.can_rename_private_register_1 (1 ms)
+[ RUN      ] TestRegisterFile.can_rename_private_register_2
+[       OK ] TestRegisterFile.can_rename_private_register_2 (0 ms)
+[ RUN      ] TestRegisterFile.can_rename_shared_register_0
+[       OK ] TestRegisterFile.can_rename_shared_register_0 (1 ms)
+[ RUN      ] TestRegisterFile.can_rename_shared_register_1
+[       OK ] TestRegisterFile.can_rename_shared_register_1 (1 ms)
+[ RUN      ] TestRegisterFile.can_rename_shared_register_2
+[       OK ] TestRegisterFile.can_rename_shared_register_2 (0 ms)
+[ RUN      ] TestRegisterFile.rename_0
+[       OK ] TestRegisterFile.rename_0 (1 ms)
+[ RUN      ] TestRegisterFile.rename_1
+[       OK ] TestRegisterFile.rename_1 (0 ms)
+[ RUN      ] TestRegisterFile.rename_2
+[       OK ] TestRegisterFile.rename_2 (1 ms)
+[ RUN      ] TestRegisterFile.rename_3
+[       OK ] TestRegisterFile.rename_3 (0 ms)
+[ RUN      ] TestRegisterFile.is_uop_ready_0
+[       OK ] TestRegisterFile.is_uop_ready_0 (1 ms)
+[ RUN      ] TestRegisterFile.is_uop_ready_1
+[       OK ] TestRegisterFile.is_uop_ready_1 (0 ms)
+[ RUN      ] TestRegisterFile.is_uop_ready_2
+[       OK ] TestRegisterFile.is_uop_ready_2 (0 ms)
+[ RUN      ] TestRegisterFile.write_uop_0
+[       OK ] TestRegisterFile.write_uop_0 (1 ms)
+[ RUN      ] TestRegisterFile.undo_uop_0
+[       OK ] TestRegisterFile.undo_uop_0 (0 ms)
+[ RUN      ] TestRegisterFile.undo_uop_1
+[       OK ] TestRegisterFile.undo_uop_1 (0 ms)
+[ RUN      ] TestRegisterFile.undo_uop_2
+[       OK ] TestRegisterFile.undo_uop_2 (0 ms)
+[ RUN      ] TestRegisterFile.commit_uop_0
+[       OK ] TestRegisterFile.commit_uop_0 (1 ms)
+[----------] 18 tests from TestRegisterFile (9 ms total)
+
+[----------] 2 tests from TestX86TimingFetchStage
+[ RUN      ] TestX86TimingFetchStage.pipeline_flush
+[       OK ] TestX86TimingFetchStage.pipeline_flush (7 ms)
+[ RUN      ] TestX86TimingFetchStage.fetch_same_block
+[       OK ] TestX86TimingFetchStage.fetch_same_block (7 ms)
+[----------] 2 tests from TestX86TimingFetchStage (14 ms total)
+
+[----------] Global test environment tear-down
+[==========] 30 tests from 5 test cases ran. (24 ms total)
+[  PASSED  ] 30 tests.

@@ -15,6 +15,8 @@ TESTS = \
 	\
 	src_arch_southern_islands_timing_test \
 	\
+	src_arch_hsa_emulator_test \
+	\
 	src_lib_esim_test \
 	\
 	src_memory_test \
@@ -29,6 +31,8 @@ check_PROGRAMS = \
 	src_arch_southern_islands_emu_test \
 	\
 	src_arch_southern_islands_timing_test \
+	\
+	src_arch_hsa_emulator_test \
 	\
 	src_lib_esim_test \
 	\
@@ -85,8 +89,6 @@ src_arch_x86_timing_test_SOURCES = \
 	src/arch/x86/timing/TestRegisterFile.cc \
 	src/arch/x86/timing/TestFetch.cc
 	
-	
-	
 src_arch_southern_islands_emu_test_LDADD = \
 	$(top_builddir)/src/arch/southern-islands/emulator/libemulator.a \
 	$(top_builddir)/src/arch/southern-islands/disassembler/libdisassembler.a \
@@ -131,4 +133,38 @@ src_memory_test_SOURCES = \
 	src/memory/TestSystemConfig.cc \
 	src/memory/TestSystemEvents.cc \
 	src/memory/TestModule.cc
+
+src_arch_hsa_emulator_test_SOURCES = \
+	src/arch/hsa/emulator/AndInstructionWorker_test.cc \
+	src/arch/hsa/emulator/BrInstructionWorker_test.cc \
+	src/arch/hsa/emulator/CvtInstructionWorker_test.cc \
+	src/arch/hsa/emulator/MemFenceInstructionWorker_test.cc \
+	src/arch/hsa/emulator/OrInstructionWorker_test.cc \
+	src/arch/hsa/emulator/SubInstructionWorker_test.cc \
+	src/arch/hsa/emulator/AtomicNoRetInstructionWorker_test.cc \
+	src/arch/hsa/emulator/CbrInstructionWorker_test.cc \
+	src/arch/hsa/emulator/GridSizeInstructionWorker_test.cc \
+	src/arch/hsa/emulator/MovInstructionWorker_test.cc \
+	src/arch/hsa/emulator/ShlInstructionWorker_test.cc \
+	src/arch/hsa/emulator/WorkItemAbsIdInstructionWorker_test.cc \
+	src/arch/hsa/emulator/BarrierInstructionWorker_test.cc \
+	src/arch/hsa/emulator/CmpInstructionWorker_test.cc \
+	src/arch/hsa/emulator/LdaInstructionWorker_test.cc \
+	src/arch/hsa/emulator/MulInstructionWorker_test.cc \
+	src/arch/hsa/emulator/ShrInstructionWorker_test.cc
+
+src_arch_hsa_emulator_test_LDADD = \
+	$(top_builddir)/src/arch/hsa/emulator/libemulator.a \
+	$(top_builddir)/src/arch/hsa/disassembler/libdisassembler.a \
+	$(top_builddir)/src/arch/hsa/driver/libdriver.a \
+	$(top_builddir)/src/arch/x86/emulator/libemulator.a \
+	$(top_builddir)/src/arch/x86/disassembler/libdisassembler.a \
+	$(top_builddir)/src/arch/x86/timing/libtiming.a \
+	$(top_builddir)/src/memory/libmemory.a \
+	$(top_builddir)/src/network/libnetwork.a \
+	$(top_builddir)/src/lib/esim/libesim.a \
+	$(top_builddir)/src/arch/common/libcommon.a \
+	$(top_builddir)/src/lib/cpp/libcpp.a \
+	$(am__append_2) -lz
+
 
