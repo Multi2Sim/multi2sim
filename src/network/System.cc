@@ -57,6 +57,9 @@ bool System::help = false;
 
 int System::frequency = 1000;
 
+const int System::trace_version_major = 1;
+const int System::trace_version_minor = 10;
+
 std::unique_ptr<System> System::instance;
 
 
@@ -222,7 +225,7 @@ void System::ReadConfiguration()
 		// trace, since we have a configuration file, but the trace
 		// will be updated only if the traceSystem is active as well.
 		trace.On();
-		if (trace)
+		if ((trace) && (stand_alone))
 			TraceHeader();
 	}
 }
@@ -283,24 +286,9 @@ void System::UniformTrafficSimulation(Network *network)
 			// Inject
 			while (inject_time[i] < cycle)
 			{
-				// Dump debug information
-				debug << misc::fmt("[Network %s] [cycle %lld] "
-						"Injecting a message from node "
-						"%s to node %s.\n",
-						network->getName().c_str(),
-						cycle,
-						node->getName().c_str(),
-						destination_node->getName().c_str());
-
 				// Schedule next injection
 				inject_time[i] += RandomExponential(
 						injection_rate);
-				debug << misc::fmt("[Network %s] [cycle %lld] "
-						"[node %s] next injection time "
-						"%f\n",
-						network->getName().c_str(),
-						cycle, node->getName().c_str(),
-						inject_time[i]);
 
 				// Send the packet
 				if (network->CanSend(node, destination_node,
@@ -311,6 +299,7 @@ void System::UniformTrafficSimulation(Network *network)
 		}
 
 		// Next cycle
+		debug << misc::fmt("___ cycle %lld ___\n", cycle);	
 		esim_engine->ProcessEvents();
 	}
 }

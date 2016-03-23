@@ -132,6 +132,9 @@ public:
 	/// simulator
 	bool finished_timing = false;
 
+	/// Number of instructions issued for this workgroup
+	long long inflight_instructions = 0;
+
 	/// Wavefront pool that the work group is associated with.
 	WavefrontPool *wavefront_pool = nullptr;
 
@@ -141,7 +144,7 @@ public:
 
 	/// Position of this work-group in the ComputeUnit's list of 
 	/// work-groups. This field is managed internally by the ComputeUnit.
-	std::list<WorkGroup*>::iterator compute_unit_work_groups_iterator;
+	std::vector<WorkGroup*>::iterator compute_unit_work_groups_iterator;
 
 	/// Size of wavefront
 	static const unsigned WavefrontSize;

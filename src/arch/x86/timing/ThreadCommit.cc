@@ -81,20 +81,30 @@ void Thread::Commit(int quantum)
 	assert(context);
 
 	// Commit stage for thread
-	bool recover = false;
 	while (quantum && canCommit())
 	{
 		// Get instruction at the head of the reorder buffer
 		assert(reorder_buffer.size());
 		std::shared_ptr<Uop> uop = reorder_buffer.front();
 		assert(uop->getThread() == this);
-		assert(!recover);
 
-		// Mispredicted branch
-		if (Cpu::getRecoverKind() == Cpu::RecoverKindCommit
-				&& (uop->getFlags() & Uinst::FlagCtrl)
-				&& uop->neip != uop->predicted_neip)
-			recover = true;
+		// Recover from mispeculation if this is the first uop of a
+		// sequence of mispredicted instructions.
+		//
+		// NOTE - Even when the recovery kind (RecoverKind) has been
+		// set to the writeback stage, there is a chance that a
+		// leading mispeculated instruction has made it here. This is
+		// the case of a mispeculated store, which did not have the
+		// chance to get to the writeback stage before it commits.
+		//
+		if (uop->first_speculative_mode)
+		{
+			// Clear thread structures
+			Recover();
+
+			// Nothing left to do
+			return;
+		}
 	
 		// Free physical registers
 		assert(!uop->speculative_mode);
@@ -167,14 +177,6 @@ void Thread::Commit(int quantum)
 		// Statistics
 		num_reorder_buffer_reads++;
 		core->incNumReorderBufferReads();
-
-		// Recover from mispeculation. Functional units are cleared when
-		// the processor recovers at commit.
-		if (recover)
-		{
-			Recover();
-			core->getAlu()->ReleaseAll();
-		}
 	}
 
 	// If context eviction signal is activated and pipeline is empty,

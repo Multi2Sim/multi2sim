@@ -32,8 +32,8 @@ namespace mem
 {
 
 
-const int System::TraceVersionMajor = 1;
-const int System::TraceVersionMinor = 678;
+const int System::trace_version_major = 1;
+const int System::trace_version_minor = 678;
 
 const std::string System::help_message =
 	"Option '--mem-config <file>' is used to configure the memory system. The\n"
@@ -1374,18 +1374,37 @@ void System::ConfigTrace()
 {
 	// Initialization
 	trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n",
-			TraceVersionMajor, TraceVersionMinor));
+			trace_version_major, trace_version_minor));
+
+	// External Networks trace commands from network section
+	net::System *net_system = net::System::getInstance();
+	if (net_system->getNumNetworks())
+	{
+		net_system->TraceHeader();
+
+		for (int i = 0; i < net_system->getNumNetworks(); i++)
+		{
+			net::Network *net = net_system->getNetwork(i);
+
+			// Trace command from the memory section
+			trace.Header(misc::fmt("mem.new_net name=\"%s\" "
+					"num_nodes=%d\n",
+					net->getName().c_str(), 
+					net->getNumNodes()));
+		}
+	}
+	else
+	{
+		net_system->trace.Off();
+	}
 
 	// Internal Networks
 	for (auto& net : networks)
-		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
-				net->getName().c_str(), net->getNumNodes()));
-
-	// External Networks
-	net::System *net_system = net::System::getInstance();
-	for (int i = 0; i < net_system->getNumNetworks(); i++)
 	{
-		net::Network *net = net_system->getNetwork(i);
+		// Trace commands from Network section
+		net->TraceHeader();
+
+		// Trace commands from Memory section
 		trace.Header(misc::fmt("mem.new_net name=\"%s\" num_nodes=%d\n",
 				net->getName().c_str(), net->getNumNodes()));
 	}

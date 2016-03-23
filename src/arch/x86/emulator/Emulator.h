@@ -61,12 +61,8 @@ class Emulator : public comm::Emulator
 	// Debugger files
 	static std::string call_debug_file;
 	static std::string context_debug_file;
-	static std::string cuda_debug_file;
-	static std::string glut_debug_file;
 	static std::string isa_debug_file;
 	static std::string loader_debug_file;
-	static std::string opencl_debug_file;
-	static std::string opengl_debug_file;
 	static std::string syscall_debug_file;
 
 	// Maximum number of instructions
@@ -142,24 +138,12 @@ public:
 	/// Debugger for x86 contexts
 	static misc::Debug context_debug;
 
-	/// Debugger for CUDA driver
-	static misc::Debug cuda_debug;
-
-	/// Debugger for GLUT driver
-	static misc::Debug glut_debug;
-	
 	/// Debugger for x86 ISA emulation
 	static misc::Debug isa_debug;
 
 	/// Debugger for program loader
 	static misc::Debug loader_debug;
 
-	/// Debugger for OpenCL driver
-	static misc::Debug opencl_debug;
-
-	/// Debugger for OpenGL driver
-	static misc::Debug opengl_debug;
-	
 	/// Debugger for system calls
 	static misc::Debug syscall_debug;
 

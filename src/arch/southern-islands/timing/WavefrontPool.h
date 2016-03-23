@@ -73,7 +73,6 @@ public:
 	/// Return the associated wavefront
 	Wavefront *getWavefront() const { return wavefront; }
 
-	
 
 
 	//

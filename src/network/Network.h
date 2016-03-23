@@ -106,6 +106,13 @@ class Network
 	// Defaule packet size - zero means no packeting
 	int packet_size = 0;
 
+	// fix latency of the network. If activated
+	// the network sends the messages with a fixed latency
+	// regardless of the topology.
+	// Ideal network, is a network with a fixed_latency
+	// of 1.
+	int fix_latency = 0;
+
 
 	
 	//
@@ -164,6 +171,16 @@ public:
 
 	/// Get packet size
 	int getPacketSize() const { return packet_size; }
+
+	/// Get the condition of the network, to see if it is
+	/// and ideal network with a fix latency or not.
+	///
+	/// \return
+	///	 true if network is ideal
+	bool hasConstantLatency() { return fix_latency; }
+
+	/// Get the fix delay of the network
+	int getFixLatency() const {return fix_latency; }
 
 	/// Create a message to be transfered in the network. The network 
 	/// keeps the ownership of the message. Message is destoried when it 

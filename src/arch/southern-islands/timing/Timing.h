@@ -51,6 +51,9 @@ class Timing : public comm::Timing
 	// Report file name
 	static std::string report_file;
 
+	// Pipeline debug file name
+	static std::string pipeline_debug_file;
+
 	// If true
 	// how a message describing the format for the x86 configuration file
 	// Passed with option --x86-help
@@ -112,9 +115,15 @@ public:
 	/// '--si-sim-kind'.
 	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 
+	/// Southern Island GPU trace version identifier
+	static const int trace_version_major;
+	static const int trace_version_minor;
+
 	/// Trace for visualization
 	static esim::Trace trace;
 
+	// Pipeline debug
+	static misc::Debug pipeline_debug;
 
 
 
@@ -151,6 +160,9 @@ public:
 	
 	/// Dump the configuration of the GPU and compute units
 	void DumpConfiguration(std::ofstream &os) const;
+
+	/// Dump the statistics summary for the timing simulator.
+	void DumpSummary(std::ostream &os) const override;
 
 	/// Dump a report of all the statistics collected during the execution
 	/// of one or more OpenCL kernels 

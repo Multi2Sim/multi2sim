@@ -1535,7 +1535,7 @@ void System::EventEvictHandler(esim::Event *event,
 				event_evict_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -1813,7 +1813,7 @@ void System::EventEvictHandler(esim::Event *event,
 				event_evict_reply_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -1953,7 +1953,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 				event_write_request_receive,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -2409,7 +2409,7 @@ void System::EventWriteRequestHandler(esim::Event *event,
 				event_write_request_finish,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3175,7 +3175,7 @@ void System::EventReadRequestHandler(esim::Event *event,
 				event_read_request_finish,
 				event);
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3408,7 +3408,7 @@ void System::EventMessageHandler(esim::Event *event,
 
 		// Trace
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3535,7 +3535,7 @@ void System::EventMessageHandler(esim::Event *event,
 
 		// Trace
 		if (frame->message)
-			trace << misc::fmt("net.msg_access "
+			net::System::trace << misc::fmt("net.msg_access "
 					"net=\"%s\" "
 					"name=\"M-%lld\" "
 					"access=\"A-%lld\"\n",
@@ -3679,10 +3679,6 @@ void System::EventLocalLoadHandler(esim::Event *event,
 			module->incCoalescedReads();
 			module->Coalesce(master_frame, frame);
 			master_frame->queue.Wait(event_local_load_finish);
-
-			// Increment witness
-			if (frame->witness)
-				(*frame->witness)++;
 
 			// Done
 			return;
@@ -4033,10 +4029,11 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 		assert(port);
 
 		// Memory debug
-		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_action\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"local_find_and_lock_action\n",
 				esim_engine->getTime(),
 				frame->getId(),
-				frame->tag,
+				frame->getAddress(),
 				module->getName().c_str());
 
 		// Trace
@@ -4059,10 +4056,11 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 	if (event == event_local_find_and_lock_finish)
 	{
 		// Memory debug
-		debug << misc::fmt("  %lld A-%lld 0x%x %s local_find_and_lock_finish\n",
+		debug << misc::fmt("  %lld A-%lld 0x%x %s "
+				"local_find_and_lock_finish\n",
 				esim_engine->getTime(),
 				frame->getId(),
-				frame->tag,
+				frame->getAddress(),
 				module->getName().c_str());
 
 		// Trace
@@ -4082,5 +4080,3 @@ void System::EventLocalFindAndLockHandler(esim::Event *event,
 }
 
 }
-
-

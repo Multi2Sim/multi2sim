@@ -354,6 +354,10 @@ public:
 	/// Flag telling if micro-operation is in speculative mode
 	bool speculative_mode = false;
 
+	/// Flag indicating whether the uop is the first in a sequence of
+	/// uops in speculative mode in the reorder buffer.
+	bool first_speculative_mode = false;
+
 	/// Flag indicating whether the uop was fetched from the trace cache
 	bool from_trace_cache = false;
 	

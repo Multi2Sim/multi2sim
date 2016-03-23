@@ -114,11 +114,12 @@ void Bus::TransferPacket(Packet *packet)
 	if (source_buffer->getBufferHead() != packet)
 	{
 		// Update debug information
-		System::debug << misc::fmt("[Network %s] [stall - queue] "
-				"message->packet: %lld-->%d, at "
-				"[node %s], [buffer %s]\n", network->getName().c_str(),
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_not_buf_head: %s:%s\n",
+				network->getName().c_str(),
 				message->getId(), packet->getId(),
-				node->getName().c_str(), source_buffer->getName().c_str());
+				node->getName().c_str(), 
+				source_buffer->getName().c_str());
 
 		// Schedule the event for next time buffer head has changed
 		source_buffer->Wait(current_event);
@@ -158,9 +159,9 @@ void Bus::TransferPacket(Packet *packet)
 	// Check if the destination buffer is not busy
 	if (destination_buffer->write_busy >= cycle)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - bus dst buffer busy] "
-				"message->packet: %lld-->%d, at "
-				"[node %s] [buffer %s]\n", network->getName().c_str(),
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_dest_buf: %s:%s\n", 
+				network->getName().c_str(),
 				message->getId(), packet->getId(),
 				destination_buffer->getNode()->getName().c_str(),
 				destination_buffer->getName().c_str());
@@ -178,9 +179,8 @@ void Bus::TransferPacket(Packet *packet)
 	if (destination_buffer->getCount() + packet_size >
 			destination_buffer->getSize())
 	{
-		System::debug <<misc::fmt("[Network %s] [stall - bus dst buffer full] "
-				"message-->packet: %lld-->%d, at "
-				"[bus %s], destination: [node %s], [buffer %s]\n",
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_full_bus_dest_buf: %s - %s:%s\n", 
 				network->getName().c_str(),
 				message->getId(), packet->getId(),
 				name.c_str(),
@@ -194,9 +194,9 @@ void Bus::TransferPacket(Packet *packet)
 	Lane *lane = Arbitration(source_buffer);
 	if (!lane)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - bus arbitration] "
-				"message->packet: %lld-->%d, at "
-				"[bus %s]\n", network->getName().c_str(),
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_bus_arb: %s\n", 
+				network->getName().c_str(),
 				message->getId(), packet->getId(),
 				this->name.c_str());
 		esim_engine->Next(current_event, 1);

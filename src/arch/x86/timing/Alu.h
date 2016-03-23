@@ -84,7 +84,9 @@ public:
 	Alu();
 
 	/// Reserve the functional unit required by the uop. The return value is
-	/// the functional unit latency, or 0 if it could not be reserved.
+	/// the functional unit latency, or 0 if it could not be reserved. If
+	/// the uop does not require any functional unit, the function returns
+	/// a latency of 1 cycle.
 	int Reserve(Uop *uop);
 
 	/// Release all functional units

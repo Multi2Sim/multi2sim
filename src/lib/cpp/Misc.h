@@ -230,7 +230,7 @@ template<typename T, typename... Args> std::unique_ptr<T>
 
 
 /// Create a unique pointer to an array of elements of type T. The elements of
-/// the array will be initialized to zero. The following example allocated a
+/// the array will be initialized to zero. The following example allocates a
 /// dynamic array of 10 integers initialized to zero:
 ///
 ///    std::unique_ptr<int[]> A;

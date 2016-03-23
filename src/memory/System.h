@@ -95,8 +95,8 @@ class System
 
 	// Version of memory system trace producer.
 	// See 'src/visual/memory/mem-system.c' for the trace consumer.
-	static const int TraceVersionMajor;
-	static const int TraceVersionMinor;
+	static const int trace_version_major;
+	static const int trace_version_minor;
 
 	// Event handlers for NMOESI cache coherence protocol. These functions
 	// are defined in SystemCoherenceProtocol.cc.

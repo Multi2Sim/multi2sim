@@ -38,6 +38,7 @@
 #include <lib/cpp/Misc.h>
 #include <arch/common/Driver.h>
 #include <arch/common/Runtime.h>
+#include <arch/x86/timing/Cpu.h>
 
 #include "Context.h"
 #include "Emulator.h"
@@ -729,9 +730,14 @@ int Context::ExecuteSyscall_open()
 	comm::FileDescriptor *desc = file_table->newFileDescriptor(
 			comm::FileDescriptor::TypeRegular,
 			host_fd, full_path, flags);
-	emulator->syscall_debug << misc::fmt("    file descriptor opened: "
-			"guest_fd=%d, host_fd=%d\n",
-			desc->getGuestIndex(), desc->getHostIndex());
+	
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  File opened:\n"
+			"    guest_fd=%d\n"
+			"    host_fd=%d\n",
+			desc->getGuestIndex(),
+			desc->getHostIndex());
 
 	// Return guest descriptor index
 	return desc->getGuestIndex();
@@ -923,8 +929,114 @@ int Context::ExecuteSyscall_unlink()
 // System call 'execve'
 //
 
+// A note
+const char *execve_note = "A system call 'execve' is trying to run a command "
+		"prefixed with '/bin/sh -c'. This is usually the result of the "
+		"execution of the 'system()' function from the guest "
+		"application to run a shell command. Multi2Sim will execute "
+		"this command natively, and will then terminate the calling "
+		"context.";
+
 int Context::ExecuteSyscall_execve()
 {
+	// Arguments
+	unsigned name_ptr = regs.getEbx();
+	unsigned argv = regs.getEcx();
+	unsigned envp = regs.getEdx();
+	unsigned regs_ptr = regs.getEsi();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  name_ptr=0x%x, "
+			"argv=0x%x, "
+			"envp=0x%x, "
+			"regs=0x%x\n",
+			name_ptr,
+			argv,
+			envp,
+			regs_ptr);
+
+	// Get command name
+	std::string name = memory->ReadString(name_ptr);
+	std::string full_path = getFullPath(name);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  name='%s', "
+			"full_path='%s'\n",
+			name.c_str(),
+			full_path.c_str());
+	
+	// Read arguments
+	std::vector<std::string> arguments;
+	emulator->syscall_debug << "  argv:\n";
+	for (;;)
+	{
+		// Argument pointer
+		unsigned arg_ptr;
+		memory->Read(argv + arguments.size() * 4, 4, (char *) &arg_ptr);
+
+		// Null-terminated array, done if null found
+		if (!arg_ptr)
+			break;
+
+		// Read argument from memory and store it
+		std::string argument = memory->ReadString(arg_ptr);
+		arguments.push_back(argument);
+
+		// Debug
+		emulator->syscall_debug << misc::fmt(
+				"    argv[%d] = '%s'\n",
+				(int) arguments.size() - 1,
+				argument.c_str());
+	}
+
+	// Environment variables
+	emulator->syscall_debug << "  envp:\n";
+	for (int i = 0; ; i++)
+	{
+		// Read pointer to environment variable
+		unsigned env_ptr;
+		memory->Read(envp + i * 4, 4, (char *) &env_ptr);
+
+		// Null-terminated array, done if null found
+		if (!env_ptr)
+			break;
+
+		// Read variable, with a large max of 10K characters
+		std::string variable = memory->ReadString(env_ptr, 10000);
+
+		// Debug
+		emulator->syscall_debug << misc::fmt(
+				"    envp[%d]='%s'\n",
+				i, variable.c_str());
+	}
+
+	// In the special case that the command line is 'sh -c <...>', this
+	// system call is the result of a program running the 'system' libc
+	// function. The host and guest architecture might be different and
+	// incompatible, so the safest option here is running the system command
+	// natively.
+	if (full_path == "/bin/sh" &&
+			arguments.size() == 3 &&
+			arguments[0] == "sh" &&
+			arguments[1] == "-c")
+	{
+		// Print note
+		misc::Warning("execve(): Child context executed natively.\n"
+				"\t%s", execve_note);
+		
+		// Execute program natively
+		int exit_code = system(arguments[2].c_str());
+
+		// Finish the context
+		Finish(exit_code);
+
+		// Done
+		return 0;
+	}
+
+	// Not supported
 	__UNIMPLEMENTED__
 }
 
@@ -1081,7 +1193,36 @@ int Context::ExecuteSyscall_stat()
 
 int Context::ExecuteSyscall_lseek()
 {
-	__UNIMPLEMENTED__
+	// Read arguments
+	int guest_fd = regs.getEbx();
+	unsigned offset = regs.getEcx();
+	int origin = regs.getEdx();
+
+	// Debug arguments
+	Emulator::syscall_debug << misc::fmt(
+			"  guest_fd=%d, "
+			"offset=0x%x, "
+			"origin=%d\n",
+			guest_fd,
+			offset,
+			origin);
+	
+	// File descriptor 
+	comm::FileDescriptor *file_descriptor = file_table->getFileDescriptor(guest_fd);
+	if (!file_descriptor)
+		return -EBADF;
+
+	// Translate file descriptor
+	int host_fd = file_descriptor->getHostIndex();
+	Emulator::syscall_debug << misc::fmt("  host_fd = %d\n", host_fd);
+	
+	// Host call
+	int err = lseek(host_fd, offset, origin);
+	if (err == -1)
+		return -errno;
+
+	// Success
+	return err;
 }
 
 
@@ -1512,9 +1653,40 @@ int Context::ExecuteSyscall_pipe()
 // System call 'times'
 //
 
+struct SimTms
+{
+	unsigned utime;
+	unsigned stime;
+	unsigned cutime;
+	unsigned cstime;
+};
+
 int Context::ExecuteSyscall_times()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned tms_ptr = regs.getEbx();
+	emulator->syscall_debug << misc::fmt("  tms_ptr=0x%x\n", tms_ptr);
+
+	// Host call
+	struct tms tms;
+	int err = times(&tms);
+
+	// Write result to guest memory
+	if (tms_ptr)
+	{
+		// Translate to guest structure
+		SimTms sim_tms;
+		sim_tms.utime = tms.tms_utime;
+		sim_tms.stime = tms.tms_stime;
+		sim_tms.cutime = tms.tms_cutime;
+		sim_tms.cstime = tms.tms_cstime;
+
+		// Write to memory
+		memory->Write(tms_ptr, sizeof(SimTms), (char *) &sim_tms);
+	}
+
+	// Return
+	return err;
 }
 
 
@@ -4921,9 +5093,6 @@ static void sys_stat_host_to_guest(struct sim_stat64_t *guest, struct stat *host
 
 int Context::ExecuteSyscall_stat64()
 {
-	struct stat statbuf;
-	struct sim_stat64_t sim_statbuf;
-
 	// Arguments 
 	unsigned file_name_ptr = regs.getEbx();
 	unsigned statbuf_ptr = regs.getEcx();
@@ -4937,14 +5106,22 @@ int Context::ExecuteSyscall_stat64()
 	std::string full_path = getFullPath(file_name);
 	emulator->syscall_debug << misc::fmt("  file_name='%s', full_path='%s'\n", file_name.c_str(), full_path.c_str());
 
-	/* Host call */
+	// Host call
+	struct stat statbuf;
 	int err = stat(full_path.c_str(), &statbuf);
 	if (err == -1)
 		return -errno;
 	
-	/* Copy guest structure */
+	// Copy guest structure
+	struct sim_stat64_t sim_statbuf;
 	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
-	memory->Write(statbuf_ptr, sizeof(sim_statbuf), (const char*)&sim_statbuf);
+
+	// Write result to guest memory
+	memory->Write(statbuf_ptr,
+			sizeof(sim_statbuf),
+			(char *) &sim_statbuf);
+	
+	// Success
 	return 0;
 }
 
@@ -4957,7 +5134,45 @@ int Context::ExecuteSyscall_stat64()
 
 int Context::ExecuteSyscall_lstat64()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	unsigned file_name_ptr = regs.getEbx();
+	unsigned statbuf_ptr = regs.getEcx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  file_name_ptr = 0x%x, "
+			"statbuf_ptr = 0x%x\n",
+			file_name_ptr,
+			statbuf_ptr);
+
+	// Read file name
+	std::string file_name = memory->ReadString(file_name_ptr);
+	std::string full_path = getFullPath(file_name);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  file_name = '%s'\n"
+			"  full_path = '%s'\n",
+			file_name.c_str(),
+			full_path.c_str());
+
+	// Host call
+	struct stat statbuf;
+	int err = lstat(full_path.c_str(), &statbuf);
+	if (err == -1)
+		return -errno;
+	
+	// Convert to simulated domain
+	struct sim_stat64_t sim_statbuf;
+	sys_stat_host_to_guest(&sim_statbuf, &statbuf);
+	
+	// Write result to guest memory
+	memory->Write(statbuf_ptr,
+			sizeof(sim_statbuf),
+			(char *) &sim_statbuf);
+	
+	// Success
+	return 0;
 }
 
 
@@ -5843,7 +6058,83 @@ int Context::ExecuteSyscall_futex()
 
 int Context::ExecuteSyscall_sched_setaffinity()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int size = regs.getEcx();
+	unsigned mask_ptr = regs.getEdx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  pid=%d, "
+			"size=%d, "
+			"mask_ptr=0x%x\n",
+			pid,
+			size,
+			mask_ptr);
+
+	// Check valid size (assume reasonable maximum of 1KB)
+	if (!misc::inRange(size, 0, 1024))
+		throw Error(misc::fmt("Invalid range for 'size' (%d)", size));
+
+	// Read mask
+	auto mask = misc::new_unique_array<char>(size);
+	memory->Read(mask_ptr, size, mask.get());
+
+	// Dump it
+	if (emulator->syscall_debug)
+	{
+		emulator->syscall_debug << "  CPUs = {";
+		for (int i = 0; i < size; i++)
+			for (int j = 0; j < 8; j++)
+				if (mask[i] & (1 << j))
+					emulator->syscall_debug << ' '
+							<< (i * 8 + j);
+		emulator->syscall_debug << " }\n";
+	}
+
+	// Find context associated with 'pid'. If the value given in 'pid' is
+	// zero, the current context is used.
+	Context *target_context = pid ? emulator->getContext(pid) : this;
+	if (!target_context)
+		return -ESRCH;
+
+	// Count number of effective valid bits in the mask.
+	int num_bits = 0;
+	int node = 0;
+	int num_nodes = Cpu::getNumCores() * Cpu::getNumThreads();
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			num_bits += mask[i] & (1 << j) ? 1 : 0;
+			node++;
+		}
+	}
+
+	// We need at least one bit to be set for the program to make forward
+	// progress hereafter.
+	if (!num_bits)
+		return -EINVAL;
+
+	// Set context affinity
+	node = 0;
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			bool value = (mask[i] & (1 << j)) > 0;
+			target_context->thread_affinity->Set(node, value);
+			node++;
+		}
+	}
+
+	// Changing the context affinity might force it to be evicted and unmapped
+	// from the current node where it is running (timing simulation only). We
+	// need to force a call to the scheduler.
+	emulator->schedule_signal = 1;
+
+	// Success
+	return 0;
 }
 
 
@@ -5855,7 +6146,54 @@ int Context::ExecuteSyscall_sched_setaffinity()
 
 int Context::ExecuteSyscall_sched_getaffinity()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int pid = regs.getEbx();
+	int size = regs.getEcx();
+	unsigned mask_ptr = regs.getEdx();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  pid=%d, "
+			"size=%d, "
+			"mask_ptr=0x%x\n",
+			pid,
+			size,
+			mask_ptr);
+	
+	// Check valid size (assume reasonable maximum of 1KB
+	if (!misc::inRange(size, 0, 1024))
+		throw Error(misc::fmt("Invalid range for size (%d)", size));
+
+	// Find context associated with 'pid'. If the value given in 'pid' is
+	// zero, the current context is used.
+	Context *target_context = pid ? emulator->getContext(pid) : this;
+	if (!target_context)
+		return -ESRCH;
+
+	// Allocate mask
+	auto mask = misc::new_unique_array<char>(size);
+
+	// Read mask from context affinity bitmap
+	int node = 0;
+	int num_nodes = Cpu::getNumCores() * Cpu::getNumThreads();
+	for (int i = 0; i < size && node < num_nodes; i++)
+	{
+		for (int j = 0; j < 8 && node < num_nodes; j++)
+		{
+			// Get affinity
+			char bit = target_context->thread_affinity->Test(node);
+			mask[i] |= bit << j;
+			
+			// Next node
+			node++;
+		}
+	}
+	
+	// Return mask
+	memory->Write(mask_ptr, size, mask.get());
+
+	// Return sizeof(cpu_set_t) = 32
+	return 32;
 }
 
 
@@ -6684,7 +7022,82 @@ int Context::ExecuteSyscall_migrate_pages()
 
 int Context::ExecuteSyscall_openat()
 {
-	__UNIMPLEMENTED__
+	// Arguments
+	int dirfd = regs.getEbx();
+	unsigned path_ptr = regs.getEcx();
+	int flags = regs.getEdx();
+	int mode = regs.getEsi();
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  dirfd = %d, "
+			"path_ptr = 0x%x, "
+			"flags = 0x%x %s, "
+			"mode = 0x%x\n",
+			dirfd,
+			path_ptr,
+			flags,
+			open_flags_map.MapFlags(flags).c_str(),
+			mode);
+
+	// Read path
+	std::string path = memory->ReadString(path_ptr);
+	std::string full_path = getFullPath(path);
+
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  path = '%s'\n"
+			"  full_path = '%s'\n",
+			path.c_str(),
+			full_path.c_str());
+
+	// Implemented cases:
+	//
+	// dirfd = AT_FDCWD (-100), path is relative -> path is relative to
+	// current directory.
+	//
+	// path is absolute -> dirfd ignored
+	//
+	// dirfd != AT_FDCWD, path is relative -> path is relative to 'difd'
+	// (not implemented)
+	//
+	if (dirfd != -100 && path[0] != '/')
+		throw misc::Panic("Unsupported for difd != AT_FDCWD with relative path");
+
+	// The dynamic linker uses the 'open' system call to open shared libraries.
+	// We need to intercept here attempts to access runtime libraries and
+	// redirect them to our own Multi2Sim runtimes.
+	comm::RuntimePool *runtime_pool = comm::RuntimePool::getInstance();
+	std::string runtime_redirect_path;
+	if (runtime_pool->Redirect(full_path, runtime_redirect_path))
+		full_path = runtime_redirect_path;
+
+	// Virtual files
+	if (misc::StringPrefix(full_path, "/proc/"))
+		throw misc::Panic("Virtual files are not supported");
+
+	// Regular file.
+	int host_fd = open(full_path.c_str(), flags, mode);
+	if (host_fd == -1)
+		return -errno;
+
+	// File opened, create a new file descriptor.
+	comm::FileDescriptor *descriptor = file_table->newFileDescriptor(
+			comm::FileDescriptor::TypeRegular,
+			host_fd,
+			full_path,
+			flags);
+	
+	// Debug
+	emulator->syscall_debug << misc::fmt(
+			"  File opened:\n"
+			"    guest_fd=%d\n"
+			"    host_fd=%d\n",
+			descriptor->getGuestIndex(),
+			descriptor->getHostIndex());
+
+	// Return guest descriptor index
+	return descriptor->getGuestIndex();
 }
 
 

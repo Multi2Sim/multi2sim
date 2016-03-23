@@ -32,6 +32,9 @@ namespace SI
 // Singleton instance
 std::unique_ptr<Timing> Timing::instance;
 
+// Trace versions
+const int Timing::trace_version_major = 1;
+const int Timing::trace_version_minor = 1;
 
 
 //
@@ -45,6 +48,10 @@ comm::Arch::SimKind Timing::sim_kind = comm::Arch::SimFunctional;
 std::string Timing::report_file;
 
 esim::Trace Timing::trace;
+
+std::string Timing::pipeline_debug_file;
+
+misc::Debug Timing::pipeline_debug;
 
 const std::string Timing::help_message =
 	"The Southern Islands GPU configuration file is a plain text INI file\n"
@@ -242,6 +249,16 @@ Timing::Timing() : comm::Timing("SouthernIslands")
 
 	// Create GPU
 	gpu = misc::new_unique<Gpu>();
+
+	/// Adding the SI related header to the trace
+	trace.Header(misc::fmt("si.init version=\"%d.%d\" "
+			"num_compute_units=%d\n",
+			trace_version_major, trace_version_minor,
+			gpu->num_compute_units));
+
+	// Debug info
+	Emulator::scheduler_debug << "SI Gpu with " << gpu->num_compute_units 
+			<< " compute unit is created\n";
 }
 
 
@@ -650,6 +667,11 @@ void Timing::RegisterOptions()
 	command_line->RegisterBool("--si-help", help,
 			"Display a help message describing the format of the "
 			"Southern Islands GPU configuration file.");
+
+	// Option --si-debug
+	command_line->RegisterString("--si-debug <file>", pipeline_debug_file,
+			"Reports the details of the SI pipeline units in every "
+			"cycle.");
 }
 
 
@@ -663,6 +685,9 @@ void Timing::ProcessOptions()
 	// Instantiate timing simulator if '--si-sim detailed' is present
 	if (sim_kind == comm::Arch::SimDetailed)
 	{
+		// Set the debug file only if this is a detailed simulation
+		pipeline_debug.setPath(pipeline_debug_file);
+
 		// First: parse configuration. This initializes all configuration
 		// static variables in class Timing, Gpu, ComputeUnit, ...
 		ParseConfiguration(&ini_file);
@@ -676,8 +701,7 @@ void Timing::ProcessOptions()
 	// Print configuration INI file format
 	if (help)
 	{
-		misc::StringFormatter formatter(help_message);
-		std::cerr << formatter;
+		std::cerr << help_message;
 		exit(0);
 	}
 }
@@ -968,6 +992,29 @@ void Timing::DumpConfiguration(std::ofstream &os) const
 	
 }
 
+
+void Timing::DumpSummary(std::ostream &os) const
+{
+	// Simulated time in nanoseconds
+	esim::FrequencyDomain *frequency_domain = getFrequencyDomain();
+	double cycle_time = (double) frequency_domain->getCycleTime() / 1e3;
+	os << misc::fmt("SimTime = %.2f [ns]\n", getCycle() * cycle_time);
+
+	// Frequency
+	os << misc::fmt("Frequency = %d [MHz]\n", frequency_domain->getFrequency());
+
+	// Cycles
+	os << misc::fmt("Cycles = %lld\n", getCycle());
+
+	// Cycles per second
+	Emulator *emulator = Emulator::getInstance();
+	double time_in_seconds = (double) emulator->getTimerValue() / 1e6;
+	double cycles_per_second = time_in_seconds > 0.0 ?
+			(double) getCycle() / time_in_seconds : 0.0;
+	os << misc::fmt("CyclesPerSecond = %.0f\n", cycles_per_second);
+}
+
+
 void Timing::DumpReport() const
 {
 	// Check if the report file has been set
@@ -1087,27 +1134,32 @@ bool Timing::Run()
 		WorkGroup *work_group = nullptr;
 		
 		// Save the number of waiting work groups
-		unsigned num_work_groups = ndrange->getNumWaitingWorkgroups();
+		unsigned num_waiting_work_groups = ndrange->
+				getNumWaitingWorkgroups();
 
 		// Map work groups to compute units
-		for (unsigned i = 0; i < num_work_groups; i++)
+		for (unsigned i = 0; i < num_waiting_work_groups; i++)
 		{
+			// Get an available compute unit
+			ComputeUnit *available_compute_unit =
+					gpu->getAvailableComputeUnit();
+
+			// Exit if no compute unit available
+			if (!available_compute_unit)
+				break;
+
 			// Remove work group from list and get its ID
 			long work_group_id = ndrange->GetWaitingWorkGroup();
 			work_group = ndrange->ScheduleWorkGroup(work_group_id);
 
-			// Get an available compute unit
-			ComputeUnit *compute_unit = 
-					gpu->getAvailableComputeUnit();
-			assert(compute_unit);
-
 			// Remove it from the available compute units list.
 			// It will be re-added later if it still has room for
 			// more work groups.
-			gpu->RemoveFromAvailableComputeUnits(compute_unit);
+			gpu->RemoveFromAvailableComputeUnits(
+					available_compute_unit);
 
 			// Map the work group to a compute unit
-			compute_unit->MapWorkGroup(work_group);
+			available_compute_unit->MapWorkGroup(work_group);
 		}
 
 		// If a context has been suspended while waiting for the ndrange

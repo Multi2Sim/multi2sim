@@ -92,6 +92,9 @@ private:
 	// Debug file for ISA
 	static std::string isa_debug_file;
 	
+	// Debug file for scheduler
+	static std::string scheduler_debug_file;
+
 	// Singleton
 	static std::unique_ptr<Emulator> instance;
 
@@ -187,6 +190,9 @@ public:
 	/// Debugger for ISA traces
 	static misc::Debug isa_debug;
 
+	/// Scheduler debug
+	static misc::Debug scheduler_debug;
+
 	/// Initialize a buffer description of type EmuBufferDesc
 	static void createBufferDesc(unsigned base_addr, unsigned size,
 			int num_elems, Argument::DataType data_type, 
@@ -262,9 +268,6 @@ public:
 		return os;
 	}
 
-	/// Get the total number of executed instructions
-	long long getNumInstructions() { return num_instructions; }
-
 	/// Get a new NDRange ID
 	unsigned getNewNDRangeID() { return num_ndranges++; }
 	
@@ -291,7 +294,9 @@ public:
 	{ 
 		// Check number of ndranges running before incrementing
 		assert(ndranges_running >= 0); 
-		ndranges_running++; 
+		ndranges_running++;
+		if (ndranges_running > 0)
+			StartTimer();
 	}
 	
 	/// Decrement ndranges_running
@@ -300,6 +305,8 @@ public:
 		// Check number number of ndranges running after decrementing
 		ndranges_running--; 
 		assert(ndranges_running  >= 0); 
+		if (ndranges_running == 0)
+			StopTimer();
 	}
 	
 	/// Increment work_group_count
@@ -327,7 +334,7 @@ public:
 	void incExportInstCount() { num_export_instructions++; }
 
 	/// Dump the statistics summary
-	void DumpSummary(std::ostream &os);
+	void DumpSummary(std::ostream &os) const;
 
 	/// Increase video memory top
 	void incVideoMemoryTop(unsigned inc) { video_memory_top += inc; }

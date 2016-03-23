@@ -1721,4 +1721,167 @@ TEST(TestSystemConfiguration, event_config_12_manual_vs_fw_routing)
 	}
 }
 
+///
+/// Test topology
+///
+///   N0  -->  S0  -->  S1  -->  S2  -->  S3 --> N1
+/// Without route the path will be through S2, but with route
+/// path will be through S3
+TEST(TestSystemConfiguration, event_config_13_ideal_fix_latency)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config_ideal =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 2\n"
+			"DefaultOutputBufferSize = 2\n"
+			"DefaultBandwidth = 2\n"
+			"DefaultPacketSize = 1\n"
+			"Ideal = true\n";
+
+	std::string config_fix_latency =
+			"[ Network.net0 ]\n"
+			"DefaultInputBufferSize = 2\n"
+			"DefaultOutputBufferSize = 2\n"
+			"DefaultBandwidth = 2\n"
+			"DefaultPacketSize = 1\n"
+			"FixLatency = 3\n";
+
+	std::string rest = 
+			"[Network.net0.Node.N0]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.N1]\n"
+			"Type = EndNode\n"
+			"[Network.net0.Node.S0]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S1]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S2]\n"
+			"Type = Switch\n"
+			"[Network.net0.Node.S3]\n"
+			"Type = Switch\n"
+			"[Network.net0.Link.N0-S0]\n"
+			"Type = Unidirectional\n"
+			"Source = N0\n"
+			"Dest = S0\n"
+			"VC = 2\n"
+			"[Network.net0.Link.S0-S1]\n"
+			"Type = Unidirectional\n"
+			"Source = S0\n"
+			"Dest = S1\n"
+			"[Network.net0.Link.S1-S2]\n"
+			"Type = Unidirectional\n"
+			"Source = S1\n"
+			"Dest = S2\n"
+			"[Network.net0.Link.S2-S3]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = S3\n"
+			"[Network.net0.Link.S2-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S2\n"
+			"Dest = N1\n"
+			"[Network.net0.Link.S3-N1]\n"
+			"Type = Unidirectional\n"
+			"Source = S3\n"
+			"Dest = N1\n";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	std::string config = config_ideal + rest;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	try
+	{
+		// Parse the configuration file
+		system->ParseConfiguration(&ini_file);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *N0 = dynamic_cast<EndNode *>(
+				network->getNodeByName("N0"));
+		EndNode *N1 = dynamic_cast<EndNode *>(
+				network->getNodeByName("N1"));
+
+		// Create a message
+		Message *message = network->TrySend(N0, N1, 2);
+		Packet *packet_0 = message->getPacket(0);
+		Packet *packet_1 = message->getPacket(1);
+
+		// Simulation loop an checking location of packet - cycle 1
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet_0->getNode(), N1);
+		EXPECT_EQ(packet_1->getNode(), N1);
+
+		// Receive message
+		network->Receive(N1, message);
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+
+	// Cleanup previous instance
+	Cleanup();
+
+	// Load the new INI file
+	misc::IniFile ini_file_2;
+	std::string config_route = config_fix_latency + rest;
+	ini_file_2.LoadFromString(config_route);
+
+	// Set up network instance again
+	system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body for route
+	try
+	{
+		// Parse the new configuration file
+		system->ParseConfiguration(&ini_file_2);
+
+		// Getting the network
+		Network *network = system->getNetworkByName("net0");
+
+		// Getting the source, destination and switch nodes
+		EndNode *N0 = dynamic_cast<EndNode *>(network->getNodeByName("N0"));
+		EndNode *N1 = dynamic_cast<EndNode *>(network->getNodeByName("N1"));
+
+		// Create a message
+		Message *message = network->TrySend(N0, N1, 2);
+		Packet *packet_0 = message->getPacket(0);
+		Packet *packet_1 = message->getPacket(1);
+
+		// Simulation loop an checking location of the packets of 
+		// the message. The message is placed in the destination
+		// node as soon as its send, however, the receive 
+		// is performed by the simulator after fix cycles. 
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		esim_engine->ProcessEvents();
+		esim_engine->ProcessEvents();
+		esim_engine->ProcessEvents();
+		EXPECT_EQ(packet_0->getNode(), N1);
+		EXPECT_EQ(packet_1->getNode(), N1);
+
+		// Receive message
+		network->Receive(N1, message);
+
+	}
+	catch (misc::Error &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
 }

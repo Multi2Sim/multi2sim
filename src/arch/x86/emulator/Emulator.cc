@@ -29,12 +29,8 @@ namespace x86
 
 std::string Emulator::call_debug_file;
 std::string Emulator::context_debug_file;
-std::string Emulator::cuda_debug_file;
-std::string Emulator::glut_debug_file;
 std::string Emulator::isa_debug_file;
 std::string Emulator::loader_debug_file;
-std::string Emulator::opencl_debug_file;
-std::string Emulator::opengl_debug_file;
 std::string Emulator::syscall_debug_file;
 
 long long Emulator::max_instructions;
@@ -43,12 +39,8 @@ std::unique_ptr<Emulator> Emulator::instance;
 
 misc::Debug Emulator::call_debug;
 misc::Debug Emulator::context_debug;
-misc::Debug Emulator::cuda_debug;
-misc::Debug Emulator::glut_debug;
 misc::Debug Emulator::isa_debug;
 misc::Debug Emulator::loader_debug;
-misc::Debug Emulator::opencl_debug;
-misc::Debug Emulator::opengl_debug;
 misc::Debug Emulator::syscall_debug;
 
 
@@ -72,15 +64,6 @@ void Emulator::RegisterOptions()
 			"Dump debug information related with context creation, "
 			"destruction, allocation, or state change.");
 
-	// Option --x86-debug-cuda <file>
-	command_line->RegisterString("--x86-debug-cuda <file>", cuda_debug_file,
-			"Debug information for the CUDA driver.");
-
-	// Option --x86-debug-glut <file>
-	command_line->RegisterString("--x86-debug-glut <file>", glut_debug_file,
-			"Debug information for the GLUT library, used by "
-			"OpenGL programs.");
-
 	// Option --x86-debug-isa <file>
 	command_line->RegisterString("--x86-debug-isa <file>", isa_debug_file,
 			"Debug information for dynamic execution of x86 "
@@ -94,14 +77,6 @@ void Emulator::RegisterOptions()
 			"sections and symbols are loaded to the initial program "
 			"memory image.");
 
-	// Option --x86-debug-opencl <file>
-	command_line->RegisterString("--x86-debug-opencl <file>", opencl_debug_file,
-			"Debug information for the OpenCL driver.");
-	
-	// Option --x86-debug-opengl <file>
-	command_line->RegisterString("--x86-debug-opengl <file>", opencl_debug_file,
-			"Debug information for the OpenGL graphics driver.");
-	
 	// Option --x86-debug-syscall <file>
 	command_line->RegisterString("--x86-debug-syscall <file>", syscall_debug_file,
 			"Debug information for system calls performed by an x86 "
@@ -124,12 +99,8 @@ void Emulator::ProcessOptions()
 	// Debuggers
 	call_debug.setPath(call_debug_file);
 	context_debug.setPath(context_debug_file);
-	cuda_debug.setPath(cuda_debug_file);
-	glut_debug.setPath(glut_debug_file);
 	isa_debug.setPath(isa_debug_file);
 	loader_debug.setPath(loader_debug_file);
-	opencl_debug.setPath(opencl_debug_file);
-	opengl_debug.setPath(opengl_debug_file);
 	syscall_debug.setPath(syscall_debug_file);
 }
 

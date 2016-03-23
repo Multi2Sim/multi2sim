@@ -257,6 +257,47 @@ TEST(TestSystemConfiguration, section_network_negative_packet_size)
 					message.c_str());
 }
 
+TEST(TestSystemConfiguration, section_node_unknown_fixlatency)
+{
+	// Cleanup singleton instance
+	Cleanup();
+
+	// Setup configuration file
+	std::string config =
+			"[ Network.test ]\n"
+			"DefaultInputBufferSize = 4\n"
+			"DefaultOutputBufferSize = 4\n"
+			"DefaultBandwidth = 1\n"
+			"DefaultPacketSize = 1\n"
+			"FixLatency = -1";
+
+	// Set up INI file
+	misc::IniFile ini_file;
+	ini_file.LoadFromString(config);
+
+	// Set up network instance
+	System *system = System::getInstance();
+	EXPECT_TRUE(system != nullptr);
+
+	// Test body
+	std::string message;
+	try
+	{
+		system->ParseConfiguration(&ini_file);
+	}
+	catch (misc::Error &error)
+	{
+		message = error.getMessage();
+	}
+	EXPECT_TRUE(system->getNetworkByName("test") != nullptr);
+	EXPECT_REGEX_MATCH(
+			misc::fmt("%s: Network test cannot have a negative "
+					"fix latency",
+					ini_file.getPath().c_str()).c_str(),
+					message.c_str());
+}
+
+
 TEST(TestSystemConfiguration, section_node_unknown_type)
 {
 	// Cleanup singleton instance

@@ -190,6 +190,9 @@ void Wavefront::Execute()
 	// because we don't know the size of the next instruction yet
 	instruction->Decode(inst_buffer.get(), pc);
 
+	// Update the statistics
+	emulator->incNumInstructions();
+
 	// Extract the properties of the newest instruction
 	this->inst_size = instruction->getSize();
 	Instruction::Opcode opcode = instruction->getOpcode();

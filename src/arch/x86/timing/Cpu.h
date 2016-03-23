@@ -61,8 +61,7 @@ public:
 	{
 		FetchKindInvalid = 0,
 		FetchKindShared,
-		FetchKindTimeslice,
-		FetchKindSwitchonevent
+		FetchKindTimeslice
 	};
 
 	/// Fetch kind string map
@@ -161,11 +160,6 @@ private:
 
 	// Number of fast forward instructions
 	static long long num_fast_forward_instructions;
-
-	/// Version of x86 trace producer.
-	/// See 'src/visual/x86/cpu.c' for x86 trace consumer.
-	static const int TraceVersionMajor;
-	static const int TraceVersionMinor;
 
 
 

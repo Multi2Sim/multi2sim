@@ -108,7 +108,7 @@ void ScalarUnit::Complete()
 	// Initialize iterator
 	auto it = write_buffer.begin();
 
-	// Process completed instructionss
+	// Process completed instructions
 	while (it != write_buffer.end())
 	{
 		// Get Uop
@@ -150,6 +150,11 @@ void ScalarUnit::Complete()
 			uop->getWavefrontPoolEntry()->lgkm_cnt--;
 		}
 
+		if (!uop->scalar_memory_read)
+		{
+			// Update wavefront pool entry
+			uop->getWavefrontPoolEntry()->ready = true;
+		}
 
 		// Check for "wait" instruction
 		// If a wait instruction was executed and there are outstanding
@@ -157,7 +162,6 @@ void ScalarUnit::Complete()
 		if (uop->memory_wait)
 		{
 			uop->getWavefrontPoolEntry()->mem_wait = true;
-			uop->getWavefrontPoolEntry()->ready = true;
 		}
 
 		// Check for "barrier" instruction
@@ -170,7 +174,6 @@ void ScalarUnit::Complete()
 
 			// Check if all wavefronts have reached the barrier
 			bool barrier_complete = true;
-			work_group->getWavefrontsBegin();
 			for (auto it = work_group->getWavefrontsBegin(),
 					e = work_group->getWavefrontsEnd();
 					it != e;
@@ -180,7 +183,7 @@ void ScalarUnit::Complete()
 				assert(wavefront->getWavefrontPoolEntry());
 				if (!wavefront->getWavefrontPoolEntry()->
 						wait_for_barrier)
-							barrier_complete = false;
+					barrier_complete = false;
 			}
 
 			// If all wavefronts have reached the barrier,
@@ -194,13 +197,18 @@ void ScalarUnit::Complete()
 				{
 					Wavefront *wavefront = it->get();
 					assert(wavefront->getWavefrontPoolEntry()->
-						wait_for_barrier);
-					wavefront->getWavefrontPoolEntry()->wait_for_barrier = false;;
+							wait_for_barrier);
+					wavefront->getWavefrontPoolEntry()->
+							wait_for_barrier = false;
 				}
-			}
 
-			// Update wavefront pool entry
-			uop->getWavefrontPoolEntry()->ready = true;
+				Timing::pipeline_debug << misc::fmt(
+						"wg=%d id_in_wf=%lld "
+						"Barrier:Finished (last wf=%d)\n",
+						work_group->getId(),
+						uop->getIdInWavefront(),
+						uop->getWavefront()->getId());
+			}
 		}
 
 		if (uop->wavefront_last_instruction)
@@ -223,19 +231,28 @@ void ScalarUnit::Complete()
 
 			// Check if the work group is finished. If so, unmap
 			// the work group
-			if (work_group->finished_timing)
+			if (work_group->finished_timing &&
+					work_group->inflight_instructions == 1)
+			{
+				Timing::pipeline_debug << misc::fmt(
+						"wg=%d "
+						"WGFinished\n",
+						work_group->getId());
 				compute_unit->UnmapWorkGroup(uop->getWorkGroup());
+			}
 		}
 
 		// Trace
 		Timing::trace << misc::fmt("si.end_inst "
-				           "id=%lld "
-				           "cu=%d\n",
-					    uop->getIdInComputeUnit(),
-			                    compute_unit->getIndex());
+				"id=%lld "
+				"cu=%d\n",
+				uop->getIdInComputeUnit(),
+				compute_unit->getIndex());
 
 		// Access complete, remove the uop from the queue
 		it = write_buffer.erase(it);
+		assert(uop->getWorkGroup()->inflight_instructions > 0);
+		uop->getWorkGroup()->inflight_instructions--;
 
 		// Statistics
 		num_instructions++;
@@ -622,12 +639,6 @@ void ScalarUnit::Read()
 		// Update uop read ready
 		uop->read_ready = compute_unit->getTiming()->getCycle() +
 				read_latency;
-
-		if (!uop->at_barrier && !uop->memory_wait &&
-				!uop->wavefront_last_instruction)
-		{
-			uop->getWavefrontPoolEntry()->ready_next_cycle = true;
-		}
 
 		// Trace
 		Timing::trace << misc::fmt("si.inst "

@@ -40,6 +40,9 @@ std::string Emulator::isa_debug_file;
 
 long long Emulator::max_instructions;
 
+std::string Emulator::scheduler_debug_file;
+ 
+misc::Debug Emulator::scheduler_debug;
 
 Emulator *Emulator::getInstance()
 {
@@ -68,9 +71,10 @@ Emulator::Emulator() : comm::Emulator("SouthernIslands")
 }
 
 
-void Emulator::Dump(std::ostream &os) const
+void Emulator::DumpSummary(std::ostream &os) const
 {
 	// FIXME: basic statistics, such as instructions, time...
+	comm::Emulator::DumpSummary(os);
 
 	// More statistics 
 	os << "NDRangeCount = " << num_ndranges << std::endl;
@@ -363,12 +367,19 @@ void Emulator::RegisterOptions()
 			"Maximum number of ISA instructions. An instruction "
 			"executed by an entire wavefront counts as 1 toward "
 			"this limit. Use 0 (default) for no limit.");
+
+	// Option --si-debug-scheduler
+	command_line->RegisterString("--si-debug-scheduler <file>",
+			scheduler_debug_file,
+			"File to dump how the work groups, and wavefronts are "
+			"scheduled on the Gpu's compute units.");
 }
 
 
 void Emulator::ProcessOptions()
 {
 	isa_debug.setPath(isa_debug_file);
+	scheduler_debug.setPath(scheduler_debug_file);
 }
 	
 	
@@ -381,6 +392,10 @@ NDRange *Emulator::addNDRange()
 	// Save iterator to the position in the ND-range list
 	ndrange->ndranges_iterator = it;
 
+	// Debug info
+	scheduler_debug << misc::fmt("NDRange %d added\n",
+			ndrange->getId());
+
 	// Return created ND-range
 	return ndrange;
 }
@@ -388,6 +403,10 @@ NDRange *Emulator::addNDRange()
 
 void Emulator::RemoveNDRange(NDRange *ndrange)
 {
+	//Debug info
+	scheduler_debug << misc::fmt("NDRange %d removed\n",
+			ndrange->getId());
+
 	assert(ndrange->ndranges_iterator != ndranges.end());
 	ndranges.erase(ndrange->ndranges_iterator);
 }

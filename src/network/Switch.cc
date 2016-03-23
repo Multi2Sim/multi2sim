@@ -42,7 +42,7 @@ void Switch::Dump(std::ostream &os) const
 			(double) sent_bytes / cycle : 0.0 );
 	os << misc::fmt("ReceivedBytes = %lld\n", received_bytes);
 	os << misc::fmt("ReceivedPackets = %lld\n", received_packets);
-	os << misc::fmt("RecieveRate = %0.4f\n", cycle ?
+	os << misc::fmt("ReceiveRate = %0.4f\n", cycle ?
 			(double) received_bytes / cycle : 0.0 );
 
 	// Dumping input buffers' information
@@ -70,8 +70,9 @@ void Switch::Forward(Packet *packet)
 	// Assert the input buffer is an input buffer of current node
 	Node *node  = input_buffer->getNode();
 	if (node != this) 
-		throw misc::Panic(misc::fmt("Trying to forward a packet "
-				"that is not in current switch").c_str());
+		throw misc::Panic(misc::fmt("Trying to forward "
+				"a packet that is not in current "
+				"switch").c_str());
 
 	// Check if the input buffer is in read busy
 	long long cycle = System::getInstance()->getCycle();
@@ -79,14 +80,16 @@ void Switch::Forward(Packet *packet)
 	Network *network = message->getNetwork();
 	if (input_buffer->read_busy >= cycle)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - busy source] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_sw_src_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
 				node->getName().c_str(),
 				input_buffer->getName().c_str());
+
+		// Coming back to this event when buffer is not busy
 		esim_engine->Next(current_event, 
 				input_buffer->read_busy - cycle + 1);
 		return;
@@ -98,7 +101,8 @@ void Switch::Forward(Packet *packet)
 	RoutingTable::Entry *entry = 
 			routing_table->Lookup(node, destination_node);
 	if (!entry) 
-		throw misc::Panic(misc::fmt("%s: no route from %s to %s.",
+		throw misc::Panic(misc::fmt("%s: no route from %s "
+				"to %s.",
 				network->getName().c_str(), 
 				node->getName().c_str(), 
 				destination_node->getName().c_str()));
@@ -107,15 +111,17 @@ void Switch::Forward(Packet *packet)
 	// Check if the output buffer is busy
 	if (output_buffer->write_busy >= cycle)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - busy destination] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_busy_sw_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
-				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getNode()->
+				getName().c_str(),
 				output_buffer->getName().c_str());
 
+		// Update trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -133,25 +139,28 @@ void Switch::Forward(Packet *packet)
 		return;
 	}
 
-	// Check if the destination buffer target enough to fit the packet
+	// Check if the destination buffer has enough storage
+	// to fit the packet
 	if (packet->getSize() > output_buffer->getSize())
-		throw misc::Panic(misc::fmt("%s: packet does not fit in "
-				"buffer.\n", 
+		throw misc::Panic(misc::fmt("%s: packet does not "
+				"fit in buffer.\n",
 				network->getName().c_str()));
 
 	// If destination output buffer is full, wait
 	if (output_buffer->getCount() + packet->getSize() > 
 			output_buffer->getSize())
 	{
-		System::debug << misc::fmt("[Network %s] [stall - full destination] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s] [Buffer %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_full_sw_dst_buf: %s:%s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
-				output_buffer->getNode()->getName().c_str(),
+				output_buffer->getNode()->
+				getName().c_str(),
 				output_buffer->getName().c_str());
 
+		// Update trace information
 		System::trace << misc::fmt("net.packet "
 				"net=\"%s\" "
 				"name=\"P-%lld:%d\" "
@@ -163,6 +172,7 @@ void Switch::Forward(Packet *packet)
 				node->getName().c_str(),
 				input_buffer->getName().c_str());
 
+		// Come back when buffer is not busy
 		output_buffer->Wait(current_event);
 		return;
 	}
@@ -170,9 +180,9 @@ void Switch::Forward(Packet *packet)
 	// If scheduler says that it is not our turn, try later
 	if (Schedule(output_buffer) != input_buffer)
 	{
-		System::debug << misc::fmt("[Network %s] [stall - switch scheduling] "
-				"message-->packet: %lld:%d, at "
-				"[Node %s]",
+		// Update debug information
+		System::debug << misc::fmt("net: %s - M-%lld:%d - "
+				"stl_sw_arb: %s\n",
 				network->getName().c_str(),
 				message->getId(),
 				packet->getId(),
@@ -194,16 +204,18 @@ void Switch::Forward(Packet *packet)
 	packet->setBusy(cycle + latency - 1);
 
 	// Buffer's trace information
-	System::trace << misc::fmt("net.packet_extract net=\"%s\" node=\"%s\" "
-			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	System::trace << misc::fmt("net.packet_extract "
+			"net=\"%s\" node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			input_buffer->getNode()->getName().c_str(),
 			input_buffer->getName().c_str(),
 			message->getId(), packet->getId(),
 			input_buffer->getOccupancyInBytes());
 
-	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
-			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	System::trace << misc::fmt("net.packet_insert net=\"%s\" "
+			"node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			output_buffer->getNode()->getName().c_str(),
 			output_buffer->getName().c_str(),
@@ -217,7 +229,8 @@ void Switch::Forward(Packet *packet)
 
 Buffer *Switch::Schedule(Buffer *output_buffer) 
 {
-	// Checks if the scheduler is an output buffer of current switch	
+	// Checks if the scheduler is an output buffer
+	// of current switch
 	bool is_output_buffer = false;
 	for (auto &buffer : output_buffers) 
 		if (output_buffer == buffer.get())
@@ -226,8 +239,8 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 			break;
 		}
 	if (!is_output_buffer) 
-		throw misc::Panic(misc::fmt("Buffer %s is not and output "
-				"buffer of switch %s.", 
+		throw misc::Panic(misc::fmt("Buffer %s is not and "
+				"output buffer of switch %s.",
 				output_buffer->getName().c_str(),
 				this->getName().c_str()));
 
@@ -242,7 +255,7 @@ Buffer *Switch::Schedule(Buffer *output_buffer)
 	output_buffer->setScheduledCycle(cycle);
 
 	// Get the index of the buffer of the previous devision. If no 
-	// previous decision is make, use 0
+	// previous decision is made, use 0
 	int previous_input_buffer_index = output_buffer->getScheduledBuffer() ?
 		output_buffer->getScheduledBuffer()->getIndex() : 0;
 	

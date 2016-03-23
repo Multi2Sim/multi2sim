@@ -44,44 +44,58 @@ void System::EventTypeSendHandler(esim::Event *event,
 	esim::Engine *esim_engine = esim::Engine::getInstance();
 	Frame *network_frame = misc::cast<Frame *>(frame);
 
-	// Lookup route from routing table
+	// Get the network related field from the event
 	Packet *packet = network_frame->getPacket();
 	Message *message = packet->getMessage();
 	Network *network = message->getNetwork();
 	Node *source_node = message->getSourceNode();
 	Node *destination_node = message->getDestinationNode();
+
+	// For fix delay go around the network
+	if (network->hasConstantLatency())
+	{
+		// Debug Information
+		debug << misc::fmt("net: %s - M-%lld:%d -"
+				"fix_lat=%d\n",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getId(),
+				network->getFixLatency());
+
+		// Update the network related statistics
+		source_node->incSentBytes(packet->getSize());
+		source_node->incSentPackets();
+		destination_node->incReceivedBytes(packet->getSize());
+		destination_node->incReceivedPackets();
+		packet->setNode(destination_node);
+		esim_engine->Next(event_receive,
+				network->getFixLatency());
+		return;
+	}
+
+	// Lookup route from routing table
 	RoutingTable *routing_table = network->getRoutingTable();
-	RoutingTable::Entry *entry = routing_table->Lookup(source_node, 
+	RoutingTable::Entry *entry = routing_table->Lookup(
+			source_node,
 			destination_node);
 	Buffer *output_buffer = entry->getBuffer();
 	if (!output_buffer)
-		throw misc::Panic(misc::fmt("%s: no route from %s to %s.", 
+		throw misc::Panic(misc::fmt("%s: no route from "
+				"%s to %s.",
 				network->getName().c_str(),
 				source_node->getName().c_str(),
 				destination_node->getName().c_str()));
 
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Send Handler]"
-			"message-->packet: %lld-->%d, "
-			"[Source node %s] to [Destination node=\"%s\", "
-			"output_buffer=\"%s\"\n",
-			network->getName().c_str(), 
-			message->getId(), 
-			packet->getId(),
-			source_node->getName().c_str(), 
-			destination_node->getName().c_str(), 
-			output_buffer->getName().c_str());
-
 	// Check if buffer fits the message
 	if (message->getSize() > output_buffer->getSize())
-		throw misc::Panic(misc::fmt("%s: message does not fit in "
-				"buffer.\n", __FUNCTION__));
+		throw misc::Panic(misc::fmt("%s: message does not "
+				"fit in buffer.\n", __FUNCTION__));
 
 	// Check if the buffer is too full to fit the new message
 	if (output_buffer->getCount() + packet->getSize() > 
 			output_buffer->getSize())
 		throw misc::Panic(misc::fmt("%s: output buffer full.", 
-					__FUNCTION__));
+				__FUNCTION__));
 
 	// Insert in output buffer (1 cycle latency)
 	System *system = getInstance();
@@ -93,8 +107,9 @@ void System::EventTypeSendHandler(esim::Event *event,
 	packet->setBusy(cycle);
 
 	// Update trace with buffer information
-	System::trace << misc::fmt("net.packet_insert net=\"%s\" node=\"%s\" "
-			"buffer=\"%s\" name=\"P-%lld:%d\" occpncy=%d\n",
+	System::trace << misc::fmt("net.packet_insert "
+			"net=\"%s\" node=\"%s\" buffer=\"%s\" "
+			"name=\"P-%lld:%d\" occpncy=%d\n",
 			network->getName().c_str(),
 			output_buffer->getNode()->getName().c_str(),
 			output_buffer->getName().c_str(),
@@ -114,19 +129,8 @@ void System::EventTypeOutputBufferHandler(esim::Event *event,
 
 	// Lookup route from routing table
 	Packet *packet = network_frame->getPacket();
-	Message *message = packet->getMessage();
 	Buffer *buffer = packet->getBuffer();
-	Node *node = packet->getNode();
-	Network *network = message->getNetwork();
 
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Output Buffer Event Handler], "
-			"message-->packet: %lld-->%d, "
-			"[Node %s] [Buffer %s]\n",
-			network->getName().c_str(), message->getId(), 
-			packet->getId(), node->getName().c_str(),
-			buffer->getName().c_str());
-	
 	// Let the connection to pass the packet to input buffer
 	Connection *connection = buffer->getConnection();
 	connection->TransferPacket(packet);
@@ -149,14 +153,6 @@ void System::EventTypeInputBufferHandler(esim::Event *event,
 	Message *message = packet->getMessage();
 	Network *network = message->getNetwork();
 
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Input Buffer Event Handler], "
-			"message-->packet: %lld-->%d, at "
-			"[Node %s] [Buffer %s]\n",
-			network->getName().c_str(), message->getId(),
-			packet->getId(), node->getName().c_str(),
-			buffer->getName().c_str());
-
 	// If this is the destination node, schedule receive event
 	if (node == packet->getMessage()->getDestinationNode())
 	{
@@ -167,6 +163,16 @@ void System::EventTypeInputBufferHandler(esim::Event *event,
 	// If the message is not at buffer head, process later
 	if (buffer->getBufferHead() != packet)
 	{
+		// Debug info
+		debug << misc::fmt("net: %s - M-%lld:%d -"
+				"stl_not_buf_head: %s:%s\n",
+				network->getName().c_str(),
+				message->getId(),
+				packet->getId(),
+				node->getName().c_str(),
+				buffer->getName().c_str());
+
+		// Schedule event for later
 		buffer->Wait(event);
 		return;
 	}
@@ -174,7 +180,8 @@ void System::EventTypeInputBufferHandler(esim::Event *event,
 	// If this not destination, current node must be a switch 
 	Switch *switch_node = dynamic_cast<Switch *>(node);
 	if (switch_node == nullptr)
-		throw Error("Message can only pass through switch nodes");
+		throw Error("Message can only pass through "
+				"switch nodes");
 
 	// Switch forward the packet
 	switch_node->Forward(packet);
@@ -196,12 +203,6 @@ void System::EventTypeReceiveHandler(esim::Event *event,
 	EndNode *node = dynamic_cast<EndNode *>(packet->getNode());
 	Network *network = message->getNetwork();
 
-	// Dump debug information
-	debug << misc::fmt("[Network %s] [Receive Event Handler], "
-			"message-->packet: %lld-->%d, [node %s]\n",
-			network->getName().c_str(), message->getId(),
-			packet->getId(), node->getName().c_str());
-
 	// Check if the message arrived at an end node
 	if (!node)
 		throw misc::Panic("The message is not arriving at an end node");
@@ -214,12 +215,14 @@ void System::EventTypeReceiveHandler(esim::Event *event,
 			// was packetized
 			if (message->getNumPackets() > 1)
 				System::trace << misc::fmt("net.msg net=\"%s\" "
-						"name=\"M-%lld\" state=\"%s:depacketize\"\n",
+						"name=\"M-%lld\" "
+						"state=\"%s:depacketize\"\n",
 						network->getName().c_str(),
 						message->getId(),
 						node->getName().c_str());
 
-			// Receive the message just when there is no return event
+			// Receive the message just when there is
+			// no return event
 			if (network_frame->automatic_receive)
 				network->Receive(node, message);
 			else
