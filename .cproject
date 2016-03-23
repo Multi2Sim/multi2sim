@@ -470,4 +470,5 @@
 			<resource resourceType="PROJECT" workspacePath="/multi2sim_hsa"/>
 		</configuration>
 	</storageModule>
+	<storageModule moduleId="org.eclipse.cdt.internal.ui.text.commentOwnerProjectMappings"/>
 </cproject>

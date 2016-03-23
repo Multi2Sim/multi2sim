@@ -24,3 +24,7 @@ install:
 script:
         - make
         - make check
+        - pwd
+        - git clone https://github.com/Multi2Sim/m2s-client-kit.git
+        - cd m2s-client-kit/local-tests
+        - pwd
