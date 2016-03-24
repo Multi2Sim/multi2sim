@@ -19,7 +19,7 @@
 
 #include <cassert>
 #include <limits>
-#include <math.h>
+#include <cmath>
 #include <lib/cpp/Misc.h>
 
 #include "Emulator.h"
@@ -2286,11 +2286,11 @@ void WorkItem::ISA_V_CVT_U32_F32_Impl(Instruction *instruction)
 	// Handle special number cases and cast to an unsigned
 
 	// -inf, NaN, 0, -0 --> 0
-	if ((isinf(fvalue) && fvalue < 0.0f) || isnan(fvalue)
+	if ((std::isinf(fvalue) && fvalue < 0.0f) || std::isnan(fvalue)
 		|| fvalue == 0.0f || fvalue == -0.0f)
 		value.as_uint = 0;
 	// inf, > max_uint --> max_uint
-	else if (isinf(fvalue) || fvalue >= std::numeric_limits<unsigned int>::max())
+	else if (std::isinf(fvalue) || fvalue >= std::numeric_limits<unsigned int>::max())
 		value.as_uint = std::numeric_limits<unsigned int>::max();
 	else
 		value.as_uint = (unsigned) fvalue;
@@ -2326,10 +2326,10 @@ void WorkItem::ISA_V_CVT_I32_F32_Impl(Instruction *instruction)
 	// Handle special number cases and cast to an int
 
 	// inf, > max_int --> max_int
-	if ((isinf(fvalue) && fvalue > 0.0f) || fvalue >= std::numeric_limits<int>::max())
+	if ((std::isinf(fvalue) && fvalue > 0.0f) || fvalue >= std::numeric_limits<int>::max())
 		value.as_int = std::numeric_limits<int>::max();
 	// -inf, < -max_int --> -max_int
-	else if (isinf(fvalue) || fvalue < std::numeric_limits<int>::min())
+	else if (std::isinf(fvalue) || fvalue < std::numeric_limits<int>::min())
 		value.as_int = std::numeric_limits<int>::min();
 	// NaN, 0, -0 --> 0
 	else if (isnan(fvalue) || fvalue == 0.0f || fvalue == -0.0f)
@@ -5926,41 +5926,41 @@ void WorkItem::ISA_V_ADD_F64_Impl(Instruction *instruction)
 	// Add the operands, take into account special number cases.
 
 	// s0 == NaN64 || s1 == NaN64
-	if (fpclassify(s0.as_double) == FP_NAN ||
-		fpclassify(s1.as_double) == FP_NAN)
+	if (std::fpclassify(s0.as_double) == FP_NAN ||
+		std::fpclassify(s1.as_double) == FP_NAN)
 	{
 		// value <-- NaN64
 		value.as_double = NAN;
 	}
 	// s0,s1 == infinity
-	else if (fpclassify(s0.as_double) == FP_INFINITE &&
-		fpclassify(s1.as_double) == FP_INFINITE)
+	else if (std::fpclassify(s0.as_double) == FP_INFINITE &&
+		std::fpclassify(s1.as_double) == FP_INFINITE)
 	{
 		// value <-- NaN64
 		value.as_double = NAN;
 	}
 	// s0,!s1 == infinity
-	else if (fpclassify(s0.as_double) == FP_INFINITE)
+	else if (std::fpclassify(s0.as_double) == FP_INFINITE)
 	{
 		// value <-- s0(+-infinity)
 		value.as_double = s0.as_double;
 	}
 	// s1,!s0 == infinity
-	else if (fpclassify(s1.as_double) == FP_INFINITE)
+	else if (std::fpclassify(s1.as_double) == FP_INFINITE)
 	{
 		// value <-- s1(+-infinity)
 		value.as_double = s1.as_double;
 	}
 	// s0 == +-denormal, +-0
-	else if (fpclassify(s0.as_double) == FP_SUBNORMAL ||
-		fpclassify(s0.as_double) == FP_ZERO)
+	else if (std::fpclassify(s0.as_double) == FP_SUBNORMAL ||
+		std::fpclassify(s0.as_double) == FP_ZERO)
 	{
 		// s1 == +-denormal, +-0
-		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO)
+		if (std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s1.as_double) == FP_ZERO)
 			// s0 && s1 == -denormal, -0
-			if (! !signbit(s0.as_double)
-				&& ! !signbit(s1.as_double))
+			if (std::signbit(s0.as_double)
+				&& std::signbit(s1.as_double))
 				// value <-- -0
 				value.as_double = -0;
 			else
@@ -5972,15 +5972,15 @@ void WorkItem::ISA_V_ADD_F64_Impl(Instruction *instruction)
 			value.as_double = s1.as_double;
 	}
 	// s1 == +-denormal, +-0
-	else if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
-		fpclassify(s1.as_double) == FP_ZERO)
+	else if (std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+		std::fpclassify(s1.as_double) == FP_ZERO)
 	{
 		// s0 == +-denormal, +-0
-		if (fpclassify(s0.as_double) == FP_SUBNORMAL ||
-			fpclassify(s0.as_double) == FP_ZERO)
+		if (std::fpclassify(s0.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s0.as_double) == FP_ZERO)
 			// s0 && s1 == -denormal, -0
-			if (! !signbit(s0.as_double)
-				&& ! !signbit(s1.as_double))
+			if (std::signbit(s0.as_double)
+				&& std::signbit(s1.as_double))
 				// value <-- -0
 				value.as_double = -0;
 			else
@@ -6041,81 +6041,81 @@ void WorkItem::ISA_V_MUL_F64_Impl(Instruction *instruction)
 	// Multiply the operands, take into account special number cases.
 
 	// s0 == NaN64 || s1 == NaN64
-	if (fpclassify(s0.as_double) == FP_NAN ||
-		fpclassify(s1.as_double) == FP_NAN)
+	if (std::fpclassify(s0.as_double) == FP_NAN ||
+		std::fpclassify(s1.as_double) == FP_NAN)
 	{
 		// value <-- NaN64
 		value.as_double = NAN;
 	}
 	// s0 == +denormal, +0
-	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO) &&
-		!signbit(s0.as_double))
+	else if ((std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s1.as_double) == FP_ZERO) &&
+		!std::signbit(s0.as_double))
 	{
 		// s1 == +-infinity
-		if (isinf(s1.as_double))
+		if (std::isinf(s1.as_double))
 			// value <-- NaN64
 			value.as_double = NAN;
 		// s1 > 0
-		else if (!signbit(s1.as_double))
+		else if (!std::signbit(s1.as_double))
 			// value <-- +0
 			value.as_double = +0;
 		// s1 < 0
-		else if (! !signbit(s1.as_double))
+		else if (std::signbit(s1.as_double))
 			// value <-- -0
 			value.as_double = -0;
 	}
 	// s0 == -denormal, -0
-	else if ((fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO) &&
-		! !signbit(s0.as_double))
+	else if ((std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s1.as_double) == FP_ZERO) &&
+		std::signbit(s0.as_double))
 	{
 		// s1 == +-infinity
-		if (isinf(s1.as_double))
+		if (std::isinf(s1.as_double))
 			// value <-- NaN64
 			value.as_double = NAN;
 		// s1 > 0
-		else if (!signbit(s1.as_double))
+		else if (!std::signbit(s1.as_double))
 			// value <-- -0
 			value.as_double = -0;
 		// s1 < 0
-		else if (! !signbit(s1.as_double))
+		else if (std::signbit(s1.as_double))
 			// value <-- +0
 			value.as_double = +0;
 	}
 	// s0 == +infinity
-	else if (fpclassify(s0.as_double) == FP_INFINITE &&
-		!signbit(s0.as_double))
+	else if (std::fpclassify(s0.as_double) == FP_INFINITE &&
+		!std::signbit(s0.as_double))
 	{
 		// s1 == +-denormal, +-0
-		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO)
+		if (std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s1.as_double) == FP_ZERO)
 			// value <-- NaN64
 			value.as_double = NAN;
 		// s1 > 0
-		else if (!signbit(s1.as_double))
+		else if (!std::signbit(s1.as_double))
 			// value <-- +infinity
 			value.as_double = +INFINITY;
 		// s1 < 0
-		else if (! !signbit(s1.as_double))
+		else if (std::signbit(s1.as_double))
 			// value <-- -infinity
 			value.as_double = -INFINITY;
 	}
 	// s0 == -infinity
-	else if (fpclassify(s0.as_double) == FP_INFINITE &&
-		! !signbit(s0.as_double))
+	else if (std::fpclassify(s0.as_double) == FP_INFINITE &&
+		std::signbit(s0.as_double))
 	{
 		// s1 == +-denormal, +-0
-		if (fpclassify(s1.as_double) == FP_SUBNORMAL ||
-			fpclassify(s1.as_double) == FP_ZERO)
+		if (std::fpclassify(s1.as_double) == FP_SUBNORMAL ||
+			std::fpclassify(s1.as_double) == FP_ZERO)
 			// value <-- NaN64
 			value.as_double = NAN;
 		// s1 > 0
-		else if (!signbit(s1.as_double))
+		else if (!std::signbit(s1.as_double))
 			// value <-- -infinity
 			value.as_double = -INFINITY;
 		// s1 < 0
-		else if (! !signbit(s1.as_double))
+		else if (std::signbit(s1.as_double))
 			// value <-- +infinity
 			value.as_double = +INFINITY;
 	}

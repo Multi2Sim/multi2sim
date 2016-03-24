@@ -4582,33 +4582,33 @@ void Thread::ExecuteInst_FSET_B(Instruction *inst)
  		if (cmp_op == 0)
 			cmp_result = false;
 		else if (cmp_op == 1)
-			cmp_result = ((src1 < src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 < src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 2)
-			cmp_result = ((src1 == src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 == src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 3)
-			cmp_result = ((src1 <= src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 <= src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 4)
-			cmp_result = ((src1 > src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 > src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 5)
-			cmp_result = ((src1 != src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 != src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 6)
-			cmp_result = ((src1 >= src2) && (!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((src1 >= src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 7)
-			cmp_result = ((!isnan(src1)) && (!isnan(src2)));
+			cmp_result = ((!std::isnan(src1)) && (!std::isnan(src2)));
 		else if (cmp_op == 8)
-			cmp_result = ((isnan(src1)) && (isnan(src2)));
+			cmp_result = ((std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 9)
-			cmp_result = ((src1 < src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 < src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 10)
-			cmp_result = ((src1 == src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 == src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 11)
-			cmp_result = ((src1 <= src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 <= src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 12)
-			cmp_result = ((src1 > src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 > src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 13)
-			cmp_result = ((src1 != src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 != src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 14)
-			cmp_result = ((src1 >= src2) && (isnan(src1)) && (isnan(src2)));
+			cmp_result = ((src1 >= src2) && (std::isnan(src1)) && (std::isnan(src2)));
 		else if (cmp_op == 15)
 			cmp_result = true;
 
