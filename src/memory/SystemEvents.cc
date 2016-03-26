@@ -3338,7 +3338,7 @@ void System::EventInvalidateHandler(esim::Event *event,
 				frame->getId(),
 				module->getName().c_str());
 
-		// The following line updates the block state.  We must
+		// TODO The following line updates the block state.  We must
 		// be sure that the directory entry is always locked if we
 		// allow this to happen.
 		if (frame->reply == Frame::ReplyAckData)

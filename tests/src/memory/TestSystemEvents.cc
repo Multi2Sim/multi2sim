@@ -4093,6 +4093,166 @@ TEST(TestSystemEvents, config_0_store_1)
 }
 
 
+TEST(TestSystemEvents, config_0_store_2)
+{
+	try
+	{
+		// Cleanup singleton instances
+		Cleanup();
+
+		// Load configuration files
+		misc::IniFile ini_file_mem;
+		misc::IniFile ini_file_x86;
+		misc::IniFile ini_file_net;
+		ini_file_mem.LoadFromString(mem_config_0);
+		ini_file_x86.LoadFromString(x86_config);
+		ini_file_net.LoadFromString(net_config);
+
+		// Set up x86 timing simulator
+		x86::Timing::ParseConfiguration(&ini_file_x86);
+		x86::Timing::getInstance();
+
+		// Set up network system
+		net::System *network_system = net::System::getInstance();
+		network_system->ParseConfiguration(&ini_file_net);
+
+		// Set up memory system
+		System *memory_system = System::getInstance();
+		memory_system->ReadConfiguration(&ini_file_mem);
+
+		// Get modules
+		Module *module_l1_0 = memory_system->getModule("mod-l1-0");
+		Module *module_l1_1 = memory_system->getModule("mod-l1-1");
+		Module *module_l1_2 = memory_system->getModule("mod-l1-2");
+		Module *module_l2_0 = memory_system->getModule("mod-l2-0");
+		Module *module_l2_1 = memory_system->getModule("mod-l2-1");
+		Module *module_mm = memory_system->getModule("mod-mm");
+		ASSERT_NE(module_l1_0, nullptr);
+		ASSERT_NE(module_l1_1, nullptr);
+		ASSERT_NE(module_l2_0, nullptr);
+		ASSERT_NE(module_mm, nullptr);
+
+		// Set L1 Block States
+		module_l1_0->getCache()->getBlock(0, 1)->setStateTag(
+				Cache::BlockShared, 0x0);
+		module_l1_2->getCache()->getBlock(0, 1)->setStateTag(
+				Cache::BlockShared, 0x0);
+
+		// Set L2 Block States and sharer/owner
+		module_l2_0->getCache()->getBlock(0, 3)->setStateTag(
+				Cache::BlockShared, 0x0);
+		module_l2_1->getCache()->getBlock(0, 3)->setStateTag(
+				Cache::BlockShared, 0x0);
+		module_l2_0->setSharer(0, 3, 0, module_l1_0);
+		module_l2_1->setSharer(0, 3, 0, module_l1_2);
+		
+		// Set MM block states and sharer/owner
+		module_mm->getCache()->getBlock(0, 7)->setStateTag(Cache::BlockExclusive, 0x0);
+		module_mm->setSharer(0, 7, 0, module_l2_0);
+		module_mm->setSharer(0, 7, 0, module_l2_1);
+
+		// Accesses
+		int witness = -1;
+		module_l1_1->Access(Module::AccessStore, 0x40, &witness);
+
+		// Simulation loop
+		esim::Engine *esim_engine = esim::Engine::getInstance();
+		while (witness < 0)
+			esim_engine->ProcessEvents();
+
+		// Check L1 block
+		unsigned tag;
+		Cache::BlockState state;
+		module_l1_0->getCache()->getBlock(0, 1, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockInvalid);
+		module_l1_1->getCache()->getBlock(1, 1, tag, state);
+		EXPECT_EQ(tag, 0x40);
+		EXPECT_EQ(state, Cache::BlockModified);
+		module_l1_2->getCache()->getBlock(0, 1, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockInvalid);
+
+		// Check L2-0 state, owners and sharers 
+		module_l2_0->getCache()->getBlock(0, 3, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 1), 1);
+		EXPECT_EQ(module_l2_0->isSharer(0, 3, 1, module_l1_1), true);
+		EXPECT_EQ(module_l2_0->getOwner(0, 3, 1), module_l1_1);
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 3, 0), 0);
+		EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), nullptr);
+
+		// Check L2-1 state, owners and sharers
+		module_l2_1->getCache()->getBlock(0, 3, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockInvalid);
+		EXPECT_EQ(module_l2_1->getNumSharers(0, 3, 1), 0);
+		EXPECT_EQ(module_l2_1->getOwner(0, 3, 1), nullptr);
+		EXPECT_EQ(module_l2_1->getNumSharers(0, 3, 0), 0);
+		EXPECT_EQ(module_l2_1->getOwner(0, 3, 0), nullptr);
+
+		// Check MM state, owners and sharers
+		module_mm->getCache()->getBlock(0, 7, tag, state);
+		EXPECT_EQ(tag, 0x0);
+		EXPECT_EQ(state, Cache::BlockExclusive);
+		EXPECT_EQ(module_mm->getNumSharers(0, 7, 0), 1);
+		EXPECT_EQ(module_mm->isSharer(0, 7, 0, module_l2_0), true);
+		EXPECT_EQ(module_mm->getOwner(0, 7, 0), module_l2_0);
+
+		// Check L1-0 communications. Receives an INV
+		// and sends an ACK
+		net::Node *node = module_l1_0->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 8);
+		EXPECT_EQ(node->getSentBytes(), 8);
+
+		// Check L1-1 communications. Send a write-request, and 
+		// receives a block
+		node = module_l1_1->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 72);
+		EXPECT_EQ(node->getSentBytes(), 8);
+
+		// Check L1-2 communications. Receives an INV
+		// and sends an ACK
+		node = module_l1_2->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 8);
+		EXPECT_EQ(node->getSentBytes(), 8);
+
+		// Check L2-0 communications. It receives a write-request from
+		// L1-1, invalidates L1-0, and sends the write-request to MM.
+		// Receives an ACK from MM indicating the hierarchy is updated
+		// and send the requested data to L1-1.
+		node = module_l2_0->getHighNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 80);
+		node = module_l2_0->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 8);
+		EXPECT_EQ(node->getSentBytes(), 8);
+
+		// Check L2-1 communications. Receives an INV from MM, and 
+		// forwards it to L1-2. Receives an ACK from L1-2 and forwards
+		// it to MM
+		node = module_l2_1->getHighNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 8);
+		EXPECT_EQ(node->getSentBytes(), 8);
+		node = module_l2_1->getLowNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 8);
+		EXPECT_EQ(node->getSentBytes(), 8);
+
+		// Check MM communications. It receives a write-request from
+		// L2-0, invalidates the L2-1 and acknowledges the invalidation
+		// of the L2-1 to L2-0
+		node = module_mm->getHighNetworkNode();
+		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 16);
+	}
+	catch (misc::Exception &e)
+	{
+		e.Dump();
+		FAIL();
+	}
+}
+
 // l1_0, l2_0, l3_0, and mm have address 0 in E
 // Cycle 1 - l1_0 writes address 0 (block in l1_0 turns M)
 // Cycle 2 - l1_1 reads address 0x200 (conflict in l1_0 and l2_0, but not in l3)
