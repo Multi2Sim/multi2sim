@@ -4261,7 +4261,7 @@ TEST(TestSystemEvents, config_0_store_2)
 
 		// Accesses
 		int witness = -1;
-		module_l1_1->Access(Module::AccessStore, 0x40, &witness);
+		module_l1_1->Access(Module::AccessStore, 0x48, &witness);
 
 		// Simulation loop
 		esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -4316,8 +4316,8 @@ TEST(TestSystemEvents, config_0_store_2)
 		// There should be no communication with l1_0 or any other
 		// sharers
 		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 8);
-		EXPECT_EQ(node->getSentBytes(), 8);
+		EXPECT_EQ(node->getReceivedBytes(), 0);
+		EXPECT_EQ(node->getSentBytes(), 0);
 
 		// Check L1-1 communications. Send a write-request, and 
 		// receives a block

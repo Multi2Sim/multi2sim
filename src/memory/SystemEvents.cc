@@ -562,10 +562,24 @@ void System::EventStoreHandler(esim::Event *event,
 		auto new_frame = misc::new_shared<Frame>(
 				frame->getId(),
 				module,
-				frame->tag);
+				frame->getAddress());
 		new_frame->target_module = module->getLowModuleServingAddress(frame->tag);
 		new_frame->request_direction = Frame::RequestDirectionUpDown;
 		new_frame->witness = frame->witness;
+
+		// Set the expected reply size. This might change during the
+		// down up write process, and invalidation
+		if (frame->state == Cache::BlockInvalid)
+		{
+			new_frame->reply_size = module->getBlockSize() + 8;
+			new_frame->setReplyIfHigher(Frame::ReplyAckData);
+		}
+		else
+		{
+			new_frame->reply_size = 8;
+			new_frame->setReplyIfHigher(Frame::ReplyAck);
+		}
+
 		esim_engine->Call(event_write_request,
 				new_frame,
 				event_store_unlock);
@@ -1463,6 +1477,7 @@ void System::EventEvictHandler(esim::Event *event,
 		new_frame->except_module = nullptr;
 		new_frame->set = frame->set;
 		new_frame->way = frame->way;
+		new_frame->partial_invalidation = false;
 		esim_engine->Call(event_invalidate,
 				new_frame,
 				event_evict_invalid);
@@ -1686,12 +1701,13 @@ void System::EventEvictHandler(esim::Event *event,
 		for (int z = 0; z < directory->getNumSubBlocks(); z++)
 		{
 			// Skip other sub-blocks
-			unsigned directory_entry_tag = frame->tag + 
+			unsigned directory_entry_tag = frame->tag +
 					z * target_module->getSubBlockSize();
-			assert(directory_entry_tag < frame->tag + (unsigned) target_module->getBlockSize());
-			if (directory_entry_tag < (unsigned) frame->src_tag || 
+			assert(directory_entry_tag < frame->tag + (unsigned)
+					target_module->getBlockSize());
+			if (directory_entry_tag < (unsigned) frame->src_tag ||
 					directory_entry_tag >=
-					frame->src_tag + 
+					frame->src_tag +
 					(unsigned) module->getBlockSize())
 				continue;
 
@@ -1963,8 +1979,8 @@ void System::EventWriteRequestHandler(esim::Event *event,
 		// decrease this value (during invalidate). If the request 
 		// turns out to be downup, then these values will get 
 		// overwritten.
-		frame->reply_size = module->getBlockSize() + 8;
-		frame->setReplyIfHigher(Frame::ReplyAckData);
+//		frame->reply_size = module->getBlockSize() + 8;
+//		frame->setReplyIfHigher(Frame::ReplyAckData);
 
 		// Sanity
 		assert(frame->request_direction);
@@ -2110,10 +2126,15 @@ void System::EventWriteRequestHandler(esim::Event *event,
 		auto new_frame = misc::new_shared<Frame>(
 				frame->getId(),
 				target_module,
-				0);
+				frame->getAddress());
 		new_frame->except_module = module;
 		new_frame->set = frame->set;
 		new_frame->way = frame->way;
+		assert(frame->request_direction);
+		if (frame->request_direction == Frame::RequestDirectionDownUp)
+			new_frame->partial_invalidation = false;
+		else
+			new_frame->partial_invalidation = true;
 		esim_engine->Call(event_invalidate,
 				new_frame,
 				event_write_request_exclusive);
@@ -2185,6 +2206,17 @@ void System::EventWriteRequestHandler(esim::Event *event,
 			new_frame->target_module = target_module->
 					getLowModuleServingAddress(frame->tag);
 			new_frame->request_direction = Frame::RequestDirectionUpDown;
+			if (frame->state == Cache::BlockInvalid)
+			{
+				new_frame->reply_size = target_module->getBlockSize() 
+						+ 8;
+				new_frame->setReplyIfHigher(Frame::ReplyAckData);
+			}
+			else
+			{
+				new_frame->reply_size = 8;
+				new_frame->setReplyIfHigher(Frame::ReplyAck);
+			}
 			esim_engine->Call(event_write_request,
 					new_frame,
 					event_write_request_updown_finish);
@@ -2238,19 +2270,18 @@ void System::EventWriteRequestHandler(esim::Event *event,
 			return;
 		}
 
-		// Check that address is a multiple of the module's block size.
-		// Set module as sharer and owner. */
+		// Set module as sharer and owner.
 		for (int z = 0; z < target_directory->getNumSubBlocks(); z++)
 		{
-			assert(frame->getAddress() % module->getBlockSize() == 0);
+			//assert(frame->getAddress() % module->getBlockSize() == 0);
 			unsigned directory_entry_tag = frame->tag +
 					z * target_module->getSubBlockSize();
 			assert(directory_entry_tag < frame->tag + 
 					(unsigned) target_module->getBlockSize());
-			if (directory_entry_tag < frame->getAddress() || 
-					directory_entry_tag >=
-					frame->getAddress() +
-					(unsigned) module->getBlockSize())
+			if (directory_entry_tag > frame->getAddress() || 
+					directory_entry_tag + 
+					(unsigned) module->getSubBlockSize() <=
+					frame->getAddress())
 				continue;
 
 			// Set sharer and owner
@@ -2413,11 +2444,12 @@ void System::EventWriteRequestHandler(esim::Event *event,
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld A-%lld 0x%x %s "
-				"write_request_reply\n",
+				"write_request_reply (size=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
-				target_module->getName().c_str());
+				target_module->getName().c_str(),
+				frame->reply_size);
 		trace << misc::fmt("mem.access "
 				"name=\"A-%lld\" "
 				"state=\"%s:write_request_reply\"\n",
@@ -3175,11 +3207,12 @@ void System::EventReadRequestHandler(esim::Event *event,
 	{
 		// Debug and trace
 		debug << misc::fmt("  %lld A-%lld 0x%x %s "
-				"read_request_reply\n",
+				"read_request_reply (size=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
-				target_module->getName().c_str());
+				target_module->getName().c_str(),
+				frame->reply_size);
 		trace << misc::fmt("mem.access "
 				"name=\"A-%lld\" "
 				"state=\"%s:read_request_reply\"\n",
@@ -3314,8 +3347,19 @@ void System::EventInvalidateHandler(esim::Event *event,
 					z * module->getSubBlockSize();
 			assert(directory_entry_tag < frame->tag +
 					(unsigned) module->getBlockSize());
+
+			// Skip other sub-blocks
+			if (frame->partial_invalidation &&
+					(frame->getAddress() < directory_entry_tag ||
+					frame->getAddress() >= directory_entry_tag +
+					module->getSubBlockSize()))
+				continue;
+
+			// Get the directory entry
 			Directory::Entry *directory_entry = directory->getEntry(
 					frame->set, frame->way, z);
+
+			// Process all the high level modules connected to it
 			for (int i = 0; i < directory->getNumNodes(); i++)
 			{
 				// Skip non-sharers and 'except_module'
@@ -3343,6 +3387,9 @@ void System::EventInvalidateHandler(esim::Event *event,
 							Directory::NoOwner);
 
 				// Skip mid-block sub-blocks
+				// This is to avoid sending multiple messages
+				// to invalidate the same sub-block
+				// in the higher level module
 				if (directory_entry_tag % sharer->getBlockSize())
 					continue;
 
@@ -3526,10 +3573,14 @@ void System::EventMessageHandler(esim::Event *event,
 			for (int z = 0; z < target_module->getDirectorySize(); z++)
 			{
 				// Skip other subblocks
-				if (int(frame->getAddress()) == frame->tag + z * target_module->getNumSubBlocks())
+				if (int(frame->getAddress()) == frame->tag + z * 
+						target_module->getNumSubBlocks())
 				{
 					// Clear the owner
-					Directory::Entry *dir_entry = target_directory->getEntry(frame->set, frame->way, z);
+					Directory::Entry *dir_entry = 
+							target_directory->
+							getEntry(frame->set, 
+							frame->way, z);
 					dir_entry->setOwner(-1);
 				}
 
@@ -3558,11 +3609,12 @@ void System::EventMessageHandler(esim::Event *event,
 	{
 		// Memory debug
 		debug << misc::fmt("  %lld A-%lld 0x%x %s "
-				"message_reply\n",
+				"message_reply (size=%d)\n",
 				esim_engine->getTime(),
 				frame->getId(),
 				frame->tag,
-				module->getName().c_str());
+				module->getName().c_str(),
+				frame->reply_size);
 
 		// Get source and destination node
 		net::Network *network = module->getLowNetwork();
