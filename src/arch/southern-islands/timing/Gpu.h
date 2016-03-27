@@ -149,8 +149,11 @@ public:
 	/// Return the associated MMU
 	mem::Mmu *getMmu() const { return mmu.get(); }
 
-	/// Map an NDRange to the GPP object
+	/// Map an NDRange to the GPU object
 	void MapNDRange(NDRange *ndrange);
+
+	// Unmap an NDRange from the GPU
+	void UnmapNDRange(NDRange *ndrange);
 	
 	// Calculate the number of allowed work groups per wavefront pool
 	void CalcGetWorkGroupsPerWavefrontPool(

@@ -134,6 +134,21 @@ void Gpu::MapNDRange(NDRange *ndrange)
 }
 
 
+void Gpu::UnmapNDRange(NDRange* ndrange)
+{
+	// Erase every workgroup in each compute unit, setting the
+	// work_groups size to 0
+	for (int i = 0; i < num_compute_units; i++)
+	{
+		// Get the compute unit
+		ComputeUnit *compute_unit = compute_units[i].get();
+
+		// Erase the workgroups of the compute unit
+		compute_unit->Reset();
+	}
+}
+
+
 void Gpu::CalcGetWorkGroupsPerWavefrontPool(int work_items_per_work_group, 
 		int registers_per_work_item, int local_memory_per_work_group)
 {

@@ -902,6 +902,13 @@ int Driver::CallNDRangeFree(comm::Context *context,
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)", 
 			__FUNCTION__, ndrange_id));
 
+	// Unmap NDRange if it is timing
+	if (Timing::getSimKind() == comm::Arch::SimDetailed)
+	{
+		Gpu *gpu = Timing::getInstance()->getGpu();
+		gpu->UnmapNDRange(ndrange);
+	}
+
 	// Free       
 	emulator->RemoveNDRange(ndrange);
 
