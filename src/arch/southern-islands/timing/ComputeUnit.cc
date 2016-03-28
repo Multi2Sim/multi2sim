@@ -548,6 +548,9 @@ void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
 
 void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
 {
+	// Save timing simulator
+	timing = Timing::getInstance();
+
 	// Debug info
 	Emulator::scheduler_debug << misc::fmt("@%lld work group %d "
 			"removed from compute unit %d slot %d\n",
@@ -565,6 +568,9 @@ void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
 
 void ComputeUnit::Reset()
 {
+	// Save timing simulator
+	timing = Timing::getInstance();
+
 	// Debug info
 	Emulator::scheduler_debug << misc::fmt("@%lld compute unit %d "
 			"reset\n",
