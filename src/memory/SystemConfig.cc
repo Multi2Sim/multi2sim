@@ -1373,6 +1373,10 @@ void System::ConfigCalculateModuleLevels()
 void System::ConfigTrace()
 {
 	// Initialization
+	if (!trace)
+		return;
+
+	// Add the header
 	trace.Header(misc::fmt("mem.init version=\"%d.%d\"\n",
 			trace_version_major, trace_version_minor));
 
