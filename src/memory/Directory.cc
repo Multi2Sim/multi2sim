@@ -68,6 +68,15 @@ void Directory::setOwner(int set_id, int way_id, int sub_block_id, int owner)
 			way_id,
 			sub_block_id,
 			owner);
+
+	// Debug
+	System::debug << misc::fmt("    dir=\"%s\" set=%d, way=%d, sub_block=%d: "
+			"set owner=%d\n",
+			name.c_str(),
+			set_id,
+			way_id,
+			sub_block_id,
+			owner);
 }
 	
 
@@ -98,6 +107,14 @@ void Directory::setSharer(int set_id, int way_id, int sub_block_id, int node_id)
 	// Trace
 	System::trace << misc::fmt("mem.set_sharer dir=\"%s\" "
 			"x=%d y=%d z=%d sharer=%d\n",
+			name.c_str(),
+			set_id,
+			way_id,
+			sub_block_id,
+			node_id);
+
+	System::debug << misc::fmt("    dir=\"%s\" set=%d, way=%d, sub_block=%d: "
+			"set sharer=%d\n",
 			name.c_str(),
 			set_id,
 			way_id,
@@ -138,6 +155,15 @@ void Directory::clearSharer(int set_id, int way_id, int sub_block_id, int node_i
 			way_id,
 			sub_block_id,
 			node_id);
+
+	// Debug
+	System::debug << misc::fmt("    dir=\"%s\" set=%d, way=%d, sub_block=%d: "
+			"clear sharer=%d\n",
+			name.c_str(),
+			set_id,
+			way_id,
+			sub_block_id,
+			node_id);
 }
 
 
@@ -161,6 +187,14 @@ void Directory::clearAllSharers(int set_id, int way_id, int sub_block_id)
 	// Trace
 	System::trace << misc::fmt("mem.clear_all_sharers dir=\"%s\" "
 			"x=%d y=%d z=%d\n",
+			name.c_str(),
+			set_id,
+			way_id,
+			sub_block_id);
+
+	// Debug
+	System::debug << misc::fmt("    clear all sharer "
+			"dir=\"%s\" set=%d, way=%d, sub_block=%d\n",
 			name.c_str(),
 			set_id,
 			way_id,
