@@ -676,6 +676,9 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 
 	// Parse ALU configuration by their sections
 	Alu::ParseConfiguration(ini_file);
+
+	// Check the configuration for forbidden variables
+	ini_file->Check();
 }
 
 

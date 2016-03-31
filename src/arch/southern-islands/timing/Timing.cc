@@ -864,6 +864,8 @@ void Timing::ParseConfiguration(misc::IniFile *ini_file)
 					VectorMemoryUnit::write_buffer_size);
 
 	// TODO Section [LDS]
+	// Enforce only the allowed variables
+	ini_file->Check();
 }
 
 void Timing::DumpConfiguration(std::ofstream &os) const

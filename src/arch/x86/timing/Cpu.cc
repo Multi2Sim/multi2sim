@@ -173,7 +173,6 @@ void Cpu::ParseConfiguration(misc::IniFile *ini_file)
 			load_store_queue_kind_map, LoadStoreQueueKindPrivate);
 	load_store_queue_size = ini_file->ReadInt(section, "LsqSize", 20);
 	uop_queue_size = ini_file->ReadInt(section, "UopQueueSize", 32);
-
 }
 
 
