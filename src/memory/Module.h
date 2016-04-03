@@ -576,7 +576,7 @@ public:
 	/// Return the owner module associated with a directory entry. If the
 	/// entry has no owner, the function returns `nullptr`. A directory
 	/// must have been created for this module.
-	Module *getOwner(int set_id, int way_id, int sub_block_id);
+	Module *getOwner(int set_id, int way_id, int sub_block_id) const;
 
 	/// Add the given module as a sharer for the given set, way, and
 	/// sub-block of the current module's directory. A directory must
@@ -614,7 +614,7 @@ public:
 
 	/// Return the number of sharers for the given directory entry. A
 	/// directory must have been created for this module.
-	int getNumSharers(int set_id, int way_id, int sub_block_id)
+	int getNumSharers(int set_id, int way_id, int sub_block_id) const
 	{
 		assert(directory.get());
 		Directory::Entry *entry = directory->getEntry(set_id, way_id,
@@ -688,6 +688,9 @@ public:
 
 	/// Dump the module information.
 	void Dump(std::ostream &os = std::cout) const;
+
+	/// Dump the module report.
+	void DumpReport(std::ostream &os = std::cout) const;
 
 	/// Check if an access to a module can be coalesced with another access
 	/// older than 'older_than_frame'. If 'older_than_frame' is nullptr,

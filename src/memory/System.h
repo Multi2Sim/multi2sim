@@ -84,6 +84,12 @@ class System
 
 	// Frequency of memory system in MHz
 	static int frequency;
+
+	// Sanity check cycle
+	static long long sanity_check_interval;
+
+	// Last time a sanity check is performed
+	static long long last_sanity_check;
 	
 	// Error messages
 	static const char *err_config_note;
@@ -374,6 +380,8 @@ public:
 	static esim::Event *event_local_find_and_lock_action;
 	static esim::Event *event_local_find_and_lock_finish;
 
+	// Sanity check of the event driven simulation
+	void SanityCheck();
 
 
 
@@ -403,7 +411,7 @@ public:
 	void DumpReport();
 
 	/// Dump function for report
-	void Dump(std::ostream &os = std::cout) const;
+	void DumpReport(std::ostream &os = std::cout) const;
 
 };
 

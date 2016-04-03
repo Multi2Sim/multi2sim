@@ -38,7 +38,8 @@ std::string System::debug_file;
 std::string System::report_file;
 bool System::help = false;
 int System::frequency = 1000;
-
+long long System::sanity_check_interval = 0;
+long long System::last_sanity_check = 0;
 
 esim::Trace System::trace;
 
@@ -331,6 +332,14 @@ void System::RegisterOptions()
 			"cache hits, misses evictions, etc. This option must "
 			"be used together with detailed simulation of any "
 			"CPU/GPU architecture.");
+
+	// Option sanity check
+	command_line->RegisterInt64("--mem-sanity-check <interval>",
+			sanity_check_interval,
+			"This option performs a sanity check for the underlying "
+			"coherency protocol in constant periods equal to the interval, "
+			"to examine its consistency and correctness. The simulation "
+			"fails if the correctness is not maintained.");
 }
 
 
@@ -360,16 +369,16 @@ void System::DumpReport()
 					report_file.c_str()));
 		
 		// Dump the memory report
-		Dump(f);
+		DumpReport(f);
 
 		// For every internal network report in the same file
 		for (auto &network : networks)
-			network->Dump(f);
+			network->DumpReport(f);
 	}
 }
 
 
-void System::Dump(std::ostream &os) const
+void System::DumpReport(std::ostream &os) const
 {
 	// Dump introduction to the memory report file
 	os << "; Report for caches, TLBs, and main memory\n";
@@ -390,7 +399,75 @@ void System::Dump(std::ostream &os) const
 	
 	// Dump report for each module
 	for (auto &module : modules)
-		module->Dump(os);
+		module->DumpReport(os);
+}
+
+
+void System::SanityCheck()
+{
+	//
+	// Top down Rules
+	//
+
+	// Get the blocks of each module in the highest level
+	for (auto &module : modules)
+	{
+		// Get the associated cache
+		Cache *cache = module->getCache();
+
+		// Get every block of the cache
+		for (unsigned set = 0; set < cache->getNumSets(); set++)
+		{
+			for (unsigned way = 0; way < cache->getNumWays(); way++)
+			{
+				// Get the block
+				Cache::Block *block = cache->getBlock(set,way);
+				
+				// If the block is not valid, continue
+				if (block->getState() == Cache::BlockInvalid)
+					continue;
+
+				// Get the lower module for the top-down rules
+				Module *lower_module = module->
+						getLowModuleServingAddress(
+						block->getTag());
+				int lower_set;
+				int lower_way;
+				int lower_tag;
+				Cache::BlockState lower_state = Cache::BlockInvalid;
+				module->FindBlock(block->getTag(),
+						lower_set,
+						lower_way,
+						lower_tag,
+						lower_state);
+
+				// Rule 1:
+				// Lower level module should have the block
+				// in an state other than Invalid.
+				if (lower_state == Cache::BlockInvalid)
+				{
+					module->Dump();
+					lower_module->Dump();
+					throw Error(misc::fmt("Sanity check failed\n"
+					"window %lld to %lld: The module %s "
+					"has a block that is not found in "
+					"module's approperiate lower module %s\n",
+					(last_sanity_check - 1) * sanity_check_interval,
+					last_sanity_check * sanity_check_interval,
+					module->getName().c_str(),
+					lower_module->getName().c_str()));
+				}
+			}
+		}
+	}
+
+	//
+	// Down Up Rules
+	//
+
+	//
+	// Peer Rules
+	//
 }
 
 }  // namespace mem

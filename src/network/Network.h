@@ -411,6 +411,9 @@ public:
 	/// Generating the report dump
 	void DumpReport(const std::string &path);
 	
+	/// Dump the network information.
+	void DumpReport(std::ostream &os = std::cout) const;
+
 	/// Generating the static graph file
 	void StaticGraph(const std::string &path);
 };

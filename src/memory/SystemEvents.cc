@@ -119,6 +119,24 @@ void System::EventLoadHandler(esim::Event *event, esim::Frame *esim_frame)
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
 
+	// Perform a sanity check if it is requested by the user. The sanity
+	// check is invoked in a certain intervals passed by the user, in
+	// either the load, store, and nc_store event handlers.
+	// If neither of the events are called during the interval,
+	// sanity check is not performed since there are no changes in the
+	// blocks.
+	if (sanity_check_interval &&
+			esim_engine->getTime() > last_sanity_check * 
+			sanity_check_interval)
+	{
+		// Call the sanity check function
+		System *system = getInstance();
+		system->SanityCheck();
+
+		// Set the last sanity check to current window
+		last_sanity_check++;
+	}
+
 	// Event "load"
 	if (event == event_load)
 	{
@@ -390,6 +408,19 @@ void System::EventStoreHandler(esim::Event *event,
 	Cache *cache = module->getCache();
 	Directory *directory = module->getDirectory();
 
+	// Sanity check
+	if (sanity_check_interval &&
+			esim_engine->getTime() > last_sanity_check * 
+			sanity_check_interval)
+	{
+		// Call the sanity check function
+		System *system = getInstance();
+		system->SanityCheck();
+
+		// Set the last sanity check to current window
+		last_sanity_check++;
+	}
+
 	// Event "store"
 	if (event == event_store)
 	{
@@ -633,6 +664,19 @@ void System::EventNCStoreHandler(esim::Event *event,
 	Module *module = frame->getModule();
 	Directory *directory = module->getDirectory();
 	Cache *cache = module->getCache();
+
+	// Sanity check
+	if (sanity_check_interval &&
+			esim_engine->getTime() > last_sanity_check * 
+			sanity_check_interval)
+	{
+		// Call the sanity check function
+		System *system = getInstance();
+		system->SanityCheck();
+
+		// Set the last sanity check to current window
+		last_sanity_check++;
+	}
 
 	// Event "nc_store"
 	if (event == event_nc_store)

@@ -17,6 +17,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <climits>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+
 #include "Frame.h"
 #include "Module.h"
 #include "System.h"
@@ -110,7 +115,7 @@ Module *Module::getLowModuleServingAddress(unsigned address) const
 }
 
 
-Module *Module::getOwner(int set_id, int way_id, int sub_block_id)
+Module *Module::getOwner(int set_id, int way_id, int sub_block_id) const
 {
 	// Get directory entry
 	assert(directory.get());
@@ -388,6 +393,378 @@ bool Module::isInFlightAccess(long long id)
 
 
 void Module::Dump(std::ostream &os) const
+{
+	// First we have to calculate the largest string that will be presented
+	// in the table, and create the size of elements of the table according
+	// to this string. Initial element size is the string "Module <name>"
+	unsigned element_size = name.length() + 7;
+
+	// Get the number of sets and ways
+	unsigned sets = cache->getNumSets();
+	unsigned ways = cache->getNumWays();
+	int sub_blocks = directory->getNumSubBlocks();
+
+	// Also we create a list with integers for the maximum number of 
+	// sharers per set
+	std::vector<int> max_sharers;
+	max_sharers.resize(cache->getNumSets());
+
+	for (unsigned set = 0; set < sets; set++)
+	{
+		for (unsigned way = 0; way < ways; way++)
+		{
+			// Get the block
+			Cache::Block *block = cache->getBlock(set,way);
+
+			// If block state is invalid continue
+			if (!block->getState())
+				continue;
+
+			// Start the element size with the tag of the block
+			if (element_size < std::to_string(
+					block->getTag()).length())
+				element_size = std::to_string(
+						block->getTag()).length();
+
+			// Sharers field size
+			unsigned entry_text_size = 0;
+			
+			// find modules that are sharers/owner of the 
+			// directory entries. 
+			for (int sub_block_id = 0; 
+					sub_block_id < sub_blocks;
+					sub_block_id++)
+			{
+				// Number of sharers per sub_block
+				int sharers = 0;
+
+				// Add the name of the sharer + two spaces
+				for (auto &high_module : high_modules)
+				{
+					int index = getSharerIndex(high_module);
+					if (directory->isSharer((int) set, (int) way,
+							sub_block_id, index))
+					{
+						if (entry_text_size < high_module->
+								getName().length())
+							entry_text_size = high_module->
+									getName().
+									length();
+						sharers++;
+					}
+				}
+
+				// Increase the maximum number of sharers
+				// per set if it is required
+				if (max_sharers[set] < sharers)
+					max_sharers[set] = sharers;
+			}
+
+			// Check if this string is bigger than the previous
+			// maximum value
+			if (element_size < entry_text_size)
+				element_size = entry_text_size;
+
+		}
+	}
+
+	// Based on the element size construct the dump table
+	// No matter what, we would add extra space to the element size
+	element_size += 2;
+
+	// We start drawing the table based on the element size
+	// ******************************************
+	// * Module <name>			    *
+	// ******************************************
+	os << "(The Dump is best viewed when text "
+			"wrapping is disabled)\n";
+	os << std::string((ways * sub_blocks + 2)* element_size, '=') << 
+			"\n";
+	os << "| Module " << name.c_str() <<
+			std::string((ways * sub_blocks + 2) * element_size - 10 -
+			name.length(), ' ') << "|" << "\n";
+	os << std::string((ways * sub_blocks + 2)* element_size, '=') << 
+			"\n";
+
+	// Here we start printing
+	int pad_size = 0;
+
+	// The first line is the number of ways. The first two elements 
+	// in this row are empty.
+	os << "|" << std::string(element_size * 2 - 2 , ' ') << "|";
+	for (unsigned i = 0; i < ways; i++)
+	{
+		// Print the way index
+		std::string way_id = "Way " + std::to_string(i);
+
+		// Empty space excluding | and the way index
+		pad_size = (sub_blocks * element_size) - 2 - way_id.length();
+		os << "|" <<
+				std::string(pad_size/2, ' ') <<
+				way_id.c_str() <<
+				std::string((sub_blocks * element_size) - 2 
+				- way_id.length() - pad_size/2, ' ') <<
+				"|";
+	}
+
+	// Separating the first row
+	os <<"\n";
+	os << std::string((sub_blocks * ways + 2)* element_size, '=') << 
+			"\n";
+	for (unsigned set = 0; set < sets; set++)
+	{
+		// The row information
+		std::string set_id = "Set " + std::to_string(set);
+
+		// Print the set index
+		os << "| " <<
+				std::left <<
+				std::setw(element_size - 3) <<
+				std::setfill(' ') <<
+				set_id.c_str() <<
+				"|";
+
+		// The first row is the state (which is 5 letters)
+		pad_size = element_size - 2 - 5;
+		os << "|" <<
+				std::string(pad_size/2, ' ') <<
+				"State" <<
+				std::string(element_size - 7 - 
+				pad_size/2, ' ') <<
+				"|";
+
+		// Printing the state of the block
+		for (unsigned way = 0; way < ways; way++)
+		{
+			// Get the block
+			Cache::Block *block = cache->getBlock(set, way);
+
+			// Print the state
+			pad_size = sub_blocks * element_size - 3;
+			os << "|" <<
+					std::string(pad_size/2, ' ') <<
+					Cache::BlockStateMap[block->getState()] <<
+					std::string(sub_blocks * element_size - 3 - 
+					pad_size/2, ' ') <<
+					"|";
+		}
+
+		// Internal separator
+		os << "\n" << "|" << std::string(element_size - 1, ' ')
+				<< std::string(element_size * 
+				(ways * sub_blocks + 1),'-') << "\n";
+
+		// The next row is the tag but the first column is empty
+		os << "|" << std::string(element_size - 2 , ' ') << "|";
+
+		// The second column prints Tag(which is 3 words)
+		pad_size = element_size - 2 - 3;
+		os << "|" <<
+				std::string(pad_size/2, ' ') <<
+				"Tag" <<
+				std::string(element_size - 5 - 
+				pad_size/2, ' ') <<
+				"|";
+
+		// Printing the tag of the block
+		for (unsigned way = 0; way < ways; way++)
+		{
+			// Get the block
+			Cache::Block *block = cache->getBlock(set, way);
+
+			// If the block is invalid print empty
+			if (!block->getState())
+			{
+				os << "|" << std::string(sub_blocks * element_size - 2, ' ')
+						<< "|";
+			}
+			else
+			{
+				// Conduct the tag in Hex 
+				std::stringstream stream;
+				stream << std::hex << block->getTag();
+				std::string tag = "0x" + stream.str();
+
+				// Print the tag
+				pad_size = sub_blocks * element_size - 
+						2 - tag.length();
+				os << "|" <<
+						std::string(pad_size/2, ' ') <<
+						tag.c_str() <<
+						std::string(sub_blocks * 
+						element_size - 2 - 
+						tag.length() - pad_size/2, 
+						' ') <<
+						"|";
+			}
+		}
+		// Internal separator
+		os << "\n" << "|" << std::string(element_size - 1, ' ')
+				<< std::string(element_size * 
+				(sub_blocks * ways + 1),'-') << "\n";
+
+		// Start printing sharers of the sub-blocks one sharer
+		// per line
+		std::vector<int> printed_counter;
+		printed_counter.resize(cache->getNumWays() * directory->
+				getNumSubBlocks());
+
+		// Minimum number of rows for sharer is 1
+		int sharer_rows = 1;
+		if (sharer_rows < max_sharers[set])
+			sharer_rows = max_sharers[set];
+		for (int sharer_row = 0; sharer_row < sharer_rows; 
+				sharer_row++)
+		{
+			// The next row is the sharers but the first column is empty
+			os << "|" << std::string(element_size - 2 , ' ') << "|";
+
+			// The second column prints Sharers(which is 7 words)
+			if (sharer_row == 0)
+			{
+				pad_size = element_size - 2 - 7;
+				os << "|" <<
+						std::string(pad_size/2, ' ') <<
+						"Sharers" <<
+					std::string(element_size - 9 - 
+					pad_size/2, ' ') <<
+					"|";
+			}
+			else
+			{
+				os << "|" << std::string(element_size - 2, ' ')
+						<< "|";
+			}
+
+			// For each entry
+			for (unsigned way = 0; way < ways; way++)
+			{
+				for (int sub_block = 0; sub_block < sub_blocks;
+						sub_block++)
+				{
+					// If the sub_block doesn't have a sharer
+					// print empty and continue
+					if (!getNumSharers(set, way, sub_block))
+					{
+						os << "|" << std::string(
+						element_size - 2, ' ') << "|";
+						continue;
+					}
+					// Counting the modules that are 
+					// sharers
+					int counting = 0;
+					for (auto &high_module : high_modules)
+					{
+						// Get the number of printed sharer
+						int printed = printed_counter[
+								way * directory->
+								getNumSubBlocks() +
+								sub_block];
+
+						// Find a sharer module
+						int index = getSharerIndex(high_module);
+						if (directory->isSharer((int) set, (int) way,
+								sub_block,
+								index))
+						{
+							// If the sharer module is
+							// already printed continue
+							// otherwise print and
+							// exit the loop for
+							// this sub-block
+							if (printed > counting)
+							{
+								counting++;
+								continue;
+							}
+							else
+							{
+								// Increase
+								// printed
+								// counter
+								printed_counter[
+								way * directory->
+								getNumSubBlocks() +
+								sub_block]++;
+								
+								// Print
+								int length = 
+										high_module->
+										getName().
+										length();
+								pad_size = element_size - 
+										2 -
+										length;
+								os << "|" <<
+								std::string(pad_size/2, ' ') <<
+								high_module->getName() <<
+								std::string(element_size - 2 - 
+								length - pad_size/2, ' ') <<
+								"|";
+							}
+						}
+					}
+				}
+			}
+			// Internal separator
+			os << "\n";
+		}
+		// Internal separator
+		os << "|" << std::string(element_size - 1, ' ')
+				<< std::string(element_size * 
+				(sub_blocks * ways + 1),'-') << "\n";
+
+		// The next row is the owner but the first column is empty
+		os << "|" << std::string(element_size - 2 , ' ') << "|";
+
+		// The second column prints Owner(which is 5 letters)
+		pad_size = element_size - 2 - 5;
+		os << "|" <<
+				std::string(pad_size/2, ' ') <<
+				"Owner" <<
+				std::string(element_size - 7 - 
+				pad_size/2, ' ') <<
+				"|";
+
+		// For each entry
+		for (unsigned way = 0; way < ways; way++)
+		{
+			for (int sub_block = 0; sub_block < sub_blocks;
+					sub_block++)
+			{
+				// If the sub_block doesn't have a owner
+				// print empty
+				Module *owner = getOwner(set, way, sub_block);
+				if (!owner)
+				{
+					os << "|" << std::string(
+					element_size - 2, ' ') << "|";
+				}
+				else
+				{
+					// Print
+					int length = owner->getName().length();
+					pad_size = element_size - 2 - length;
+					os << "|" <<
+							std::string(pad_size/2,
+							' ') <<
+							owner->getName() <<
+							std::string(element_size - 
+							2 - length - 
+							pad_size/2, ' ') <<
+							"|";
+				}
+			}
+		}
+		// Set separator
+		os << "\n" << "|" << std::string((2 + ways * sub_blocks) * 
+				element_size - 2, '=') << "|"
+				<< "\n";
+	}
+}
+
+
+void Module::DumpReport(std::ostream &os) const
 {
 	// Dumping module's name
 	os << misc::fmt("[ %s ]\n\n", name.c_str());

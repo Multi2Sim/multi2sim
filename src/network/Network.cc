@@ -760,7 +760,7 @@ void Network::DumpReport(const std::string &path)
 				path.c_str()));
 
 	// Dump into file
-	Dump(f);
+	DumpReport(f);
 }
 
 
@@ -787,7 +787,7 @@ void Network::StaticGraph(const std::string &path)
 }
 
 
-void Network::Dump(std::ostream &os) const
+void Network::DumpReport(std::ostream &os) const
 {
 	// Dump network information
 	os << misc::fmt("[ Network.%s ]\n", name.c_str());
