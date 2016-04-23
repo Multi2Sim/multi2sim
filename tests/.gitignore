@@ -3,3 +3,8 @@
 .deps
 Makefile
 Makefile.in
+
+# Gtest files
+*_test
+*.log
+*.trs
