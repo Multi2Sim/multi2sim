@@ -1,0 +1,32 @@
+language: cpp
+compiler: g++
+
+addons:
+        apt:
+                sources:
+                        - ubuntu-toolchain-r-test
+                packages:
+                        - g++-4.9
+                        - zlib1g-dev
+                        - lib32gcc1
+                        - gcc-multilib
+
+before_install:
+        - export CXX="g++-4.9"
+        
+install:
+        - libtoolize
+        - aclocal
+        - autoconf
+        - automake --add-missing
+        - ./configure --enable-debug
+
+script:
+        - make
+        - make check
+        - pwd
+        - git clone https://github.com/Multi2Sim/m2s-client-kit.git
+        - cd m2s-client-kit/local-tests
+        - pwd
+        - ./test-auto.sh all --local /home/travis/build/sunyifan112358/multi2sim
+
