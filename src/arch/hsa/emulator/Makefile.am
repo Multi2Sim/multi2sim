@@ -65,6 +65,9 @@ libemulator_a_SOURCES = \
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
 		\
+		CmovInstructionWorker.h \
+		CmovInstructionWorker.cc \
+		\
 		CurrentWorkGroupSizeInstructionWorker.h \
 		CurrentWorkGroupSizeInstructionWorker.cc \
 		\

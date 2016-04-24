@@ -29,6 +29,7 @@
 #include "BrInstructionWorker.h"
 #include "BarrierInstructionWorker.h"
 #include "CbrInstructionWorker.h"
+#include "CmovInstructionWorker.h"
 #include "CurrentWorkGroupSizeInstructionWorker.h"
 #include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
@@ -556,6 +557,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_CBR:
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_CMOV:
+
+		return misc::new_unique<CmovInstructionWorker>(this, stack_top);
 
 	case BRIG_OPCODE_CURRENTWORKGROUPSIZE:
 
