@@ -50,6 +50,7 @@
 #include "WorkItemAbsIdInstructionWorker.h"
 #include "WorkItemIdInstructionWorker.h"
 #include "WorkGroupIdInstructionWorker.h"
+#include "XorInstructionWorker.h"
 
 
 namespace HSA
@@ -337,10 +338,13 @@ unsigned WorkItem::getFlatAddress(BrigSegment segment, unsigned address)
 	}
 
 	case BRIG_SEGMENT_PRIVATE:
+	case BRIG_SEGMENT_SPILL:
 
+	{
 		// Get private segment manager and translate address
 		flat_address = private_segment->getFlatAddress(address);	
 		break;
+	}
 
 	case BRIG_SEGMENT_KERNARG:
 
@@ -488,6 +492,7 @@ void WorkItem::DeclareVariable()
 		break;
 
 	case BRIG_SEGMENT_PRIVATE:
+	case BRIG_SEGMENT_SPILL:
 
 		DeclareVariablePrivate(name, type, dim);
 		break;
@@ -500,11 +505,6 @@ void WorkItem::DeclareVariable()
 	case BRIG_SEGMENT_READONLY:
 
 		throw misc::Panic("Unsupported segment READONLY.");
-		break;
-
-	case BRIG_SEGMENT_SPILL:
-
-		throw misc::Panic("Unsupported segment SPILL.");
 		break;
 
 	case BRIG_SEGMENT_ARG:
@@ -643,6 +643,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_WORKGROUPID:
 
 		return misc::new_unique<WorkGroupIdInstructionWorker>(
+				this, stack_top);
+
+	case BRIG_OPCODE_XOR:
+
+		return misc::new_unique<XorInstructionWorker>(
 				this, stack_top);
 
 	default:

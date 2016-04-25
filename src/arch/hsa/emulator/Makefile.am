@@ -123,7 +123,10 @@ libemulator_a_SOURCES = \
 		WorkItemIdInstructionWorker.cc \
 		\
 		WorkGroupIdInstructionWorker.h \
-		WorkGroupIdInstructionWorker.cc
+		WorkGroupIdInstructionWorker.cc \
+		\
+		XorInstructionWorker.h \
+		XorInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 

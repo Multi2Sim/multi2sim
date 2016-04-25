@@ -848,52 +848,6 @@ void WorkItem::ExecuteInst_POPCOUNT()
 
 
 template<typename T>
-void WorkItem::Inst_XOR_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 ^ src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_XOR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst XOR, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_XOR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_XOR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_BITEXTRACT_Aux()
 {
 	// Retrieve operand value
