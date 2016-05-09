@@ -531,6 +531,7 @@ void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
 		// Set the new work group to the empty entry
 		work_groups[index] = work_group;
 	}
+
 	// Checks
 	assert(work_group->id_in_compute_unit == index);
 
@@ -548,9 +549,6 @@ void ComputeUnit::AddWorkGroup(WorkGroup *work_group)
 
 void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
 {
-	// Save timing simulator
-	timing = Timing::getInstance();
-
 	// Debug info
 	Emulator::scheduler_debug << misc::fmt("@%lld work group %d "
 			"removed from compute unit %d slot %d\n",
@@ -568,8 +566,10 @@ void ComputeUnit::RemoveWorkGroup(WorkGroup *work_group)
 
 void ComputeUnit::Reset()
 {
-	// Save timing simulator
-	timing = Timing::getInstance();
+	// If there are no work groups ever assigned to this compute unit
+	// the size would be zero, so no reset is required. 
+	if (!work_groups.size())
+		return;
 
 	// Debug info
 	Emulator::scheduler_debug << misc::fmt("@%lld compute unit %d "

@@ -195,6 +195,15 @@ public:
 	// Dump function
 	void Dump(std::ostream &os = std::cout) const;
 
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const ComputeUnit &compute_unit)
+	{
+		compute_unit.Dump(os);
+		return os;
+	}
+
+
 
 
 

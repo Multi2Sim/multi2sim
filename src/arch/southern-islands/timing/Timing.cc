@@ -1124,6 +1124,10 @@ bool Timing::Run()
 	if (!emulator->getNumNDRanges())
 		return false;
 
+	// TODO instead of statically allocating the whole GPU to one NDRange
+	// which wastes the resources, dynamically add the workgroups of
+	// different NDRanges to the compute units, if all work groups of
+	// the current NDRange is scheduled, and resources are available
 	// Add any available work groups to the waiting list
 	for (auto it = emulator->getNDRangesBegin();
 			it != emulator->getNDRangesEnd();
@@ -1134,7 +1138,35 @@ bool Timing::Run()
 
 		// Setup WorkGroup pointer
 		WorkGroup *work_group = nullptr;
-		
+
+		// Get current mapped NDRange to the Gpu
+		NDRange *mapped_ndrange = gpu->getNDRange();
+
+		// If the Gpu has no mapped NDRange, map the new NDRange
+		if (!mapped_ndrange)
+		{
+			// TODO the problem is that the NDRange keeps getting
+			// mapped and unmapped since the waitingworkgroups list
+			// of ndrange only grows with the driver calls.
+			// This solution doesn't work.
+	 		gpu->MapNDRange(ndrange);
+			ndrange->address_space = gpu->getMmu()
+					->newSpace("Southern Islands");
+		}
+		else 
+		{
+			// If the current NDRange is not the mapped one, move
+			// on
+			if (mapped_ndrange != ndrange)
+				continue;
+
+			// Unmap the current NDRange if it has no running or
+			// waiting work groups
+			if (ndrange->LastWorkGroupSent() &&
+					ndrange->isRunningWorkGroupsEmpty())
+				gpu->UnmapNDRange(ndrange);
+		}
+
 		// Save the number of waiting work groups
 		unsigned num_waiting_work_groups = ndrange->
 				getNumWaitingWorkgroups();
@@ -1153,6 +1185,11 @@ bool Timing::Run()
 			// Remove work group from list and get its ID
 			long work_group_id = ndrange->GetWaitingWorkGroup();
 			work_group = ndrange->ScheduleWorkGroup(work_group_id);
+
+			// If the last work group is sent, then set the value
+			// to true
+			if (!ndrange->isWaitingWorkGroupsEmpty())
+				ndrange->setLastWorkgroupSent(true);
 
 			// Remove it from the available compute units list.
 			// It will be re-added later if it still has room for

@@ -1247,6 +1247,9 @@ void Module::FlushCache()
 
 void Module::UpdateStats(Frame *frame)
 {
+	// Assert that the frame module is in fact the module
+	assert(this == frame->getModule());
+
 	// Record access type. I purposefully chose to record both hits and
 	// misses separately here so that we can sanity check them against
 	// the total number of accesses.

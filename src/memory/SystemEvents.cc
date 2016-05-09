@@ -1518,23 +1518,6 @@ void System::EventEvictHandler(esim::Event *event,
 			return;
 		}
 
-		// Note: if state is invalid (happens during invalidate?)
-		// just skip to FINISH also?
-		// Just set the block to invalid if there is no data to
-		// return, and let the protocol deal with catching up later.
-		if (module->getType() == Module::TypeCache &&
-				(frame->state == Cache::BlockShared ||
-				frame->state == Cache::BlockExclusive))
-		{
-			cache->setBlock(frame->src_set,
-					frame->src_way,
-					0,
-					Cache::BlockInvalid);
-			frame->state = Cache::BlockInvalid;
-			esim_engine->Next(event_evict_finish);
-			return;
-		}
-
 		// Continue with 'evict-action'
 		esim_engine->Next(event_evict_action);
 		return;
@@ -1570,22 +1553,24 @@ void System::EventEvictHandler(esim::Event *event,
 		}
 
 		// If state is M/O/N, data must be sent to lower level module
+		int message_size;
 		if (frame->state == Cache::BlockModified ||
 			frame->state == Cache::BlockOwned ||
 			frame->state == Cache::BlockNonCoherent)
 		{
 			// Need to transmit data to low module.
 			frame->reply = Frame::ReplyAckData;
+			message_size = 8 + module->getBlockSize();
 		}
 
 		// States E/S shouldn't happen
 		else 
 		{
-			throw misc::Panic("Unexpected E or S states");
+			message_size = 8;
+			frame->reply = Frame::ReplyAck;
 		}
 
 		// Send message
-		int message_size = 8 + module->getBlockSize();
 		net::Network *network = module->getLowNetwork();
 		net::EndNode *source_node = module->getLowNetworkNode();
 		frame->message = network->TrySend(source_node,
@@ -1973,14 +1958,6 @@ void System::EventWriteRequestHandler(esim::Event *event,
 
 		// Default return values
 		parent_frame->error = false;
-
-		// For write requests, we need to set the initial reply size 
-		// because in updown, peer transfers must be allowed to 
-		// decrease this value (during invalidate). If the request 
-		// turns out to be downup, then these values will get 
-		// overwritten.
-//		frame->reply_size = module->getBlockSize() + 8;
-//		frame->setReplyIfHigher(Frame::ReplyAckData);
 
 		// Sanity
 		assert(frame->request_direction);
@@ -3433,8 +3410,34 @@ void System::EventInvalidateHandler(esim::Event *event,
 		// be sure that the directory entry is always locked if we
 		// allow this to happen.
 		if (frame->reply == Frame::ReplyAckData)
-			cache->setBlock(frame->set, frame->way, frame->tag,
-					Cache::BlockModified);
+		{
+			switch(frame->state)
+			{
+			case Cache::BlockExclusive:
+				cache->setBlock(frame->set,
+						frame->way,
+						frame->tag,
+						Cache::BlockModified);
+				break;
+
+			case Cache::BlockShared:
+				cache->setBlock(frame->set,
+						frame->way,
+						frame->tag,
+						Cache::BlockNonCoherent);
+				break;
+
+			case Cache::BlockOwned:
+			case Cache::BlockNonCoherent:
+			case Cache::BlockModified:
+
+				// Nothing to do
+				break;
+
+			default:
+				throw misc::Panic("Invalid cache block state");
+			}
+		}
 
 		// Ignore while pending
 		assert(frame->pending > 0);

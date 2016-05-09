@@ -130,22 +130,22 @@ void Gpu::MapNDRange(NDRange *ndrange)
 			ndrange->getId(),
 			work_groups_per_wavefront_pool,
 			work_groups_per_compute_unit);
-	
+
+	// Map NDRange to the Gpu
+	mapped_ndrange = ndrange;
 }
 
 
-void Gpu::UnmapNDRange(NDRange* ndrange)
+void Gpu::UnmapNDRange(NDRange *ndrange)
 {
-	// Erase every workgroup in each compute unit, setting the
-	// work_groups size to 0
-	for (int i = 0; i < num_compute_units; i++)
-	{
-		// Get the compute unit
-		ComputeUnit *compute_unit = compute_units[i].get();
+	// Unmap the NDRange
+	assert(mapped_ndrange == ndrange);
+	mapped_ndrange = nullptr;
 
-		// Erase the workgroups of the compute unit
+	//Erase every workgroup in each compute unit, setting the
+	// work_groups size to 0
+	for (auto &compute_unit : compute_units)
 		compute_unit->Reset();
-	}
 }
 
 
