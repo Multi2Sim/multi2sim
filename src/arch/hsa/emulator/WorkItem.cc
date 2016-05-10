@@ -660,6 +660,8 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 bool WorkItem::Execute()
 {
+	Emulator *emulator = Emulator::getInstance();
+
 	// Only execute the active work item
 	if (status != WorkItemStatusActive)
 		return true;
@@ -674,8 +676,30 @@ bool WorkItem::Execute()
 	// Retrieve stack top
 	StackFrame *stack_top = getStackTop();
 
-	// Increase instruction counter
-	Emulator::getInstance()->incNumInstructions();
+	// Increase instruction counter and check if the max instructions is
+	// reached
+	emulator->incNumInstructions();
+	long long max_instructions = Emulator::getMaxInstructions();
+	if (max_instructions &&
+			emulator->getNumInstructions() > max_instructions)
+	{
+		std::cerr << "HsaMaxInstructions\n";
+		exit(1);
+	}
+
+	// Check if time to inject register fault
+	uint64_t register_fault = Emulator::getRegisterFaultInjectionInstructionId();
+	if (register_fault &&
+			(uint64_t)emulator->getNumInstructions() == register_fault) {
+		InjectRegisterFault();
+	}
+
+	// Check if time to inject lds fault
+	uint64_t lds_fault = Emulator::getLdsFaultInjectionInstructionId();
+	if (lds_fault &&
+			(uint64_t)emulator->getNumInstructions() == lds_fault) {
+		InjectLdsFault();
+	}
 
 	// Execute the instruction or directory
 	BrigCodeEntry *inst = stack_top->getPc();
@@ -687,11 +711,6 @@ bool WorkItem::Execute()
 					getAbsoluteFlattenedId());
 			Emulator::isa_debug << "Executing: ";
 			Emulator::isa_debug << *inst;
-
-//			Emulator::isa_debug << "Before: ";
-//			if (Emulator::isa_debug)
-//				stack_top->Dump(Emulator::isa_debug);
-//			Emulator::isa_debug << "\n";
 		}
 
 		// Get the function according to the opcode and perform the inst
@@ -733,6 +752,50 @@ bool WorkItem::Execute()
 		
 	// Return true, since the execution is not finished
 	return true;
+}
+
+
+void WorkItem::InjectRegisterFault() {
+	StackFrame *stack_top = getStackTop();
+
+	// Total register size is register size + c register size + pc
+	int register_size = stack_top->getRegisterSizeInByte();
+	int total_register_size = register_size + 8 + 8;
+
+	// Randomize where to inject error
+	uint32_t injection_pos = rand() % total_register_size;
+	uint32_t injection_bit = rand() % 8;
+
+	// Inject error
+	if (injection_pos < stack_top->getRegisterSizeInByte())
+	{
+		fprintf(stderr, "Inject fault in regular register [%d, %d]\n",
+			injection_pos, injection_bit);
+		stack_top->BitFlipRegister(injection_pos, injection_bit);
+	}
+	else if (injection_pos < stack_top->getRegisterSizeInByte() + 8)
+	{
+		int byte = injection_pos - register_size;
+		fprintf(stderr, "Inject fault in c register [%d]\n", byte);
+		stack_top->BitFlipRegisterInCRegisters(byte);
+	}
+	else
+	{
+		int byte = injection_pos - register_size - 8;
+		fprintf(stderr, "Inject fault in pc [%d, %d]\n",
+			byte, injection_bit);
+		uint64_t pc = (uint64_t)stack_top->getPc();
+		uint64_t mask = 1 << (byte * 8 + injection_bit);
+		pc ^= mask;
+		stack_top->setPc(std::unique_ptr<BrigCodeEntry>(
+				(BrigCodeEntry *)pc));
+	}
+
+}
+
+
+void WorkItem::InjectLdsFault() {
+
 }
 
 

@@ -246,5 +246,65 @@ Variable *StackFrame::getSymbol(const std::string &name)
 	return nullptr;
 }
 
+
+void StackFrame::getRegisterValue(const std::string &name, void *buffer) const {
+	// Do special action for c registers
+	if (name[1] == 'c')
+	{
+		unsigned int index = name[2] - '0';
+		*(unsigned char *)buffer = c_registers[index];
+		return;
+	}
+
+	// Get the offset of the register
+	unsigned int offset = function->getRegisterOffset(name);
+
+	// Get the size of the register
+	unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+	// Copy the value of the register
+	memcpy(buffer, register_storage.get() + offset, size);
+
+	// Return the value of the register
+	return;
+}
+
+
+void StackFrame::setRegisterValue(const std::string &name, void *value)
+{
+	// Do special action for c registers
+	if (name[1] == 'c')
+	{
+		unsigned int index = name[2] - '0';
+		c_registers[index] = *(unsigned char *)value;
+		return;
+	}
+
+	// Get the offset of the register
+	unsigned int offset = function->getRegisterOffset(name);
+
+	// Get the size of the register
+	unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+	// Copy the value to the register
+	memcpy(register_storage.get() + offset, value, size);
+
+	// Set the value of the register
+	return;
+}
+
+
+void StackFrame::BitFlipRegister(int byte, int bit)
+{
+	char mask = 1 << bit;
+	register_storage[byte] ^= mask;
+}
+
+
+void StackFrame::BitFlipRegisterInCRegisters(int byte)
+{
+	c_registers[byte] = ~c_registers[byte];
+}
+
 }  // namespace HSA
 

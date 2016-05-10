@@ -61,7 +61,15 @@ class Emulator : public comm::Emulator
 	static std::string hsa_debug_aql_file;
 
 	// Maximum number of instructions
-	// static long long max_instructions;
+	static long long max_instructions;
+
+	// After executing this number of instructions, a bit flip happens
+	// in the register
+	static uint64_t register_fault_injection_instruction_id;
+
+	// After executing this number of instructions, a bit flip happens
+	// in the local data storage (group segment memory)
+	static uint64_t lds_fault_injection_instruction_id;
 
 	// Simulation kind
 	static comm::Arch::SimKind sim_kind;
@@ -105,6 +113,19 @@ public:
 	/// The HSA emulator is a singleton class. The only possible instance
 	/// of it will be allocated the first time this function is invoked
 	static Emulator *getInstance();
+
+	/// Returns the maximum number of instruction that the emulator run.
+	static long long getMaxInstructions() { return max_instructions; }
+
+	/// Returns the instruction where a register fault will be injected
+	static uint64_t getRegisterFaultInjectionInstructionId() {
+		return register_fault_injection_instruction_id;
+	}
+
+	/// Returns the instruction where a lds fault will be injected
+	static uint64_t getLdsFaultInjectionInstructionId() {
+		return lds_fault_injection_instruction_id;
+	}
 
 	/// Install the components of the virtual machine 
 	/// Install the components according to the ini config file or install

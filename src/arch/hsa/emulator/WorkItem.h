@@ -182,6 +182,13 @@ public:
  	///	Return false if the stack is empty after poping
  	bool ReturnFunction();
 
+ 	/// Inject a bit flip into the registers, a random place in the
+ 	/// register files of the current stack
+ 	void InjectRegisterFault();
+
+ 	/// Inject a bit flip into the local data storage (group segment).
+ 	void InjectLdsFault();
+
 
 
 

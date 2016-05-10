@@ -51,6 +51,11 @@ misc::Debug Emulator::loader_debug;
 misc::Debug Emulator::isa_debug;
 misc::Debug Emulator::aql_debug;
 
+// Variables
+uint64_t Emulator::register_fault_injection_instruction_id;
+uint64_t Emulator::lds_fault_injection_instruction_id;
+long long Emulator::max_instructions;
+
 // Singleton instance
 std::unique_ptr<Emulator> Emulator::instance;
 
@@ -89,6 +94,29 @@ void Emulator::RegisterOptions()
 			"(default = functional)",
 			(int &) sim_kind, comm::Arch::SimKindMap,
 			"Level of accuracy of HSA simulation");
+
+	// Option --hsa-register-fault-injection <instruction>
+	command_line->RegisterUInt64("--hsa-register-fault-injection "
+			"<instruction_id> (default = 0)",
+			(unsigned long long &)register_fault_injection_instruction_id,
+			"After a number of instructions executed, a bit flip "
+			"happens in the register file. Default value 0 means "
+			"no fault injection");
+
+	// Option --hsa-register-fault-injection <instruction>
+	command_line->RegisterUInt64("--hsa-lds-fault-injection "
+			"<instruction_id> (default = 0)",
+			(unsigned long long &)lds_fault_injection_instruction_id,
+			"After a number of instructions executed, a bit flip "
+			"happens in the local data storage (group segment). "
+			"Default value 0 means no fault injection");
+
+	// Option --hsa-max-instruction
+	command_line->RegisterUInt64("--hsa-max-inst "
+			"<max-instruction> (default = 0)",
+			(unsigned long long &)max_instructions,
+			"The maximum number of instructions to execute. "
+			"Use the default value 0 for no limitation");
 }
 
 
