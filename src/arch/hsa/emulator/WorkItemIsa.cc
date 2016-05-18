@@ -448,69 +448,6 @@ void WorkItem::ExecuteInst_MAX()
 
 
 template<typename T>
-void WorkItem::Inst_MIN_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = (src0 < src1) ? src0 : src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_MIN()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action accoding to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_MIN_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_MIN_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_MIN_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_MIN_Aux<unsigned long long>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		throw misc::Panic("Unimplemented Inst MIN, "
-				"kind BRIG_KIND_INST_MOD.");
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 {
 	// Get source value

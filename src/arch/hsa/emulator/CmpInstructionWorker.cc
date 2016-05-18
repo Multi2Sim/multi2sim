@@ -17,6 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cmath>
 #include <lib/cpp/String.h>
 #include <lib/cpp/Error.h>
 #include <arch/hsa/disassembler/AsmService.h>
@@ -159,6 +160,20 @@ void CmpInstructionWorker::Inst_CMP_Aux(BrigCodeEntry *instruction)
 	case BRIG_COMPARE_LTU:
 	case BRIG_COMPARE_LEU:
 	case BRIG_COMPARE_GTU:
+
+    if (std::isnan(src1) || std::isnan(src2)) 
+    {
+      dst = 1;
+    } 
+    else 
+    {
+      if (src1 >= src2)
+        dst = 1;
+      else
+        dst = 0;
+      break;
+    }
+
 	case BRIG_COMPARE_GEU:
 	case BRIG_COMPARE_NUM:
 	case BRIG_COMPARE_NAN:
@@ -176,8 +191,11 @@ void CmpInstructionWorker::Inst_CMP_Aux(BrigCodeEntry *instruction)
 	case BRIG_COMPARE_SNUM:
 	case BRIG_COMPARE_SNAN:
 	case BRIG_COMPARE_SGTU:
+
 	default:
-		throw misc::Panic("Unimplemented compare operation.");
+		throw misc::Panic(misc::fmt("Unimplemented compare operation. %s", 
+          AsmService::CompareOperationToString(
+              instruction->getCompareOperation()).c_str()));
 
 	}
 

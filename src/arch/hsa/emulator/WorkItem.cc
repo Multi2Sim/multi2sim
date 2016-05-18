@@ -40,6 +40,7 @@
 #include "SubInstructionWorker.h"
 #include "LdaInstructionWorker.h"
 #include "MadInstructionWorker.h"
+#include "MinInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
 #include "OrInstructionWorker.h"
@@ -599,6 +600,12 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_MAD:
 
 		return misc::new_unique<MadInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MIN:
+	case 32796:
+
+		return misc::new_unique<MinInstructionWorker>(this, stack_top);
+
 
 	case BRIG_OPCODE_MUL:
 

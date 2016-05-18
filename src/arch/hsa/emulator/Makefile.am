@@ -92,6 +92,9 @@ libemulator_a_SOURCES = \
 		MemFenceInstructionWorker.h \
 		MemFenceInstructionWorker.cc \
 		\
+		MinInstructionWorker.h \
+		MinInstructionWorker.cc \
+		\
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
 		\
