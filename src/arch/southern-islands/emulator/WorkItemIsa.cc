@@ -1415,14 +1415,20 @@ void WorkItem::ISA_S_MULK_I32_Impl(Instruction *instruction)
 void WorkItem::ISA_S_MOV_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constant with a 64 bit instruction.
-	assert(!(INST.ssrc0 == 0xFF));
+	// assert(!(INST.ssrc0 == 0xFF));
 
 	Instruction::Register s0_lo;
 	Instruction::Register s0_hi;
 
 	// Load operand from registers.
-	s0_lo.as_uint = ReadSReg(INST.ssrc0);
-	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	if (INST.ssrc0 == 0xFF){
+		s0_lo.as_uint = INST.lit_cnst;
+		s0_hi.as_uint = 0x0;
+	}
+	else{
+		s0_lo.as_uint = ReadSReg(INST.ssrc0);
+		s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	}
 
 	// Write the results.
 	// Store the data in the destination register
