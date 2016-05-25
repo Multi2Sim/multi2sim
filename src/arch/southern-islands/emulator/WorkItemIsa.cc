@@ -2500,6 +2500,34 @@ void WorkItem::ISA_V_RCP_F32_Impl(Instruction *instruction)
 }
 #undef INST
 
+// D.f = 1.0 / sqrt(S0.f).
+#define INST INST_VOP1
+void WorkItem::ISA_V_RSQ_F32_Impl(Instruction *instruction)
+{
+	Instruction::Register s0;
+	Instruction::Register rsq;
+
+	// Load operand from register or as a literal constant.
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+
+	rsq.as_float = 1.0f / sqrt(s0.as_float);
+
+	// Write the results.
+	WriteVReg(INST.vdst, rsq.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+			rsq.as_float);
+	}
+}
+#undef INST
+
+
 // D.d = 1.0 / (S0.d).
 #define INST INST_VOP1
 void WorkItem::ISA_V_RCP_F64_Impl(Instruction *instruction)
