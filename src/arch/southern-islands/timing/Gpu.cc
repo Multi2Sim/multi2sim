@@ -131,15 +131,14 @@ void Gpu::MapNDRange(NDRange *ndrange)
 			work_groups_per_wavefront_pool,
 			work_groups_per_compute_unit);
 
-	// Map NDRange to the Gpu
+	// Map ndrange
 	mapped_ndrange = ndrange;
 }
 
 
 void Gpu::UnmapNDRange(NDRange *ndrange)
 {
-	// Unmap the NDRange
-	assert(mapped_ndrange == ndrange);
+	// Unmap NDRange
 	mapped_ndrange = nullptr;
 
 	//Erase every workgroup in each compute unit, setting the

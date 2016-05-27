@@ -1139,71 +1139,64 @@ bool Timing::Run()
 		// Setup WorkGroup pointer
 		WorkGroup *work_group = nullptr;
 
-		// Get current mapped NDRange to the Gpu
-		NDRange *mapped_ndrange = gpu->getNDRange();
-
-		// If the Gpu has no mapped NDRange, map the new NDRange
-		if (!mapped_ndrange)
+		if (ndrange->address_space == nullptr)
 		{
 			// TODO the problem is that the NDRange keeps getting
 			// mapped and unmapped since the waitingworkgroups list
 			// of ndrange only grows with the driver calls.
 			// This solution doesn't work.
-	 		gpu->MapNDRange(ndrange);
 			ndrange->address_space = gpu->getMmu()
 					->newSpace("Southern Islands");
-		}
-		else 
-		{
-			// If the current NDRange is not the mapped one, move
-			// on
-			if (mapped_ndrange != ndrange)
-				continue;
-
-			// Unmap the current NDRange if it has no running or
-			// waiting work groups
-			if (ndrange->LastWorkGroupSent() &&
-					ndrange->isRunningWorkGroupsEmpty())
-				gpu->UnmapNDRange(ndrange);
+			gpu->MapNDRange(ndrange);
 		}
 
-		// Save the number of waiting work groups
-		unsigned num_waiting_work_groups = ndrange->
-				getNumWaitingWorkgroups();
-
-		// Map work groups to compute units
-		for (unsigned i = 0; i < num_waiting_work_groups; i++)
+		// If the waiting list is not empty
+		if (!ndrange->isWaitingWorkGroupsEmpty())
 		{
-			// Get an available compute unit
-			ComputeUnit *available_compute_unit =
-					gpu->getAvailableComputeUnit();
+			// Save the number of waiting work groups
+			unsigned num_waiting_work_groups = ndrange->
+					getNumWaitingWorkgroups();
 
-			// Exit if no compute unit available
-			if (!available_compute_unit)
-				break;
+			// Map work groups to compute units
+			for (unsigned i = 0; i < num_waiting_work_groups; i++)
+			{
+				// Get an available compute unit
+				ComputeUnit *available_compute_unit =
+						gpu->getAvailableComputeUnit();
 
-			// Remove work group from list and get its ID
-			long work_group_id = ndrange->GetWaitingWorkGroup();
-			work_group = ndrange->ScheduleWorkGroup(work_group_id);
+				// Exit if no compute unit available
+				if (!available_compute_unit)
+					break;
 
-			// If the last work group is sent, then set the value
-			// to true
-			if (!ndrange->isWaitingWorkGroupsEmpty())
-				ndrange->setLastWorkgroupSent(true);
+				// Remove work group from list and get its ID
+				long work_group_id = ndrange->GetWaitingWorkGroup();
+				work_group = ndrange->ScheduleWorkGroup(work_group_id);
 
-			// Remove it from the available compute units list.
-			// It will be re-added later if it still has room for
-			// more work groups.
-			gpu->RemoveFromAvailableComputeUnits(
-					available_compute_unit);
+				// If the last work group is sent, then set the value
+				// to true
+				if (ndrange->isWaitingWorkGroupsEmpty())
+					ndrange->setLastWorkgroupSent(true);
 
-			// Map the work group to a compute unit
-			available_compute_unit->MapWorkGroup(work_group);
+				// Remove it from the available compute units list.
+				// It will be re-added later if it still has room for
+				// more work groups.
+				gpu->RemoveFromAvailableComputeUnits(
+						available_compute_unit);
+
+				// Map the work group to a compute unit
+				available_compute_unit->MapWorkGroup(work_group);
+			}
+		}
+
+		if (ndrange->isRunningWorkGroupsEmpty() &&
+				ndrange->LastWorkGroupSent())
+		{
+			gpu->UnmapNDRange(ndrange);
+			ndrange->WakeupContext();
 		}
 
 		// If a context has been suspended while waiting for the ndrange
 		// check if it can be woken up.
-		ndrange->WakeupContext();
 	}
 
 
