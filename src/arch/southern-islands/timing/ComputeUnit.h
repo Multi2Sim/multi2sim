@@ -158,6 +158,9 @@ public:
 	/// Constructor
 	ComputeUnit(int index, Gpu *gpu);
 
+	/// Reset the compute unit for the next NDRange
+	void Reset();
+
 	/// Advance compute unit state by one cycle
 	void Run();
 
@@ -188,6 +191,25 @@ public:
 
 	/// Return the associated LDS module
 	mem::Module *getLdsModule() const { return lds_module.get(); }
+
+	// Dump function
+	void Dump(std::ostream &os = std::cout) const;
+
+	/// Same as Dump()
+	friend std::ostream &operator<<(std::ostream &os,
+			const ComputeUnit &compute_unit)
+	{
+		compute_unit.Dump(os);
+		return os;
+	}
+
+
+
+
+
+	//
+	// Public member variables
+	//
 
 	/// Cache used for vector data
 	mem::Module *vector_cache = nullptr;

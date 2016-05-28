@@ -1124,6 +1124,10 @@ bool Timing::Run()
 	if (!emulator->getNumNDRanges())
 		return false;
 
+	// TODO instead of statically allocating the whole GPU to one NDRange
+	// which wastes the resources, dynamically add the workgroups of
+	// different NDRanges to the compute units, if all work groups of
+	// the current NDRange is scheduled, and resources are available
 	// Add any available work groups to the waiting list
 	for (auto it = emulator->getNDRangesBegin();
 			it != emulator->getNDRangesEnd();
@@ -1134,39 +1138,65 @@ bool Timing::Run()
 
 		// Setup WorkGroup pointer
 		WorkGroup *work_group = nullptr;
-		
-		// Save the number of waiting work groups
-		unsigned num_waiting_work_groups = ndrange->
-				getNumWaitingWorkgroups();
 
-		// Map work groups to compute units
-		for (unsigned i = 0; i < num_waiting_work_groups; i++)
+		if (ndrange->address_space == nullptr)
 		{
-			// Get an available compute unit
-			ComputeUnit *available_compute_unit =
-					gpu->getAvailableComputeUnit();
+			// TODO the problem is that the NDRange keeps getting
+			// mapped and unmapped since the waitingworkgroups list
+			// of ndrange only grows with the driver calls.
+			// This solution doesn't work.
+			ndrange->address_space = gpu->getMmu()
+					->newSpace("Southern Islands");
+			gpu->MapNDRange(ndrange);
+		}
 
-			// Exit if no compute unit available
-			if (!available_compute_unit)
-				break;
+		// If the waiting list is not empty
+		if (!ndrange->isWaitingWorkGroupsEmpty())
+		{
+			// Save the number of waiting work groups
+			unsigned num_waiting_work_groups = ndrange->
+					getNumWaitingWorkgroups();
 
-			// Remove work group from list and get its ID
-			long work_group_id = ndrange->GetWaitingWorkGroup();
-			work_group = ndrange->ScheduleWorkGroup(work_group_id);
+			// Map work groups to compute units
+			for (unsigned i = 0; i < num_waiting_work_groups; i++)
+			{
+				// Get an available compute unit
+				ComputeUnit *available_compute_unit =
+						gpu->getAvailableComputeUnit();
 
-			// Remove it from the available compute units list.
-			// It will be re-added later if it still has room for
-			// more work groups.
-			gpu->RemoveFromAvailableComputeUnits(
-					available_compute_unit);
+				// Exit if no compute unit available
+				if (!available_compute_unit)
+					break;
 
-			// Map the work group to a compute unit
-			available_compute_unit->MapWorkGroup(work_group);
+				// Remove work group from list and get its ID
+				long work_group_id = ndrange->GetWaitingWorkGroup();
+				work_group = ndrange->ScheduleWorkGroup(work_group_id);
+
+				// If the last work group is sent, then set the value
+				// to true
+				if (ndrange->isWaitingWorkGroupsEmpty())
+					ndrange->setLastWorkgroupSent(true);
+
+				// Remove it from the available compute units list.
+				// It will be re-added later if it still has room for
+				// more work groups.
+				gpu->RemoveFromAvailableComputeUnits(
+						available_compute_unit);
+
+				// Map the work group to a compute unit
+				available_compute_unit->MapWorkGroup(work_group);
+			}
+		}
+
+		if (ndrange->isRunningWorkGroupsEmpty() &&
+				ndrange->LastWorkGroupSent())
+		{
+			gpu->UnmapNDRange(ndrange);
+			ndrange->WakeupContext();
 		}
 
 		// If a context has been suspended while waiting for the ndrange
 		// check if it can be woken up.
-		ndrange->WakeupContext();
 	}
 
 
@@ -1182,7 +1212,7 @@ bool Timing::Run()
 		esim_engine->Finish("SIMaxInstructions");
 
 	// Stop if there was a simulation stall
-	if (gpu->last_complete_cycle && gpu->last_complete_cycle > 1000000)
+	if (getCycle() - gpu->last_complete_cycle > 1000000)
 	{
 		std::cout<<"\n\n************TOO LONG******************\n\n";
 		//warning("Southern Islands GPU simulation stalled.\n%s",

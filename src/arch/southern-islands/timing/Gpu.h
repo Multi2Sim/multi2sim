@@ -73,6 +73,9 @@ private:
 	/// Number of work_groups allowed in a compute unit
 	int work_groups_per_compute_unit = 0;
 
+	/// Mapped NDRange to the GPU
+	NDRange *mapped_ndrange = nullptr;
+
 public:
 
 	//
@@ -149,8 +152,11 @@ public:
 	/// Return the associated MMU
 	mem::Mmu *getMmu() const { return mmu.get(); }
 
-	/// Map an NDRange to the GPP object
+	/// Map an NDRange to the GPU object
 	void MapNDRange(NDRange *ndrange);
+
+	// Unmap an NDRange from the GPU
+	void UnmapNDRange(NDRange *ndrange);
 	
 	// Calculate the number of allowed work groups per wavefront pool
 	void CalcGetWorkGroupsPerWavefrontPool(
@@ -187,6 +193,9 @@ public:
 	
 	/// Add a compute unit to the list of available compute units
 	ComputeUnit *AddComputeUnit(ComputeUnit *compute_unit);
+
+	/// Getter for the mapped NDRange of the GPU
+	NDRange *getNDRange() const { return mapped_ndrange; }
 };
 
 }

@@ -614,18 +614,6 @@ int Driver::CallNDRangeCreate(comm::Context *context,
 	// Set the global and local sizes
 	ndrange->SetupSize(global_size, local_size, work_dim);
 
-	// Calculate the allowed work groups per wavefront pool and 
-	// compute unit. Create the address space for the MMU.
-	
-	// Get gpu object from timing instance
-	if (Timing::getSimKind() == comm::Arch::SimDetailed)
-	{
-		Gpu *gpu  = Timing::getInstance()->getGpu();
-	 	gpu->MapNDRange(ndrange);
-		ndrange->address_space = gpu->getMmu()
-				->newSpace("Southern Islands");
-	}
-	
 	// Return ID of new nd-range 
 	return ndrange->getId();
 }
@@ -736,30 +724,28 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 	NDRange *ndrange = emulator->getNDRangeById(ndrange_id);
 	
 	// Check for ndrange
-	if (!ndrange)                                                            
+	if (!ndrange)
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)",
-				__FUNCTION__, ndrange_id));  
+				__FUNCTION__, ndrange_id));
 	
-	// Last work group has been sent
-	ndrange->setLastWorkgroupSent(true);
-
-	// If no work-groups are left in the queues, remove the nd-range         
-	// from the driver list                                           
-	if (!(ndrange->getNumWorkgroups()) &&                         
-			!(ndrange->getNumWaitingWorkgroups()))                       
-	{                                   
-		// The NDRange has finished 
-		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);            
-	}                                                                        
-	else                                                                     
+	// If no work-groups are left in the queues, remove the nd-range
+	// from the driver list
+	if (!(ndrange->getNumWorkgroups()) &&
+			!(ndrange->getNumWaitingWorkgroups()) &&
+			(ndrange->LastWorkGroupSent()))
+	{
+		// The NDRange has finished
+		debug << misc::fmt("\tnd-range %d finished\n", ndrange_id);
+	}
+	else
 	{
 		// The NDRange has not finished. Suspend the context until it
 		// completes
-		debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n", 
+		debug << misc::fmt("\twaiting for nd-range %d to finish (blocking)\n",
 				ndrange_id);
 		context->Suspend();
 		ndrange->SetSuspendedContext(context);
-	}                                                                 
+	}
 
 	// Return
 	return 0;
@@ -837,7 +823,7 @@ int Driver::CallNDRangeSetFused(comm::Context *context,
 	// else                                                                     
 	//{                                                                       
 	
-	debug << misc::fmt("\tnot fused\n");                                                                                                           
+	debug << misc::fmt("\tnot fused\n");
 
 	// Return
 	return 0;
