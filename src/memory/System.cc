@@ -408,12 +408,15 @@ void System::SanityCheck()
 	//
 	// Top down Rules
 	//
-
 	// Get the blocks of each module in the highest level
 	for (auto &module : modules)
 	{
 		// Get the associated cache
 		Cache *cache = module->getCache();
+
+		// Continue if module is in the last level
+		if (module->getType() == Module::TypeMainMemory)
+			continue;
 
 		// Get every block of the cache
 		for (unsigned set = 0; set < cache->getNumSets(); set++)
@@ -424,18 +427,24 @@ void System::SanityCheck()
 				Cache::Block *block = cache->getBlock(set,way);
 				
 				// If the block is not valid, continue
-				if (block->getState() == Cache::BlockInvalid)
+				Cache::BlockState state = block->getState();
+				if (state == Cache::BlockInvalid)
 					continue;
+
+				// Get the block's tag
+				unsigned tag = block->getTag();
 
 				// Get the lower module for the top-down rules
 				Module *lower_module = module->
 						getLowModuleServingAddress(
 						block->getTag());
+				assert(lower_module);
+
 				int lower_set;
 				int lower_way;
 				int lower_tag;
 				Cache::BlockState lower_state = Cache::BlockInvalid;
-				module->FindBlock(block->getTag(),
+				lower_module->FindBlock(tag,
 						lower_set,
 						lower_way,
 						lower_tag,
@@ -456,6 +465,171 @@ void System::SanityCheck()
 					last_sanity_check * sanity_check_interval,
 					module->getName().c_str(),
 					lower_module->getName().c_str()));
+				}
+
+				// Rule 2:
+				// If block is in E or M state the lower level
+				// should have that block as an owner
+				if (state == Cache::BlockExclusive ||
+						state == Cache::BlockModified)
+				{
+					// Get lower module directory
+					Directory *directory = lower_module->
+							getDirectory();
+
+					// Get the directory entry tag
+					for (int z = 0; z < directory->
+							getNumSubBlocks();
+							z++)
+					{
+						// Get tag of directory entry
+						unsigned directory_entry_tag =
+								lower_tag + z *
+								lower_module->
+								getSubBlockSize();
+						assert(directory_entry_tag <
+								lower_tag +
+								(unsigned)
+								lower_module->
+								getBlockSize());
+
+						// Find the entry
+						if (directory_entry_tag <
+								tag ||
+								directory_entry_tag >=
+								tag + lower_module->
+								getSubBlockSize())
+							continue;
+
+						// Sub-block is z
+						// Module should be owner of the
+						// sub-block
+						if (lower_module->getOwner(lower_set,
+								lower_way,
+								z) != module.get())
+						{
+							module->Dump();
+							lower_module->Dump();
+							throw Error(misc::fmt(
+									"Sanity "
+									"check "
+									"failed\n"
+									"window "
+									"%lld to "
+									"%lld: "
+									"The "
+									"module %s:"
+									"block "
+									"(set %d: "
+									" way %d) "
+									"is in E/M "
+									"state "
+									"but not "
+									"considered "
+									"an owner "
+									"by lower "
+									"module %s "
+									"block "
+									"(set %d: "
+									" way %d: "
+									"sub %d)\n",
+									(last_sanity_check -
+									1) * 
+									sanity_check_interval,
+									last_sanity_check *
+									sanity_check_interval,
+									module->
+									getName().
+									c_str(),
+									set,
+									way,
+									lower_module->
+									getName().
+									c_str(),
+									lower_set,
+									lower_way,
+									z));
+						}
+
+						// Module should be the only sharer
+						// of the sub-block
+						if (lower_module->getNumSharers(
+								lower_set,
+								lower_way,
+								z) != 1)
+						{
+							throw Error(misc::fmt(
+									"Sanity "
+									"check "
+									"failed\n"
+									"window "
+									"%lld to "
+									"%lld: "
+									"The "
+									"module %s"
+									"has a "
+									"block "
+									"that is "
+									"in E/M "
+									"state "
+									"but lower "
+									"module %s "
+									"has more "
+									"than 1 "
+									"sharer\n",
+									(last_sanity_check -
+									1) * 
+									sanity_check_interval,
+									last_sanity_check *
+									sanity_check_interval,
+									module->
+									getName().
+									c_str(),
+									lower_module->
+									getName().
+									c_str()));
+						}
+	
+						// Module should be the only sharer
+						// of the sub-block
+						if (!lower_module->isSharer(
+								lower_set,
+								lower_way,
+								z, module.get()))
+						{
+							throw Error(misc::fmt(
+									"Sanity "
+									"check "
+									"failed\n"
+									"window "
+									"%lld to "
+									"%lld: "
+									"The "
+									"module %s"
+									"has a "
+									"block "
+									"that is "
+									"in E/M "
+									"state "
+									"but is "
+									"not the "
+									"sharer "
+									"in the "
+									"lower "
+									"module %s\n",
+									(last_sanity_check -
+									1) * 
+									sanity_check_interval,
+									last_sanity_check *
+									sanity_check_interval,
+									module->
+									getName().
+									c_str(),
+									lower_module->
+									getName().
+									c_str()));
+						}
+					}
 				}
 			}
 		}

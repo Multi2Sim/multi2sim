@@ -701,6 +701,7 @@ void Module::Dump(std::ostream &os) const
 								std::string(element_size - 2 - 
 								length - pad_size/2, ' ') <<
 								"|";
+								break;
 							}
 						}
 					}
