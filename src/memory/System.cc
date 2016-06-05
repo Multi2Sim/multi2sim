@@ -414,6 +414,9 @@ void System::SanityCheck()
 		// Get the associated cache
 		Cache *cache = module->getCache();
 
+		// Get the associated directory
+		Directory *directory = module->getDirectory();
+
 		// Continue if module is in the last level
 		if (module->getType() == Module::TypeMainMemory)
 			continue;
@@ -474,11 +477,11 @@ void System::SanityCheck()
 						state == Cache::BlockModified)
 				{
 					// Get lower module directory
-					Directory *directory = lower_module->
+					Directory *lower_directory = lower_module->
 							getDirectory();
 
 					// Get the directory entry tag
-					for (int z = 0; z < directory->
+					for (int z = 0; z < lower_directory->
 							getNumSubBlocks();
 							z++)
 					{
@@ -508,6 +511,21 @@ void System::SanityCheck()
 								lower_way,
 								z) != module.get())
 						{
+							// The only reason that
+							// the lower level can be 
+							// different from what
+							// higher level expect
+							// it to be is that
+							// this is an in-flight
+							// process. So the higher
+							// level directory should
+							// be locked
+							if (directory->isEntryLocked(
+									set, way))
+								continue;
+
+							// Otherwise this is 
+							// an error
 							module->Dump();
 							lower_module->Dump();
 							throw Error(misc::fmt(
@@ -558,6 +576,22 @@ void System::SanityCheck()
 								lower_way,
 								z) != 1)
 						{
+							// The only reason that
+							// the lower module might
+							// have zero sharer
+							// or have 1 sharer but
+							// not the 'module' 
+							// is that this is
+							// an in-flight eviction.
+							// Lower level removes
+							// the module as sharer
+							// but the module is 
+							// still not updated.
+							if (directory->isEntryLocked(
+									set, way))
+								continue;
+
+							// Else there is an error
 							throw Error(misc::fmt(
 									"Sanity "
 									"check "
@@ -597,6 +631,20 @@ void System::SanityCheck()
 								lower_way,
 								z, module.get()))
 						{
+							// The only reason that
+							// the module is not the
+							// sharer is that
+							// this is an in-flight
+							// process.
+							// We removed it as sharer
+							// but the module is not
+							// yet updated.
+							if (directory->isEntryLocked(
+									set, way))
+								continue;
+
+							// Otherwise this is an
+							// error
 							throw Error(misc::fmt(
 									"Sanity "
 									"check "

@@ -287,7 +287,7 @@ bool Directory::LockEntry(
 	// Debug
 	System::debug << misc::fmt("    "
 			"A-%lld acquires directory lock "
-			"at set %d, way %d\n",
+			"at set=%d, way=%d\n",
 			access_id,
 			set_id,
 			way_id);
@@ -310,7 +310,7 @@ void Directory::UnlockEntry(int set_id, int way_id, long long access_id)
 	// Debug
 	System::debug << misc::fmt("    "
 			"A-%lld releases directory lock "
-			"at set %d, way %d\n",
+			"at set=%d, way=%d\n",
 			access_id,
 			set_id,
 			way_id);
