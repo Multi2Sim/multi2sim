@@ -57,11 +57,11 @@ void LdInstructionWorker::Inst_LD_Aux(BrigCodeEntry *instruction)
 	if (sizeof(T) == 1) {
 		auto extended_value = misc::new_unique_array<uint32_t>(
 				vector_modifier);
-		for(int i = 0; i < vector_modifier; i++) {
+		for(unsigned int i = 0; i < vector_modifier; i++) {
 			memcpy(extended_value.get() + i, value.get() + i, 1);
 			operand_value_writer->Write(instruction, 0,
 					extended_value.get());
-		}
+      	}
 	} else {
 		// Move value from register or immediate into memory
 		operand_value_writer->Write(instruction, 0, value.get());
