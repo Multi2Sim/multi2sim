@@ -35,6 +35,8 @@ class CvtInstructionWorker : public HsaInstructionWorker
 	void Inst_CVT_sext_Aux(BrigCodeEntry *instruction);
 	template<typename SrcType, typename DstType>
 	void Inst_CVT_u2f_Aux(BrigCodeEntry *instruction);
+	template<typename SrcType, typename DstType>
+	void Inst_CVT_s2f_Aux(BrigCodeEntry *instruction);
 
 public:
 	CvtInstructionWorker(WorkItem *work_item,

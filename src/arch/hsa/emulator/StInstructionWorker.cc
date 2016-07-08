@@ -17,6 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <cstring>
+
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
 
 #include "StInstructionWorker.h"
@@ -45,11 +47,22 @@ void StInstructionWorker::Inst_ST_Aux(BrigCodeEntry *instruction)
 	operand_value_retriever->Retrieve(instruction, 1, &address);
 
 	// Translate address to flat address
-	address = work_item->getFlatAddress(instruction->getSegment(), address);
+	BrigSegment segment = instruction->getSegment();
+	address = work_item->getFlatAddress(segment, address);
 
 	// Move value from register or immediate into memory
 	T src0;
-	operand_value_retriever->Retrieve(instruction, 0, &src0);
+	if (sizeof(T) <= 4)
+	{
+		uint32_t value;
+		operand_value_retriever->Retrieve(instruction, 0, &value);
+		memcpy(&src0, &value, sizeof(T));
+	} else {
+		uint64_t value;
+		operand_value_retriever->Retrieve(instruction, 0, &value);
+		memcpy(&src0, &value, sizeof(T));
+	}
+
 	mem::Memory *memory = Emulator::getInstance()->getMemory();
 	memory->Write(address, sizeof(T), (char *)&src0);
 }

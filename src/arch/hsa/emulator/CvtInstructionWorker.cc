@@ -89,6 +89,17 @@ void CvtInstructionWorker::Inst_CVT_u2f_Aux(BrigCodeEntry *instruction)
 	operand_value_writer->Write(instruction, 0, &dst);
 }
 
+template<typename SrcType, typename DstType>
+void CvtInstructionWorker::Inst_CVT_s2f_Aux(BrigCodeEntry *instruction)
+{
+	SrcType src;
+	operand_value_retriever->Retrieve(instruction, 1, &src);
+
+	// Force cast
+	DstType dst = (DstType)src;
+	operand_value_writer->Write(instruction, 0, &dst);
+}
+
 
 void CvtInstructionWorker::Execute(BrigCodeEntry *instruction)
 {
@@ -124,9 +135,13 @@ void CvtInstructionWorker::Execute(BrigCodeEntry *instruction)
 	{
 		Inst_CVT_sext_Aux<int, long long>(instruction);
 	}
+	else if (src_type == BRIG_TYPE_S32 && dst_type == BRIG_TYPE_F64)
+	{
+		Inst_CVT_s2f_Aux<int, double>(instruction);
+	}
 	else
 	{
-		throw misc::Panic(misc::fmt("Conversion between %s and %s "
+		throw misc::Panic(misc::fmt("Conversion from %s to %s "
 				"is not supported\n",
 				AsmService::TypeToString(src_type).c_str(),
 				AsmService::TypeToString(dst_type).c_str()));
