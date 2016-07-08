@@ -1,5 +1,7 @@
 *.o
 *.a
+*.log
+*.trs
 .deps
 Makefile
 Makefile.in
@@ -8,3 +10,4 @@ Makefile.in
 *_test
 *.log
 *.trs
+src_*

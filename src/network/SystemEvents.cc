@@ -55,7 +55,7 @@ void System::EventTypeSendHandler(esim::Event *event,
 	if (network->hasConstantLatency())
 	{
 		// Debug Information
-		debug << misc::fmt("net: %s - M-%lld:%d -"
+		debug << misc::fmt("net: %s - M-%lld:%d - "
 				"fix_lat=%d\n",
 				network->getName().c_str(),
 				message->getId(),

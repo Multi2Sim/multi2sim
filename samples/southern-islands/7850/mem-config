@@ -45,7 +45,7 @@ AddressRange = ADDR DIV 64 MOD 5 EQ 3
 [ Module mm-4 ]
 Type = MainMemory
 BlockSize = 64
-Latency = 400
+Latency = 100
 HighNetwork = net-l2-4-to-mm-4
 AddressRange = ADDR DIV 64 MOD 5 EQ 4
 

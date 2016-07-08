@@ -220,6 +220,9 @@ public:
 	/// the owner.
 	bool retain_owner = false;
 
+	// If true, the invalidation just happens to certain sub-blocks
+	// of a block
+	bool partial_invalidation = false;
 
 
 

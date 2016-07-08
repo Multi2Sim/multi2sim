@@ -661,7 +661,7 @@ TEST(TestSystemEvents, config_0_evict_0)
 }
 
 
-// l1_0 has address 0 in S
+// l1_0 has address 0 in E 
 // l1_0 reads address 1024 and 2048 (address 0 gets evicted)
 TEST(TestSystemEvents, config_0_evict_1)
 {
@@ -701,7 +701,7 @@ TEST(TestSystemEvents, config_0_evict_1)
 		ASSERT_NE(module_mm, nullptr);
 
 		// Set block states
-		module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockShared, 0x0);
+		module_l1_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
 		module_l1_1->getCache()->getBlock(1, 0)->setStateTag(Cache::BlockModified, 0x40);
 		module_l2_0->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
 		module_mm->getCache()->getBlock(0, 0)->setStateTag(Cache::BlockExclusive, 0x0);
@@ -754,11 +754,12 @@ TEST(TestSystemEvents, config_0_evict_1)
 		EXPECT_EQ(tag, 0x800);
 		EXPECT_EQ(state, Cache::BlockExclusive);
 
-		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
-		EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+		// Check sharers and owner for 0x0 sub-block 0 (previously
+		// in l1-0)
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 0);
 
-		// Check sharers
+		// Check sharers/owner for 0x40 (0x0 sub-block 1) currently
+		// owned by l1-1
 		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 1), 1);
 		EXPECT_EQ(module_l2_0->isSharer(0, 0, 1, module_l1_1), true);
 
@@ -771,7 +772,7 @@ TEST(TestSystemEvents, config_0_evict_1)
 		EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
 
 		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), module_l1_0);
+		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
 
 		// Check owner
 		EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), module_l1_1);
@@ -783,12 +784,15 @@ TEST(TestSystemEvents, config_0_evict_1)
 		EXPECT_EQ(module_l2_0->getOwner(0, 2, 0), module_l1_0);
 
 		// Check link
+		// Sent: 8B Rx for 0x400, 8B Rx for 0x800 and 8B for evict
+		//     which is removing sharer/owner in lower level
+		// Received: 72B for 0x400, 72B for 0x800, and 8B ACK for evict
 		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 24);
 
 		// Check link
 		node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 144);
+		EXPECT_EQ(node->getReceivedBytes(), 152);
 
 		// Check link
 		node = module_l1_1->getLowNetworkNode();
@@ -800,11 +804,11 @@ TEST(TestSystemEvents, config_0_evict_1)
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 144);
+		EXPECT_EQ(node->getSentBytes(), 152);
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getReceivedBytes(), 24);
 
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
@@ -1235,8 +1239,7 @@ TEST(TestSystemEvents, config_0_evict_4)
 		EXPECT_EQ(state, Cache::BlockExclusive);
 
 		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 2);
-		EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
 		EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
 
 		// Check sharers
@@ -1247,7 +1250,9 @@ TEST(TestSystemEvents, config_0_evict_4)
 		EXPECT_EQ(module_l2_0->getNumSharers(0, 2, 0), 1);
 		EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
 
-		// Check owner
+		// Check owner -- even though l1-1 now has exclusive access
+		// to the data, we won't update the owner state since it adds
+		// to the coherency information
 		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
 
 		// Check owner
@@ -1258,11 +1263,11 @@ TEST(TestSystemEvents, config_0_evict_4)
 
 		// Check link
 		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 24);
 
 		// Check link
 		node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 144);
+		EXPECT_EQ(node->getReceivedBytes(), 152);
 
 		// Check link
 		node = module_l1_1->getLowNetworkNode();
@@ -1274,11 +1279,11 @@ TEST(TestSystemEvents, config_0_evict_4)
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 144);
+		EXPECT_EQ(node->getSentBytes(), 152);
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getReceivedBytes(), 24);
 
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
@@ -1298,6 +1303,8 @@ TEST(TestSystemEvents, config_0_evict_4)
 
 // l1_0 and l1_1 have address 0 in S
 // l1_0 reads address 1024 and 2048 (address 0 gets evicted)
+// This is disturbingly identical to the previous test. Keeping it
+// just only since the L2 is in state S
 TEST(TestSystemEvents, config_0_evict_5)
 {
 	try
@@ -1389,8 +1396,7 @@ TEST(TestSystemEvents, config_0_evict_5)
 		EXPECT_EQ(state, Cache::BlockExclusive);
 
 		// Check sharers
-		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 2);
-		EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_0), true);
+		EXPECT_EQ(module_l2_0->getNumSharers(0, 0, 0), 1);
 		EXPECT_EQ(module_l2_0->isSharer(0, 0, 0, module_l1_1), true);
 
 		// Check sharers
@@ -1402,7 +1408,7 @@ TEST(TestSystemEvents, config_0_evict_5)
 		EXPECT_EQ(module_l2_0->isSharer(0, 2, 0, module_l1_0), true);
 
 		// Check owner
-		EXPECT_EQ(module_l2_0->getOwner(0, 0, 1), nullptr);
+		EXPECT_EQ(module_l2_0->getOwner(0, 0, 0), nullptr);
 
 		// Check owner
 		EXPECT_EQ(module_l2_0->getOwner(0, 3, 0), module_l1_0);
@@ -1412,11 +1418,11 @@ TEST(TestSystemEvents, config_0_evict_5)
 
 		// Check link
 		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 16);
+		EXPECT_EQ(node->getSentBytes(), 24);
 
 		// Check link
 		node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 144);
+		EXPECT_EQ(node->getReceivedBytes(), 152);
 
 		// Check link
 		node = module_l1_1->getLowNetworkNode();
@@ -1428,11 +1434,11 @@ TEST(TestSystemEvents, config_0_evict_5)
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getSentBytes(), 144);
+		EXPECT_EQ(node->getSentBytes(), 152);
 
 		// Check link
 		node = module_l2_0->getHighNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 16);
+		EXPECT_EQ(node->getReceivedBytes(), 24);
 
 		// Check link
 		node = module_l2_0->getLowNetworkNode();
@@ -4261,7 +4267,7 @@ TEST(TestSystemEvents, config_0_store_2)
 
 		// Accesses
 		int witness = -1;
-		module_l1_1->Access(Module::AccessStore, 0x40, &witness);
+		module_l1_1->Access(Module::AccessStore, 0x48, &witness);
 
 		// Simulation loop
 		esim::Engine *esim_engine = esim::Engine::getInstance();
@@ -4316,8 +4322,8 @@ TEST(TestSystemEvents, config_0_store_2)
 		// There should be no communication with l1_0 or any other
 		// sharers
 		net::Node *node = module_l1_0->getLowNetworkNode();
-		EXPECT_EQ(node->getReceivedBytes(), 8);
-		EXPECT_EQ(node->getSentBytes(), 8);
+		EXPECT_EQ(node->getReceivedBytes(), 0);
+		EXPECT_EQ(node->getSentBytes(), 0);
 
 		// Check L1-1 communications. Send a write-request, and 
 		// receives a block

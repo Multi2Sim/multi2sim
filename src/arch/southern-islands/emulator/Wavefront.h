@@ -286,7 +286,7 @@ public:
 
 	/// Flag set during instruction emulation to indicate that the
 	/// instruction performed a memory wait operation.
-	void setMemoryWait(bool mem_wait) { this->memory_wait = memory_wait; }
+	void setMemoryWait(bool mem_wait) { this->memory_wait = mem_wait; }
 
 	/// Flag set during instruction emulation to indicate that the wavefront
 	/// got stalled at a barrier.
@@ -299,7 +299,7 @@ public:
 	/// Flag set during instruction emulation.
 	void setVectorMemoryGlobalCoherency(bool vector_mem_global_coherency)
 	{
-		this->vector_memory_global_coherency = vector_memory_global_coherency;
+		this->vector_memory_global_coherency = vector_mem_global_coherency;
 	}
 
 	/// Set scalar register as an unsigned int
