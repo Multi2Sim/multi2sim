@@ -1415,14 +1415,20 @@ void WorkItem::ISA_S_MULK_I32_Impl(Instruction *instruction)
 void WorkItem::ISA_S_MOV_B64_Impl(Instruction *instruction)
 {
 	// Assert no literal constant with a 64 bit instruction.
-	assert(!(INST.ssrc0 == 0xFF));
+	// assert(!(INST.ssrc0 == 0xFF));
 
 	Instruction::Register s0_lo;
 	Instruction::Register s0_hi;
 
 	// Load operand from registers.
-	s0_lo.as_uint = ReadSReg(INST.ssrc0);
-	s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	if (INST.ssrc0 == 0xFF){
+		s0_lo.as_uint = INST.lit_cnst;
+		s0_hi.as_uint = 0x0;
+	}
+	else{
+		s0_lo.as_uint = ReadSReg(INST.ssrc0);
+		s0_hi.as_uint = ReadSReg(INST.ssrc0 + 1);
+	}
 
 	// Write the results.
 	// Store the data in the destination register
@@ -2499,6 +2505,34 @@ void WorkItem::ISA_V_RCP_F32_Impl(Instruction *instruction)
 	}
 }
 #undef INST
+
+// D.f = 1.0 / sqrt(S0.f).
+#define INST INST_VOP1
+void WorkItem::ISA_V_RSQ_F32_Impl(Instruction *instruction)
+{
+	Instruction::Register s0;
+	Instruction::Register rsq;
+
+	// Load operand from register or as a literal constant.
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+
+	rsq.as_float = 1.0f / sqrt(s0.as_float);
+
+	// Write the results.
+	WriteVReg(INST.vdst, rsq.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: V%u<=(%gf) ", id, INST.vdst,
+			rsq.as_float);
+	}
+}
+#undef INST
+
 
 // D.d = 1.0 / (S0.d).
 #define INST INST_VOP1
@@ -3699,7 +3733,29 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Instruction *instruction)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GE_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(instruction);
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+
+	// Load operands from registers or as a literal constant.
+	if (INST.src0 == 255)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+	s1.as_uint = ReadVReg(INST.vsrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_float >= s1.as_float);
+
+	// Write the results.
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
+			id_in_wavefront, result.as_uint);
+	}	
 }
 #undef INST
 
@@ -4105,11 +4161,33 @@ void WorkItem::ISA_V_CMP_GT_U32_Impl(Instruction *instruction)
 }
 #undef INST
 
-// D.u = (S0.f < S1.f).
+// D.u = (S0.f != S1.f).
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_NE_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(instruction);
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+
+	// Load operands from registers or as a literal constant.
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+	s1.as_uint = ReadVReg(INST.vsrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_uint != s1.as_uint);
+
+	// Write the results.
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
+			id_in_wavefront, result.as_uint);
+	}
 }
 #undef INST
 
@@ -4117,7 +4195,29 @@ void WorkItem::ISA_V_CMP_NE_U32_Impl(Instruction *instruction)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GE_U32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(instruction);
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+
+	// Load operands from registers or as a literal constant.
+	if (INST.src0 == 0xFF)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+	s1.as_uint = ReadVReg(INST.vsrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_uint >= s1.as_uint);
+
+	// Write the results.
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
+			id_in_wavefront, result.as_uint);
+	}
 }
 #undef INST
 
