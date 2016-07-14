@@ -3733,7 +3733,29 @@ void WorkItem::ISA_V_CMP_GT_F32_Impl(Instruction *instruction)
 #define INST INST_VOPC
 void WorkItem::ISA_V_CMP_GE_F32_Impl(Instruction *instruction)
 {
-	ISAUnimplemented(instruction);
+	Instruction::Register s0;
+	Instruction::Register s1;
+	Instruction::Register result;
+
+	// Load operands from registers or as a literal constant.
+	if (INST.src0 == 255)
+		s0.as_uint = INST.lit_cnst;
+	else
+		s0.as_uint = ReadReg(INST.src0);
+	s1.as_uint = ReadVReg(INST.vsrc1);
+
+	// Compare the operands.
+	result.as_uint = (s0.as_float >= s1.as_float);
+
+	// Write the results.
+	WriteBitmaskSReg(Instruction::RegisterVcc, result.as_uint);
+
+	// Print isa debug information.
+	if (Emulator::isa_debug)
+	{
+		Emulator::isa_debug << misc::fmt("t%d: vcc<=(%u) ",
+			id_in_wavefront, result.as_uint);
+	}	
 }
 #undef INST
 
