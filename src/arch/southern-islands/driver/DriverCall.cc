@@ -727,7 +727,12 @@ int Driver::CallNDRangeFinish(comm::Context *context,
 	if (!ndrange)
 		throw Error(misc::fmt("%s: invalid ndrange ID (%d)",
 				__FUNCTION__, ndrange_id));
-	
+
+	// If the simulation is only timing, there is no concept of last
+	// workgroup. So set it to true.
+	if (Timing::getSimKind() != comm::Arch::SimDetailed)
+		ndrange->setLastWorkgroupSent(true);
+
 	// If no work-groups are left in the queues, remove the nd-range
 	// from the driver list
 	if (!(ndrange->getNumWorkgroups()) &&
