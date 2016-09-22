@@ -24,9 +24,11 @@
 #include <list>
 #include <memory>
 #include <vector>
-#include <memory/Memory.h>
 
+#include <arch/common/Context.h>
 #include <arch/kepler/driver/Function.h>
+#include <memory/Memory.h>
+#include<memory/Mmu.h>
 
 #include "Emulator.h"
 #include "ThreadBlock.h"
@@ -94,9 +96,38 @@ class Grid
 	// Shared memory top pointer
 	unsigned shared_memory_top;
 
+	// Shared memory used by function in Bytes
+	unsigned shared_memory_size;
+
+	// Constant memory used by function in Bytes
+	unsigned constant_memory_size;
+
+	// Local memory used by function in Bytes
+	unsigned local_memory_size;
+
+	// Number of barriers in the function
+	unsigned num_barriers;
+
+	// Number of register used by function in Bytes
+	unsigned num_registers_per_thread;
+
+	// Flag indicates the number of the blocks in the grid which are already
+	// mapped to SM. For timing simulator usage.
+	unsigned num_mapped_blocks;
+
+	// Number of thread blocks completed timing simulation
+	unsigned num_thread_blocks_completed_timing;
+
+	// Pointer to a context that is suspended while waiting for the grid to
+	// complete
+	comm::Context *suspended_context = nullptr;
+
 public:
 	/// Constructor
 	Grid(Function *function);
+
+	// Associated memory address space
+	mem::Mmu::Space *address_space = nullptr;
 
 	/// Dump the state of the grid in a plain-text format into an output
 	/// stream.
@@ -134,6 +165,24 @@ public:
 		return kernel_function_name;
 	}
 
+	/// Get the size of shared memory in bytes used in the function
+	unsigned getSharedMemorySize() const { return shared_memory_size; }
+
+	/// Get the size of local memory in bytes used in the function
+	unsigned getLocalMemorySize() const { return local_memory_size; }
+
+	/// Get the size of constant memory in bytes used in the function
+	unsigned getConstantMemorySize() const { return constant_memory_size; }
+
+	/// Get the number of registers used in the function
+	unsigned getNumRegistersPerThread() const
+	{
+		return num_registers_per_thread;
+	}
+
+	/// Get the number of barriers in the function
+	unsigned getNumBarriers() const { return num_barriers; }
+
 	/// Get 3D thread block count
 	/// \param index range from 0 to 2
 	unsigned getThreadBlockCount3(int index) const
@@ -141,6 +190,9 @@ public:
 		//assert(index < 3);
 		return thread_block_count3[index];
 	}
+
+	/// Get number of thread blocks in the grid
+	unsigned getThreadBlockCount() const { return thread_block_count; }
 
 	/// Get instruction buffer
 	std::vector<unsigned long long>::iterator getInstructionBuffer()
@@ -173,6 +225,28 @@ public:
 		return running_thread_blocks.begin();
 	}
 
+	/// Get number of mapped blocks
+	unsigned getNumMappedBlocks() { return num_mapped_blocks; }
+
+	/// Get number of thread blocks completed timing simulation
+	unsigned getNumThreadBlocksCompletedTiming()
+	{
+		return num_thread_blocks_completed_timing;
+	}
+
+	/// Return a pointer to a suspended context. If there is no suspended
+	/// context, a nullptr is returned
+	comm::Context *GetSuspendedContext() { return suspended_context; }
+
+	/// Increase Number of mapped blocks by 1
+	void IncreseNumMappedBlocks() { num_mapped_blocks++; }
+
+	/// Increase Number of thread blocks completed timing simulation
+	void IncThreadBlocksCompletedTiming()
+	{
+		num_thread_blocks_completed_timing++;
+	}
+
 	// Setters
 	//
 
@@ -196,6 +270,15 @@ public:
 
 	/// pop the front thread block out of running thread block list
 	void PopRunningThreadBlock();
+
+	/// Save a suspended context that is waiting for the grid
+	void SetSuspendedContext(comm::Context *context)
+	{
+		suspended_context = context;
+	}
+
+	/// Wake up the suspended context if the grid has completed
+	void WakeupContext();
 };
 
 }   //namespace

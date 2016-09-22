@@ -40,6 +40,8 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 	unsigned am = 0;
 
 	// Initialization
+	warp_pool_entry_index = -1;
+
 	// Calculate the warp ID in grid
 	this->id = id + thread_block->getId() * thread_block->getWarpCount();
 
@@ -95,6 +97,7 @@ Warp::Warp(ThreadBlock *thread_block, unsigned id):inst(Instruction())
 	at_barrier = 0;
 	finished_thread = 0;
 	finished_emu = false;
+	finished_timing = false;
 
 	// simulation performance
 	emu_inst_count = 0;
@@ -113,11 +116,8 @@ void Warp::Dump(std::ostream &os) const
 }
 
 
-void Warp::Execute()
+Instruction::Opcode Warp::Decode()
 {
-	// Get emu instance
-	Emulator *emulator = Emulator::getInstance();
-
 	// Instruction binary
 	Instruction::Bytes inst_bytes;
 
@@ -129,13 +129,20 @@ void Warp::Execute()
 	inst_bytes.as_uint[1] = instruction_buffer[pc / inst_size];
 
 	// Decode instruction
+	inst.Decode((const char *) &inst_bytes, pc);
+
+	// Get opcode
+	inst_op = (Instruction::Opcode) inst.getOpcode();
+
+	return inst_op;
+}
+
+
+void Warp::Execute(Instruction::Opcode inst_op)
+{
+	// Decode instruction
 	if( pc % 64)
 	{
-			inst.Decode((const char *) &inst_bytes, pc);
-
-			// Execute instruction
-			inst_op = (Instruction::Opcode) inst.getOpcode();
-
 			if (!inst_op)
 			{
 				std::cerr << __FILE__ << ":" << __LINE__ << ": unrecognized instruction "
@@ -143,6 +150,7 @@ void Warp::Execute()
 				misc::Panic("Simulation exits with exception.\n");
 			}
 
+			// Execute
 			for (auto thread_id = threads_begin; thread_id < threads_end; ++thread_id)
 			{
 				/*
@@ -182,14 +190,14 @@ void Warp::Execute()
 
     inst_count++;
     emu_inst_count++;
-    emulator->incNumAluInstructions();
-    pc = this->target_pc;
 
     if(pc >= instruction_buffer_size - 8)
     {
     	finished_emu = true;
     	thread_block->incWarpsCompletedEmu();
     }
+
+    pc = this->target_pc;
 	// Stats
 
 	//asEmu(emu)->instructions++; // no parent class any more
@@ -208,6 +216,17 @@ unsigned Warp::getFinishedThreadCount() const
         return num;
 }
 
+
+bool Warp::getThreadActive(int id_in_warp)
+{
+	// Get SyncStack
+	SyncStack* stack = this->getSyncStack()->get();
+
+	// Active
+	bool active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	return active;
+}
 
 
 } //namespace

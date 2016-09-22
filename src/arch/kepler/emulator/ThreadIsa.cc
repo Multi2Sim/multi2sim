@@ -98,8 +98,10 @@ enum
 
 void Thread::ExecuteInst_Special()
 {
-
+	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
+
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
 	// Only effect on thread 0 in warp
@@ -108,6 +110,16 @@ void Thread::ExecuteInst_Special()
 		unsigned temp_am;
 		if (stack->pop(warp->getPC(), temp_am))
 			stack->setActiveMask(temp_am);
+	}
+
+	// Active
+	unsigned active;
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	if(active == 1)
+	{
+		emulator->incNumInstructions();
+		emulator->incNumMiscInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -121,6 +133,7 @@ void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 	Instruction::BytesIMUL format = inst_bytes.imul;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -189,6 +202,8 @@ void Thread::ExecuteInst_IMUL_A(Instruction *inst)
 		// Write
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -275,6 +290,8 @@ void Thread::ExecuteInst_IMUL_B(Instruction *inst)
 		// Write result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -287,7 +304,9 @@ void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 	Instruction::Bytes inst_bytes = inst->getInstBytes();
 	Instruction::BytesISCADD format = inst_bytes.iscadd;
 
+
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -390,6 +409,8 @@ void Thread::ExecuteInst_ISCADD_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -404,7 +425,7 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 	Instruction::BytesISCADD format = inst_bytes.iscadd;
 
 	// Get Warp
-	Emulator* emu = Emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -454,7 +475,7 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 
 		// Read src2 value Check it
 		if (format.op2 == 1) // constant mode
-			emu->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		else if (format.op2 == 3)
 		{
 			unsigned src2_id;
@@ -514,6 +535,8 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 
@@ -524,6 +547,7 @@ void Thread::ExecuteInst_ISCADD_B(Instruction *inst)
 void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -617,6 +641,8 @@ void Thread::ExecuteInst_ISAD_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -740,6 +766,8 @@ void Thread::ExecuteInst_ISAD_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -753,6 +781,7 @@ void Thread::ExecuteInst_BFI_A(Instruction *inst)
 	Instruction::BytesBFI format = inst_bytes.bfi;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack *stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -822,6 +851,8 @@ void Thread::ExecuteInst_BFI_A(Instruction *inst)
 		unsigned dst_id;
 		dst_id = format.dst;
 		WriteGPR(dst_id, temp);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -840,6 +871,7 @@ void Thread::ExecuteInst_BFE_A(Instruction *inst)
 	Instruction::BytesBFE format = inst_bytes.bfe;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack *stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -883,6 +915,7 @@ void Thread::ExecuteInst_BFE_A(Instruction *inst)
 
 		// Operation
 		unsigned temp;
+		long long int temp1;
 		temp = src1;
 		if (format.bit_reverse == 1)
 			temp ^= 0xffffffff;
@@ -895,7 +928,16 @@ void Thread::ExecuteInst_BFE_A(Instruction *inst)
 
 			// Shift the LSB of the field to bit 0
 			if (format.u_s == 1) // arithmetic shift
-				temp = (int)temp >> (32 - size);
+			{
+				if (temp & 0x80000000)
+				{
+					temp1 = temp | 0xffffffff00000000ull;
+					temp1 = temp1 >> (32-size);
+					temp = temp1 & 0xffffffff;
+				}
+				else
+				temp = temp >> (32 - size);
+			}
 			else if (format.u_s == 0)
 				temp = temp >> (32 - size);
 		}
@@ -905,9 +947,18 @@ void Thread::ExecuteInst_BFE_A(Instruction *inst)
 				position = 32;
 
 			if (format.u_s == 1) // arithmetic shift
-				temp = (int)temp >> size;
+			{
+				if (temp & 0x80000000)
+				{
+					temp1 = temp | 0xffffffff00000000ull;
+					temp1 = temp1 >> position;
+					temp = temp1 & 0xffffffff;
+				}
+				else
+				temp = temp >> position;
+			}
 			else if (format.u_s == 0)
-				temp = temp >> size;
+				temp = temp >> position;
 		}
 
 		// CC update
@@ -923,6 +974,8 @@ void Thread::ExecuteInst_BFE_A(Instruction *inst)
 		unsigned dst_id;
 		dst_id = format.dst;
 		WriteGPR(dst_id, temp);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -985,6 +1038,7 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 
 		// Operation
 		unsigned temp;
+		long long int temp1;
 		temp = src1;
 
 		if (format.bit_reverse == 1)
@@ -999,7 +1053,16 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 
 			// Shift the LSB of the field to bit 0
 			if (format.u_s == 1) // arithmetic shift
-				temp = (int)temp >> (32 - size);
+			{
+				if (temp & 0x80000000)
+				{
+					temp1 = temp | 0xffffffff00000000ull;
+					temp1 = temp1 >> (32-size);
+					temp = temp1 & 0xffffffff;
+				}
+				else
+				temp = temp >> (32 - size);
+			}
 			else if (format.u_s == 0)
 				temp = temp >> (32 - size);
 		}
@@ -1009,11 +1072,19 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 				position = 32;
 
 			if (format.u_s == 1) // arithmetic shift
-				temp = (int)temp >> size;
+			{
+				if (temp & 0x80000000)
+				{
+					temp1 = temp | 0xffffffff00000000ull;
+					temp1 = temp1 >> position;
+					temp = temp1 & 0xffffffff;
+				}
+				else
+				temp = temp >> position;
+			}
 			else if (format.u_s == 0)
-				temp = temp >> size;
+				temp = temp >> position;
 		}
-
 		// CC update
 		if (format.cc == 1)
 		{
@@ -1027,6 +1098,8 @@ void Thread::ExecuteInst_BFE_B(Instruction *inst)
 		unsigned dst_id;
 		dst_id = format.dst;
 		WriteGPR(dst_id, temp);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1099,7 +1172,8 @@ void Thread::ExecuteInst_IMAD(Instruction *inst)
 		// Write
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
-
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1129,6 +1203,7 @@ void Thread::ExecuteInst_IMADSP_B(Instruction *inst)
 void Thread::ExecuteInst_IADD_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -1243,6 +1318,8 @@ void Thread::ExecuteInst_IADD_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1321,7 +1398,7 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 			src2 = ReadGPR(src2_id);
 		}
 		else if (format.op2 == 1) // constant mode
-			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
+				this->warp->getThreadBlock()->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 
 		// Determine least significant bit value for the add
 		unsigned lsb = 0;
@@ -1390,6 +1467,8 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 
@@ -1412,6 +1491,7 @@ void Thread::ExecuteInst_IADD_B(Instruction *inst)
 void Thread::ExecuteInst_IADD32I(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -1525,6 +1605,8 @@ void Thread::ExecuteInst_IADD32I(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1539,6 +1621,7 @@ void Thread::ExecuteInst_ISET_A(Instruction *inst)
 void Thread::ExecuteInst_ISET_B(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -1657,6 +1740,8 @@ void Thread::ExecuteInst_ISET_B(Instruction *inst)
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1779,6 +1864,8 @@ void Thread::ExecuteInst_ISETP_A(Instruction *inst)
 			WritePredicate(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
 			WritePredicate(pred_id_2, pred_2);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1802,6 +1889,7 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -1914,6 +2002,8 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 			WritePredicate(pred_id_1, pred_1);
 		if (pred_id_2 != 7)
 			WritePredicate(pred_id_2, pred_2);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -1934,6 +2024,7 @@ void Thread::ExecuteInst_ISETP_B(Instruction *inst)
 void Thread::ExecuteInst_LOP_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2002,6 +2093,8 @@ void Thread::ExecuteInst_LOP_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2090,6 +2183,8 @@ void Thread::ExecuteInst_LOP_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2205,6 +2300,8 @@ void Thread::ExecuteInst_ICMP_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2217,7 +2314,7 @@ void Thread::ExecuteInst_EXIT(Instruction *inst)
 	Instruction::Bytes inst_bytes = inst->getInstBytes();
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
-	//emulator* emulator = emulator::getInstance();
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Predicates and active masks
@@ -2256,6 +2353,8 @@ void Thread::ExecuteInst_EXIT(Instruction *inst)
 		stack->mask(id_in_warp, SyncStackMaskEXIT);
 		stack->clearActiveMaskBit(id_in_warp);
 		warp->setFinishedThreadBit(id_in_warp);
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2342,6 +2441,8 @@ void Thread::ExecuteInst_BRA(Instruction *inst)
 	if (active == 1 && pred == 1)
 	{
 		stack->setTempMaskBit(id_in_warp);
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 	// At the last thread, push temp_entry's mask into stack,
@@ -2504,6 +2605,8 @@ void Thread::ExecuteInst_MOV_B(Instruction *inst)
 		dst_id = format.dst;
 		//WriteGPR(dst_id, dst);
 		Write_register(&dst, dst_id);
+		emulator->incNumInstructions();
+		emulator->incNumMovmentInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2582,6 +2685,8 @@ void Thread::ExecuteInst_MOV32I(Instruction *inst)
 		{
 			throw misc::Panic(".S = 1 in Function MOV32I");
 		}
+		emulator->incNumInstructions();
+		emulator->incNumMovmentInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2591,6 +2696,7 @@ void Thread::ExecuteInst_MOV32I(Instruction *inst)
 void Thread::ExecuteInst_SEL_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2653,6 +2759,8 @@ void Thread::ExecuteInst_SEL_A(Instruction *inst)
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
 		Write_register(&dst, dst_id);
+		emulator->incNumInstructions();
+		emulator->incNumMovmentInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2734,6 +2842,8 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
 		Write_register(&dst, dst_id);
+		emulator->incNumInstructions();
+		emulator->incNumMovmentInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2743,6 +2853,7 @@ void Thread::ExecuteInst_SEL_B(Instruction *inst)
 void Thread::ExecuteInst_I2F_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2788,7 +2899,7 @@ void Thread::ExecuteInst_I2F_A(Instruction *inst)
 	if (active == 1 && pred == 1)
 	{
 
-		if (format.op0 == 1) // src2 is IMM20
+		if (format.op0 == 1) // src is IMM20
 			src = format.src >> 18 ? format.src | 0xfff80000 : format.src;
 
 		// Negate
@@ -2808,6 +2919,8 @@ void Thread::ExecuteInst_I2F_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2867,10 +2980,10 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 			emulator->ReadConstantMemory(format.src << 2, 4, (char*)&src);
 		else if ((format.op0 == 2 && format.op2 == 3)) // src is register mode
 		{
-			// src2 ID
+			// src ID
 			unsigned src_id;
 
-			// Read src2 value
+			// Read src value
 			src_id = format.src;
 			src = ReadGPR(src_id);
 		}
@@ -2891,6 +3004,8 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -2900,6 +3015,7 @@ void Thread::ExecuteInst_I2F_B(Instruction *inst)
 void Thread::ExecuteInst_I2I_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -2964,6 +3080,8 @@ void Thread::ExecuteInst_I2I_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3030,22 +3148,78 @@ void Thread::ExecuteInst_I2I_B(Instruction *inst)
 			src = ReadGPR(src_id);
 		}
 
-		// Negate
-		if (format.src_negate == 1)
-			src = -src;
+		// Execute
+		long long int temp;
+		if (format.s_fmt == 0)
+		{
+			if (format.extract == 0)
+				temp = src & 0x000000ff;
+			else if (format.extract == 1)
+				temp = (src >> 8) & 0x000000ff;
+			else if (format.extract == 2)
+				temp = (src >> 16) & 0x000000ff;
+			else if (format.extract == 3)
+				temp = (src >> 24) & 0x000000ff;
+			if (format.src_signed == 1 && (temp & 0x00000080))
+				temp |= 0xffffffffffffff00ull;
+		}
+		else if (format.s_fmt == 1)
+		{
+			if (format.extract == 0)
+				temp = src & 0x0000ffff;
+			else if (format.extract == 1)
+				temp = (src >> 16) & 0x0000ffff;
+			if (format.src_signed == 1 && (temp & 0x00008000))
+				temp |= 0xffffffffffff0000ull;
+		}
+		else
+		{
+			temp = src;
+			if (format.src_signed == 1 && (temp & 0x80000000))
+				temp |= 0xffffffff00000000ull;
+		}
+
 		// Absolute value
 		if (format.src_abs == 1)
-			src = abs(src);
+			if (temp < 0)
+				temp = -temp;
 
-		// Execute
-		if (format.s_fmt == 2 && format.d_fmt == 2) //Currently support 32 bit
-			dst = src;
+		// Negate
+		if (format.src_negate == 1)
+			temp = -temp;
+
+		// .SAT option
+		int width;
+		if (format.s_fmt == 0)
+			width = 8;
+		else if (format.s_fmt == 1)
+			width = 16;
+		else if (format.s_fmt == 2)
+			width = 32;
+
+		if (format.sat && format.src_signed)
+		{
+			if (temp < -(1 << (width-1)))
+				temp = -(1 << (width-1));
+			else if (temp > ((1 << (width-1)) - 1))
+					temp = (1 << (width-1)) - 1;
+		}
+		else if (format.sat && (format.src_signed == 0))
+		{
+			if (temp < 0)
+				temp = 0;
+			else if (temp > (0xffffffff >> (32 - width)))
+				temp = (0xffffffff >> (32 - width));
+		}
 		else
-			ISAUnsupportedFeature(inst);
+			temp &= (0xffffffff >> (32 - width));
 
 		// Write Result
 		dst_id = format.dst;
+		dst = (temp & 0xffffffff);
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3055,6 +3229,7 @@ void Thread::ExecuteInst_I2I_B(Instruction *inst)
 void Thread::ExecuteInst_F2I_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -3135,6 +3310,8 @@ void Thread::ExecuteInst_F2I_A(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3229,6 +3406,8 @@ void Thread::ExecuteInst_F2I_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3339,6 +3518,8 @@ void Thread::ExecuteInst_F2F_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumConversionInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3469,15 +3650,24 @@ void Thread::ExecuteInst_LD(Instruction *inst)
 		/* Write */
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst[0]);
-
+		global_memory_access_size = 4;
 
 		if (data_type > 4)
+		{
 			WriteGPR(dst_id + 1, dst[1]);
+			global_memory_access_size = 8;
+		}
 		if (data_type > 5)
 		{
 			WriteGPR(dst_id + 2, dst[2]);
 			WriteGPR(dst_id + 3, dst[3]);
+			global_memory_access_size = 16;
 		}
+
+		// Set up global memory access address
+		global_memory_access_address = addr;
+		emulator->incNumInstructions();
+		emulator->incNumLSInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3501,7 +3691,7 @@ void Thread::ExecuteInst_LDS(Instruction *inst)
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
-
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -3587,6 +3777,8 @@ void Thread::ExecuteInst_LDS(Instruction *inst)
 		}
 
 
+		emulator->incNumInstructions();
+		emulator->incNumLSInstructions();
 	}
 
 
@@ -3692,6 +3884,8 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 			WriteGPR(dst_id, dst.u32);
 
 			// Read the upper 32 bits
+			// Keep using constant memory from emulator because the function
+			// arguments are written to emulator constant memory
 			emulator->ReadConstantMemory(mem_addr + 4, 4, (char*)&srcB.u32);
 
 			// Execute the upper 32 bits
@@ -3706,6 +3900,8 @@ void Thread::ExecuteInst_LDC(Instruction *inst)
 						"128 bits LDC attempted.\n");
 		}
 
+	    emulator->incNumInstructions();
+	    emulator->incNumLSInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -3773,6 +3969,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 		data_type = (format.op1 >> 2) & 0x7;
 		src_id = format.dst;
 		src[0] = ReadGPR(src_id);
+
 		if (data_type > 4)
 			src[1] = ReadGPR(src_id + 1);
 		if (data_type > 5)										//Really? FIXME
@@ -3800,7 +3997,11 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 			thread_block->WriteToSharedMemory(shared_memory_addr, 4, (char*)src);
 		}
 		else
+		{
 			emulator->WriteGlobalMemory(addr, 4, (char*)src);
+		}
+
+		global_memory_access_size = 4;
 
 		// Data type > 4
 		if (data_type > 4)
@@ -3825,6 +4026,7 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 			}
 			else
 				emulator->WriteGlobalMemory(addr + 4, 4, (char*)&src[1]);
+			global_memory_access_size = 8;
 		}
 
 		// Data type > 5
@@ -3850,8 +4052,14 @@ void Thread::ExecuteInst_ST(Instruction *inst)
 			}
 			else
 				emulator->WriteGlobalMemory(addr + 8, 8, (char*)&src[2]);
+			global_memory_access_size = 16;
 		}
+
+		global_memory_access_address = addr;
+		emulator->incNumInstructions();
+		emulator->incNumLSInstructions();
 	}
+
 
 	if (id_in_warp == warp->getThreadCount() - 1)
             warp->setTargetPC(warp->getPC() + warp->getInstructionSize());
@@ -3873,6 +4081,7 @@ void Thread::ExecuteInst_STS(Instruction *inst)
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -3958,6 +4167,8 @@ void Thread::ExecuteInst_STS(Instruction *inst)
 			thread_block->writeSharedMem(dst, sizeof(int), (char*)&src);
 			*/
 		}
+		emulator->incNumInstructions();
+		emulator->incNumLSInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4040,7 +4251,7 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 		{
 			emulator->ReadConstantMemory(src_id << 2, 4, (char*)&src2);
 		}
-		else if (format.srcB_mod == 1 || format.srcB_mod == 2)
+		else if (format.srcB_mod == 1 && format.op0 == 2)
 			src2 = ReadFloatGPR(src_id);
 		else 	// check it
 		{
@@ -4059,6 +4270,8 @@ void Thread::ExecuteInst_FMUL(Instruction *inst)
 		/* Write */
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumFP32Instructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4284,6 +4497,8 @@ void Thread::ExecuteInst_FADD_B(Instruction *inst)
 		unsigned dst_id;
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumFP32Instructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4293,6 +4508,7 @@ void Thread::ExecuteInst_FADD_B(Instruction *inst)
 void Thread::ExecuteInst_MUFU(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -4355,6 +4571,8 @@ void Thread::ExecuteInst_MUFU(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumFP32Instructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4369,6 +4587,7 @@ void Thread::ExecuteInst_FFMA_A(Instruction *inst)
 void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -4417,7 +4636,6 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 		// Read src2 and src3
 		if (format.op2 == 1) // src2 is const src3 is register
 		{
-			Emulator *emulator = Emulator::getInstance();
 			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 			unsigned src3_id;
 			src3_id = format.src3;
@@ -4428,7 +4646,6 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 			unsigned src2_id;
 			src2_id = format.src3; // format.src3 is for register mode
 			src2 = ReadFloatGPR(src2_id);
-			Emulator *emulator = Emulator::getInstance();
 			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src3);
 		}
 		else if (format.op2 == 3) // both src2 and src3 are register mode
@@ -4475,6 +4692,8 @@ void Thread::ExecuteInst_FFMA_B(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumFP32Instructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4489,6 +4708,7 @@ void Thread::ExecuteInst_FSET_A(Instruction *inst)
 void Thread::ExecuteInst_FSET_B(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -4582,33 +4802,33 @@ void Thread::ExecuteInst_FSET_B(Instruction *inst)
  		if (cmp_op == 0)
 			cmp_result = false;
 		else if (cmp_op == 1)
-			cmp_result = ((src1 < src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 < src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 2)
-			cmp_result = ((src1 == src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 == src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 3)
-			cmp_result = ((src1 <= src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 <= src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 4)
-			cmp_result = ((src1 > src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 > src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 5)
-			cmp_result = ((src1 != src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 != src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 6)
-			cmp_result = ((src1 >= src2) && (!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((src1 >= src2) && (!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 7)
-			cmp_result = ((!std::isnan(src1)) && (!std::isnan(src2)));
+			cmp_result = ((!isnan(src1)) && (!isnan(src2)));
 		else if (cmp_op == 8)
-			cmp_result = ((std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 9)
-			cmp_result = ((src1 < src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 < src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 10)
-			cmp_result = ((src1 == src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 == src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 11)
-			cmp_result = ((src1 <= src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 <= src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 12)
-			cmp_result = ((src1 > src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 > src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 13)
-			cmp_result = ((src1 != src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 != src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 14)
-			cmp_result = ((src1 >= src2) && (std::isnan(src1)) && (std::isnan(src2)));
+			cmp_result = ((src1 >= src2) && (isnan(src1)) && (isnan(src2)));
 		else if (cmp_op == 15)
 			cmp_result = true;
 
@@ -4628,6 +4848,8 @@ void Thread::ExecuteInst_FSET_B(Instruction *inst)
 		dst_id = format.dst;
 		dst = pred_src ? src1 : src2;
 		WriteFloatGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumFP32Instructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4637,6 +4859,7 @@ void Thread::ExecuteInst_FSET_B(Instruction *inst)
 void Thread::ExecuteInst_NOP(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -4662,7 +4885,8 @@ void Thread::ExecuteInst_NOP(Instruction *inst)
 
 	if (active == 1 && s == 1)
 	{
-
+		emulator->incNumInstructions();
+		emulator->incNumMiscInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4676,6 +4900,7 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -4724,6 +4949,8 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 		// Write
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumMiscInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4743,6 +4970,7 @@ void Thread::ExecuteInst_S2R(Instruction *inst)
 void Thread::ExecuteInst_PSETP(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -4842,7 +5070,8 @@ void Thread::ExecuteInst_PSETP(Instruction *inst)
 		// Write Result
 		dst_id = format.pred0;
 		WritePredicate(dst_id, dst);
-
+		emulator->incNumInstructions();
+		emulator->incNumPredicateInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4862,6 +5091,7 @@ void Thread::ExecuteInst_BAR(Instruction *inst)
 	Instruction::BytesGeneral0 format = inst_bytes.general0;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned pred;
@@ -4893,6 +5123,8 @@ void Thread::ExecuteInst_BAR(Instruction *inst)
 	if (active == 1 && pred == 1)
 	{
 		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumMiscInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -4961,6 +5193,7 @@ void Thread::ExecuteInst_CAL(Instruction *inst)
 	Instruction::BytesCAL format = inst_bytes.cal;
 
 	// Predicates and active masks
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Get instruction offset
@@ -4997,6 +5230,8 @@ void Thread::ExecuteInst_CAL(Instruction *inst)
 	if (active == 1 && pred == 1)
 	{
 		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5047,6 +5282,7 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
 
     unsigned address;
     unsigned pc;
+	unsigned active;
 
 	// Determine whether the warp reaches reconvergence pc.
 	// If it is, pop the synchronization stack top and restore the active mask
@@ -5058,9 +5294,13 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
 				stack->setActiveMask(temp_am);
 	}
 
+
 	// Instbytes format
 	Instruction::Bytes inst_bytes = inst->getInstBytes();
 	Instruction::BytesSSY format = inst_bytes.ssy;
+
+	// Active
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
 
 	// Operand
 	unsigned offset;
@@ -5070,6 +5310,14 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
 	isconstmem = format.isconstmem;
 
 	offset = format.offset;
+
+	// Execute
+	if (active == 1)
+	{
+		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
+	}
 
 	// Execute at the last thread in warp
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5085,7 +5333,7 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
         {
 			// check this
 			if (isconstmem == 1)
-              	emulator->ReadConstantMemory(offset << 2,4, (char*) &address);
+				emulator->ReadConstantMemory(offset << 2,4, (char*) &address);
         }
 
 		stack->push(address,
@@ -5100,6 +5348,7 @@ void Thread::ExecuteInst_SSY(Instruction *inst)
 void Thread::ExecuteInst_PBK(Instruction *inst)
 {
 	// Get synchronization stack
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned address;
@@ -5118,6 +5367,17 @@ void Thread::ExecuteInst_PBK(Instruction *inst)
 	Instruction::Bytes inst_bytes = inst->getInstBytes();
 	Instruction::BytesPBK format = inst_bytes.pbk;
 
+	// Active
+	unsigned active;
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Execute
+	if (active == 1)
+	{
+		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
+	}
 
 	// Execute
     if (id_in_warp == warp->getThreadCount() - 1)
@@ -5154,6 +5414,7 @@ void Thread::ExecuteInst_PBK(Instruction *inst)
 void Thread::ExecuteInst_PCNT(Instruction *inst)
 {
 	// Get synchronization stack
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned address;
@@ -5172,6 +5433,17 @@ void Thread::ExecuteInst_PCNT(Instruction *inst)
 	Instruction::Bytes inst_bytes = inst->getInstBytes();
 	Instruction::BytesPCNT format = inst_bytes.pcnt;
 
+	// Active
+	unsigned active;
+	active = 1u & (stack->getActiveMask() >> id_in_warp);
+
+	// Execute
+	if (active == 1)
+	{
+		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
+	}
 
 	// Execute
     if (id_in_warp == warp->getThreadCount() - 1)
@@ -5273,6 +5545,8 @@ void Thread::ExecuteInst_RET(Instruction *inst)
 	if (active == 1 && pred == 1)
 	{
 		// FIXME naive here
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 
@@ -5319,6 +5593,7 @@ void Thread::ExecuteInst_KIL(Instruction *inst)
 void Thread::ExecuteInst_BRK(Instruction *inst)
 {
 	// Get synchronization stack
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -5367,6 +5642,8 @@ void Thread::ExecuteInst_BRK(Instruction *inst)
 		// Clear current active mask.
 		stack->clearActiveMaskBit(id_in_warp);
 
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 	// Update target PC
@@ -5394,6 +5671,7 @@ void Thread::ExecuteInst_BRK(Instruction *inst)
 void Thread::ExecuteInst_CONT(Instruction *inst)
 {
 	// Get synchronization stack
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	unsigned active;
@@ -5442,6 +5720,8 @@ void Thread::ExecuteInst_CONT(Instruction *inst)
 
 		// Clear current active mask.
 		stack->clearActiveMaskBit(id_in_warp);
+		emulator->incNumInstructions();
+		emulator->incNumControlInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5484,6 +5764,7 @@ void Thread::ExecuteInst_IDE(Instruction *inst)
 void Thread::ExecuteInst_LOP32I(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -5552,6 +5833,8 @@ void Thread::ExecuteInst_LOP32I(Instruction *inst)
 		// Write Result
 		dst_id = format.dst;
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5581,6 +5864,7 @@ void Thread::ExecuteInst_ISCADD32I(Instruction *inst)
 void Thread::ExecuteInst_SHL_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -5655,6 +5939,8 @@ void Thread::ExecuteInst_SHL_A(Instruction *inst)
 
 		// Write the value to destination register
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5664,6 +5950,7 @@ void Thread::ExecuteInst_SHL_A(Instruction *inst)
 void Thread::ExecuteInst_SHL_B(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -5714,9 +6001,6 @@ void Thread::ExecuteInst_SHL_B(Instruction *inst)
 		// Read SrcB
 		if (format.op2 == 1) // src2 is constant mode
 		{
-			// Get emulator instance
-			Emulator *emulator = Emulator::getInstance();
-
 			// Read src2
 			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		}
@@ -5745,6 +6029,8 @@ void Thread::ExecuteInst_SHL_B(Instruction *inst)
 
 		// Write the value to destination register
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5754,6 +6040,7 @@ void Thread::ExecuteInst_SHL_B(Instruction *inst)
 void Thread::ExecuteInst_SHR_A(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -5828,6 +6115,8 @@ void Thread::ExecuteInst_SHR_A(Instruction *inst)
 
 		// Write the value to destination register
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)
@@ -5837,6 +6126,7 @@ void Thread::ExecuteInst_SHR_A(Instruction *inst)
 void Thread::ExecuteInst_SHR_B(Instruction *inst)
 {
 	// Get Warp
+	Emulator *emulator = Emulator::getInstance();
 	SyncStack* stack = warp->getSyncStack()->get();
 
 	// Determine whether the warp reaches reconvergence pc.
@@ -5888,9 +6178,6 @@ void Thread::ExecuteInst_SHR_B(Instruction *inst)
 		// Read Src2
 		if (format.op2 == 1) // src2 is const mode
 		{
-			// Get emulator instance
-			Emulator *emulator = Emulator::getInstance();
-
 			// Read src2
 			emulator->ReadConstantMemory(format.src2 << 2, 4, (char*)&src2);
 		}
@@ -5926,6 +6213,8 @@ void Thread::ExecuteInst_SHR_B(Instruction *inst)
 
 		// Write the value to destination register
 		WriteGPR(dst_id, dst);
+		emulator->incNumInstructions();
+		emulator->incNumIntegerInstructions();
 	}
 
 	if (id_in_warp == warp->getThreadCount() - 1)

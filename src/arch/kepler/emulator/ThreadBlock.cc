@@ -74,22 +74,39 @@ ThreadBlock::ThreadBlock(Grid *grid, int id, unsigned *id_3d)
 	// Shared Memory Initialization
 	shared_memory = misc::new_unique<mem::Memory>();
 	shared_memory->setSafe(false);
-	shared_memory_size = (1 << 20); // current 1MB for local memory
+	shared_memory_size = 48 * (1 << 10); // current 48KB for local memory
 	shared_memory_top_address = 0;
 	shared_memory_top_generic_address = shared_memory_top_address + id *
 				shared_memory_size + emulator->getGlobalMemoryTotalSize();
 
+	//constant memory cache initialization
+	constant_memory_cache = misc::new_unique<mem::Memory>();
+	constant_memory_cache->setSafe(false);
+
 	// Shared memory top generic address is recorded in constant memory
 	// c[0x0][0x20]
-	emulator->WriteConstantMemory(0x20, sizeof(unsigned),
+	this->WriteConstantMemory(0x20, sizeof(unsigned),
 			(char *) &shared_memory_top_generic_address);
+
+	// Copy the other value in constant memory
+	unsigned thread_block_size3[3];
+	unsigned thread_block_count3[3];
+
+	for (int i = 0; i < 3; i++)
+	{
+		thread_block_size3[i] = grid->getThreadBlockSize3(i);
+		thread_block_count3[3] = grid->getThreadBlockCount3(i);
+	}
+	this->WriteConstantMemory(0x28, 3*sizeof(unsigned),
+					(const char *) thread_block_size3);
+	this->WriteConstantMemory(0x34, 3*sizeof(unsigned),
+					(const char *) thread_block_count3);
 
 	/* Flags */
 	finished_emu = false;
 	num_warps_completed_emu = 0;
 	num_warps_at_barrier = 0;
 
-	finished_timing = 0;
 	num_warps_completed_timing = 0;
 }
 

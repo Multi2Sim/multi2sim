@@ -31,12 +31,21 @@ Grid::Grid(Function *function)
 {
 	// Initialization
 	this->emulator = emulator->getInstance();
-	id = emulator->getGridSize();
+	id = emulator->getNumGrids();
 	const char * temp_buffer;
 	temp_buffer = function->getTextBuffer();
 	instruction_buffer_size = function->getTextSize();
 	instruction_buffer.resize(instruction_buffer_size);
 	kernel_function_name = function->getName();
+	shared_memory_size = function->getSharedMemorySize();
+	constant_memory_size = function->getConstantMemorySize();
+	local_memory_size = function->getLocalMemorySize();
+	num_barriers = function->getNumBarriers();
+	num_registers_per_thread = function->getNumRegistersPerThread();
+
+	// Number of mapped blocks.
+	num_mapped_blocks = 0;
+	num_thread_blocks_completed_timing = 0;
 
 	// Instruction byte
 	unsigned long long inst_byte;
@@ -127,4 +136,51 @@ void Grid::PopRunningThreadBlock()
 	running_thread_blocks.pop_front();
 }
 
+void Grid::WakeupContext()
+{
+
+#if 0
+	// Check if there is a suspended context and if the grid has completed all
+	// of its thread blocks.
+	if (suspended_context && (this->getPendThreadBlocksize() == 0) &&
+			(this->getRunningThreadBlocksize() == 0))
+	{
+		// There are no more thread blocks to execute, so a suspended context
+		// can continue.
+		suspended_context->Wakeup();
+
+		// if the context has been woken up, there is no need to hold to the
+		// pointer
+		suspended_context = nullptr;
+	}
+#endif
+
+	if (suspended_context)
+	{
+
+		// There are no more thread blocks to execute, so a suspended context
+		// can continue.
+		suspended_context->Wakeup();
+
+		// if the context has been woken up, there is no need to hold to the
+		// pointer
+		suspended_context = nullptr;
+
+	/*	if (emulator->getSimKind() == comm::Arch::SimFunctional)
+		{
+			if ((this->getPendThreadBlocksize() == 0) &&
+					(this->getRunningThreadBlocksize() == 0))
+			{
+				// There are no more thread blocks to execute, so a suspended context
+				// can continue.
+				suspended_context->Wakeup();
+
+				// if the context has been woken up, there is no need to hold to the
+				// pointer
+				suspended_context = nullptr;
+			}
+		}
+		*/
+	}
+}
 }	//namespace

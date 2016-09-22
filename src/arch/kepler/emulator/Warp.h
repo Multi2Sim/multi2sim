@@ -41,6 +41,7 @@ namespace Kepler
 class Grid;
 class ThreadBlock;
 class Thread;
+class WarpPoolEntry;
 
 
 /// Polymorphic class used to attach data to a warp. The timing simulator
@@ -107,6 +108,7 @@ class Warp
 
 	unsigned finished_thread;
 	bool finished_emu;
+	bool finished_timing;
 	bool at_barrier;
 
 	// Iterators
@@ -140,6 +142,12 @@ class Warp
 	// past-the-end iterator to the thread-block's thread list.
 	std::vector<std::unique_ptr<Thread>>::iterator threads_end;
 
+	// Associated warp pool entry for timing simulator
+	WarpPoolEntry *warp_pool_entry = nullptr;
+
+	// The entry index in the warp pool for timing simulator
+	int warp_pool_entry_index;
+
 public:
 	/// Constructor
 	///
@@ -149,6 +157,14 @@ public:
 	/// \param id
 	///	Global 1D identifier of the warp
 	Warp(ThreadBlock *thread_block, unsigned id);
+
+	/// Counter for per warp identifiers assigned to uops in the timing
+	/// simulator
+	long long uop_id_counter = 0;
+
+	/// Field introduced for the timing simulator. Contains the warp ID in the
+	/// associated SM
+	int id_in_sm = 0;
 
 	/// Return the global warp 1D ID
 	int getId() const { return id; }
@@ -197,6 +213,21 @@ public:
 	/// Get inst_size
 	int getInstructionSize() const {return inst_size;}
 
+	/// Get instruction
+	Instruction *getInstruction() { return &inst; }
+
+	/// Return the associated warp pool entry
+	WarpPoolEntry *getWarpPoolEntry() const
+	{
+		return warp_pool_entry;
+	}
+
+	/// Return the associated warp pool entry id
+	int getWarpPoolEntryIndex() const { return warp_pool_entry_index; }
+
+	/// Return the pc of last instruction
+	int getLastInstructionPC() const { return instruction_buffer_size - 8; }
+
 	//////////////////////////////////////////////////////////////
 
 	// Setters
@@ -234,6 +265,18 @@ public:
 
 	void setTargetPC ( int target)  {target_pc = target; }
 
+	/// Set the warp pool entry associated with the warp
+	void setWarpPoolEntry (WarpPoolEntry *entry)
+	{
+		warp_pool_entry = entry;
+	}
+
+	/// Set the warp pool entry index associated with the warp
+	void setWarpPoolEntryIndex (int index)
+	{
+		warp_pool_entry_index = index;
+	}
+
 	/// Dump warp in a human-readable format into output stream \a os
 	void Dump(std::ostream &os = std::cout) const;
 
@@ -245,9 +288,13 @@ public:
 		return os;
 	}
 
+	/// Decode the next instruction in the warp at the current position
+	/// of the program counter
+	Instruction::Opcode Decode();
+
 	/// Emulate the next instruction in the warp at the current
 	/// position of the program counter
-	void Execute();
+	void Execute(Instruction::Opcode inst_op);
 
 	/// Return true if thread is active. The thread identifier is
 	/// given relative to the first thread in the warp
@@ -277,6 +324,10 @@ public:
 	std::vector<std::unique_ptr<Thread>>::iterator ThreadsEnd() {
 		return threads_end;
 	}
+
+	/// Return a new unique sequential indentifier for a uop associated with
+	/// the wavefront. This function is used by the timing simulator
+	long long getUopId() { return ++uop_id_counter; }
 };
 
 }  // namespace Kepler

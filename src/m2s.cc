@@ -27,6 +27,7 @@
 #include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/driver/Driver.h>
 #include <arch/kepler/emulator/Emulator.h>
+#include <arch/kepler/timing/Timing.h>
 #include <arch/mips/disassembler/Disassembler.h>
 #include <arch/mips/emulator/Context.h>
 #include <arch/mips/emulator/Emulator.h>
@@ -592,6 +593,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Disassembler::RegisterOptions();
 	Kepler::Driver::RegisterOptions();
 	Kepler::Emulator::RegisterOptions();
+	Kepler::Timing::RegisterOptions();
 	mem::Mmu::RegisterOptions();
 	mem::Manager::RegisterOptions();
 	MIPS::Disassembler::RegisterOptions();
@@ -622,6 +624,7 @@ int MainProgram(int argc, char **argv)
 	Kepler::Disassembler::ProcessOptions();
 	Kepler::Driver::ProcessOptions();
 	Kepler::Emulator::ProcessOptions();
+	Kepler::Timing::ProcessOptions();
 	mem::Mmu::ProcessOptions();
 	mem::Manager::ProcessOptions();
 	MIPS::Disassembler::ProcessOptions();

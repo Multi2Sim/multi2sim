@@ -23,6 +23,8 @@
 #include <arch/kepler/disassembler/Disassembler.h>
 #include <arch/kepler/emulator/Emulator.h>
 #include <arch/kepler/emulator/Grid.h>
+#include <arch/kepler/timing/Gpu.h>
+#include <arch/kepler/timing/Timing.h>
 #include <lib/cpp/String.h>
 #include <lib/util/string.h>
 #include <memory/Memory.h>
@@ -169,6 +171,15 @@ int Driver::CallMemRead(comm::Context *context,
 	std::unique_ptr<char> buffer(new char[size]);
 	global_mem->Read(device_ptr, size, buffer.get());
 	memory->Write(host_ptr, size, buffer.get());
+
+	// Timing simulator
+	// If the '--kpl-report' flag was used, dump the report into the specified
+	// file
+	if (Emulator::getSimKind() == comm::Arch::SimDetailed)
+	{
+		Timing *timing = Timing::getInstance();
+		timing->DumpReport();
+	}
 
 	// Return
 	return 0;
@@ -353,14 +364,35 @@ int Driver::CallLaunchKernel(comm::Context *context,
 	}
 
 	// Create grid
-	Grid *grid = kpl_emu->addGrid(function);
+	if (Emulator::getSimKind() == comm::Arch::SimFunctional)
+	{
+		Grid *grid = kpl_emu->addGrid(function);
 
-	// Set up grid
-	grid->SetupSize(grid_dim, block_dim);
-	grid->GridSetupConstantMemory();
+		// Set up grid
+		grid->SetupSize(grid_dim, block_dim);
+		grid->GridSetupConstantMemory();
 
-	// Add to pending list
-	kpl_emu->PushPendingGrid(grid);
+		// Add to pending list
+		kpl_emu->PushPendingGrid(grid);
+	}
+	// Timing simulator
+	// Get gpu object from timing instance
+	else if (Emulator::getSimKind() == comm::Arch::SimDetailed)
+		{
+			// Create grid
+			Grid *grid = Timing::getInstance()->addGrid(function);
+
+			// Set up grid
+			grid->SetupSize(grid_dim, block_dim);
+			grid->GridSetupConstantMemory();
+
+			GPU *gpu = Timing::getInstance()->getGpu();
+			gpu->MapGrid(grid);
+			grid->address_space = gpu->getMmu()->newSpace("Kepler");
+
+			// Set grid finished flag to false
+			Timing::getInstance()->grid_finished = false;
+		}
 
 	// Return value
 	return 0;
@@ -508,6 +540,85 @@ int Driver::CallMemFree(comm::Context *context,
 	//global_mem->Unmap(device_ptr, sizeof(device_ptr));
 	// Return  */
 	return 0;
+}
+
+/// ABI Call "StreamCommandFinish"
+int Driver::CallGridFinish(comm::Context* context, mem::Memory *memory,
+		unsigned args_ptr)
+{
+
+	Grid *grid = nullptr;
+	if (Emulator::getSimKind() == comm::Arch::SimFunctional)
+	{
+		Kepler::Emulator *kpl_emu = Kepler::Emulator::getInstance();
+		grid = kpl_emu->getGrid(0);
+
+		if(!grid)
+			return 0;
+
+		// If no thread blocks are left in the grid, remove the grid from the
+		// driver list
+		if ((grid->getPendThreadBlocksize() == 0) &&
+				grid->getRunningThreadBlocksize() == 0)
+		{
+			// The Grid has finished
+			debug << misc::fmt("\tgrid %d finished\n", 0);
+		}
+		else
+		{
+			// The grid has not finished. Suspend the context until it
+			// completes
+			debug << misc::fmt("\twaiting for grid to finish (blocking)\n");
+			context->Suspend();
+			grid->SetSuspendedContext(context);
+		}
+
+	}
+	else if (Emulator::getSimKind() == comm::Arch::SimDetailed)
+	{
+		Kepler::Timing *kpl_timing = Kepler::Timing::getInstance();
+		grid = kpl_timing->getGrid();
+
+		if (!grid)
+			return 0;
+
+		// If no thread blocks are left in the grid, remove the grid from the
+		// driver list
+		if (grid->getNumThreadBlocksCompletedTiming() !=
+				grid->getThreadBlockCount())
+		{
+			// The grid has not finished. Suspend the context until it
+			// completes
+			debug << misc::fmt("\twaiting for grid to finish (blocking)\n");
+			context->Suspend();
+			grid->SetSuspendedContext(context);
+		}
+		else
+		{
+			// The Grid has finished
+			debug << misc::fmt("\tgrid %d finished\n", 0);
+		}
+	}
+	return 0;
+
+#if 0
+	int result;
+
+	if (Emulator::getSimKind() == comm::Arch::SimDetailed)
+	{
+		Kepler::Timing *kpl_timing = Kepler::Timing::getInstance();
+		if (kpl_timing->grid_finished == true)
+			 result = 1;
+		 else
+			 result = 0;
+	}
+	else if (Emulator::getSimKind() == comm::Arch::SimFunctional)
+
+		result = 1;
+
+	return result;
+
+#endif
 }
 
 }  // namespace Kepler
