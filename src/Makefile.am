@@ -31,6 +31,7 @@ LDADD = \
 	$(top_builddir)/src/arch/kepler/driver/libdriver.a \
 	$(top_builddir)/src/arch/kepler/emulator/libemulator.a \
 	$(top_builddir)/src/arch/kepler/disassembler/libdisassembler.a \
+	$(top_builddir)/src/arch/kepler/timing/libtiming.a\
 	\
 	$(top_builddir)/src/arch/mips/timing/libtiming.a \
 	$(top_builddir)/src/arch/mips/emulator/libemulator.a \
