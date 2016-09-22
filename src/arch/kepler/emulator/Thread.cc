@@ -37,6 +37,11 @@ Thread::Thread(Warp *warp, int id)
 	this->id = id + thread_block->getId() * grid->getThreadBlockSize();
 	id_in_warp = id % warp_size;
 	id_in_thread_block = id;
+	id_3d[0] = id % grid->getThreadBlockSize3(0);
+	id_3d[1] = (id / grid->getThreadBlockSize3(0)) %
+			grid->getThreadBlockSize3(1);
+	id_3d[2] = id / (grid->getThreadBlockSize3(0) *
+			grid->getThreadBlockSize3(1));
 
 	// Local Memory Initialization
 	local_memory = misc::new_unique<mem::Memory>();

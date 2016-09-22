@@ -22,12 +22,13 @@
 
 #include <iostream>
 
+
 namespace Kepler
 {
 
 // Forward declarations
 class Disassembler;
-
+class Uop;
 
 class Instruction
 {
@@ -46,6 +47,54 @@ public:
 		// Max
 		OpcodeCount
 	};
+
+	/// Instruction Formats
+	enum Format
+	{
+		FormatInvalid = 0,
+
+		// Regular simple integer operation(can be executed in pSPU, IMU)
+		FormatInteger1,
+
+		// Complex integer operation such as IMUL IMAD(can be executed in sSPU)
+		FormatInteger2,
+
+		// Complex integer operation such as ISCADD ISAD(can be executed in IMU)
+		FormatInteger3,
+
+		// Floating point operation(can be executed in all SPUs)
+		FormatFP32_1,
+
+		// Floating point operation (can be executed in only shared SPUs)
+		FormatFP32_2,
+
+		// Double point operation(can be executed in all DPUs)
+		FormatFP64,
+
+		// Control operation(can be executed in BRU)
+		FormatControl,
+
+		// Load store operation(can be executed in LSU)
+		FormatLS,
+
+		// Conversion operation(can be executed in DPUs)
+		FormatConversion,
+
+		// Bit operation only MOV and MOV32I(SPUs, IMU and SFU)
+		FormatBit1,
+
+		// Regular bit operation such as SEL, S2R(pSPUs ,IMU and SFU )
+		FormatBit2,
+
+		// Complex bit operation CSET, CSETP(IMU)
+		FormatBit3,
+
+		// Complex operation such as MUFU, IPA
+		FormatSFU,
+		FormatCount
+	};
+
+	Format instruction_format;
 
 	/// Opcode information
 	struct Info
@@ -271,6 +320,21 @@ public:
 	 	unsigned long long int unknown2 : 2;		//50:49
 		unsigned long long int u_or_s	: 3;		//53:51
 		unsigned long long int op1		: 10;		//63:54
+	};
+
+	/// LD
+	struct BytesLD
+	{
+		unsigned long long int op0:		2; // 1:0
+		unsigned long long int dst:		8; // 9:2
+		unsigned long long int src:		8; // 17:10
+		unsigned long long int pred:		4; // 21:18
+		unsigned long long int s:		1; // 22
+		unsigned long long int addr:		32; // 54:23
+		unsigned long long int extend:		1; // 55;
+		unsigned long long int size:		3; // 58:56
+		unsigned long long int cache_op:		2; // 60:59
+		unsigned long long int op1:		3; // 63:61
 	};
 
 	/// PSETP
@@ -839,6 +903,7 @@ public:
 		unsigned long long int op1:			8; // 61:54
 		unsigned long long int op2:			2; // 63:62
 	};
+
 	/// Instruction bytes
 	union Bytes
 	{
@@ -850,6 +915,7 @@ public:
 		BytesGeneral1 general1;
 		BytesGeneral2 general2;
 		BytesImm      immediate;
+		BytesLD       ld;
 		BytesLDC      ldc;
 		BytesPSETP    psetp;
 		BytesSSY      ssy;
@@ -953,6 +1019,19 @@ public:
 
 	/// Dump instruction name into output stream.
 	void Dump(std::ostream &os) const;
+
+	/// Read the instruction registers index for scoreboard
+	void ReadRegistersIndex(Opcode opcode, Uop *uop);
+
+	/// Get instruction format
+	Format getFormat() { return instruction_format; }
+
+
+	/// Set instrction format
+	void SetFormat(Instruction::Format format)
+	{
+		instruction_format = format;
+	}
 };
 
 

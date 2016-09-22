@@ -62,9 +62,9 @@ class Emulator : public comm::Emulator
 	std::vector<std::unique_ptr<Grid>> grids;
 
 	// List of Grid
-	std::list<Grid *> pending_grids;
-	std::list<Grid *> running_grids;
-	std::list<Grid *> finished_grids;
+	std::list<Grid*> pending_grids;
+	std::list<Grid*> running_grids;
+	std::list<Grid*> finished_grids;
 
 	// Memory
 	std::unique_ptr<mem::Memory> global_memory;
@@ -82,17 +82,45 @@ class Emulator : public comm::Emulator
 	// if an uninitialized element is used by the kernel.
 	bool const_mem_init[32];
 
-	// Number of ALU instructions executed
-	long long num_alu_instructions = 0;
+	//
+	// Statistics
+	//
 
-	// Number of branch instructions executed
-	long long num_branch_instructions = 0;
+	// Number of kernels executed
+	int num_grids = 0;
 
-	// Number of shared memory instructions executed
-	long long num_shared_mem_instructions = 0;
+	// Number of CUDA thread block executed
+	long long num_thread_blocks = 0;
 
-	// Number of global memory instructions executed
-	long long num_global_memory_instructions = 0;
+	// Number of integer instructions executed
+	long long num_integer_instructions = 0;
+
+	// Number of single floating point instructions executed
+	long long num_fp32_instructions = 0;
+
+	// Number of double floating point instructions executed
+	long long num_fp64_instructions = 0;
+
+	// Number of flow control instructions executed
+	long long num_control_instructions = 0;
+
+	// Number of conversion instructions executed
+	long long num_conversion_instructions = 0;
+
+	// Number of load store instructions executed
+	long long num_ls_instructions = 0;
+
+	// Number of movement instructions executed
+	long long num_movement_instructions = 0;
+
+	// Number of predicate instructions executed
+	long long num_predicate_instructions = 0;
+
+	// Number of Miscellaneous instructions executed
+	long long num_misc_instructions = 0;
+
+	// Num of total instructions
+	long long num_instructions = 0;
 
 	/// Constructor
 	Emulator();
@@ -138,8 +166,9 @@ public:
 	/// end of the execution.
 	static Emulator *getInstance();
 
-	/// Get grid list size
-	unsigned getGridSize() { return grids.size(); }
+	/// Return the simulation level set by command-line option
+	/// '-kpl-sim-kind'
+	static comm::Arch::SimKind getSimKind() { return sim_kind; }
 
 	/// Get the assambler
 	Disassembler *getAsm() const { return disassembler;}
@@ -156,9 +185,6 @@ public:
 		return global_memory_total_size;
 	}
 
-	/// Get ALU instruction count
-	unsigned getNumAluInstructions() const { return num_alu_instructions; }
-
 	/// Get Shared memory total size
 	unsigned getSharedMemoryTotalSize() const
 	{
@@ -174,13 +200,22 @@ public:
 	/// Return the number of available grids
 	int getNumGrids() { return grids.size(); }
 
+	/// Return number of available pending grids
+	int getNumPendingGrids() { return pending_grids.size(); }
+
+	/// Return number of available running grids
+	int getNumRunningGrids() { return running_grids.size(); }
+
 	/// Return the grid with the given identifier, or `nullptr` if the
 	/// identifier does not correspond to a valid module.
 	Grid *getGrid(int index)
 	{
-		return misc::inRange((unsigned) index, 0, grids.size()) ?
+		if (grids.size() > 0)
+			return misc::inRange((unsigned) index, 0, grids.size()) ?
 				grids[index].get() :
 				nullptr;
+		else
+			return nullptr;
 	}
 
 	/// Set global memory top
@@ -195,8 +230,35 @@ public:
 		this->global_memory_free_size = global_memory_free_size;
 	}
 
-	/// Increment ALU instruction counter
-	void incNumAluInstructions() { num_alu_instructions++; }
+	/// Increase number of integer instructions by 1
+	void incNumIntegerInstructions() { num_integer_instructions++; }
+
+	/// Increase number of fp32 instructions by 1
+	void incNumFP32Instructions() { num_fp32_instructions++; }
+
+	/// Increase number of fp64 instructions by 1
+	void incNumFP64Instructions() { num_fp64_instructions++; }
+
+	/// Increase number of control instructions by 1
+	void incNumControlInstructions() { num_control_instructions++; }
+
+	/// Increase number of conversion instructions by 1
+	void incNumConversionInstructions() { num_conversion_instructions++; }
+
+	/// Increase number of load store instructions by 1
+	void incNumLSInstructions() { num_ls_instructions++; }
+
+	/// Increase number of movement instructions by 1
+	void incNumMovmentInstructions() { num_movement_instructions++; }
+
+	/// Increase number of predicate instructions by 1
+	void incNumPredicateInstructions() { num_predicate_instructions++; }
+
+	/// Increase number of misc instructions by 1
+	void incNumMiscInstructions() { num_misc_instructions++; }
+
+	/// Increase number of total instructions by 1
+	void incNumInstructions() { num_instructions++; }
 
 	/// Increse global memory top
 	void incGloablMemoryTop(unsigned inc) { global_memory_top += inc; }
@@ -213,7 +275,7 @@ public:
 	}
 
 	/// Dump the statistics summary
-	void DumpSummary(std::ostream &os);
+	void DumpSummary(std::ostream &os) const;
 
 	/// Run one iteration of the emulation loop
 	bool Run();
@@ -257,8 +319,26 @@ public:
 	/// Push an element into pending grid list
 	void PushPendingGrid(Grid *grid);
 
+	/// Pop front from pending grid list
+	void PopPendingGrid()
+	{
+		pending_grids.pop_front();
+	}
+
 	/// Create a new grid to the grid list and return a pointer to it.
 	Grid *addGrid(Function *function);
+
+	/// Return an iterator to the first pending grid
+	std::list<Grid*>::iterator getPendingGridsBegin()
+	{
+		return pending_grids.begin();
+	}
+
+	/// Return an iterator to the last pending grid
+	std::list<Grid*>::iterator getPendingGridsEnd()
+	{
+		return pending_grids.end();
+	}
 
 	/// Register command-line options
 	static void RegisterOptions();

@@ -53,6 +53,24 @@ class Function
 	// Size of the ISA section in bytes FIXME
 	int text_size;
 
+	// Max threads allowed per block
+	int max_threads_per_block;
+
+	// Shared memory used by function in Bytes
+	unsigned shared_memory_size;
+
+	// Constant memory used by function in Bytes
+	unsigned constant_memory_size;
+
+	// Local memory used by function in Bytes
+	unsigned local_memory_size;
+
+	// Number of barriers in the function
+	unsigned num_barriers;
+
+	// Number of register per thread
+	unsigned num_registers_per_thread;
+
 	// Arguments
 	std::vector<std::unique_ptr<Argument>> arguments;
 
@@ -66,6 +84,24 @@ public:
 
 	/// Get the size of the ISA section in the associated ELF binary
 	int getTextSize() const { return text_size; }
+
+	/// Get the size of shared memory in bytes used in the function
+	unsigned getSharedMemorySize() const { return shared_memory_size; }
+
+	/// Get the size of local memory in bytes used in the function
+	unsigned getLocalMemorySize() const { return local_memory_size; }
+
+	/// Get the size of constant memory in bytes used in the function
+	unsigned getConstantMemorySize() const { return constant_memory_size; }
+
+	/// Get the number of registers used in the function
+	unsigned getNumRegistersPerThread() const
+	{
+		return num_registers_per_thread;
+	}
+
+	/// Get the number of barriers in the function
+	unsigned getNumBarriers() const { return num_barriers; }
 
 	/// Get a buffer pointing to the ISA section in the associated ELF file
 	const char *getTextBuffer() const { return text_buffer; }

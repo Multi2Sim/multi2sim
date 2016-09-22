@@ -40,6 +40,33 @@ Function::Function(int id, Module *module, const std::string &name) :
 	// Obtain cubin binary from associated module
 	ELFReader::File *elf_file = module->getELFFile();
 
+	// Get section named ".nv.shared.<name>" if any
+	std::string shared_section_name = ".nv.shared." + name;
+	ELFReader::Section *shared_section = elf_file->
+			getSection(shared_section_name);
+
+	// Get shared memory size
+	shared_memory_size = shared_section ? shared_section->getRawInfo()
+			->sh_size : 0;
+
+	// Get section named ".nv.local.<name>" if any
+	std::string local_section_name = ".nv.local." + name;
+	ELFReader::Section *local_section = elf_file->
+			getSection(local_section_name);
+
+	// Get local memory size
+	local_memory_size = local_section ? local_section->getRawInfo()->sh_size
+			: 0;
+
+	// Get section named ".nv.constant.<name>" if any
+	std::string constant_section_name = ".nv.constant0." + name;
+	ELFReader::Section *constant_section = elf_file->
+			getSection(constant_section_name);
+
+	// Get constant memory size
+	constant_memory_size = constant_section ? constant_section->
+			getRawInfo()->sh_size : 0;
+
 	// Get section named ".text.<name>" from the ELF file
 	std::string text_section_name = ".text." + name;
 	ELFReader::Section *text_section = elf_file->getSection(
@@ -51,6 +78,11 @@ Function::Function(int id, Module *module, const std::string &name) :
 	// Get instruction binary
 	text_buffer = text_section->getBuffer();
 	text_size = text_section->getSize();
+
+	// Initialize function attributes
+	max_threads_per_block = 1024;
+	num_registers_per_thread = text_section->getRawInfo()->sh_info >> 24;
+	num_barriers = text_section->getRawInfo()->sh_flags >> 20; // 26:20 are barcount?
 
 	// Get section named ".nv.info.<name>" from the ELF file
 	std::string info_section_name = ".nv.info." + name;

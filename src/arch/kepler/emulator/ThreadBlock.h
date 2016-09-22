@@ -85,10 +85,12 @@ class ThreadBlock
 	unsigned num_warps_completed_timing;
 
 	bool finished_emu;
-	bool finished_timing;
 
 	// Shared Memory
 	std::unique_ptr<mem::Memory> shared_memory;
+
+	// Constant Memory cache
+	std::unique_ptr<mem::Memory> constant_memory_cache;
 
 	// Shared memory size. Field initialized in constructor. Currently set as
 	// 16MB
@@ -108,6 +110,17 @@ public:
 	///
 	/// \param id Thread-block global 1D ID
 	ThreadBlock(Grid *grid, int id, unsigned *id_3d);
+
+	/// Identifier in SM
+	int id_in_sm = 0;
+
+	/// Boolean value indicating the status of the thread block in the timing
+	/// simulator
+	bool finished_timing = false;
+
+	/// Position of this thread block in the SM's list of thread blocks. This
+	/// field is managed internally by the SM
+	std::list<ThreadBlock*>::iterator sm_thread_block_iterator;
 
 	/// Dump thread-block in human readable format into output stream
 	void Dump(std::ostream &os = std::cout) const;
@@ -139,6 +152,12 @@ public:
 		return num_warps_completed_emu;
 	}
 
+	/// Get counter of warps completed timing
+	unsigned getNumWarpsCompletedTiming() const
+	{
+		return num_warps_completed_timing;
+	}
+
 	/// Get Grid that it belongs to
 	Grid *getGrid() const { return grid; }
 
@@ -148,6 +167,13 @@ public:
 		assert(id_in_thread_block >= 0 && id_in_thread_block <
 						(int)threads.size());
 		return threads[id_in_thread_block].get();
+	}
+
+	/// Get pointer of the given warp in this thread block
+	Warp *getWarp(int id_in_thread_block)
+	{
+		assert(id_in_thread_block >=0 && id_in_thread_block < (int)warps.size());
+		return warps[id_in_thread_block].get();
 	}
 
 	/// Get counter of threads in thread-block
@@ -164,6 +190,9 @@ public:
 
 	/// Increment warps_completed_emu counter
 	void incWarpsCompletedEmu() { num_warps_completed_emu ++; }
+
+	/// Increment warps_completed_timing counter
+	void incWarpsCompletedTiming() { num_warps_completed_timing ++; }
 
 	/// Set finished_emu
 	void setFinishedEmu(bool value) { finished_emu = value; }
@@ -196,6 +225,24 @@ public:
 	void ReadFromSharedMemory(unsigned address, unsigned length, char* buffer)
 	{
 		shared_memory->Read(address, length, buffer);
+	}
+
+	/// Write Constant Memory
+	/// \param starting address to be written in
+	/// \param size of data
+	/// \param data buffer
+	void WriteConstantMemory(unsigned address, unsigned size, const char *buffer)
+	{
+		constant_memory_cache->Write(address, size, buffer);
+	}
+
+	/// Read Global Memory
+	/// \param starting address to be read in
+	/// \param size of data
+	/// \param data buffer
+	void ReadConstantMemory(unsigned address, unsigned size, char *buffer)
+	{
+		constant_memory_cache->Read(address, size, buffer);
 	}
 
 	/// Clear barrier flag in all warps of the threadblock

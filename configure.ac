@@ -592,6 +592,7 @@ AC_CONFIG_FILES([
 		src/arch/kepler/disassembler/Makefile
 		src/arch/kepler/driver/Makefile
 		src/arch/kepler/emulator/Makefile
+		src/arch/kepler/timing/Makefile
 
 		src/arch/mips/Makefile
 		src/arch/mips/disassembler/Makefile

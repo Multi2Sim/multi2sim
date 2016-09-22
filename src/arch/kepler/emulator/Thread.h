@@ -89,10 +89,6 @@ private:
 	// Registers
 	Register registers;
 
-	// Last global memory access
-	unsigned global_memory_access_address;
-	unsigned global_memory_access_size;
-
 	// Local Memory
 	std::unique_ptr<mem::Memory> local_memory;
 
@@ -134,6 +130,12 @@ public :
 	/// \param Warp Warp that it belongs to
 	/// \id Global 1D identifier of the thread
 	Thread(Warp *warp, int id);
+
+	// Last global memory address
+	unsigned global_memory_access_address = 0;
+
+	// Last global memory access size
+	unsigned global_memory_access_size = 0;
 
 	/// Get global id
 	unsigned getId() const { return id; }

@@ -32,6 +32,7 @@
 #include "Thread.h"
 #include "Warp.h"
 #include "ThreadBlock.h"
+#include "../disassembler/Instruction.h"
 
 
 namespace Kepler
@@ -78,7 +79,7 @@ Emulator::Emulator() : comm::Emulator("Kepler")
 	global_memory_free_size = this->global_memory_total_size;
 
 	// Shared memory initialization
-	shared_memory_total_size = 16 * (1 << 20) * 20; // 20 blocks. 16MB each
+	shared_memory_total_size = 16 * (1 << 20) * 20; //total size 20 x 16MB
 
 	// Constant memory initialization
 	constant_memory = misc::new_unique<mem::Memory>();
@@ -92,13 +93,26 @@ Emulator::Emulator() : comm::Emulator("Kepler")
 void Emulator::Dump(std::ostream &os) const
 {
 	std::cout <<"\n[ Kepler ]\nInstructions = "
-			<< num_alu_instructions << std::endl;
+			<< num_instructions << std::endl;
 }
 
 
-void Emulator::DumpSummary(std::ostream &os)
+void Emulator::DumpSummary(std::ostream &os) const
 {
-	Dump();
+	os << "TotalInstructions = " << num_instructions << std::endl;
+	os << "IntegerInstructions = " << num_integer_instructions << std::endl;
+	os << "FP32Instructions = " << num_fp32_instructions << std::endl;
+	os << "FP64Instructions = " << num_fp64_instructions << std::endl;
+	os << "ControlInstructions = " << num_control_instructions << std::endl;
+	os << "LSInstructions = " << num_ls_instructions << std::endl;
+	os << "MovementInstructions = " << num_movement_instructions <<
+			std::endl;
+	os << "ConversionInstructions = " << num_conversion_instructions <<
+			std::endl;
+	os << "PredicateInstructions = " << num_predicate_instructions <<
+			std::endl;
+	os << "MiscInstructions = " << num_misc_instructions << std::endl;
+
 }
 
 
@@ -118,6 +132,7 @@ bool Emulator::Run()
 	std::unique_ptr<ThreadBlock> thread_block;
 	int thread_block_id;
 	unsigned thread_block_3d_id[3];
+
 	while (pending_grids.size())
 	{
 		grid = pending_grids.front();
@@ -152,14 +167,17 @@ bool Emulator::Run()
 				{
 					if ((*wp_p)->getFinishedEmu() || (*wp_p)->getAtBarrier())
 						continue;
-					(*wp_p)->Execute();
+					Instruction::Opcode opcode;
+					opcode = (*wp_p)->Decode();
+					(*wp_p)->Execute(opcode);
 				}
 			}
 			thread_block.get()->setFinishedEmu(true);
 			grid->PopRunningThreadBlock();
 			thread_block.reset(); // free the memory of thread block
 		}
-		finished_grids.push_back(grid);
+		finished_grids.emplace_back(grid);
+		grid->WakeupContext();
 	}
 
 	// Free finished grids
@@ -173,7 +191,7 @@ bool Emulator::Run()
 
 void Emulator::PushPendingGrid(Grid *grid)
 {
-	pending_grids.push_back(grid);
+	pending_grids.emplace_back(grid);
 }
 
 
@@ -207,12 +225,6 @@ void Emulator::RegisterOptions()
 
 void Emulator::ProcessOptions()
 {
-	// Throw an error for now if the si-sim detailed is invoked
-	if (sim_kind == comm::Arch::SimDetailed)
-		throw misc::Error("The detailed Kepler simulation is not currently "
-				"supported in Multi2Sim.");
-
-	// Set the path for the debug files
 	isa_debug.setPath(isa_debug_file);
 	isa_debug.setPrefix("[Kepler emulator]");
 }
