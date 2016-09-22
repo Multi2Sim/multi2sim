@@ -1,0 +1,27 @@
+language: cpp
+compiler: g++
+
+addons:
+        apt:
+                sources:
+                        - ubuntu-toolchain-r-test
+                packages:
+                        - g++-4.9
+                        - zlib1g-dev
+                        - lib32gcc1
+                        - gcc-multilib
+
+before_install:
+        - export CXX="g++-4.9"
+        
+install:
+        - libtoolize
+        - aclocal
+        - autoconf
+        - automake --add-missing
+        - ./configure --enable-debug
+
+script:
+        - make
+        - make check
+

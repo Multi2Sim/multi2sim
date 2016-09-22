@@ -699,6 +699,8 @@ int MainProgram(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+	srand(time(NULL));
+
 	// Main exception handler
 	try
 	{

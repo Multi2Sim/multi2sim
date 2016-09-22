@@ -61,7 +61,7 @@ void AndInstructionWorker::Execute(BrigCodeEntry *instruction)
 	{
 	case BRIG_TYPE_B1:
 
-		throw misc::Panic("Unimplemented Inst AND, type B1.");
+		Inst_AND_Aux<uint8_t>(instruction);
 		break;
 
 	case BRIG_TYPE_B32:

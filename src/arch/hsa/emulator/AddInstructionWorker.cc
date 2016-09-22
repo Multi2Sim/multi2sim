@@ -80,9 +80,20 @@ void AddInstructionWorker::Execute(BrigCodeEntry *instruction)
 			Inst_ADD_Aux<unsigned long long>(instruction);
 			break;
 
+		case BRIG_TYPE_F32:
+
+			Inst_ADD_Aux<float>(instruction);
+			break;
+
+		case BRIG_TYPE_F64:
+
+			Inst_ADD_Aux<double>(instruction);
+			break;
+
 		default:
 
-			throw Error("Illegal type.");
+			throw Error("Illegal type in ADD of instruction kind "
+					"BRIG_KIND_INST_BASIC.");
 		}
 	}
 	else if (instruction->getKind() == BRIG_KIND_INST_MOD)
@@ -101,7 +112,8 @@ void AddInstructionWorker::Execute(BrigCodeEntry *instruction)
 
 		default:
 
-			throw Error("Illegal type.");
+			throw Error("Illegal type in ADD of instruction kind "
+					"BRIG_KIND_INST_MOD.");
 		}
 
 	}
