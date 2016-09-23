@@ -2338,7 +2338,7 @@ void WorkItem::ISA_V_CVT_I32_F32_Impl(Instruction *instruction)
 	else if (std::isinf(fvalue) || fvalue < std::numeric_limits<int>::min())
 		value.as_int = std::numeric_limits<int>::min();
 	// NaN, 0, -0 --> 0
-	else if (isnan(fvalue) || fvalue == 0.0f || fvalue == -0.0f)
+	else if (std::isnan(fvalue) || fvalue == 0.0f || fvalue == -0.0f)
 		value.as_int = 0;
 	else
 		value.as_int = (int) fvalue;
