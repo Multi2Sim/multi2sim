@@ -26,6 +26,7 @@
 #include <arch/hsa/disassembler/AsmService.h>
 
 #include "Function.h"
+#include "VariablePrinter.h"
 
 namespace HSA
 {
@@ -66,6 +67,9 @@ class StackFrame
 
 	// C registers, use a 8 bit char for each 1 bit boolean value
 	unsigned char c_registers[8];
+
+  // For printing variables
+  VariablePrinter variablePrinter;
 
 public:
 
@@ -145,21 +149,7 @@ public:
 		return function_argument_segment; 
 	}
 
-	/// Adding an argument in the function argument list. This API is 
-	/// opened for the caller to set the memory layout for the function
-	/// argument segment. In the caller function, it will use bracket to 
-	/// create an argument segment and define a few variables there. 
-	/// Those variables is going to be the input and output argument 
-	/// for the callee function. Because the formal name and the actuall
-	/// name can be different and the sequence of declaring those 
-	/// variables are different, when the function is involked, the 
-	/// simulator should know the connection between the formal and 
-	/// the actual argument. The value of the actual argument is stored
-	/// in the memory that is managed by the argument segment manager. 
-	/// Passing the arguments is just passing a referece of the segment 
-	/// manager, since the callee will be able to access that part of 
-	/// memory. However, the simulator would have to modify the memory
-	/// layout, so that the callee knows the right offset.
+	/// Adding an argument in the function argument list.
 	void addFunctionArguments(std::unique_ptr<Variable> argument)
 	{
 		function_arguments.emplace(argument->getName(), 
@@ -202,6 +192,11 @@ public:
 			return nullptr;
 		return it->second.get();
 	}
+
+  /// Print the list of function arguments
+  void PrintFunctionArgumentList(std::ostream &os = std::cout) {
+    variablePrinter.PrintVariables(&function_arguments, os);
+  } 
 
 	/// This function trys to get a symbol in the stack frame. It would 
 	/// first try to search in the argument scope, and variables and 

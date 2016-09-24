@@ -40,19 +40,6 @@ class Emulator;
 class ProgramLoader;
 class HsaExecutable;
 
-/// List of HSA opcode
-/*
-enum InstOpcode
-{
-#define DEFINST(name, opcode, opstr) \
-	INST_##name,
-#include <arch/hsa/disassembler/Instruction.def>
-#undef DEFINST
-	// Max
-	InstOpcodeCount
-};
-*/
-
 /// HSA work item
 class WorkItem
 {
