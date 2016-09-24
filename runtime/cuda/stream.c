@@ -321,6 +321,7 @@ void *cuda_stream_thread_func(void *thread_data)
 		/* Run command */
 		cuda_stream_command_run(command);
 
+		ioctl(active_device->fd, cuda_call_GridFinish);
 		/* Dequeue and free command */
 		cuda_stream_dequeue(stream);
 		cuda_stream_command_free(command);

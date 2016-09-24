@@ -385,7 +385,7 @@ int Driver::CallLaunchKernel(comm::Context *context,
 			// Set up grid
 			grid->SetupSize(grid_dim, block_dim);
 			grid->GridSetupConstantMemory();
-
+			Timing::getInstance()->num_grids ++;
 			GPU *gpu = Timing::getInstance()->getGpu();
 			gpu->MapGrid(grid);
 			grid->address_space = gpu->getMmu()->newSpace("Kepler");

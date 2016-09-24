@@ -874,13 +874,12 @@ void Timing::DumpReport()
 
 	// Report for device
 	report << misc::fmt(";\n; Simulation Statistics\n;\n\n");
-	Emulator *emulator = Emulator::getInstance();
 	double instructions_per_cycle = getCycle() ?
-		(double)(emulator->getNumInstructions()/this->getCycle()) : 0.0;
+		(double)((double)num_SIMD_instructions/(double)this->getCycle()) : 0.0;
 	report << misc::fmt("[ Device ]\n\n");
-	report << misc::fmt("GridCount = %d\n", emulator->getNumGrids());
+	//report << misc::fmt("GridCount = %d\n", num_grids);
 	report << misc::fmt("Instructions = %lld\n",
-			emulator->getNumInstructions()); // TODO Blocks, classify instructions
+			num_SIMD_instructions); // TODO Blocks, classify instructions
 	report << misc::fmt("Cycles = %lld\n", getCycle());
 	report << misc::fmt("instructionsPerCycle = %.4g\n",
 			instructions_per_cycle);
@@ -892,7 +891,7 @@ void Timing::DumpReport()
 		// Calculate relevant values for each SM
 		SM *sm = it->get();
 		instructions_per_cycle = getCycle() ?
-			(double)(sm->num_total_instructions/getCycle()) : 0.0;
+			(double)((double)sm->num_total_instructions/(double)getCycle()) : 0.0;
 
 		// Report statistics for each SM
 		report << misc::fmt("[ SM %d ]\n\n", sm->getId());
@@ -912,8 +911,8 @@ void Timing::DumpReport()
 		report << misc::fmt("Cycles = %lld\n", getCycle());
 		report << misc::fmt("InstructionsPerCycle = %.4g\n",
 				instructions_per_cycle);
-		report << misc::fmt("RegistersReads = %lld\n", sm->num_regiters_reads);
-		report << misc::fmt("RegistersWrites = %lld\n", sm->num_regiters_reads);
+		//report << misc::fmt("RegistersReads = %lld\n", sm->num_regiters_reads);
+		//report << misc::fmt("RegistersWrites = %lld\n", sm->num_regiters_reads);
 		report << misc::fmt("\n\n");
 	}
 

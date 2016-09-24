@@ -53,7 +53,7 @@ void SPU::Dispatch(std::unique_ptr<Uop> uop)
 	SM *sm = getSM();
 
 	// One more instruction of this kind
-	sm->num_sfu_instructions++;
+	sm->num_spu_instructions++;
 
 	// Dispatch it
 	ExecutionUnit::Dispatch(std::move(uop));

@@ -542,6 +542,13 @@ void SM::Dispatch(FetchBuffer *fetch_buffer, WarpPool *warp_pool)
 				// Emulate instructions
 				warp->Execute(opcode);
 
+				// Increase number of instructions executed in
+				// SM
+				num_total_instructions++;
+
+				// Increase number of instructions executed in
+				// GPU
+				Timing::getInstance()->num_SIMD_instructions++;
 				// Update memory accesses
 				if (instruction->getFormat() == Instruction::FormatLS)
 				{
@@ -749,7 +756,6 @@ void SM::Fetch(FetchBuffer *fetch_buffer, WarpPool *warp_pool)
 				// Insert uop into fetch buffer
 				fetch_buffer->AddToFetchBuffer(fetch_buffer_entry_index *2 + i,
 						std::move(uop));
-				num_total_instructions++;
 				fetch_pc += 8;
 				instructions_fetched = true;
 			}

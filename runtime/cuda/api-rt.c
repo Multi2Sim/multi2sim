@@ -263,6 +263,7 @@ void __cudaRegisterFunction(void **fatCubinHandle, const char *hostFun,
 	/* Free */
 	elf_file_free(dev_func_bin);
 
+	// Remove generated cubin file
 	remove(cubin_path);
 
 	cuda_debug("\t(runtime) '%s' out: return", __func__);
@@ -1077,6 +1078,11 @@ cudaError_t cudaConfigureCall(dim3 gridDim, dim3 blockDim, size_t sharedMem,
 	command = cuda_stream_command_create(stream, cuLaunchKernelImpl, NULL, args,
 			NULL, NULL);
 	command->ready_to_run = 0;
+
+	//Kepler timing
+	cudaStreamSynchronize(stream);
+
+
 	cuda_stream_enqueue(stream, command);
 
 	/* Free arguments */
@@ -1124,7 +1130,6 @@ cudaError_t cudaSetupArgument(const void *arg, size_t size, size_t offset)
 	if (!command->k_args.args)
 		command->k_args.args = list_create();
 	list_enqueue(command->k_args.args, func_arg);
-
 	cuda_rt_last_error = cudaSuccess;
 
 	cuda_debug("\t(runtime) '%s' out: return = %d", __func__, cudaSuccess);

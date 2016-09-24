@@ -122,8 +122,11 @@ public:
 	/// Trace for visualization
 	static esim::Trace trace;
 
+	/// Number of grids executed
+	int num_grids = 0;
 
-
+	/// Number of SIMD instructions executed
+	long long num_SIMD_instructions = 0;
 
 	//
 	// Class members
