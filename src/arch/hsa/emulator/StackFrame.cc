@@ -122,22 +122,23 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump function arguments
 	os << "  ***** Function arguments *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&function_arguments, os);
 	os << "  ***** ******** ********* *****\n\n";
 
 	// If in argument scope, dump argument scope
 	os << "  ***** Argument scope *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&argument_scope, os);
 	os << "  ***** ******** ***** *****\n\n";
 
 	// Kernal argument
 	os << "  ***** Kernel Argument *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(
+       work_item->getGrid()->getKernelArguments(), os);
 	os << "  ***** ****** ******** ****\n\n";
 
 	// Variable scope, 4
 	os << "  ***** Variables *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&variables, os);
 	os << "  ***** ********* *****\n\n";
 
 	// Dump back trace information
