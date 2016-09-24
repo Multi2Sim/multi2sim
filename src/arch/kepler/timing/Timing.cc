@@ -877,7 +877,7 @@ void Timing::DumpReport()
 	double instructions_per_cycle = getCycle() ?
 		(double)((double)num_SIMD_instructions/(double)this->getCycle()) : 0.0;
 	report << misc::fmt("[ Device ]\n\n");
-	//report << misc::fmt("GridCount = %d\n", num_grids);
+	report << misc::fmt("GridCount = %d\n", num_grids);
 	report << misc::fmt("Instructions = %lld\n",
 			num_SIMD_instructions); // TODO Blocks, classify instructions
 	report << misc::fmt("Cycles = %lld\n", getCycle());
