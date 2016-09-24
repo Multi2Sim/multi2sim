@@ -143,14 +143,13 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 	int frame_count = 1;
 	for (auto it = stack.rbegin(); it != stack.rend(); it++)
 	{
-		// StackFrame *frame = (*it).get();
 		os << misc::fmt("#%d ", frame_count++);
 		os << misc::fmt("%s ", (*it)->getFunction()->getName().c_str());
 
 		// Dump arguments and their value
 		os << "(";
-		os << "To be supported";
-		//frame->getFunctionArguments()->DumpInLine(os);
+		StackFrame *frame = (*it).get();
+		frame->PrintFunctionArgumentList(os);
 		os << ")";
 		os << "\n";
 	}
