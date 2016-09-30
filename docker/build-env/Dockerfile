@@ -1,4 +1,4 @@
-FOM ubuntu:14.04.5
+FROM ubuntu:14.04.5
 MAINTAINER NUCAR
 
 # Libs for build Multi2Sim
