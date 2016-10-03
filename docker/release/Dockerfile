@@ -1,4 +1,4 @@
-FROM nucar/multi2sim-build
+FROM multi2sim/multi2sim:build-env
 MAINTAINER NUCAR
 
 # Build Multi2Sim
