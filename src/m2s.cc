@@ -643,6 +643,27 @@ int MainProgram(int argc, char **argv)
 	// simulation active. Check this in the architecture pool after all
 	// '--xxx-sim' command-line options have been processed.
 	comm::ArchPool *arch_pool = comm::ArchPool::getInstance();
+
+	// Throw an error if we have two instances of simulation options. For
+	// example network stand alone simulation is invoked with timing
+	// simulations
+	if (arch_pool->getNumTiming())
+	{
+		if (net::System::isStandAlone() || dram::System::isStandAlone())
+			throw misc::Error("Cannot have both "
+						"stand-alone and detailed "
+						"simulation active at the same "
+						"time");
+	}
+	else
+	{
+		if (net::System::isStandAlone() && dram::System::isStandAlone())
+			throw misc::Error("Cannot have both "
+						"stand-alone and detailed "
+						"simulation active at the same "
+						"time");
+	}
+			
 	if (arch_pool->getNumTiming())
 	{
 		// We need to load the network configuration file prior to
