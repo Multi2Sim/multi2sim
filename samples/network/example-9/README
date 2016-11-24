@@ -1,0 +1,6 @@
+Ideal Network for Southern Island 7970
+--------------------------------------
+It invloves Multiple Buses for each Compute Unit. Each Node writes in one specific
+BUS which all other Nodes are listening to. 
+
+../../../bin/m2s --si-sim detailed --si-config si-config-32 --mem-config mem-si-32 --net-config net-si-32 --ctx-config ctx-config --net-snapshot 1000 --net-report report.net

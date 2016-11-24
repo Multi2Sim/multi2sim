@@ -1,0 +1,13 @@
+% Example to test the x86 detailed simulation with one multi-threaded
+% application running multiple concurrent threads on a CPU with 2 cores
+% each capable of running two threads.
+% 
+% For this test first we should build the binary from the source code
+% and then use this binary for Multi2sim
+
+% Building the binary
+gcc test-threads.c -o test-threads -lpthread -m32 || exit
+
+% Using the binary in multi2sim
+$M2SROOT/bin/m2s --x86-sim detailed --x86-config x86-config.ini \
+		--ctx-config ctx-config.ini

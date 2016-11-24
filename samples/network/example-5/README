@@ -1,0 +1,8 @@
+This network has a cycle. It is a 5x2 torus.
+
+--net-sim net0 --net-config net-config.ini --net-injection-rate 32 --net-msg-size 144 --net-max-cycles 120 --net-visual net2.vis --net-debug net.debug
+
+If pointers are not freed, its due to inflight packets. The packet is ditached from message but not re-attached again. A cycle may lead to a dead-line in which
+case the packets never arrive at their destination. Since packets are inflight neither them nor their stack will be freed, resulting in unfreed space.
+
+This should be resolved. 

@@ -1,0 +1,5 @@
+Ideal Network for Many-Core 40 CPU system
+--------------------------------------
+It invloves Multiple Buses for each Compute Unit. L1 to L2 contains a magic net with fix delay of 3 
+
+../../../bin/m2s --x86-sim detailed --x86-config x86-config-40 --mem-config mem-x86-40 --net-config net-x86-40 --ctx-config ctx-config --net-snapshot 10000 --net-report report.net

@@ -1,0 +1,70 @@
+[Network.mynet]
+DefaultInputBufferSize = 10
+DefaultOutputBufferSize = 20
+DefaultBandwidth = 2
+
+[Network.mynet.Node.N0]
+Type = EndNode
+
+[Network.mynet.Node.N1]
+Type = EndNode
+
+[Network.mynet.Node.N2]
+Type = EndNode
+
+[Network.mynet.Node.N3]
+Type = EndNode
+
+[Network.mynet.Node.S0]
+Type = Switch
+InputBufferSize = 30
+OutputBufferSize = 4
+
+[Network.mynet.Node.S1]
+Type = Switch
+InputBufferSize = 5
+OutputBufferSize = 6
+
+[Network.mynet.Bus.B0]
+Lanes = 2
+
+[Network.mynet.Link.n0-s0]
+Source = N0
+Dest = S0
+Type = Unidirectional
+
+[Network.mynet.Link.n3-s1]
+Source = N3
+Dest = S1
+Type = Bidirectional
+
+[Network.mynet.BusPort.n1-b0]
+Bus = B0
+Node = N1
+Type = Receiver
+BufferSize = 7
+
+[Network.mynet.BusPort.n2-b0]
+Node = N2
+Bus = B0
+Type = Sender 
+BufferSize = 8
+
+[Network.mynet.BusPort.b0-n2]
+Node = N2
+Bus = B0
+Type = Receiver
+BufferSize = 9
+
+[Network.mynet.BusPort.s0-b0]
+Node = S0
+Bus = B0
+Type = Sender
+BufferSize = 10
+
+[Network.mynet.BusPort.S1-b0]
+Node = S1
+Bus = B0
+Type = Sender
+BufferSize = 20
+

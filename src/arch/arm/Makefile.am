@@ -1,0 +1,4 @@
+SUBDIRS = \
+	disassembler \
+	emulator \
+	timing

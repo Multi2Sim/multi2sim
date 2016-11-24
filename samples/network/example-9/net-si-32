@@ -1,0 +1,10820 @@
+;--------------------------------------------Network
+[Network.si-net-l1-l2]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 72
+DefaultPacketSize = 0
+
+;--------------------------------------------------Nodes
+[Network.si-net-l1-l2.Node.l1v0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v5]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v6]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v7]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v8]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v9]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v10]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v11]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v12]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v13]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v14]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v15]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v16]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v17]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v18]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v19]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v20]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v21]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v22]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v23]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v24]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v25]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v26]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v27]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v28]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v29]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v30]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v31]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s5]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s6]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s7]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n5]
+Type = EndNode
+
+;---------------------------------------------------Switches
+[Network.si-net-l1-l2.Bus.s0]
+
+[Network.si-net-l1-l2.Bus.s1]
+
+[Network.si-net-l1-l2.Bus.s2]
+
+[Network.si-net-l1-l2.Bus.s3]
+
+[Network.si-net-l1-l2.Bus.s4]
+
+[Network.si-net-l1-l2.Bus.s5]
+
+[Network.si-net-l1-l2.Bus.s6]
+
+[Network.si-net-l1-l2.Bus.s7]
+
+[Network.si-net-l1-l2.Bus.s8]
+
+[Network.si-net-l1-l2.Bus.s9]
+
+[Network.si-net-l1-l2.Bus.s10]
+
+[Network.si-net-l1-l2.Bus.s11]
+
+[Network.si-net-l1-l2.Bus.s12]
+
+[Network.si-net-l1-l2.Bus.s13]
+
+[Network.si-net-l1-l2.Bus.s14]
+
+[Network.si-net-l1-l2.Bus.s15]
+
+[Network.si-net-l1-l2.Bus.s16]
+
+[Network.si-net-l1-l2.Bus.s17]
+
+[Network.si-net-l1-l2.Bus.s18]
+
+[Network.si-net-l1-l2.Bus.s19]
+
+[Network.si-net-l1-l2.Bus.s20]
+
+[Network.si-net-l1-l2.Bus.s21]
+
+[Network.si-net-l1-l2.Bus.s22]
+
+[Network.si-net-l1-l2.Bus.s23]
+
+[Network.si-net-l1-l2.Bus.s24]
+
+[Network.si-net-l1-l2.Bus.s25]
+
+[Network.si-net-l1-l2.Bus.s26]
+
+[Network.si-net-l1-l2.Bus.s27]
+
+[Network.si-net-l1-l2.Bus.s28]
+
+[Network.si-net-l1-l2.Bus.s29]
+
+[Network.si-net-l1-l2.Bus.s30]
+
+[Network.si-net-l1-l2.Bus.s31]
+
+[Network.si-net-l1-l2.Bus.s32]
+
+[Network.si-net-l1-l2.Bus.s33]
+
+[Network.si-net-l1-l2.Bus.s34]
+
+[Network.si-net-l1-l2.Bus.s35]
+
+[Network.si-net-l1-l2.Bus.s36]
+
+[Network.si-net-l1-l2.Bus.s37]
+
+[Network.si-net-l1-l2.Bus.s38]
+
+[Network.si-net-l1-l2.Bus.s39]
+
+[Network.si-net-l1-l2.Bus.s40]
+
+[Network.si-net-l1-l2.Bus.s41]
+
+[Network.si-net-l1-l2.Bus.s42]
+
+[Network.si-net-l1-l2.Bus.s43]
+
+[Network.si-net-l1-l2.Bus.s44]
+
+[Network.si-net-l1-l2.Bus.s45]
+
+;-----------------------------------------------------BusPorts
+[Network.si-net-l1-l2.BusPort.l1v0-s0]
+Type = Sender
+Node = l1v0
+Bus  = s0
+
+[Network.si-net-l1-l2.BusPort.s0-l1v1]
+Type = Receiver
+Bus = s0
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s0-l1v2]
+Type = Receiver
+Bus = s0
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s0-l1v3]
+Type = Receiver
+Bus = s0
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s0-l1v4]
+Type = Receiver
+Bus = s0
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s0-l1v5]
+Type = Receiver
+Bus = s0
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s0-l1v6]
+Type = Receiver
+Bus = s0
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s0-l1v7]
+Type = Receiver
+Bus = s0
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s0-l1v8]
+Type = Receiver
+Bus = s0
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s0-l1v9]
+Type = Receiver
+Bus = s0
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s0-l1v10]
+Type = Receiver
+Bus = s0
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s0-l1v11]
+Type = Receiver
+Bus = s0
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s0-l1v12]
+Type = Receiver
+Bus = s0
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s0-l1v13]
+Type = Receiver
+Bus = s0
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s0-l1v14]
+Type = Receiver
+Bus = s0
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s0-l1v15]
+Type = Receiver
+Bus = s0
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s0-l1v16]
+Type = Receiver
+Bus = s0
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s0-l1v17]
+Type = Receiver
+Bus = s0
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s0-l1v18]
+Type = Receiver
+Bus = s0
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s0-l1v19]
+Type = Receiver
+Bus = s0
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s0-l1v20]
+Type = Receiver
+Bus = s0
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s0-l1v21]
+Type = Receiver
+Bus = s0
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s0-l1v22]
+Type = Receiver
+Bus = s0
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s0-l1v23]
+Type = Receiver
+Bus = s0
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s0-l1v24]
+Type = Receiver
+Bus = s0
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s0-l1v25]
+Type = Receiver
+Bus = s0
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s0-l1v26]
+Type = Receiver
+Bus = s0
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s0-l1v27]
+Type = Receiver
+Bus = s0
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s0-l1v28]
+Type = Receiver
+Bus = s0
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s0-l1v29]
+Type = Receiver
+Bus = s0
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s0-l1v30]
+Type = Receiver
+Bus = s0
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s0-l1v31]
+Type = Receiver
+Bus = s0
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s0-l1s0]
+Type = Receiver
+Bus = s0
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s0-l1s1]
+Type = Receiver
+Bus = s0
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s0-l1s2]
+Type = Receiver
+Bus = s0
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s0-l1s3]
+Type = Receiver
+Bus = s0
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s0-l1s4]
+Type = Receiver
+Bus = s0
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s0-l1s5]
+Type = Receiver
+Bus = s0
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s0-l1s6]
+Type = Receiver
+Bus = s0
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s0-l1s7]
+Type = Receiver
+Bus = s0
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s0-l2n0]
+Type = Receiver
+Bus = s0
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s0-l2n1]
+Type = Receiver
+Bus = s0
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s0-l2n2]
+Type = Receiver
+Bus = s0
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s0-l2n3]
+Type = Receiver
+Bus = s0
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s0-l2n4]
+Type = Receiver
+Bus = s0
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s0-l2n5]
+Type = Receiver
+Bus = s0
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s1-l1v0]
+Type = Receiver
+Bus = s1
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.l1v1-s1]
+Type = Sender 
+Node = l1v1
+Bus  = s1
+
+[Network.si-net-l1-l2.BusPort.s1-l1v2]
+Type = Receiver
+Bus = s1
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s1-l1v3]
+Type = Receiver
+Bus = s1
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s1-l1v4]
+Type = Receiver
+Bus = s1
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s1-l1v5]
+Type = Receiver
+Bus = s1
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s1-l1v6]
+Type = Receiver
+Bus = s1
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s1-l1v7]
+Type = Receiver
+Bus = s1
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s1-l1v8]
+Type = Receiver
+Bus = s1
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s1-l1v9]
+Type = Receiver
+Bus = s1
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s1-l1v10]
+Type = Receiver
+Bus = s1
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s1-l1v11]
+Type = Receiver
+Bus = s1
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s1-l1v12]
+Type = Receiver
+Bus = s1
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s1-l1v13]
+Type = Receiver
+Bus = s1
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s1-l1v14]
+Type = Receiver
+Bus = s1
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s1-l1v15]
+Type = Receiver
+Bus = s1
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s1-l1v16]
+Type = Receiver
+Bus = s1
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s1-l1v17]
+Type = Receiver
+Bus = s1
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s1-l1v18]
+Type = Receiver
+Bus = s1
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s1-l1v19]
+Type = Receiver
+Bus = s1
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s1-l1v20]
+Type = Receiver
+Bus = s1
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s1-l1v21]
+Type = Receiver
+Bus = s1
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s1-l1v22]
+Type = Receiver
+Bus = s1
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s1-l1v23]
+Type = Receiver
+Bus = s1
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s1-l1v24]
+Type = Receiver
+Bus = s1
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s1-l1v25]
+Type = Receiver
+Bus = s1
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s1-l1v26]
+Type = Receiver
+Bus = s1
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s1-l1v27]
+Type = Receiver
+Bus = s1
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s1-l1v28]
+Type = Receiver
+Bus = s1
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s1-l1v29]
+Type = Receiver
+Bus = s1
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s1-l1v30]
+Type = Receiver
+Bus = s1
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s1-l1v31]
+Type = Receiver
+Bus = s1
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s1-l1s0]
+Type = Receiver
+Bus = s1
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s1-l1s1]
+Type = Receiver
+Bus = s1
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s1-l1s2]
+Type = Receiver
+Bus = s1
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s1-l1s3]
+Type = Receiver
+Bus = s1
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s1-l1s4]
+Type = Receiver
+Bus = s1
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s1-l1s5]
+Type = Receiver
+Bus = s1
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s1-l1s6]
+Type = Receiver
+Bus = s1
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s1-l1s7]
+Type = Receiver
+Bus = s1
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s1-l2n0]
+Type = Receiver
+Bus = s1
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s1-l2n1]
+Type = Receiver
+Bus = s1
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s1-l2n2]
+Type = Receiver
+Bus = s1
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s1-l2n3]
+Type = Receiver
+Bus = s1
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s1-l2n4]
+Type = Receiver
+Bus = s1
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s1-l2n5]
+Type = Receiver
+Bus = s1
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s2-l1v0]
+Type = Receiver
+Bus = s2
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s2-l1v1]
+Type = Receiver
+Bus = s2
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.l1v2-s2]
+Type = Sender
+Node = l1v2
+Bus  = s2
+
+[Network.si-net-l1-l2.BusPort.s2-l1v3]
+Type = Receiver
+Bus = s2
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s2-l1v4]
+Type = Receiver
+Bus = s2
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s2-l1v5]
+Type = Receiver
+Bus = s2
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s2-l1v6]
+Type = Receiver
+Bus = s2
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s2-l1v7]
+Type = Receiver
+Bus = s2
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s2-l1v8]
+Type = Receiver
+Bus = s2
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s2-l1v9]
+Type = Receiver
+Bus = s2
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s2-l1v10]
+Type = Receiver
+Bus = s2
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s2-l1v11]
+Type = Receiver
+Bus = s2
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s2-l1v12]
+Type = Receiver
+Bus = s2
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s2-l1v13]
+Type = Receiver
+Bus = s2
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s2-l1v14]
+Type = Receiver
+Bus = s2
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s2-l1v15]
+Type = Receiver
+Bus = s2
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s2-l1v16]
+Type = Receiver
+Bus = s2
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s2-l1v17]
+Type = Receiver
+Bus = s2
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s2-l1v18]
+Type = Receiver
+Bus = s2
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s2-l1v19]
+Type = Receiver
+Bus = s2
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s2-l1v20]
+Type = Receiver
+Bus = s2
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s2-l1v21]
+Type = Receiver
+Bus = s2
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s2-l1v22]
+Type = Receiver
+Bus = s2
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s2-l1v23]
+Type = Receiver
+Bus = s2
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s2-l1v24]
+Type = Receiver
+Bus = s2
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s2-l1v25]
+Type = Receiver
+Bus = s2
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s2-l1v26]
+Type = Receiver
+Bus = s2
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s2-l1v27]
+Type = Receiver
+Bus = s2
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s2-l1v28]
+Type = Receiver
+Bus = s2
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s2-l1v29]
+Type = Receiver
+Bus = s2
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s2-l1v30]
+Type = Receiver
+Bus = s2
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s2-l1v31]
+Type = Receiver
+Bus = s2
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s2-l1s0]
+Type = Receiver
+Bus = s2
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s2-l1s1]
+Type = Receiver
+Bus = s2
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s2-l1s2]
+Type = Receiver
+Bus = s2
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s2-l1s3]
+Type = Receiver
+Bus = s2
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s2-l1s4]
+Type = Receiver
+Bus = s2
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s2-l1s5]
+Type = Receiver
+Bus = s2
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s2-l1s6]
+Type = Receiver
+Bus = s2
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s2-l1s7]
+Type = Receiver
+Bus = s2
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s2-l2n0]
+Type = Receiver
+Bus = s2
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s2-l2n1]
+Type = Receiver
+Bus = s2
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s2-l2n2]
+Type = Receiver
+Bus = s2
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s2-l2n3]
+Type = Receiver
+Bus = s2
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s2-l2n4]
+Type = Receiver
+Bus = s2
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s2-l2n5]
+Type = Receiver
+Bus = s2
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s3-l1v0]
+Type = Receiver
+Bus = s3
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s3-l1v1]
+Type = Receiver
+Bus = s3
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s3-l1v2]
+Type = Receiver
+Bus = s3
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.l1v3-s3]
+Type = Sender
+Node = l1v3
+Bus  = s3
+
+[Network.si-net-l1-l2.BusPort.s3-l1v4]
+Type = Receiver
+Bus = s3
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s3-l1v5]
+Type = Receiver
+Bus = s3
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s3-l1v6]
+Type = Receiver
+Bus = s3
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s3-l1v7]
+Type = Receiver
+Bus = s3
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s3-l1v8]
+Type = Receiver
+Bus = s3
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s3-l1v9]
+Type = Receiver
+Bus = s3
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s3-l1v10]
+Type = Receiver
+Bus = s3
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s3-l1v11]
+Type = Receiver
+Bus = s3
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s3-l1v12]
+Type = Receiver
+Bus = s3
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s3-l1v13]
+Type = Receiver
+Bus = s3
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s3-l1v14]
+Type = Receiver
+Bus = s3
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s3-l1v15]
+Type = Receiver
+Bus = s3
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s3-l1v16]
+Type = Receiver
+Bus = s3
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s3-l1v17]
+Type = Receiver
+Bus = s3
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s3-l1v18]
+Type = Receiver
+Bus = s3
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s3-l1v19]
+Type = Receiver
+Bus = s3
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s3-l1v20]
+Type = Receiver
+Bus = s3
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s3-l1v21]
+Type = Receiver
+Bus = s3
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s3-l1v22]
+Type = Receiver
+Bus = s3
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s3-l1v23]
+Type = Receiver
+Bus = s3
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s3-l1v24]
+Type = Receiver
+Bus = s3
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s3-l1v25]
+Type = Receiver
+Bus = s3
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s3-l1v26]
+Type = Receiver
+Bus = s3
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s3-l1v27]
+Type = Receiver
+Bus = s3
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s3-l1v28]
+Type = Receiver
+Bus = s3
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s3-l1v29]
+Type = Receiver
+Bus = s3
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s3-l1v30]
+Type = Receiver
+Bus = s3
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s3-l1v31]
+Type = Receiver
+Bus = s3
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s3-l1s0]
+Type = Receiver
+Bus = s3
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s3-l1s1]
+Type = Receiver
+Bus = s3
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s3-l1s2]
+Type = Receiver
+Bus = s3
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s3-l1s3]
+Type = Receiver
+Bus = s3
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s3-l1s4]
+Type = Receiver
+Bus = s3
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s3-l1s5]
+Type = Receiver
+Bus = s3
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s3-l1s6]
+Type = Receiver
+Bus = s3
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s3-l1s7]
+Type = Receiver
+Bus = s3
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s3-l2n0]
+Type = Receiver
+Bus = s3
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s3-l2n1]
+Type = Receiver
+Bus = s3
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s3-l2n2]
+Type = Receiver
+Bus = s3
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s3-l2n3]
+Type = Receiver
+Bus = s3
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s3-l2n4]
+Type = Receiver
+Bus = s3
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s3-l2n5]
+Type = Receiver
+Bus = s3
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s4-l1v0]
+Type = Receiver
+Bus = s4
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s4-l1v1]
+Type = Receiver
+Bus = s4
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s4-l1v2]
+Type = Receiver
+Bus = s4
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s4-l1v3]
+Type = Receiver
+Bus = s4
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.l1v4-s4]
+Type = Sender
+Node = l1v4
+Bus  = s4
+
+[Network.si-net-l1-l2.BusPort.s4-l1v5]
+Type = Receiver
+Bus = s4
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s4-l1v6]
+Type = Receiver
+Bus = s4
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s4-l1v7]
+Type = Receiver
+Bus = s4
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s4-l1v8]
+Type = Receiver
+Bus = s4
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s4-l1v9]
+Type = Receiver
+Bus = s4
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s4-l1v10]
+Type = Receiver
+Bus = s4
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s4-l1v11]
+Type = Receiver
+Bus = s4
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s4-l1v12]
+Type = Receiver
+Bus = s4
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s4-l1v13]
+Type = Receiver
+Bus = s4
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s4-l1v14]
+Type = Receiver
+Bus = s4
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s4-l1v15]
+Type = Receiver
+Bus = s4
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s4-l1v16]
+Type = Receiver
+Bus = s4
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s4-l1v17]
+Type = Receiver
+Bus = s4
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s4-l1v18]
+Type = Receiver
+Bus = s4
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s4-l1v19]
+Type = Receiver
+Bus = s4
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s4-l1v20]
+Type = Receiver
+Bus = s4
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s4-l1v21]
+Type = Receiver
+Bus = s4
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s4-l1v22]
+Type = Receiver
+Bus = s4
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s4-l1v23]
+Type = Receiver
+Bus = s4
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s4-l1v24]
+Type = Receiver
+Bus = s4
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s4-l1v25]
+Type = Receiver
+Bus = s4
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s4-l1v26]
+Type = Receiver
+Bus = s4
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s4-l1v27]
+Type = Receiver
+Bus = s4
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s4-l1v28]
+Type = Receiver
+Bus = s4
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s4-l1v29]
+Type = Receiver
+Bus = s4
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s4-l1v30]
+Type = Receiver
+Bus = s4
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s4-l1v31]
+Type = Receiver
+Bus = s4
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s4-l1s0]
+Type = Receiver
+Bus = s4
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s4-l1s1]
+Type = Receiver
+Bus = s4
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s4-l1s2]
+Type = Receiver
+Bus = s4
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s4-l1s3]
+Type = Receiver
+Bus = s4
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s4-l1s4]
+Type = Receiver
+Bus = s4
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s4-l1s5]
+Type = Receiver
+Bus = s4
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s4-l1s6]
+Type = Receiver
+Bus = s4
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s4-l1s7]
+Type = Receiver
+Bus = s4
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s4-l2n0]
+Type = Receiver
+Bus = s4
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s4-l2n1]
+Type = Receiver
+Bus = s4
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s4-l2n2]
+Type = Receiver
+Bus = s4
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s4-l2n3]
+Type = Receiver
+Bus = s4
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s4-l2n4]
+Type = Receiver
+Bus = s4
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s4-l2n5]
+Type = Receiver
+Bus = s4
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s5-l1v0]
+Type = Receiver
+Bus = s5
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s5-l1v1]
+Type = Receiver
+Bus = s5
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s5-l1v2]
+Type = Receiver
+Bus = s5
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s5-l1v3]
+Type = Receiver
+Bus = s5
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s5-l1v4]
+Type = Receiver
+Bus = s5
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.l1v5-s5]
+Type = Sender
+Node = l1v5
+Bus  = s5
+
+[Network.si-net-l1-l2.BusPort.s5-l1v6]
+Type = Receiver
+Bus = s5
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s5-l1v7]
+Type = Receiver
+Bus = s5
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s5-l1v8]
+Type = Receiver
+Bus = s5
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s5-l1v9]
+Type = Receiver
+Bus = s5
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s5-l1v10]
+Type = Receiver
+Bus = s5
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s5-l1v11]
+Type = Receiver
+Bus = s5
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s5-l1v12]
+Type = Receiver
+Bus = s5
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s5-l1v13]
+Type = Receiver
+Bus = s5
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s5-l1v14]
+Type = Receiver
+Bus = s5
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s5-l1v15]
+Type = Receiver
+Bus = s5
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s5-l1v16]
+Type = Receiver
+Bus = s5
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s5-l1v17]
+Type = Receiver
+Bus = s5
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s5-l1v18]
+Type = Receiver
+Bus = s5
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s5-l1v19]
+Type = Receiver
+Bus = s5
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s5-l1v20]
+Type = Receiver
+Bus = s5
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s5-l1v21]
+Type = Receiver
+Bus = s5
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s5-l1v22]
+Type = Receiver
+Bus = s5
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s5-l1v23]
+Type = Receiver
+Bus = s5
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s5-l1v24]
+Type = Receiver
+Bus = s5
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s5-l1v25]
+Type = Receiver
+Bus = s5
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s5-l1v26]
+Type = Receiver
+Bus = s5
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s5-l1v27]
+Type = Receiver
+Bus = s5
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s5-l1v28]
+Type = Receiver
+Bus = s5
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s5-l1v29]
+Type = Receiver
+Bus = s5
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s5-l1v30]
+Type = Receiver
+Bus = s5
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s5-l1v31]
+Type = Receiver
+Bus = s5
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s5-l1s0]
+Type = Receiver
+Bus = s5
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s5-l1s1]
+Type = Receiver
+Bus = s5
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s5-l1s2]
+Type = Receiver
+Bus = s5
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s5-l1s3]
+Type = Receiver
+Bus = s5
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s5-l1s4]
+Type = Receiver
+Bus = s5
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s5-l1s5]
+Type = Receiver
+Bus = s5
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s5-l1s6]
+Type = Receiver
+Bus = s5
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s5-l1s7]
+Type = Receiver
+Bus = s5
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s5-l2n0]
+Type = Receiver
+Bus = s5
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s5-l2n1]
+Type = Receiver
+Bus = s5
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s5-l2n2]
+Type = Receiver
+Bus = s5
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s5-l2n3]
+Type = Receiver
+Bus = s5
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s5-l2n4]
+Type = Receiver
+Bus = s5
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s5-l2n5]
+Type = Receiver
+Bus = s5
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s6-l1v0]
+Type = Receiver
+Bus = s6
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s6-l1v1]
+Type = Receiver
+Bus = s6
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s6-l1v2]
+Type = Receiver
+Bus = s6
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s6-l1v3]
+Type = Receiver
+Bus = s6
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s6-l1v4]
+Type = Receiver
+Bus = s6
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s6-l1v5]
+Type = Receiver
+Bus = s6
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.l1v6-s6]
+Type = Sender
+Node = l1v6
+Bus  = s6
+
+[Network.si-net-l1-l2.BusPort.s6-l1v7]
+Type = Receiver
+Bus = s6
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s6-l1v8]
+Type = Receiver
+Bus = s6
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s6-l1v9]
+Type = Receiver
+Bus = s6
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s6-l1v10]
+Type = Receiver
+Bus = s6
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s6-l1v11]
+Type = Receiver
+Bus = s6
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s6-l1v12]
+Type = Receiver
+Bus = s6
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s6-l1v13]
+Type = Receiver
+Bus = s6
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s6-l1v14]
+Type = Receiver
+Bus = s6
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s6-l1v15]
+Type = Receiver
+Bus = s6
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s6-l1v16]
+Type = Receiver
+Bus = s6
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s6-l1v17]
+Type = Receiver
+Bus = s6
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s6-l1v18]
+Type = Receiver
+Bus = s6
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s6-l1v19]
+Type = Receiver
+Bus = s6
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s6-l1v20]
+Type = Receiver
+Bus = s6
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s6-l1v21]
+Type = Receiver
+Bus = s6
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s6-l1v22]
+Type = Receiver
+Bus = s6
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s6-l1v23]
+Type = Receiver
+Bus = s6
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s6-l1v24]
+Type = Receiver
+Bus = s6
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s6-l1v25]
+Type = Receiver
+Bus = s6
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s6-l1v26]
+Type = Receiver
+Bus = s6
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s6-l1v27]
+Type = Receiver
+Bus = s6
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s6-l1v28]
+Type = Receiver
+Bus = s6
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s6-l1v29]
+Type = Receiver
+Bus = s6
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s6-l1v30]
+Type = Receiver
+Bus = s6
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s6-l1v31]
+Type = Receiver
+Bus = s6
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s6-l1s0]
+Type = Receiver
+Bus = s6
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s6-l1s1]
+Type = Receiver
+Bus = s6
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s6-l1s2]
+Type = Receiver
+Bus = s6
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s6-l1s3]
+Type = Receiver
+Bus = s6
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s6-l1s4]
+Type = Receiver
+Bus = s6
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s6-l1s5]
+Type = Receiver
+Bus = s6
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s6-l1s6]
+Type = Receiver
+Bus = s6
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s6-l1s7]
+Type = Receiver
+Bus = s6
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s6-l2n0]
+Type = Receiver
+Bus = s6
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s6-l2n1]
+Type = Receiver
+Bus = s6
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s6-l2n2]
+Type = Receiver
+Bus = s6
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s6-l2n3]
+Type = Receiver
+Bus = s6
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s6-l2n4]
+Type = Receiver
+Bus = s6
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s6-l2n5]
+Type = Receiver
+Bus = s6
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s7-l1v0]
+Type = Receiver
+Bus = s7
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s7-l1v1]
+Type = Receiver
+Bus = s7
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s7-l1v2]
+Type = Receiver
+Bus = s7
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s7-l1v3]
+Type = Receiver
+Bus = s7
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s7-l1v4]
+Type = Receiver
+Bus = s7
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s7-l1v5]
+Type = Receiver
+Bus = s7
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s7-l1v6]
+Type = Receiver
+Bus = s7
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.l1v7-s7]
+Type = Sender
+Node = l1v7
+Bus  = s7
+
+[Network.si-net-l1-l2.BusPort.s7-l1v8]
+Type = Receiver
+Bus = s7
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s7-l1v9]
+Type = Receiver
+Bus = s7
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s7-l1v10]
+Type = Receiver
+Bus = s7
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s7-l1v11]
+Type = Receiver
+Bus = s7
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s7-l1v12]
+Type = Receiver
+Bus = s7
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s7-l1v13]
+Type = Receiver
+Bus = s7
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s7-l1v14]
+Type = Receiver
+Bus = s7
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s7-l1v15]
+Type = Receiver
+Bus = s7
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s7-l1v16]
+Type = Receiver
+Bus = s7
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s7-l1v17]
+Type = Receiver
+Bus = s7
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s7-l1v18]
+Type = Receiver
+Bus = s7
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s7-l1v19]
+Type = Receiver
+Bus = s7
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s7-l1v20]
+Type = Receiver
+Bus = s7
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s7-l1v21]
+Type = Receiver
+Bus = s7
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s7-l1v22]
+Type = Receiver
+Bus = s7
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s7-l1v23]
+Type = Receiver
+Bus = s7
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s7-l1v24]
+Type = Receiver
+Bus = s7
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s7-l1v25]
+Type = Receiver
+Bus = s7
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s7-l1v26]
+Type = Receiver
+Bus = s7
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s7-l1v27]
+Type = Receiver
+Bus = s7
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s7-l1v28]
+Type = Receiver
+Bus = s7
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s7-l1v29]
+Type = Receiver
+Bus = s7
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s7-l1v30]
+Type = Receiver
+Bus = s7
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s7-l1v31]
+Type = Receiver
+Bus = s7
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s7-l1s0]
+Type = Receiver
+Bus = s7
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s7-l1s1]
+Type = Receiver
+Bus = s7
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s7-l1s2]
+Type = Receiver
+Bus = s7
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s7-l1s3]
+Type = Receiver
+Bus = s7
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s7-l1s4]
+Type = Receiver
+Bus = s7
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s7-l1s5]
+Type = Receiver
+Bus = s7
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s7-l1s6]
+Type = Receiver
+Bus = s7
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s7-l1s7]
+Type = Receiver
+Bus = s7
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s7-l2n0]
+Type = Receiver
+Bus = s7
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s7-l2n1]
+Type = Receiver
+Bus = s7
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s7-l2n2]
+Type = Receiver
+Bus = s7
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s7-l2n3]
+Type = Receiver
+Bus = s7
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s7-l2n4]
+Type = Receiver
+Bus = s7
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s7-l2n5]
+Type = Receiver
+Bus = s7
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s8-l1v0]
+Type = Receiver
+Bus = s8
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s8-l1v1]
+Type = Receiver
+Bus = s8
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s8-l1v2]
+Type = Receiver
+Bus = s8
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s8-l1v3]
+Type = Receiver
+Bus = s8
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s8-l1v4]
+Type = Receiver
+Bus = s8
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s8-l1v5]
+Type = Receiver
+Bus = s8
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s8-l1v6]
+Type = Receiver
+Bus = s8
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s8-l1v7]
+Type = Receiver
+Bus = s8
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.l1v8-s8]
+Type = Sender
+Node = l1v8
+Bus  = s8
+
+[Network.si-net-l1-l2.BusPort.s8-l1v9]
+Type = Receiver
+Bus = s8
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s8-l1v10]
+Type = Receiver
+Bus = s8
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s8-l1v11]
+Type = Receiver
+Bus = s8
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s8-l1v12]
+Type = Receiver
+Bus = s8
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s8-l1v13]
+Type = Receiver
+Bus = s8
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s8-l1v14]
+Type = Receiver
+Bus = s8
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s8-l1v15]
+Type = Receiver
+Bus = s8
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s8-l1v16]
+Type = Receiver
+Bus = s8
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s8-l1v17]
+Type = Receiver
+Bus = s8
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s8-l1v18]
+Type = Receiver
+Bus = s8
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s8-l1v19]
+Type = Receiver
+Bus = s8
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s8-l1v20]
+Type = Receiver
+Bus = s8
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s8-l1v21]
+Type = Receiver
+Bus = s8
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s8-l1v22]
+Type = Receiver
+Bus = s8
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s8-l1v23]
+Type = Receiver
+Bus = s8
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s8-l1v24]
+Type = Receiver
+Bus = s8
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s8-l1v25]
+Type = Receiver
+Bus = s8
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s8-l1v26]
+Type = Receiver
+Bus = s8
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s8-l1v27]
+Type = Receiver
+Bus = s8
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s8-l1v28]
+Type = Receiver
+Bus = s8
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s8-l1v29]
+Type = Receiver
+Bus = s8
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s8-l1v30]
+Type = Receiver
+Bus = s8
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s8-l1v31]
+Type = Receiver
+Bus = s8
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s8-l1s0]
+Type = Receiver
+Bus = s8
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s8-l1s1]
+Type = Receiver
+Bus = s8
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s8-l1s2]
+Type = Receiver
+Bus = s8
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s8-l1s3]
+Type = Receiver
+Bus = s8
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s8-l1s4]
+Type = Receiver
+Bus = s8
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s8-l1s5]
+Type = Receiver
+Bus = s8
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s8-l1s6]
+Type = Receiver
+Bus = s8
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s8-l1s7]
+Type = Receiver
+Bus = s8
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s8-l2n0]
+Type = Receiver
+Bus = s8
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s8-l2n1]
+Type = Receiver
+Bus = s8
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s8-l2n2]
+Type = Receiver
+Bus = s8
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s8-l2n3]
+Type = Receiver
+Bus = s8
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s8-l2n4]
+Type = Receiver
+Bus = s8
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s8-l2n5]
+Type = Receiver
+Bus = s8
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s9-l1v0]
+Type = Receiver
+Bus = s9
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s9-l1v1]
+Type = Receiver
+Bus = s9
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s9-l1v2]
+Type = Receiver
+Bus = s9
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s9-l1v3]
+Type = Receiver
+Bus = s9
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s9-l1v4]
+Type = Receiver
+Bus = s9
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s9-l1v5]
+Type = Receiver
+Bus = s9
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s9-l1v6]
+Type = Receiver
+Bus = s9
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s9-l1v7]
+Type = Receiver
+Bus = s9
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s9-l1v8]
+Type = Receiver
+Bus = s9
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.l1v9-s9]
+Type = Sender
+Node = l1v9
+Bus  = s9
+
+[Network.si-net-l1-l2.BusPort.s9-l1v10]
+Type = Receiver
+Bus = s9
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s9-l1v11]
+Type = Receiver
+Bus = s9
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s9-l1v12]
+Type = Receiver
+Bus = s9
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s9-l1v13]
+Type = Receiver
+Bus = s9
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s9-l1v14]
+Type = Receiver
+Bus = s9
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s9-l1v15]
+Type = Receiver
+Bus = s9
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s9-l1v16]
+Type = Receiver
+Bus = s9
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s9-l1v17]
+Type = Receiver
+Bus = s9
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s9-l1v18]
+Type = Receiver
+Bus = s9
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s9-l1v19]
+Type = Receiver
+Bus = s9
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s9-l1v20]
+Type = Receiver
+Bus = s9
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s9-l1v21]
+Type = Receiver
+Bus = s9
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s9-l1v22]
+Type = Receiver
+Bus = s9
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s9-l1v23]
+Type = Receiver
+Bus = s9
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s9-l1v24]
+Type = Receiver
+Bus = s9
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s9-l1v25]
+Type = Receiver
+Bus = s9
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s9-l1v26]
+Type = Receiver
+Bus = s9
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s9-l1v27]
+Type = Receiver
+Bus = s9
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s9-l1v28]
+Type = Receiver
+Bus = s9
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s9-l1v29]
+Type = Receiver
+Bus = s9
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s9-l1v30]
+Type = Receiver
+Bus = s9
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s9-l1v31]
+Type = Receiver
+Bus = s9
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s9-l1s0]
+Type = Receiver
+Bus = s9
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s9-l1s1]
+Type = Receiver
+Bus = s9
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s9-l1s2]
+Type = Receiver
+Bus = s9
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s9-l1s3]
+Type = Receiver
+Bus = s9
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s9-l1s4]
+Type = Receiver
+Bus = s9
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s9-l1s5]
+Type = Receiver
+Bus = s9
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s9-l1s6]
+Type = Receiver
+Bus = s9
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s9-l1s7]
+Type = Receiver
+Bus = s9
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s9-l2n0]
+Type = Receiver
+Bus = s9
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s9-l2n1]
+Type = Receiver
+Bus = s9
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s9-l2n2]
+Type = Receiver
+Bus = s9
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s9-l2n3]
+Type = Receiver
+Bus = s9
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s9-l2n4]
+Type = Receiver
+Bus = s9
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s9-l2n5]
+Type = Receiver
+Bus = s9
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s10-l1v0]
+Type = Receiver
+Bus = s10
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s10-l1v1]
+Type = Receiver
+Bus = s10
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s10-l1v2]
+Type = Receiver
+Bus = s10
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s10-l1v3]
+Type = Receiver
+Bus = s10
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s10-l1v4]
+Type = Receiver
+Bus = s10
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s10-l1v5]
+Type = Receiver
+Bus = s10
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s10-l1v6]
+Type = Receiver
+Bus = s10
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s10-l1v7]
+Type = Receiver
+Bus = s10
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s10-l1v8]
+Type = Receiver
+Bus = s10
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s10-l1v9]
+Type = Receiver
+Bus = s10
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.l1v10-s10]
+Type = Sender
+Node = l1v10
+Bus  = s10
+
+[Network.si-net-l1-l2.BusPort.s10-l1v11]
+Type = Receiver
+Bus = s10
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s10-l1v12]
+Type = Receiver
+Bus = s10
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s10-l1v13]
+Type = Receiver
+Bus = s10
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s10-l1v14]
+Type = Receiver
+Bus = s10
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s10-l1v15]
+Type = Receiver
+Bus = s10
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s10-l1v16]
+Type = Receiver
+Bus = s10
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s10-l1v17]
+Type = Receiver
+Bus = s10
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s10-l1v18]
+Type = Receiver
+Bus = s10
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s10-l1v19]
+Type = Receiver
+Bus = s10
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s10-l1v20]
+Type = Receiver
+Bus = s10
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s10-l1v21]
+Type = Receiver
+Bus = s10
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s10-l1v22]
+Type = Receiver
+Bus = s10
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s10-l1v23]
+Type = Receiver
+Bus = s10
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s10-l1v24]
+Type = Receiver
+Bus = s10
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s10-l1v25]
+Type = Receiver
+Bus = s10
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s10-l1v26]
+Type = Receiver
+Bus = s10
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s10-l1v27]
+Type = Receiver
+Bus = s10
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s10-l1v28]
+Type = Receiver
+Bus = s10
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s10-l1v29]
+Type = Receiver
+Bus = s10
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s10-l1v30]
+Type = Receiver
+Bus = s10
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s10-l1v31]
+Type = Receiver
+Bus = s10
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s10-l1s0]
+Type = Receiver
+Bus = s10
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s10-l1s1]
+Type = Receiver
+Bus = s10
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s10-l1s2]
+Type = Receiver
+Bus = s10
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s10-l1s3]
+Type = Receiver
+Bus = s10
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s10-l1s4]
+Type = Receiver
+Bus = s10
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s10-l1s5]
+Type = Receiver
+Bus = s10
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s10-l1s6]
+Type = Receiver
+Bus = s10
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s10-l1s7]
+Type = Receiver
+Bus = s10
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s10-l2n0]
+Type = Receiver
+Bus = s10
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s10-l2n1]
+Type = Receiver
+Bus = s10
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s10-l2n2]
+Type = Receiver
+Bus = s10
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s10-l2n3]
+Type = Receiver
+Bus = s10
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s10-l2n4]
+Type = Receiver
+Bus = s10
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s10-l2n5]
+Type = Receiver
+Bus = s10
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s11-l1v0]
+Type = Receiver
+Bus = s11
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s11-l1v1]
+Type = Receiver
+Bus = s11
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s11-l1v2]
+Type = Receiver
+Bus = s11
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s11-l1v3]
+Type = Receiver
+Bus = s11
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s11-l1v4]
+Type = Receiver
+Bus = s11
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s11-l1v5]
+Type = Receiver
+Bus = s11
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s11-l1v6]
+Type = Receiver
+Bus = s11
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s11-l1v7]
+Type = Receiver
+Bus = s11
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s11-l1v8]
+Type = Receiver
+Bus = s11
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s11-l1v9]
+Type = Receiver
+Bus = s11
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s11-l1v10]
+Type = Receiver
+Bus = s11
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.l1v11-s11]
+Type = Sender
+Node = l1v11
+Bus  = s11
+
+[Network.si-net-l1-l2.BusPort.s11-l1v12]
+Type = Receiver
+Bus = s11
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s11-l1v13]
+Type = Receiver
+Bus = s11
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s11-l1v14]
+Type = Receiver
+Bus = s11
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s11-l1v15]
+Type = Receiver
+Bus = s11
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s11-l1v16]
+Type = Receiver
+Bus = s11
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s11-l1v17]
+Type = Receiver
+Bus = s11
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s11-l1v18]
+Type = Receiver
+Bus = s11
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s11-l1v19]
+Type = Receiver
+Bus = s11
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s11-l1v20]
+Type = Receiver
+Bus = s11
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s11-l1v21]
+Type = Receiver
+Bus = s11
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s11-l1v22]
+Type = Receiver
+Bus = s11
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s11-l1v23]
+Type = Receiver
+Bus = s11
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s11-l1v24]
+Type = Receiver
+Bus = s11
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s11-l1v25]
+Type = Receiver
+Bus = s11
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s11-l1v26]
+Type = Receiver
+Bus = s11
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s11-l1v27]
+Type = Receiver
+Bus = s11
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s11-l1v28]
+Type = Receiver
+Bus = s11
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s11-l1v29]
+Type = Receiver
+Bus = s11
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s11-l1v30]
+Type = Receiver
+Bus = s11
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s11-l1v31]
+Type = Receiver
+Bus = s11
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s11-l1s0]
+Type = Receiver
+Bus = s11
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s11-l1s1]
+Type = Receiver
+Bus = s11
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s11-l1s2]
+Type = Receiver
+Bus = s11
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s11-l1s3]
+Type = Receiver
+Bus = s11
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s11-l1s4]
+Type = Receiver
+Bus = s11
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s11-l1s5]
+Type = Receiver
+Bus = s11
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s11-l1s6]
+Type = Receiver
+Bus = s11
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s11-l1s7]
+Type = Receiver
+Bus = s11
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s11-l2n0]
+Type = Receiver
+Bus = s11
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s11-l2n1]
+Type = Receiver
+Bus = s11
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s11-l2n2]
+Type = Receiver
+Bus = s11
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s11-l2n3]
+Type = Receiver
+Bus = s11
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s11-l2n4]
+Type = Receiver
+Bus = s11
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s11-l2n5]
+Type = Receiver
+Bus = s11
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s12-l1v0]
+Type = Receiver
+Bus = s12
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s12-l1v1]
+Type = Receiver
+Bus = s12
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s12-l1v2]
+Type = Receiver
+Bus = s12
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s12-l1v3]
+Type = Receiver
+Bus = s12
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s12-l1v4]
+Type = Receiver
+Bus = s12
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s12-l1v5]
+Type = Receiver
+Bus = s12
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s12-l1v6]
+Type = Receiver
+Bus = s12
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s12-l1v7]
+Type = Receiver
+Bus = s12
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s12-l1v8]
+Type = Receiver
+Bus = s12
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s12-l1v9]
+Type = Receiver
+Bus = s12
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s12-l1v10]
+Type = Receiver
+Bus = s12
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s12-l1v11]
+Type = Receiver
+Bus = s12
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.l1v12-s12]
+Type = Sender
+Node = l1v12
+Bus  = s12
+
+[Network.si-net-l1-l2.BusPort.s12-l1v13]
+Type = Receiver
+Bus = s12
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s12-l1v14]
+Type = Receiver
+Bus = s12
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s12-l1v15]
+Type = Receiver
+Bus = s12
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s12-l1v16]
+Type = Receiver
+Bus = s12
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s12-l1v17]
+Type = Receiver
+Bus = s12
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s12-l1v18]
+Type = Receiver
+Bus = s12
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s12-l1v19]
+Type = Receiver
+Bus = s12
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s12-l1v20]
+Type = Receiver
+Bus = s12
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s12-l1v21]
+Type = Receiver
+Bus = s12
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s12-l1v22]
+Type = Receiver
+Bus = s12
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s12-l1v23]
+Type = Receiver
+Bus = s12
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s12-l1v24]
+Type = Receiver
+Bus = s12
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s12-l1v25]
+Type = Receiver
+Bus = s12
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s12-l1v26]
+Type = Receiver
+Bus = s12
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s12-l1v27]
+Type = Receiver
+Bus = s12
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s12-l1v28]
+Type = Receiver
+Bus = s12
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s12-l1v29]
+Type = Receiver
+Bus = s12
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s12-l1v30]
+Type = Receiver
+Bus = s12
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s12-l1v31]
+Type = Receiver
+Bus = s12
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s12-l1s0]
+Type = Receiver
+Bus = s12
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s12-l1s1]
+Type = Receiver
+Bus = s12
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s12-l1s2]
+Type = Receiver
+Bus = s12
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s12-l1s3]
+Type = Receiver
+Bus = s12
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s12-l1s4]
+Type = Receiver
+Bus = s12
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s12-l1s5]
+Type = Receiver
+Bus = s12
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s12-l1s6]
+Type = Receiver
+Bus = s12
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s12-l1s7]
+Type = Receiver
+Bus = s12
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s12-l2n0]
+Type = Receiver
+Bus = s12
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s12-l2n1]
+Type = Receiver
+Bus = s12
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s12-l2n2]
+Type = Receiver
+Bus = s12
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s12-l2n3]
+Type = Receiver
+Bus = s12
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s12-l2n4]
+Type = Receiver
+Bus = s12
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s12-l2n5]
+Type = Receiver
+Bus = s12
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s13-l1v0]
+Type = Receiver
+Bus = s13
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s13-l1v1]
+Type = Receiver
+Bus = s13
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s13-l1v2]
+Type = Receiver
+Bus = s13
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s13-l1v3]
+Type = Receiver
+Bus = s13
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s13-l1v4]
+Type = Receiver
+Bus = s13
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s13-l1v5]
+Type = Receiver
+Bus = s13
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s13-l1v6]
+Type = Receiver
+Bus = s13
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s13-l1v7]
+Type = Receiver
+Bus = s13
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s13-l1v8]
+Type = Receiver
+Bus = s13
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s13-l1v9]
+Type = Receiver
+Bus = s13
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s13-l1v10]
+Type = Receiver
+Bus = s13
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s13-l1v11]
+Type = Receiver
+Bus = s13
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s13-l1v12]
+Type = Receiver
+Bus = s13
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.l1v13-s13]
+Type = Sender
+Node = l1v13
+Bus  = s13
+
+[Network.si-net-l1-l2.BusPort.s13-l1v14]
+Type = Receiver
+Bus = s13
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s13-l1v15]
+Type = Receiver
+Bus = s13
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s13-l1v16]
+Type = Receiver
+Bus = s13
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s13-l1v17]
+Type = Receiver
+Bus = s13
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s13-l1v18]
+Type = Receiver
+Bus = s13
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s13-l1v19]
+Type = Receiver
+Bus = s13
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s13-l1v20]
+Type = Receiver
+Bus = s13
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s13-l1v21]
+Type = Receiver
+Bus = s13
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s13-l1v22]
+Type = Receiver
+Bus = s13
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s13-l1v23]
+Type = Receiver
+Bus = s13
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s13-l1v24]
+Type = Receiver
+Bus = s13
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s13-l1v25]
+Type = Receiver
+Bus = s13
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s13-l1v26]
+Type = Receiver
+Bus = s13
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s13-l1v27]
+Type = Receiver
+Bus = s13
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s13-l1v28]
+Type = Receiver
+Bus = s13
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s13-l1v29]
+Type = Receiver
+Bus = s13
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s13-l1v30]
+Type = Receiver
+Bus = s13
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s13-l1v31]
+Type = Receiver
+Bus = s13
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s13-l1s0]
+Type = Receiver
+Bus = s13
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s13-l1s1]
+Type = Receiver
+Bus = s13
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s13-l1s2]
+Type = Receiver
+Bus = s13
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s13-l1s3]
+Type = Receiver
+Bus = s13
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s13-l1s4]
+Type = Receiver
+Bus = s13
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s13-l1s5]
+Type = Receiver
+Bus = s13
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s13-l1s6]
+Type = Receiver
+Bus = s13
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s13-l1s7]
+Type = Receiver
+Bus = s13
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s13-l2n0]
+Type = Receiver
+Bus = s13
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s13-l2n1]
+Type = Receiver
+Bus = s13
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s13-l2n2]
+Type = Receiver
+Bus = s13
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s13-l2n3]
+Type = Receiver
+Bus = s13
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s13-l2n4]
+Type = Receiver
+Bus = s13
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s13-l2n5]
+Type = Receiver
+Bus = s13
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s14-l1v0]
+Type = Receiver
+Bus = s14
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s14-l1v1]
+Type = Receiver
+Bus = s14
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s14-l1v2]
+Type = Receiver
+Bus = s14
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s14-l1v3]
+Type = Receiver
+Bus = s14
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s14-l1v4]
+Type = Receiver
+Bus = s14
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s14-l1v5]
+Type = Receiver
+Bus = s14
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s14-l1v6]
+Type = Receiver
+Bus = s14
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s14-l1v7]
+Type = Receiver
+Bus = s14
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s14-l1v8]
+Type = Receiver
+Bus = s14
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s14-l1v9]
+Type = Receiver
+Bus = s14
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s14-l1v10]
+Type = Receiver
+Bus = s14
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s14-l1v11]
+Type = Receiver
+Bus = s14
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s14-l1v12]
+Type = Receiver
+Bus = s14
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s14-l1v13]
+Type = Receiver
+Bus = s14
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.l1v14-s14]
+Type = Sender
+Node = l1v14
+Bus  = s14
+
+[Network.si-net-l1-l2.BusPort.s14-l1v15]
+Type = Receiver
+Bus = s14
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s14-l1v16]
+Type = Receiver
+Bus = s14
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s14-l1v17]
+Type = Receiver
+Bus = s14
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s14-l1v18]
+Type = Receiver
+Bus = s14
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s14-l1v19]
+Type = Receiver
+Bus = s14
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s14-l1v20]
+Type = Receiver
+Bus = s14
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s14-l1v21]
+Type = Receiver
+Bus = s14
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s14-l1v22]
+Type = Receiver
+Bus = s14
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s14-l1v23]
+Type = Receiver
+Bus = s14
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s14-l1v24]
+Type = Receiver
+Bus = s14
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s14-l1v25]
+Type = Receiver
+Bus = s14
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s14-l1v26]
+Type = Receiver
+Bus = s14
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s14-l1v27]
+Type = Receiver
+Bus = s14
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s14-l1v28]
+Type = Receiver
+Bus = s14
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s14-l1v29]
+Type = Receiver
+Bus = s14
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s14-l1v30]
+Type = Receiver
+Bus = s14
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s14-l1v31]
+Type = Receiver
+Bus = s14
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s14-l1s0]
+Type = Receiver
+Bus = s14
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s14-l1s1]
+Type = Receiver
+Bus = s14
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s14-l1s2]
+Type = Receiver
+Bus = s14
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s14-l1s3]
+Type = Receiver
+Bus = s14
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s14-l1s4]
+Type = Receiver
+Bus = s14
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s14-l1s5]
+Type = Receiver
+Bus = s14
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s14-l1s6]
+Type = Receiver
+Bus = s14
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s14-l1s7]
+Type = Receiver
+Bus = s14
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s14-l2n0]
+Type = Receiver
+Bus = s14
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s14-l2n1]
+Type = Receiver
+Bus = s14
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s14-l2n2]
+Type = Receiver
+Bus = s14
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s14-l2n3]
+Type = Receiver
+Bus = s14
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s14-l2n4]
+Type = Receiver
+Bus = s14
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s14-l2n5]
+Type = Receiver
+Bus = s14
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s15-l1v0]
+Type = Receiver
+Bus = s15
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s15-l1v1]
+Type = Receiver
+Bus = s15
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s15-l1v2]
+Type = Receiver
+Bus = s15
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s15-l1v3]
+Type = Receiver
+Bus = s15
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s15-l1v4]
+Type = Receiver
+Bus = s15
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s15-l1v5]
+Type = Receiver
+Bus = s15
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s15-l1v6]
+Type = Receiver
+Bus = s15
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s15-l1v7]
+Type = Receiver
+Bus = s15
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s15-l1v8]
+Type = Receiver
+Bus = s15
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s15-l1v9]
+Type = Receiver
+Bus = s15
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s15-l1v10]
+Type = Receiver
+Bus = s15
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s15-l1v11]
+Type = Receiver
+Bus = s15
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s15-l1v12]
+Type = Receiver
+Bus = s15
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s15-l1v13]
+Type = Receiver
+Bus = s15
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s15-l1v14]
+Type = Receiver
+Bus = s15
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.l1v15-s15]
+Type = Sender
+Node = l1v15
+Bus  = s15
+
+[Network.si-net-l1-l2.BusPort.s15-l1v16]
+Type = Receiver
+Bus = s15
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s15-l1v17]
+Type = Receiver
+Bus = s15
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s15-l1v18]
+Type = Receiver
+Bus = s15
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s15-l1v19]
+Type = Receiver
+Bus = s15
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s15-l1v20]
+Type = Receiver
+Bus = s15
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s15-l1v21]
+Type = Receiver
+Bus = s15
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s15-l1v22]
+Type = Receiver
+Bus = s15
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s15-l1v23]
+Type = Receiver
+Bus = s15
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s15-l1v24]
+Type = Receiver
+Bus = s15
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s15-l1v25]
+Type = Receiver
+Bus = s15
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s15-l1v26]
+Type = Receiver
+Bus = s15
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s15-l1v27]
+Type = Receiver
+Bus = s15
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s15-l1v28]
+Type = Receiver
+Bus = s15
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s15-l1v29]
+Type = Receiver
+Bus = s15
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s15-l1v30]
+Type = Receiver
+Bus = s15
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s15-l1v31]
+Type = Receiver
+Bus = s15
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s15-l1s0]
+Type = Receiver
+Bus = s15
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s15-l1s1]
+Type = Receiver
+Bus = s15
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s15-l1s2]
+Type = Receiver
+Bus = s15
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s15-l1s3]
+Type = Receiver
+Bus = s15
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s15-l1s4]
+Type = Receiver
+Bus = s15
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s15-l1s5]
+Type = Receiver
+Bus = s15
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s15-l1s6]
+Type = Receiver
+Bus = s15
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s15-l1s7]
+Type = Receiver
+Bus = s15
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s15-l2n0]
+Type = Receiver
+Bus = s15
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s15-l2n1]
+Type = Receiver
+Bus = s15
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s15-l2n2]
+Type = Receiver
+Bus = s15
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s15-l2n3]
+Type = Receiver
+Bus = s15
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s15-l2n4]
+Type = Receiver
+Bus = s15
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s15-l2n5]
+Type = Receiver
+Bus = s15
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s16-l1v0]
+Type = Receiver
+Bus = s16
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s16-l1v1]
+Type = Receiver
+Bus = s16
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s16-l1v2]
+Type = Receiver
+Bus = s16
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s16-l1v3]
+Type = Receiver
+Bus = s16
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s16-l1v4]
+Type = Receiver
+Bus = s16
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s16-l1v5]
+Type = Receiver
+Bus = s16
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s16-l1v6]
+Type = Receiver
+Bus = s16
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s16-l1v7]
+Type = Receiver
+Bus = s16
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s16-l1v8]
+Type = Receiver
+Bus = s16
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s16-l1v9]
+Type = Receiver
+Bus = s16
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s16-l1v10]
+Type = Receiver
+Bus = s16
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s16-l1v11]
+Type = Receiver
+Bus = s16
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s16-l1v12]
+Type = Receiver
+Bus = s16
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s16-l1v13]
+Type = Receiver
+Bus = s16
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s16-l1v14]
+Type = Receiver
+Bus = s16
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s16-l1v15]
+Type = Receiver
+Bus = s16
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.l1v16-s16]
+Type = Sender
+Node = l1v16
+Bus = s16
+
+[Network.si-net-l1-l2.BusPort.s16-l1v17]
+Type = Receiver
+Bus = s16
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s16-l1v18]
+Type = Receiver
+Bus = s16
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s16-l1v19]
+Type = Receiver
+Bus = s16
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s16-l1v20]
+Type = Receiver
+Bus = s16
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s16-l1v21]
+Type = Receiver
+Bus = s16
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s16-l1v22]
+Type = Receiver
+Bus = s16
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s16-l1v23]
+Type = Receiver
+Bus = s16
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s16-l1v24]
+Type = Receiver
+Bus = s16
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s16-l1v25]
+Type = Receiver
+Bus = s16
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s16-l1v26]
+Type = Receiver
+Bus = s16
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s16-l1v27]
+Type = Receiver
+Bus = s16
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s16-l1v28]
+Type = Receiver
+Bus = s16
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s16-l1v29]
+Type = Receiver
+Bus = s16
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s16-l1v30]
+Type = Receiver
+Bus = s16
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s16-l1v31]
+Type = Receiver
+Bus = s16
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s16-l1s0]
+Type = Receiver
+Bus = s16
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s16-l1s1]
+Type = Receiver
+Bus = s16
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s16-l1s2]
+Type = Receiver
+Bus = s16
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s16-l1s3]
+Type = Receiver
+Bus = s16
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s16-l1s4]
+Type = Receiver
+Bus = s16
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s16-l1s5]
+Type = Receiver
+Bus = s16
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s16-l1s6]
+Type = Receiver
+Bus = s16
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s16-l1s7]
+Type = Receiver
+Bus = s16
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s16-l2n0]
+Type = Receiver
+Bus = s16
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s16-l2n1]
+Type = Receiver
+Bus = s16
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s16-l2n2]
+Type = Receiver
+Bus = s16
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s16-l2n3]
+Type = Receiver
+Bus = s16
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s16-l2n4]
+Type = Receiver
+Bus = s16
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s16-l2n5]
+Type = Receiver
+Bus = s16
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s17-l1v0]
+Type = Receiver
+Bus = s17
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s17-l1v1]
+Type = Receiver
+Bus = s17
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s17-l1v2]
+Type = Receiver
+Bus = s17
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s17-l1v3]
+Type = Receiver
+Bus = s17
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s17-l1v4]
+Type = Receiver
+Bus = s17
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s17-l1v5]
+Type = Receiver
+Bus = s17
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s17-l1v6]
+Type = Receiver
+Bus = s17
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s17-l1v7]
+Type = Receiver
+Bus = s17
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s17-l1v8]
+Type = Receiver
+Bus = s17
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s17-l1v9]
+Type = Receiver
+Bus = s17
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s17-l1v10]
+Type = Receiver
+Bus = s17
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s17-l1v11]
+Type = Receiver
+Bus = s17
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s17-l1v12]
+Type = Receiver
+Bus = s17
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s17-l1v13]
+Type = Receiver
+Bus = s17
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s17-l1v14]
+Type = Receiver
+Bus = s17
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s17-l1v15]
+Type = Receiver
+Bus = s17
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s17-l1v16]
+Type = Receiver
+Bus = s17
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.l1v17-s17]
+Type = Sender
+Node = l1v17
+Bus = s17
+
+[Network.si-net-l1-l2.BusPort.s17-l1v18]
+Type = Receiver
+Bus = s17
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s17-l1v19]
+Type = Receiver
+Bus = s17
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s17-l1v20]
+Type = Receiver
+Bus = s17
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s17-l1v21]
+Type = Receiver
+Bus = s17
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s17-l1v22]
+Type = Receiver
+Bus = s17
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s17-l1v23]
+Type = Receiver
+Bus = s17
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s17-l1v24]
+Type = Receiver
+Bus = s17
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s17-l1v25]
+Type = Receiver
+Bus = s17
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s17-l1v26]
+Type = Receiver
+Bus = s17
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s17-l1v27]
+Type = Receiver
+Bus = s17
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s17-l1v28]
+Type = Receiver
+Bus = s17
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s17-l1v29]
+Type = Receiver
+Bus = s17
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s17-l1v30]
+Type = Receiver
+Bus = s17
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s17-l1v31]
+Type = Receiver
+Bus = s17
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s17-l1s0]
+Type = Receiver
+Bus = s17
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s17-l1s1]
+Type = Receiver
+Bus = s17
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s17-l1s2]
+Type = Receiver
+Bus = s17
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s17-l1s3]
+Type = Receiver
+Bus = s17
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s17-l1s4]
+Type = Receiver
+Bus = s17
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s17-l1s5]
+Type = Receiver
+Bus = s17
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s17-l1s6]
+Type = Receiver
+Bus = s17
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s17-l1s7]
+Type = Receiver
+Bus = s17
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s17-l2n0]
+Type = Receiver
+Bus = s17
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s17-l2n1]
+Type = Receiver
+Bus = s17
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s17-l2n2]
+Type = Receiver
+Bus = s17
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s17-l2n3]
+Type = Receiver
+Bus = s17
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s17-l2n4]
+Type = Receiver
+Bus = s17
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s17-l2n5]
+Type = Receiver
+Bus = s17
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s18-l1v0]
+Type = Receiver
+Bus = s18
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s18-l1v1]
+Type = Receiver
+Bus = s18
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s18-l1v2]
+Type = Receiver
+Bus = s18
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s18-l1v3]
+Type = Receiver
+Bus = s18
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s18-l1v4]
+Type = Receiver
+Bus = s18
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s18-l1v5]
+Type = Receiver
+Bus = s18
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s18-l1v6]
+Type = Receiver
+Bus = s18
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s18-l1v7]
+Type = Receiver
+Bus = s18
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s18-l1v8]
+Type = Receiver
+Bus = s18
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s18-l1v9]
+Type = Receiver
+Bus = s18
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s18-l1v10]
+Type = Receiver
+Bus = s18
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s18-l1v11]
+Type = Receiver
+Bus = s18
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s18-l1v12]
+Type = Receiver
+Bus = s18
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s18-l1v13]
+Type = Receiver
+Bus = s18
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s18-l1v14]
+Type = Receiver
+Bus = s18
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s18-l1v15]
+Type = Receiver
+Bus = s18
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s18-l1v16]
+Type = Receiver
+Bus = s18
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s18-l1v17]
+Type = Receiver
+Bus = s18
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.l1v18-s18]
+Type = Sender
+Node = l1v18
+Bus = s18
+
+[Network.si-net-l1-l2.BusPort.s18-l1v19]
+Type = Receiver
+Bus = s18
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s18-l1v20]
+Type = Receiver
+Bus = s18
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s18-l1v21]
+Type = Receiver
+Bus = s18
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s18-l1v22]
+Type = Receiver
+Bus = s18
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s18-l1v23]
+Type = Receiver
+Bus = s18
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s18-l1v24]
+Type = Receiver
+Bus = s18
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s18-l1v25]
+Type = Receiver
+Bus = s18
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s18-l1v26]
+Type = Receiver
+Bus = s18
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s18-l1v27]
+Type = Receiver
+Bus = s18
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s18-l1v28]
+Type = Receiver
+Bus = s18
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s18-l1v29]
+Type = Receiver
+Bus = s18
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s18-l1v30]
+Type = Receiver
+Bus = s18
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s18-l1v31]
+Type = Receiver
+Bus = s18
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s18-l1s0]
+Type = Receiver
+Bus = s18
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s18-l1s1]
+Type = Receiver
+Bus = s18
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s18-l1s2]
+Type = Receiver
+Bus = s18
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s18-l1s3]
+Type = Receiver
+Bus = s18
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s18-l1s4]
+Type = Receiver
+Bus = s18
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s18-l1s5]
+Type = Receiver
+Bus = s18
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s18-l1s6]
+Type = Receiver
+Bus = s18
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s18-l1s7]
+Type = Receiver
+Bus = s18
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s18-l2n0]
+Type = Receiver
+Bus = s18
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s18-l2n1]
+Type = Receiver
+Bus = s18
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s18-l2n2]
+Type = Receiver
+Bus = s18
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s18-l2n3]
+Type = Receiver
+Bus = s18
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s18-l2n4]
+Type = Receiver
+Bus = s18
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s18-l2n5]
+Type = Receiver
+Bus = s18
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s19-l1v0]
+Type = Receiver
+Bus = s19
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s19-l1v1]
+Type = Receiver
+Bus = s19
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s19-l1v2]
+Type = Receiver
+Bus = s19
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s19-l1v3]
+Type = Receiver
+Bus = s19
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s19-l1v4]
+Type = Receiver
+Bus = s19
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s19-l1v5]
+Type = Receiver
+Bus = s19
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s19-l1v6]
+Type = Receiver
+Bus = s19
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s19-l1v7]
+Type = Receiver
+Bus = s19
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s19-l1v8]
+Type = Receiver
+Bus = s19
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s19-l1v9]
+Type = Receiver
+Bus = s19
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s19-l1v10]
+Type = Receiver
+Bus = s19
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s19-l1v11]
+Type = Receiver
+Bus = s19
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s19-l1v12]
+Type = Receiver
+Bus = s19
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s19-l1v13]
+Type = Receiver
+Bus = s19
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s19-l1v14]
+Type = Receiver
+Bus = s19
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s19-l1v15]
+Type = Receiver
+Bus = s19
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s19-l1v16]
+Type = Receiver
+Bus = s19
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s19-l1v17]
+Type = Receiver
+Bus = s19
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s19-l1v18]
+Type = Receiver
+Bus = s19
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.l1v19-s19]
+Type = Sender
+Node = l1v19
+Bus = s19
+
+[Network.si-net-l1-l2.BusPort.s19-l1v20]
+Type = Receiver
+Bus = s19
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s19-l1v21]
+Type = Receiver
+Bus = s19
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s19-l1v22]
+Type = Receiver
+Bus = s19
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s19-l1v23]
+Type = Receiver
+Bus = s19
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s19-l1v24]
+Type = Receiver
+Bus = s19
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s19-l1v25]
+Type = Receiver
+Bus = s19
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s19-l1v26]
+Type = Receiver
+Bus = s19
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s19-l1v27]
+Type = Receiver
+Bus = s19
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s19-l1v28]
+Type = Receiver
+Bus = s19
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s19-l1v29]
+Type = Receiver
+Bus = s19
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s19-l1v30]
+Type = Receiver
+Bus = s19
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s19-l1v31]
+Type = Receiver
+Bus = s19
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s19-l1s0]
+Type = Receiver
+Bus = s19
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s19-l1s1]
+Type = Receiver
+Bus = s19
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s19-l1s2]
+Type = Receiver
+Bus = s19
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s19-l1s3]
+Type = Receiver
+Bus = s19
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s19-l1s4]
+Type = Receiver
+Bus = s19
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s19-l1s5]
+Type = Receiver
+Bus = s19
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s19-l1s6]
+Type = Receiver
+Bus = s19
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s19-l1s7]
+Type = Receiver
+Bus = s19
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s19-l2n0]
+Type = Receiver
+Bus = s19
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s19-l2n1]
+Type = Receiver
+Bus = s19
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s19-l2n2]
+Type = Receiver
+Bus = s19
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s19-l2n3]
+Type = Receiver
+Bus = s19
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s19-l2n4]
+Type = Receiver
+Bus = s19
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s19-l2n5]
+Type = Receiver
+Bus = s19
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s20-l1v0]
+Type = Receiver
+Bus = s20
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s20-l1v1]
+Type = Receiver
+Bus = s20
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s20-l1v2]
+Type = Receiver
+Bus = s20
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s20-l1v3]
+Type = Receiver
+Bus = s20
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s20-l1v4]
+Type = Receiver
+Bus = s20
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s20-l1v5]
+Type = Receiver
+Bus = s20
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s20-l1v6]
+Type = Receiver
+Bus = s20
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s20-l1v7]
+Type = Receiver
+Bus = s20
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s20-l1v8]
+Type = Receiver
+Bus = s20
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s20-l1v9]
+Type = Receiver
+Bus = s20
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s20-l1v10]
+Type = Receiver
+Bus = s20
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s20-l1v11]
+Type = Receiver
+Bus = s20
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s20-l1v12]
+Type = Receiver
+Bus = s20
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s20-l1v13]
+Type = Receiver
+Bus = s20
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s20-l1v14]
+Type = Receiver
+Bus = s20
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s20-l1v15]
+Type = Receiver
+Bus = s20
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s20-l1v16]
+Type = Receiver
+Bus = s20
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s20-l1v17]
+Type = Receiver
+Bus = s20
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s20-l1v18]
+Type = Receiver
+Bus = s20
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s20-l1v19]
+Type = Receiver
+Bus = s20
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.l1v20-s20]
+Type = Sender
+Node = l1v20
+Bus = s20
+
+[Network.si-net-l1-l2.BusPort.s20-l1v21]
+Type = Receiver
+Bus = s20
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s20-l1v22]
+Type = Receiver
+Bus = s20
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s20-l1v23]
+Type = Receiver
+Bus = s20
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s20-l1v24]
+Type = Receiver
+Bus = s20
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s20-l1v25]
+Type = Receiver
+Bus = s20
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s20-l1v26]
+Type = Receiver
+Bus = s20
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s20-l1v27]
+Type = Receiver
+Bus = s20
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s20-l1v28]
+Type = Receiver
+Bus = s20
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s20-l1v29]
+Type = Receiver
+Bus = s20
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s20-l1v30]
+Type = Receiver
+Bus = s20
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s20-l1v31]
+Type = Receiver
+Bus = s20
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s20-l1s0]
+Type = Receiver
+Bus = s20
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s20-l1s1]
+Type = Receiver
+Bus = s20
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s20-l1s2]
+Type = Receiver
+Bus = s20
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s20-l1s3]
+Type = Receiver
+Bus = s20
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s20-l1s4]
+Type = Receiver
+Bus = s20
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s20-l1s5]
+Type = Receiver
+Bus = s20
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s20-l1s6]
+Type = Receiver
+Bus = s20
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s20-l1s7]
+Type = Receiver
+Bus = s20
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s20-l2n0]
+Type = Receiver
+Bus = s20
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s20-l2n1]
+Type = Receiver
+Bus = s20
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s20-l2n2]
+Type = Receiver
+Bus = s20
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s20-l2n3]
+Type = Receiver
+Bus = s20
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s20-l2n4]
+Type = Receiver
+Bus = s20
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s20-l2n5]
+Type = Receiver
+Bus = s20
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s21-l1v0]
+Type = Receiver
+Bus = s21
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s21-l1v1]
+Type = Receiver
+Bus = s21
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s21-l1v2]
+Type = Receiver
+Bus = s21
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s21-l1v3]
+Type = Receiver
+Bus = s21
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s21-l1v4]
+Type = Receiver
+Bus = s21
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s21-l1v5]
+Type = Receiver
+Bus = s21
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s21-l1v6]
+Type = Receiver
+Bus = s21
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s21-l1v7]
+Type = Receiver
+Bus = s21
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s21-l1v8]
+Type = Receiver
+Bus = s21
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s21-l1v9]
+Type = Receiver
+Bus = s21
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s21-l1v10]
+Type = Receiver
+Bus = s21
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s21-l1v11]
+Type = Receiver
+Bus = s21
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s21-l1v12]
+Type = Receiver
+Bus = s21
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s21-l1v13]
+Type = Receiver
+Bus = s21
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s21-l1v14]
+Type = Receiver
+Bus = s21
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s21-l1v15]
+Type = Receiver
+Bus = s21
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s21-l1v16]
+Type = Receiver
+Bus = s21
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s21-l1v17]
+Type = Receiver
+Bus = s21
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s21-l1v18]
+Type = Receiver
+Bus = s21
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s21-l1v19]
+Type = Receiver
+Bus = s21
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s21-l1v20]
+Type = Receiver
+Bus = s21
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.l1v21-s21]
+Type = Sender
+Node = l1v21
+Bus = s21
+
+[Network.si-net-l1-l2.BusPort.s21-l1v22]
+Type = Receiver
+Bus = s21
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s21-l1v23]
+Type = Receiver
+Bus = s21
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s21-l1v24]
+Type = Receiver
+Bus = s21
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s21-l1v25]
+Type = Receiver
+Bus = s21
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s21-l1v26]
+Type = Receiver
+Bus = s21
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s21-l1v27]
+Type = Receiver
+Bus = s21
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s21-l1v28]
+Type = Receiver
+Bus = s21
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s21-l1v29]
+Type = Receiver
+Bus = s21
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s21-l1v30]
+Type = Receiver
+Bus = s21
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s21-l1v31]
+Type = Receiver
+Bus = s21
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s21-l1s0]
+Type = Receiver
+Bus = s21
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s21-l1s1]
+Type = Receiver
+Bus = s21
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s21-l1s2]
+Type = Receiver
+Bus = s21
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s21-l1s3]
+Type = Receiver
+Bus = s21
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s21-l1s4]
+Type = Receiver
+Bus = s21
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s21-l1s5]
+Type = Receiver
+Bus = s21
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s21-l1s6]
+Type = Receiver
+Bus = s21
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s21-l1s7]
+Type = Receiver
+Bus = s21
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s21-l2n0]
+Type = Receiver
+Bus = s21
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s21-l2n1]
+Type = Receiver
+Bus = s21
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s21-l2n2]
+Type = Receiver
+Bus = s21
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s21-l2n3]
+Type = Receiver
+Bus = s21
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s21-l2n4]
+Type = Receiver
+Bus = s21
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s21-l2n5]
+Type = Receiver
+Bus = s21
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s22-l1v0]
+Type = Receiver
+Bus = s22
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s22-l1v1]
+Type = Receiver
+Bus = s22
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s22-l1v2]
+Type = Receiver
+Bus = s22
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s22-l1v3]
+Type = Receiver
+Bus = s22
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s22-l1v4]
+Type = Receiver
+Bus = s22
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s22-l1v5]
+Type = Receiver
+Bus = s22
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s22-l1v6]
+Type = Receiver
+Bus = s22
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s22-l1v7]
+Type = Receiver
+Bus = s22
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s22-l1v8]
+Type = Receiver
+Bus = s22
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s22-l1v9]
+Type = Receiver
+Bus = s22
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s22-l1v10]
+Type = Receiver
+Bus = s22
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s22-l1v11]
+Type = Receiver
+Bus = s22
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s22-l1v12]
+Type = Receiver
+Bus = s22
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s22-l1v13]
+Type = Receiver
+Bus = s22
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s22-l1v14]
+Type = Receiver
+Bus = s22
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s22-l1v15]
+Type = Receiver
+Bus = s22
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s22-l1v16]
+Type = Receiver
+Bus = s22
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s22-l1v17]
+Type = Receiver
+Bus = s22
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s22-l1v18]
+Type = Receiver
+Bus = s22
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s22-l1v19]
+Type = Receiver
+Bus = s22
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s22-l1v20]
+Type = Receiver
+Bus = s22
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s22-l1v21]
+Type = Receiver
+Bus = s22
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.l1v22-s22]
+Type = Sender
+Node = l1v22
+Bus = s22
+
+[Network.si-net-l1-l2.BusPort.s22-l1v23]
+Type = Receiver
+Bus = s22
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s22-l1v24]
+Type = Receiver
+Bus = s22
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s22-l1v25]
+Type = Receiver
+Bus = s22
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s22-l1v26]
+Type = Receiver
+Bus = s22
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s22-l1v27]
+Type = Receiver
+Bus = s22
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s22-l1v28]
+Type = Receiver
+Bus = s22
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s22-l1v29]
+Type = Receiver
+Bus = s22
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s22-l1v30]
+Type = Receiver
+Bus = s22
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s22-l1v31]
+Type = Receiver
+Bus = s22
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s22-l1s0]
+Type = Receiver
+Bus = s22
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s22-l1s1]
+Type = Receiver
+Bus = s22
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s22-l1s2]
+Type = Receiver
+Bus = s22
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s22-l1s3]
+Type = Receiver
+Bus = s22
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s22-l1s4]
+Type = Receiver
+Bus = s22
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s22-l1s5]
+Type = Receiver
+Bus = s22
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s22-l1s6]
+Type = Receiver
+Bus = s22
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s22-l1s7]
+Type = Receiver
+Bus = s22
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s22-l2n0]
+Type = Receiver
+Bus = s22
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s22-l2n1]
+Type = Receiver
+Bus = s22
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s22-l2n2]
+Type = Receiver
+Bus = s22
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s22-l2n3]
+Type = Receiver
+Bus = s22
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s22-l2n4]
+Type = Receiver
+Bus = s22
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s22-l2n5]
+Type = Receiver
+Bus = s22
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s23-l1v0]
+Type = Receiver
+Bus = s23
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s23-l1v1]
+Type = Receiver
+Bus = s23
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s23-l1v2]
+Type = Receiver
+Bus = s23
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s23-l1v3]
+Type = Receiver
+Bus = s23
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s23-l1v4]
+Type = Receiver
+Bus = s23
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s23-l1v5]
+Type = Receiver
+Bus = s23
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s23-l1v6]
+Type = Receiver
+Bus = s23
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s23-l1v7]
+Type = Receiver
+Bus = s23
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s23-l1v8]
+Type = Receiver
+Bus = s23
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s23-l1v9]
+Type = Receiver
+Bus = s23
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s23-l1v10]
+Type = Receiver
+Bus = s23
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s23-l1v11]
+Type = Receiver
+Bus = s23
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s23-l1v12]
+Type = Receiver
+Bus = s23
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s23-l1v13]
+Type = Receiver
+Bus = s23
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s23-l1v14]
+Type = Receiver
+Bus = s23
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s23-l1v15]
+Type = Receiver
+Bus = s23
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s23-l1v16]
+Type = Receiver
+Bus = s23
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s23-l1v17]
+Type = Receiver
+Bus = s23
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s23-l1v18]
+Type = Receiver
+Bus = s23
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s23-l1v19]
+Type = Receiver
+Bus = s23
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s23-l1v20]
+Type = Receiver
+Bus = s23
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s23-l1v21]
+Type = Receiver
+Bus = s23
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s23-l1v22]
+Type = Receiver
+Bus = s23
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.l1v23-s23]
+Type = Sender
+Node = l1v23
+Bus = s23
+
+[Network.si-net-l1-l2.BusPort.s23-l1v24]
+Type = Receiver
+Bus = s23
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s23-l1v25]
+Type = Receiver
+Bus = s23
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s23-l1v26]
+Type = Receiver
+Bus = s23
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s23-l1v27]
+Type = Receiver
+Bus = s23
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s23-l1v28]
+Type = Receiver
+Bus = s23
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s23-l1v29]
+Type = Receiver
+Bus = s23
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s23-l1v30]
+Type = Receiver
+Bus = s23
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s23-l1v31]
+Type = Receiver
+Bus = s23
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s23-l1s0]
+Type = Receiver
+Bus = s23
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s23-l1s1]
+Type = Receiver
+Bus = s23
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s23-l1s2]
+Type = Receiver
+Bus = s23
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s23-l1s3]
+Type = Receiver
+Bus = s23
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s23-l1s4]
+Type = Receiver
+Bus = s23
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s23-l1s5]
+Type = Receiver
+Bus = s23
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s23-l1s6]
+Type = Receiver
+Bus = s23
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s23-l1s7]
+Type = Receiver
+Bus = s23
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s23-l2n0]
+Type = Receiver
+Bus = s23
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s23-l2n1]
+Type = Receiver
+Bus = s23
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s23-l2n2]
+Type = Receiver
+Bus = s23
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s23-l2n3]
+Type = Receiver
+Bus = s23
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s23-l2n4]
+Type = Receiver
+Bus = s23
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s23-l2n5]
+Type = Receiver
+Bus = s23
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s24-l1v0]
+Type = Receiver
+Bus = s24
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s24-l1v1]
+Type = Receiver
+Bus = s24
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s24-l1v2]
+Type = Receiver
+Bus = s24
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s24-l1v3]
+Type = Receiver
+Bus = s24
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s24-l1v4]
+Type = Receiver
+Bus = s24
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s24-l1v5]
+Type = Receiver
+Bus = s24
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s24-l1v6]
+Type = Receiver
+Bus = s24
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s24-l1v7]
+Type = Receiver
+Bus = s24
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s24-l1v8]
+Type = Receiver
+Bus = s24
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s24-l1v9]
+Type = Receiver
+Bus = s24
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s24-l1v10]
+Type = Receiver
+Bus = s24
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s24-l1v11]
+Type = Receiver
+Bus = s24
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s24-l1v12]
+Type = Receiver
+Bus = s24
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s24-l1v13]
+Type = Receiver
+Bus = s24
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s24-l1v14]
+Type = Receiver
+Bus = s24
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s24-l1v15]
+Type = Receiver
+Bus = s24
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s24-l1v16]
+Type = Receiver
+Bus = s24
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s24-l1v17]
+Type = Receiver
+Bus = s24
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s24-l1v18]
+Type = Receiver
+Bus = s24
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s24-l1v19]
+Type = Receiver
+Bus = s24
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s24-l1v20]
+Type = Receiver
+Bus = s24
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s24-l1v21]
+Type = Receiver
+Bus = s24
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s24-l1v22]
+Type = Receiver
+Bus = s24
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s24-l1v23]
+Type = Receiver
+Bus = s24
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.l1v24-s24]
+Type = Sender
+Node = l1v24
+Bus = s24
+
+[Network.si-net-l1-l2.BusPort.s24-l1v25]
+Type = Receiver
+Bus = s24
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s24-l1v26]
+Type = Receiver
+Bus = s24
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s24-l1v27]
+Type = Receiver
+Bus = s24
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s24-l1v28]
+Type = Receiver
+Bus = s24
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s24-l1v29]
+Type = Receiver
+Bus = s24
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s24-l1v30]
+Type = Receiver
+Bus = s24
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s24-l1v31]
+Type = Receiver
+Bus = s24
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s24-l1s0]
+Type = Receiver
+Bus = s24
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s24-l1s1]
+Type = Receiver
+Bus = s24
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s24-l1s2]
+Type = Receiver
+Bus = s24
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s24-l1s3]
+Type = Receiver
+Bus = s24
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s24-l1s4]
+Type = Receiver
+Bus = s24
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s24-l1s5]
+Type = Receiver
+Bus = s24
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s24-l1s6]
+Type = Receiver
+Bus = s24
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s24-l1s7]
+Type = Receiver
+Bus = s24
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s24-l2n0]
+Type = Receiver
+Bus = s24
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s24-l2n1]
+Type = Receiver
+Bus = s24
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s24-l2n2]
+Type = Receiver
+Bus = s24
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s24-l2n3]
+Type = Receiver
+Bus = s24
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s24-l2n4]
+Type = Receiver
+Bus = s24
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s24-l2n5]
+Type = Receiver
+Bus = s24
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s25-l1v0]
+Type = Receiver
+Bus = s25
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s25-l1v1]
+Type = Receiver
+Bus = s25
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s25-l1v2]
+Type = Receiver
+Bus = s25
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s25-l1v3]
+Type = Receiver
+Bus = s25
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s25-l1v4]
+Type = Receiver
+Bus = s25
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s25-l1v5]
+Type = Receiver
+Bus = s25
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s25-l1v6]
+Type = Receiver
+Bus = s25
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s25-l1v7]
+Type = Receiver
+Bus = s25
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s25-l1v8]
+Type = Receiver
+Bus = s25
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s25-l1v9]
+Type = Receiver
+Bus = s25
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s25-l1v10]
+Type = Receiver
+Bus = s25
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s25-l1v11]
+Type = Receiver
+Bus = s25
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s25-l1v12]
+Type = Receiver
+Bus = s25
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s25-l1v13]
+Type = Receiver
+Bus = s25
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s25-l1v14]
+Type = Receiver
+Bus = s25
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s25-l1v15]
+Type = Receiver
+Bus = s25
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s25-l1v16]
+Type = Receiver
+Bus = s25
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s25-l1v17]
+Type = Receiver
+Bus = s25
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s25-l1v18]
+Type = Receiver
+Bus = s25
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s25-l1v19]
+Type = Receiver
+Bus = s25
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s25-l1v20]
+Type = Receiver
+Bus = s25
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s25-l1v21]
+Type = Receiver
+Bus = s25
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s25-l1v22]
+Type = Receiver
+Bus = s25
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s25-l1v23]
+Type = Receiver
+Bus = s25
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s25-l1v24]
+Type = Receiver
+Bus = s25
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.l1v25-s25]
+Type = Sender
+Node = l1v25
+Bus = s25
+
+[Network.si-net-l1-l2.BusPort.s25-l1v26]
+Type = Receiver
+Bus = s25
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s25-l1v27]
+Type = Receiver
+Bus = s25
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s25-l1v28]
+Type = Receiver
+Bus = s25
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s25-l1v29]
+Type = Receiver
+Bus = s25
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s25-l1v30]
+Type = Receiver
+Bus = s25
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s25-l1v31]
+Type = Receiver
+Bus = s25
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s25-l1s0]
+Type = Receiver
+Bus = s25
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s25-l1s1]
+Type = Receiver
+Bus = s25
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s25-l1s2]
+Type = Receiver
+Bus = s25
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s25-l1s3]
+Type = Receiver
+Bus = s25
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s25-l1s4]
+Type = Receiver
+Bus = s25
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s25-l1s5]
+Type = Receiver
+Bus = s25
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s25-l1s6]
+Type = Receiver
+Bus = s25
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s25-l1s7]
+Type = Receiver
+Bus = s25
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s25-l2n0]
+Type = Receiver
+Bus = s25
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s25-l2n1]
+Type = Receiver
+Bus = s25
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s25-l2n2]
+Type = Receiver
+Bus = s25
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s25-l2n3]
+Type = Receiver
+Bus = s25
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s25-l2n4]
+Type = Receiver
+Bus = s25
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s25-l2n5]
+Type = Receiver
+Bus = s25
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s26-l1v0]
+Type = Receiver
+Bus = s26
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s26-l1v1]
+Type = Receiver
+Bus = s26
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s26-l1v2]
+Type = Receiver
+Bus = s26
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s26-l1v3]
+Type = Receiver
+Bus = s26
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s26-l1v4]
+Type = Receiver
+Bus = s26
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s26-l1v5]
+Type = Receiver
+Bus = s26
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s26-l1v6]
+Type = Receiver
+Bus = s26
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s26-l1v7]
+Type = Receiver
+Bus = s26
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s26-l1v8]
+Type = Receiver
+Bus = s26
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s26-l1v9]
+Type = Receiver
+Bus = s26
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s26-l1v10]
+Type = Receiver
+Bus = s26
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s26-l1v11]
+Type = Receiver
+Bus = s26
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s26-l1v12]
+Type = Receiver
+Bus = s26
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s26-l1v13]
+Type = Receiver
+Bus = s26
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s26-l1v14]
+Type = Receiver
+Bus = s26
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s26-l1v15]
+Type = Receiver
+Bus = s26
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s26-l1v16]
+Type = Receiver
+Bus = s26
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s26-l1v17]
+Type = Receiver
+Bus = s26
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s26-l1v18]
+Type = Receiver
+Bus = s26
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s26-l1v19]
+Type = Receiver
+Bus = s26
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s26-l1v20]
+Type = Receiver
+Bus = s26
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s26-l1v21]
+Type = Receiver
+Bus = s26
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s26-l1v22]
+Type = Receiver
+Bus = s26
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s26-l1v23]
+Type = Receiver
+Bus = s26
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s26-l1v24]
+Type = Receiver
+Bus = s26
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s26-l1v25]
+Type = Receiver
+Bus = s26
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.l1v26-s26]
+Type = Sender
+Node = l1v26
+Bus = s26
+
+[Network.si-net-l1-l2.BusPort.s26-l1v27]
+Type = Receiver
+Bus = s26
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s26-l1v28]
+Type = Receiver
+Bus = s26
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s26-l1v29]
+Type = Receiver
+Bus = s26
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s26-l1v30]
+Type = Receiver
+Bus = s26
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s26-l1v31]
+Type = Receiver
+Bus = s26
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s26-l1s0]
+Type = Receiver
+Bus = s26
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s26-l1s1]
+Type = Receiver
+Bus = s26
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s26-l1s2]
+Type = Receiver
+Bus = s26
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s26-l1s3]
+Type = Receiver
+Bus = s26
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s26-l1s4]
+Type = Receiver
+Bus = s26
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s26-l1s5]
+Type = Receiver
+Bus = s26
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s26-l1s6]
+Type = Receiver
+Bus = s26
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s26-l1s7]
+Type = Receiver
+Bus = s26
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s26-l2n0]
+Type = Receiver
+Bus = s26
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s26-l2n1]
+Type = Receiver
+Bus = s26
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s26-l2n2]
+Type = Receiver
+Bus = s26
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s26-l2n3]
+Type = Receiver
+Bus = s26
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s26-l2n4]
+Type = Receiver
+Bus = s26
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s26-l2n5]
+Type = Receiver
+Bus = s26
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s27-l1v0]
+Type = Receiver
+Bus = s27
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s27-l1v1]
+Type = Receiver
+Bus = s27
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s27-l1v2]
+Type = Receiver
+Bus = s27
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s27-l1v3]
+Type = Receiver
+Bus = s27
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s27-l1v4]
+Type = Receiver
+Bus = s27
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s27-l1v5]
+Type = Receiver
+Bus = s27
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s27-l1v6]
+Type = Receiver
+Bus = s27
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s27-l1v7]
+Type = Receiver
+Bus = s27
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s27-l1v8]
+Type = Receiver
+Bus = s27
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s27-l1v9]
+Type = Receiver
+Bus = s27
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s27-l1v10]
+Type = Receiver
+Bus = s27
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s27-l1v11]
+Type = Receiver
+Bus = s27
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s27-l1v12]
+Type = Receiver
+Bus = s27
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s27-l1v13]
+Type = Receiver
+Bus = s27
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s27-l1v14]
+Type = Receiver
+Bus = s27
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s27-l1v15]
+Type = Receiver
+Bus = s27
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s27-l1v16]
+Type = Receiver
+Bus = s27
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s27-l1v17]
+Type = Receiver
+Bus = s27
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s27-l1v18]
+Type = Receiver
+Bus = s27
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s27-l1v19]
+Type = Receiver
+Bus = s27
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s27-l1v20]
+Type = Receiver
+Bus = s27
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s27-l1v21]
+Type = Receiver
+Bus = s27
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s27-l1v22]
+Type = Receiver
+Bus = s27
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s27-l1v23]
+Type = Receiver
+Bus = s27
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s27-l1v24]
+Type = Receiver
+Bus = s27
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s27-l1v25]
+Type = Receiver
+Bus = s27
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s27-l1v26]
+Type = Receiver
+Bus = s27
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.l1v27-s27]
+Type = Sender
+Node = l1v27
+Bus = s27
+
+[Network.si-net-l1-l2.BusPort.s27-l1v28]
+Type = Receiver
+Bus = s27
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s27-l1v29]
+Type = Receiver
+Bus = s27
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s27-l1v30]
+Type = Receiver
+Bus = s27
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s27-l1v31]
+Type = Receiver
+Bus = s27
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s27-l1s0]
+Type = Receiver
+Bus = s27
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s27-l1s1]
+Type = Receiver
+Bus = s27
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s27-l1s2]
+Type = Receiver
+Bus = s27
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s27-l1s3]
+Type = Receiver
+Bus = s27
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s27-l1s4]
+Type = Receiver
+Bus = s27
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s27-l1s5]
+Type = Receiver
+Bus = s27
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s27-l1s6]
+Type = Receiver
+Bus = s27
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s27-l1s7]
+Type = Receiver
+Bus = s27
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s27-l2n0]
+Type = Receiver
+Bus = s27
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s27-l2n1]
+Type = Receiver
+Bus = s27
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s27-l2n2]
+Type = Receiver
+Bus = s27
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s27-l2n3]
+Type = Receiver
+Bus = s27
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s27-l2n4]
+Type = Receiver
+Bus = s27
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s27-l2n5]
+Type = Receiver
+Bus = s27
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s28-l1v0]
+Type = Receiver
+Bus = s28
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s28-l1v1]
+Type = Receiver
+Bus = s28
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s28-l1v2]
+Type = Receiver
+Bus = s28
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s28-l1v3]
+Type = Receiver
+Bus = s28
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s28-l1v4]
+Type = Receiver
+Bus = s28
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s28-l1v5]
+Type = Receiver
+Bus = s28
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s28-l1v6]
+Type = Receiver
+Bus = s28
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s28-l1v7]
+Type = Receiver
+Bus = s28
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s28-l1v8]
+Type = Receiver
+Bus = s28
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s28-l1v9]
+Type = Receiver
+Bus = s28
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s28-l1v10]
+Type = Receiver
+Bus = s28
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s28-l1v11]
+Type = Receiver
+Bus = s28
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s28-l1v12]
+Type = Receiver
+Bus = s28
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s28-l1v13]
+Type = Receiver
+Bus = s28
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s28-l1v14]
+Type = Receiver
+Bus = s28
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s28-l1v15]
+Type = Receiver
+Bus = s28
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s28-l1v16]
+Type = Receiver
+Bus = s28
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s28-l1v17]
+Type = Receiver
+Bus = s28
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s28-l1v18]
+Type = Receiver
+Bus = s28
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s28-l1v19]
+Type = Receiver
+Bus = s28
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s28-l1v20]
+Type = Receiver
+Bus = s28
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s28-l1v21]
+Type = Receiver
+Bus = s28
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s28-l1v22]
+Type = Receiver
+Bus = s28
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s28-l1v23]
+Type = Receiver
+Bus = s28
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s28-l1v24]
+Type = Receiver
+Bus = s28
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s28-l1v25]
+Type = Receiver
+Bus = s28
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s28-l1v26]
+Type = Receiver
+Bus = s28
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s28-l1v27]
+Type = Receiver
+Bus = s28
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.l1v28-s28]
+Type = Sender
+Node = l1v28
+Bus = s28
+
+[Network.si-net-l1-l2.BusPort.s28-l1v29]
+Type = Receiver
+Bus = s28
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s28-l1v30]
+Type = Receiver
+Bus = s28
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s28-l1v31]
+Type = Receiver
+Bus = s28
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s28-l1s0]
+Type = Receiver
+Bus = s28
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s28-l1s1]
+Type = Receiver
+Bus = s28
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s28-l1s2]
+Type = Receiver
+Bus = s28
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s28-l1s3]
+Type = Receiver
+Bus = s28
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s28-l1s4]
+Type = Receiver
+Bus = s28
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s28-l1s5]
+Type = Receiver
+Bus = s28
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s28-l1s6]
+Type = Receiver
+Bus = s28
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s28-l1s7]
+Type = Receiver
+Bus = s28
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s28-l2n0]
+Type = Receiver
+Bus = s28
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s28-l2n1]
+Type = Receiver
+Bus = s28
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s28-l2n2]
+Type = Receiver
+Bus = s28
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s28-l2n3]
+Type = Receiver
+Bus = s28
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s28-l2n4]
+Type = Receiver
+Bus = s28
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s28-l2n5]
+Type = Receiver
+Bus = s28
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s29-l1v0]
+Type = Receiver
+Bus = s29
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s29-l1v1]
+Type = Receiver
+Bus = s29
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s29-l1v2]
+Type = Receiver
+Bus = s29
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s29-l1v3]
+Type = Receiver
+Bus = s29
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s29-l1v4]
+Type = Receiver
+Bus = s29
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s29-l1v5]
+Type = Receiver
+Bus = s29
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s29-l1v6]
+Type = Receiver
+Bus = s29
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s29-l1v7]
+Type = Receiver
+Bus = s29
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s29-l1v8]
+Type = Receiver
+Bus = s29
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s29-l1v9]
+Type = Receiver
+Bus = s29
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s29-l1v10]
+Type = Receiver
+Bus = s29
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s29-l1v11]
+Type = Receiver
+Bus = s29
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s29-l1v12]
+Type = Receiver
+Bus = s29
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s29-l1v13]
+Type = Receiver
+Bus = s29
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s29-l1v14]
+Type = Receiver
+Bus = s29
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s29-l1v15]
+Type = Receiver
+Bus = s29
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s29-l1v16]
+Type = Receiver
+Bus = s29
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s29-l1v17]
+Type = Receiver
+Bus = s29
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s29-l1v18]
+Type = Receiver
+Bus = s29
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s29-l1v19]
+Type = Receiver
+Bus = s29
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s29-l1v20]
+Type = Receiver
+Bus = s29
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s29-l1v21]
+Type = Receiver
+Bus = s29
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s29-l1v22]
+Type = Receiver
+Bus = s29
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s29-l1v23]
+Type = Receiver
+Bus = s29
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s29-l1v24]
+Type = Receiver
+Bus = s29
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s29-l1v25]
+Type = Receiver
+Bus = s29
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s29-l1v26]
+Type = Receiver
+Bus = s29
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s29-l1v27]
+Type = Receiver
+Bus = s29
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s29-l1v28]
+Type = Receiver
+Bus = s29
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.l1v29-s29]
+Type = Sender
+Node = l1v29
+Bus = s29
+
+[Network.si-net-l1-l2.BusPort.s29-l1v30]
+Type = Receiver
+Bus = s29
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s29-l1v31]
+Type = Receiver
+Bus = s29
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s29-l1s0]
+Type = Receiver
+Bus = s29
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s29-l1s1]
+Type = Receiver
+Bus = s29
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s29-l1s2]
+Type = Receiver
+Bus = s29
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s29-l1s3]
+Type = Receiver
+Bus = s29
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s29-l1s4]
+Type = Receiver
+Bus = s29
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s29-l1s5]
+Type = Receiver
+Bus = s29
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s29-l1s6]
+Type = Receiver
+Bus = s29
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s29-l1s7]
+Type = Receiver
+Bus = s29
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s29-l2n0]
+Type = Receiver
+Bus = s29
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s29-l2n1]
+Type = Receiver
+Bus = s29
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s29-l2n2]
+Type = Receiver
+Bus = s29
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s29-l2n3]
+Type = Receiver
+Bus = s29
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s29-l2n4]
+Type = Receiver
+Bus = s29
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s29-l2n5]
+Type = Receiver
+Bus = s29
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s30-l1v0]
+Type = Receiver
+Bus = s30
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s30-l1v1]
+Type = Receiver
+Bus = s30
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s30-l1v2]
+Type = Receiver
+Bus = s30
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s30-l1v3]
+Type = Receiver
+Bus = s30
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s30-l1v4]
+Type = Receiver
+Bus = s30
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s30-l1v5]
+Type = Receiver
+Bus = s30
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s30-l1v6]
+Type = Receiver
+Bus = s30
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s30-l1v7]
+Type = Receiver
+Bus = s30
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s30-l1v8]
+Type = Receiver
+Bus = s30
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s30-l1v9]
+Type = Receiver
+Bus = s30
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s30-l1v10]
+Type = Receiver
+Bus = s30
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s30-l1v11]
+Type = Receiver
+Bus = s30
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s30-l1v12]
+Type = Receiver
+Bus = s30
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s30-l1v13]
+Type = Receiver
+Bus = s30
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s30-l1v14]
+Type = Receiver
+Bus = s30
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s30-l1v15]
+Type = Receiver
+Bus = s30
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s30-l1v16]
+Type = Receiver
+Bus = s30
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s30-l1v17]
+Type = Receiver
+Bus = s30
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s30-l1v18]
+Type = Receiver
+Bus = s30
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s30-l1v19]
+Type = Receiver
+Bus = s30
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s30-l1v20]
+Type = Receiver
+Bus = s30
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s30-l1v21]
+Type = Receiver
+Bus = s30
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s30-l1v22]
+Type = Receiver
+Bus = s30
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s30-l1v23]
+Type = Receiver
+Bus = s30
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s30-l1v24]
+Type = Receiver
+Bus = s30
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s30-l1v25]
+Type = Receiver
+Bus = s30
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s30-l1v26]
+Type = Receiver
+Bus = s30
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s30-l1v27]
+Type = Receiver
+Bus = s30
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s30-l1v28]
+Type = Receiver
+Bus = s30
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s30-l1v29]
+Type = Receiver
+Bus = s30
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.l1v30-s30]
+Type = Sender
+Node = l1v30
+Bus = s30
+
+[Network.si-net-l1-l2.BusPort.s30-l1v31]
+Type = Receiver
+Bus = s30
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s30-l1s0]
+Type = Receiver
+Bus = s30
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s30-l1s1]
+Type = Receiver
+Bus = s30
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s30-l1s2]
+Type = Receiver
+Bus = s30
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s30-l1s3]
+Type = Receiver
+Bus = s30
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s30-l1s4]
+Type = Receiver
+Bus = s30
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s30-l1s5]
+Type = Receiver
+Bus = s30
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s30-l1s6]
+Type = Receiver
+Bus = s30
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s30-l1s7]
+Type = Receiver
+Bus = s30
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s30-l2n0]
+Type = Receiver
+Bus = s30
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s30-l2n1]
+Type = Receiver
+Bus = s30
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s30-l2n2]
+Type = Receiver
+Bus = s30
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s30-l2n3]
+Type = Receiver
+Bus = s30
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s30-l2n4]
+Type = Receiver
+Bus = s30
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s30-l2n5]
+Type = Receiver
+Bus = s30
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s31-l1v0]
+Type = Receiver
+Bus = s31
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s31-l1v1]
+Type = Receiver
+Bus = s31
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s31-l1v2]
+Type = Receiver
+Bus = s31
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s31-l1v3]
+Type = Receiver
+Bus = s31
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s31-l1v4]
+Type = Receiver
+Bus = s31
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s31-l1v5]
+Type = Receiver
+Bus = s31
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s31-l1v6]
+Type = Receiver
+Bus = s31
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s31-l1v7]
+Type = Receiver
+Bus = s31
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s31-l1v8]
+Type = Receiver
+Bus = s31
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s31-l1v9]
+Type = Receiver
+Bus = s31
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s31-l1v10]
+Type = Receiver
+Bus = s31
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s31-l1v11]
+Type = Receiver
+Bus = s31
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s31-l1v12]
+Type = Receiver
+Bus = s31
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s31-l1v13]
+Type = Receiver
+Bus = s31
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s31-l1v14]
+Type = Receiver
+Bus = s31
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s31-l1v15]
+Type = Receiver
+Bus = s31
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s31-l1v16]
+Type = Receiver
+Bus = s31
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s31-l1v17]
+Type = Receiver
+Bus = s31
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s31-l1v18]
+Type = Receiver
+Bus = s31
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s31-l1v19]
+Type = Receiver
+Bus = s31
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s31-l1v20]
+Type = Receiver
+Bus = s31
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s31-l1v21]
+Type = Receiver
+Bus = s31
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s31-l1v22]
+Type = Receiver
+Bus = s31
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s31-l1v23]
+Type = Receiver
+Bus = s31
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s31-l1v24]
+Type = Receiver
+Bus = s31
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s31-l1v25]
+Type = Receiver
+Bus = s31
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s31-l1v26]
+Type = Receiver
+Bus = s31
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s31-l1v27]
+Type = Receiver
+Bus = s31
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s31-l1v28]
+Type = Receiver
+Bus = s31
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s31-l1v29]
+Type = Receiver
+Bus = s31
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s31-l1v30]
+Type = Receiver
+Bus = s31
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.l1v31-s31]
+Type = Sender
+Node = l1v31
+Bus = s31
+
+[Network.si-net-l1-l2.BusPort.s31-l1s0]
+Type = Receiver
+Bus = s31
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s31-l1s1]
+Type = Receiver
+Bus = s31
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s31-l1s2]
+Type = Receiver
+Bus = s31
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s31-l1s3]
+Type = Receiver
+Bus = s31
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s31-l1s4]
+Type = Receiver
+Bus = s31
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s31-l1s5]
+Type = Receiver
+Bus = s31
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s31-l1s6]
+Type = Receiver
+Bus = s31
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s31-l1s7]
+Type = Receiver
+Bus = s31
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s31-l2n0]
+Type = Receiver
+Bus = s31
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s31-l2n1]
+Type = Receiver
+Bus = s31
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s31-l2n2]
+Type = Receiver
+Bus = s31
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s31-l2n3]
+Type = Receiver
+Bus = s31
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s31-l2n4]
+Type = Receiver
+Bus = s31
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s31-l2n5]
+Type = Receiver
+Bus = s31
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s32-l1v0]
+Type = Receiver
+Bus = s32
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s32-l1v1]
+Type = Receiver
+Bus = s32
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s32-l1v2]
+Type = Receiver
+Bus = s32
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s32-l1v3]
+Type = Receiver
+Bus = s32
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s32-l1v4]
+Type = Receiver
+Bus = s32
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s32-l1v5]
+Type = Receiver
+Bus = s32
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s32-l1v6]
+Type = Receiver
+Bus = s32
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s32-l1v7]
+Type = Receiver
+Bus = s32
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s32-l1v8]
+Type = Receiver
+Bus = s32
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s32-l1v9]
+Type = Receiver
+Bus = s32
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s32-l1v10]
+Type = Receiver
+Bus = s32
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s32-l1v11]
+Type = Receiver
+Bus = s32
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s32-l1v12]
+Type = Receiver
+Bus = s32
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s32-l1v13]
+Type = Receiver
+Bus = s32
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s32-l1v14]
+Type = Receiver
+Bus = s32
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s32-l1v15]
+Type = Receiver
+Bus = s32
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s32-l1v16]
+Type = Receiver
+Bus = s32
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s32-l1v17]
+Type = Receiver
+Bus = s32
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s32-l1v18]
+Type = Receiver
+Bus = s32
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s32-l1v19]
+Type = Receiver
+Bus = s32
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s32-l1v20]
+Type = Receiver
+Bus = s32
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s32-l1v21]
+Type = Receiver
+Bus = s32
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s32-l1v22]
+Type = Receiver
+Bus = s32
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s32-l1v23]
+Type = Receiver
+Bus = s32
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s32-l1v24]
+Type = Receiver
+Bus = s32
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s32-l1v25]
+Type = Receiver
+Bus = s32
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s32-l1v26]
+Type = Receiver
+Bus = s32
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s32-l1v27]
+Type = Receiver
+Bus = s32
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s32-l1v28]
+Type = Receiver
+Bus = s32
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s32-l1v29]
+Type = Receiver
+Bus = s32
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s32-l1v30]
+Type = Receiver
+Bus = s32
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s32-l1v31]
+Type = Receiver
+Bus = s32
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.l1s0-s32]
+Type = Sender
+Node = l1s0
+Bus = s32
+
+[Network.si-net-l1-l2.BusPort.s32-l1s1]
+Type = Receiver
+Bus = s32
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s32-l1s2]
+Type = Receiver
+Bus = s32
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s32-l1s3]
+Type = Receiver
+Bus = s32
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s32-l1s4]
+Type = Receiver
+Bus = s32
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s32-l1s5]
+Type = Receiver
+Bus = s32
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s32-l1s6]
+Type = Receiver
+Bus = s32
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s32-l1s7]
+Type = Receiver
+Bus = s32
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s32-l2n0]
+Type = Receiver
+Bus = s32
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s32-l2n1]
+Type = Receiver
+Bus = s32
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s32-l2n2]
+Type = Receiver
+Bus = s32
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s32-l2n3]
+Type = Receiver
+Bus = s32
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s32-l2n4]
+Type = Receiver
+Bus = s32
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s32-l2n5]
+Type = Receiver
+Bus = s32
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s33-l1v0]
+Type = Receiver
+Bus = s33
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s33-l1v1]
+Type = Receiver
+Bus = s33
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s33-l1v2]
+Type = Receiver
+Bus = s33
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s33-l1v3]
+Type = Receiver
+Bus = s33
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s33-l1v4]
+Type = Receiver
+Bus = s33
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s33-l1v5]
+Type = Receiver
+Bus = s33
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s33-l1v6]
+Type = Receiver
+Bus = s33
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s33-l1v7]
+Type = Receiver
+Bus = s33
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s33-l1v8]
+Type = Receiver
+Bus = s33
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s33-l1v9]
+Type = Receiver
+Bus = s33
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s33-l1v10]
+Type = Receiver
+Bus = s33
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s33-l1v11]
+Type = Receiver
+Bus = s33
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s33-l1v12]
+Type = Receiver
+Bus = s33
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s33-l1v13]
+Type = Receiver
+Bus = s33
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s33-l1v14]
+Type = Receiver
+Bus = s33
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s33-l1v15]
+Type = Receiver
+Bus = s33
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s33-l1v16]
+Type = Receiver
+Bus = s33
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s33-l1v17]
+Type = Receiver
+Bus = s33
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s33-l1v18]
+Type = Receiver
+Bus = s33
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s33-l1v19]
+Type = Receiver
+Bus = s33
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s33-l1v20]
+Type = Receiver
+Bus = s33
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s33-l1v21]
+Type = Receiver
+Bus = s33
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s33-l1v22]
+Type = Receiver
+Bus = s33
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s33-l1v23]
+Type = Receiver
+Bus = s33
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s33-l1v24]
+Type = Receiver
+Bus = s33
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s33-l1v25]
+Type = Receiver
+Bus = s33
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s33-l1v26]
+Type = Receiver
+Bus = s33
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s33-l1v27]
+Type = Receiver
+Bus = s33
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s33-l1v28]
+Type = Receiver
+Bus = s33
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s33-l1v29]
+Type = Receiver
+Bus = s33
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s33-l1v30]
+Type = Receiver
+Bus = s33
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s33-l1v31]
+Type = Receiver
+Bus = s33
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s33-l1s0]
+Type = Receiver
+Bus = s33
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.l1s1-s33]
+Type = Sender
+Node = l1s1
+Bus = s33
+
+[Network.si-net-l1-l2.BusPort.s33-l1s2]
+Type = Receiver
+Bus = s33
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s33-l1s3]
+Type = Receiver
+Bus = s33
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s33-l1s4]
+Type = Receiver
+Bus = s33
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s33-l1s5]
+Type = Receiver
+Bus = s33
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s33-l1s6]
+Type = Receiver
+Bus = s33
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s33-l1s7]
+Type = Receiver
+Bus = s33
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s33-l2n0]
+Type = Receiver
+Bus = s33
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s33-l2n1]
+Type = Receiver
+Bus = s33
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s33-l2n2]
+Type = Receiver
+Bus = s33
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s33-l2n3]
+Type = Receiver
+Bus = s33
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s33-l2n4]
+Type = Receiver
+Bus = s33
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s33-l2n5]
+Type = Receiver
+Bus = s33
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s34-l1v0]
+Type = Receiver
+Bus = s34
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s34-l1v1]
+Type = Receiver
+Bus = s34
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s34-l1v2]
+Type = Receiver
+Bus = s34
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s34-l1v3]
+Type = Receiver
+Bus = s34
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s34-l1v4]
+Type = Receiver
+Bus = s34
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s34-l1v5]
+Type = Receiver
+Bus = s34
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s34-l1v6]
+Type = Receiver
+Bus = s34
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s34-l1v7]
+Type = Receiver
+Bus = s34
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s34-l1v8]
+Type = Receiver
+Bus = s34
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s34-l1v9]
+Type = Receiver
+Bus = s34
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s34-l1v10]
+Type = Receiver
+Bus = s34
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s34-l1v11]
+Type = Receiver
+Bus = s34
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s34-l1v12]
+Type = Receiver
+Bus = s34
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s34-l1v13]
+Type = Receiver
+Bus = s34
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s34-l1v14]
+Type = Receiver
+Bus = s34
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s34-l1v15]
+Type = Receiver
+Bus = s34
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s34-l1v16]
+Type = Receiver
+Bus = s34
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s34-l1v17]
+Type = Receiver
+Bus = s34
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s34-l1v18]
+Type = Receiver
+Bus = s34
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s34-l1v19]
+Type = Receiver
+Bus = s34
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s34-l1v20]
+Type = Receiver
+Bus = s34
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s34-l1v21]
+Type = Receiver
+Bus = s34
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s34-l1v22]
+Type = Receiver
+Bus = s34
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s34-l1v23]
+Type = Receiver
+Bus = s34
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s34-l1v24]
+Type = Receiver
+Bus = s34
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s34-l1v25]
+Type = Receiver
+Bus = s34
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s34-l1v26]
+Type = Receiver
+Bus = s34
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s34-l1v27]
+Type = Receiver
+Bus = s34
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s34-l1v28]
+Type = Receiver
+Bus = s34
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s34-l1v29]
+Type = Receiver
+Bus = s34
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s34-l1v30]
+Type = Receiver
+Bus = s34
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s34-l1v31]
+Type = Receiver
+Bus = s34
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s34-l1s0]
+Type = Receiver
+Bus = s34
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s34-l1s1]
+Type = Receiver
+Bus = s34
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.l1s2-s34]
+Type = Sender
+Node = l1s2
+Bus = s34
+
+[Network.si-net-l1-l2.BusPort.s34-l1s3]
+Type = Receiver
+Bus = s34
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s34-l1s4]
+Type = Receiver
+Bus = s34
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s34-l1s5]
+Type = Receiver
+Bus = s34
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s34-l1s6]
+Type = Receiver
+Bus = s34
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s34-l1s7]
+Type = Receiver
+Bus = s34
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s34-l2n0]
+Type = Receiver
+Bus = s34
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s34-l2n1]
+Type = Receiver
+Bus = s34
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s34-l2n2]
+Type = Receiver
+Bus = s34
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s34-l2n3]
+Type = Receiver
+Bus = s34
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s34-l2n4]
+Type = Receiver
+Bus = s34
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s34-l2n5]
+Type = Receiver
+Bus = s34
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s35-l1v0]
+Type = Receiver
+Bus = s35
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s35-l1v1]
+Type = Receiver
+Bus = s35
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s35-l1v2]
+Type = Receiver
+Bus = s35
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s35-l1v3]
+Type = Receiver
+Bus = s35
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s35-l1v4]
+Type = Receiver
+Bus = s35
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s35-l1v5]
+Type = Receiver
+Bus = s35
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s35-l1v6]
+Type = Receiver
+Bus = s35
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s35-l1v7]
+Type = Receiver
+Bus = s35
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s35-l1v8]
+Type = Receiver
+Bus = s35
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s35-l1v9]
+Type = Receiver
+Bus = s35
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s35-l1v10]
+Type = Receiver
+Bus = s35
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s35-l1v11]
+Type = Receiver
+Bus = s35
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s35-l1v12]
+Type = Receiver
+Bus = s35
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s35-l1v13]
+Type = Receiver
+Bus = s35
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s35-l1v14]
+Type = Receiver
+Bus = s35
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s35-l1v15]
+Type = Receiver
+Bus = s35
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s35-l1v16]
+Type = Receiver
+Bus = s35
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s35-l1v17]
+Type = Receiver
+Bus = s35
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s35-l1v18]
+Type = Receiver
+Bus = s35
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s35-l1v19]
+Type = Receiver
+Bus = s35
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s35-l1v20]
+Type = Receiver
+Bus = s35
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s35-l1v21]
+Type = Receiver
+Bus = s35
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s35-l1v22]
+Type = Receiver
+Bus = s35
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s35-l1v23]
+Type = Receiver
+Bus = s35
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s35-l1v24]
+Type = Receiver
+Bus = s35
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s35-l1v25]
+Type = Receiver
+Bus = s35
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s35-l1v26]
+Type = Receiver
+Bus = s35
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s35-l1v27]
+Type = Receiver
+Bus = s35
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s35-l1v28]
+Type = Receiver
+Bus = s35
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s35-l1v29]
+Type = Receiver
+Bus = s35
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s35-l1v30]
+Type = Receiver
+Bus = s35
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s35-l1v31]
+Type = Receiver
+Bus = s35
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s35-l1s0]
+Type = Receiver
+Bus = s35
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s35-l1s1]
+Type = Receiver
+Bus = s35
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s35-l1s2]
+Type = Receiver
+Bus = s35
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.l1s3-s35]
+Type = Sender
+Node = l1s3
+Bus = s35
+
+[Network.si-net-l1-l2.BusPort.s35-l1s4]
+Type = Receiver
+Bus = s35
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s35-l1s5]
+Type = Receiver
+Bus = s35
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s35-l1s6]
+Type = Receiver
+Bus = s35
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s35-l1s7]
+Type = Receiver
+Bus = s35
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s35-l2n0]
+Type = Receiver
+Bus = s35
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s35-l2n1]
+Type = Receiver
+Bus = s35
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s35-l2n2]
+Type = Receiver
+Bus = s35
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s35-l2n3]
+Type = Receiver
+Bus = s35
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s35-l2n4]
+Type = Receiver
+Bus = s35
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s35-l2n5]
+Type = Receiver
+Bus = s35
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s36-l1v0]
+Type = Receiver
+Bus = s36
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s36-l1v1]
+Type = Receiver
+Bus = s36
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s36-l1v2]
+Type = Receiver
+Bus = s36
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s36-l1v3]
+Type = Receiver
+Bus = s36
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s36-l1v4]
+Type = Receiver
+Bus = s36
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s36-l1v5]
+Type = Receiver
+Bus = s36
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s36-l1v6]
+Type = Receiver
+Bus = s36
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s36-l1v7]
+Type = Receiver
+Bus = s36
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s36-l1v8]
+Type = Receiver
+Bus = s36
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s36-l1v9]
+Type = Receiver
+Bus = s36
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s36-l1v10]
+Type = Receiver
+Bus = s36
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s36-l1v11]
+Type = Receiver
+Bus = s36
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s36-l1v12]
+Type = Receiver
+Bus = s36
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s36-l1v13]
+Type = Receiver
+Bus = s36
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s36-l1v14]
+Type = Receiver
+Bus = s36
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s36-l1v15]
+Type = Receiver
+Bus = s36
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s36-l1v16]
+Type = Receiver
+Bus = s36
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s36-l1v17]
+Type = Receiver
+Bus = s36
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s36-l1v18]
+Type = Receiver
+Bus = s36
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s36-l1v19]
+Type = Receiver
+Bus = s36
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s36-l1v20]
+Type = Receiver
+Bus = s36
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s36-l1v21]
+Type = Receiver
+Bus = s36
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s36-l1v22]
+Type = Receiver
+Bus = s36
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s36-l1v23]
+Type = Receiver
+Bus = s36
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s36-l1v24]
+Type = Receiver
+Bus = s36
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s36-l1v25]
+Type = Receiver
+Bus = s36
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s36-l1v26]
+Type = Receiver
+Bus = s36
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s36-l1v27]
+Type = Receiver
+Bus = s36
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s36-l1v28]
+Type = Receiver
+Bus = s36
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s36-l1v29]
+Type = Receiver
+Bus = s36
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s36-l1v30]
+Type = Receiver
+Bus = s36
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s36-l1v31]
+Type = Receiver
+Bus = s36
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s36-l1s0]
+Type = Receiver
+Bus = s36
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s36-l1s1]
+Type = Receiver
+Bus = s36
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s36-l1s2]
+Type = Receiver
+Bus = s36
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s36-l1s3]
+Type = Receiver
+Bus = s36
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.l1s4-s36]
+Type = Sender
+Node = l1s4
+Bus = s36
+
+[Network.si-net-l1-l2.BusPort.s36-l1s5]
+Type = Receiver
+Bus = s36
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s36-l1s6]
+Type = Receiver
+Bus = s36
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s36-l1s7]
+Type = Receiver
+Bus = s36
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s36-l2n0]
+Type = Receiver
+Bus = s36
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s36-l2n1]
+Type = Receiver
+Bus = s36
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s36-l2n2]
+Type = Receiver
+Bus = s36
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s36-l2n3]
+Type = Receiver
+Bus = s36
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s36-l2n4]
+Type = Receiver
+Bus = s36
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s36-l2n5]
+Type = Receiver
+Bus = s36
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s37-l1v0]
+Type = Receiver
+Bus = s37
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s37-l1v1]
+Type = Receiver
+Bus = s37
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s37-l1v2]
+Type = Receiver
+Bus = s37
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s37-l1v3]
+Type = Receiver
+Bus = s37
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s37-l1v4]
+Type = Receiver
+Bus = s37
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s37-l1v5]
+Type = Receiver
+Bus = s37
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s37-l1v6]
+Type = Receiver
+Bus = s37
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s37-l1v7]
+Type = Receiver
+Bus = s37
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s37-l1v8]
+Type = Receiver
+Bus = s37
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s37-l1v9]
+Type = Receiver
+Bus = s37
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s37-l1v10]
+Type = Receiver
+Bus = s37
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s37-l1v11]
+Type = Receiver
+Bus = s37
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s37-l1v12]
+Type = Receiver
+Bus = s37
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s37-l1v13]
+Type = Receiver
+Bus = s37
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s37-l1v14]
+Type = Receiver
+Bus = s37
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s37-l1v15]
+Type = Receiver
+Bus = s37
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s37-l1v16]
+Type = Receiver
+Bus = s37
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s37-l1v17]
+Type = Receiver
+Bus = s37
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s37-l1v18]
+Type = Receiver
+Bus = s37
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s37-l1v19]
+Type = Receiver
+Bus = s37
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s37-l1v20]
+Type = Receiver
+Bus = s37
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s37-l1v21]
+Type = Receiver
+Bus = s37
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s37-l1v22]
+Type = Receiver
+Bus = s37
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s37-l1v23]
+Type = Receiver
+Bus = s37
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s37-l1v24]
+Type = Receiver
+Bus = s37
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s37-l1v25]
+Type = Receiver
+Bus = s37
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s37-l1v26]
+Type = Receiver
+Bus = s37
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s37-l1v27]
+Type = Receiver
+Bus = s37
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s37-l1v28]
+Type = Receiver
+Bus = s37
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s37-l1v29]
+Type = Receiver
+Bus = s37
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s37-l1v30]
+Type = Receiver
+Bus = s37
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s37-l1v31]
+Type = Receiver
+Bus = s37
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s37-l1s0]
+Type = Receiver
+Bus = s37
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s37-l1s1]
+Type = Receiver
+Bus = s37
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s37-l1s2]
+Type = Receiver
+Bus = s37
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s37-l1s3]
+Type = Receiver
+Bus = s37
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s37-l1s4]
+Type = Receiver
+Bus = s37
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.l1s5-s37]
+Type = Sender
+Node = l1s5
+Bus = s37
+
+[Network.si-net-l1-l2.BusPort.s37-l1s6]
+Type = Receiver
+Bus = s37
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s37-l1s7]
+Type = Receiver
+Bus = s37
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s37-l2n0]
+Type = Receiver
+Bus = s37
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s37-l2n1]
+Type = Receiver
+Bus = s37
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s37-l2n2]
+Type = Receiver
+Bus = s37
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s37-l2n3]
+Type = Receiver
+Bus = s37
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s37-l2n4]
+Type = Receiver
+Bus = s37
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s37-l2n5]
+Type = Receiver
+Bus = s37
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s38-l1v0]
+Type = Receiver
+Bus = s38
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s38-l1v1]
+Type = Receiver
+Bus = s38
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s38-l1v2]
+Type = Receiver
+Bus = s38
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s38-l1v3]
+Type = Receiver
+Bus = s38
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s38-l1v4]
+Type = Receiver
+Bus = s38
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s38-l1v5]
+Type = Receiver
+Bus = s38
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s38-l1v6]
+Type = Receiver
+Bus = s38
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s38-l1v7]
+Type = Receiver
+Bus = s38
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s38-l1v8]
+Type = Receiver
+Bus = s38
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s38-l1v9]
+Type = Receiver
+Bus = s38
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s38-l1v10]
+Type = Receiver
+Bus = s38
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s38-l1v11]
+Type = Receiver
+Bus = s38
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s38-l1v12]
+Type = Receiver
+Bus = s38
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s38-l1v13]
+Type = Receiver
+Bus = s38
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s38-l1v14]
+Type = Receiver
+Bus = s38
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s38-l1v15]
+Type = Receiver
+Bus = s38
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s38-l1v16]
+Type = Receiver
+Bus = s38
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s38-l1v17]
+Type = Receiver
+Bus = s38
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s38-l1v18]
+Type = Receiver
+Bus = s38
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s38-l1v19]
+Type = Receiver
+Bus = s38
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s38-l1v20]
+Type = Receiver
+Bus = s38
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s38-l1v21]
+Type = Receiver
+Bus = s38
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s38-l1v22]
+Type = Receiver
+Bus = s38
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s38-l1v23]
+Type = Receiver
+Bus = s38
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s38-l1v24]
+Type = Receiver
+Bus = s38
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s38-l1v25]
+Type = Receiver
+Bus = s38
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s38-l1v26]
+Type = Receiver
+Bus = s38
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s38-l1v27]
+Type = Receiver
+Bus = s38
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s38-l1v28]
+Type = Receiver
+Bus = s38
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s38-l1v29]
+Type = Receiver
+Bus = s38
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s38-l1v30]
+Type = Receiver
+Bus = s38
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s38-l1v31]
+Type = Receiver
+Bus = s38
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s38-l1s0]
+Type = Receiver
+Bus = s38
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s38-l1s1]
+Type = Receiver
+Bus = s38
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s38-l1s2]
+Type = Receiver
+Bus = s38
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s38-l1s3]
+Type = Receiver
+Bus = s38
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s38-l1s4]
+Type = Receiver
+Bus = s38
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s38-l1s5]
+Type = Receiver
+Bus = s38
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.l1s6-s38]
+Type = Sender
+Node = l1s6
+Bus = s38
+
+[Network.si-net-l1-l2.BusPort.s38-l1s7]
+Type = Receiver
+Bus = s38
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s38-l2n0]
+Type = Receiver
+Bus = s38
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s38-l2n1]
+Type = Receiver
+Bus = s38
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s38-l2n2]
+Type = Receiver
+Bus = s38
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s38-l2n3]
+Type = Receiver
+Bus = s38
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s38-l2n4]
+Type = Receiver
+Bus = s38
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s38-l2n5]
+Type = Receiver
+Bus = s38
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s39-l1v0]
+Type = Receiver
+Bus = s39
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s39-l1v1]
+Type = Receiver
+Bus = s39
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s39-l1v2]
+Type = Receiver
+Bus = s39
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s39-l1v3]
+Type = Receiver
+Bus = s39
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s39-l1v4]
+Type = Receiver
+Bus = s39
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s39-l1v5]
+Type = Receiver
+Bus = s39
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s39-l1v6]
+Type = Receiver
+Bus = s39
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s39-l1v7]
+Type = Receiver
+Bus = s39
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s39-l1v8]
+Type = Receiver
+Bus = s39
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s39-l1v9]
+Type = Receiver
+Bus = s39
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s39-l1v10]
+Type = Receiver
+Bus = s39
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s39-l1v11]
+Type = Receiver
+Bus = s39
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s39-l1v12]
+Type = Receiver
+Bus = s39
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s39-l1v13]
+Type = Receiver
+Bus = s39
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s39-l1v14]
+Type = Receiver
+Bus = s39
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s39-l1v15]
+Type = Receiver
+Bus = s39
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s39-l1v16]
+Type = Receiver
+Bus = s39
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s39-l1v17]
+Type = Receiver
+Bus = s39
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s39-l1v18]
+Type = Receiver
+Bus = s39
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s39-l1v19]
+Type = Receiver
+Bus = s39
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s39-l1v20]
+Type = Receiver
+Bus = s39
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s39-l1v21]
+Type = Receiver
+Bus = s39
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s39-l1v22]
+Type = Receiver
+Bus = s39
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s39-l1v23]
+Type = Receiver
+Bus = s39
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s39-l1v24]
+Type = Receiver
+Bus = s39
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s39-l1v25]
+Type = Receiver
+Bus = s39
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s39-l1v26]
+Type = Receiver
+Bus = s39
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s39-l1v27]
+Type = Receiver
+Bus = s39
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s39-l1v28]
+Type = Receiver
+Bus = s39
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s39-l1v29]
+Type = Receiver
+Bus = s39
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s39-l1v30]
+Type = Receiver
+Bus = s39
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s39-l1v31]
+Type = Receiver
+Bus = s39
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s39-l1s0]
+Type = Receiver
+Bus = s39
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s39-l1s1]
+Type = Receiver
+Bus = s39
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s39-l1s2]
+Type = Receiver
+Bus = s39
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s39-l1s3]
+Type = Receiver
+Bus = s39
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s39-l1s4]
+Type = Receiver
+Bus = s39
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s39-l1s5]
+Type = Receiver
+Bus = s39
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s39-l1s6]
+Type = Receiver
+Bus = s39
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.l1s7-s39]
+Type = Sender
+Node = l1s7
+Bus = s39
+
+[Network.si-net-l1-l2.BusPort.s39-l2n0]
+Type = Receiver
+Bus = s39
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s39-l2n1]
+Type = Receiver
+Bus = s39
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s39-l2n2]
+Type = Receiver
+Bus = s39
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s39-l2n3]
+Type = Receiver
+Bus = s39
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s39-l2n4]
+Type = Receiver
+Bus = s39
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s39-l2n5]
+Type = Receiver
+Bus = s39
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s40-l1v0]
+Type = Receiver
+Bus = s40
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s40-l1v1]
+Type = Receiver
+Bus = s40
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s40-l1v2]
+Type = Receiver
+Bus = s40
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s40-l1v3]
+Type = Receiver
+Bus = s40
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s40-l1v4]
+Type = Receiver
+Bus = s40
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s40-l1v5]
+Type = Receiver
+Bus = s40
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s40-l1v6]
+Type = Receiver
+Bus = s40
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s40-l1v7]
+Type = Receiver
+Bus = s40
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s40-l1v8]
+Type = Receiver
+Bus = s40
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s40-l1v9]
+Type = Receiver
+Bus = s40
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s40-l1v10]
+Type = Receiver
+Bus = s40
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s40-l1v11]
+Type = Receiver
+Bus = s40
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s40-l1v12]
+Type = Receiver
+Bus = s40
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s40-l1v13]
+Type = Receiver
+Bus = s40
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s40-l1v14]
+Type = Receiver
+Bus = s40
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s40-l1v15]
+Type = Receiver
+Bus = s40
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s40-l1v16]
+Type = Receiver
+Bus = s40
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s40-l1v17]
+Type = Receiver
+Bus = s40
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s40-l1v18]
+Type = Receiver
+Bus = s40
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s40-l1v19]
+Type = Receiver
+Bus = s40
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s40-l1v20]
+Type = Receiver
+Bus = s40
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s40-l1v21]
+Type = Receiver
+Bus = s40
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s40-l1v22]
+Type = Receiver
+Bus = s40
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s40-l1v23]
+Type = Receiver
+Bus = s40
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s40-l1v24]
+Type = Receiver
+Bus = s40
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s40-l1v25]
+Type = Receiver
+Bus = s40
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s40-l1v26]
+Type = Receiver
+Bus = s40
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s40-l1v27]
+Type = Receiver
+Bus = s40
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s40-l1v28]
+Type = Receiver
+Bus = s40
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s40-l1v29]
+Type = Receiver
+Bus = s40
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s40-l1v30]
+Type = Receiver
+Bus = s40
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s40-l1v31]
+Type = Receiver
+Bus = s40
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s40-l1s0]
+Type = Receiver
+Bus = s40
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s40-l1s1]
+Type = Receiver
+Bus = s40
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s40-l1s2]
+Type = Receiver
+Bus = s40
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s40-l1s3]
+Type = Receiver
+Bus = s40
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s40-l1s4]
+Type = Receiver
+Bus = s40
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s40-l1s5]
+Type = Receiver
+Bus = s40
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s40-l1s6]
+Type = Receiver
+Bus = s40
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s40-l1s7]
+Type = Receiver
+Bus = s40
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.l2n0-s40]
+Type = Sender
+Node = l2n0
+Bus = s40
+
+[Network.si-net-l1-l2.BusPort.s40-l2n1]
+Type = Receiver
+Bus = s40
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s40-l2n2]
+Type = Receiver
+Bus = s40
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s40-l2n3]
+Type = Receiver
+Bus = s40
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s40-l2n4]
+Type = Receiver
+Bus = s40
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s40-l2n5]
+Type = Receiver
+Bus = s40
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s41-l1v0]
+Type = Receiver
+Bus = s41
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s41-l1v1]
+Type = Receiver
+Bus = s41
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s41-l1v2]
+Type = Receiver
+Bus = s41
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s41-l1v3]
+Type = Receiver
+Bus = s41
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s41-l1v4]
+Type = Receiver
+Bus = s41
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s41-l1v5]
+Type = Receiver
+Bus = s41
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s41-l1v6]
+Type = Receiver
+Bus = s41
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s41-l1v7]
+Type = Receiver
+Bus = s41
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s41-l1v8]
+Type = Receiver
+Bus = s41
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s41-l1v9]
+Type = Receiver
+Bus = s41
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s41-l1v10]
+Type = Receiver
+Bus = s41
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s41-l1v11]
+Type = Receiver
+Bus = s41
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s41-l1v12]
+Type = Receiver
+Bus = s41
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s41-l1v13]
+Type = Receiver
+Bus = s41
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s41-l1v14]
+Type = Receiver
+Bus = s41
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s41-l1v15]
+Type = Receiver
+Bus = s41
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s41-l1v16]
+Type = Receiver
+Bus = s41
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s41-l1v17]
+Type = Receiver
+Bus = s41
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s41-l1v18]
+Type = Receiver
+Bus = s41
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s41-l1v19]
+Type = Receiver
+Bus = s41
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s41-l1v20]
+Type = Receiver
+Bus = s41
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s41-l1v21]
+Type = Receiver
+Bus = s41
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s41-l1v22]
+Type = Receiver
+Bus = s41
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s41-l1v23]
+Type = Receiver
+Bus = s41
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s41-l1v24]
+Type = Receiver
+Bus = s41
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s41-l1v25]
+Type = Receiver
+Bus = s41
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s41-l1v26]
+Type = Receiver
+Bus = s41
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s41-l1v27]
+Type = Receiver
+Bus = s41
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s41-l1v28]
+Type = Receiver
+Bus = s41
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s41-l1v29]
+Type = Receiver
+Bus = s41
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s41-l1v30]
+Type = Receiver
+Bus = s41
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s41-l1v31]
+Type = Receiver
+Bus = s41
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s41-l1s0]
+Type = Receiver
+Bus = s41
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s41-l1s1]
+Type = Receiver
+Bus = s41
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s41-l1s2]
+Type = Receiver
+Bus = s41
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s41-l1s3]
+Type = Receiver
+Bus = s41
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s41-l1s4]
+Type = Receiver
+Bus = s41
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s41-l1s5]
+Type = Receiver
+Bus = s41
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s41-l1s6]
+Type = Receiver
+Bus = s41
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s41-l1s7]
+Type = Receiver
+Bus = s41
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s41-l2n0]
+Type = Receiver
+Bus = s41
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.l2n1-s41]
+Type = Sender
+Node = l2n1
+Bus = s41
+
+[Network.si-net-l1-l2.BusPort.s41-l2n2]
+Type = Receiver
+Bus = s41
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s41-l2n3]
+Type = Receiver
+Bus = s41
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s41-l2n4]
+Type = Receiver
+Bus = s41
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s41-l2n5]
+Type = Receiver
+Bus = s41
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s42-l1v0]
+Type = Receiver
+Bus = s42
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s42-l1v1]
+Type = Receiver
+Bus = s42
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s42-l1v2]
+Type = Receiver
+Bus = s42
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s42-l1v3]
+Type = Receiver
+Bus = s42
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s42-l1v4]
+Type = Receiver
+Bus = s42
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s42-l1v5]
+Type = Receiver
+Bus = s42
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s42-l1v6]
+Type = Receiver
+Bus = s42
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s42-l1v7]
+Type = Receiver
+Bus = s42
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s42-l1v8]
+Type = Receiver
+Bus = s42
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s42-l1v9]
+Type = Receiver
+Bus = s42
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s42-l1v10]
+Type = Receiver
+Bus = s42
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s42-l1v11]
+Type = Receiver
+Bus = s42
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s42-l1v12]
+Type = Receiver
+Bus = s42
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s42-l1v13]
+Type = Receiver
+Bus = s42
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s42-l1v14]
+Type = Receiver
+Bus = s42
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s42-l1v15]
+Type = Receiver
+Bus = s42
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s42-l1v16]
+Type = Receiver
+Bus = s42
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s42-l1v17]
+Type = Receiver
+Bus = s42
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s42-l1v18]
+Type = Receiver
+Bus = s42
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s42-l1v19]
+Type = Receiver
+Bus = s42
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s42-l1v20]
+Type = Receiver
+Bus = s42
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s42-l1v21]
+Type = Receiver
+Bus = s42
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s42-l1v22]
+Type = Receiver
+Bus = s42
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s42-l1v23]
+Type = Receiver
+Bus = s42
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s42-l1v24]
+Type = Receiver
+Bus = s42
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s42-l1v25]
+Type = Receiver
+Bus = s42
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s42-l1v26]
+Type = Receiver
+Bus = s42
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s42-l1v27]
+Type = Receiver
+Bus = s42
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s42-l1v28]
+Type = Receiver
+Bus = s42
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s42-l1v29]
+Type = Receiver
+Bus = s42
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s42-l1v30]
+Type = Receiver
+Bus = s42
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s42-l1v31]
+Type = Receiver
+Bus = s42
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s42-l1s0]
+Type = Receiver
+Bus = s42
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s42-l1s1]
+Type = Receiver
+Bus = s42
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s42-l1s2]
+Type = Receiver
+Bus = s42
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s42-l1s3]
+Type = Receiver
+Bus = s42
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s42-l1s4]
+Type = Receiver
+Bus = s42
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s42-l1s5]
+Type = Receiver
+Bus = s42
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s42-l1s6]
+Type = Receiver
+Bus = s42
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s42-l1s7]
+Type = Receiver
+Bus = s42
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s42-l2n0]
+Type = Receiver
+Bus = s42
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s42-l2n1]
+Type = Receiver
+Bus = s42
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.l2n2-s42]
+Type = Sender
+Node = l2n2
+Bus = s42
+
+[Network.si-net-l1-l2.BusPort.s42-l2n3]
+Type = Receiver
+Bus = s42
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s42-l2n4]
+Type = Receiver
+Bus = s42
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s42-l2n5]
+Type = Receiver
+Bus = s42
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s43-l1v0]
+Type = Receiver
+Bus = s43
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s43-l1v1]
+Type = Receiver
+Bus = s43
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s43-l1v2]
+Type = Receiver
+Bus = s43
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s43-l1v3]
+Type = Receiver
+Bus = s43
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s43-l1v4]
+Type = Receiver
+Bus = s43
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s43-l1v5]
+Type = Receiver
+Bus = s43
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s43-l1v6]
+Type = Receiver
+Bus = s43
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s43-l1v7]
+Type = Receiver
+Bus = s43
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s43-l1v8]
+Type = Receiver
+Bus = s43
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s43-l1v9]
+Type = Receiver
+Bus = s43
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s43-l1v10]
+Type = Receiver
+Bus = s43
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s43-l1v11]
+Type = Receiver
+Bus = s43
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s43-l1v12]
+Type = Receiver
+Bus = s43
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s43-l1v13]
+Type = Receiver
+Bus = s43
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s43-l1v14]
+Type = Receiver
+Bus = s43
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s43-l1v15]
+Type = Receiver
+Bus = s43
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s43-l1v16]
+Type = Receiver
+Bus = s43
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s43-l1v17]
+Type = Receiver
+Bus = s43
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s43-l1v18]
+Type = Receiver
+Bus = s43
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s43-l1v19]
+Type = Receiver
+Bus = s43
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s43-l1v20]
+Type = Receiver
+Bus = s43
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s43-l1v21]
+Type = Receiver
+Bus = s43
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s43-l1v22]
+Type = Receiver
+Bus = s43
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s43-l1v23]
+Type = Receiver
+Bus = s43
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s43-l1v24]
+Type = Receiver
+Bus = s43
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s43-l1v25]
+Type = Receiver
+Bus = s43
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s43-l1v26]
+Type = Receiver
+Bus = s43
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s43-l1v27]
+Type = Receiver
+Bus = s43
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s43-l1v28]
+Type = Receiver
+Bus = s43
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s43-l1v29]
+Type = Receiver
+Bus = s43
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s43-l1v30]
+Type = Receiver
+Bus = s43
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s43-l1v31]
+Type = Receiver
+Bus = s43
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s43-l1s0]
+Type = Receiver
+Bus = s43
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s43-l1s1]
+Type = Receiver
+Bus = s43
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s43-l1s2]
+Type = Receiver
+Bus = s43
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s43-l1s3]
+Type = Receiver
+Bus = s43
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s43-l1s4]
+Type = Receiver
+Bus = s43
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s43-l1s5]
+Type = Receiver
+Bus = s43
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s43-l1s6]
+Type = Receiver
+Bus = s43
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s43-l1s7]
+Type = Receiver
+Bus = s43
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s43-l2n0]
+Type = Receiver
+Bus = s43
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s43-l2n1]
+Type = Receiver
+Bus = s43
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s43-l2n2]
+Type = Receiver
+Bus = s43
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.l2n3-s43]
+Type = Sender
+Node = l2n3
+Bus = s43
+
+[Network.si-net-l1-l2.BusPort.s43-l2n4]
+Type = Receiver
+Bus = s43
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.s43-l2n5]
+Type = Receiver
+Bus = s43
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s44-l1v0]
+Type = Receiver
+Bus = s44
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s44-l1v1]
+Type = Receiver
+Bus = s44
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s44-l1v2]
+Type = Receiver
+Bus = s44
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s44-l1v3]
+Type = Receiver
+Bus = s44
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s44-l1v4]
+Type = Receiver
+Bus = s44
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s44-l1v5]
+Type = Receiver
+Bus = s44
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s44-l1v6]
+Type = Receiver
+Bus = s44
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s44-l1v7]
+Type = Receiver
+Bus = s44
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s44-l1v8]
+Type = Receiver
+Bus = s44
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s44-l1v9]
+Type = Receiver
+Bus = s44
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s44-l1v10]
+Type = Receiver
+Bus = s44
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s44-l1v11]
+Type = Receiver
+Bus = s44
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s44-l1v12]
+Type = Receiver
+Bus = s44
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s44-l1v13]
+Type = Receiver
+Bus = s44
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s44-l1v14]
+Type = Receiver
+Bus = s44
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s44-l1v15]
+Type = Receiver
+Bus = s44
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s44-l1v16]
+Type = Receiver
+Bus = s44
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s44-l1v17]
+Type = Receiver
+Bus = s44
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s44-l1v18]
+Type = Receiver
+Bus = s44
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s44-l1v19]
+Type = Receiver
+Bus = s44
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s44-l1v20]
+Type = Receiver
+Bus = s44
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s44-l1v21]
+Type = Receiver
+Bus = s44
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s44-l1v22]
+Type = Receiver
+Bus = s44
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s44-l1v23]
+Type = Receiver
+Bus = s44
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s44-l1v24]
+Type = Receiver
+Bus = s44
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s44-l1v25]
+Type = Receiver
+Bus = s44
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s44-l1v26]
+Type = Receiver
+Bus = s44
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s44-l1v27]
+Type = Receiver
+Bus = s44
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s44-l1v28]
+Type = Receiver
+Bus = s44
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s44-l1v29]
+Type = Receiver
+Bus = s44
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s44-l1v30]
+Type = Receiver
+Bus = s44
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s44-l1v31]
+Type = Receiver
+Bus = s44
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s44-l1s0]
+Type = Receiver
+Bus = s44
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s44-l1s1]
+Type = Receiver
+Bus = s44
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s44-l1s2]
+Type = Receiver
+Bus = s44
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s44-l1s3]
+Type = Receiver
+Bus = s44
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s44-l1s4]
+Type = Receiver
+Bus = s44
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s44-l1s5]
+Type = Receiver
+Bus = s44
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s44-l1s6]
+Type = Receiver
+Bus = s44
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s44-l1s7]
+Type = Receiver
+Bus = s44
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s44-l2n0]
+Type = Receiver
+Bus = s44
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s44-l2n1]
+Type = Receiver
+Bus = s44
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s44-l2n2]
+Type = Receiver
+Bus = s44
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s44-l2n3]
+Type = Receiver
+Bus = s44
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.l2n4-s44]
+Type = Sender
+Node = l2n4
+Bus = s44
+
+[Network.si-net-l1-l2.BusPort.s44-l2n5]
+Type = Receiver
+Bus = s44
+Node = l2n5
+
+[Network.si-net-l1-l2.BusPort.s45-l1v0]
+Type = Receiver
+Bus = s45
+Node = l1v0
+
+[Network.si-net-l1-l2.BusPort.s45-l1v1]
+Type = Receiver
+Bus = s45
+Node = l1v1
+
+[Network.si-net-l1-l2.BusPort.s45-l1v2]
+Type = Receiver
+Bus = s45
+Node = l1v2
+
+[Network.si-net-l1-l2.BusPort.s45-l1v3]
+Type = Receiver
+Bus = s45
+Node = l1v3
+
+[Network.si-net-l1-l2.BusPort.s45-l1v4]
+Type = Receiver
+Bus = s45
+Node = l1v4
+
+[Network.si-net-l1-l2.BusPort.s45-l1v5]
+Type = Receiver
+Bus = s45
+Node = l1v5
+
+[Network.si-net-l1-l2.BusPort.s45-l1v6]
+Type = Receiver
+Bus = s45
+Node = l1v6
+
+[Network.si-net-l1-l2.BusPort.s45-l1v7]
+Type = Receiver
+Bus = s45
+Node = l1v7
+
+[Network.si-net-l1-l2.BusPort.s45-l1v8]
+Type = Receiver
+Bus = s45
+Node = l1v8
+
+[Network.si-net-l1-l2.BusPort.s45-l1v9]
+Type = Receiver
+Bus = s45
+Node = l1v9
+
+[Network.si-net-l1-l2.BusPort.s45-l1v10]
+Type = Receiver
+Bus = s45
+Node = l1v10
+
+[Network.si-net-l1-l2.BusPort.s45-l1v11]
+Type = Receiver
+Bus = s45
+Node = l1v11
+
+[Network.si-net-l1-l2.BusPort.s45-l1v12]
+Type = Receiver
+Bus = s45
+Node = l1v12
+
+[Network.si-net-l1-l2.BusPort.s45-l1v13]
+Type = Receiver
+Bus = s45
+Node = l1v13
+
+[Network.si-net-l1-l2.BusPort.s45-l1v14]
+Type = Receiver
+Bus = s45
+Node = l1v14
+
+[Network.si-net-l1-l2.BusPort.s45-l1v15]
+Type = Receiver
+Bus = s45
+Node = l1v15
+
+[Network.si-net-l1-l2.BusPort.s45-l1v16]
+Type = Receiver
+Bus = s45
+Node = l1v16
+
+[Network.si-net-l1-l2.BusPort.s45-l1v17]
+Type = Receiver
+Bus = s45
+Node = l1v17
+
+[Network.si-net-l1-l2.BusPort.s45-l1v18]
+Type = Receiver
+Bus = s45
+Node = l1v18
+
+[Network.si-net-l1-l2.BusPort.s45-l1v19]
+Type = Receiver
+Bus = s45
+Node = l1v19
+
+[Network.si-net-l1-l2.BusPort.s45-l1v20]
+Type = Receiver
+Bus = s45
+Node = l1v20
+
+[Network.si-net-l1-l2.BusPort.s45-l1v21]
+Type = Receiver
+Bus = s45
+Node = l1v21
+
+[Network.si-net-l1-l2.BusPort.s45-l1v22]
+Type = Receiver
+Bus = s45
+Node = l1v22
+
+[Network.si-net-l1-l2.BusPort.s45-l1v23]
+Type = Receiver
+Bus = s45
+Node = l1v23
+
+[Network.si-net-l1-l2.BusPort.s45-l1v24]
+Type = Receiver
+Bus = s45
+Node = l1v24
+
+[Network.si-net-l1-l2.BusPort.s45-l1v25]
+Type = Receiver
+Bus = s45
+Node = l1v25
+
+[Network.si-net-l1-l2.BusPort.s45-l1v26]
+Type = Receiver
+Bus = s45
+Node = l1v26
+
+[Network.si-net-l1-l2.BusPort.s45-l1v27]
+Type = Receiver
+Bus = s45
+Node = l1v27
+
+[Network.si-net-l1-l2.BusPort.s45-l1v28]
+Type = Receiver
+Bus = s45
+Node = l1v28
+
+[Network.si-net-l1-l2.BusPort.s45-l1v29]
+Type = Receiver
+Bus = s45
+Node = l1v29
+
+[Network.si-net-l1-l2.BusPort.s45-l1v30]
+Type = Receiver
+Bus = s45
+Node = l1v30
+
+[Network.si-net-l1-l2.BusPort.s45-l1v31]
+Type = Receiver
+Bus = s45
+Node = l1v31
+
+[Network.si-net-l1-l2.BusPort.s45-l1s0]
+Type = Receiver
+Bus = s45
+Node = l1s0
+
+[Network.si-net-l1-l2.BusPort.s45-l1s1]
+Type = Receiver
+Bus = s45
+Node = l1s1
+
+[Network.si-net-l1-l2.BusPort.s45-l1s2]
+Type = Receiver
+Bus = s45
+Node = l1s2
+
+[Network.si-net-l1-l2.BusPort.s45-l1s3]
+Type = Receiver
+Bus = s45
+Node = l1s3
+
+[Network.si-net-l1-l2.BusPort.s45-l1s4]
+Type = Receiver
+Bus = s45
+Node = l1s4
+
+[Network.si-net-l1-l2.BusPort.s45-l1s5]
+Type = Receiver
+Bus = s45
+Node = l1s5
+
+[Network.si-net-l1-l2.BusPort.s45-l1s6]
+Type = Receiver
+Bus = s45
+Node = l1s6
+
+[Network.si-net-l1-l2.BusPort.s45-l1s7]
+Type = Receiver
+Bus = s45
+Node = l1s7
+
+[Network.si-net-l1-l2.BusPort.s45-l2n0]
+Type = Receiver
+Bus = s45
+Node = l2n0
+
+[Network.si-net-l1-l2.BusPort.s45-l2n1]
+Type = Receiver
+Bus = s45
+Node = l2n1
+
+[Network.si-net-l1-l2.BusPort.s45-l2n2]
+Type = Receiver
+Bus = s45
+Node = l2n2
+
+[Network.si-net-l1-l2.BusPort.s45-l2n3]
+Type = Receiver
+Bus = s45
+Node = l2n3
+
+[Network.si-net-l1-l2.BusPort.s45-l2n4]
+Type = Receiver
+Bus = s45
+Node = l2n4
+
+[Network.si-net-l1-l2.BusPort.l2n5-s45]
+Type = Sender
+Node = l2n5
+Bus = s45
+

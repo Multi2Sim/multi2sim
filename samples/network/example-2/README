@@ -1,0 +1,28 @@
+The Southern Island 7970 Default Configuration With external network between L1 and L2.
+
+#########################################################################################
+
+L1S = L1 cache for Scalar Unit; There is 8 L1S in default Southern Island Configuration
+L1V = L1 cache for Vector Unit; There is 32 L1V in default SI Configuration
+L2N = L2 cache ; There is 6 L2 Cache in default SI Configuration
+SW  = Switch ; One switch act as a Crossbar connecting L1 Cache Level to L2 Cache Level
+ _____   _____       _____   _____   _____   _____       _____  
+| L1S | | L1S | ... | L1S | | L1V | | L1V | | L1V | ... | L1V |
+|_____| |_____|     |_____| |_____| |_____| |_____|     |_____|
+
+
+
+                             ____
+                            | SW |
+                            |____|
+
+
+          _____   _____   _____   _____   _____   _____   
+         | L2N | | L2N | | L2N | | L2N | | L2N | | L2N |
+         |_____| |_____| |_____| |_____| |_____| |_____|
+
+########################################################################################
+To Run simulation, modify the following for your binary:
+
+$> m2s --si-sim detailed --mem-config mem-si --net-config net-si --si-config si-config --ctx-config ctx-config --net-report report
+

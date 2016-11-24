@@ -1,0 +1,427 @@
+;--------------------------------------------Network
+[Network.si-net-l1-l2]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 72
+DefaultPacketSize = 0 
+
+;--------------------------------------------------Nodes
+[Network.si-net-l1-l2.Node.l1s0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s5]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s6]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1s7]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v5]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v6]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v7]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v8]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v9]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v10]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v11]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v12]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v13]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v14]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v15]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v16]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v17]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v18]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v19]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v20]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v21]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v22]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v23]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v24]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v25]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v26]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v27]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v28]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v29]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v30]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l1v31]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n0]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n1]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n2]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n3]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n4]
+Type = EndNode
+
+[Network.si-net-l1-l2.Node.l2n5]
+Type = EndNode
+
+;---------------------------------------------------Switches
+[Network.si-net-l1-l2.Node.s0]
+Type = Switch
+
+;-----------------------------------------------------Links
+[Network.si-net-l1-l2.Link.l1s0-s0]
+Type = Bidirectional
+Source = l1s0
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s1-s0]
+Type = Bidirectional
+Source = l1s1
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s2-s0]
+Type = Bidirectional
+Source = l1s2
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s3-s0]
+Type = Bidirectional
+Source = l1s3
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s4-s0]
+Type = Bidirectional
+Source = l1s4
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s5-s0]
+Type = Bidirectional
+Source = l1s5
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s6-s0]
+Type = Bidirectional
+Source = l1s6
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1s7-s0]
+Type = Bidirectional
+Source = l1s7
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v0-s0]
+Type = Bidirectional
+Source = l1v0
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v1-s0]
+Type = Bidirectional
+Source = l1v1
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v2-s0]
+Type = Bidirectional
+Source = l1v2
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v3-s0]
+Type = Bidirectional
+Source = l1v3
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v4-s0]
+Type = Bidirectional
+Source = l1v4
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v5-s0]
+Type = Bidirectional
+Source = l1v5
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v6-s0]
+Type = Bidirectional
+Source = l1v6
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v7-s0]
+Type = Bidirectional
+Source = l1v7
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v8-s0]
+Type = Bidirectional
+Source = l1v8
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v9-s0]
+Type = Bidirectional
+Source = l1v9
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v10-s0]
+Type = Bidirectional
+Source = l1v10
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v11-s0]
+Type = Bidirectional
+Source = l1v11
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v12-s0]
+Type = Bidirectional
+Source = l1v12
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v13-s0]
+Type = Bidirectional
+Source = l1v13
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v14-s0]
+Type = Bidirectional
+Source = l1v14
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v15-s0]
+Type = Bidirectional
+Source = l1v15
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v16-s0]
+Type = Bidirectional
+Source = l1v16
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v17-s0]
+Type = Bidirectional
+Source = l1v17
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v18-s0]
+Type = Bidirectional
+Source = l1v18
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v19-s0]
+Type = Bidirectional
+Source = l1v19
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v20-s0]
+Type = Bidirectional
+Source = l1v20
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v21-s0]
+Type = Bidirectional
+Source = l1v21
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v22-s0]
+Type = Bidirectional
+Source = l1v22
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v23-s0]
+Type = Bidirectional
+Source = l1v23
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v24-s0]
+Type = Bidirectional
+Source = l1v24
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v25-s0]
+Type = Bidirectional
+Source = l1v25
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v26-s0]
+Type = Bidirectional
+Source = l1v26
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v27-s0]
+Type = Bidirectional
+Source = l1v27
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v28-s0]
+Type = Bidirectional
+Source = l1v28
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v29-s0]
+Type = Bidirectional
+Source = l1v29
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v30-s0]
+Type = Bidirectional
+Source = l1v30
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l1v31-s0]
+Type = Bidirectional
+Source = l1v31
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n0-s0]
+Type = Bidirectional
+Source = l2n0
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n1-s0]
+Type = Bidirectional
+Source = l2n1
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n2-s0]
+Type = Bidirectional
+Source = l2n2
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n3-s0]
+Type = Bidirectional
+Source = l2n3
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n4-s0]
+Type = Bidirectional
+Source = l2n4
+Dest = s0
+VC = 1
+
+[Network.si-net-l1-l2.Link.l2n5-s0]
+Type = Bidirectional
+Source = l2n5
+Dest = s0
+VC = 1
+

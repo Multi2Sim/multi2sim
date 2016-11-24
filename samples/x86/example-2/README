@@ -1,0 +1,15 @@
+% Another simple example to test the x86 detailed simulation
+% in Multi2sim. The difference with example-1 is the use of detailed
+% simulation instead of functional.
+% 
+% This example contains a test for sorting an array.
+% 
+% For this test first we should build the binary from the source code
+% and then use the binary for Multi2sim
+
+% Building the binary
+gcc test-sort.c -o test-sort -m32 || exit 
+
+% Using the binary in multi2sim
+$M2SROOT/bin/m2s --x86-sim detailed --x86-config x86-config.ini \
+		--ctx-config ctx-config.ini

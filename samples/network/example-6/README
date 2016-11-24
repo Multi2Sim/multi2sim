@@ -1,0 +1,4 @@
+Example of a 6x6 Mesh with X-Y routing.
+In order to create Meshes or Meshes with X-Y routing use the scripts in /samples/network/scripts
+
+m2s --net-sim net0 --net-config net-mesh-example-rt --net-injection-rate 32 --net-msg-size 144 --net-max-cycles 120 --net-visual net.vis

@@ -1,0 +1,7 @@
+# Another manual routing test for multi2sim network model.
+#
+# This specific test accounts for every feature that manual routing provides,
+# which includes the use of virtual channels, and obviously the manual routes
+# that are not necessarily the shortest path 
+
+$M2SROOT/bin/m2s --net-sim mynet --net-config net-config.ini 

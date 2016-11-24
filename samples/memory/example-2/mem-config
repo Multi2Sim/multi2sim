@@ -1,0 +1,91 @@
+[CacheGeometry geo-l1]
+Sets = 128
+Assoc = 2
+BlockSize = 256
+Latency = 2
+Policy = LRU
+Ports = 2
+
+[CacheGeometry geo-l2]
+Sets = 512
+Assoc = 4
+BlockSize = 256
+Latency = 20
+Policy = LRU
+Ports = 4
+
+[Module mod-l1-0]
+Type = Cache
+Geometry = geo-l1
+LowNetwork = net0
+LowNetworkNode = n0
+LowModules = mod-l2-0 mod-l2-1
+
+
+[Module mod-l1-1]
+Type = Cache
+Geometry = geo-l1
+LowNetwork = net0 
+LowNetworkNode = n1
+LowModules = mod-l2-0 mod-l2-1
+
+
+[Module mod-l1-2]
+Type = Cache
+Geometry = geo-l1
+LowNetwork = net0
+LowNetworkNode = n2
+LowModules = mod-l2-0 mod-l2-1
+
+
+[Module mod-l2-0]
+Type = Cache
+Geometry = geo-l2
+HighNetwork = net0
+HighNetworkNode = n3
+LowNetwork = net-l2-mm
+AddressRange = BOUNDS 0x00000000 0x7FFFFFFF
+LowModules = mod-mm
+
+[Module mod-l2-1]
+Type = Cache
+Geometry = geo-l2
+HighNetwork = net0
+HighNetworkNode = n4
+LowNetwork = net-l2-mm
+AddressRange = BOUNDS 0x80000000 0xFFFFFFFF
+LowModules = mod-mm
+
+[Module mod-mm]
+Type = MainMemory
+BlockSize = 256
+Latency = 200
+HighNetwork = net-l2-mm
+
+[Network net-l2-mm]
+DefaultInputBufferSize = 1024 
+DefaultOutputBufferSize = 1024
+DefaultBandwidth = 256 
+
+
+[Entry core-0]
+Arch = x86
+Core = 0
+Thread = 0
+DataModule = mod-l1-0
+InstModule = mod-l1-0
+
+[Entry core-1]
+Arch = x86
+Core = 1
+Thread = 0
+DataModule = mod-l1-1
+InstModule = mod-l1-1
+
+[Entry core-2]
+Arch = x86
+Core = 2
+Thread = 0
+DataModule = mod-l1-2
+InstModule = mod-l1-2
+

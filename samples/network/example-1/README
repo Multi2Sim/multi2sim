@@ -1,0 +1,32 @@
+The stand-alone simulation of the default single-switch crossbar network between L1 caches and L2 caches.
+
+#######################################################################################
+
+ _____   _____       _____   _____   _____   _____       _____  
+| L1S | | L1S | ... | L1S | | L1V | | L1V | | L1V | ... | L1V |
+|_____| |_____|     |_____| |_____| |_____| |_____|     |_____|
+
+                             ____
+                            | SW |
+                            |____|
+
+          _____   _____   _____   _____   _____   _____   
+         | L2N | | L2N | | L2N | | L2N | | L2N | | L2N |
+         |_____| |_____| |_____| |_____| |_____| |_____|
+
+########################################################################################
+To Run simulation, type (or copy):
+
+$> m2s --net-sim si-net-l1-l2 --net-config net-si --net-msg-size 72 --net-max-cycles 1000  --net-injection-rate 20 --net-report net.rep --net-visual net.vis 
+
+----------------------------------------------------------------------------------------
+%% This simulation runs for 1000 cycle. In this period, at each cycle, 4 nodes inject 
+%% a message of size 72 in the network. 
+%% Network report is returned in the file net.rep 
+----------------------------------------------------------------------------------------
+
+In order to produce the visualization graph of this network in eps format, run the 
+python script graphplot, which resides in folder samples/network/.
+
+$> ./samples/network/graphplot net.vis net.eps
+

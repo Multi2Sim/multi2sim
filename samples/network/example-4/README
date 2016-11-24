@@ -1,0 +1,6 @@
+An example of 4x4 Mesh.
+In order to make mesh with any size try using the scripts provided in /samples/network/scripts . You can use another script in this folder to create meshes with X-Y routing.
+Mesh without manual (here X-Y) routing may lead to cycle in the network and ultimately deadlock. For more information about cycle and deadlock check out multi2sim manual (Interconnection Network Chapter)
+
+Run the following:
+--net-sim net0 --net-config net-mesh --net-injection-rate 32 --net-msg-size 144 --net-max-cycles 120 --net-visual net2.vis

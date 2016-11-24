@@ -1,0 +1,721 @@
+;------------L1 Vector : Cache size is 16384 
+[CacheGeometry si-geo-vector-l1]
+Sets = 64
+Assoc = 4
+BlockSize = 64
+Latency = 1
+Policy = LRU
+Ports = 2
+
+;------------L1 Scalar : Cache size is 16384 
+[CacheGeometry si-geo-scalar-l1]
+Sets = 64
+Assoc = 4
+BlockSize = 64
+Latency = 1
+Policy = LRU
+Ports = 2
+
+;------------L2 Geometery : Cache size is 131072 
+[CacheGeometry si-geo-l2]
+Sets = 128
+Assoc = 16
+BlockSize = 64
+Latency = 10
+Policy = LRU
+Ports = 2
+
+;-------------------------------------L1 vectors
+[Module si-vector-l1-0]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v0
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-1]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v1
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-2]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v2
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-3]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v3
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-4]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v4
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-5]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v5
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-6]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v6
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-7]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v7
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-8]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v8
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-9]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v9
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-10]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v10
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-11]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v11
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-12]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v12
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-13]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v13
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-14]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v14
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-15]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v15
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-16]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v16
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-17]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v17
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-18]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v18
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-19]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v19
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-20]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v20
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-21]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v21
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-22]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v22
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-23]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v23
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-24]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v24
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-25]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v25
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-26]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v26
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-27]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v27
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-28]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v28
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-29]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v29
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-30]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v30
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-vector-l1-31]
+Type = Cache
+Geometry = si-geo-vector-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1v31
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+;-----------------------------------L1 scalars
+[Module si-scalar-l1-0]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s0
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-1]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s1
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-2]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s2
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-3]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s3
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-4]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s4
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-5]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s5
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-6]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s6
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+[Module si-scalar-l1-7]
+Type = Cache
+Geometry = si-geo-scalar-l1
+LowNetwork = si-net-l1-l2
+LowNetworkNode = l1s7
+LowModules = l2n0 l2n1 l2n2 l2n3 l2n4 l2n5 
+
+;-----------------------------------SI Compute Units
+[Entry si-cu-0]
+Arch = x86
+Core = 0
+Thread = 0
+DataModule = si-vector-l1-0
+InstModule = si-vector-l1-0 
+
+[Entry si-cu-1]
+Arch = x86
+Core = 1
+Thread = 0
+DataModule = si-vector-l1-1
+InstModule = si-vector-l1-1 
+
+[Entry si-cu-2]
+Arch = x86
+Core = 2
+Thread = 0
+DataModule = si-vector-l1-2
+InstModule = si-vector-l1-2 
+
+[Entry si-cu-3]
+Arch = x86
+Core = 3
+Thread = 0
+DataModule = si-vector-l1-3
+InstModule = si-vector-l1-3 
+
+[Entry si-cu-4]
+Arch = x86
+Core = 4
+Thread = 0
+DataModule = si-vector-l1-4
+InstModule = si-vector-l1-4 
+
+[Entry si-cu-5]
+Arch = x86
+Core = 5
+Thread = 0
+DataModule = si-vector-l1-5
+InstModule = si-vector-l1-5 
+
+[Entry si-cu-6]
+Arch = x86
+Core = 6
+Thread = 0
+DataModule = si-vector-l1-6
+InstModule = si-vector-l1-6
+
+[Entry si-cu-7]
+Arch = x86
+Core = 7
+Thread = 0
+DataModule = si-vector-l1-7
+InstModule = si-vector-l1-7 
+
+[Entry si-cu-8]
+Arch = x86
+Core = 8
+Thread = 0
+DataModule = si-vector-l1-8
+InstModule = si-vector-l1-8
+
+[Entry si-cu-9]
+Arch = x86
+Core = 9
+Thread = 0
+DataModule = si-vector-l1-9
+InstModule = si-vector-l1-9
+
+[Entry si-cu-10]
+Arch = x86
+Core = 10
+Thread = 0
+DataModule = si-vector-l1-10
+InstModule = si-vector-l1-10
+
+[Entry si-cu-11]
+Arch = x86
+Core = 11
+Thread = 0
+DataModule = si-vector-l1-11
+InstModule = si-vector-l1-11 
+
+[Entry si-cu-12]
+Arch = x86
+Core = 12
+Thread = 0
+DataModule = si-vector-l1-12
+InstModule = si-vector-l1-12 
+
+[Entry si-cu-13]
+Arch = x86
+Core = 13
+Thread = 0
+DataModule = si-vector-l1-13
+InstModule = si-vector-l1-13
+
+[Entry si-cu-14]
+Arch = x86
+Core = 14
+Thread = 0
+DataModule = si-vector-l1-14
+InstModule = si-vector-l1-14
+
+[Entry si-cu-15]
+Arch = x86
+Core = 15
+Thread = 0
+DataModule = si-vector-l1-15
+InstModule = si-vector-l1-15
+
+[Entry si-cu-16]
+Arch = x86
+Core = 16
+Thread = 0
+DataModule = si-vector-l1-16
+InstModule = si-vector-l1-16 
+
+[Entry si-cu-17]
+Arch = x86
+Core = 17
+Thread = 0
+DataModule = si-vector-l1-17
+InstModule = si-vector-l1-17
+
+[Entry si-cu-18]
+Arch = x86
+Core = 18
+Thread = 0
+DataModule = si-vector-l1-18
+InstModule = si-vector-l1-18
+
+[Entry si-cu-19]
+Arch = x86
+Core = 19
+Thread = 0
+DataModule = si-vector-l1-19
+InstModule = si-vector-l1-19 
+
+[Entry si-cu-20]
+Arch = x86
+Core = 20
+Thread = 0
+DataModule = si-vector-l1-20
+InstModule = si-vector-l1-20
+
+[Entry si-cu-21]
+Arch = x86
+Core = 21
+Thread = 0
+DataModule = si-vector-l1-21
+InstModule = si-vector-l1-21
+
+[Entry si-cu-22]
+Arch = x86
+Core = 22
+Thread = 0
+DataModule = si-vector-l1-22
+InstModule = si-vector-l1-22
+
+[Entry si-cu-23]
+Arch = x86
+Core = 23
+Thread = 0
+DataModule = si-vector-l1-23
+InstModule = si-vector-l1-23
+
+[Entry si-cu-24]
+Arch = x86
+Core = 24
+Thread = 0
+DataModule = si-vector-l1-24
+InstModule = si-vector-l1-24
+
+[Entry si-cu-25]
+Arch = x86
+Core = 25
+Thread = 0
+DataModule = si-vector-l1-25
+InstModule = si-vector-l1-25
+
+[Entry si-cu-26]
+Arch = x86
+Core = 26
+Thread = 0
+DataModule = si-vector-l1-26
+InstModule = si-vector-l1-26 
+
+[Entry si-cu-27]
+Arch = x86
+Core = 27
+Thread = 0
+DataModule = si-vector-l1-27
+InstModule = si-vector-l1-27
+
+[Entry si-cu-28]
+Arch = x86
+Core = 28
+Thread = 0
+DataModule = si-vector-l1-28
+InstModule = si-vector-l1-28
+
+[Entry si-cu-29]
+Arch = x86
+Core = 29
+Thread = 0
+DataModule = si-vector-l1-29
+InstModule = si-vector-l1-29
+
+
+[Entry si-cu-30]
+Arch = x86
+Core = 30
+Thread = 0
+DataModule = si-vector-l1-30
+InstModule = si-vector-l1-30
+
+
+[Entry si-cu-31]
+Arch = x86
+Core = 31
+Thread = 0
+DataModule = si-vector-l1-31
+InstModule = si-vector-l1-31
+
+[Entry si-cu-32]
+Arch = x86
+Core = 32
+Thread = 0
+DataModule = si-scalar-l1-0
+InstModule = si-scalar-l1-0
+
+[Entry si-cu-33]
+Arch = x86
+Core = 33
+Thread = 0
+DataModule = si-scalar-l1-1
+InstModule = si-scalar-l1-1
+
+[Entry si-cu-34]
+Arch = x86
+Core = 34
+Thread = 0
+DataModule = si-scalar-l1-2
+InstModule = si-scalar-l1-2
+
+[Entry si-cu-35]
+Arch = x86
+Core = 35
+Thread = 0
+DataModule = si-scalar-l1-3
+InstModule = si-scalar-l1-3
+
+[Entry si-cu-36]
+Arch = x86
+Core = 36
+Thread = 0
+DataModule = si-scalar-l1-4
+InstModule = si-scalar-l1-4
+
+[Entry si-cu-37]
+Arch = x86
+Core = 37
+Thread = 0
+DataModule = si-scalar-l1-5
+InstModule = si-scalar-l1-5
+
+[Entry si-cu-38]
+Arch = x86
+Core = 38
+Thread = 0
+DataModule = si-scalar-l1-6
+InstModule = si-scalar-l1-6
+
+[Entry si-cu-39]
+Arch = x86
+Core = 39
+Thread = 0
+DataModule = si-scalar-l1-7
+InstModule = si-scalar-l1-7
+
+;---------------------------------L2 Cache Units 
+[Module l2n0]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n0
+LowNetwork = si-net-l2-0-gm-0
+LowModules = si-gm-0
+AddressRange = ADDR DIV 64 MOD 6 EQ 0
+
+[Module l2n1]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n1
+LowNetwork = si-net-l2-1-gm-1
+LowModules = si-gm-1
+AddressRange = ADDR DIV 64 MOD 6 EQ 1
+
+[Module l2n2]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n2
+LowNetwork = si-net-l2-2-gm-2
+LowModules = si-gm-2
+AddressRange = ADDR DIV 64 MOD 6 EQ 2
+
+[Module l2n3]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n3
+LowNetwork = si-net-l2-3-gm-3
+LowModules = si-gm-3
+AddressRange = ADDR DIV 64 MOD 6 EQ 3
+
+[Module l2n4]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n4
+LowNetwork = si-net-l2-4-gm-4
+LowModules = si-gm-4
+AddressRange = ADDR DIV 64 MOD 6 EQ 4
+
+[Module l2n5]
+Type = Cache
+Geometry = si-geo-l2
+HighNetwork = si-net-l1-l2
+HighNetworkNode = l2n5
+LowNetwork = si-net-l2-5-gm-5
+LowModules = si-gm-5
+AddressRange = ADDR DIV 64 MOD 6 EQ 5
+
+;--------------------------------Main (Global) Memory 
+[Module si-gm-0]
+Type = MainMemory
+HighNetwork = si-net-l2-0-gm-0
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 0
+
+[Module si-gm-1]
+Type = MainMemory
+HighNetwork = si-net-l2-1-gm-1
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 1
+
+[Module si-gm-2]
+Type = MainMemory
+HighNetwork = si-net-l2-2-gm-2
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 2
+
+[Module si-gm-3]
+Type = MainMemory
+HighNetwork = si-net-l2-3-gm-3
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 3
+
+[Module si-gm-4]
+Type = MainMemory
+HighNetwork = si-net-l2-4-gm-4
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 4
+
+[Module si-gm-5]
+Type = MainMemory
+HighNetwork = si-net-l2-5-gm-5
+BlockSize = 64
+Latency = 100
+AddressRange = ADDR DIV 64 MOD 6 EQ 5
+
+;-------------------------------- Internal Networks 
+[Network si-net-l2-0-gm-0]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[Network si-net-l2-1-gm-1]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[Network si-net-l2-2-gm-2]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[Network si-net-l2-3-gm-3]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[Network si-net-l2-4-gm-4]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
+[Network si-net-l2-5-gm-5]
+DefaultInputBufferSize = 528
+DefaultOutputBufferSize = 528
+DefaultBandwidth = 264
+
