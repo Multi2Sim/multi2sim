@@ -364,6 +364,10 @@ private:
 		// Random bytes
 		unsigned at_random_addr;
 		unsigned at_random_addr_holder;
+
+		// Address of the value of the AT_PLATFORM element of the
+		// auxiliary vector pointing to the name of the platform
+		unsigned at_platform_ptr = 0;
 	};
 
 	// String map from program header types

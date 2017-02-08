@@ -333,12 +333,20 @@ unsigned Context::LoadAV(unsigned where)
 	LoadAVEntry(sp, 12, geteuid());  // AT_EUID
 	LoadAVEntry(sp, 13, getgid());  // AT_GID
 	LoadAVEntry(sp, 14, getegid());  // AT_EGID
-	LoadAVEntry(sp, 17, 0x64);  // AT_CLKTCK
-	LoadAVEntry(sp, 23, 0);  // AT_SECURE
 
-	// Random bytes
+	// AT_PLATFORM
+	loader->at_platform_ptr = sp + 4;
+	LoadAVEntry(sp, 15, 0);
+
+	// AT_CLKTCK
+	LoadAVEntry(sp, 17, 0x64);
+
+	// AT_SECURE
+	LoadAVEntry(sp, 23, 0);
+
+	// AT_RANDOM
 	loader->at_random_addr_holder = sp + 4;
-	LoadAVEntry(sp, 25, 0);  // AT_RANDOM
+	LoadAVEntry(sp, 25, 0);
 
 	/*LoadAVEntry(sp, 32, 0xffffe400);
 	LoadAVEntry(sp, 33, 0xffffe000);
@@ -358,6 +366,8 @@ unsigned Context::LoadAV(unsigned where)
  * ------------------------------------------------------------------------------
  * (0xc0000000)		< bottom of stack >		0	(virtual)
  * (0xbffffffc)		[ end marker ]			4	(= NULL)
+ *
+ *			[ platform string ]		= "i686"
  *
  * 			[ environment ASCIIZ strings ]	>= 0
  * 			[ argument ASCIIZ strings ]	>= 0
@@ -446,6 +456,13 @@ void Context::LoadStack()
 	}
 	memory->Write(loader->at_random_addr_holder, 4, (char *)
 			&loader->at_random_addr);
+	
+	// Platform string
+	std::string platform = "i686";
+	assert(loader->at_platform_ptr);
+	memory->WriteString(sp, platform);
+	memory->Write(loader->at_platform_ptr, 4, (char *) &sp);
+	sp += platform.length() + 1;
 
 	// Check that we didn't overflow the stack
 	if (sp > LoaderStackBase)
