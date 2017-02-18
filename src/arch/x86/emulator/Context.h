@@ -350,16 +350,9 @@ private:
 		unsigned stack_size;
 		unsigned environ_base;
 
-		// Lowest address initialized
-		unsigned bottom;
-
 		// Program entries
 		unsigned prog_entry;
 		unsigned interp_prog_entry;
-
-		// Program headers
-		unsigned phdt_base;
-		unsigned phdr_count;
 
 		// Random bytes
 		unsigned at_random_addr;
@@ -379,21 +372,12 @@ private:
 	// it.
 	std::shared_ptr<Loader> loader;
 
-	// Load environment variables in 'loader.env' into the stack
-	void LoadEnv();
-
 	// Load segments from binary. The function returns the highest loaded
 	// virtual address from all the loaded segments.
 	unsigned LoadSegments(ELFReader::File *binary);
 
-	// Load ELF sections from binary
-	void LoadELFSections(ELFReader::File *binary);
-
 	// Load dynamic linker
 	void LoadInterpreter();
-
-	// Load program headers
-	void LoadProgramHeaders();
 
 	// Load entry of the auxiliary vector
 	void LoadAuxiliaryVectorEntry(unsigned &sp, unsigned type, unsigned value);

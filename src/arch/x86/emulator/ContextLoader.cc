@@ -137,77 +137,17 @@ static const unsigned LoaderMaxEnviron = 0x10000;  // 16KB for environment
 static const unsigned LoaderStackSize = 0x800000;  // 8MB stack size
 
 
-static misc::StringMap section_flags_map =
+misc::StringMap Context::program_header_type_map =
 {
-	{ "SHF_WRITE", 1 },
-	{ "SHF_ALLOC", 2 },
-	{ "SHF_EXECINSTR", 4 }
+	{ "PT_NULL",        0 },
+	{ "PT_LOAD",        1 },
+	{ "PT_DYNAMIC",     2 },
+	{ "PT_INTERP",      3 },
+	{ "PT_NOTE",        4 },
+	{ "PT_SHLIB",       5 },
+	{ "PT_PHDR",        6 },
+	{ "PT_TLS",         7 }
 };
-
-void Context::LoadELFSections(ELFReader::File *binary)
-{
-	Emulator::loader_debug << "\nLoading ELF sections\n";
-	loader->bottom = 0xffffffff;
-	for (auto &section : binary->getSections())
-	{
-		// Debug
-		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
-		std::string flags_str = section_flags_map.MapFlags(section->getFlags());
-		Emulator::loader_debug << misc::fmt("  section '%s': offset=0x%x, "
-				"addr=0x%x, size=%u, flags=%s\n",
-				section->getName().c_str(), section->getOffset(),
-				section->getAddr(), section->getSize(),
-				flags_str.c_str());
-
-		// Process section
-		if (section->getFlags() & SHF_ALLOC)
-		{
-			// Write permission
-			if (section->getFlags() & SHF_WRITE)
-				perm |= mem::Memory::AccessWrite;
-
-			// Executable section
-			if (section->getFlags() & SHF_EXECINSTR)
-			{
-				// Add execute permission
-				perm |= mem::Memory::AccessExec;
-
-				// Add region to call stack
-				if (call_stack != nullptr)
-				{
-					call_stack->Map(binary->getPath(),
-							section->getOffset(),
-							section->getAddr(),
-							section->getSize(),
-							false);
-				}
-			}
-
-			// Load section
-			memory->Map(section->getAddr(), section->getSize(), perm);
-			memory->growHeapBreak(section->getAddr() + section->getSize());
-			loader->bottom = std::min(loader->bottom, section->getAddr());
-
-			// If section type is SHT_NOBITS (sh_type=8), initialize to 0.
-			// Otherwise, copy section contents from ELF file.
-			if (section->getType() == 8)
-			{
-				if (section->getSize())
-				{
-					auto zero_buffer = misc::new_unique_array<char>(section->getSize());
-					memory->Init(section->getAddr(),
-							section->getSize(),
-							zero_buffer.get());
-				}
-			}
-			else
-			{
-				memory->Init(section->getAddr(), section->getSize(),
-						section->getBuffer());
-			}
-		}
-	}
-}
 
 
 unsigned Context::LoadSegments(ELFReader::File *binary)
@@ -337,78 +277,6 @@ void Context::LoadInterpreter()
 	emulator->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
 			loader->interp_prog_entry);
 	
-}
-
-
-misc::StringMap Context::program_header_type_map =
-{
-	{ "PT_NULL",        0 },
-	{ "PT_LOAD",        1 },
-	{ "PT_DYNAMIC",     2 },
-	{ "PT_INTERP",      3 },
-	{ "PT_NOTE",        4 },
-	{ "PT_SHLIB",       5 },
-	{ "PT_PHDR",        6 },
-	{ "PT_TLS",         7 }
-};
-
-
-void Context::LoadProgramHeaders()
-{
-	// Debug
-	emulator->loader_debug << "\nLoading program headers\n";
-	ELFReader::File *binary = loader->binary.get();
-
-	// Load program header table from ELF
-	int phdr_count = binary->getPhnum();
-	int phdr_size = binary->getPhentsize();
-	int phdt_size = phdr_count * phdr_size;
-	assert(phdr_count == binary->getNumProgramHeaders());
-	
-	// Program header PT_PHDR, specifying location and size of the program
-	// header table itself. Search for program header PT_PHDR, specifying
-	// location and size of the program header table. If none found, choose
-	// loader->bottom - phdt_size. */
-	unsigned phdt_base = loader->bottom - phdt_size;
-	for (auto &program_header : binary->getProgramHeaders())
-		if (program_header->getType() == PT_PHDR)
-			phdt_base = program_header->getVaddr();
-	emulator->loader_debug << misc::fmt("  virtual address for program header "
-			"table: 0x%x\n", phdt_base);
-
-	// Allocate memory for program headers
-	memory->Map(phdt_base, phdt_size, mem::Memory::AccessInit
-			| mem::Memory::AccessRead);
-
-	// Load program headers
-	int index = 0;
-	for (auto &program_header : binary->getProgramHeaders())
-	{
-		// Load program header
-		unsigned address = phdt_base + index * phdr_size;
-		memory->Init(address, phdr_size, (char *)
-				program_header->getRawInfo());
-
-		// Debug
-		emulator->loader_debug << misc::fmt("  header loaded at 0x%x\n", address)
-				<< misc::fmt("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
-				program_header_type_map.MapValue(program_header->getType()),
-				program_header->getOffset(),
-				program_header->getVaddr(),
-				program_header->getPaddr())
-				<< misc::fmt("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
-				program_header->getFilesz(),
-				program_header->getMemsz(),
-				program_header->getFlags(),
-				program_header->getAlign());
-
-		// Next
-		index++;
-	}
-
-	// Free buffer and save pointers
-	loader->phdt_base = phdt_base;
-	loader->phdr_count = phdr_count;
 }
 
 
