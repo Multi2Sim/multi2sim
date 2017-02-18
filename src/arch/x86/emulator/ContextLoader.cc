@@ -226,7 +226,7 @@ unsigned Context::LoadSegments(ELFReader::File *binary)
 			continue;
 
 		// Debug
-		emulator->loader_debug << "  segment loaded at 0x%x\n"
+		emulator->loader_debug << "  segment loaded\n"
 				<< misc::fmt("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
 				program_header_type_map.MapValue(program_header->getType()),
 				program_header->getOffset(),
@@ -237,10 +237,6 @@ unsigned Context::LoadSegments(ELFReader::File *binary)
 				program_header->getMemsz(),
 				program_header->getFlags(),
 				program_header->getAlign());
-
-		// Program interpreter
-		if (program_header->getType() == 3)
-			loader->interp = memory->ReadString(program_header->getVaddr());
 
 		// Compute segment permissions, initially just init and read
 		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
@@ -255,12 +251,12 @@ unsigned Context::LoadSegments(ELFReader::File *binary)
 
 		// Map segment in memory
 		memory->Map(program_header->getVaddr(),
-				program_header->getSize(),
+				program_header->getMemsz(),
 				perm);
 		
 		// Load segment
 		memory->Init(program_header->getVaddr(),
-				program_header->getSize(),
+				program_header->getFilesz(),
 				program_header->getBuffer());
 
 		// Record highest address
@@ -275,16 +271,38 @@ unsigned Context::LoadSegments(ELFReader::File *binary)
 static const unsigned LoaderInterpBase = 0xc0001000;
 static const unsigned LoaderInterpMaxSize = 0x800000;  // 8MB
 
-void Context::LoadInterp()
+void Context::LoadInterpreter()
 {
+	// Traverse program headers in search of a program interpreter
+	for (auto &program_header : loader->binary->getProgramHeaders())
+	{
+		// Skip if not a program interpreter entry
+		if (program_header->getType() != 3)
+			continue;
+
+		// Found
+		loader->interpreter = memory->ReadString(program_header->getVaddr());
+		break;
+	}
+
+	// No program interpreter
+	if (loader->interpreter.empty())
+	{
+		// Debug
+		emulator->loader_debug << "\nNo program interpreter found\n";
+
+		// Done
+		return;
+	}
+
 	// Debug
 	emulator->loader_debug << misc::fmt("\nLoading program interpreter '%s'\n",
-			loader->interp.c_str());
+			loader->interpreter.c_str());
 
 	// Open interpreter
-	std::ifstream f(loader->interp);
+	std::ifstream f(loader->interpreter);
 	if (!f)
-		throw Error(loader->interp + ": Invalid interpreter");
+		throw Error(loader->interpreter + ": Invalid interpreter");
 
 	// Get file size
 	f.seekg(0, std::ios_base::end);
@@ -293,7 +311,7 @@ void Context::LoadInterp()
 
 	// Check maximum size
 	if (size > LoaderInterpMaxSize)
-		throw Error(loader->interp + ": Interpreter too large");
+		throw Error(loader->interpreter + ": Interpreter too large");
 	
 	// Read content of interpreter
 	auto buffer = misc::new_unique_array<char>(size);
@@ -311,7 +329,7 @@ void Context::LoadInterp()
 			address, size);
 	
 	// Load segments from program interpreter
-	ELFReader::File binary(loader->interp);
+	ELFReader::File binary(loader->interpreter);
 	LoadSegments(&binary);
 	
 	// Change program entry to the one specified by the interpreter
@@ -384,10 +402,6 @@ void Context::LoadProgramHeaders()
 				program_header->getFlags(),
 				program_header->getAlign());
 
-		// Program interpreter
-		if (program_header->getType() == 3)
-			loader->interp = memory->ReadString(program_header->getVaddr());
-		
 		// Next
 		index++;
 	}
@@ -398,7 +412,7 @@ void Context::LoadProgramHeaders()
 }
 
 
-void Context::LoadAVEntry(unsigned &sp, unsigned type, unsigned value)
+void Context::LoadAuxiliaryVectorEntry(unsigned &sp, unsigned type, unsigned value)
 {
 	// Write values
 	memory->Write(sp, 4, (char *) &type);
@@ -409,71 +423,81 @@ void Context::LoadAVEntry(unsigned &sp, unsigned type, unsigned value)
 }
 
 
-unsigned Context::LoadAV(unsigned where)
+unsigned Context::LoadAuxiliaryVector(unsigned where)
 {
 	// Debug
 	unsigned sp = where;
 	emulator->loader_debug << misc::fmt("Loading auxiliary vector at 0x%x\n", where);
+	
+	// Search for program header PT_PHDR, which specifies the location of
+	// the program header table itself.
+	unsigned phdt_base = 0;
+	for (auto &program_header : loader->binary->getProgramHeaders())
+		if (program_header->getType() == PT_PHDR)
+			phdt_base = program_header->getVaddr();
 
 	// AT_PHDR
-	LoadAVEntry(sp, 3, loader->phdt_base);
+	if (phdt_base)
+		LoadAuxiliaryVectorEntry(sp, 3, phdt_base);
 
 	// AT_PHENT
-	LoadAVEntry(sp, 4, 32);
+	LoadAuxiliaryVectorEntry(sp, 4, 32);
 
 	// AT_PHNUM
-	LoadAVEntry(sp, 5, loader->phdr_count);
+	LoadAuxiliaryVectorEntry(sp, 5, loader->binary->getPhnum());
 
 	// AT_PAGESZ
-	LoadAVEntry(sp, 6, mem::Memory::PageSize);
+	LoadAuxiliaryVectorEntry(sp, 6, mem::Memory::PageSize);
 
 	// AT_BASE
-	if (!loader->interp.empty())
-		LoadAVEntry(sp, 7, LoaderInterpBase);
+	if (!loader->interpreter.empty())
+		LoadAuxiliaryVectorEntry(sp, 7, LoaderInterpBase);
 
 	// AT_FLAGS
-	LoadAVEntry(sp, 8, 0);
+	LoadAuxiliaryVectorEntry(sp, 8, 0);
 
 	// AT_ENTRY
-	LoadAVEntry(sp, 9, loader->prog_entry);
+	LoadAuxiliaryVectorEntry(sp, 9, loader->prog_entry);
 
 	// AT_UID
-	LoadAVEntry(sp, 11, getuid());
+	LoadAuxiliaryVectorEntry(sp, 11, getuid());
 
 	// AT_EUID
-	LoadAVEntry(sp, 12, geteuid());
+	LoadAuxiliaryVectorEntry(sp, 12, geteuid());
 
 	// AT_GID
-	LoadAVEntry(sp, 13, getgid());
+	LoadAuxiliaryVectorEntry(sp, 13, getgid());
 
 	// AT_EGID
-	LoadAVEntry(sp, 14, getegid());
+	LoadAuxiliaryVectorEntry(sp, 14, getegid());
 
 	// AT_PLATFORM
 	loader->at_platform_ptr = sp + 4;
-	LoadAVEntry(sp, 15, 0);
+	LoadAuxiliaryVectorEntry(sp, 15, 0);
 
 	// AT_HWCAP
-	LoadAVEntry(sp, 16, 0x78bfbff);
+	LoadAuxiliaryVectorEntry(sp, 16, 0x78bfbff);
 
 	// AT_CLKTCK
-	LoadAVEntry(sp, 17, 0x64);
+	LoadAuxiliaryVectorEntry(sp, 17, 0x64);
 
 	// AT_SECURE
-	LoadAVEntry(sp, 23, 0);
+	LoadAuxiliaryVectorEntry(sp, 23, 0);
 
 	// AT_RANDOM
 	loader->at_random_addr_holder = sp + 4;
-	LoadAVEntry(sp, 25, 0);
+	LoadAuxiliaryVectorEntry(sp, 25, 0);
 
-	/*LoadAVEntry(sp, 32, 0xffffe400);
-	LoadAVEntry(sp, 33, 0xffffe000);
-	LoadAVEntry(sp, 16, 0xbfebfbff);*/
+	/*LoadAuxiliaryVectorEntry(sp, 32, 0xffffe400);
+	LoadAuxiliaryVectorEntry(sp, 33, 0xffffe000);
+	LoadAuxiliaryVectorEntry(sp, 16, 0xbfebfbff);*/
 
 	/* ??? 32 and 33 ???*/
 
-	// Finally, AT_NULL, and return size
-	LoadAVEntry(sp, 0, 0);
+	// AT_NULL
+	LoadAuxiliaryVectorEntry(sp, 0, 0);
+
+	// Return size of auxiliary vector
 	return sp - where;
 }
 
@@ -535,7 +559,7 @@ void Context::LoadStack()
 	sp += loader->env.size() * 4 + 4;
 
 	// Load here the auxiliary vector
-	sp += LoadAV(sp);
+	sp += LoadAuxiliaryVector(sp);
 
 	// Write arguments into stack
 	emulator->loader_debug << "\nArguments:\n";
@@ -669,16 +693,15 @@ void Context::LoadBinary()
 	// Load program header table. If we found a PT_INTERP program header,
 	// we have to load the program interpreter. This means we are dealing with
 	// a dynamically linked application.
-	LoadProgramHeaders();
-	if (!loader->interp.empty())
-		LoadInterp();
+	// Load program interpreter, if any
+	LoadInterpreter();
 
 	// Stack
 	LoadStack();
 
 	// Register initialization
 	regs.setEsp(loader->environ_base);
-	regs.setEip(loader->interp.empty() ? loader->prog_entry
+	regs.setEip(loader->interpreter.empty() ? loader->prog_entry
 			: loader->interp_prog_entry);
 
 	// Debug

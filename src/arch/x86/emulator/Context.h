@@ -332,7 +332,7 @@ private:
 		std::vector<std::string> env;
 
 		// Executable interpreter
-		std::string interp;
+		std::string interpreter;
 
 		// Executable file name
 		std::string exe;
@@ -390,16 +390,16 @@ private:
 	void LoadELFSections(ELFReader::File *binary);
 
 	// Load dynamic linker
-	void LoadInterp();
+	void LoadInterpreter();
 
 	// Load program headers
 	void LoadProgramHeaders();
 
 	// Load entry of the auxiliary vector
-	void LoadAVEntry(unsigned &sp, unsigned type, unsigned value);
+	void LoadAuxiliaryVectorEntry(unsigned &sp, unsigned type, unsigned value);
 
 	// Load auxiliary vector and return its size in bytes
-	unsigned LoadAV(unsigned where);
+	unsigned LoadAuxiliaryVector(unsigned where);
 
 	// Load content of stack
 	void LoadStack();
