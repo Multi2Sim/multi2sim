@@ -18,6 +18,7 @@
  */
 
 #include <fcntl.h>
+#include <fstream>
 #include <unistd.h>
 
 #include <lib/cpp/String.h>
@@ -209,13 +210,45 @@ void Context::LoadELFSections(ELFReader::File *binary)
 }
 
 
+static const unsigned LoaderInterpBase = 0xc0001000;
+static const unsigned LoaderInterpMaxSize = 0x800000;  // 8MB
+
 void Context::LoadInterp()
 {
 	// Debug
 	emulator->loader_debug << misc::fmt("\nLoading program interpreter '%s'\n",
 			loader->interp.c_str());
+
+	// Open interpreter
+	std::ifstream f(loader->interp);
+	if (!f)
+		throw Error(loader->interp + ": Invalid interpreter");
+
+	// Get file size
+	f.seekg(0, std::ios_base::end);
+	unsigned size = f.tellg();
+	f.seekg(0, std::ios_base::beg);
+
+	// Check maximum size
+	if (size > LoaderInterpMaxSize)
+		throw Error(loader->interp + ": Interpreter too large");
 	
-	// Load section from program interpreter
+	// Read content of interpreter
+	auto buffer = misc::new_unique_array<char>(size);
+	f.read(buffer.get(), size);
+	f.close();
+
+	// Load interpreter in memory
+	unsigned address = LoaderInterpBase;
+	memory->Map(address, size, mem::Memory::AccessInit);
+	memory->Init(address, size, buffer.get());
+	
+	// Debug
+	emulator->loader_debug << misc::fmt(
+			"\n\tInterpreter loaded at 0x%x (%u bytes)\n\n",
+			address, size);
+	
+	// Load sections from program interpreter
 	ELFReader::File binary(loader->interp);
 	LoadELFSections(&binary);
 
@@ -223,6 +256,7 @@ void Context::LoadInterp()
 	loader->interp_prog_entry = binary.getEntry();
 	emulator->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
 			loader->interp_prog_entry);
+	
 }
 
 
@@ -319,24 +353,46 @@ unsigned Context::LoadAV(unsigned where)
 	unsigned sp = where;
 	emulator->loader_debug << misc::fmt("Loading auxiliary vector at 0x%x\n", where);
 
-	// Program headers
-	LoadAVEntry(sp, 3, loader->phdt_base);  // AT_PHDR
-	LoadAVEntry(sp, 4, 32);  // AT_PHENT -> program header size of 32 bytes
-	LoadAVEntry(sp, 5, loader->phdr_count);  // AT_PHNUM
+	// AT_PHDR
+	LoadAVEntry(sp, 3, loader->phdt_base);
 
-	// Other values
-	LoadAVEntry(sp, 6, mem::Memory::PageSize);  // AT_PAGESZ
-	LoadAVEntry(sp, 7, 0);  // AT_BASE
-	LoadAVEntry(sp, 8, 0);  // AT_FLAGS
-	LoadAVEntry(sp, 9, loader->prog_entry);  // AT_ENTRY
-	LoadAVEntry(sp, 11, getuid());  // AT_UID
-	LoadAVEntry(sp, 12, geteuid());  // AT_EUID
-	LoadAVEntry(sp, 13, getgid());  // AT_GID
-	LoadAVEntry(sp, 14, getegid());  // AT_EGID
+	// AT_PHENT
+	LoadAVEntry(sp, 4, 32);
+
+	// AT_PHNUM
+	LoadAVEntry(sp, 5, loader->phdr_count);
+
+	// AT_PAGESZ
+	LoadAVEntry(sp, 6, mem::Memory::PageSize);
+
+	// AT_BASE
+	if (!loader->interp.empty())
+		LoadAVEntry(sp, 7, LoaderInterpBase);
+
+	// AT_FLAGS
+	LoadAVEntry(sp, 8, 0);
+
+	// AT_ENTRY
+	LoadAVEntry(sp, 9, loader->prog_entry);
+
+	// AT_UID
+	LoadAVEntry(sp, 11, getuid());
+
+	// AT_EUID
+	LoadAVEntry(sp, 12, geteuid());
+
+	// AT_GID
+	LoadAVEntry(sp, 13, getgid());
+
+	// AT_EGID
+	LoadAVEntry(sp, 14, getegid());
 
 	// AT_PLATFORM
 	loader->at_platform_ptr = sp + 4;
 	LoadAVEntry(sp, 15, 0);
+
+	// AT_HWCAP
+	LoadAVEntry(sp, 16, 0x78bfbff);
 
 	// AT_CLKTCK
 	LoadAVEntry(sp, 17, 0x64);
@@ -352,7 +408,7 @@ unsigned Context::LoadAV(unsigned where)
 	LoadAVEntry(sp, 33, 0xffffe000);
 	LoadAVEntry(sp, 16, 0xbfebfbff);*/
 
-	/* ??? AT_HWCAP, AT_PLATFORM, 32 and 33 ???*/
+	/* ??? 32 and 33 ???*/
 
 	// Finally, AT_NULL, and return size
 	LoadAVEntry(sp, 0, 0);
@@ -470,6 +526,19 @@ void Context::LoadStack()
 			__FUNCTION__);
 }
 
+
+/*
+ * The following layout is used for the initial virtual memory image of the
+ * new context:
+ *
+ *
+ * Low		High		Size			Description
+ * ------------------------------------------------------------------------------
+ * 0xc0001000	0xc0801000	0x800000 (8MB) max	Interpreter
+ * 0xbf800000	0xc0000000	0x800000 (8MB)		Stack
+ * <variable>	0xb7fb0000	<variable>		Dynamic data (mmap)
+ *
+ */
 
 void Context::LoadBinary()
 {
