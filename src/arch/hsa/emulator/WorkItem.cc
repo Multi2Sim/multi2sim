@@ -29,6 +29,7 @@
 #include "BrInstructionWorker.h"
 #include "BarrierInstructionWorker.h"
 #include "CbrInstructionWorker.h"
+#include "CmovInstructionWorker.h"
 #include "CurrentWorkGroupSizeInstructionWorker.h"
 #include "CmpInstructionWorker.h"
 #include "CvtInstructionWorker.h"
@@ -39,6 +40,7 @@
 #include "SubInstructionWorker.h"
 #include "LdaInstructionWorker.h"
 #include "MadInstructionWorker.h"
+#include "MinInstructionWorker.h"
 #include "MemFenceInstructionWorker.h"
 #include "MovInstructionWorker.h"
 #include "OrInstructionWorker.h"
@@ -49,6 +51,7 @@
 #include "WorkItemAbsIdInstructionWorker.h"
 #include "WorkItemIdInstructionWorker.h"
 #include "WorkGroupIdInstructionWorker.h"
+#include "XorInstructionWorker.h"
 
 
 namespace HSA
@@ -140,14 +143,13 @@ void WorkItem::Backtrace(std::ostream &os = std::cout) const
 	int frame_count = 1;
 	for (auto it = stack.rbegin(); it != stack.rend(); it++)
 	{
-		// StackFrame *frame = (*it).get();
 		os << misc::fmt("#%d ", frame_count++);
 		os << misc::fmt("%s ", (*it)->getFunction()->getName().c_str());
 
 		// Dump arguments and their value
 		os << "(";
-		os << "To be supported";
-		//frame->getFunctionArguments()->DumpInLine(os);
+		StackFrame *frame = (*it).get();
+		frame->PrintFunctionArgumentList(os);
 		os << ")";
 		os << "\n";
 	}
@@ -336,10 +338,13 @@ unsigned WorkItem::getFlatAddress(BrigSegment segment, unsigned address)
 	}
 
 	case BRIG_SEGMENT_PRIVATE:
+	case BRIG_SEGMENT_SPILL:
 
+	{
 		// Get private segment manager and translate address
 		flat_address = private_segment->getFlatAddress(address);	
 		break;
+	}
 
 	case BRIG_SEGMENT_KERNARG:
 
@@ -487,6 +492,7 @@ void WorkItem::DeclareVariable()
 		break;
 
 	case BRIG_SEGMENT_PRIVATE:
+	case BRIG_SEGMENT_SPILL:
 
 		DeclareVariablePrivate(name, type, dim);
 		break;
@@ -499,11 +505,6 @@ void WorkItem::DeclareVariable()
 	case BRIG_SEGMENT_READONLY:
 
 		throw misc::Panic("Unsupported segment READONLY.");
-		break;
-
-	case BRIG_SEGMENT_SPILL:
-
-		throw misc::Panic("Unsupported segment SPILL.");
 		break;
 
 	case BRIG_SEGMENT_ARG:
@@ -557,6 +558,10 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 		return misc::new_unique<CbrInstructionWorker>(this, stack_top);
 
+	case BRIG_OPCODE_CMOV:
+
+		return misc::new_unique<CmovInstructionWorker>(this, stack_top);
+
 	case BRIG_OPCODE_CURRENTWORKGROUPSIZE:
 
 		return misc::new_unique<CurrentWorkGroupSizeInstructionWorker>(
@@ -594,6 +599,12 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 	case BRIG_OPCODE_MAD:
 
 		return misc::new_unique<MadInstructionWorker>(this, stack_top);
+
+	case BRIG_OPCODE_MIN:
+	case 32796:
+
+		return misc::new_unique<MinInstructionWorker>(this, stack_top);
+
 
 	case BRIG_OPCODE_MUL:
 
@@ -640,6 +651,11 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 		return misc::new_unique<WorkGroupIdInstructionWorker>(
 				this, stack_top);
 
+	case BRIG_OPCODE_XOR:
+
+		return misc::new_unique<XorInstructionWorker>(
+				this, stack_top);
+
 	default:
 		throw misc::Panic(misc::fmt("Opcode %s (%d) not implemented.",
 				AsmService::OpcodeToString(opcode).c_str(),
@@ -650,6 +666,8 @@ std::unique_ptr<HsaInstructionWorker> WorkItem::getInstructionWorker(
 
 bool WorkItem::Execute()
 {
+	Emulator *emulator = Emulator::getInstance();
+
 	// Only execute the active work item
 	if (status != WorkItemStatusActive)
 		return true;
@@ -664,8 +682,30 @@ bool WorkItem::Execute()
 	// Retrieve stack top
 	StackFrame *stack_top = getStackTop();
 
-	// Increase instruction counter
-	Emulator::getInstance()->incNumInstructions();
+	// Increase instruction counter and check if the max instructions is
+	// reached
+	emulator->incNumInstructions();
+	long long max_instructions = Emulator::getMaxInstructions();
+	if (max_instructions &&
+			emulator->getNumInstructions() > max_instructions)
+	{
+		std::cerr << "HsaMaxInstructions\n";
+		exit(1);
+	}
+
+	// Check if time to inject register fault
+	uint64_t register_fault = Emulator::getRegisterFaultInjectionInstructionId();
+	if (register_fault &&
+			(uint64_t)emulator->getNumInstructions() == register_fault) {
+		InjectRegisterFault();
+	}
+
+	// Check if time to inject lds fault
+	uint64_t lds_fault = Emulator::getLdsFaultInjectionInstructionId();
+	if (lds_fault &&
+			(uint64_t)emulator->getNumInstructions() == lds_fault) {
+		InjectLdsFault();
+	}
 
 	// Execute the instruction or directory
 	BrigCodeEntry *inst = stack_top->getPc();
@@ -677,11 +717,6 @@ bool WorkItem::Execute()
 					getAbsoluteFlattenedId());
 			Emulator::isa_debug << "Executing: ";
 			Emulator::isa_debug << *inst;
-
-//			Emulator::isa_debug << "Before: ";
-//			if (Emulator::isa_debug)
-//				stack_top->Dump(Emulator::isa_debug);
-//			Emulator::isa_debug << "\n";
 		}
 
 		// Get the function according to the opcode and perform the inst
@@ -723,6 +758,50 @@ bool WorkItem::Execute()
 		
 	// Return true, since the execution is not finished
 	return true;
+}
+
+
+void WorkItem::InjectRegisterFault() {
+	StackFrame *stack_top = getStackTop();
+
+	// Total register size is register size + c register size + pc
+	int register_size = stack_top->getRegisterSizeInByte();
+	int total_register_size = register_size + 8 + 8;
+
+	// Randomize where to inject error
+	uint32_t injection_pos = rand() % total_register_size;
+	uint32_t injection_bit = rand() % 8;
+
+	// Inject error
+	if (injection_pos < stack_top->getRegisterSizeInByte())
+	{
+		fprintf(stderr, "Inject fault in regular register [%d, %d]\n",
+			injection_pos, injection_bit);
+		stack_top->BitFlipRegister(injection_pos, injection_bit);
+	}
+	else if (injection_pos < stack_top->getRegisterSizeInByte() + 8)
+	{
+		int byte = injection_pos - register_size;
+		fprintf(stderr, "Inject fault in c register [%d]\n", byte);
+		stack_top->BitFlipRegisterInCRegisters(byte);
+	}
+	else
+	{
+		int byte = injection_pos - register_size - 8;
+		fprintf(stderr, "Inject fault in pc [%d, %d]\n",
+			byte, injection_bit);
+		uint64_t pc = (uint64_t)stack_top->getPc();
+		uint64_t mask = 1 << (byte * 8 + injection_bit);
+		pc ^= mask;
+		stack_top->setPc(std::unique_ptr<BrigCodeEntry>(
+				(BrigCodeEntry *)pc));
+	}
+
+}
+
+
+void WorkItem::InjectLdsFault() {
+
 }
 
 

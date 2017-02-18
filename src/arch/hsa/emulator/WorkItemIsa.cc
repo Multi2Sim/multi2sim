@@ -448,69 +448,6 @@ void WorkItem::ExecuteInst_MAX()
 
 
 template<typename T>
-void WorkItem::Inst_MIN_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = (src0 < src1) ? src0 : src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_MIN()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action accoding to the kind of the inst
-	if (inst->getKind() == BRIG_KIND_INST_BASIC)
-	{
-		switch (inst->getType())
-		{
-		case BRIG_TYPE_S32:
-
-			Inst_MIN_Aux<int>();
-			break;
-
-		case BRIG_TYPE_S64:
-
-			Inst_MIN_Aux<long long>();
-			break;
-
-		case BRIG_TYPE_U32:
-
-			Inst_MIN_Aux<unsigned int>();
-			break;
-
-		case BRIG_TYPE_U64:
-
-			Inst_MIN_Aux<unsigned long long>();
-			break;
-
-		default:
-
-			throw Error("Illegal type.");
-		}
-	}
-	else if (inst->getKind() == BRIG_KIND_INST_MOD)
-	{
-		throw misc::Panic("Unimplemented Inst MIN, "
-				"kind BRIG_KIND_INST_MOD.");
-	}
-	else
-	{
-		throw Error("Unsupported Inst kind.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_MULHI_Aux(int half_width, T lo_mask)
 {
 	// Get source value
@@ -848,52 +785,6 @@ void WorkItem::ExecuteInst_POPCOUNT()
 
 
 template<typename T>
-void WorkItem::Inst_XOR_Aux()
-{
-	// Perform action
-	T src0;
-	T src1;
-	getOperandValue(1, &src0);
-	getOperandValue(2, &src1);
-	T des = src0 ^ src1;
-	setOperandValue(0, &des);
-}
-
-
-void WorkItem::ExecuteInst_XOR()
-{
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Do different action according to the kind of the inst
-	switch (inst->getType())
-	{
-	case BRIG_TYPE_B1:
-
-		throw misc::Panic("Unimplemented Inst XOR, type B1.");
-		break;
-
-	case BRIG_TYPE_B32:
-
-		Inst_XOR_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-
-		Inst_XOR_Aux<unsigned long long>();
-		break;
-
-	default:
-
-		throw Error("Illegal type.");
-	}
-
-	// Move the pc forward
-	MovePcForwardByOne();
-}
-
-
-template<typename T>
 void WorkItem::Inst_BITEXTRACT_Aux()
 {
 	// Retrieve operand value
@@ -1031,82 +922,6 @@ void WorkItem::ExecuteInst_PACK()
 void WorkItem::ExecuteInst_UNPACK()
 {
 	throw misc::Panic(misc::fmt("Instruction not implemented %s\n", __FUNCTION__));
-}
-
-template<typename T> void WorkItem::Inst_CMOV_Aux() {
-	// Retrieve src0 value
-	unsigned char src0;
-	getOperandValue(1, &src0);
-
-	// Retrieve src1, src2
-	T src1, src2;
-	getOperandValue(2, &src1);
-	getOperandValue(3, &src2);
-
-	// Move to dst value
-	T dst;
-	if (src0) 
-		dst = src1;
-	else 
-		dst = src2;
-	setOperandValue(0, &dst);
-}
-
-
-void WorkItem::ExecuteInst_CMOV()
-{
-	// Retrieve inst
-	StackFrame *stack_top = stack.back().get();
-	BrigCodeEntry *inst = stack_top->getPc();
-
-	// Call auxiliary function on different type
-	switch (inst->getType()){
-	case BRIG_TYPE_B1:
-
-		Inst_CMOV_Aux<unsigned char>();
-		break;
-
-	case BRIG_TYPE_B32:
-	case BRIG_TYPE_U32:
-
-		Inst_CMOV_Aux<unsigned int>();
-		break;
-
-	case BRIG_TYPE_B64:
-	case BRIG_TYPE_U64:
-
-		Inst_CMOV_Aux<unsigned long long>();
-		break;
-
-	case BRIG_TYPE_S32:
-
-		Inst_CMOV_Aux<int>();
-		break;
-
-	case BRIG_TYPE_S64:
-
-		Inst_CMOV_Aux<long long>();
-		break;
-
-	case BRIG_TYPE_F32:
-
-		Inst_CMOV_Aux<float>();
-		break;
-
-	case BRIG_TYPE_F64:
-
-		Inst_CMOV_Aux<double>();
-		break;
-
-	default:
-
-		throw misc::Panic("Unsupported type for opcode CMOV.");
-		break;
-
-	}
-
-	// Move PC forward
-	MovePcForwardByOne();
 }
 
 

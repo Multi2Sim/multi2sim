@@ -1,6 +1,6 @@
 /*
  *  Multi2Sim
- *  Copyright (C) 2014  Yifan Sun (yifansun@coe.neu.edu)
+ *  Copyright (C) 2016  Yifan Sun (yifansun@coe.neu.edu)
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,9 +17,26 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "WorkGroupIdInstructionWorker.h"
+#ifndef ARCH_HSA_EMULATOR_VARIABLEPRINTER_H
+#define ARCH_HSA_EMULATOR_VARIABLEPRINTER_H
 
-namespace HSA
-{
+#include <map>
+#include <memory>
+#include <string>
+#include <iostream>
+
+namespace HSA {
+
+class Variable;
+
+/// A VariablePinters prints variable list 
+class VariablePrinter {
+public:
+  void PrintVariables(
+      const std::map<std::string, std::unique_ptr<Variable>> *variables, 
+      std::ostream &os = std::cout) const;
+};
 
 }  // namespace HSA
+
+#endif  // ARCH_HSA_EMULATOR_VARIABLEPRINTER_H

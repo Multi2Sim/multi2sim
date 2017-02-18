@@ -23,64 +23,96 @@
 #include <arch/hsa/disassembler/Brig.h>
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
 
-#include "AndInstructionWorker.h"
+#include "CmovInstructionWorker.h"
 #include "WorkItem.h"
 
-namespace HSA
-{
+namespace HSA {
 
-AndInstructionWorker::AndInstructionWorker(WorkItem *work_item,
+CmovInstructionWorker::CmovInstructionWorker (WorkItem *work_item,
 		StackFrame *stack_frame) :
 		HsaInstructionWorker(work_item, stack_frame)
 {
 }
 
 
-AndInstructionWorker::~AndInstructionWorker()
+CmovInstructionWorker::~CmovInstructionWorker ()
 {
 }
 
 
 template<typename T>
-void AndInstructionWorker::Inst_AND_Aux(BrigCodeEntry *instruction)
+void CmovInstructionWorker::Inst_CMOV_Aux(BrigCodeEntry *instruction)
 {
-	// Perform action
-	T src0;
-	T src1;
+	// Retrieve src0 value
+	unsigned char src0;
 	operand_value_retriever->Retrieve(instruction, 1, &src0);
+
+	// Retrieve src1, src2
+	T src1, src2;
 	operand_value_retriever->Retrieve(instruction, 2, &src1);
-	T des = src0 & src1;
-	operand_value_writer->Write(instruction, 0, &des);
+	operand_value_retriever->Retrieve(instruction, 3, &src2);
+
+	// Move to dst value
+	T dst;
+	if (src0)
+		dst = src1;
+	else
+		dst = src2;
+	operand_value_writer->Write(instruction, 0, &dst);
+
+	// Move PC forward
+	work_item->MovePcForwardByOne();
 }
 
 
-void AndInstructionWorker::Execute(BrigCodeEntry *instruction)
+void CmovInstructionWorker::Execute(BrigCodeEntry *instruction)
 {
-	// Do different action according to the kind of the inst
-	switch (instruction->getType())
-	{
+	// Call auxiliary function on different type
+	switch (instruction->getType()){
 	case BRIG_TYPE_B1:
 
-		Inst_AND_Aux<uint8_t>(instruction);
+		Inst_CMOV_Aux<unsigned char>(instruction);
 		break;
 
 	case BRIG_TYPE_B32:
+	case BRIG_TYPE_U32:
 
-		Inst_AND_Aux<uint32_t>(instruction);
+		Inst_CMOV_Aux<unsigned int>(instruction);
 		break;
 
 	case BRIG_TYPE_B64:
+	case BRIG_TYPE_U64:
 
-		Inst_AND_Aux<uint64_t>(instruction);
+		Inst_CMOV_Aux<unsigned long long>(instruction);
+		break;
+
+	case BRIG_TYPE_S32:
+
+		Inst_CMOV_Aux<int>(instruction);
+		break;
+
+	case BRIG_TYPE_S64:
+
+		Inst_CMOV_Aux<long long>(instruction);
+		break;
+
+	case BRIG_TYPE_F32:
+
+		Inst_CMOV_Aux<float>(instruction);
+		break;
+
+	case BRIG_TYPE_F64:
+
+		Inst_CMOV_Aux<double>(instruction);
 		break;
 
 	default:
 
-		throw Error("Illegal type.");
-	}
+		throw misc::Panic("Unsupported type for opcode CMOV.");
+		break;
 
-	// Move the pc forward
-	work_item->MovePcForwardByOne();
+	}
 }
 
-}  // namespace HSA
+}
+

@@ -37,6 +37,9 @@ libemulator_a_SOURCES = \
 		Variable.h \
 		Variable.cc \
 		\
+		VariablePrinter.h \
+		VariablePrinter.cc \
+		\
 		Wavefront.h \
 		Wavefront.cc \
 		\
@@ -65,6 +68,9 @@ libemulator_a_SOURCES = \
 		CbrInstructionWorker.h \
 		CbrInstructionWorker.cc \
 		\
+		CmovInstructionWorker.h \
+		CmovInstructionWorker.cc \
+		\
 		CurrentWorkGroupSizeInstructionWorker.h \
 		CurrentWorkGroupSizeInstructionWorker.cc \
 		\
@@ -88,6 +94,9 @@ libemulator_a_SOURCES = \
 		\
 		MemFenceInstructionWorker.h \
 		MemFenceInstructionWorker.cc \
+		\
+		MinInstructionWorker.h \
+		MinInstructionWorker.cc \
 		\
 		MovInstructionWorker.h \
 		MovInstructionWorker.cc \
@@ -120,7 +129,10 @@ libemulator_a_SOURCES = \
 		WorkItemIdInstructionWorker.cc \
 		\
 		WorkGroupIdInstructionWorker.h \
-		WorkGroupIdInstructionWorker.cc
+		WorkGroupIdInstructionWorker.cc \
+		\
+		XorInstructionWorker.h \
+		XorInstructionWorker.cc
 		
 AM_CPPFLAGS = @M2S_INCLUDES@
 

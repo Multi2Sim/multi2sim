@@ -40,19 +40,6 @@ class Emulator;
 class ProgramLoader;
 class HsaExecutable;
 
-/// List of HSA opcode
-/*
-enum InstOpcode
-{
-#define DEFINST(name, opcode, opstr) \
-	INST_##name,
-#include <arch/hsa/disassembler/Instruction.def>
-#undef DEFINST
-	// Max
-	InstOpcodeCount
-};
-*/
-
 /// HSA work item
 class WorkItem
 {
@@ -181,6 +168,13 @@ public:
  	/// \return
  	///	Return false if the stack is empty after poping
  	bool ReturnFunction();
+
+ 	/// Inject a bit flip into the registers, a random place in the
+ 	/// register files of the current stack
+ 	void InjectRegisterFault();
+
+ 	/// Inject a bit flip into the local data storage (group segment).
+ 	void InjectLdsFault();
 
 
 
