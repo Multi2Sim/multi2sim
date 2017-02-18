@@ -210,6 +210,68 @@ void Context::LoadELFSections(ELFReader::File *binary)
 }
 
 
+unsigned Context::LoadSegments(ELFReader::File *binary)
+{
+	// Highest written memory address
+	unsigned top = 0;
+
+	// Debug
+	emulator->loader_debug << "\nLoading segments\n";
+
+	// Traverse segments
+	for (auto &program_header : binary->getProgramHeaders())
+	{
+		// Skip if segment is not loadable
+		if (program_header->getType() != 1)
+			continue;
+
+		// Debug
+		emulator->loader_debug << "  segment loaded at 0x%x\n"
+				<< misc::fmt("    type=%s, offset=0x%x, vaddr=0x%x, paddr=0x%x\n",
+				program_header_type_map.MapValue(program_header->getType()),
+				program_header->getOffset(),
+				program_header->getVaddr(),
+				program_header->getPaddr())
+				<< misc::fmt("    filesz=%d, memsz=%d, flags=%d, align=%d\n",
+				program_header->getFilesz(),
+				program_header->getMemsz(),
+				program_header->getFlags(),
+				program_header->getAlign());
+
+		// Program interpreter
+		if (program_header->getType() == 3)
+			loader->interp = memory->ReadString(program_header->getVaddr());
+
+		// Compute segment permissions, initially just init and read
+		unsigned perm = mem::Memory::AccessInit | mem::Memory::AccessRead;
+		
+		// Check if segment has write permission
+		if (program_header->getFlags() & PF_W)
+			perm |= mem::Memory::AccessWrite;
+
+		// Check if segment has execution permission
+		if (program_header->getFlags() & PF_X)
+			perm |= mem::Memory::AccessExec;
+
+		// Map segment in memory
+		memory->Map(program_header->getVaddr(),
+				program_header->getSize(),
+				perm);
+		
+		// Load segment
+		memory->Init(program_header->getVaddr(),
+				program_header->getSize(),
+				program_header->getBuffer());
+
+		// Record highest address
+		top = std::max(top, program_header->getVaddr() + program_header->getMemsz());
+	}
+
+	// Return highest address
+	return top;
+}
+
+
 static const unsigned LoaderInterpBase = 0xc0001000;
 static const unsigned LoaderInterpMaxSize = 0x800000;  // 8MB
 
@@ -248,10 +310,10 @@ void Context::LoadInterp()
 			"\n\tInterpreter loaded at 0x%x (%u bytes)\n\n",
 			address, size);
 	
-	// Load sections from program interpreter
+	// Load segments from program interpreter
 	ELFReader::File binary(loader->interp);
-	LoadELFSections(&binary);
-
+	LoadSegments(&binary);
+	
 	// Change program entry to the one specified by the interpreter
 	loader->interp_prog_entry = binary.getEntry();
 	emulator->loader_debug << misc::fmt("  program interpreter entry: 0x%x\n\n",
@@ -325,7 +387,7 @@ void Context::LoadProgramHeaders()
 		// Program interpreter
 		if (program_header->getType() == 3)
 			loader->interp = memory->ReadString(program_header->getVaddr());
-
+		
 		// Next
 		index++;
 	}
@@ -590,16 +652,19 @@ void Context::LoadBinary()
 	}
 	
 	// Load ELF binary
-	loader->binary.reset(new ELFReader::File(loader->exe));
+	loader->binary = misc::new_unique<ELFReader::File>(loader->exe);
 
 	// Read sections and program entry
-	LoadELFSections(loader->binary.get());
 	loader->prog_entry = loader->binary->getEntry();
+
+	// Load segments from binary. The returned value is the highest virtual
+	// address used by a segment. Round it up to the page boundary.
+	unsigned top = LoadSegments(loader->binary.get());
+	top = misc::RoundUp(top, mem::Memory::PageSize);
 
 	// Set heap break to the highest written address rounded up to
 	// the memory page boundary.
-	memory->setHeapBreak(misc::RoundUp(memory->getHeapBreak(),
-			mem::Memory::PageSize));
+	memory->setHeapBreak(top);
 
 	// Load program header table. If we found a PT_INTERP program header,
 	// we have to load the program interpreter. This means we are dealing with

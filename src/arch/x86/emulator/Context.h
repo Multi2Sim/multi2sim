@@ -382,6 +382,10 @@ private:
 	// Load environment variables in 'loader.env' into the stack
 	void LoadEnv();
 
+	// Load segments from binary. The function returns the highest loaded
+	// virtual address from all the loaded segments.
+	unsigned LoadSegments(ELFReader::File *binary);
+
 	// Load ELF sections from binary
 	void LoadELFSections(ELFReader::File *binary);
 
