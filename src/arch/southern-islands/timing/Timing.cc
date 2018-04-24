@@ -1064,7 +1064,7 @@ void Timing::DumpReport() const
 		long long coalesced_reads = compute_unit->getLdsModule()->num_coalesced_reads;
 		long long coalesced_writes = compute_unit->getLdsModule()->num_coalesced_writes;
 		instructions_per_cycle = getCycle() ?                           
-			(double)(compute_unit->num_total_instructions/getCycle()) : 
+			((double)compute_unit->num_total_instructions/(double)getCycle()) : 
 			0.0;                                                     
 
 		// Report statistics for each compute unit

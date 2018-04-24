@@ -150,8 +150,17 @@ void ComputeUnit::Issue(FetchBuffer *fetch_buffer)
 	IssueToExecutionUnit(fetch_buffer, &scalar_unit);
 
 	// Issue instructions to SIMD units
-	for (auto &simd_unit : simd_units)
-		IssueToExecutionUnit(fetch_buffer, simd_unit.get());
+    for (int i = 0; i < num_wavefront_pools; ++i) {
+      // Save timing simulator
+      timing = Timing::getInstance();
+  
+    // Issue buffer chosen to issue this cycle
+      int active_issue_buffer = timing->getCycle() % num_wavefront_pools;
+
+      // Issue in round-robin fashion
+      int index = (i + active_issue_buffer) % num_wavefront_pools;
+      IssueToExecutionUnit(fetch_buffer, simd_units[index].get());
+    }
 
 	// Issue instructions to vector memory unit
 	IssueToExecutionUnit(fetch_buffer, &vector_memory_unit);
