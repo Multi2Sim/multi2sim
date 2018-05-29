@@ -54,8 +54,18 @@ void LdInstructionWorker::Inst_LD_Aux(BrigCodeEntry *instruction)
 			sizeof(T) * vector_modifier,
 			(char *)value.get());
 
-	// Move value from register or immediate into memory
-	operand_value_writer->Write(instruction, 0, value.get());
+	if (sizeof(T) == 1) {
+		auto extended_value = misc::new_unique_array<uint32_t>(
+				vector_modifier);
+		for(unsigned int i = 0; i < vector_modifier; i++) {
+			memcpy(extended_value.get() + i, value.get() + i, 1);
+			operand_value_writer->Write(instruction, 0,
+					extended_value.get());
+      	}
+	} else {
+		// Move value from register or immediate into memory
+		operand_value_writer->Write(instruction, 0, value.get());
+	}
 }
 
 
@@ -63,6 +73,11 @@ void LdInstructionWorker::Execute(BrigCodeEntry *instruction)
 {
 	switch (instruction->getType())
 	{
+	case BRIG_TYPE_U8:
+
+		Inst_LD_Aux<unsigned char>(instruction);
+		break;
+
 	case BRIG_TYPE_U32:
 
 		Inst_LD_Aux<unsigned int>(instruction);

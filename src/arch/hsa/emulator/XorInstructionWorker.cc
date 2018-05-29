@@ -17,61 +17,57 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <lib/cpp/String.h>
-#include <lib/cpp/Error.h>
-#include <arch/hsa/disassembler/AsmService.h>
-#include <arch/hsa/disassembler/Brig.h>
 #include <arch/hsa/disassembler/BrigCodeEntry.h>
 
-#include "AndInstructionWorker.h"
+#include "XorInstructionWorker.h"
 #include "WorkItem.h"
 
 namespace HSA
 {
 
-AndInstructionWorker::AndInstructionWorker(WorkItem *work_item,
+XorInstructionWorker::XorInstructionWorker(WorkItem *work_item,
 		StackFrame *stack_frame) :
 		HsaInstructionWorker(work_item, stack_frame)
 {
 }
 
 
-AndInstructionWorker::~AndInstructionWorker()
+XorInstructionWorker::~XorInstructionWorker()
 {
 }
 
 
 template<typename T>
-void AndInstructionWorker::Inst_AND_Aux(BrigCodeEntry *instruction)
+void XorInstructionWorker::Inst_XOR_Aux(BrigCodeEntry *instruction)
 {
 	// Perform action
 	T src0;
 	T src1;
 	operand_value_retriever->Retrieve(instruction, 1, &src0);
 	operand_value_retriever->Retrieve(instruction, 2, &src1);
-	T des = src0 & src1;
+	T des = src0 ^ src1;
 	operand_value_writer->Write(instruction, 0, &des);
 }
 
 
-void AndInstructionWorker::Execute(BrigCodeEntry *instruction)
+void XorInstructionWorker::Execute(BrigCodeEntry *instruction)
 {
 	// Do different action according to the kind of the inst
 	switch (instruction->getType())
 	{
 	case BRIG_TYPE_B1:
 
-		Inst_AND_Aux<uint8_t>(instruction);
+		Inst_XOR_Aux<uint8_t>(instruction);
 		break;
 
 	case BRIG_TYPE_B32:
 
-		Inst_AND_Aux<uint32_t>(instruction);
+		Inst_XOR_Aux<unsigned int>(instruction);
 		break;
 
 	case BRIG_TYPE_B64:
 
-		Inst_AND_Aux<uint64_t>(instruction);
+		Inst_XOR_Aux<unsigned long long>(instruction);
 		break;
 
 	default:

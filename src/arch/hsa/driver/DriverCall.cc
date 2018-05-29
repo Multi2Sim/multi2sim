@@ -520,7 +520,7 @@ int Driver::CallQueueAddWriteIndexAcqRel(comm::Context *context,
 	debug << misc::fmt("\tqueue: 0x%016llx, \n", queue_ptr);
 	debug << misc::fmt("\tvalue: %lld, \n", value);
 
-	// Retrieve the read index
+	// Retrieve the write index
 	unsigned long long *write_index = (unsigned long long *)memory->
 			getBuffer(queue_ptr + 40, 8, mem::Memory::AccessWrite);
 

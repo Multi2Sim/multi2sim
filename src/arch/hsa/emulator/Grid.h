@@ -162,6 +162,11 @@ public:
 			return nullptr;
 		return it->second.get();
 	}
+
+  /// Return the kernel argument list
+  std::map<std::string, std::unique_ptr<Variable>> *getKernelArguments() {
+    return &kernel_arguments;
+  }
 };
 
 }  // namespace HSA

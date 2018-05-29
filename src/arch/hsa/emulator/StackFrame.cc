@@ -122,22 +122,23 @@ void StackFrame::Dump(std::ostream &os = std::cout) const
 
 	// Dump function arguments
 	os << "  ***** Function arguments *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&function_arguments, os);
 	os << "  ***** ******** ********* *****\n\n";
 
 	// If in argument scope, dump argument scope
 	os << "  ***** Argument scope *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&argument_scope, os);
 	os << "  ***** ******** ***** *****\n\n";
 
 	// Kernal argument
 	os << "  ***** Kernel Argument *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(
+       work_item->getGrid()->getKernelArguments(), os);
 	os << "  ***** ****** ******** ****\n\n";
 
 	// Variable scope, 4
 	os << "  ***** Variables *****\n";
-	os << "To be supported";
+  variablePrinter.PrintVariables(&variables, os);
 	os << "  ***** ********* *****\n\n";
 
 	// Dump back trace information
@@ -244,6 +245,66 @@ Variable *StackFrame::getSymbol(const std::string &name)
 
 	// If nothing is found, return nullptr
 	return nullptr;
+}
+
+
+void StackFrame::getRegisterValue(const std::string &name, void *buffer) const {
+	// Do special action for c registers
+	if (name[1] == 'c')
+	{
+		unsigned int index = name[2] - '0';
+		*(unsigned char *)buffer = c_registers[index];
+		return;
+	}
+
+	// Get the offset of the register
+	unsigned int offset = function->getRegisterOffset(name);
+
+	// Get the size of the register
+	unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+	// Copy the value of the register
+	memcpy(buffer, register_storage.get() + offset, size);
+
+	// Return the value of the register
+	return;
+}
+
+
+void StackFrame::setRegisterValue(const std::string &name, void *value)
+{
+	// Do special action for c registers
+	if (name[1] == 'c')
+	{
+		unsigned int index = name[2] - '0';
+		c_registers[index] = *(unsigned char *)value;
+		return;
+	}
+
+	// Get the offset of the register
+	unsigned int offset = function->getRegisterOffset(name);
+
+	// Get the size of the register
+	unsigned size = AsmService::getSizeInByteByRegisterName(name);
+
+	// Copy the value to the register
+	memcpy(register_storage.get() + offset, value, size);
+
+	// Set the value of the register
+	return;
+}
+
+
+void StackFrame::BitFlipRegister(int byte, int bit)
+{
+	char mask = 1 << bit;
+	register_storage[byte] ^= mask;
+}
+
+
+void StackFrame::BitFlipRegisterInCRegisters(int byte)
+{
+	c_registers[byte] = ~c_registers[byte];
 }
 
 }  // namespace HSA

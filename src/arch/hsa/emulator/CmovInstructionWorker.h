@@ -17,9 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "WorkItemIdInstructionWorker.h"
+#ifndef SRC_ARCH_HSA_EMULATOR_CMOVINSTRUCTIONWORKER_H
+#define SRC_ARCH_HSA_EMULATOR_CMOVINSTRUCTIONWORKER_H
 
-namespace HSA
+#include "HsaInstructionWorker.h"
+
+namespace HSA {
+
+class CmovInstructionWorker : public HSA::HsaInstructionWorker
 {
+	template<typename T>
+	void Inst_CMOV_Aux(BrigCodeEntry *instruction);
 
-}  // namespace HSA
+public:
+	CmovInstructionWorker (WorkItem *work_item, StackFrame *stack_frame);
+	virtual ~CmovInstructionWorker ();
+
+	void Execute(BrigCodeEntry *instruction) override;
+};
+
+}
+
+#endif  // SRC_ARCH_HSA_EMULATOR_CMOVINSTRUCTIONWORKER_H

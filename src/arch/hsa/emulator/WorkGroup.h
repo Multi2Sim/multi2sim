@@ -51,7 +51,7 @@ class WorkGroup
 	unsigned int current_group_size_z = 0;
 
 	// Number of workitems in the workgroup
-	unsigned int num_work_items;
+	unsigned int num_work_items = 0;
 
 	// The segment memory manager
 	std::unique_ptr<SegmentManager> group_segment;

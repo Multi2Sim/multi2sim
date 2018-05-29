@@ -16,35 +16,26 @@
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-
-#ifndef ARCH_HSA_EMULATOR_CVTINSTRUCTIONWORKER_H
-#define ARCH_HSA_EMULATOR_CVTINSTRUCTIONWORKER_H
+#ifndef ARCH_HSA_EMULATOR_XORINSTRUCTIONWORKER_H
+#define ARCH_HSA_EMULATOR_XORINSTRUCTIONWORKER_H
 
 #include "HsaInstructionWorker.h"
 
 namespace HSA
 {
 
-class CvtInstructionWorker : public HsaInstructionWorker
+class XorInstructionWorker : public HsaInstructionWorker
 {
-	template<typename SrcType, typename DstType>
-	void Inst_CVT_chop_Aux(BrigCodeEntry *instruction);
-	template<typename SrcType, typename DstType>
-	void Inst_CVT_zext_Aux(BrigCodeEntry *instruction);
-	template<typename SrcType, typename DstType>
-	void Inst_CVT_sext_Aux(BrigCodeEntry *instruction);
-	template<typename SrcType, typename DstType>
-	void Inst_CVT_u2f_Aux(BrigCodeEntry *instruction);
-	template<typename SrcType, typename DstType>
-	void Inst_CVT_s2f_Aux(BrigCodeEntry *instruction);
+	template<typename T>
+	void Inst_XOR_Aux(BrigCodeEntry *instruction);
 
 public:
-	CvtInstructionWorker(WorkItem *work_item,
+	XorInstructionWorker(WorkItem *work_item,
 			StackFrame *stack_frame);
-	virtual ~CvtInstructionWorker();
+	virtual ~XorInstructionWorker();
 	void Execute(BrigCodeEntry *instruction) override;
 };
 
-}
+}  // namespace HSA
 
-#endif  // ARCH_HSA_EMULATOR_CVTINSTRUCTIONWORKER_H
+#endif  // ARCH_HSA_EMULATOR_XORINSTRUCTIONWORKER_H

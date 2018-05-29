@@ -26,6 +26,7 @@
 #include <arch/hsa/disassembler/AsmService.h>
 
 #include "Function.h"
+#include "VariablePrinter.h"
 
 namespace HSA
 {
@@ -66,6 +67,9 @@ class StackFrame
 
 	// C registers, use a 8 bit char for each 1 bit boolean value
 	unsigned char c_registers[8];
+
+  // For printing variables
+  VariablePrinter variablePrinter;
 
 public:
 
@@ -114,52 +118,14 @@ public:
 	void DumpRegister(const std::string &name, std::ostream &os) const;
 
 	/// Return register value
-	void getRegisterValue(const std::string &name, void *buffer) const
-	{
-		// Do special action for c registers
-		if (name[1] == 'c')
-		{
-			unsigned int index = name[2] - '0';
-			*(unsigned char *)buffer = c_registers[index];
-			return;
-		}
-
-		// Get the offset of the register
-		unsigned int offset = function->getRegisterOffset(name);
-
-		// Get the size of the register
-		unsigned size = AsmService::getSizeInByteByRegisterName(name);
-
-		// Copy the value of the register
-		memcpy(buffer, register_storage.get() + offset, size);
-
-		// Return the value of the register
-		return;
-	}
+	void getRegisterValue(const std::string &name, void *buffer) const;
 
 	/// Set a registers value
-	void setRegisterValue(const std::string &name, void *value)
-	{
-		// Do special action for c registers
-		if (name[1] == 'c')
-		{
-			unsigned int index = name[2] - '0';
-			c_registers[index] = *(unsigned char *)value;
-			return;
-		}
+	void setRegisterValue(const std::string &name, void *value);
 
-		// Get the offset of the register
-		unsigned int offset = function->getRegisterOffset(name);
-
-		// Get the size of the register
-		unsigned size = AsmService::getSizeInByteByRegisterName(name);
-
-		// Copy the value to the register
-		memcpy(register_storage.get() + offset, value, size);
-
-		// Set the value of the register
-		return;
-	}
+	/// Returns the actual register size used in this stack frame, in
+	/// unit of bytes
+	uint32_t getRegisterSizeInByte() { return function->getRegisterSize(); }
 
 	/// Start an argument scope, when a '{' appears. Requires the size to
 	/// be allocated for the argument segment
@@ -183,21 +149,7 @@ public:
 		return function_argument_segment; 
 	}
 
-	/// Adding an argument in the function argument list. This API is 
-	/// opened for the caller to set the memory layout for the function
-	/// argument segment. In the caller function, it will use bracket to 
-	/// create an argument segment and define a few variables there. 
-	/// Those variables is going to be the input and output argument 
-	/// for the callee function. Because the formal name and the actuall
-	/// name can be different and the sequence of declaring those 
-	/// variables are different, when the function is involked, the 
-	/// simulator should know the connection between the formal and 
-	/// the actual argument. The value of the actual argument is stored
-	/// in the memory that is managed by the argument segment manager. 
-	/// Passing the arguments is just passing a referece of the segment 
-	/// manager, since the callee will be able to access that part of 
-	/// memory. However, the simulator would have to modify the memory
-	/// layout, so that the callee knows the right offset.
+	/// Adding an argument in the function argument list.
 	void addFunctionArguments(std::unique_ptr<Variable> argument)
 	{
 		function_arguments.emplace(argument->getName(), 
@@ -241,11 +193,22 @@ public:
 		return it->second.get();
 	}
 
+  /// Print the list of function arguments
+  void PrintFunctionArgumentList(std::ostream &os = std::cout) {
+    variablePrinter.PrintVariables(&function_arguments, os);
+  } 
+
 	/// This function trys to get a symbol in the stack frame. It would 
 	/// first try to search in the argument scope, and variables and 
 	/// finally function arguments. If the name is net defined in 
 	//. this stack frame, nullptr will be returned.
 	Variable *getSymbol(const std::string &name);
+
+	/// Injection an bit flip error in the registers
+	void BitFlipRegister(int byte, int bit);
+
+	/// Injection an bit flip error in the registers
+	void BitFlipRegisterInCRegisters(int byte);
 
 };
 
